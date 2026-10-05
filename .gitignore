@@ -1,0 +1,17 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# Build outputs (regenerate with `make`)
+build/
+*.stl
+*.3mf
+*.gcode
+*.bgcode
+
+# Editors / OS
+.DS_Store
+*.swp
+.vscode/
+.idea/

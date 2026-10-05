@@ -1,0 +1,10 @@
+Prompt to Bench is released under three open licences, one per kind of content:
+
+  Paper, tutorial, figures and other text  CC BY 4.0        LICENSES/CC-BY-4.0.txt
+  Hardware designs (designs/*.scad)        CERN-OHL-P-2.0   LICENSES/CERN-OHL-P-2.0.txt
+  Software (bench/, tools/)                MIT              LICENSES/MIT.txt
+
+Each source file carries an SPDX-License-Identifier line where practical.
+Third-party model outputs stored under bench/results/ are research data generated
+by the listed models and are provided for reproducibility; check each model's own
+licence before reusing them in other contexts.

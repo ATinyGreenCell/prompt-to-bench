@@ -1,0 +1,232 @@
+{
+ "tube_rack_1p5ml": {
+  "design_center": [
+   0.0,
+   0.0
+  ],
+  "zmin": 0.0,
+  "volume": 169942.7036194415,
+  "size": [
+   106.0,
+   72.0,
+   30.0
+  ],
+  "material_area": {}
+ },
+ "conical_rack_50ml": {
+  "design_center": [
+   0.0,
+   0.0
+  ],
+  "zmin": 0.0,
+  "volume": 97917.71654233024,
+  "size": [
+   130.0,
+   90.0,
+   70.0
+  ],
+  "material_area": {}
+ },
+ "slide_drying_rack": {
+  "design_center": [
+   0.0,
+   0.0
+  ],
+  "zmin": 0.0,
+  "volume": 68679.99917387962,
+  "size": [
+   90.0,
+   45.0,
+   20.0
+  ],
+  "material_area": {}
+ },
+ "pcr_tube_rack_sbs": {
+  "design_center": [
+   0.0,
+   0.0
+  ],
+  "zmin": 0.0,
+  "volume": 160367.75638277223,
+  "size": [
+   127.76000213623047,
+   85.4800033569336,
+   20.0
+  ],
+  "material_area": {}
+ },
+ "gel_comb_10well": {
+  "design_center": [
+   0.0,
+   0.0
+  ],
+  "zmin": 0.0,
+  "volume": 2160.0,
+  "size": [
+   70.0,
+   24.0,
+   1.5
+  ],
+  "material_area": {
+   "0.75": 1440.0
+  }
+ },
+ "micropestle_1p5ml": {
+  "design_center": [
+   0.0,
+   0.0
+  ],
+  "zmin": 0.0,
+  "volume": 2520.722455270104,
+  "size": [
+   8.0,
+   8.0,
+   63.498191833496094
+  ],
+  "material_area": {}
+ },
+ "lab_funnel_60mm": {
+  "design_center": [
+   0.0,
+   0.0
+  ],
+  "zmin": 0.0,
+  "volume": 5892.605212615027,
+  "size": [
+   60.0,
+   60.0,
+   50.0
+  ],
+  "material_area": {}
+ },
+ "seed_sowing_template": {
+  "design_center": [
+   0.0,
+   -0.15063858032226562
+  ],
+  "zmin": 0.0,
+  "volume": 10580.47037048569,
+  "size": [
+   85.0,
+   84.69872283935547,
+   2.0
+  ],
+  "material_area": {
+   "1": 5290.235185242841
+  }
+ },
+ "dshaft_knob_6mm": {
+  "design_center": [
+   0.0,
+   0.0
+  ],
+  "zmin": 0.0,
+  "volume": 9871.477144953884,
+  "size": [
+   29.925640106201172,
+   30.0,
+   15.0
+  ],
+  "material_area": {}
+ },
+ "pcr_tube_adapter": {
+  "design_center": [
+   0.0,
+   0.0
+  ],
+  "zmin": 0.0,
+  "volume": 1380.3664157945266,
+  "size": [
+   13.0,
+   13.0,
+   21.5
+  ],
+  "material_area": {}
+ },
+ "hose_barb_reducer_8_5": {
+  "design_center": [
+   0.0,
+   0.0
+  ],
+  "zmin": 0.0,
+  "volume": 1832.3340758144861,
+  "size": [
+   12.0,
+   12.0,
+   41.0
+  ],
+  "material_area": {}
+ },
+ "rod_tubing_clip": {
+  "design_center": [
+   5.784257650375366,
+   0.0
+  ],
+  "zmin": 0.0,
+  "volume": 1626.0692322791058,
+  "size": [
+   27.358994007110596,
+   18.700000762939453,
+   10.0
+  ],
+  "material_area": {
+   "5": 162.6069232279106
+  }
+ },
+ "stirrer_fan_housing": {
+  "design_center": [
+   0.0,
+   0.0
+  ],
+  "zmin": 0.0,
+  "volume": 49083.581386821344,
+  "size": [
+   90.0,
+   90.0,
+   40.0
+  ],
+  "material_area": {}
+ },
+ "nema17_motor_bracket": {
+  "design_center": [
+   0.0,
+   22.5
+  ],
+  "zmin": 0.0,
+  "volume": 22081.663956279062,
+  "size": [
+   50.0,
+   45.0,
+   50.0
+  ],
+  "material_area": {}
+ },
+ "enclosure_box_and_lid": {
+  "design_center": [
+   0.0,
+   0.0
+  ],
+  "zmin": 0.0,
+  "volume": 28290.400020599365,
+  "size": [
+   150.0,
+   50.0,
+   30.0
+  ],
+  "material_area": {}
+ },
+ "mini_gel_tank": {
+  "design_center": [
+   0.0,
+   0.0
+  ],
+  "zmin": 0.0,
+  "volume": 104429.36502561839,
+  "size": [
+   120.0,
+   70.0,
+   40.0
+  ],
+  "material_area": {}
+ }
+}

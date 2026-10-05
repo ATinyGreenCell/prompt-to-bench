@@ -1,0 +1,11 @@
+# Python packages for tools/scadreport.py, the benchmark and the figures.
+# Versions used for the paper (Python 3.14); newer versions should work.
+trimesh>=4.0        # tested 5.1.1
+shapely>=2.0        # tested 2.1.2
+networkx>=3.0       # tested 3.7
+rtree>=1.0          # tested 1.4.1
+numpy>=1.26         # tested 2.5.3
+scipy>=1.11         # tested 1.18.1
+matplotlib>=3.8     # tested 3.11.2
+PyYAML>=6.0         # tested 6.0.3
+pillow>=10.0        # tested 12.3.0

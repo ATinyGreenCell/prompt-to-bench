@@ -1,0 +1,398 @@
+# Prompt-to-Bench task set: 16 biology-lab parts, 4 per category.
+# `prompt` is exactly what the model sees (after the system prompt).
+# `checks` are hidden; coordinates are in the design frame of `reference`
+# (the part as the prompt describes it, lowest point at z = 0).
+# Reference values for relative checks (volume, slice areas) come from the
+# rendered reference solution - see build_refs.py.
+
+- id: tube_rack_1p5ml
+  category: benchware
+  title: 24-place 1.5 mL tube rack
+  short: 1.5 mL rack
+  reference: designs/benchware/tube_rack_1p5ml.scad
+  skills: [block, blind holes, 2-D hole grid]
+  prompt: >-
+    Design a bench rack for 1.5 mL microcentrifuge tubes. It is a solid rectangular
+    block 106 mm long (X), 72 mm wide (Y) and 30 mm tall (Z). It has 24 vertical
+    holes in 4 rows (along Y) of 6 holes (along X), 16 mm centre-to-centre in both
+    directions, with the hole grid centred on the block. Each hole is 11.2 mm in
+    diameter and 25 mm deep, open at the top and closed at the bottom, leaving a
+    5 mm solid floor.
+  checks:
+    - bbox: {size: [106, 72, 30], tol: 0.5}
+    - bodies: 1
+    - slice: {z: 15, islands: 1, holes: 24, hole_d: [11.2, 0.4],
+              hole_grid: {nx: 6, ny: 4, px: 16, py: 16}, tol: 0.5}
+    - slice: {z: 2.5, islands: 1, holes: 0}
+    - volume: {rel_tol: 0.05}
+
+- id: conical_rack_50ml
+  category: benchware
+  title: 50 mL conical tube rack, printed inverted
+  short: 50 mL rack
+  reference: designs/benchware/conical_rack_50ml.scad
+  skills: [print orientation, through holes, multi-feature union]
+  prompt: >-
+    Design a rack for six 50 mL conical (Falcon-type) tubes. It is printed upside
+    down and flipped over after printing. In print orientation: a flat plate 130 mm
+    (X) by 90 mm (Y) and 4 mm thick lies on the bed (z = 0 to 4). The plate has six
+    through-holes, 30.5 mm in diameter, in 2 rows (along Y) of 3 (along X), 40 mm
+    centre-to-centre in both directions, centred on the plate. Two solid walls run
+    along the two long edges of the plate: each wall is 130 mm long (X) and 4 mm
+    thick (Y), flush with the plate's long edge, and rises from the plate to
+    z = 70. The two short ends stay open. After flipping, the rack stands on the
+    two walls and the tubes pass through the holes.
+  checks:
+    - bbox: {size: [130, 90, 70], tol: 0.5}
+    - bodies: 1
+    - slice: {z: 2, islands: 1, holes: 6, hole_d: [30.5, 0.5],
+              hole_grid: {nx: 3, ny: 2, px: 40, py: 40}, tol: 0.6}
+    - slice: {z: 40, islands: 2, island_rects: [[130, 4], [130, 4]], island_tol: 0.4}
+    - probes: {solid: [[0, 43, 40], [0, -43, 40], [0, 0, 2]],
+               empty: [[0, 0, 40], [63, 0, 40], [0, 20, 2]]}
+    - volume: {rel_tol: 0.05}
+
+- id: slide_drying_rack
+  category: benchware
+  title: Microscope slide drying rack
+  short: slide rack
+  reference: designs/benchware/slide_drying_rack.scad
+  skills: [thin slots, 1-D array, small clearances]
+  prompt: >-
+    Design a drying rack that holds 10 microscope slides (75 x 25 x 1 mm) standing
+    upright on their long edge. It is a solid base block 90 mm long (X), 45 mm wide
+    (Y) and 20 mm tall (Z). Cut 10 parallel slots into the top face: each slot runs
+    along X, is 77 mm long, 1.6 mm wide (Y) and 10 mm deep, open at the top. The
+    slots are 3.5 mm apart centre-to-centre (in Y), and the group of slots is
+    centred on the block in X and Y.
+  checks:
+    - bbox: {size: [90, 45, 20], tol: 0.5}
+    - bodies: 1
+    - slice: {z: 15, islands: 1, holes: 10, hole_rect: [77, 1.6, 0.6, 0.25],
+              hole_centers: [[0, -15.75], [0, -12.25], [0, -8.75], [0, -5.25], [0, -1.75],
+                             [0, 1.75], [0, 5.25], [0, 8.75], [0, 12.25], [0, 15.75]], tol: 0.4}
+    - slice: {z: 5, islands: 1, holes: 0}
+    - volume: {rel_tol: 0.05}
+
+- id: pcr_tube_rack_sbs
+  category: benchware
+  title: 96-place PCR tube rack, SBS footprint
+  short: 96 PCR rack
+  reference: designs/benchware/pcr_tube_rack_sbs.scad
+  skills: [standard footprint, large grid, asymmetric feature]
+  prompt: >-
+    Design a rack for 96 PCR tubes (0.2 mL) with the standard microplate (ANSI/SLAS)
+    footprint: a block 127.76 mm long (X), 85.48 mm wide (Y) and 20 mm tall (Z). It
+    has 96 vertical through-holes, 6.2 mm in diameter, in 8 rows (along Y) by 12
+    columns (along X) at 9.0 mm centre-to-centre spacing. The centre of the first
+    hole (A1) is 14.38 mm from the left edge and 11.24 mm from the back edge, so the
+    grid is centred on the block. Cut a 45-degree chamfer with 5 mm legs off the
+    vertical edge at the A1 corner as an orientation mark.
+  checks:
+    - bbox: {size: [127.76, 85.48, 20], tol: 0.5}
+    - bodies: 1
+    - slice: {z: 10, islands: 1, holes: 96, hole_d: [6.2, 0.3],
+              hole_grid: {nx: 12, ny: 8, px: 9, py: 9}, tol: 0.4}
+    - slice: {z: 1, holes: 96}
+    - probes: {empty: [[-62.88, 41.74, 10]],
+               solid: [[62.88, 41.74, 10], [62.88, -41.74, 10], [-62.88, -41.74, 10]]}
+    - volume: {rel_tol: 0.05}
+
+- id: gel_comb_10well
+  category: tools
+  title: 10-well agarose gel comb
+  short: gel comb
+  reference: designs/tools/gel_comb_10well.scad
+  skills: [flat part, 2-D profile, tooth array]
+  prompt: >-
+    Design a 10-well comb for casting agarose gels, printed lying flat. The whole
+    comb is a flat plate 1.5 mm thick (Z) lying on the bed. Seen from above, it has
+    a straight spine (back bar) 70 mm long (X) and 12 mm wide (Y), and 10
+    rectangular teeth that hang from one long edge of the spine in the -Y
+    direction. Each tooth is 5.0 mm wide (X) and 12 mm long (Y). The gaps between
+    neighbouring teeth are 1.5 mm, and the row of teeth is centred on the spine
+    in X.
+  checks:
+    - bbox: {size: [70, 24, 1.5], tol: 0.3}
+    - bodies: 1
+    - slice: {z: 0.75, islands: 1, holes: 0, material_area: 0.04}
+    - line: {z: 0.75, from: [-36, -6], to: [36, -6], intervals: 10, length: [5.0, 0.3]}
+    - line: {z: 0.75, from: [-36, 6], to: [36, 6], intervals: 1, length: [70, 0.5]}
+    - volume: {rel_tol: 0.05}
+
+- id: micropestle_1p5ml
+  category: tools
+  title: Micropestle for 1.5 mL tubes
+  short: micropestle
+  reference: designs/tools/micropestle_1p5ml.scad
+  skills: [stacked primitives, cone, grooves at given heights]
+  prompt: >-
+    Design a pestle for grinding tissue inside a 1.5 mL microcentrifuge tube,
+    printed standing upright. From bottom to top: (1) a cylindrical handle 8 mm in
+    diameter from z = 0 to z = 45; (2) a cone that tapers from 8 mm diameter at
+    z = 45 to 3 mm diameter at z = 62; (3) a rounded tip: a 3 mm diameter sphere
+    centred at z = 62. For grip, cut four circumferential grooves into the handle,
+    each 2 mm wide (in Z) and 1 mm deep, centred at z = 10, 15, 20 and 25.
+  checks:
+    - bbox: {size: [8, 8, 63.5], tol: 0.4}
+    - bodies: 1
+    - slice: {z: 12.5, islands: 1, holes: 0, island_d: [8, 0.3]}
+    - slice: {z: 10, islands: 1, island_d: [6, 0.3]}
+    - slice: {z: 53.5, islands: 1, island_d: [5.5, 0.35]}
+    - slice: {z: 63, islands: 1}
+    - volume: {rel_tol: 0.06}
+
+- id: lab_funnel_60mm
+  category: tools
+  title: 60 mm lab funnel
+  short: funnel
+  reference: designs/tools/lab_funnel_60mm.scad
+  skills: [hollow solid of revolution, open ends, wall thickness]
+  prompt: >-
+    Design a small lab funnel, printed upright with the wide opening at the top. A
+    straight spout (tube) with 10 mm outer diameter runs from z = 0 to z = 20. On
+    top of it, a cone widens from 10 mm outer diameter at z = 20 to 60 mm outer
+    diameter at the rim at z = 50. The wall is 1.6 mm thick everywhere (so the
+    spout's bore is 6.8 mm), and the funnel is open at the top and at the bottom so
+    liquid runs straight through.
+  checks:
+    - bbox: {size: [60, 60, 50], tol: 0.5}
+    - bodies: 1
+    - slice: {z: 10, islands: 1, holes: 1, island_d: [10, 0.3], hole_d: [6.8, 0.3]}
+    - slice: {z: 35, islands: 1, holes: 1, island_d: [35, 0.6], hole_d: [31.4, 0.8]}
+    - slice: {z: 49.5, islands: 1, holes: 1, hole_d: [55.5, 0.9]}
+    - probes: {empty: [[0, 0, 0.3], [0, 0, 15], [0, 0, 30], [0, 0, 49.7]]}
+    - volume: {rel_tol: 0.15}
+
+- id: seed_sowing_template
+  category: tools
+  title: Seed-sowing template for a 90 mm Petri dish
+  short: seed template
+  reference: designs/tools/seed_sowing_template.scad
+  skills: [disc, small-hole grid, orientation notch]
+  prompt: >-
+    Design a sowing template that sits inside a 90 mm Petri dish: a flat disc
+    85 mm in diameter and 2 mm thick, lying on the bed. It has a 7 x 7 grid of
+    3 mm diameter through-holes with 9 mm centre-to-centre spacing, centred on the
+    disc. Cut a rectangular orientation notch into the rim on the +Y side, centred
+    on the Y axis: 10 mm wide (X) and 4 mm deep (Y, measured in from the rim).
+  checks:
+    - bbox: {size: [85, 84.7, 2], tol: 0.5}
+    - bodies: 1
+    - slice: {z: 1, islands: 1, holes: 49, hole_d: [3.0, 0.3],
+              hole_grid: {nx: 7, ny: 7, px: 9, py: 9}, tol: 0.4, material_area: 0.04}
+    - probes: {empty: [[0, 41.5, 1]], solid: [[0, -41.5, 1], [41.5, 0, 1], [-41.5, 0, 1]]}
+    - volume: {rel_tol: 0.05}
+
+- id: dshaft_knob_6mm
+  category: quick-fixes
+  title: Replacement knob for a 6 mm D-shaft
+  short: D-shaft knob
+  reference: designs/quick-fixes/dshaft_knob_6mm.scad
+  skills: [D-profile bore, polar array, feature alignment]
+  prompt: >-
+    Design a replacement knob for a hotplate stirrer with a 6 mm D-shaft. The knob
+    is a cylinder 30 mm in diameter and 15 mm tall. It is printed with the side that
+    faces the hotplate down on the bed (z = 0). From that bottom face, a D-shaped
+    blind bore goes 12 mm up into the knob: a 6.2 mm diameter circle with one side
+    cut flat, so the distance from the flat to the opposite side of the circle is
+    4.7 mm. Around the outside, cut 18 evenly spaced vertical grip grooves along
+    the full height; each groove is a 2 mm diameter half-cylinder centred on the
+    outer surface. On the top face, cut a pointer groove 1.5 mm wide and 1 mm deep
+    that runs from the centre to the outer edge, on the same side as the flat of
+    the D.
+  checks:
+    - bbox: {size: [30, 30, 15], tol: 0.4}
+    - bodies: 1
+    - slice: {z: 6, islands: 1, holes: 1, hole_area: [24.6, 0.12]}
+    - slice: {z: 13, islands: 1, holes: 0}
+    - arc: {z: 7, center: [0, 0], r: 14.6, gaps: 18}
+    - probes: {solid: [[2.5, 0, 5], [0, 0, 13], [-10, 0, 14.6], [0, 10, 14.6]],
+               empty: [[-2.5, 0, 5], [0, 2.4, 5], [10, 0, 14.6]]}
+    - volume: {rel_tol: 0.06}
+
+- id: pcr_tube_adapter
+  category: quick-fixes
+  title: 0.2 mL-in-1.5 mL tube adapter sleeve
+  short: tube adapter
+  reference: designs/quick-fixes/pcr_tube_adapter.scad
+  skills: [concentric cylinders, print orientation, through bore]
+  prompt: >-
+    Design an adapter sleeve that lets a 0.2 mL PCR tube sit in a rack hole made for
+    1.5 mL tubes. Print it upside down: a collar 13 mm in diameter and 1.5 mm thick
+    lies on the bed (z = 0 to 1.5), and the sleeve body, 10.8 mm in outer diameter,
+    rises from the collar to z = 21.5. A straight 6.2 mm diameter bore runs through
+    the full height, open at both ends.
+  checks:
+    - bbox: {size: [13, 13, 21.5], tol: 0.4}
+    - bodies: 1
+    - slice: {z: 0.75, islands: 1, holes: 1, island_d: [13, 0.3], hole_d: [6.2, 0.3]}
+    - slice: {z: 11, islands: 1, holes: 1, island_d: [10.8, 0.3], hole_d: [6.2, 0.3]}
+    - probes: {empty: [[0, 0, 0.3], [0, 0, 21.2]]}
+    - volume: {rel_tol: 0.06}
+
+- id: hose_barb_reducer_8_5
+  category: quick-fixes
+  title: Hose-barb reducer, 8 mm to 5 mm tubing
+  short: hose reducer
+  reference: designs/quick-fixes/hose_barb_reducer_8_5.scad
+  skills: [revolved profile, sawtooth barbs, through bore]
+  prompt: >-
+    Design a straight hose-barb reducer that joins silicone tubing with 8 mm inner
+    diameter to tubing with 5 mm inner diameter. Print it standing upright along Z.
+    It is round (rotationally symmetric about the Z axis) and a 3 mm bore runs
+    straight through its full length. From z = 0 to z = 20: two identical barbs for
+    the 8 mm tubing, stacked; each barb is 10 mm tall and its outer diameter grows
+    linearly from 7.5 mm at its bottom to 9.5 mm at its top, then steps straight
+    back to 7.5 mm (a sawtooth profile). From z = 20 to z = 25: a cylindrical
+    collar of 12 mm diameter. From z = 25 to z = 41: two identical barbs for the
+    5 mm tubing, stacked; each barb is 8 mm tall and its outer diameter shrinks
+    linearly from 6.5 mm at its bottom to 5.0 mm at its top, then steps straight
+    back out to 6.5 mm.
+  checks:
+    - bbox: {size: [12, 12, 41], tol: 0.4}
+    - bodies: 1
+    - slice: {z: 0.5, islands: 1, holes: 1, island_d: [7.6, 0.3], hole_d: [3.0, 0.3]}
+    - slice: {z: 9.5, island_d: [9.4, 0.3]}
+    - slice: {z: 10.5, island_d: [7.6, 0.3]}
+    - slice: {z: 22.5, islands: 1, holes: 1, island_d: [12, 0.3], hole_d: [3.0, 0.3]}
+    - slice: {z: 25.5, island_d: [6.41, 0.3]}
+    - slice: {z: 32.5, island_d: [5.09, 0.3]}
+    - slice: {z: 33.5, island_d: [6.41, 0.3]}
+    - slice: {z: 40.5, island_d: [5.09, 0.3]}
+    - probes: {empty: [[0, 0, 0.2], [0, 0, 15], [0, 0, 22.5], [0, 0, 30], [0, 0, 40.8]]}
+    - volume: {rel_tol: 0.06}
+
+- id: rod_tubing_clip
+  category: quick-fixes
+  title: Snap-on tubing clip for a lab stand rod
+  short: rod clip
+  reference: designs/quick-fixes/rod_tubing_clip.scad
+  skills: [2-D profile booleans, open rings, explicit coordinates]
+  prompt: >-
+    Design a snap-on clip that holds a piece of tubing next to a 12.7 mm (1/2 inch)
+    lab stand rod. It is printed flat: a 10 mm tall extrusion (Z) of a 2-D profile
+    in the XY plane. The profile consists of: (1) a rod ring with 12.7 mm inner
+    diameter and 3 mm wall (18.7 mm outer diameter), centred at the origin, with a
+    10 mm wide opening cut out of its -X side (everything with x < 0 and
+    -5 < y < 5 is removed from this ring) so it snaps onto the rod; (2) a tubing
+    ring with 6 mm inner diameter and 2 mm wall, centred at x = 15, y = 0, with a
+    4.5 mm wide opening cut out of its +X side (x > 15 and -2.25 < y < 2.25);
+    (3) a solid bridge 6 mm wide (Y) between x = 8 and x = 12 that joins the two
+    rings without blocking either ring's hole.
+  checks:
+    - bbox: {size: [27.37, 18.7, 10], tol: 0.4}
+    - bodies: 1
+    - slice: {z: 5, islands: 1, holes: 0, material_area: 0.05}
+    - probes: {empty: [[0, 0, 5], [15, 0, 5], [-7.5, 0, 5], [19, 0, 5]],
+               solid: [[0, 7.8, 5], [0, -7.8, 5], [15, 4, 5], [15, -4, 5], [10, 0, 5], [-5.5, 6, 5]]}
+    - volume: {rel_tol: 0.05}
+
+- id: stirrer_fan_housing
+  category: hardware
+  title: Magnetic stirrer housing for an 80 mm PC fan
+  short: stirrer housing
+  reference: designs/hardware/stirrer_fan_housing.scad
+  skills: [shelled box, bolt pattern, print orientation, edge notch]
+  prompt: >-
+    Design the housing for a DIY magnetic stirrer built from an 80 mm PC case fan.
+    In use it is an upside-down open box that covers the fan, and its closed top is
+    the stirring surface. Model it in print orientation, i.e. upside down: the
+    2 mm thick top plate lies on the bed (z = 0 to 2) and four walls, 2.5 mm thick,
+    rise from it to z = 40, where the box is open. The outer size is 90 x 90 mm
+    (X x Y). Drill four 4.5 mm holes for M4 screws through the top plate on a
+    71.5 mm square pattern centred on the plate (the fan's mounting holes). In one
+    wall, cut a notch for the power cable: 12 mm wide, centred along the wall,
+    reaching 8 mm down from the open edge (from z = 32 to z = 40).
+  checks:
+    - bbox: {size: [90, 90, 40], tol: 0.5}
+    - bodies: 1
+    - slice: {z: 1, islands: 1, holes: 4, hole_d: [4.5, 0.3],
+              hole_centers: [[35.75, 35.75], [-35.75, 35.75], [35.75, -35.75], [-35.75, -35.75]], tol: 0.4}
+    - slice: {z: 20, islands: 1, holes: 1, hole_rects: [[85, 85]], rect_tol: 0.4}
+    - slice: {z: 36, islands: 1, holes: 0}
+    - probes: {empty: [[0, 43.75, 36], [0, 0, 20]],
+               solid: [[0, -43.75, 36], [43.75, 0, 36], [-43.75, 0, 36], [0, 0, 1]]}
+    - volume: {rel_tol: 0.05}
+
+- id: nema17_motor_bracket
+  category: hardware
+  title: NEMA 17 motor L-bracket
+  short: motor bracket
+  reference: designs/hardware/nema17_motor_bracket.scad
+  skills: [L-bracket, horizontal holes, bolt patterns, gussets]
+  prompt: >-
+    Design an L-shaped mounting bracket for a NEMA 17 stepper motor, e.g. for a
+    syringe pump. Print orientation: the base plate lies on the bed. Base plate:
+    x from -25 to 25, y from 0 to 45, z from 0 to 5, with two 4.5 mm vertical
+    through-holes (M4) at (x = -17, y = 30) and (x = 17, y = 30). Vertical motor
+    plate: x from -25 to 25, y from 0 to 5, z from 0 to 50, standing on the back
+    edge of the base. Through the motor plate (along Y) cut a 23 mm hole for the
+    motor's centring boss with its centre at x = 0, z = 28, and four 3.4 mm holes
+    for M3 screws on a 31 mm square pattern centred on the boss hole. Add two
+    triangular gussets, 5 mm thick, flush with the left and right edges
+    (x = -25 to -20 and x = 20 to 25): each is a right triangle in the YZ plane
+    with legs 20 mm along +Y and 20 mm along +Z, its right-angle corner at y = 5,
+    z = 5 (where the plates meet).
+  checks:
+    - bbox: {size: [50, 45, 50], tol: 0.5}
+    - bodies: 1
+    - slice: {z: 2.5, islands: 1, holes: 2, hole_d: [4.5, 0.3],
+              hole_centers: [[-17, 30], [17, 30]], tol: 0.5}
+    - slice: {z: 28, islands: 2}
+    - probes: {empty: [[0, 2.5, 28], [0, 2.5, 38], [15.5, 2.5, 12.5], [-15.5, 2.5, 12.5],
+                       [15.5, 2.5, 43.5], [-15.5, 2.5, 43.5], [0, 20, 20]],
+               solid: [[0, 2.5, 45], [-20, 2.5, 28], [0, 30, 2.5], [22.5, 10, 10], [-22.5, 10, 10]]}
+    - volume: {rel_tol: 0.06}
+
+- id: enclosure_box_and_lid
+  category: hardware
+  title: Electronics enclosure with push-fit lid
+  short: box + lid
+  reference: designs/hardware/enclosure_box_and_lid.scad
+  skills: [multi-part layout, clearance fit, shelling]
+  prompt: >-
+    Design a two-part enclosure for a small electronics board (for example an
+    Arduino-based temperature logger). Put both parts in the same file, side by
+    side on the bed with a 10 mm gap between them, so they print together. Part 1,
+    the box: outer size 70 x 50 x 30 mm (X x Y x Z), 2 mm walls, 2 mm floor, open
+    top. Part 2, the lid, printed upside down: a plate 70 x 50 x 2 mm lying on the
+    bed, with a rectangular lip on top of it - a 1.5 mm thick wall, 4 mm tall,
+    whose outer size is 65.6 x 45.6 mm, centred on the plate, so it slides into the
+    box opening with 0.2 mm clearance on each side. Place the lid on the +X side of
+    the box.
+  checks:
+    - bodies: 2
+    - bbox: {size: [150, 50, 30], tol: 0.6}
+    - body_sizes: {sizes: [[70, 50, 30], [70, 50, 6]], tol: 0.4}
+    - slice: {z: 15, islands: 1, holes: 1, hole_rects: [[66, 46]], rect_tol: 0.3}
+    - slice: {z: 4, islands: 2, island_rects: [[70, 50], [65.6, 45.6]], island_tol: 0.15,
+              hole_rects: [[66, 46], [62.6, 42.6]], rect_tol: 0.3}
+    - slice: {z: 1, islands: 2, holes: 0}
+    - volume: {rel_tol: 0.05}
+
+- id: mini_gel_tank
+  category: hardware
+  title: Mini gel-electrophoresis buffer tank
+  short: gel tank
+  reference: designs/hardware/mini_gel_tank.scad
+  skills: [shelled box, internal platform, horizontal holes]
+  prompt: >-
+    Design the buffer tank for a mini horizontal gel-electrophoresis box. It is an
+    open-top rectangular tank with outer dimensions 120 mm (X) x 70 mm (Y) x 40 mm
+    (Z), 3 mm walls and a 3 mm floor. In the middle of the tank, a solid raised
+    platform for the gel tray spans the full inner width (Y) of the tank, is 60 mm
+    long in X (centred), and its top is 10 mm above the inner floor (at z = 13).
+    The platform divides the bottom of the tank into two buffer chambers, one at
+    each end, that connect above the platform. Through each end wall (the walls at
+    the two X ends), drill a 2 mm diameter horizontal hole along X at y = 0,
+    z = 30 for the electrode wires.
+  checks:
+    - bbox: {size: [120, 70, 40], tol: 0.5}
+    - bodies: 1
+    - slice: {z: 8, islands: 1, holes: 2, hole_rects: [[64, 27], [64, 27]], rect_tol: 0.5}
+    - slice: {z: 20, islands: 1, holes: 1, hole_rects: [[114, 64]], rect_tol: 0.5}
+    - slice: {z: 1.5, islands: 1, holes: 0}
+    - probes: {empty: [[58.5, 0, 30], [-58.5, 0, 30], [0, 0, 14]],
+               solid: [[58.5, 10, 30], [-58.5, 10, 30], [0, 0, 12]]}
+    - volume: {rel_tol: 0.05}

@@ -1,0 +1,14 @@
+qwen3.5:9b-q4_K_M 56671c2ab938 6.6GB
+gemma4:e4b-it-q4_K_M dc35e8d9c606 6.6GB
+lfm2.5:8b-a1b-q4_K_M 9cf756159fc2 5.2GB
+qwen2.5-coder:7b dae161e27b0e 4.7GB
+gemma4:e2b-it-q4_K_M b37049369adf 4.6GB
+qwen3.5:4b-q4_K_M d8b0f5e9760c 3.3GB
+ministral-3:3b f04aa1c738f6 3.0GB
+qwen2.5-coder:3b f72c60cabf62 1.9GB
+llama3.2:3b a80c4f17acd5 2.0GB
+granite4.2:3b 40577dc168a3 2.2GB
+qwen3.5:2b-q4_K_M 1e2d21a4f03a 1.9GB
+qwen2.5-coder:1.5b d7372fd82851 986MB
+qwen2.5-coder:0.5b 4ff64a7f502a 397MB
+qwen2.5:1.5b 65ec06548149 986MB

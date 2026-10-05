@@ -1,0 +1,35 @@
+// Two-part enclosure (box + push-fit lid) for a small electronics board
+// Category: full hardware. Both parts in one file, side by side, ready to print.
+// The lid's lip is 0.2 mm smaller per side than the box opening (push fit).
+// Print: PLA or PETG, 0.2 mm layers. Print a lid first to check the fit.
+// SPDX-License-Identifier: CERN-OHL-P-2.0
+
+/* [Enclosure] */
+box = [70, 50, 30];    // outer X, Y, Z
+wall = 2;
+floor_t = 2;
+lid_t = 2;
+lip_h = 4;
+lip_wall = 1.5;
+clearance = 0.2;       // per side
+gap = 10;              // between the parts on the bed
+
+/* [Hidden] */
+eps = 0.01;
+lip = [box.x - 2 * wall - 2 * clearance, box.y - 2 * wall - 2 * clearance];
+
+// box (left)
+translate([-box.x - gap / 2, -box.y / 2, 0])
+    difference() {
+        cube(box);
+        translate([wall, wall, floor_t]) cube([box.x - 2 * wall, box.y - 2 * wall, box.z]);
+    }
+// lid (right), lip pointing up
+translate([gap / 2, -box.y / 2, 0]) {
+    cube([box.x, box.y, lid_t]);
+    translate([(box.x - lip.x) / 2, (box.y - lip.y) / 2, lid_t - eps])
+        difference() {
+            cube([lip.x, lip.y, lip_h + eps]);
+            translate([lip_wall, lip_wall, -1]) cube([lip.x - 2 * lip_wall, lip.y - 2 * lip_wall, lip_h + 2]);
+        }
+}
