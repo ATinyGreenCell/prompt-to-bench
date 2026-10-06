@@ -1,10 +1,11 @@
 # Prompt to Bench - common tasks. Run `make help`.
 PY ?= .venv/bin/python
 
-.PHONY: help venv refs renders slice analyze bench-local bench-claude lang all
+.PHONY: help venv test refs renders slice analyze bench-local bench-claude lang all
 
 help:
 	@echo "make venv          create .venv and install requirements"
+	@echo "make test          robustness tests (fake model, real OpenSCAD; ~1 min)"
 	@echo "make refs          validate the checker against the reference designs"
 	@echo "make renders       render designs/ to figures/design_library.png"
 	@echo "make slice         slice every design for a Prusa MK4 (needs PrusaSlicer)"
@@ -15,6 +16,9 @@ help:
 
 venv:
 	python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
+
+test:
+	$(PY) bench/test_harness.py
 
 refs:
 	$(PY) bench/build_refs.py
@@ -38,4 +42,4 @@ lang:
 analyze:
 	$(PY) bench/analyze.py
 
-all: refs renders analyze
+all: test refs renders analyze

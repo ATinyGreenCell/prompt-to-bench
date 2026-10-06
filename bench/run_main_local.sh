@@ -7,6 +7,11 @@
 # thinking switched off, reason inside code comments until the cap) run last.
 set -u
 cd "$(dirname "$0")/.."
+# Keep the laptop awake (no suspend on idle or lid close) while the benchmark runs.
+INHIBIT=()
+if command -v systemd-inhibit >/dev/null 2>&1; then
+  INHIBIT=(systemd-inhibit --what=sleep:idle:handle-lid-switch --who=prompt-to-bench --why="benchmark running")
+fi
 MODELS=(
   qwen2.5-coder:1.5b
   qwen2.5-coder:7b
@@ -23,4 +28,4 @@ MODELS=(
   qwen3.5:4b-q4_K_M
   qwen3.5:9b-q4_K_M
 )
-.venv/bin/python bench/run_bench.py --run main --models "${MODELS[@]}" "$@"
+"${INHIBIT[@]}" .venv/bin/python bench/run_bench.py --run main --models "${MODELS[@]}" "$@"

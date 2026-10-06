@@ -43,6 +43,15 @@ You need OpenSCAD on your `PATH`. A development snapshot with the Manifold backe
   - `--feedback generic` replaces the report with "it does not match the specification, try again", which measures how much the measurements themselves help.
 - **Pass:** every check passes. We also record partial scores, failure stages, tokens and timings.
 
+## Robustness
+
+- **Runtime errors are never scored.** If Ollama or the Claude CLI fails (server restart, dropped connection, rate limit), the request is retried with back-off. If it still fails, the task is skipped *without* a record, so a later run picks it up. Three runtime errors in a row stop the run.
+- **Resumable and crash-safe.** Each conversation is appended with `fsync`. A line damaged by a power cut is dropped on the next start and that task reruns. Run the same command again to resume.
+- **One writer per run.** A lock file refuses a second `run_bench.py` on the same `--run` folder.
+- **No sleep.** `run_main_local.sh` and `run_lang.sh` hold a `systemd-inhibit` lock (where available), so the laptop does not suspend mid-run.
+- **Machine-independent.** Attempts that `include`/`use` an external library are flagged (`uses_library`), because their result depends on what is installed locally.
+- `python bench/test_harness.py` (or `make test`) exercises all of the above with a fake model.
+
 ## Check types
 
 A check is written in the *design frame*: the part as the prompt describes it, with its lowest point at z = 0. Candidates are normalised by bounding-box centre. The position-dependent checks are tried under the eight bed symmetries (90° rotations and mirroring), and the best match is kept.

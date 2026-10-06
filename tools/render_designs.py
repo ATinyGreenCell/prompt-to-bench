@@ -32,9 +32,10 @@ def main():
         scad = os.path.join(ROOT, t["reference"])
         png = os.path.join(OUT, t["id"] + ".png")
         # preview mode (OpenCSG) gives every part the same colour scheme
-        subprocess.run(["openscad", "-o", png, "--imgsize", "900,700", "--viewall",
-                        "--autocenter", "--colorscheme", "Tomorrow", scad],
-                       check=True, capture_output=True)
+        cmd = ["openscad", "-o", png, "--imgsize", "900,700", "--viewall", "--autocenter", "--colorscheme", "Tomorrow"]
+        if subprocess.run(cmd + [scad], capture_output=True).returncode != 0:
+            # preview needs OpenGL; on headless machines fall back to a full render (or run under xvfb-run)
+            subprocess.run(cmd + ["--render", scad], check=True, capture_output=True)
         tiles.append((t["category"], t["title"], png))
         print("rendered", t["id"])
     # 4 x 4 contact sheet, one column per category

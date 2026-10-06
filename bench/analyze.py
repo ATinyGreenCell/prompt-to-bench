@@ -13,6 +13,7 @@ import argparse
 import collections
 import csv
 import glob
+import hashlib
 import json
 import math
 import os
@@ -48,13 +49,35 @@ THEMES = {
 # --------------------------------------------------------------------------- loading
 
 def load_runs():
+    """All runs; damaged lines are skipped and repeated conversations keep only the newest record."""
     runs = {}
     for path in sorted(glob.glob(os.path.join(HERE, "results", "*", "results.jsonl"))):
         run = os.path.basename(os.path.dirname(path))
-        if run.startswith("smoke") or run.startswith("calib"):
+        if run.startswith(("smoke", "calib", "_")):
             continue
-        runs[run] = [json.loads(line) for line in open(path) if line.strip()]
+        latest = {}
+        for line in open(path):
+            try:
+                r = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            r["_run"] = run
+            latest[(r["model"], r["task"], r["sample"], r.get("lang", "en"), r.get("feedback", "report"))] = r
+        runs[run] = list(latest.values())
     return runs
+
+
+def code_hash(rec, i):
+    """Hash of the code in attempt i (recorded by newer runs; recomputed from the saved .scad otherwise)."""
+    a = rec["attempts"][i]
+    if a.get("code_sha1") is not None or not a.get("code_lines"):
+        return a.get("code_sha1")
+    suffix = "".join(f"_{x}" for x, d in ((rec.get("lang", "en"), "en"), (rec.get("feedback", "report"), "report")) if x != d)
+    path = os.path.join(HERE, "results", rec["_run"], "code", re.sub(r"[^A-Za-z0-9._-]+", "_", rec["model"]),
+                        f"{rec['task']}_s{rec['sample']}{suffix}_a{i}.scad")
+    if not os.path.exists(path):
+        return None
+    return hashlib.sha1(open(path, "rb").read()).hexdigest()[:12]
 
 
 def wilson(k, n, z=1.96):
@@ -114,9 +137,8 @@ def summarise(records, models_meta, tasks):
         gsec = sum((a.get("usage") or {}).get("gen_s") or 0 for r in recs for a in r["attempts"])
         att0 = [r["attempts"][0] for r in recs if r["attempts"]]
         stages = collections.Counter(failure_stage(a) for a in att0)
-        same = sum(1 for r in recs for i in range(1, len(r["attempts"]))
-                   if r["attempts"][i].get("code_lines") and r["attempts"][i].get("code_hash") is not None
-                   and r["attempts"][i]["code_hash"] == r["attempts"][i - 1].get("code_hash"))
+        repairs = [(r, i) for r in recs for i in range(1, len(r["attempts"]))]
+        same = sum(1 for r, i in repairs if code_hash(r, i) is not None and code_hash(r, i) == code_hash(r, i - 1))
         rows.append({
             "model": model, "label": meta.get("label", model), "family": meta.get("family", ""),
             "hosted": bool(meta.get("hosted")), "size_gb": meta.get("size_gb"), "params_b": meta.get("params_b"),
@@ -127,7 +149,7 @@ def summarise(records, models_meta, tasks):
             "median_task_min": walls[len(walls) // 2] / 60 if walls else None,
             "total_min": sum(walls) / 60,
             "gen_tok_s": gtok / gsec if gsec else None,
-            "first_stage": dict(stages), "repeat_repairs": same,
+            "first_stage": dict(stages), "repeat_repairs": same, "n_repairs": len(repairs),
         })
     return rows
 
@@ -264,7 +286,7 @@ def fig_frontier(rows, th, path, title):
         for h in hosted:
             yv = 100 * h["pass3_rate"]
             ax.axhline(yv, color=th["axis"], linewidth=1, zorder=1)
-            ax.text(ax.get_xlim()[1] if False else 0.99, yv, f"{h['label'].replace(' (hosted)', '')}: {yv:.0f}%",
+            ax.text(0.99, yv, f"{h['label'].replace(' (hosted)', '')}: {yv:.0f}%",
                     transform=ax.get_yaxis_transform(), ha="right", va="bottom", fontsize=7.5, color=th["muted"])
         ax.set_xlabel(xlabel, color=th["ink2"], fontsize=9)
         ax.set_ylim(-3, 108)
@@ -326,8 +348,8 @@ def pct(k, n):
 
 def table_main(rows):
     out = ["| Model | Download | Licence | Pass, 1st try | Pass, ≤3 tries (95% CI) | Printable 1st try | "
-           "Median min/task | Tokens/s |",
-           "|---|---:|---|---:|---:|---:|---:|---:|"]
+           "Median min/task | Tokens/s | Same code after feedback |",
+           "|---|---:|---|---:|---:|---:|---:|---:|---:|"]
     for r in order_models(rows):
         ci = r["pass3_ci"]
         out.append(
@@ -335,7 +357,8 @@ def table_main(rows):
             f"{(str(r['size_gb']) + ' GB') if r['size_gb'] else 'hosted'} | {r['licence']} | "
             f"{r['pass1']}/{r['n_tasks']} | {r['pass3']}/{r['n_tasks']} ({100 * ci[0]:.0f}-{100 * ci[1]:.0f}%) | "
             f"{r['render1']}/{r['n_tasks']} | "
-            f"{r['median_task_min']:.1f} | {('%.1f' % r['gen_tok_s']) if r['gen_tok_s'] and not r['hosted'] else '-'} |")
+            f"{r['median_task_min']:.1f} | {('%.1f' % r['gen_tok_s']) if r['gen_tok_s'] and not r['hosted'] else '-'} | "
+            f"{r['repeat_repairs']}/{r['n_repairs']} |")
     return "\n".join(out)
 
 

@@ -11,6 +11,7 @@ import csv
 import os
 import re
 import shlex
+import shutil
 import subprocess
 
 import yaml
@@ -26,11 +27,22 @@ CMD = shlex.split(os.environ.get("PRUSASLICER", "flatpak run --command=prusa-sli
 
 
 def setup_datadir():
+    """Isolated config folder with only the stock Prusa profiles (your own presets are never read)."""
     vendor = os.path.join(DATADIR, "vendor", "PrusaResearch.ini")
     if not os.path.exists(vendor):
         os.makedirs(os.path.dirname(vendor), exist_ok=True)
-        subprocess.run(["flatpak", "run", "--command=cp", "com.prusa3d.PrusaSlicer",
-                        "/app/share/PrusaSlicer/profiles/PrusaResearch.ini", vendor], check=True)
+        src = os.environ.get("PRUSA_PROFILES")  # e.g. /usr/share/PrusaSlicer/profiles/PrusaResearch.ini
+        for cand in [src, "/usr/share/PrusaSlicer/profiles/PrusaResearch.ini",
+                     "/usr/local/share/PrusaSlicer/profiles/PrusaResearch.ini"]:
+            if cand and os.path.exists(cand):
+                shutil.copy(cand, vendor)
+                break
+        else:
+            if shutil.which("flatpak") is None or subprocess.run(
+                    ["flatpak", "run", "--command=cp", "com.prusa3d.PrusaSlicer",
+                     "/app/share/PrusaSlicer/profiles/PrusaResearch.ini", vendor]).returncode != 0:
+                raise SystemExit("Could not find PrusaSlicer's PrusaResearch.ini profile bundle. "
+                                 "Set PRUSA_PROFILES=/path/to/PrusaResearch.ini and PRUSASLICER=/path/to/prusa-slicer")
     with open(os.path.join(DATADIR, "PrusaSlicer.ini"), "w") as fh:
         fh.write("[vendor:PrusaResearch]\nMK4 = 0.4\n")
 
@@ -53,9 +65,11 @@ def main():
         subprocess.run(["openscad", "-o", stl, "--export-format", "binstl", os.path.join(ROOT, t["reference"])],
                        check=True, capture_output=True)
         gcode = stl.replace(".stl", ".gcode")
-        subprocess.run(CMD + ["--datadir", DATADIR, "--printer-profile", PRINTER, "--print-profile", PRINT,
-                              "--material-profile", MATERIAL, "--threads", "1", "--export-gcode",
-                              "--output", gcode, stl], check=True, capture_output=True)
+        p = subprocess.run(CMD + ["--datadir", DATADIR, "--printer-profile", PRINTER, "--print-profile", PRINT,
+                                  "--material-profile", MATERIAL, "--threads", "1", "--export-gcode",
+                                  "--output", gcode, stl], capture_output=True, text=True)
+        if p.returncode != 0 or not os.path.exists(gcode):
+            raise SystemExit(f"PrusaSlicer failed on {t['id']}:\n{(p.stdout + p.stderr)[-800:]}")
         meta = {}
         for line in open(gcode, errors="replace"):
             m = re.match(r"; (filament used \[cm3\]|estimated printing time \(normal mode\)) = (.*)", line)

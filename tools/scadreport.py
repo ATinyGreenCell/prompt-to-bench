@@ -20,6 +20,7 @@ import json
 import math
 import os
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -31,6 +32,7 @@ import trimesh
 
 OPENSCAD = os.environ.get("OPENSCAD", "openscad")
 PLA_DENSITY = 1.24  # g/cm^3
+MAX_FACES = 2_000_000  # bigger meshes are almost always runaway $fn / minkowski and would stall the analysis
 MSG_RE = re.compile(r"^\s*(ERROR|WARNING|DEPRECATED|TRACE)\b|top level object|not a 3D object")
 
 
@@ -64,10 +66,18 @@ def render(scad_path, out_path, defines=(), timeout=180):
 
 
 def load_mesh(path):
+    if os.path.getsize(path) > 84 + 50 * MAX_FACES:  # binary STL: 50 bytes per triangle
+        raise ValueError(f"mesh has more than {MAX_FACES:,} triangles - lower $fn or avoid minkowski()")
     m = trimesh.load(path, force="mesh")
     if not isinstance(m, trimesh.Trimesh) or len(m.faces) == 0:
         raise ValueError("empty mesh")
     return m
+
+
+def _z(v):
+    """Round for display without printing '-0.00'."""
+    v = round(float(v), 2)
+    return 0.0 if v == 0 else v
 
 
 # --------------------------------------------------------------------------- slicing
@@ -146,14 +156,14 @@ def grid_text(holes):
     """Describe hole centres as a regular grid when they form one."""
     if len(holes) < 2:
         h = holes[0]
-        return f"centre ({h['cx']:.2f}, {h['cy']:.2f})"
+        return f"centre ({_z(h['cx']):.2f}, {_z(h['cy']):.2f})"
     xs = _cluster([h["cx"] for h in holes])
     ys = _cluster([h["cy"] for h in holes])
     cx = np.mean([h["cx"] for h in holes])
     cy = np.mean([h["cy"] for h in holes])
     if len(xs) * len(ys) == len(holes):
         return (f"{len(xs)} x {len(ys)} grid (X x Y), pitch X {_pitch(xs)} / Y {_pitch(ys)}, "
-                f"grid centre ({cx:.2f}, {cy:.2f})")
+                f"grid centre ({_z(cx):.2f}, {_z(cy):.2f})")
     pts = ", ".join(f"({h['cx']:.1f}, {h['cy']:.1f})" for h in holes[:12])
     more = " ..." if len(holes) > 12 else ""
     return f"centres {pts}{more}"
@@ -230,7 +240,7 @@ def format_report(r, data=None):
         return "\n".join(out)
     if data is None:
         return "\n".join(out)
-    (x0, y0, z0), (x1, y1, z1) = data["bounds"]
+    (x0, y0, z0), (x1, y1, z1) = [[_z(v) for v in b] for b in data["bounds"]]
     wt = "watertight (valid solid)" if data["watertight"] else "NOT watertight (broken surface - check for zero-thickness walls or self-intersections)"
     vol = f"volume {data['volume']:,.0f} mm3 (~{data['volume'] / 1000 * PLA_DENSITY:.0f} g of PLA if printed solid)" if data["volume"] else "volume unknown"
     out.append(f"SOLID: {data['bodies']} separate bod{'y' if data['bodies'] == 1 else 'ies'}, {wt}; {vol}.")
@@ -255,7 +265,7 @@ def format_report(r, data=None):
             continue
         if len(isl) <= 4:
             outl = "; ".join((f"circle d={i['l']:.2f}" if i["kind"] == "circle" else _shape_text(i))
-                             + f" centred ({i['cx']:.2f}, {i['cy']:.2f})" for i in isl)
+                             + f" centred ({_z(i['cx']):.2f}, {_z(i['cy']):.2f})" for i in isl)
         else:
             outl = f"{len(isl)} pieces, e.g. " + _shape_text(isl[0])
         line = f"  z={s['z']:.2f}: {len(isl)} solid region{'s' if len(isl) != 1 else ''} [outline: {outl}]"
@@ -271,16 +281,20 @@ def report(scad_path, extra_z=(), defines=(), stl_out=None, timeout=180):
     if stl_out is None:
         tmpdir = tempfile.mkdtemp(prefix="scadreport_")
         stl_out = os.path.join(tmpdir, "part.stl")
-    r = render(scad_path, stl_out, defines, timeout)
-    data, mesh = None, None
-    if r["ok"]:
-        try:
-            mesh = load_mesh(stl_out)
-            data = analyse(mesh, extra_z)
-        except Exception as e:  # noqa: BLE001
-            r["ok"] = False
-            r["messages"].append(f"ERROR: could not read the exported mesh ({e})")
-    return format_report(r, data), {"render": r, "geometry": data}, mesh
+    try:
+        r = render(scad_path, stl_out, defines, timeout)
+        data, mesh = None, None
+        if r["ok"]:
+            try:
+                mesh = load_mesh(stl_out)
+                data = analyse(mesh, extra_z)
+            except Exception as e:  # noqa: BLE001
+                r["ok"] = False
+                r["messages"].append(f"ERROR: could not analyse the exported mesh ({e})")
+        return format_report(r, data), {"render": r, "geometry": data}, mesh
+    finally:
+        if tmpdir:
+            shutil.rmtree(tmpdir, ignore_errors=True)
 
 
 def main():
@@ -291,6 +305,10 @@ def main():
     ap.add_argument("--stl", help="also keep the exported STL here")
     ap.add_argument("--json", action="store_true")
     a = ap.parse_args()
+    if not os.path.exists(a.scad):
+        sys.exit(f"no such file: {a.scad}")
+    if shutil.which(OPENSCAD) is None and not os.path.exists(OPENSCAD):
+        sys.exit("OpenSCAD not found - install it (openscad.org) or set OPENSCAD=/path/to/openscad")
     text, data, _ = report(a.scad, a.z, a.D, a.stl)
     if a.json:
         print(json.dumps(data, indent=1, default=float))
