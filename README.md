@@ -428,7 +428,9 @@ Details, including the hosted reference and the language ablation, are in [`benc
 
 **AI use.** Claude (Anthropic; Claude Opus 5.5 in Claude Code) drafted the benchmark code, reference designs, translations, figures, tutorial and much of this text, and ran the literature search and two independent audits of the claims and designs ([`meta/audits/`](meta/audits/)), under the author's direction. Every reference was checked against a primary record (Crossref, PubMed, arXiv, the publisher or official documentation) on 5 October 2026. The prompts and the assistant's replies that built this repository are published, lightly redacted, in [`meta/BUILD_LOG.md`](meta/BUILD_LOG.md). Following COPE and ICMJE guidance, the AI is not listed as an author. No client or confidential work was used.
 
-**Competing interests.** S. S. Cocioba is a co-author of [McNair et al. 2024](#mcnair2024), cited here. *(Funding: to be completed.)*
+**Funding.** This work was self-funded by the author, an independent researcher at Binomica Labs; it received no grant or institutional funding.
+
+**Competing interests.** S. S. Cocioba is a co-author of [McNair et al. 2024](#mcnair2024), cited here. No other competing interests.
 
 ## How to cite
 
