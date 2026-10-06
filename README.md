@@ -1,6 +1,6 @@
 # Prompt to Bench: language models as a no-CAD entry point to 3D printing for biology labs
 
-**Seb** ([@ATinyGreenCell](https://github.com/ATinyGreenCell)) and contributors
+**Sebastian S. Cocioba** ([ORCID 0000-0002-6821-2996](https://orcid.org/0000-0002-6821-2996); [@ATinyGreenCell](https://github.com/ATinyGreenCell)), Binomica Labs, and contributors
 
 *Living preprint, v0.1 (5 October 2026). This README **is** the paper. It is open for corrections, new tasks, new designs, new models and new languages - see [How to contribute](#how-to-contribute).*
 
@@ -411,7 +411,7 @@ See [`bench/README.md`](bench/README.md) for details, including the hosted refer
 
 This paper is about using AI to design hardware, and it was itself written with AI. The benchmark code, reference designs, translations, figures and tutorial were drafted with substantial assistance from Claude (Anthropic) via Claude Code, under the direction of the author, who takes responsibility for the content. A literature search on 5 October 2026 checked every reference against a primary record: Crossref, PubMed, arXiv, the publisher or official documentation. No client or confidential work was used anywhere in this project.
 
-**Competing interests.** *To be completed by the authors: declare co-authorship of any cited work (for example [McNair et al. 2024](#mcnair2024)), funding and other interests.*
+**Competing interests.** S. S. Cocioba is a co-author of [McNair et al. 2024](#mcnair2024), which is cited in this paper. *(Funding: to be completed.)*
 
 ## How to cite
 

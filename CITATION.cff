@@ -3,7 +3,10 @@ message: "If you use these designs, tools or benchmark, please cite them as belo
 title: "Prompt to Bench: language models as a no-CAD entry point to 3D printing for biology labs"
 type: software
 authors:
-  - given-names: Seb
+  - family-names: Cocioba
+    given-names: Sebastian S.
+    affiliation: Binomica Labs
+    orcid: "https://orcid.org/0000-0002-6821-2996"
     alias: ATinyGreenCell
 version: 0.1.0
 date-released: 2026-10-05
