@@ -12,7 +12,7 @@
   "temperature": 0.2,
   "prompts": "bench/prompts/translations.yaml",
   "lang": "sw",
-  "system": "/home/seb/printpaper/bench/prompts/system.md",
+  "system": "bench/prompts/system.md",
   "render_timeout": 120,
   "seed_base": 1000,
   "num_predict": 1024,

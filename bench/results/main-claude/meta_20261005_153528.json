@@ -13,7 +13,7 @@
   "temperature": 0.2,
   "prompts": null,
   "lang": "en",
-  "system": "/home/seb/printpaper/bench/prompts/system.md",
+  "system": "bench/prompts/system.md",
   "render_timeout": 120,
   "seed_base": 1000
  },

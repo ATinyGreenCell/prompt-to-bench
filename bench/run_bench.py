@@ -315,7 +315,8 @@ def main():
         for line in open(res_path):
             r = json.loads(line)
             done.add((r["model"], r["task"], r["sample"], r.get("lang", "en"), r.get("feedback", "report")))
-    meta = {"started": dt.datetime.now().isoformat(timespec="seconds"), "args": vars(args),
+    margs = {k: (os.path.relpath(v, ROOT) if isinstance(v, str) and v.startswith(ROOT) else v) for k, v in vars(args).items()}
+    meta = {"started": dt.datetime.now().isoformat(timespec="seconds"), "args": margs,
             "host": platform.node(), "cpu": platform.processor() or platform.machine(),
             "python": platform.python_version()}
     try:
