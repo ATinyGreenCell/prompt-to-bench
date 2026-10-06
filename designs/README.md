@@ -28,6 +28,7 @@ Licence: [CERN-OHL-P-2.0](../LICENSES/CERN-OHL-P-2.0.txt), a permissive open-har
 | Full hardware | [`hardware/nema17_motor_bracket.scad`](hardware/nema17_motor_bracket.scad) | teardrop motor hole; screw the base down first |
 | Full hardware | [`hardware/enclosure_box_and_lid.scad`](hardware/enclosure_box_and_lid.scad) | slip-fit lid (0.1 mm for friction); cable hole; fits an Arduino Nano build |
 | Full hardware | [`hardware/mini_gel_tank.scad`](hardware/mini_gel_tank.scad) | **lid and interlock not included - do not power it until built**; leak-test |
+| Calibration | [`calibration/clearance_coupon.scad`](calibration/clearance_coupon.scad) | print first: measures your printer's press, sliding and loose fits (see [setup guide](../tutorial/SETUP.md#c-calibrate-once-your-printer-facts-card)) |
 
 Print times are PrusaSlicer estimates for an Original Prusa MK4 (0.20 mm SPEED profile). The full table is in the paper (Table 1) and in [`../figures/print_estimates.csv`](../figures/print_estimates.csv).
 

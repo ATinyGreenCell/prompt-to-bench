@@ -15,6 +15,8 @@ You will learn to turn "I need something that holds these tubes" into a printed 
 
 ---
 
+**New here? Start with [SETUP.md](SETUP.md):** our exact setup (Claude Code + Prusa MK4), the same workflow with any printer, slicer or chatbot, a setup-assistant prompt, and a 15-minute calibration for your printer.
+
 ## Contents
 
 1. [Install the tools](#part-1-install-the-tools)
