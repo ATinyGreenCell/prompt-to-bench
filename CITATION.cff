@@ -2,6 +2,8 @@ cff-version: 1.2.0
 message: "If you use these designs, tools or benchmark, please cite them as below."
 title: "Prompt to Bench: language models as a no-CAD entry point to 3D printing for biology labs"
 type: software
+doi: 10.5281/zenodo.23198097
+repository-code: "https://github.com/ATinyGreenCell/prompt-to-bench"
 authors:
   - family-names: Cocioba
     given-names: Sebastian S.

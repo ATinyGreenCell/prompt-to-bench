@@ -1,5 +1,7 @@
 # Prompt to Bench: language models as a no-CAD entry point to 3D printing for biology labs
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23198097.svg)](https://doi.org/10.5281/zenodo.23198097)
+
 **Sebastian S. Cocioba** ([ORCID 0000-0002-6821-2996](https://orcid.org/0000-0002-6821-2996); [@ATinyGreenCell](https://github.com/ATinyGreenCell)), Binomica Labs, and contributors
 
 *Living preprint, v0.1 (5 October 2026). This README **is** the paper. It is open for corrections, new tasks, new designs, new models and new languages - see [How to contribute](#how-to-contribute).*
@@ -415,7 +417,9 @@ This paper is about using AI to design hardware, and it was itself written with 
 
 ## How to cite
 
-See [`CITATION.cff`](CITATION.cff). A versioned DOI will be added on the first tagged release.
+Cocioba SS (2026). *Prompt to Bench: language models as a no-CAD entry point to 3D printing for biology labs.* Zenodo. https://doi.org/10.5281/zenodo.23198097
+
+This DOI always resolves to the latest version; each release also has its own DOI (v0.1.0: [10.5281/zenodo.23198098](https://doi.org/10.5281/zenodo.23198098)). Machine-readable metadata: [`CITATION.cff`](CITATION.cff).
 
 ---
 
