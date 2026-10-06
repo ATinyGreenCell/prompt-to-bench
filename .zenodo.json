@@ -1,0 +1,14 @@
+{
+  "upload_type": "software",
+  "title": "Prompt to Bench: language models as a no-CAD entry point to 3D printing for biology labs",
+  "description": "<p>A living paper, student tutorial, library of 16 tested parametric OpenSCAD designs for biology labs (benchware, tools, quick fixes and parts of full instruments), and Prompt-to-Bench-16, a benchmark that scores language-model-written OpenSCAD against hidden geometric checks. Includes an evaluation of small open-weight models running offline on a CPU-only laptop, with hosted Claude models as a reference, and a language ablation (Spanish, Hindi, Swahili).</p><p>Licences: text and figures CC BY 4.0; hardware designs CERN-OHL-P-2.0; software MIT.</p>",
+  "creators": [
+    {"name": "Seb", "affiliation": ""}
+  ],
+  "license": "cc-by-4.0",
+  "access_right": "open",
+  "keywords": ["open hardware", "3D printing", "OpenSCAD", "large language models", "laboratory equipment", "open-weight models", "global access", "benchmark"],
+  "related_identifiers": [
+    {"identifier": "https://github.com/ATinyGreenCell/prompt-to-bench", "relation": "isSupplementTo", "scheme": "url"}
+  ]
+}
