@@ -15,3 +15,8 @@ build/
 *.swp
 .vscode/
 .idea/
+
+# Personal Claude Code settings (build-log hook)
+.claude/settings.local.json
+# Private redaction list for meta/build_log.py (it names what it hides, so never commit it)
+meta/redact.txt
