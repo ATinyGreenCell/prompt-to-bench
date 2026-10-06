@@ -192,7 +192,7 @@ This validation caught an error in one of our own reference designs. A 7 x 7 gri
   - Run through Ollama 0.30.11 with 4-bit weights (Q4_K_M), temperature 0.2, top-p 0.95, a fixed seed per attempt and an 8,192-token context.
   - Replies are streamed. A reply ends at 2,048 tokens, as soon as a complete OpenSCAD code block has arrived, or when the model starts repeating itself verbatim. A correct solution needs about 400-700 tokens.
   - "Thinking" is switched off for models that support it, so that every local model answers directly and runs at a comparable cost.
-- **Hosted reference:** Claude Haiku 4.5 and Claude Sonnet 5.5 run through the Claude Code command line in print mode, with the system prompt replaced by ours, all tools disabled and default settings otherwise. That includes extended thinking: this is Claude as a student would actually use it, not an equal-cost comparison.
+- **Hosted reference:** Claude Haiku 4.5 and Claude Sonnet 5.5 run through the Claude Code command line in print mode, with the system prompt replaced by ours, all tools disabled and default settings otherwise. With those defaults Claude Haiku 4.5 used extended thinking (about 10,000-16,000 output tokens per reply), while Claude Sonnet 5.5 answered directly (about 400-1,200 tokens in 4-17 s). This is Claude as a student would actually use it, not an equal-cost comparison.
 - **Hardware:** a 2022 laptop with an Intel Core i7-1260P (12 cores, 16 threads), 16 GB RAM (14 GiB usable), no discrete GPU (the integrated GPU was not used), Ubuntu, OpenSCAD 2026.10.01 (development snapshot) and PrusaSlicer 2.9.6. Models ran one at a time, so the timings are clean.
 
 ### 5.4 Models
