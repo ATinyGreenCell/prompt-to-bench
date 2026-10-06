@@ -11,7 +11,7 @@ You will learn to turn "I need something that holds these tubes" into a printed 
 - digital calipers (about US$10-20 — the single best investment in this tutorial);
 - access to an FDM 3D printer (your own, a shared one or a makerspace).
 
-**You do not need:** a GPU, a paid AI subscription or a permanent internet connection (see [Part 8](#part-8-working-offline-with-a-free-local-model)).
+**You do not need:** a GPU or a permanent internet connection. A hosted chatbot is the most reliable option; see [Part 8](#part-8-working-offline-with-a-free-local-model) for the offline option and its current limits.
 
 ---
 
@@ -50,7 +50,7 @@ When OpenSCAD starts, open **Window** and make sure the **Editor**, **Console** 
 
 ### Step 1 - Measure
 
-Take a 1.5 mL microcentrifuge tube and measure the outside diameter just below the lid hinge with your calipers. You will get about **10.8 mm**. A hole needs a little extra room, so we will use **11.2 mm**: about 0.2 mm of clearance on each side.
+Take a 1.5 mL microcentrifuge tube and measure the outside diameter just below the lid hinge with your calipers. You will get about **10.8 mm**. A tube should drop into its hole, and printed holes come out a little small, so we will use **11.6 mm**: about 0.4 mm of clearance on each side (see Part 4).
 
 > **Rule 1: measure; don't trust memory - yours or the AI's.** Models will confidently invent "standard" sizes. Give them numbers.
 
@@ -83,7 +83,7 @@ Write the request the way you would explain it to a careful colleague who cannot
 Design a bench rack for 1.5 mL microcentrifuge tubes. It is a solid rectangular
 block 106 mm long (X), 72 mm wide (Y) and 30 mm tall (Z). It has 24 vertical
 holes in 4 rows (along Y) of 6 holes (along X), 16 mm centre-to-centre in both
-directions, with the hole grid centred on the block. Each hole is 11.2 mm in
+directions, with the hole grid centred on the block. Each hole is 11.6 mm in
 diameter and 25 mm deep, open at the top and closed at the bottom, leaving a
 5 mm solid floor.
 ```
@@ -102,7 +102,7 @@ Copy the code the model returns into a new OpenSCAD file, save it as `rack.scad`
 cols = 6;              // holes along X
 rows = 4;              // holes along Y
 pitch = 16;            // centre-to-centre spacing [mm]
-hole_d = 11.2;         // 1.5 mL tube body is ~10.8 mm; ~0.4 mm clearance
+hole_d = 11.6;         // tube body 10.8 mm + clearance
 hole_depth = 25;       // blind holes, leaves a 5 mm floor
 block = [106, 72, 30]; // X, Y, Z [mm]
 
@@ -133,22 +133,22 @@ Then **measure**. You can do it inside OpenSCAD, but the easiest way is `scadrep
 ```text
 $ python tools/scadreport.py rack.scad
 OPENSCAD: rendered OK in 0.5 s, no warnings.
-SOLID: 1 separate body, watertight (valid solid); volume 169,943 mm3 (~211 g of PLA if printed solid).
+SOLID: 1 separate body, watertight (valid solid); volume 165,652 mm3 (~205 g of PLA if printed solid).
 BOUNDING BOX: X -53.00 .. 53.00 (size 106.00) | Y -36.00 .. 36.00 (size 72.00) | Z 0.00 .. 30.00 (size 30.00) mm
 BED: lowest point at z = 0.00; contact area with the bed 7,632 mm2.
 OVERHANGS: none steeper than 45 deg - prints without supports.
 HORIZONTAL SLICES (cut through the part at height z above its lowest point):
   z=2.50: 1 solid region [outline: rectangle 106.00 x 72.00 centred (0.00, 0.00)]; 0 holes; ...
-  z=17.50: 1 solid region [...]; 24 holes: 24 x circle d=11.19 [6 x 4 grid (X x Y), pitch X 16.00 / Y 16.00, ...]
+  z=17.50: 1 solid region [...]; 24 holes: 24 x circle d=11.59 [6 x 4 grid (X x Y), pitch X 16.00 / Y 16.00, ...]
 ```
 
 Compare every line with your request:
 
 - Size 106 x 72 x 30? ✓
 - Floor solid at z = 2.5? ✓
-- 24 holes of 11.2 mm on a 16 mm grid? ✓
+- 24 holes of 11.6 mm on a 16 mm grid? ✓ (11.59: a 64-sided polygon is a hair smaller than a circle)
 
-> **Rule 3: when something is wrong, paste the report into the chat.** A language model cannot see your part. A report like this is the next best thing, and it is what makes small free models usable. In our benchmark, models fixed many of their own mistakes this way.
+> **Rule 3: when something is wrong, paste the report into the chat.** A language model cannot see your part; a report like this is the next best thing. In our benchmark it helped the hosted models fix most of their remaining mistakes. The small local models we tested usually ignored feedback and returned the same file - with them, start a new chat, simplify the request, or fix the code yourself.
 
 **Common problems and what they mean:**
 
@@ -210,32 +210,32 @@ Keep electronics low-voltage. Use certified power supplies. Never improvise main
 
 | Material | Heat limit (approx.) | Good for | Avoid |
 |---|---|---|---|
-| **PLA** | softens at 55-60 °C | racks, templates, organisers, most benchware | autoclaves, hot water baths, heat blocks, cars in summer |
-| **PETG** | HDT about 68 °C | combs, funnels, clips, parts that flex or see ethanol | autoclaves (it deforms at 121 °C), long soaks in alcohols |
-| **ASA / PC blends** | HDT about 85-110 °C | warm environments | autoclaves (PC deformed too in tests); they need an enclosure to print |
+| **PLA** | softens at 55-60 °C | racks, templates, organisers, most benchware | autoclaves, hot water baths, heat blocks, agarose hotter than 60 °C, acetone, cars in summer |
+| **PETG** | HDT about 68 °C | combs, funnels, clips, parts that flex or see ethanol | autoclaves (it deforms at 121 °C), long soaks in alcohols, phenol and chloroform (TRIzol), acetone |
+| **ASA / PC blends** | HDT about 86-113 °C ([Prusament data sheets](https://prusament.com/)) | warm environments | autoclaves (printed PC deformed too in tests); they need an enclosed printer |
 
-- **Cleaning.** Wiping with 70% ethanol, isopropanol or dilute bleach is fine. Long soaks weaken parts. Layer lines trap dirt and biofilm, so printed parts are never truly sterile after handling.
+- **Cleaning.** Wiping with 70% ethanol, isopropanol or dilute bleach is fine; long soaks weaken parts. Ethanol *disinfects* but does not *sterilise* - it does not kill spores - and layer lines trap dirt and biofilm. For anything that touches media or cultures: soak at least 10 minutes in 70% ethanol, dry it in the flow hood and use it once, or keep it outside the dish (the seed template works from under the plate).
 - **Never print:**
-  - rotors or tube adapters for a commercial centrifuge;
+  - rotors or tube adapters for a commercial centrifuge (our tube adapter is for racks only - never spin it);
   - pressure vessels;
   - anything that holds mains voltage;
   - anything that touches patients.
-- **Printing safely.** Ventilate the room (ABS and ASA emit more particles and fumes than PLA). Never leave a running printer unattended overnight unless your institution allows it.
+- **Printing safely.** Ventilate the room (ABS emits far more ultrafine particles and fumes than PLA). Never leave a running printer unattended overnight unless your institution allows it.
 
 The [paper's safety section](../README.md#8-safety-and-responsibility) has the references.
 
 ## Part 8. Working offline with a free local model
 
-You can run a capable model on your own laptop, with no account and no internet once it is downloaded. We use [Ollama](https://ollama.com):
+You can run a model on your own laptop, with no account and no internet once it is downloaded. Be aware that **none of the 14 small models we tested (up to 6.6 GB, on a laptop CPU) produced a correct part in our benchmark**, so for now treat local models as an experiment: check everything, and expect to fix the code yourself. We use [Ollama](https://ollama.com):
 
 1. Install Ollama from [ollama.com/download](https://ollama.com/download). It is available for Windows, macOS and Linux.
 2. Download a model **once**. If your connection is slow or metered, ask someone to copy it to you on a USB stick: on Linux the models live in `/usr/share/ollama/.ollama/models`, and in `~/.ollama/models` on macOS and Windows.
    ```bash
-   ollama pull qwen2.5-coder:7b
+   ollama pull <model>          # e.g. gemma4:e4b-it-q4_K_M, the closest in our tests
    ```
-3. Chat with it in a terminal (`ollama run qwen2.5-coder:7b`), or connect any OpenAI-compatible chat app or OpenSCAD's experimental AI assistant to `http://localhost:11434`.
+3. Chat with it in a terminal (`ollama run <model>`), or connect any OpenAI-compatible chat app or OpenSCAD's experimental AI assistant to `http://localhost:11434`.
 
-**Which model?** We tested 14 free models on a 2022 laptop without a GPU ([paper, §6](../README.md#6-results)). <!-- TUTORIAL:model-advice -->*Recommendations will be added when the benchmark run completes.*<!-- /TUTORIAL:model-advice -->
+**Which model?** We tested 14 free models on a 2022 laptop without a GPU ([paper, §6](../README.md#6-results)). None passed a task. The code models (Qwen2.5-Coder) mostly wrote OpenSCAD as if it were another language; the reasoning models (Qwen3.5, Granite, LFM2.5) ran out of tokens; the Gemma 4 models (E2B, E4B) came closest, rendering most parts but rarely at the right size. If you have any internet access, a hosted chatbot will save you hours. If you don't, a Gemma 4 model plus the starter prompt can draft code that you then fix by hand - which is also a fine way to learn OpenSCAD.
 
 **Tips that make small models work better:**
 
@@ -243,7 +243,7 @@ You can run a capable model on your own laptop, with no account and no internet 
 - Give every number. Small models cannot fill gaps sensibly.
 - Ask for one feature at a time ("first the block with holes; then we add the chamfer").
 - Always paste the error messages or the `scadreport` back. If the model returns the same broken file twice, start a fresh chat.
-- If it struggles in your language, try writing the numbers and geometry words (diameter, hole, wall, z = 0) in English. See the paper's language results.
+- Writing in your own language is fine for hosted models: our test (one hosted model) found no clear difference between English, Spanish, Hindi and Swahili requests. We have not tested whether mixing in English geometry words helps small models.
 
 ## Part 9. Share what you made
 
@@ -262,7 +262,7 @@ Say which AI model and prompt you used. A permissive open-hardware licence, such
 2. **Benchware.** Design a stand for the pipettes on your bench. Measure where the pipette rests and how far apart they need to be. Include the print orientation in your request.
 3. **Quick fix.** Find a broken or missing knob, foot or clip in your lab. Measure the shaft or mounting, write a request, check it with `scadreport`, print a coupon of the critical fit, then print the part.
 4. **Tool.** Design a seed-sowing or colony-picking template for the plates your lab uses. Make sure the corner holes stay inside the rim: use `scadreport` to check.
-5. **Team project.** Build a magnetic stirrer from a PC fan, two magnets and a 12 V supply, starting from [`stirrer_fan_housing.scad`](../designs/hardware/stirrer_fan_housing.scad). Write a one-page safety note before switching it on.
+5. **Team project.** Build a magnetic stirrer from a PC fan, two magnets and a 12 V supply, starting from [`stirrer_fan_housing.scad`](../designs/hardware/stirrer_fan_housing.scad). Leave spacers so the magnets clear the top plate (the design has standoffs), glue the magnets with opposite poles facing up, and keep loose neodymium magnets away from children and pacemakers. Write a one-page safety note before switching it on.
 6. **Compare models.** Give the same request to a hosted chatbot and to a local model. Count the rounds of feedback each needs. What does this tell you about which model to use for which part?
 
 ## Cheat sheets

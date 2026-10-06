@@ -1,21 +1,31 @@
-// Seed-sowing / colony-picking template for a 90 mm Petri dish (7 x 7 grid)
-// Category: tools. Disc that lies on the agar; drop seeds through the holes.
-// Print: PLA or PETG, 0.2 mm layers; disinfect with 70 % ethanol before use.
+// Seed-sowing / colony-picking guide for a 90 mm Petri dish (7 x 7 grid)
+// Category: tools. Recommended use: put the disc UNDER the dish and sow onto the agar
+// through the clear base, following the holes. Nothing printed touches the medium.
+// If it must lie on the agar: soak >= 10 min in 70 % ethanol, dry in the flow hood,
+// and treat it as single use - ethanol disinfects but does not kill spores, and
+// plant plates incubate for weeks. Use the lift tab to remove it.
+// Fit: "90 mm" dishes are ~85-86 mm inside (glass ~85 mm) and narrow towards the
+// floor; 82 mm fits most. Measure your dish if it sits inside.
+// Print: PLA or PETG, 0.2 mm layers.
 // SPDX-License-Identifier: CERN-OHL-P-2.0
 
 /* [Template] */
-disc_d = 85;           // fits inside a 90 mm dish
+disc_d = 82;
 thickness = 2;
 n = 7;                 // n x n grid
-pitch = 9;             // 10 mm would push the corner holes through the rim
+pitch = 9;             // 10 mm would push the corner holes too close to the rim
 hole_d = 3;
 notch = [10, 4];       // orientation notch, width x depth [mm], on the +Y edge
+tab = [10, 6];         // lift tab on the -Y edge, width x length [mm]
 
 /* [Hidden] */
 eps = 0.01;
 
 difference() {
-    cylinder(d = disc_d, h = thickness, $fn = 180);
+    union() {
+        cylinder(d = disc_d, h = thickness, $fn = 180);
+        translate([-tab.x / 2, -disc_d / 2 - tab.y + 1, 0]) cube([tab.x, tab.y, thickness]);
+    }
     for (i = [0 : n - 1], j = [0 : n - 1])
         translate([(i - (n - 1) / 2) * pitch, (j - (n - 1) / 2) * pitch, -eps])
             cylinder(d = hole_d, h = thickness + 2 * eps, $fn = 32);

@@ -363,7 +363,7 @@
 
 - id: enclosure_box_and_lid
   category: hardware
-  title: Electronics enclosure with push-fit lid
+  title: Electronics enclosure with slip-fit lid
   short: box + lid
   reference: bench/reference/enclosure_box_and_lid.scad
   library: designs/hardware/enclosure_box_and_lid.scad

@@ -537,8 +537,6 @@ def main():
 
     for mode, th in THEMES.items():
         if rows:
-            fig_dumbbell(rows, th, os.path.join(FIG, f"fig_pass_rates_{mode}.png"),
-                         "Lab parts that pass every geometric check (16 tasks)")
             fig_heatmap(main_recs, rows, tasks, th, os.path.join(FIG, f"fig_outcomes_{mode}.png"),
                         "Outcome per task (number = attempt that passed)")
             fig_tiers(rows, th, os.path.join(FIG, f"fig_tiers_{mode}.png"),

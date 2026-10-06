@@ -10,7 +10,9 @@ Sixteen biology-lab parts, described in words and numbers. A model writes OpenSC
 | [`prompts/system.md`](prompts/system.md) | the system prompt every model receives (also the tutorial's starter prompt) |
 | [`prompts/translations.yaml`](prompts/translations.yaml) | the same prompts in Spanish, Hindi and Swahili |
 | [`checks.py`](checks.py) | the checker (bbox, bodies, slices, probes, lines, arcs, volume; symmetry-aware) |
+| [`reference/`](reference/) | the 16 frozen answer keys (v1); the lab-ready parts in `designs/` have since diverged |
 | [`build_refs.py`](build_refs.py) | renders the reference designs and validates the checker against them |
+| [`rescore.py`](rescore.py) | re-checks every saved attempt of a run with the current checker and reports changed verdicts |
 | [`reference_stats.json`](reference_stats.json) | reference volumes, slice areas and design-frame centres (generated) |
 | [`run_bench.py`](run_bench.py) | runs models: Ollama (local) or `claude:<model>` via the Claude Code CLI |
 | [`models.yaml`](models.yaml) | model metadata: sizes, parameters, licences |
@@ -51,6 +53,7 @@ You need OpenSCAD on your `PATH`. A development snapshot with the Manifold backe
 - **No sleep.** `run_main_local.sh` and `run_lang.sh` hold a `systemd-inhibit` lock (where available), so the laptop does not suspend mid-run.
 - **Machine-independent.** Attempts that `include`/`use` an external library are flagged (`uses_library`), because their result depends on what is installed locally.
 - `python bench/test_harness.py` (or `make test`) exercises all of the above with a fake model.
+- After any change to `checks.py` or `tasks.yaml`, run `python bench/rescore.py <run> --dry-run` to see which verdicts would change, then without `--dry-run` to apply.
 
 ## Check types
 

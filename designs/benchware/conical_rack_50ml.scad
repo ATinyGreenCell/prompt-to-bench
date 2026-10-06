@@ -3,6 +3,7 @@
 // plate on the bed and the walls growing upward (no bridges, no supports); flip
 // it over after printing so it stands on the walls with the tube tips on the bench.
 // Print: PLA or PETG, 0.2 mm layers, 15 % infill.
+// Fit: Falcon 50 mL tubes are 30 mm O.D. (Corning 352070); 31 mm holes = 0.5 mm per side.
 // SPDX-License-Identifier: CERN-OHL-P-2.0
 
 /* [Rack] */
@@ -12,7 +13,7 @@ wall_t = 4;            // thickness of the two long walls
 cols = 3;              // holes along X
 rows = 2;              // holes along Y
 pitch = 40;            // centre-to-centre spacing [mm]
-hole_d = 30.5;         // 50 mL conical tubes are ~29-30 mm across
+hole_d = 31.0;         // 30 mm tube + 0.5 mm per side
 
 /* [Hidden] */
 $fn = 96;

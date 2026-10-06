@@ -1,6 +1,10 @@
 // Micropestle for grinding tissue in a 1.5 mL microcentrifuge tube
-// Category: tools. Handle with grip grooves + cone matching the tube's conical tip.
-// Print: PETG or PLA, standing upright, 0.12-0.15 mm layers, 100 % infill.
+// Category: tools. Handle with grip grooves + cone matching the tube's conical tip
+// (Eppendorf 1.5 mL: 8.7 mm inside, ~18 mm conical section).
+// Print: PETG or PLA, standing upright, 0.12-0.15 mm layers, 100 % infill, 5 mm brim;
+// print several at once so each thin layer can cool.
+// Use: single use. Not RNase/DNase-free and not autoclavable; layer lines retain tissue.
+// Not for phenol/chloroform (TRIzol) or acetone. Brittle in liquid nitrogen - grind gently.
 // SPDX-License-Identifier: CERN-OHL-P-2.0
 
 /* [Pestle] */

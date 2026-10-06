@@ -1,7 +1,10 @@
 // L-bracket for a NEMA 17 stepper motor (syringe pumps, peristaltic pumps, shakers)
 // Category: full hardware. Base plate with two M4 holes, vertical motor plate with
 // the 22 mm boss hole + 31 mm M3 pattern, two gussets. Motor body mounts on the
-// back (-Y) side, shaft pointing over the base.
+// back (-Y) side, shaft pointing over the base - screw the base down before mounting
+// the motor, or the bracket tips backwards.
+// The boss hole has a 45 deg teardrop top so its crown prints without sagging onto
+// the motor's centring boss; check that the boss fits before final assembly.
 // Print: PETG, base on the bed, 0.2 mm layers, 5 perimeters, 30 % infill.
 // SPDX-License-Identifier: CERN-OHL-P-2.0
 
@@ -29,7 +32,13 @@ difference() {
                 rotate([90, 0, 90]) linear_extrude(gusset_t)
                     polygon([[0, 0], [gusset_len, 0], [0, gusset_len]]);
     }
-    translate([0, -1, boss_z]) rotate([-90, 0, 0]) cylinder(d = boss_d, h = plate.y + 2, $fn = 96);
+    // teardrop: circle + 45 deg roof, extruded through the plate along Y
+    translate([0, plate.y + 1, boss_z]) rotate([90, 0, 0])
+        linear_extrude(plate.y + 2)
+            hull() {
+                circle(d = boss_d, $fn = 96);
+                translate([0, boss_d / 2 * sqrt(2) - 0.01]) square(0.02, center = true);
+            }
     for (sx = [-1, 1], sz = [-1, 1])
         translate([sx * screw_spacing / 2, -1, boss_z + sz * screw_spacing / 2])
             rotate([-90, 0, 0]) cylinder(d = screw_d, h = plate.y + 2, $fn = 32);

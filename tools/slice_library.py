@@ -62,7 +62,7 @@ def main():
     rows = []
     for t in tasks:
         stl = os.path.join(out_dir, t["id"] + ".stl")
-        subprocess.run(["openscad", "-o", stl, "--export-format", "binstl", os.path.join(ROOT, t["reference"])],
+        subprocess.run(["openscad", "-o", stl, "--export-format", "binstl", os.path.join(ROOT, t.get("library", t["reference"]))],
                        check=True, capture_output=True)
         gcode = stl.replace(".stl", ".gcode")
         p = subprocess.run(CMD + ["--datadir", DATADIR, "--printer-profile", PRINTER, "--print-profile", PRINT,

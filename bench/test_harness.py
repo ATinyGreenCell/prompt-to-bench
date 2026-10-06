@@ -22,7 +22,7 @@ import run_bench  # noqa: E402
 from checks import evaluate  # noqa: E402
 from scadreport import load_mesh, render, report  # noqa: E402
 
-REF = open(os.path.join(ROOT, "designs/benchware/tube_rack_1p5ml.scad")).read()
+REF = open(os.path.join(ROOT, "bench/reference/tube_rack_1p5ml.scad")).read()  # frozen v1 key
 FAILS = []
 
 
@@ -84,6 +84,9 @@ def checker_cases():
         "upside down": (f"translate([0,0,30]) mirror([0,0,1]) {{ {REF.split('/* [Hidden] */')[1]} }}".replace("$fn = 64;\neps = 0.01;", "") , False),
     }
     for name, (code, should_pass) in variants.items():
+        if name not in ("reference", "upside down", "shifted far from origin") and code == REF:
+            check(f"checker: mutation '{name}' applies", False, "mutation did not change the design")
+            continue
         if name == "upside down":
             code = REF.split("difference()")[0] + "translate([0,0,30]) mirror([0,0,1]) difference()" + REF.split("difference()", 1)[1]
         if name == "shifted far from origin":

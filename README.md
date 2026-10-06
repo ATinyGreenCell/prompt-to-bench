@@ -4,88 +4,86 @@
 
 **Sebastian S. Cocioba** ([ORCID 0000-0002-6821-2996](https://orcid.org/0000-0002-6821-2996); [@ATinyGreenCell](https://github.com/ATinyGreenCell)), Binomica Labs, and contributors
 
-*Living preprint, v0.1 (5 October 2026). This README **is** the paper. It is open for corrections, new tasks, new designs, new models and new languages - see [How to contribute](#how-to-contribute).*
+*Living preprint, v0.2 draft (6 October 2026). This README **is** the paper. Corrections, tasks, designs, models and languages are welcome; see [How to contribute](#how-to-contribute). How it was built, prompt by prompt, is in the [build log](meta/BUILD_LOG.md).*
 
-> **In this repository:** the paper (this page) · [student tutorial](tutorial/README.md) · [16 tested OpenSCAD lab designs](designs/) · [the Prompt-to-Bench benchmark](bench/) · [`scadreport`](tools/scadreport.py), a geometry-feedback tool you can use with any chatbot · licences: text CC BY 4.0, designs CERN-OHL-P-2.0, code MIT.
+> **In this repository:** the paper (this page) · [student tutorial](tutorial/README.md) · [16 parametric OpenSCAD lab designs](designs/) · [the Prompt-to-Bench benchmark](bench/) · [`scadreport`](tools/scadreport.py), a geometry-feedback tool for any chatbot · [audits](meta/audits/) · licences: text CC BY 4.0, designs CERN-OHL-P-2.0, code MIT.
 
 ---
 
 ## Abstract
 
-<!-- AUTO:abstract -->
-Biology labs run on small plastic parts: tube racks, gel combs, adapters, knobs, brackets and housings. A desktop 3D printer can make them for cents, but designing them has required CAD skills that most biologists never acquire. Large language models (LLMs) remove much of that barrier when the CAD is written as code. A user describes a part in plain words and measured numbers, the model writes an OpenSCAD program, and the user renders, checks and prints it. We describe this workflow and the practices that make it reliable for people with no CAD training. We release 16 tested, parametric designs across four kinds of lab prints: benchware, tools, quick fixes and parts of full instruments. Together they print in 31.6 h from 483 g of PLA (about US$12) on a Prusa MK4. We also release a benchmark that scores model-written OpenSCAD against hidden geometric checks, and a feedback tool that measures the part a model actually built. To ask how small a model can be, we ran 14 open-weight models (0.4-6.6 GB) fully offline on a 2022 laptop CPU with no GPU, and two hosted Claude models as a reference. *Results are being filled in as the benchmark completes; see [Results](#6-results).*
-<!-- /AUTO:abstract -->
+Biology labs run on small plastic parts: tube racks, gel combs, adapters, knobs, brackets and housings. A desktop 3D printer makes them for cents, but designing them has required CAD skills most biologists never learn. Language models lower that barrier when the CAD is written as code: the user describes a part in words and measured numbers, the model writes an OpenSCAD program, and the user renders, checks and prints it. We describe this workflow and the practices that make it reliable for people without CAD training, and release 16 parametric, geometry-checked designs across four kinds of lab prints (benchware, tools, quick fixes and parts of instruments; 32.8 h and about US$12 of PLA on a Prusa MK4), a benchmark that scores model-written OpenSCAD against hidden geometric checks, and a tool that measures the part a model actually built. Two hosted models passed nearly every task: Claude Sonnet 5.5 16 of 16 on the first try, Claude Haiku 4.5 14 of 16 within three attempts. None of the open-weight models (0.4-6.6 GB) we ran offline on a 2022 laptop CPU passed a task (two of fourteen runs are still being completed): the code models mostly wrote syntax OpenSCAD cannot parse and repeated the same file after feedback, and the reasoning models ran out of tokens. The best small models (Gemma 4 E2B and E4B) rendered most parts but rarely got their dimensions right. With this protocol, no open-weight model small enough for a typical student laptop is yet a usable design assistant; the workflow itself, and its feedback tools, already are.
 
 ---
 
 ## 1. Introduction
 
-Every biology lab depends on a long tail of small, specific objects. Examples include a rack that fits the tubes this lab actually uses, a comb for a home-made gel tray, an adapter that lets one consumable sit in another's holder, a knob to replace the one that cracked, and a bracket for a pump motor. Commercial versions are often expensive, slow to arrive or simply not made. Desktop 3D printing turned many of these objects into an afternoon's work. Over a decade of "open labware" has shown that printed and open-source equipment can match commercial tools for a fraction of the cost ([Pearce 2012](#pearce2012); [Baden et al. 2015](#baden2015); [Coakley & Hurt 2016](#coakley2016); [Pearce 2020](#pearce2020)). It has also shown that open hardware matters most where budgets and supply chains are thinnest ([Maia Chagas 2018](#maiachagas2018); [Wenzel 2023](#wenzel2023)). In one recent collection of 26 printable lab items, which this author co-wrote, the printed versions cost on average 8.18% of their commercial equivalents ([McNair et al. 2024](#mcnair2024)).
+Every biology lab depends on a long tail of small, specific objects: a rack for the tubes this lab actually uses, a comb for a home-made gel tray, an adapter between two consumables, a replacement for the knob that cracked. Commercial versions are expensive, slow to arrive or not made at all. A decade of "open labware" has shown that printed and open-source equipment can match commercial tools at a fraction of the cost ([Pearce 2012](#pearce2012); [Baden et al. 2015](#baden2015); [Coakley & Hurt 2016](#coakley2016); [Pearce 2020](#pearce2020)), and that it matters most where budgets and supply chains are thinnest ([Maia Chagas 2018](#maiachagas2018); [Wenzel 2023](#wenzel2023)). In one collection of 26 printable lab items, which this author co-wrote, printed versions cost on average 8.18% of their commercial equivalents ([McNair et al. 2024](#mcnair2024)).
 
-The printer is no longer the bottleneck; design is. Turning "I need something that holds six 50 mL tubes upright" into a printable file usually means learning a CAD program. Among programmers of open labware, the most common choice is **OpenSCAD** ([OpenSCAD developers](#openscad)), a free tool in which a part is written as a short program of solids, Boolean operations and loops ([Machado et al. 2019](#machado2019)). OpenSCAD underlies widely used open instruments such as the OpenFlexure microscope ([Collins et al. 2020](#collins2020)), the FlyPi ([Maia Chagas et al. 2017](#maiachagas2017)), a parametric syringe-pump library ([Wijnen et al. 2014](#wijnen2014)) and printable optics ([Zhang et al. 2013](#zhang2013)). It also appears in a steady stream of recent biology tools ([Subbaraman et al. 2024](#subbaraman2024); [Keene-Snickers et al. 2025](#keenesnickers2025); [Yamazaki et al. 2025](#yamazaki2025); [Bhupathi et al. 2026](#bhupathi2026); [Algarín et al. 2026](#algarin2026)). Its users report the hard parts to be spatial reasoning, validation and debugging ([Gonzalez Avila et al. 2024](#gonzalezavila2024)).
+The printer is no longer the bottleneck; design is. Among scripting tools for parametric open labware, the most widely used is **OpenSCAD** ([OpenSCAD developers](#openscad); [Machado et al. 2019](#machado2019)), in which a part is a short program of solids, Boolean operations and loops. It underlies the OpenFlexure microscope ([Collins et al. 2020](#collins2020)), the FlyPi ([Maia Chagas et al. 2017](#maiachagas2017)), a syringe-pump library ([Wijnen et al. 2014](#wijnen2014)), printable optics ([Zhang et al. 2013](#zhang2013)) and a steady stream of recent biology tools ([Subbaraman et al. 2024](#subbaraman2024); [Keene-Snickers et al. 2025](#keenesnickers2025); [Yamazaki et al. 2025](#yamazaki2025); [Bhupathi et al. 2026](#bhupathi2026); [Algarín et al. 2026](#algarin2026)). Its users find spatial reasoning, validation and debugging the hard parts ([Gonzalez Avila et al. 2024](#gonzalezavila2024)).
 
-Code is exactly what large language models write well. Because OpenSCAD designs are text, a researcher can describe a part in plain language and let a model draft the program. Researchers already used GPT-4 in this way to design OpenSCAD microfluidic components ([Nelson et al. 2023](#nelson2023)). Benchmarks of frontier models find OpenSCAD among the most reliable code-CAD formats ([Jones et al. 2025](#jones2025); [Yang et al. 2026](#yang2026)). OpenSCAD's own developers are building an experimental AI assistant that talks to a local model by default ([OpenSCAD GSoC 2026](#openscadai2026)). In our own lab practice, a hosted frontier model (Claude) and OpenSCAD now take routine parts from idea to a print-ready file in minutes. That success is what prompted this paper.
+Because OpenSCAD designs are text, a language model can draft them from a plain-language description. GPT-4 has been used this way for microfluidic components ([Nelson et al. 2023](#nelson2023)), benchmarks of frontier models find OpenSCAD among the most reliable code-CAD formats ([Jones et al. 2025](#jones2025); [Yang et al. 2026](#yang2026)), and OpenSCAD's developers are building an experimental assistant that talks to a local model by default ([OpenSCAD GSoC 2026](#openscadai2026)). In our lab, a hosted frontier model (Claude) and OpenSCAD now take routine parts from idea to a print-ready file in minutes, which is what prompted this paper.
 
-Access to that combination is uneven. In 2025, 2.2 billion people were still offline, and fixed broadband cost more than a quarter of average income in low-income countries ([ITU 2025](#itu2025)). Generative-AI use was 24.7% of the population in the Global North against 14.1% in the Global South in late 2025 ([Microsoft AI Economy Institute 2026](#microsoft2026)). Hosted models are paid, are not offered in every country ([Anthropic, n.d.](#anthropicregions)), charge per token in ways that penalise many non-English languages ([Ahia et al. 2023](#ahia2023)), and can change availability at short notice ([Anthropic 2026](#anthropic2026)). Non-native English speakers already pay heavily to do science in English ([Amano et al. 2023](#amano2023)). **Open-weight** models that run on a student's own laptop, offline and for free, could close much of this gap. But there are two reasons to doubt that small models can do the job. OpenSCAD is a very low-resource programming language: openly licensed code corpora contain roughly a thousand times less OpenSCAD than Python ([Kocetkov et al. 2022](#kocetkov2022); see [§5.5](#55-what-to-expect-from-small-models)). And small open models have performed poorly on CAD code generation without fine-tuning ([Badagabettu et al. 2024](#badagabettu2024); [Alrashedy et al. 2025](#alrashedy2025); [Dong et al. 2026](#dong2026)).
+Access to that combination is uneven. In 2025, 2.2 billion people were offline, and fixed broadband cost more than a quarter of average income in low-income countries ([ITU 2025](#itu2025)). Generative-AI use reached 24.7% of people in the Global North and 14.1% in the Global South ([Microsoft AI Economy Institute 2026](#microsoft2026)). Hosted models cost money, are not offered everywhere ([Anthropic, n.d.](#anthropicregions)), charge more per word for many non-English languages ([Ahia et al. 2023](#ahia2023)) and can change availability at short notice ([Anthropic 2026](#anthropic2026)); non-native English speakers already pay heavily to do science in English ([Amano et al. 2023](#amano2023)). **Open-weight** models running offline on a student's laptop could close much of this gap, but there are reasons for doubt: OpenSCAD is a very low-resource programming language ([§5.5](#55-what-to-expect-from-open-models)), and open-weight models, even at 8-70B parameters, have done poorly at CAD code without fine-tuning ([Badagabettu et al. 2024](#badagabettu2024); [Alrashedy et al. 2025](#alrashedy2025); [Dong et al. 2026](#dong2026)).
 
-This paper asks three practical questions:
+We ask three practical questions:
 
-1. **Workflow.** What process, prompts and checks let someone with no CAD training get a correct, printable lab part from a language model?
-2. **Model size.** What is the *smallest* open-weight model that is genuinely useful for this when it runs offline on an ordinary laptop?
-3. **Language.** Does writing the request in Spanish, Hindi or Swahili instead of English change the answer?
+1. **Workflow.** What process, prompts and checks let someone without CAD training get a correct, printable lab part from a language model?
+2. **Model size.** What is the smallest open-weight model that is useful for this, offline, on an ordinary laptop?
+3. **Language.** Does writing the request in Spanish, Hindi or Swahili change the outcome? (We could test this only for one hosted model.)
 
 **Contributions.**
 
-- A workflow and best-practice rules for LLM-assisted design of lab parts, with a copy-paste starter prompt ([§3](#3-the-workflow), [§4](#4-best-practices)).
-- 16 tested, parametric OpenSCAD designs in four categories: benchware, tools, quick fixes and parts of full instruments ([§2](#2-what-labs-print-four-kinds-of-parts), [`designs/`](designs/)).
-- `scadreport`, a small tool that renders an OpenSCAD file and reports what was actually built: size, holes, spacing, wall layout, overhangs. Its output can be pasted into any chatbot ([`tools/`](tools/)).
-- **Prompt-to-Bench-16**, a benchmark of 16 realistic design requests with hidden, symmetry-aware geometric checks, validated against its own reference solutions ([§5](#5-benchmark-prompt-to-bench-16)).
-- An evaluation of 14 open-weight models running CPU-only and offline, with hosted Claude models as a reference, plus a language ablation ([§6](#6-results)).
-- A student tutorial ([`tutorial/`](tutorial/README.md)). Everything is open, and the benchmark runs on a laptop so that others can add results from their own hardware and languages.
+- A workflow and best-practice rules, with a copy-paste starter prompt ([§3](#3-the-workflow), [§4](#4-best-practices)).
+- 16 parametric OpenSCAD lab designs in four categories ([§2](#2-what-labs-print-four-kinds-of-parts), [`designs/`](designs/)).
+- `scadreport`, a tool that reports what an OpenSCAD file actually builds - size, holes, spacing, overhangs - in text any chatbot can read ([`tools/`](tools/)).
+- **Prompt-to-Bench-16**, 16 design requests with hidden, symmetry-aware geometric checks ([§5](#5-benchmark-prompt-to-bench-16)).
+- An evaluation of 14 open-weight models running CPU-only and offline, with two hosted Claude models as a reference and a language ablation ([§6](#6-results)).
+- A student tutorial ([`tutorial/`](tutorial/README.md)) and a public log of how this repository was built with an AI assistant ([`meta/`](meta/)).
 
 ## 2. What labs print: four kinds of parts
 
-We group lab prints into four kinds. They differ in what can go wrong, so they also differ in what a model must get right.
-
 | Kind | Examples | What must be right | Typical risk |
 |---|---|---|---|
-| **Benchware** (holds, organises, stores) | tube and slide racks, plate-format holders, pipette stands, tip-box adapters | hole counts, spacing, standard footprints (e.g. ANSI/SLAS microplate) | low - wrong sizes waste plastic |
-| **Tools** (used in a protocol) | gel combs, micropestles, funnels, seed-sowing and colony templates, spreaders | key dimensions, surface finish, material compatibility | low-moderate - contamination, chemical attack |
-| **Quick fixes** (replace or adapt a part) | knobs for D-shafts, tube adapters, hose barbs, clips, feet, covers | a precise fit to an existing object, measured with calipers | moderate - fit and load; never for safety-critical parts |
-| **Full hardware** (parts of instruments) | stirrer housings, pump and motor brackets, enclosures, gel tanks, microscope parts | interfaces between parts, fasteners, assembly tolerances, electronics | higher - mechanical, electrical and biosafety hazards ([§8](#8-safety-and-responsibility)) |
+| **Benchware** (holds, organises, stores) | tube and slide racks, plate-format holders, pipette stands | hole counts, spacing, standard footprints (e.g. ANSI/SLAS microplate) | low - wrong sizes waste plastic |
+| **Tools** (used in a protocol) | gel combs, micropestles, funnels, sowing templates | key dimensions, surface finish, materials | low-moderate - contamination, chemical attack |
+| **Quick fixes** (replace or adapt a part) | knobs, tube adapters, hose barbs, clips | a precise fit to an existing object | moderate - fit and load |
+| **Full hardware** (parts of instruments) | stirrer housings, motor brackets, enclosures, gel tanks | interfaces, fasteners, assembly, electronics | higher - mechanical, electrical, biosafety ([§8](#8-safety-and-responsibility)) |
 
-Our 16 reference designs cover all four kinds (Figure 1). Each one is a single OpenSCAD file with all dimensions as named parameters at the top, in [Customizer](https://files.openscad.org/documentation/manual/Customizer.html) sections, so they can be adapted without editing code. Each is modelled in print orientation and prints without supports. Sliced with PrusaSlicer ([Prusa Research](#prusaslicer)) for an Original Prusa MK4 (0.4 mm nozzle, 0.20 mm SPEED profile, Prusament PLA), the whole set takes 31.6 h and 483 g of filament, about US$12 of PLA at US$25/kg (Table 1).
+Our 16 designs cover all four kinds (Figure 1). Each is one OpenSCAD file with every dimension as a named parameter in [Customizer](https://files.openscad.org/documentation/manual/Customizer.html) sections, modelled in print orientation, with print, fit and safety notes in its header. All print without supports except where a hole's crown bridges (the motor bracket). Sliced with PrusaSlicer ([Prusa Research](#prusaslicer)) for an Original Prusa MK4 with the stock 0.20 mm profile, the set takes 32.8 h and 496 g of PLA, about US$12 (Table 1).
 
-<p align="center"><img src="figures/design_library.png" alt="Renders of the 16 reference designs in four columns: benchware, tools, quick fixes, full hardware" width="900"></p>
+The library has two versions on purpose. The benchmark's answer keys are frozen in [`bench/reference/`](bench/reference/): each is exactly what its prompt asks for. The files in [`designs/`](designs/) are their lab-ready successors, revised after an independent mechanical and biological audit ([`meta/audits/`](meta/audits/)): wider clearances for tubes, slots that drain, standoffs so stirrer magnets clear the plate, a gel tank whose electrodes sit under the buffer, and explicit warnings where a part could be misused (for example, never spin the tube adapter in a centrifuge). The designs are geometry-checked and sliced; physical print-and-fit validation is in progress.
 
-**Figure 1.** The 16 reference designs, which are also the benchmark's answer key. All are in [`designs/`](designs/), each with print notes in its header.
+<p align="center"><img src="figures/design_library.png" alt="Renders of the 16 designs in four columns: benchware, tools, quick fixes, full hardware" width="900"></p>
+
+**Figure 1.** The 16 lab-ready designs in [`designs/`](designs/).
 
 <details>
-<summary><b>Table 1.</b> Print-time and filament estimates for an Original Prusa MK4 (click to expand)</summary>
+<summary><b>Table 1.</b> Print-time and filament estimates, Original Prusa MK4 (click to expand)</summary>
 
 <!-- AUTO:table-prints -->
 | Part | Kind | Print time | PLA (g) | Material cost (US$) |
 |---|---|---:|---:|---:|
-| 24-place 1.5 mL tube rack | Benchware | 5h 23m 24s | 78.7 | 1.97 |
-| 50 mL conical tube rack, printed inverted | Benchware | 4h 14m 10s | 69.4 | 1.73 |
-| Microscope slide drying rack | Benchware | 2h 5m 6s | 41.8 | 1.05 |
-| 96-place PCR tube rack, SBS footprint | Benchware | 8h 2m 5s | 93.3 | 2.33 |
-| 10-well agarose gel comb | Tools | 10m 51s | 2.5 | 0.06 |
+| 24-place 1.5 mL tube rack | Benchware | 5h 26m 54s | 78.7 | 1.97 |
+| 50 mL conical tube rack, printed inverted | Benchware | 4h 9m 34s | 69.0 | 1.73 |
+| Microscope slide drying rack | Benchware | 2h 2m 36s | 33.3 | 0.83 |
+| 96-place PCR tube rack, SBS footprint | Benchware | 8h 8m 41s | 92.9 | 2.32 |
+| 10-well agarose gel comb | Tools | 11m 32s | 2.7 | 0.07 |
 | Micropestle for 1.5 mL tubes | Tools | 26m 34s | 1.9 | 0.05 |
-| 60 mm lab funnel | Tools | 34m 15s | 7.1 | 0.18 |
-| Seed-sowing template for a 90 mm Petri dish | Tools | 52m 39s | 12.8 | 0.32 |
-| Replacement knob for a 6 mm D-shaft | Quick fixes | 21m 8s | 5.0 | 0.12 |
-| 0.2 mL-in-1.5 mL tube adapter sleeve | Quick fixes | 10m 33s | 1.5 | 0.04 |
-| Hose-barb reducer, 8 mm to 5 mm tubing | Quick fixes | 17m 48s | 1.7 | 0.04 |
+| 60 mm lab funnel | Tools | 37m 36s | 9.3 | 0.23 |
+| Seed-sowing template for a 90 mm Petri dish | Tools | 50m 45s | 12.0 | 0.30 |
+| Replacement knob for a 6 mm D-shaft | Quick fixes | 21m 7s | 5.0 | 0.12 |
+| 0.2 mL-in-1.5 mL tube adapter sleeve | Quick fixes | 10m 41s | 1.5 | 0.04 |
+| Hose-barb reducer, 8 mm to 5 mm tubing | Quick fixes | 18m 39s | 1.7 | 0.04 |
 | Snap-on tubing clip for a lab stand rod | Quick fixes | 7m 14s | 1.6 | 0.04 |
-| Magnetic stirrer housing for an 80 mm PC fan | Full hardware | 2h 57m 58s | 53.0 | 1.32 |
-| NEMA 17 motor L-bracket | Full hardware | 59m 38s | 14.3 | 0.36 |
-| Electronics enclosure with push-fit lid | Full hardware | 1h 41m 2s | 34.0 | 0.85 |
-| Mini gel-electrophoresis buffer tank | Full hardware | 3h 21m 15s | 64.3 | 1.61 |
-| **All 16 parts** | | **31.6 h** | **483** | **12.07** |
+| Magnetic stirrer housing for an 80 mm PC fan | Full hardware | 3h 7m 49s | 53.9 | 1.35 |
+| NEMA 17 motor L-bracket | Full hardware | 59m 51s | 14.2 | 0.35 |
+| Electronics enclosure with push-fit lid | Full hardware | 1h 40m 19s | 33.9 | 0.85 |
+| Mini gel-electrophoresis buffer tank | Full hardware | 4h 18m 32s | 84.4 | 2.11 |
+| **All 16 parts** | | **32.8 h** | **496** | **12.40** |
 <!-- /AUTO:table-prints -->
 
-Estimates are from PrusaSlicer 2.9.6 with the stock "0.20mm SPEED @MK4 0.4" profile and "Prusament PLA @PG". Filament mass assumes 1.24 g/cm³; cost assumes US$25/kg. Reproduce with `python tools/slice_library.py`.
+PrusaSlicer 2.9.6, stock "0.20mm SPEED @MK4 0.4" profile and "Prusament PLA @PG" for every part - not the finer per-part settings some headers recommend, which take longer. Mass assumes 1.24 g/cm³; cost assumes US$25/kg. Reproduce with `python tools/slice_library.py`.
 </details>
 
 ## 3. The workflow
@@ -104,98 +102,87 @@ flowchart LR
     H -- "yes" --> I["8 Print, use, share<br/>.scad + settings + photo"]
 ```
 
-**Figure 2.** The Prompt-to-Bench loop. The model does the CAD; the human measures, checks and decides. Steps 4-5 can be automated by an agent such as Claude Code, or done by hand with any chatbot.
+**Figure 2.** The model does the CAD; the person measures, checks and decides. Steps 4-5 can be run by an agent such as Claude Code or by hand with any chatbot.
 
-The loop has two features that matter more than the choice of model.
+Two features of the loop matter more than the choice of model.
 
-**The specification carries the knowledge.** The user supplies measured numbers, the print orientation and the coordinate frame (for example, "the base lies on the bed at z = 0"). The model is never asked to remember the outside diameter of a 50 mL tube or the hole pattern of a fan. Standard dimensions (such as ANSI/SLAS microplate footprints, 80 mm fan hole spacing and NEMA 17 bolt patterns) are written into the request ([ANSI/SLAS 2004](#slas2004); [SUNON](#sunon); [Oriental Motor](#orientalmotor)).
+**The specification carries the knowledge.** The user gives measured numbers, the print orientation and the coordinate frame ("the base lies on the bed at z = 0"). The model is never asked to remember a tube diameter or a fan's hole pattern; even standard dimensions - ANSI/SLAS microplate footprints, 80 mm fan holes, NEMA 17 bolt patterns - go into the request ([ANSI/SLAS 2004](#slas2004); [SUNON](#sunon); [Oriental Motor](#orientalmotor)).
 
-**The model must be shown what it built.** A language model cannot see its part. When OpenSCAD fails, its error messages go back to the model. When the file renders but the part is wrong, the most useful feedback is a plain-text *measurement* of the result, not "it's wrong". We wrote `scadreport` for this. It renders the file and reports whether the result is a single watertight solid, its bounding box and volume, how it sits on the bed and where it overhangs. It also slices the part horizontally at every distinct height and lists each hole's shape, size and grid spacing. A typical excerpt for a rack whose pitch came out wrong:
+**The model must be shown what it built.** A language model cannot see its part. When OpenSCAD fails, its messages go back to the model. When the file renders but the part is wrong, the useful feedback is a measurement, not "it's wrong". `scadreport` renders the file and reports whether it is one watertight solid, its bounding box, volume, bed contact and overhangs, and horizontal slices at up to ten representative heights - each listing every hole's shape, size and grid spacing. For a rack whose pitch and hole depth came out wrong:
 
 ```
-SOLID: 1 separate body, watertight (valid solid); volume 158,139 mm3 (~196 g of PLA if printed solid).
 BOUNDING BOX: X -53.00 .. 53.00 (size 106.00) | Y -36.00 .. 36.00 (size 72.00) | Z 0.00 .. 30.00 (size 30.00) mm
-  z=15.00: 1 solid region [outline: rectangle 106.00 x 72.00 centred (0.00, 0.00)]; 24 holes:
-           24 x circle d=11.19 [6 x 4 grid (X x Y), pitch X 15.00 / Y 15.00, grid centre (0.00, 0.00)]
+  z=1.50: 1 solid region [...]; 24 holes: 24 x circle d=11.19 [6 x 4 grid (X x Y), pitch X 15.00 / Y 15.00, ...]
+  z=15.00: 1 solid region [...]; 24 holes: 24 x circle d=11.19 [6 x 4 grid (X x Y), pitch X 15.00 / Y 15.00, ...]
 ```
 
-A user, or the model itself, can now compare "pitch 15.00" with the "16 mm" in the request. The report does not know what was wanted, so it works for any part.
+Compared with the request, two errors are visible: the pitch is 15 mm, not 16, and the holes reach z = 1.5, so the 5 mm floor is missing. The report knows nothing about the request, so it works for any part.
 
 ## 4. Best practices
 
-These rules come from our own use of the workflow, from the benchmark below and from the cited literature, and complement general guides to 3D printing in chemistry and biology labs ([Pamidi et al. 2024](#pamidi2024); [Saggiomo 2022](#saggiomo2022)). Each is reflected in the tutorial and in the reference designs.
+These rules come from our own use of the workflow, the benchmark and the literature, and complement general guides to 3D printing in chemistry and biology labs ([Pamidi et al. 2024](#pamidi2024); [Saggiomo 2022](#saggiomo2022)).
 
-1. **Measure; don't rely on memory - yours or the model's.** Give caliper numbers for everything that must fit. A model will happily invent "standard" dimensions.
-2. **State the print orientation and the frame.** Say which face sits on the bed at z = 0, and which way is +X. Most "wrong" parts in practice are right shapes in the wrong place or upside down.
-3. **Use a starter prompt.** A short system prompt fixes the style: millimetres, named parameters, built-in OpenSCAD only, cutters that overshoot faces, `$fn` for round holes, `for` loops for arrays ([`bench/prompts/system.md`](bench/prompts/system.md), reproduced in the tutorial). Putting best-practice lists in the prompt also helped GPT-4 in earlier CAD work ([Makatura et al. 2023](#makatura2023)).
-4. **Ask for parameters, then stop asking.** Once a design works, change its numbers yourself (or in the Customizer) instead of regenerating it. The `.scad` file becomes a template for the next lab.
-5. **Close the loop with measurements.** Paste OpenSCAD's messages and a `scadreport` back into the chat. Never accept a part you have not checked against the request.
-6. **Print a coupon first.** Before an 8-hour print, print a 2-mm slice containing the critical holes or the mating feature. FDM holes tend to come out undersized ([Slic3r manual](#slic3r)). Start fits at about 0.2-0.3 mm clearance per side and calibrate for your printer and material ([Prusa Research, n.d.](#prusamodeling); [Popescu et al. 2023](#popescu2023)).
-7. **Design for the printer.** Use a flat face on the bed, keep overhangs under about 45°, avoid long bridges and use walls of at least two extrusion widths. Print things upside down when that removes supports; two of our designs (the 50 mL rack and the stirrer housing) are modelled that way.
-8. **Choose material for the lab, not the printer.** PLA softens around 55-60 °C, so it is not for autoclaves, hot water baths or heat blocks. PETG (heat deflection temperature, HDT, 68 °C) and even polycarbonate also deform in a 121 °C autoclave ([Pérez Davila et al. 2021](#perezdavila2021); [Rynio et al. 2022](#rynio2022); [Popescu et al. 2025](#popescu2025); [Prusament TDS](#prusament)). Brief wipes with 70% ethanol, isopropanol or dilute hypochlorite are fine on PLA ([Vaňková et al. 2020](#vankova2020)); long soaks weaken parts ([Kaptan 2025](#kaptan2025)).
-9. **Know what not to print.** Do not print rotors or adapters for commercial centrifuges ([Eppendorf](#eppendorf)), pressure vessels, mains-powered enclosures without proper electrical design ([IEC 61010-1](#iec61010)), or anything that touches patients. See [§8](#8-safety-and-responsibility).
-10. **Share the source, not just the STL.** The editable `.scad` file is the "source" of open hardware ([Bonvoisin et al. 2017](#bonvoisin2017); [Diederich et al. 2022](#diederich2022)). Add the print settings and a photo, and say which model and prompt produced it.
-11. **Keep private work local.** Unpublished or client designs should not be pasted into hosted services you do not control. A local model keeps them on your machine.
-12. **Match the model to the part.** *To be finalised from the results in [§6](#6-results).*
+1. **Measure; don't rely on memory - yours or the model's.** Give caliper numbers for everything that must fit.
+2. **State the print orientation and the frame.** Say which face is on the bed at z = 0 and which way is +X. Many "wrong" parts are right shapes, upside down or in the wrong place.
+3. **Use a starter prompt.** It fixes the style: millimetres, named parameters, built-in OpenSCAD only, cutters that overshoot faces, `$fn` for round holes, loops for arrays ([`bench/prompts/system.md`](bench/prompts/system.md)). Best-practice lists in the prompt also helped GPT-4 in earlier CAD work ([Makatura et al. 2023](#makatura2023)).
+4. **Once a design works, change its numbers - don't regenerate it.** The `.scad` file becomes a template for the next lab.
+5. **Check every part against the request.** Paste OpenSCAD's messages or a `scadreport` back into the chat when something is wrong.
+6. **Print a coupon first.** A 2-3 mm slice with the critical holes takes minutes. FDM holes print undersized ([Slic3r manual](#slic3r)): start at about 0.3-0.5 mm clearance per side for parts that should drop in (tubes in racks), 0.2-0.3 mm for sliding fits, and calibrate for your printer and material: accuracy depends on speed, temperature and layer height ([Prusa Research, n.d.](#prusamodeling); [Popescu et al. 2023](#popescu2023); [Li et al. 2025](#li2025)).
+7. **Design for the printer.** A flat face on the bed, overhangs under about 45°, no long bridges, walls of at least two extrusion widths. Print upside down when that removes supports; four of our designs (the 50 mL rack, the tube adapter, the enclosure lid and the stirrer housing) are modelled that way.
+8. **Choose material for the lab.** PLA softens around 55-60 °C: no autoclaves, hot baths or heat blocks. Printed PETG, PP and PC also deformed in 121 °C autoclave tests ([Pérez Davila et al. 2021](#perezdavila2021); [Rynio et al. 2022](#rynio2022); [Popescu et al. 2025](#popescu2025)); PETG's heat deflection temperature is 68 °C ([Prusament TDS](#prusament)). Let agarose cool to 50-60 °C before it meets a printed comb. Brief wipes with 70% ethanol, isopropanol or dilute hypochlorite are fine on PLA ([Vaňková et al. 2020](#vankova2020)); long soaks weaken parts ([Kaptan 2025](#kaptan2025)), and PETG is attacked by acetone, phenol and chloroform.
+9. **Know what not to print.** No rotors or adapters for commercial centrifuges ([Eppendorf](#eppendorf)), pressure vessels, mains-powered enclosures without proper electrical design ([IEC 61010-1](#iec61010)), or anything that touches patients ([§8](#8-safety-and-responsibility)).
+10. **Share the source, not just the STL.** The `.scad` file is the source of open hardware ([Bonvoisin et al. 2017](#bonvoisin2017); [Diederich et al. 2022](#diederich2022)). Add print settings, a photo, and the model and prompt that produced it.
+11. **Keep private work local.** Do not paste unpublished or client designs into hosted services you do not control.
+12. **Pick the model for the job.** In our tests only the hosted models produced correct parts. Small open-weight models are worth trying offline, but check everything they produce, and expect to fix the code yourself ([§6](#6-results)).
 
 ## 5. Benchmark: Prompt-to-Bench-16
 
 ### 5.1 Tasks
 
-Each task is a design request as a careful student would write it after measuring with calipers. It gives dimensions in millimetres, the print orientation, the frame where it matters, and plain-language feature descriptions. There are four tasks in each of the four categories (Table 2), spanning blind and through holes, 1-D and 2-D arrays (up to 96 holes in the ANSI/SLAS microplate footprint), slots, teeth, revolved profiles, polar arrays, D-shaped bores, open rings, horizontal holes, multi-part layouts and clearance fits. Full prompts are in [`bench/tasks.yaml`](bench/tasks.yaml).
+Each task is a request as a careful student would write it after measuring: dimensions in millimetres, the print orientation, the frame where it matters, and plain-language features. There are four tasks per category (Table 2), covering blind and through holes, 1-D and 2-D arrays (up to 96 holes in the ANSI/SLAS footprint), slots, teeth, revolved profiles, polar arrays, D-shaped bores, open rings, horizontal holes, multi-part layouts and a clearance fit. Prompts and checks are in [`bench/tasks.yaml`](bench/tasks.yaml); the frozen answer keys are in [`bench/reference/`](bench/reference/).
 
 | Category | Task | What it exercises |
 |---|---|---|
 | Benchware | 24-place 1.5 mL tube rack | block, blind holes, 6 x 4 grid |
 | Benchware | 50 mL conical tube rack, printed inverted | print orientation, through holes, walls |
-| Benchware | Microscope slide drying rack | ten 1.6 mm slots, small clearances |
+| Benchware | Microscope slide drying rack | ten 1.6 mm slots |
 | Benchware | 96-place PCR tube rack, SBS footprint | standard footprint, 96-hole grid, orientation chamfer |
 | Tools | 10-well agarose gel comb | flat 2-D profile, tooth array |
 | Tools | Micropestle for 1.5 mL tubes | stacked primitives, cone, grooves at given heights |
 | Tools | 60 mm lab funnel | hollow solid of revolution, open ends |
 | Tools | Seed-sowing template for a 90 mm Petri dish | disc, 49-hole grid, orientation notch |
-| Quick fixes | Replacement knob for a 6 mm D-shaft | D-profile bore, 18-groove polar array, aligned pointer |
+| Quick fixes | Replacement knob for a 6 mm D-shaft | D-shaped bore, 18-groove polar array, aligned pointer |
 | Quick fixes | 0.2 mL-in-1.5 mL tube adapter sleeve | concentric cylinders, upside-down printing |
 | Quick fixes | Hose-barb reducer, 8 mm to 5 mm tubing | revolved sawtooth profile, through bore |
 | Quick fixes | Snap-on tubing clip for a lab stand rod | 2-D Booleans, open rings, explicit coordinates |
 | Full hardware | Magnetic stirrer housing for an 80 mm PC fan | shelled box, bolt pattern, cable notch |
 | Full hardware | NEMA 17 motor L-bracket | horizontal holes, bolt patterns, gussets |
-| Full hardware | Electronics enclosure with push-fit lid | two bodies, 0.2 mm clearance fit |
-| Full hardware | Mini gel-electrophoresis buffer tank | internal platform, chambers, electrode holes |
+| Full hardware | Electronics enclosure with slip-fit lid | two bodies, 0.2 mm clearance |
+| Full hardware | Mini gel-electrophoresis buffer tank | internal platform, chambers, holes |
 
-**Table 2.** The 16 tasks. The reference solutions are the designs in Figure 1.
+**Table 2.** The 16 tasks. They test whether a model follows a specification; the lab-ready parts in [`designs/`](designs/) differ where real use called for it ([§2](#2-what-labs-print-four-kinds-of-parts)).
 
 ### 5.2 Hidden geometric checks
 
-The model never sees the checks. A candidate file is rendered with OpenSCAD using the Manifold geometry kernel ([Lalish et al.](#manifold)) and the mesh is normalised: bounding-box centre at the origin in XY, lowest point at z = 0. It is then compared with the specification using four kinds of test:
+The model never sees the checks. A candidate is rendered with OpenSCAD's Manifold kernel ([Lalish et al.](#manifold)), normalised (bounding-box centre at the origin in XY, lowest point at z = 0) and tested with:
 
-- **global checks:** bounding box, number of bodies, watertightness and volume within 5-15% of the reference;
-- **horizontal sections at chosen heights:** number of solid regions and holes, hole diameters or rectangle sizes, hole-centre positions and grids, and cross-section areas;
-- **probe points** that must be solid or empty, for features like notches, chamfers and horizontal holes;
-- **line and arc probes** that count solid intervals, for comb teeth and grip grooves.
+- **global checks:** bounding box, number of bodies, watertightness, volume relative to the reference;
+- **horizontal sections:** number of solid regions and holes, hole sizes, positions and grids, section areas;
+- **probe points** that must be solid or empty (notches, chamfers, horizontal holes);
+- **line and arc probes** that count solid intervals (comb teeth, grip grooves).
 
-Rotating a part by 90° about Z or mirroring it does not change how it prints or works, so position-dependent checks are evaluated under all eight symmetries of the bed and the best match is kept. A part *passes* only if every check passes. Dimensional tolerances are 0.25-0.6 mm, which is about what a careful FDM print achieves anyway ([Li et al. 2025](#li2025)).
+Position-dependent checks are evaluated under all eight symmetries of the bed (90° rotations and mirroring), which do not change how a part prints, and the best match is kept. A part passes only if every check passes. Absolute tolerances are 0.15-0.9 mm (most 0.3-0.5 mm, tighter for the 0.2 mm clearance fit, looser where the prompt allows two readings), plus 4-35% on areas and volumes; they are set to accept every correct reading of the prompt, not to mimic print accuracy.
 
-We validated the checker with [`bench/build_refs.py`](bench/build_refs.py):
-
-- all 16 reference solutions pass their own checks;
-- they still pass after being rotated, mirrored and moved;
-- they fail when scaled by 3%;
-- none passes another task's checks (0/240 cross-task false positives).
-
-This validation caught an error in one of our own reference designs. A 7 x 7 grid of seed holes at 10 mm pitch placed the corner holes 42.4 mm from the centre of an 85 mm disc, so they broke through the rim. We changed the pitch to 9 mm. It is a small example of the workflow's main lesson: geometry should be measured, not assumed.
+[`bench/build_refs.py`](bench/build_refs.py) confirms that the references pass their own checks, still pass after rotation, mirroring and translation, fail when scaled by 3%, and pass no other task's checks. These tests show the checks are self-consistent, not that every correct design passes. An audit found one false negative: "a 1.6 mm wall everywhere" on the funnel can be measured horizontally (our reference) or perpendicular to the cone (+24% volume); we widened that task's volume tolerance and re-checked every saved attempt with [`bench/rescore.py`](bench/rescore.py), which changed that one verdict and no other. Building the checks also caught an error in our own design: a 7 x 7 grid at 10 mm pitch put the corner holes through the rim of the 85 mm seed template.
 
 ### 5.3 Protocol
 
-- **Prompt:** every model receives the same system prompt ([`bench/prompts/system.md`](bench/prompts/system.md)) followed by the task text.
-- **Code extraction:** the answer is the longest fenced OpenSCAD block in the reply.
-- **Feedback loop:** if the part does not pass, the model gets one message and tries again, up to two repairs (three attempts). The message is either OpenSCAD's own errors and warnings (when nothing printable was produced) or the generic `scadreport` measurement report with the instruction to compare it with the specification (when a part rendered but failed). The hidden checks are never revealed. This mimics a user who notices the part is wrong and pastes the report back.
-- **Local models:**
-  - Run through Ollama 0.30.11 with 4-bit weights (Q4_K_M), temperature 0.2, top-p 0.95, a fixed seed per attempt and an 8,192-token context.
-  - Replies are streamed. A reply ends at 2,048 tokens, as soon as a complete OpenSCAD code block has arrived, or when the model starts repeating itself verbatim. A correct solution needs about 400-700 tokens.
-  - "Thinking" is switched off for models that support it, so that every local model answers directly and runs at a comparable cost.
-- **Hosted reference:** Claude Haiku 4.5 and Claude Sonnet 5.5 run through the Claude Code command line in print mode, with the system prompt replaced by ours, all tools disabled and default settings otherwise. With those defaults Claude Haiku 4.5 used extended thinking (about 10,000-16,000 output tokens per reply), while Claude Sonnet 5.5 answered directly (about 400-1,200 tokens in 4-17 s). This is Claude as a student would actually use it, not an equal-cost comparison.
-- **Hardware:** a 2022 laptop with an Intel Core i7-1260P (12 cores, 16 threads), 16 GB RAM (14 GiB usable), no discrete GPU (the integrated GPU was not used), Ubuntu, OpenSCAD 2026.10.01 (development snapshot) and PrusaSlicer 2.9.6. Models ran one at a time, so the timings are clean.
+- **Prompt:** the same system prompt ([`bench/prompts/system.md`](bench/prompts/system.md)) for every model, then the task text.
+- **Code extraction:** the longest OpenSCAD-labelled fenced block (otherwise any fenced block, the text after an unclosed fence, or the whole reply if it contains OpenSCAD calls). Local replies stop once a complete block has arrived, so in practice their first block counts.
+- **Feedback:** a part that fails gets one message and another try, up to three attempts: OpenSCAD's own errors when nothing rendered, otherwise the `scadreport` measurement with an instruction to compare it with the specification. The hidden checks are never shown, but they decide *whether* feedback is sent, so "passed within three attempts" is an optimistic bound on what a user who must spot errors alone would get.
+- **Local models:** Ollama 0.30.11, 4-bit weights (Q4_K_M), temperature 0.2, top-p 0.95, a fixed seed per attempt, 8,192-token context, "thinking" requested off where a model supports the switch. Replies end at 2,048 tokens, when a complete OpenSCAD block has arrived, or when the model repeats itself verbatim. Qwen2.5-Coder 3B and 7B ran with an earlier 1,024-token cap that never applied (their longest reply was 723 tokens); we raised the cap after a first pass cut off Gemma 4 E4B and others, and reran those models.
+- **Hosted reference:** Claude Haiku 4.5 and Claude Sonnet 5.5 through the Claude Code command line in print mode, with our system prompt, tools disabled and otherwise vendor defaults: the API's default temperature (the CLI cannot set it) and no seed. Haiku used extended thinking (median about 10,000 output tokens per reply, range 4,100-23,500); Sonnet answered directly (320-1,430 tokens, 4-12 s per reply). This is Claude at its defaults, not an equal-cost comparison.
+- **Hardware:** a 2022 laptop, Intel Core i7-1260P (12 cores, 16 threads), 16 GB RAM, no discrete GPU, Ubuntu, OpenSCAD 2026.10.01 (development snapshot), PrusaSlicer 2.9.6. Local models ran one at a time, but some runs overlapped other work on the same laptop (for example the hosted language run, whose rendering uses the CPU), so timings are indicative (roughly ±20%), not clean benchmarks.
 
 ### 5.4 Models
 
@@ -220,45 +207,88 @@ This validation caught an error in one of our own reference designs. A 7 x 7 gri
 | Claude Sonnet 5.5 (hosted) (`claude:claude-sonnet-5-5`) | Claude | - | hosted | proprietary API |
 <!-- /AUTO:table-models -->
 
-The 14 local models come from eight families: Qwen2.5-Coder ([Hui et al. 2024](#hui2024)), Qwen2.5 ([Qwen Team 2024](#qwen2024)), Qwen3.5 ([Qwen Team 2026](#qwen2026)), Gemma 4 ([Gemma Team 2026](#gemma2026)), Ministral 3 ([Liu et al. 2026](#liu2026)), Granite 4.2 ([IBM Granite Team 2026](#ibm2026)), LFM2.5 ([Liquid AI 2026](#liquid2026)) and Llama 3.2 ([Meta 2024](#meta2024)). All run through Ollama ([Ollama](#ollama)) on llama.cpp ([Gerganov et al.](#llamacpp)) as 4-bit GGUF files ([Kawrakow 2023](#kawrakow2023)). Model sizes are Ollama download sizes; licences are from the model cards (accessed 5 Oct 2026). "Open-weight" is not the same as open source, and licences differ in ways that matter for labs that sell services. The Qwen2.5-Coder 3B weights are licensed for non-commercial use only, LFM2.5 has a revenue threshold for commercial use, and Llama 3.2 has its own community licence ([Qwen 2024](#qwen3blicense); [Liquid AI 2026](#liquid2026); [Meta 2024](#meta2024)). Exact model tags and digests are in [`bench/logs/model_digests.txt`](bench/logs/model_digests.txt).
+The 14 local models come from eight families: Qwen2.5-Coder ([Hui et al. 2024](#hui2024)), Qwen2.5 ([Qwen Team 2024](#qwen2024)), Qwen3.5 ([Qwen Team 2026](#qwen2026)), Gemma 4 ([Gemma Team 2026](#gemma2026)), Ministral 3 ([Liu et al. 2026](#liu2026)), Granite 4.2 ([IBM Granite Team 2026](#ibm2026)), LFM2.5 ([Liquid AI 2026](#liquid2026)) and Llama 3.2 ([Meta 2024](#meta2024)), all run through Ollama ([Ollama](#ollama)) on llama.cpp ([Gerganov et al.](#llamacpp)) as 4-bit GGUF files ([Kawrakow 2023](#kawrakow2023)). Sizes are Ollama download sizes; parameter counts and licences are from the model cards (accessed 5 October 2026). "Open-weight" is not open source, and licences matter for labs that sell services: the Qwen2.5-Coder 3B weights are non-commercial, LFM2.5 has a revenue threshold, and Llama 3.2 has its own licence ([Qwen 2024](#qwen3blicense); [Liquid AI 2026](#liquid2026); [Meta 2024](#meta2024)). Tags and digests are in [`bench/logs/model_digests.txt`](bench/logs/model_digests.txt).
 
-### 5.5 What to expect from small models
+### 5.5 What to expect from open models
 
-Two pieces of prior evidence set low expectations.
+**OpenSCAD is a low-resource language.** In The Stack, an openly licensed corpus used to pretrain many code models, OpenSCAD is about 0.03 GB of compressed data, against about 47 GB for Python and 1.6 GB for Lua ([Kocetkov et al. 2022](#kocetkov2022); [Lozhkov et al. 2024](#lozhkov2024)) - and Lua is itself the usual example of a "low-resource" language ([Cassano et al. 2024](#cassano2024)). Quantised 7B code models on a CPU-only laptop score below 50% on Lua benchmarks ([Nyamsuren 2025](#nyamsuren2025)).
 
-**OpenSCAD is a low-resource language.** In The Stack, an openly licensed code corpus used to pretrain many code models, the OpenSCAD folder is about 0.03 GB of compressed data, against about 47 GB for Python and 1.6 GB for Lua ([Kocetkov et al. 2022](#kocetkov2022); [Lozhkov et al. 2024](#lozhkov2024)). Lua is itself the usual example of a "low-resource" language in code-model research ([Cassano et al. 2024](#cassano2024)). Quantised 7B code models running on a CPU-only laptop already score below 50% on Lua benchmarks ([Nyamsuren 2025](#nyamsuren2025)).
+**Open models have done poorly at CAD code without fine-tuning.** CodeLlama-70B produced "extremely bad" FreeCAD output ([Badagabettu et al. 2024](#badagabettu2024)); open models compiled less often than GPT-4 ([Alrashedy et al. 2025](#alrashedy2025)); on a 2026 assembly benchmark, open-weight models of 8B parameters and up scored about 3-4% against about 20% for the best closed models ([Dong et al. 2026](#dong2026)). Small-model successes come from fine-tuning on narrow CAD datasets ([Rukhovich et al. 2025](#rukhovich2025); [Govindarajan et al. 2026](#govindarajan2026); [Xie & Ju 2025](#xie2025)). We test models as a student would download them.
 
-**Small models have done poorly at CAD code without fine-tuning.** CodeLlama-70B produced "extremely bad" FreeCAD output in one study ([Badagabettu et al. 2024](#badagabettu2024)). Open models compiled less often than GPT-4 in another ([Alrashedy et al. 2025](#alrashedy2025)). On a 2026 text-to-CAD assembly benchmark, open-weight models of 8B parameters and up scored about 3-4%, against about 20% for the best closed models ([Dong et al. 2026](#dong2026)). The small-model successes in the literature come from fine-tuning on narrow CAD datasets ([Rukhovich et al. 2025](#rukhovich2025); [Govindarajan et al. 2026](#govindarajan2026); [Xie & Ju 2025](#xie2025)). We test general-purpose and code models as a student would download them, with no fine-tuning.
-
-**Defining "minimal viable".** Before running the benchmark we fixed what we would call a minimally viable local model: one that passes at least **half of the 16 tasks within three attempts**, runs on a 16 GB laptop without a GPU, and needs a median of at most **10 minutes per task**. The *minimal* viable model is the smallest download that meets all three.
+**"Minimal viable", defined before analysing local results.** A minimally viable local model passes at least **half of the 16 tasks within three attempts**, runs on a 16 GB laptop without a GPU, and needs a median of at most **10 minutes per task**; the minimal one is the smallest download that meets all three.
 
 ## 6. Results
 
 ### 6.1 Overall
 
-<!-- AUTO:fig-pass-rates -->
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="figures/fig_pass_rates_dark.png">
-  <img src="figures/fig_pass_rates_light.png" alt="Dumbbell chart of pass rates per model, first attempt vs after feedback">
-</picture>
-<!-- /AUTO:fig-pass-rates -->
-
-**Figure 3.** Share of the 16 tasks whose part passed every hidden check, on the first attempt (light) and after up to two rounds of feedback (dark). Local models are ordered by download size.
-
 <!-- AUTO:table-main -->
-| Model | Download | Licence | Pass, 1st try | Pass, ≤3 tries (95% CI) | Printable 1st try | Median min/task | Tokens/s |
-|---|---:|---|---:|---:|---:|---:|---:|
-| Claude Haiku 4.5 (hosted) *(partial)* | hosted | proprietary API | 9/12 | 11/12 (65-99%) | 11/12 | 1.9 | - |
-| Qwen2.5-Coder 1.5B *(partial)* | 0.99 GB | Apache-2.0 | 0/9 | 0/9 (0-30%) | 2/9 | 1.0 | 16.5 |
+| Model | Download | Licence | Pass, 1st try | Pass, ≤3 tries (95% CI) | Renders 1st try | Median min/task | Tokens/s | Same code after feedback |
+|---|---:|---|---:|---:|---:|---:|---:|---:|
+| Claude Haiku 4.5 (hosted) | hosted | proprietary API | 11/16 | 14/16 (64-97%) | 15/16 | 1.9 | - | 2/8 |
+| Claude Sonnet 5.5 (hosted) | hosted | proprietary API | 16/16 | 16/16 (81-100%) | 16/16 | 0.1 | - | 0/1 |
+| Qwen2.5-Coder 0.5B | 0.4 GB | Apache-2.0 | 0/16 | 0/16 (0-19%) | 0/16 | 0.8 | 37.7 | 24/32 |
+| Qwen2.5 1.5B (general) | 0.99 GB | Apache-2.0 | 0/16 | 0/16 (0-19%) | 2/16 | 1.0 | 22.0 | 27/32 |
+| Qwen2.5-Coder 1.5B | 0.99 GB | Apache-2.0 | 0/16 | 0/16 (0-19%) | 1/16 | 1.4 | 12.8 | 32/32 |
+| Qwen2.5-Coder 3B | 1.9 GB | Qwen Research (non-commercial) | 0/16 | 0/16 (0-19%) | 3/16 | 1.9 | 10.7 | 31/32 |
+| Qwen3.5 2B | 1.9 GB | Apache-2.0 | 0/16 | 0/16 (0-19%) | 0/16 | 6.3 | 18.4 | 0/32 |
+| Llama 3.2 3B | 2.0 GB | Llama 3.2 Community | 0/16 | 0/16 (0-19%) | 8/16 | 2.2 | 10.3 | 6/32 |
+| Granite 4.2 3B | 2.2 GB | Apache-2.0 | 0/16 | 0/16 (0-19%) | 2/16 | 14.8 | 6.9 | 0/32 |
+| Ministral 3 3B | 3.0 GB | Apache-2.0 | 0/16 | 0/16 (0-19%) | 1/16 | 3.6 | 9.0 | 0/32 |
+| Qwen3.5 4B *(partial)* | 3.3 GB | Apache-2.0 | 0/9 | 0/9 (0-30%) | 1/9 | 15.2 | 8.5 | 0/18 |
+| Gemma 4 E2B | 4.6 GB | Apache-2.0 | 0/16 | 0/16 (0-19%) | 12/16 | 3.6 | 18.6 | 3/32 |
+| Qwen2.5-Coder 7B | 4.7 GB | Apache-2.0 | 0/16 | 0/16 (0-19%) | 1/16 | 3.1 | 5.8 | 32/32 |
+| LFM2.5 8B-A1B (MoE) | 5.2 GB | LFM Open v1.0 (revenue cap) | 0/16 | 0/16 (0-19%) | 0/16 | 5.1 | 20.8 | 0/32 |
+| Gemma 4 E4B | 6.6 GB | Apache-2.0 | 0/16 | 0/16 (0-19%) | 9/16 | 6.1 | 11.7 | 5/32 |
+| Qwen3.5 9B *(partial)* | 6.6 GB | Apache-2.0 | 0/2 | 0/2 (0-66%) | 1/2 | 17.2 | 4.7 | 1/4 |
 <!-- /AUTO:table-main -->
 
-**Table 3.** Main results. "Printable 1st try" means the first file rendered to a solid, whether or not it was correct. The 95% confidence intervals are Wilson intervals over 16 tasks. Tokens/s is generation speed on the laptop CPU.
+**Table 3.** Main results. "Renders 1st try" means the first file produced a non-empty solid, correct or not. Intervals are Wilson 95% intervals over the 16 tasks of a single run (over the tasks completed, for partial rows); they do not include run-to-run variation. "Same code after feedback" counts repair attempts that returned a byte-identical file.
 
-<!-- AUTO:results-overall -->
-*Narrative pending completion of the benchmark run.*
-<!-- /AUTO:results-overall -->
+The hosted models are at or near the ceiling. Claude Sonnet 5.5 passed all 16 tasks on the first try; Claude Haiku 4.5 passed 11 on the first try and 14 within three attempts, failing the 96-place rack (one chamfer probe) and the enclosure (a lid with a solid floor under its lip, +14% volume). With one run each, the two cannot be ranked (paired exact test on first tries, p = 0.06), and the benchmark cannot separate hosted models of this class.
 
-### 6.2 By task and category
+No local model passed a task. Every complete local model scored 0 of 16 (Wilson upper bound 19%), so none met the viability bar in [§5.5](#55-what-to-expect-from-open-models). The Qwen3.5 4B and 9B runs are still being completed; their partial rows are marked.
+
+### 6.2 How far the local models got
+
+<!-- AUTO:fig-tiers -->
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="figures/fig_tiers_dark.png">
+  <img src="figures/fig_tiers_light.png" alt="Stacked bars of the best outcome each model reached per task">
+</picture>
+<!-- /AUTO:fig-tiers -->
+
+**Figure 3.** The best outcome each model reached per task, from nothing rendered (blank) to a part with the right overall size and body count, to a pass. Local models are ordered by download size.
+
+<!-- AUTO:table-graded -->
+| Model | Rendered (any try) | Right size and body count | Passed | Tasks with ≥ half the checks | First file treats geometry as a value | Attempts cut off (cap or loop) | Same code after feedback |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| Claude Haiku 4.5 (hosted) | 16/16 | 16/16 | 14/16 | 16/16 | 0/16 | 0/24 | 2/8 |
+| Claude Sonnet 5.5 (hosted) | 16/16 | 16/16 | 16/16 | 16/16 | 0/16 | 0/17 | 0/1 |
+| Qwen2.5-Coder 0.5B | 0/16 | 0/16 | 0/16 | 0/16 | 0/16 | 27/48 | 24/32 |
+| Qwen2.5 1.5B (general) | 2/16 | 0/16 | 0/16 | 0/16 | 6/16 | 15/48 | 27/32 |
+| Qwen2.5-Coder 1.5B | 1/16 | 0/16 | 0/16 | 0/16 | 14/16 | 3/48 | 32/32 |
+| Qwen2.5-Coder 3B | 3/16 | 2/16 | 0/16 | 2/16 | 11/16 | 0/48 | 31/32 |
+| Qwen3.5 2B | 0/16 | 0/16 | 0/16 | 0/16 | 3/16 | 42/48 | 0/32 |
+| Llama 3.2 3B | 10/16 | 0/16 | 0/16 | 0/16 | 2/16 | 1/48 | 6/32 |
+| Granite 4.2 3B | 5/16 | 2/16 | 0/16 | 1/16 | 8/16 | 37/48 | 0/32 |
+| Ministral 3 3B | 2/16 | 1/16 | 0/16 | 1/16 | 8/16 | 1/48 | 0/32 |
+| Qwen3.5 4B *(partial)* | 1/9 | 0/9 | 0/9 | 0/9 | 5/9 | 22/27 | 0/18 |
+| Gemma 4 E2B | 12/16 | 3/16 | 0/16 | 6/16 | 2/16 | 1/48 | 3/32 |
+| Qwen2.5-Coder 7B | 1/16 | 0/16 | 0/16 | 0/16 | 15/16 | 0/48 | 32/32 |
+| LFM2.5 8B-A1B (MoE) | 0/16 | 0/16 | 0/16 | 0/16 | 2/16 | 41/48 | 0/32 |
+| Gemma 4 E4B | 11/16 | 3/16 | 0/16 | 6/16 | 3/16 | 5/48 | 5/32 |
+| Qwen3.5 9B *(partial)* | 1/2 | 1/2 | 0/2 | 1/2 | 0/2 | 1/6 | 1/4 |
+<!-- /AUTO:table-graded -->
+
+**Table 4.** Graded outcomes. "Right size and body count": the bounding box and number of separate solids match, on any attempt. "Geometry as a value": the first file assigns shapes to variables (`rack = cube(...)`), which OpenSCAD cannot parse. "Cut off": attempts that ended at the token cap or in a verbatim loop.
+
+The zeros hide three different failures:
+
+- **Code models write a different language.** Qwen2.5-Coder 1.5B, 3B and 7B wrote "geometry as a value" in 11-15 of 16 first files - OpenSCAD written as if it were Python or JavaScript - and almost never produced a part.
+- **Feedback changed nothing for them.** The same three models returned byte-identical code in 31-32 of 32 repair attempts, even with a new random seed; Qwen2.5-Coder 0.5B and the general Qwen2.5 1.5B did so in 24 and 27 of 32. A bare "syntax error, line 18" from OpenSCAD did not tell them what to change.
+- **Reasoning models ran out of words.** With thinking requested off, Qwen3.5 and Granite 4.2 reasoned inside code comments, and LFM2.5 ignored the switch and wrote `<think>` reasoning in every reply; 37-42 of their 48 attempts ended at the 2,048-token cap or in a loop. Their scores say as much about the protocol as about their design ability.
+
+The closest were the Gemma 4 models (E2B and E4B), which rendered 11-12 of 16 parts and met half the checks on 6 tasks, but got the overall size right on only 3. The single best local attempt (Gemma 4 E4B, micropestle) failed one check: its grip grooves were 1.5 mm deep instead of 1 mm.
 
 <!-- AUTO:fig-outcomes -->
 <picture>
@@ -267,153 +297,138 @@ Two pieces of prior evidence set low expectations.
 </picture>
 <!-- /AUTO:fig-outcomes -->
 
-**Figure 4.** Outcome for every model and task. The number is the attempt that passed. "·" means the part rendered but never matched the spec; "×" means no printable part was produced.
+**Figure 4.** Outcome per model and task. Numbers give the attempt that passed; "·" rendered but never matched the specification; "×" nothing rendered.
 
 <!-- AUTO:table-categories -->
 | Model | Benchware | Tools | Quick fixes | Full hardware |
 |---|---:|---:|---:|---:|
-| Claude Haiku 4.5 (hosted) | 3/4 | 4/4 | 4/4 | - |
-| Qwen2.5-Coder 1.5B | 0/4 | 0/4 | 0/1 | - |
+| Claude Haiku 4.5 (hosted) | 3/4 | 4/4 | 4/4 | 3/4 |
+| Claude Sonnet 5.5 (hosted) | 4/4 | 4/4 | 4/4 | 4/4 |
+| Qwen2.5-Coder 0.5B | 0/4 | 0/4 | 0/4 | 0/4 |
+| Qwen2.5 1.5B (general) | 0/4 | 0/4 | 0/4 | 0/4 |
+| Qwen2.5-Coder 1.5B | 0/4 | 0/4 | 0/4 | 0/4 |
+| Qwen2.5-Coder 3B | 0/4 | 0/4 | 0/4 | 0/4 |
+| Qwen3.5 2B | 0/4 | 0/4 | 0/4 | 0/4 |
+| Llama 3.2 3B | 0/4 | 0/4 | 0/4 | 0/4 |
+| Granite 4.2 3B | 0/4 | 0/4 | 0/4 | 0/4 |
+| Ministral 3 3B | 0/4 | 0/4 | 0/4 | 0/4 |
+| Qwen3.5 4B | 0/4 | 0/4 | 0/1 | - |
+| Gemma 4 E2B | 0/4 | 0/4 | 0/4 | 0/4 |
+| Qwen2.5-Coder 7B | 0/4 | 0/4 | 0/4 | 0/4 |
+| LFM2.5 8B-A1B (MoE) | 0/4 | 0/4 | 0/4 | 0/4 |
+| Gemma 4 E4B | 0/4 | 0/4 | 0/4 | 0/4 |
+| Qwen3.5 9B | 0/1 | - | 0/1 | - |
 <!-- /AUTO:table-categories -->
 
-**Table 4.** Tasks passed within three attempts, by category (out of 4 each).
-
-### 6.3 How models fail
+**Table 5.** Tasks passed within three attempts, by category (out of 4).
 
 <!-- AUTO:table-failures -->
-| Model | no code | syntax error | render error | no solid | timeout | wrong geometry | pass |
-|---|---:|---:|---:|---:|---:|---:|---:|
-| Claude Haiku 4.5 (hosted) | 0 | 1 | 0 | 0 | 0 | 2 | 9 |
-| Qwen2.5-Coder 1.5B | 0 | 5 | 1 | 1 | 0 | 2 | 0 |
+| Model | truncated | no code | syntax error | render error | no solid | timeout | wrong geometry | pass |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| Claude Haiku 4.5 (hosted) | 0 | 0 | 1 | 0 | 0 | 0 | 4 | 11 |
+| Claude Sonnet 5.5 (hosted) | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 16 |
+| Qwen2.5-Coder 0.5B | 9 | 0 | 7 | 0 | 0 | 0 | 0 | 0 |
+| Qwen2.5 1.5B (general) | 5 | 0 | 9 | 0 | 0 | 0 | 2 | 0 |
+| Qwen2.5-Coder 1.5B | 1 | 0 | 11 | 1 | 2 | 0 | 1 | 0 |
+| Qwen2.5-Coder 3B | 0 | 0 | 12 | 0 | 1 | 0 | 3 | 0 |
+| Qwen3.5 2B | 15 | 0 | 0 | 1 | 0 | 0 | 0 | 0 |
+| Llama 3.2 3B | 1 | 0 | 5 | 1 | 1 | 0 | 8 | 0 |
+| Granite 4.2 3B | 12 | 0 | 1 | 0 | 1 | 0 | 2 | 0 |
+| Ministral 3 3B | 0 | 0 | 13 | 0 | 2 | 0 | 1 | 0 |
+| Qwen3.5 4B | 8 | 0 | 0 | 0 | 0 | 0 | 1 | 0 |
+| Gemma 4 E2B | 0 | 0 | 4 | 0 | 0 | 0 | 12 | 0 |
+| Qwen2.5-Coder 7B | 0 | 0 | 15 | 0 | 0 | 0 | 1 | 0 |
+| LFM2.5 8B-A1B (MoE) | 16 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| Gemma 4 E4B | 3 | 0 | 3 | 1 | 0 | 0 | 9 | 0 |
+| Qwen3.5 9B | 0 | 0 | 1 | 0 | 0 | 0 | 1 | 0 |
 <!-- /AUTO:table-failures -->
 
-**Table 5.** Where each model's *first* attempt stopped: no code, a syntax or render error, no solid (an empty or 2-D result), a printable part with the wrong geometry, or a pass.
+**Table 6.** Where each model's first attempt stopped: cut off (token cap or loop), no code, a syntax or other render error, no solid (empty or 2-D), a rendered part with the wrong geometry, or a pass.
 
-<!-- AUTO:results-failures -->
-*Narrative pending completion of the benchmark run.*
-<!-- /AUTO:results-failures -->
-
-### 6.4 Size, speed and the minimal viable model
-
-<!-- AUTO:fig-frontier -->
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="figures/fig_frontier_dark.png">
-  <img src="figures/fig_frontier_light.png" alt="Pass rate versus model download size and CPU time per task">
-</picture>
-<!-- /AUTO:fig-frontier -->
-
-**Figure 5.** Tasks passed within three attempts against model download size (left) and median CPU minutes per task (right). Horizontal lines mark the hosted reference models.
-
-<!-- AUTO:results-frontier -->
-*Narrative pending completion of the benchmark run.*
-<!-- /AUTO:results-frontier -->
-
-### 6.5 Language
+### 6.3 Language
 
 <!-- AUTO:fig-languages -->
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="figures/fig_languages_dark.png">
+  <img src="figures/fig_languages_light.png" alt="Pass rates for prompts in English, Spanish, Hindi and Swahili">
+</picture>
 <!-- /AUTO:fig-languages -->
 
-<!-- AUTO:results-language -->
-*The language ablation (Spanish, Hindi and Swahili prompts with the English system prompt) runs after the main benchmark.*
-<!-- /AUTO:results-language -->
+With Claude Haiku 4.5, requests in Spanish, Hindi and Swahili (system prompt in English) passed 13, 12 and 11 of 16 tasks within three attempts, against 14 in English; first-try passes were 12, 10 and 6 against 11. With one sample per task at the default temperature, none of these differences is statistically detectable (paired exact McNemar tests, p ≥ 0.38 for passes, p = 0.13 for Swahili first tries), and the tasks that failed differed between languages, as sampling noise would produce. We did not run the language ablation on local models, which passed nothing in English. A bug overwrote the generated code of the Spanish and Hindi runs (their scores were recorded first), so those two runs cannot be re-checked; it is fixed for future runs.
 
 ## 7. Global access
 
-**Cost.**
+**Cost.** A Prusa MK4S costs about US$650-1,000 (kit vs assembled) and capable budget printers about US$200 ([Prusa Research](#prusaprice); [Bambu Lab](#bambuprice); [Creality](#crealityprice)). After that, parts are cheap: our 16-part library uses about US$12 of PLA. OpenSCAD, PrusaSlicer, Ollama and open-weight models are free; hosted models need a subscription or per-token payment, often in a currency labs cannot easily use.
 
-- A Prusa MK4S costs about US$650-1,000 (kit vs assembled; prices vary by region and promotion), and capable budget printers about US$200 ([Prusa Research](#prusaprice); [Bambu Lab](#bambuprice); [Creality](#crealityprice)).
-- At that point the marginal cost of a part is small: our 16-part library uses about US$12 of PLA.
-- OpenSCAD, PrusaSlicer, Ollama and the open-weight models are free.
-- A hosted model needs a subscription or per-token payment in a currency many labs cannot easily use.
+**Connectivity.** The local workflow runs offline once installed; the obstacle is the one-time download of the software plus 0.4-6.6 GB per model. In nine of ten low-income economies a 5 GB mobile data basket costs more than 10% of monthly income ([ITU 2025b](#itu2025b)), so teaching labs, maker spaces and networks such as TReND ([Baden et al. 2020](#baden2020)) or GOSH ([GOSH 2017](#gosh2017)) should share models on USB drives or local mirrors.
 
-**Connectivity.**
+**Availability.** Major hosted providers exclude a small set of countries and territories, including China, Russia and Iran ([Anthropic, n.d.](#anthropicregions); [OpenAI, n.d.](#openairegions); [Google, n.d.](#googleregions)); most low-income countries are supported. Access can still change: in June 2026 a US government directive suspended two frontier Anthropic models for "any foreign national" for 18 days while other models stayed available ([Anthropic 2026](#anthropic2026)). A local model cannot be switched off this way, and it keeps unpublished designs on the user's machine.
 
-- Everything in the local workflow runs offline once installed.
-- The one-time downloads are the obstacle: the CAD and slicing software, plus 0.4-6.6 GB per model.
-- In nine out of ten low-income economies, a 5 GB mobile data basket costs more than 10% of average monthly income ([ITU 2025b](#itu2025b)).
-- We therefore recommend that teaching labs, maker spaces and organisations such as TReND ([Baden et al. 2020](#baden2020)) or the GOSH community ([GOSH 2017](#gosh2017)) distribute models on USB drives or local mirrors, not over metered connections.
+**Language.** Language models perform worse in many non-English languages ([Ahuja et al. 2023](#ahuja2023)), and code generation degrades more steeply for small open models than for frontier ones as prompts move to lower-resource languages ([Raihan et al. 2025](#raihan2025)). Our one-model test found no detectable effect ([§6.3](#63-language)).
 
-**Availability and resilience.**
+**Hardware.** The test machine is a mid-range 2022 ultrabook with 16 GB of RAM; the 6.6 GB models ran on it alongside a desktop session with an 8,192-token context. We did not test larger models.
 
-- The major hosted providers exclude a small set of countries and territories, including China, Russia and Iran ([Anthropic, n.d.](#anthropicregions); [OpenAI, n.d.](#openairegions); [Google, n.d.](#googleregions)). Most low-income countries are supported.
-- Availability can still change: in June 2026 a US government directive suspended access to two frontier Anthropic models for "any foreign national" for 18 days, while other models stayed available ([Anthropic 2026](#anthropic2026)).
-- A local model is a fallback that no policy change can switch off. It also keeps unpublished or confidential designs on the user's machine.
-
-**Language.**
-
-- Code models degrade on prompts in lower-resource natural languages, and the drop is far steeper for small open models than for frontier models ([Raihan et al. 2025](#raihan2025); [Ahuja et al. 2023](#ahuja2023)).
-- Our language ablation ([§6.5](#65-language)) tests whether this holds for lab-part design.
-
-**Hardware.** Our test machine is a mid-range 2022 ultrabook. A model that runs acceptably on it will run on many student laptops. Models over about 7 GB will not fit alongside a desktop session in 16 GB of RAM; see [§6.4](#64-size-speed-and-the-minimal-viable-model).
+**Where this leaves a student without a subscription.** Today, the reliable path still runs through a hosted model; free tiers of hosted chatbots may be enough for simple parts (we did not test them). The parts of the workflow that do not depend on the model - measuring, writing a precise request, checking with `scadreport`, printing coupons, editing parameters - transfer completely, and so does the design library.
 
 ## 8. Safety and responsibility
 
-A model that writes plausible CAD does not know your lab, your materials or your risks. The following points apply whatever model is used.
+A model that writes plausible CAD does not know your lab, your materials or your risks.
 
 - **Materials and sterilisation.**
-  - Fresh FDM prints can be close to sterile off the nozzle ([Neches et al. 2016](#neches2016)), but handling ends that, and layer lines harbour biofilm ([Hall et al. 2021](#hall2021)).
-  - PLA cannot be autoclaved ([Neijhoft et al. 2023](#neijhoft2023)). PETG, PP and PC deform at 121 °C ([Rynio et al. 2022](#rynio2022); [Popescu et al. 2025](#popescu2025)).
-  - UV-C degrades PETG faster than PLA ([Amza et al. 2021](#amza2021)).
-  - Resin (SLA) prints can be toxic to sensitive organisms ([Macdonald et al. 2016](#macdonald2016)).
-  - For cell culture or organisms, test the printed material in your own system before trusting it.
-- **Centrifuges.** Manufacturers require their own accessories ([Eppendorf](#eppendorf)), and biosafety guidance relies on certified sealed rotors or safety cups ([CDC & NIH 2020](#bmbl2020)). Printed rotors and adapters for commercial centrifuges are excluded from our designs on purpose.
-- **Electrical hardware.** Mains-powered devices fall under IEC 61010-1 ([IEC 2010](#iec61010)). Keep DIY electronics at safe low voltages behind certified power supplies, and note that gel electrophoresis runs at hazardous DC voltages: it needs a closed lid with an interlock.
-- **Printing itself.** Printers emit ultrafine particles and volatile organic compounds, more with ABS than with PLA ([Azimi et al. 2016](#azimi2016)). Follow institutional guidance on ventilation ([NIOSH 2020](#niosh2020)).
-- **Distribution.**
-  - Open-hardware certification is not a safety certification ([OSHWA 2026](#oshwa2026)).
-  - From 9 December 2026, the EU Product Liability Directive treats "digital manufacturing files" as products ([EU 2024](#eu2024)). Anyone distributing printable designs commercially in the EU should take advice. This is not legal advice.
-  - Document hazards with each design, as hardware journals require ([HardwareX template](#hardwarex)).
+  - Fresh FDM prints can be close to sterile off the nozzle ([Neches et al. 2016](#neches2016)), but handling ends that, and layer lines harbour biofilm ([Hall et al. 2021](#hall2021)). Ethanol disinfects but does not kill spores, so anything that touches media or cultures should be soaked, dried in a hood and treated as single use.
+  - Printed PLA cannot be autoclaved ([Neijhoft et al. 2023](#neijhoft2023)), and printed PETG, PP and PC deformed at 121 °C in tests ([Rynio et al. 2022](#rynio2022); [Popescu et al. 2025](#popescu2025)); moulded PP labware is a different matter and is routinely autoclaved.
+  - UV-C degrades PETG faster than PLA ([Amza et al. 2021](#amza2021)), and resin (SLA) prints can be toxic to sensitive organisms ([Macdonald et al. 2016](#macdonald2016)). Test printed materials in your own system before trusting them with cells or organisms.
+- **Centrifuges.** Manufacturers require their own accessories ([Eppendorf](#eppendorf)), and biosafety guidance relies on certified sealed rotors or safety cups ([CDC & NIH 2020](#bmbl2020)). Our tube adapter fits a 1.5 mL rotor bore by design, so its header says, in capitals, never to spin it.
+- **Electrical hardware.** Mains-powered devices fall under IEC 61010-1 ([IEC 2010](#iec61010)); keep DIY electronics at safe low voltage behind certified supplies. Gel electrophoresis runs at hazardous DC voltages: our tank does not include a lid or interlock, and its header says not to connect a power supply until one is built.
+- **Printing.** Printers emit ultrafine particles and volatile organic compounds, more with ABS than with PLA ([Azimi et al. 2016](#azimi2016)); follow institutional ventilation guidance ([NIOSH 2020](#niosh2020)).
+- **Distribution.** Open-hardware certification is not safety certification ([OSHWA 2026](#oshwa2026)). From 9 December 2026 the EU Product Liability Directive treats "digital manufacturing files" as products ([EU 2024](#eu2024)); anyone distributing printable designs commercially in the EU should take advice (this is not legal advice). Document hazards with each design, as hardware journals require ([HardwareX template](#hardwarex)).
 
 ## 9. Limitations
 
-- **Scale.**
-  - Sixteen tasks, one sample per model at a low temperature, and one computer.
-  - Confidence intervals are wide, and a different sample could change the order of nearby models.
-  - The benchmark is designed to be cheap to extend: please add tasks and runs.
-- **Who wrote the tasks.**
-  - The tasks, checks and reference designs were written by the authors with substantial help from Claude (Anthropic). This may advantage Claude models on phrasing.
-  - The specifications are explicit and the checks are validated, but independent task contributions would reduce this risk.
-- **Geometry is not function.** Passing the checks means the part matches the request, not that it works. Physical validation is in progress: printing the references on a Prusa MK4 and measuring the fit. We will add photos and measurements to this repository.
-- **Best-case prompts.** Our requests are complete and precise. Real requests are vaguer, and dialogue with the model matters more then.
-- **Settings.** Thinking was disabled for local models. With thinking off, some small reasoning models (Qwen3.5) write their reasoning into code comments until they run out of tokens. With thinking on they might do better, at a large cost in CPU time. The hosted reference ran with its default thinking.
-- **Translations.** The translated prompts have not yet been reviewed by native speakers.
-- **Snapshot.** The model landscape changes monthly. These results describe models available on 5 October 2026.
+- **Scale.** Sixteen tasks, one run per model, one computer. Intervals are wide and do not include run-to-run variation.
+- **Protocol choices decide some results.** Thinking was requested off and replies were capped at 2,048 tokens, so models that reason before answering (Qwen3.5, Granite 4.2, LFM2.5) were mostly cut off; with thinking on and a larger budget they might do better, at a large cost in CPU time. Local models ran at temperature 0.2, which made several repeat themselves exactly; Claude ran at its default temperature. Feedback was triggered by the hidden checks (an optimistic bound).
+- **Who wrote the tasks.** The tasks, checks, reference designs and translations were drafted with Claude (Anthropic), which may favour Claude's phrasing; the hosted models are near ceiling, so the benchmark cannot rank them. Independent tasks would help.
+- **The harness evolved during the study.** We fixed bugs and added robustness after the first runs; re-checking every saved attempt with the final checker changed one verdict (§5.2). Two language runs cannot be re-checked (§6.3).
+- **Geometry is not function.** Passing means the part matches the request, not that it works; the designs have not yet been printed and measured systematically.
+- **Best-case prompts.** Our requests are complete and precise; real ones are vaguer.
+- **Translations** have not yet been reviewed by native speakers.
+- **Snapshot.** These results describe models available on 5 October 2026.
 
 ## 10. Conclusion
 
-<!-- AUTO:conclusion -->
-*To be written when the benchmark completes.*
-<!-- /AUTO:conclusion -->
+A language model plus OpenSCAD is already a practical way for a biologist without CAD training to make lab parts - when the model is a hosted frontier model, the request carries measured numbers and the print orientation, and every part is checked before it is printed. Under our protocol, no open-weight model small enough for a typical student laptop was yet a usable design assistant: the code models write OpenSCAD as if it were another language and do not use error messages, and the reasoning models run out of tokens before they finish. The gap is specific enough to close - examples of correct OpenSCAD in the prompt, error messages translated into instructions, thinking budgets that fit a laptop, or small models fine-tuned on code like the designs released here - and the benchmark is cheap to rerun on new models, hardware and languages. We hope others will.
 
 ---
 
 ## How to contribute
 
-This is a living paper. Contributions are credited, and substantial contributions earn authorship (see [CONTRIBUTING.md](CONTRIBUTING.md)). The most useful contributions are:
+This is a living paper; contributions are credited and substantial ones earn authorship ([CONTRIBUTING.md](CONTRIBUTING.md)). Most useful:
 
-- **Run the benchmark on your hardware** with `bench/run_bench.py`, especially in low-resource settings, on older laptops or on a Raspberry Pi. Send the `results/` folder in a pull request.
-- **Add a model**: one line in [`bench/models.yaml`](bench/models.yaml) plus a run.
-- **Add a task** from your lab: a prompt, a reference `.scad` and checks in [`bench/tasks.yaml`](bench/tasks.yaml). Run `python bench/build_refs.py` to validate it.
-- **Add or improve a language**: review the Spanish, Hindi and Swahili prompts in [`bench/prompts/translations.yaml`](bench/prompts/translations.yaml), or add your own language.
-- **Print and measure** a reference design, then report the fit with photos and caliper readings.
+- **Run the benchmark on your hardware** (`bench/run_bench.py`), especially in low-resource settings, and send the `results/` folder in a pull request.
+- **Add a model** (one line in [`bench/models.yaml`](bench/models.yaml) plus a run) or **a task** from your lab ([`bench/tasks.yaml`](bench/tasks.yaml), validated with `python bench/build_refs.py`).
+- **Review or add a language** in [`bench/prompts/translations.yaml`](bench/prompts/translations.yaml).
+- **Print and measure** a design and report the fit with photos and caliper readings.
 - **Translate the tutorial.**
 
 ## Reproducing this paper
 
 ```bash
 python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
-.venv/bin/python bench/build_refs.py          # validate checker + reference designs
-bash bench/run_main_local.sh                  # main benchmark (local models via Ollama; hours on a CPU)
-.venv/bin/python bench/analyze.py             # tables, figures and the AUTO blocks in this README
+.venv/bin/python bench/test_harness.py        # robustness tests (fake model, real OpenSCAD)
+.venv/bin/python bench/build_refs.py          # validate the checker against the frozen references
+bash bench/run_main_local.sh                  # local models via Ollama (hours on a CPU)
+.venv/bin/python bench/analyze.py             # tables and figures in this README
 ```
 
-See [`bench/README.md`](bench/README.md) for details, including the hosted reference and the language ablation.
+Details, including the hosted reference and the language ablation, are in [`bench/README.md`](bench/README.md).
 
-## Acknowledgements and AI disclosure
+## Author contributions and AI use
 
-This paper is about using AI to design hardware, and it was itself written with AI. The benchmark code, reference designs, translations, figures and tutorial were drafted with substantial assistance from Claude (Anthropic) via Claude Code, under the direction of the author, who takes responsibility for the content. A literature search on 5 October 2026 checked every reference against a primary record: Crossref, PubMed, arXiv, the publisher or official documentation. No client or confidential work was used anywhere in this project.
+**S. S. Cocioba:** conceptualisation, scope and design decisions, supervision of all AI-assisted work, review of code, designs and text, validation, and writing (review and editing); responsible for the content.
 
-**Competing interests.** S. S. Cocioba is a co-author of [McNair et al. 2024](#mcnair2024), which is cited in this paper. *(Funding: to be completed.)*
+**AI use.** Claude (Anthropic; Claude Opus 5.5 in Claude Code) drafted the benchmark code, reference designs, translations, figures, tutorial and much of this text, and ran the literature search and two independent audits of the claims and designs ([`meta/audits/`](meta/audits/)), under the author's direction. Every reference was checked against a primary record (Crossref, PubMed, arXiv, the publisher or official documentation) on 5 October 2026. The prompts and the assistant's replies that built this repository are published, lightly redacted, in [`meta/BUILD_LOG.md`](meta/BUILD_LOG.md). Following COPE and ICMJE guidance, the AI is not listed as an author. No client or confidential work was used.
+
+**Competing interests.** S. S. Cocioba is a co-author of [McNair et al. 2024](#mcnair2024), cited here. *(Funding: to be completed.)*
 
 ## How to cite
 
