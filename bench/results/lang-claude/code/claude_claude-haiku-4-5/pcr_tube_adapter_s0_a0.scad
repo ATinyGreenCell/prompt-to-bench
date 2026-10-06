@@ -1,0 +1,29 @@
+// Adapter arm for 0.2 mL PCR tube into 1.5 mL tube socket
+// Print orientation: collar at z=0, arm extends to z=21.5
+
+// Dimensions in millimetres
+collar_od = 13;        // Outer diameter of base collar
+collar_h = 1.5;        // Height of base collar (z = 0 to 1.5)
+arm_od = 10.8;         // Outer diameter of arm body
+arm_z_start = 1.5;     // Z position where arm body starts
+total_h = 21.5;        // Total height of part
+hole_d = 6.2;          // Diameter of through-hole
+
+$fn = 64;
+
+difference() {
+    union() {
+        // Base collar at z = 0 to 1.5
+        cylinder(d = collar_od, h = collar_h, center = false);
+        
+        // Arm body from z = 1.5 to 21.5
+        translate([0, 0, arm_z_start]) {
+            cylinder(d = arm_od, h = total_h - arm_z_start, center = false);
+        }
+    }
+    
+    // Through-hole going through entire height (open both ends)
+    translate([0, 0, -0.05]) {
+        cylinder(d = hole_d, h = total_h + 0.1, center = false);
+    }
+}

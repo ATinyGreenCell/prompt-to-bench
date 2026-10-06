@@ -32,7 +32,8 @@ bench-claude:
 	$(PY) bench/run_bench.py --run main-claude --models claude:claude-haiku-4-5 claude:claude-sonnet-5-5
 
 lang:
-	bash bench/run_lang.sh
+	bash bench/run_lang.sh lang-claude claude:claude-haiku-4-5
+	bash bench/run_lang.sh lang qwen2.5-coder:7b
 
 analyze:
 	$(PY) bench/analyze.py

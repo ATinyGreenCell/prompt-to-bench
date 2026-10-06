@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Main benchmark, local open-weight models (CPU only, one model at a time so timings are clean).
 # 16 tasks x 1 sample, up to 2 repair rounds with geometry-report feedback.
-# Replies are streamed and capped at 1024 tokens; a reply ends early once a complete
+# Replies are streamed and capped at 2048 tokens; a reply ends early once a complete
 # ```openscad block has arrived or when the model is stuck repeating itself verbatim.
 # Ordered so the most informative models finish first; the Qwen3.5 models (which, with
 # thinking switched off, reason inside code comments until the cap) run last.

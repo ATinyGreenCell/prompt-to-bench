@@ -1,0 +1,57 @@
+// Tissue gripping tool for 1.5 mL microcentrifuge tube
+// Swahili: Buni mchi wa kusaga tishu ndani ya mrija wa microcentrifuge
+
+// Dimensions
+handle_diameter = 8;
+handle_radius = handle_diameter / 2;
+handle_height = 45;
+
+cone_top_z = 45;
+cone_bottom_z = 62;
+cone_top_diameter = 8;
+cone_top_radius = cone_top_diameter / 2;
+cone_bottom_diameter = 3;
+cone_bottom_radius = cone_bottom_diameter / 2;
+
+tip_diameter = 3;
+tip_radius = tip_diameter / 2;
+tip_center_z = 62;
+
+groove_count = 4;
+groove_width_z = 2;
+groove_depth = 1;
+groove_width_circumferential = 2;
+groove_z_centers = [10, 15, 20, 25];
+
+$fn = 64;
+
+// Main solid with grooves cut
+difference() {
+    union() {
+        // Cylindrical handle
+        cylinder(h = handle_height, r = handle_radius, center = false);
+        
+        // Cone taper from 8mm diameter to 3mm diameter
+        hull() {
+            translate([0, 0, cone_top_z])
+                cylinder(h = 0.01, r = cone_top_radius, center = false);
+            translate([0, 0, cone_bottom_z])
+                cylinder(h = 0.01, r = cone_bottom_radius, center = false);
+        }
+        
+        // Rounded tip (sphere)
+        translate([0, 0, tip_center_z])
+            sphere(r = tip_radius);
+    }
+    
+    // Cut grooves around the handle
+    for (groove_num = [0 : groove_count - 1]) {
+        angle = groove_num * 360 / groove_count;
+        z_center = groove_z_centers[groove_num];
+        rotate([0, 0, angle]) {
+            // Rectangular cutting block for each groove
+            translate([handle_radius - groove_depth - 0.1, -groove_width_circumferential / 2, z_center - groove_width_z / 2])
+                cube([groove_depth + 0.2, groove_width_circumferential, groove_width_z]);
+        }
+    }
+}

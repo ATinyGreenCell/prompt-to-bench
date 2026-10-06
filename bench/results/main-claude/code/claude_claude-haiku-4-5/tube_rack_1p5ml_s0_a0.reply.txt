@@ -1,0 +1,38 @@
+```openscad
+// Bench rack for 1.5 mL microcentrifuge tubes
+
+// Dimensions
+block_x = 106;          // Block length in X (mm)
+block_y = 72;           // Block width in Y (mm)
+block_z = 30;           // Block height in Z (mm)
+hole_diameter = 11.2;   // Hole diameter (mm)
+hole_depth = 25;        // Hole depth (mm)
+floor_thickness = 5;    // Solid floor thickness (mm)
+spacing = 16;           // Centre-to-centre hole spacing (mm)
+holes_x = 6;            // Number of holes along X
+holes_y = 4;            // Number of holes along Y
+
+// Calculated values
+hole_radius = hole_diameter / 2;
+span_x = (holes_x - 1) * spacing;
+span_y = (holes_y - 1) * spacing;
+start_x = -span_x / 2;
+start_y = -span_y / 2;
+
+// Build the rack
+difference() {
+    // Solid rectangular block, centred in X and Y, resting on Z=0
+    translate([-block_x/2, -block_y/2, 0])
+        cube([block_x, block_y, block_z]);
+    
+    // Drill the holes in a grid
+    for (i = [0:holes_x-1]) {
+        for (j = [0:holes_y-1]) {
+            x = start_x + i * spacing;
+            y = start_y + j * spacing;
+            translate([x, y, floor_thickness - 0.01])
+                cylinder(r=hole_radius, h=hole_depth + 0.1, $fn=64);
+        }
+    }
+}
+```

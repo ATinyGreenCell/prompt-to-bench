@@ -1,0 +1,30 @@
+// Dimensions
+spine_length_x = 70;      // Spine length in X (mm)
+spine_width_y = 12;       // Spine width in Y (mm)
+tooth_width_x = 5.0;      // Tooth width in X (mm)
+tooth_length_y = 12;      // Tooth length in Y (mm)
+gap_width = 1.5;          // Gap between teeth in X (mm)
+plate_thickness_z = 1.5;  // Overall thickness in Z (mm)
+num_teeth = 10;           // Number of teeth
+
+$fn = 64;
+
+// Calculate total width of teeth row
+total_teeth_width = num_teeth * tooth_width_x + (num_teeth - 1) * gap_width;
+
+// Calculate starting X position for first tooth (centered)
+teeth_start_x = -total_teeth_width / 2;
+
+translate([0, 0, plate_thickness_z / 2]) {
+  // Main spine
+  cube([spine_length_x, spine_width_y, plate_thickness_z], center = true);
+  
+  // Create all teeth
+  for (i = [0:num_teeth-1]) {
+    tooth_x_center = teeth_start_x + i * (tooth_width_x + gap_width) + tooth_width_x / 2;
+    tooth_y_center = -spine_width_y / 2 - tooth_length_y / 2;
+    
+    translate([tooth_x_center, tooth_y_center, 0])
+      cube([tooth_width_x, tooth_length_y, plate_thickness_z], center = true);
+  }
+}

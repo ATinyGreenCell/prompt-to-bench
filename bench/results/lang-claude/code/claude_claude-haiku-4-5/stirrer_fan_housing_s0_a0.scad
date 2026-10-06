@@ -1,0 +1,54 @@
+// Magnetic mixer cage for 80 mm computer fan
+// Print orientation: flat base slab on bed, walls rise upward
+
+// Dimensions (in mm)
+outer_x = 90;          // Outer dimension X
+outer_y = 90;          // Outer dimension Y
+height = 40;           // Total height
+slab_thickness = 2;    // Top slab thickness
+wall_thickness = 2.5;  // Wall thickness
+hole_diameter = 4.5;   // M4 screw hole diameter
+hole_spacing = 71.5;   // Square hole arrangement (center-to-center)
+slot_width = 12;       // Electrical wire slot width
+slot_z_start = 32;     // Slot starts at z = 32
+slot_z_end = 40;       // Slot ends at z = 40
+
+$fn = 64;
+
+difference() {
+  union() {
+    // Base slab (90 x 90 x 2), centered on origin
+    translate([-outer_x/2, -outer_y/2, 0])
+      cube([outer_x, outer_y, slab_thickness]);
+    
+    // South wall (y = -45 to -42.5)
+    translate([-outer_x/2, -outer_y/2, slab_thickness])
+      cube([outer_x, wall_thickness, height - slab_thickness]);
+    
+    // North wall (y = 42.5 to 45)
+    translate([-outer_x/2, outer_y/2 - wall_thickness, slab_thickness])
+      cube([outer_x, wall_thickness, height - slab_thickness]);
+    
+    // West wall (x = -45 to -42.5)
+    translate([-outer_x/2, -outer_y/2, slab_thickness])
+      cube([wall_thickness, outer_y, height - slab_thickness]);
+    
+    // East wall (x = 42.5 to 45)
+    translate([outer_x/2 - wall_thickness, -outer_y/2, slab_thickness])
+      cube([wall_thickness, outer_y, height - slab_thickness]);
+  }
+  
+  // Screw holes for M4 (4.5 mm diameter)
+  // Arranged in 71.5 mm square pattern, centered
+  for (x = [-hole_spacing/2, hole_spacing/2]) {
+    for (y = [-hole_spacing/2, hole_spacing/2]) {
+      translate([x, y, -0.1])
+        cylinder(r = hole_diameter/2, h = slab_thickness + 0.2, $fn = 64);
+    }
+  }
+  
+  // Electrical wire slot on south wall
+  // 12 mm wide, centered, 8 mm high (z=32 to z=40)
+  translate([-slot_width/2, -outer_y/2 - 0.5, slot_z_start - 0.1])
+    cube([slot_width, wall_thickness + 1, slot_z_end - slot_z_start + 0.2]);
+}

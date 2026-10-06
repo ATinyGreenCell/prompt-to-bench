@@ -1,0 +1,46 @@
+```openscad
+// Replacement knob for hotplate stirrer, 6 mm D-shaft
+$fn = 64;
+
+knob_d      = 30;    // knob outer diameter
+knob_h      = 15;    // knob height
+bore_d      = 6.2;   // D-bore circle diameter
+bore_depth  = 12;    // blind bore depth from bottom face
+d_across    = 4.7;   // distance from flat to opposite side of circle
+groove_n    = 18;    // number of grip grooves
+groove_d    = 2;     // grip groove diameter (half-cylinder centred on surface)
+ptr_w       = 1.5;   // pointer groove width
+ptr_depth   = 1;     // pointer groove depth
+eps         = 0.01;  // small overlap for clean cuts
+
+// Flat is on the +X side. Circle spans x = -bore_d/2 .. +bore_d/2.
+// Flat position: opposite side (x = -bore_d/2) to flat distance = d_across
+flat_x = -bore_d/2 + d_across;
+
+module d_profile() {
+    intersection() {
+        circle(d = bore_d);
+        translate([-bore_d, -bore_d])
+            square([bore_d + flat_x, bore_d * 2]);
+    }
+}
+
+difference() {
+    cylinder(d = knob_d, h = knob_h);
+
+    // D-shaped blind bore from the bottom face
+    translate([0, 0, -1])
+        linear_extrude(height = bore_depth + 1)
+            d_profile();
+
+    // Grip grooves around the outside
+    for (i = [0 : groove_n - 1])
+        rotate([0, 0, i * 360 / groove_n])
+            translate([knob_d / 2, 0, -1])
+                cylinder(d = groove_d, h = knob_h + 2);
+
+    // Pointer groove on top, from centre to outer edge, on the flat side (+X)
+    translate([0, -ptr_w / 2, knob_h - ptr_depth])
+        cube([knob_d / 2 + 1, ptr_w, ptr_depth + 1]);
+}
+```

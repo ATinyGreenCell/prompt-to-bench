@@ -78,7 +78,7 @@ THINK = {}  # model -> False (thinking switched off) or None (model has no think
 
 
 class Ollama:
-    def __init__(self, model, temperature, seed, num_ctx=8192, num_predict=1024, think=False):
+    def __init__(self, model, temperature, seed, num_ctx=8192, num_predict=2048, think=False):
         self.model, self.think = model, THINK.get(model, think)
         self.opts = {"temperature": temperature, "top_p": 0.95, "seed": seed,
                      "num_ctx": num_ctx, "num_predict": num_predict}
@@ -205,7 +205,7 @@ class ClaudeCLI:
         pass
 
 
-def make_backend(name, temperature, seed, num_predict=1024, think=False):
+def make_backend(name, temperature, seed, num_predict=2048, think=False):
     if name.startswith("claude:"):
         return ClaudeCLI(name.split(":", 1)[1])
     return Ollama(name, temperature, seed, num_predict=num_predict, think=think)
@@ -294,7 +294,7 @@ def main():
     ap.add_argument("--system", default=os.path.join(HERE, "prompts", "system.md"))
     ap.add_argument("--render-timeout", type=int, default=120)
     ap.add_argument("--seed-base", type=int, default=1000)
-    ap.add_argument("--num-predict", type=int, default=1024, help="max reply tokens (local models)")
+    ap.add_argument("--num-predict", type=int, default=2048, help="max reply tokens (local models)")
     ap.add_argument("--think", action="store_true", help="let local models think (default: thinking off)")
     args = ap.parse_args()
 
@@ -314,7 +314,7 @@ def main():
     if os.path.exists(res_path):
         for line in open(res_path):
             r = json.loads(line)
-            done.add((r["model"], r["task"], r["sample"]))
+            done.add((r["model"], r["task"], r["sample"], r.get("lang", "en"), r.get("feedback", "report")))
     meta = {"started": dt.datetime.now().isoformat(timespec="seconds"), "args": vars(args),
             "host": platform.node(), "cpu": platform.processor() or platform.machine(),
             "python": platform.python_version()}
@@ -332,7 +332,7 @@ def main():
         os.makedirs(code_dir, exist_ok=True)
         for s in range(args.samples):
             for t in tasks:
-                if (model, t["id"], s) in done:
+                if (model, t["id"], s, args.lang, args.feedback) in done:
                     continue
                 backend = make_backend(model, args.temperature, seed=args.seed_base + 100 * s,
                                        num_predict=args.num_predict, think=args.think)

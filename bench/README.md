@@ -34,7 +34,7 @@ You need OpenSCAD on your `PATH`. A development snapshot with the Manifold backe
 
 - **Prompt:** the system prompt plus the task prompt.
   - Local models run at temperature 0.2 and top-p 0.95, with a fixed seed per attempt, an 8,192-token context and "thinking" switched off.
-  - Replies are streamed and end at 1,024 tokens, at the first complete OpenSCAD code block, or when the model repeats itself verbatim.
+  - Replies are streamed and end at 2,048 tokens, at the first complete OpenSCAD code block, or when the model repeats itself verbatim.
 - **Code extraction:** the longest fenced OpenSCAD block, or bare code if there is no fence.
 - **Render:** OpenSCAD with the default Manifold backend and a 120 s timeout.
 - **Feedback** (`--feedback report`, the default; up to `--max-repairs 2` rounds):

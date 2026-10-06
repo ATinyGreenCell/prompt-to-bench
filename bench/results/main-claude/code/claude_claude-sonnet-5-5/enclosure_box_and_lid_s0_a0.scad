@@ -1,0 +1,55 @@
+// Two-part electronics enclosure: box + lid (printed upside down), side by side
+
+$fn = 64;
+
+// ---- Box ----
+box_x = 70;          // box outer X
+box_y = 50;          // box outer Y
+box_z = 30;          // box outer height
+wall = 2;            // box wall thickness
+floor_t = 2;         // box floor thickness
+
+// ---- Lid ----
+lid_x = 70;          // lid plate X
+lid_y = 50;          // lid plate Y
+lid_t = 2;           // lid plate thickness
+lip_wall = 1.5;      // lip wall thickness
+lip_h = 4;           // lip height above plate
+lip_x = 65.6;        // lip outer X
+lip_y = 45.6;        // lip outer Y
+
+// ---- Layout ----
+gap = 10;            // gap between parts
+eps = 0.01;          // small overshoot for clean cuts
+
+total_x = box_x + gap + lid_x;
+box_cx = -total_x/2 + box_x/2;   // box centre X
+lid_cx = total_x/2 - lid_x/2;    // lid centre X (+X side)
+
+// Box: open top
+module box() {
+    translate([box_cx, 0, 0])
+    difference() {
+        translate([-box_x/2, -box_y/2, 0])
+            cube([box_x, box_y, box_z]);
+        translate([-(box_x - 2*wall)/2, -(box_y - 2*wall)/2, floor_t])
+            cube([box_x - 2*wall, box_y - 2*wall, box_z - floor_t + 1]);
+    }
+}
+
+// Lid: plate on bed, lip on top
+module lid() {
+    translate([lid_cx, 0, 0]) {
+        translate([-lid_x/2, -lid_y/2, 0])
+            cube([lid_x, lid_y, lid_t]);
+        difference() {
+            translate([-lip_x/2, -lip_y/2, lid_t - eps])
+                cube([lip_x, lip_y, lip_h + eps]);
+            translate([-(lip_x - 2*lip_wall)/2, -(lip_y - 2*lip_wall)/2, lid_t - 1])
+                cube([lip_x - 2*lip_wall, lip_y - 2*lip_wall, lip_h + 2]);
+        }
+    }
+}
+
+box();
+lid();

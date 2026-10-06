@@ -1,0 +1,70 @@
+```openscad
+// NEMA 17 L-shaped motor bracket (print: base plate on bed)
+
+$fn = 64;
+
+// Overall plate dimensions
+plate_w      = 50;    // width in X (-25 to 25)
+base_depth   = 45;    // base plate length in Y (0 to 45)
+base_t       = 5;     // base plate thickness in Z
+wall_t       = 5;     // motor plate thickness in Y
+wall_h       = 50;    // motor plate height in Z
+
+// Base mounting holes (M4 clearance)
+base_hole_d  = 4.5;   // diameter
+base_hole_x  = 17;    // |x| position
+base_hole_y  = 30;    // y position
+
+// Motor plate holes
+boss_d       = 23;    // centring boss hole diameter
+boss_z       = 28;    // boss hole centre height
+m3_d         = 3.4;   // M3 screw hole diameter
+m3_pitch     = 31;    // square pattern side length
+
+// Gussets
+gus_t        = 5;     // gusset thickness in X
+gus_leg_y    = 20;    // leg along Y
+gus_leg_z    = 20;    // leg along Z
+gus_x_outer  = 25;    // outer X edge
+
+eps = 0.1;            // cutting overshoot
+
+difference() {
+    union() {
+        // base plate
+        translate([-plate_w/2, 0, 0])
+            cube([plate_w, base_depth, base_t]);
+        // motor plate
+        translate([-plate_w/2, 0, 0])
+            cube([plate_w, wall_t, wall_h]);
+        // gussets (left and right)
+        for (sx = [-1, 1]) {
+            x0 = (sx < 0) ? -gus_x_outer : gus_x_outer - gus_t;
+            translate([x0, 0, 0])
+                rotate([90, 0, 90])
+                    linear_extrude(height = gus_t)
+                        polygon([
+                            [wall_t - eps, base_t - eps],
+                            [wall_t + gus_leg_y, base_t - eps],
+                            [wall_t - eps, base_t + gus_leg_z]
+                        ]);
+        }
+    }
+
+    // base through-holes
+    for (sx = [-1, 1])
+        translate([sx * base_hole_x, base_hole_y, -1])
+            cylinder(d = base_hole_d, h = base_t + 2);
+
+    // boss hole through motor plate (along Y)
+    translate([0, -1, boss_z])
+        rotate([-90, 0, 0])
+            cylinder(d = boss_d, h = wall_t + 2);
+
+    // four M3 holes on square pattern
+    for (sx = [-1, 1], sz = [-1, 1])
+        translate([sx * m3_pitch/2, -1, boss_z + sz * m3_pitch/2])
+            rotate([-90, 0, 0])
+                cylinder(d = m3_d, h = wall_t + 2);
+}
+```

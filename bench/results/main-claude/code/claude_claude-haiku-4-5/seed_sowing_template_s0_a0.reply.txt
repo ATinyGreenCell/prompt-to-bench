@@ -1,0 +1,36 @@
+```openscad
+// Dimensions
+disc_diameter = 85;  // mm
+disc_radius = disc_diameter / 2;  // 42.5 mm
+disc_thickness = 2;  // mm
+
+// Hole grid
+hole_diameter = 3;  // mm
+hole_radius = hole_diameter / 2;  // 1.5 mm
+hole_spacing = 9;  // mm center-to-center
+grid_size = 7;  // 7x7 grid
+
+// Notch dimensions
+notch_width = 10;  // mm in X direction
+notch_depth = 4;  // mm in Y direction, measured inward from rim
+
+// Calculate grid extent
+grid_extent = (grid_size - 1) * hole_spacing / 2;  // 27 mm
+
+difference() {
+    // Base disc
+    cylinder(h=disc_thickness, r=disc_radius, $fn=64);
+    
+    // Cut the holes in a 7x7 grid
+    for (x = [-grid_extent : hole_spacing : grid_extent]) {
+        for (y = [-grid_extent : hole_spacing : grid_extent]) {
+            translate([x, y, -0.1])
+                cylinder(h=disc_thickness + 0.2, r=hole_radius, $fn=64);
+        }
+    }
+    
+    // Cut the rectangular notch on the +Y side
+    translate([-notch_width/2, disc_radius - notch_depth, -0.1])
+        cube([notch_width, notch_depth + 0.5, disc_thickness + 0.2]);
+}
+```

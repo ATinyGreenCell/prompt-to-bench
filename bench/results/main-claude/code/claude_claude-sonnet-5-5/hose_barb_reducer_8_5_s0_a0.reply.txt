@@ -1,0 +1,52 @@
+```openscad
+// Straight hose-barb reducer, 8 mm ID tubing to 5 mm ID tubing
+// All dimensions in mm
+
+$fn = 96;
+
+bore_d = 3;            // through bore diameter
+
+// Barbs for 8 mm tubing
+b1_count = 2;          // number of barbs
+b1_h = 10;             // height of each barb
+b1_d_bot = 7.5;        // outer diameter at bottom of barb
+b1_d_top = 9.5;        // outer diameter at top of barb
+
+// Collar
+collar_h = 5;          // collar height
+collar_d = 12;         // collar diameter
+
+// Barbs for 5 mm tubing
+b2_count = 2;          // number of barbs
+b2_h = 8;              // height of each barb
+b2_d_bot = 6.5;        // outer diameter at bottom of barb
+b2_d_top = 5.0;        // outer diameter at top of barb
+
+eps = 0.01;            // cutting overlap
+
+z_collar = b1_count * b1_h;           // 20
+z_b2 = z_collar + collar_h;           // 25
+total_h = z_b2 + b2_count * b2_h;     // 41
+
+difference() {
+    union() {
+        // 8 mm side barbs
+        for (i = [0 : b1_count - 1])
+            translate([0, 0, i * b1_h])
+                cylinder(h = b1_h, d1 = b1_d_bot, d2 = b1_d_top);
+
+        // collar
+        translate([0, 0, z_collar])
+            cylinder(h = collar_h, d = collar_d);
+
+        // 5 mm side barbs
+        for (i = [0 : b2_count - 1])
+            translate([0, 0, z_b2 + i * b2_h])
+                cylinder(h = b2_h, d1 = b2_d_bot, d2 = b2_d_top);
+    }
+
+    // through bore
+    translate([0, 0, -1])
+        cylinder(h = total_h + 2, d = bore_d);
+}
+```

@@ -1,0 +1,38 @@
+// Dimensions (all in mm)
+plate_x = 130;        // Plate length (X)
+plate_y = 90;         // Plate width (Y)
+plate_z = 4;          // Plate thickness
+
+hole_dia = 30.5;      // Hole diameter
+hole_spacing_x = 40;  // Spacing between holes (X)
+hole_spacing_y = 40;  // Spacing between holes (Y)
+
+wall_length_x = 130;  // Wall length (X)
+wall_thick_y = 4;     // Wall thickness (Y)
+wall_height = 66;     // Wall height (from z=4 to z=70)
+
+$fn = 64;
+
+difference() {
+    union() {
+        // Plate: 130 x 90 x 4 mm, centered on XY, at z = 0 to 4
+        translate([0, 0, plate_z/2])
+            cube([plate_x, plate_y, plate_z], center=true);
+        
+        // Wall 1: at Y = -45, from z = 4 to z = 70
+        translate([0, -plate_y/2 + wall_thick_y/2, 4 + wall_height/2])
+            cube([wall_length_x, wall_thick_y, wall_height], center=true);
+        
+        // Wall 2: at Y = +45, from z = 4 to z = 70
+        translate([0, plate_y/2 - wall_thick_y/2, 4 + wall_height/2])
+            cube([wall_length_x, wall_thick_y, wall_height], center=true);
+    }
+    
+    // Six through-holes, 30.5 mm diameter, in 2 rows of 3
+    for (i = [-1, 0, 1]) {
+        for (j = [-1, 1]) {
+            translate([i * hole_spacing_x, j * hole_spacing_y/2, -0.5])
+                cylinder(h = plate_z + 1, r = hole_dia/2, $fn = 64);
+        }
+    }
+}

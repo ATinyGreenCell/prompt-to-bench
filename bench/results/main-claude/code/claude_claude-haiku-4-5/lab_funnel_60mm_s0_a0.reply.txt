@@ -1,0 +1,34 @@
+```openscad
+$fn = 64;
+
+// Dimensions (in mm)
+spout_od_r = 5;           // Outer radius of spout
+wall_thick = 1.6;         // Wall thickness
+spout_id_r = spout_od_r - wall_thick; // Inner radius of spout
+spout_height = 20;        // Spout height from z=0 to z=20
+
+cone_top_z = 50;          // Top of cone at z=50
+cone_height = cone_top_z - spout_height; // Height of cone = 30 mm
+cone_top_od_r = 30;       // Outer radius at top of cone
+cone_top_id_r = cone_top_od_r - wall_thick; // Inner radius at top of cone
+
+// Build the funnel
+difference() {
+  union() {
+    // Outer spout cylinder (z=0 to z=20, OD=10mm)
+    cylinder(h=spout_height, r=spout_od_r, $fn=64);
+    
+    // Outer cone (z=20 to z=50, OD from 10mm to 60mm)
+    translate([0, 0, spout_height])
+    cylinder(h=cone_height, r1=spout_od_r, r2=cone_top_od_r, $fn=64);
+  }
+  
+  // Hollow out the spout (inner bore = 6.8mm)
+  translate([0, 0, -0.01])
+  cylinder(h=spout_height+0.02, r=spout_id_r, $fn=64);
+  
+  // Hollow out the cone (inner surface)
+  translate([0, 0, spout_height-0.01])
+  cylinder(h=cone_height+0.02, r1=spout_id_r, r2=cone_top_id_r, $fn=64);
+}
+```

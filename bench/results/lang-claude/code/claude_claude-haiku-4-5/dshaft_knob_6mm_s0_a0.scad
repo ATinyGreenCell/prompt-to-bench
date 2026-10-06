@@ -1,0 +1,55 @@
+// Knob for mixer with heating plate - D-shaped shaft
+// Dimensions in millimeters
+
+// Main dimensions
+cylinder_d = 30;            // Main cylinder diameter
+cylinder_h = 15;            // Main cylinder height
+cylinder_r = cylinder_d / 2;
+
+// D-shaped blind hole (from bottom)
+d_hole_depth = 12;          // Depth of D-shaped hole
+d_hole_circle_d = 6.2;      // Circle diameter of D-shape
+d_hole_flat_offset = 1.6;   // Distance of flat from circle center (gives 4.7 mm total width)
+
+// Grip grooves (around outer surface)
+num_grooves = 18;           // Number of equally-spaced grooves
+groove_d = 2;               // Diameter of each groove
+
+// Indicator groove (on top surface)
+indicator_width = 1.5;      // Width of indicator groove
+indicator_depth = 1;        // Depth of indicator groove
+
+$fn = 64;
+
+difference() {
+    // Main cylinder body
+    cylinder(d=cylinder_d, h=cylinder_h);
+    
+    // Cut D-shaped blind hole from bottom
+    translate([0, 0, -0.01]) 
+    linear_extrude(height=d_hole_depth + 0.02) {
+        difference() {
+            circle(d=d_hole_circle_d, $fn=64);
+            translate([0, -d_hole_flat_offset - 0.01]) 
+            square([d_hole_circle_d + 2, d_hole_circle_d + 2], center=true);
+        }
+    }
+    
+    // Cut 18 equally-spaced vertical grip grooves around outer surface
+    for (i = [0:num_grooves-1]) {
+        angle = i * 360 / num_grooves;
+        rotate([0, 0, angle])
+        translate([cylinder_r, 0, -0.01])
+        cylinder(d=groove_d, h=cylinder_h + 0.02, $fn=64);
+    }
+    
+    // Cut radial indicator groove on top (on same side as D-shape flat)
+    translate([0, 0, cylinder_h - indicator_depth - 0.01])
+    linear_extrude(height=indicator_depth + 0.02) {
+        polygon([
+            [0, 0],
+            [-indicator_width/2, -cylinder_r],
+            [indicator_width/2, -cylinder_r]
+        ]);
+    }
+}

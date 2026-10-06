@@ -1,0 +1,97 @@
+// Dimensions in mm
+base_width = 50;
+base_length = 45;
+base_thickness = 5;
+
+motor_plate_width = 50;
+motor_plate_depth = 5;
+motor_plate_height = 50;
+
+mount_hole_dia = 4.5;
+mount_hole_1_x = -17;
+mount_hole_1_y = 30;
+mount_hole_2_x = 17;
+mount_hole_2_y = 30;
+
+boss_hole_dia = 23;
+boss_hole_x = 0;
+boss_hole_z = 28;
+
+screw_hole_dia = 3.4;
+screw_pattern_size = 31;
+
+$fn = 64;
+
+difference() {
+    // Base shape (union of base plate, motor plate, and gussets)
+    union() {
+        // Base plate: x = -25 to 25, y = 0 to 45, z = 0 to 5
+        translate([-25, 0, 0])
+            cube([50, 45, 5]);
+        
+        // Motor plate: x = -25 to 25, y = 0 to 5, z = 0 to 50
+        translate([-25, 0, 0])
+            cube([50, 5, 50]);
+        
+        // Right gusset: x = 20 to 25, triangular prism in YZ plane
+        polyhedron(
+            points = [
+                [20, 5, 5],
+                [25, 5, 5],
+                [20, 25, 5],
+                [25, 25, 5],
+                [20, 5, 25],
+                [25, 5, 25]
+            ],
+            faces = [
+                [0, 1, 3, 2],
+                [0, 1, 5, 4],
+                [4, 5, 3, 2],
+                [0, 4, 2],
+                [1, 3, 5]
+            ]
+        );
+        
+        // Left gusset: x = -25 to -20, triangular prism in YZ plane
+        polyhedron(
+            points = [
+                [-25, 5, 5],
+                [-20, 5, 5],
+                [-25, 25, 5],
+                [-20, 25, 5],
+                [-25, 5, 25],
+                [-20, 5, 25]
+            ],
+            faces = [
+                [0, 1, 3, 2],
+                [0, 1, 5, 4],
+                [4, 5, 3, 2],
+                [0, 4, 2],
+                [1, 5, 3]
+            ]
+        );
+    }
+    
+    // Cut out the holes
+    
+    // Mount holes on base plate (M4, 4.5 mm diameter, vertical through-holes)
+    translate([mount_hole_1_x, mount_hole_1_y, -0.5])
+        cylinder(d = mount_hole_dia, h = 6, $fn = 64);
+    
+    translate([mount_hole_2_x, mount_hole_2_y, -0.5])
+        cylinder(d = mount_hole_dia, h = 6, $fn = 64);
+    
+    // Boss hole on motor plate (23 mm diameter, through along Y)
+    translate([boss_hole_x, -0.5, boss_hole_z])
+        rotate([-90, 0, 0])
+            cylinder(d = boss_hole_dia, h = 6, $fn = 64);
+    
+    // M3 screw holes (3.4 mm diameter) on 31 mm square pattern centered on boss hole
+    for (dx = [-15.5, 15.5]) {
+        for (dz = [-15.5, 15.5]) {
+            translate([dx, -0.5, 28 + dz])
+                rotate([-90, 0, 0])
+                    cylinder(d = screw_hole_dia, h = 6, $fn = 64);
+        }
+    }
+}

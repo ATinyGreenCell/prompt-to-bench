@@ -1,0 +1,84 @@
+```openscad
+// L-shaped NEMA 17 stepper motor mounting bracket
+// Printing orientation: base platform on bed, motor plate vertical
+
+// Dimensions (in millimeters)
+base_m4_hole_d = 4.5;  // M4 mounting holes in base
+base_m4_hole_1_x = -17;
+base_m4_hole_1_y = 30;
+base_m4_hole_2_x = 17;
+base_m4_hole_2_y = 30;
+
+motor_shaft_d = 23;    // Motor shaft hole diameter
+motor_shaft_x = 0;
+motor_shaft_z = 28;
+motor_m3_hole_d = 3.4; // M3 screw holes
+motor_m3_spacing = 31; // Square hole spacing
+
+gusset_y_length = 20;  // Gusset triangle side in Y direction
+gusset_z_length = 20;  // Gusset triangle side in Z direction
+gusset_left_x_min = -25;
+gusset_left_x_max = -20;
+gusset_right_x_min = 20;
+gusset_right_x_max = 25;
+gusset_corner_y = 5;
+gusset_corner_z = 5;
+
+$fn = 64;
+
+// Module for triangular prism gusset
+module triangular_prism(x_min, x_max, y_corner, z_corner, y_length, z_length) {
+  hull() {
+    translate([x_min, y_corner, z_corner]) sphere(r=0.01);
+    translate([x_min, y_corner + y_length, z_corner]) sphere(r=0.01);
+    translate([x_min, y_corner, z_corner + z_length]) sphere(r=0.01);
+    translate([x_max, y_corner, z_corner]) sphere(r=0.01);
+    translate([x_max, y_corner + y_length, z_corner]) sphere(r=0.01);
+    translate([x_max, y_corner, z_corner + z_length]) sphere(r=0.01);
+  }
+}
+
+// Main assembly
+difference() {
+  union() {
+    // Base platform: 50x45x5 mm
+    translate([-25, 0, 0])
+      cube([50, 45, 5]);
+    
+    // Motor mounting vertical plate: 50x5x50 mm
+    translate([-25, 0, 0])
+      cube([50, 5, 50]);
+    
+    // Left triangular gusset
+    triangular_prism(gusset_left_x_min, gusset_left_x_max,
+                     gusset_corner_y, gusset_corner_z,
+                     gusset_y_length, gusset_z_length);
+    
+    // Right triangular gusset
+    triangular_prism(gusset_right_x_min, gusset_right_x_max,
+                     gusset_corner_y, gusset_corner_z,
+                     gusset_y_length, gusset_z_length);
+  }
+  
+  // Cut M4 mounting holes in base
+  translate([base_m4_hole_1_x, base_m4_hole_1_y, -0.5])
+    cylinder(d = base_m4_hole_d, h = 6);
+  
+  translate([base_m4_hole_2_x, base_m4_hole_2_y, -0.5])
+    cylinder(d = base_m4_hole_d, h = 6);
+  
+  // Cut motor shaft hole through vertical plate (drilling along Y)
+  translate([motor_shaft_x, -0.5, motor_shaft_z])
+    rotate([90, 0, 0])
+    cylinder(d = motor_shaft_d, h = 6);
+  
+  // Cut M3 mounting holes in square pattern
+  for (dx = [-motor_m3_spacing/2, motor_m3_spacing/2]) {
+    for (dz = [-motor_m3_spacing/2, motor_m3_spacing/2]) {
+      translate([motor_shaft_x + dx, -0.5, motor_shaft_z + dz])
+        rotate([90, 0, 0])
+        cylinder(d = motor_m3_hole_d, h = 6);
+    }
+  }
+}
+```

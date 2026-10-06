@@ -1,0 +1,54 @@
+// Pestle for grinding tissue in microcentrifuge tube
+// Printed standing upright (vertical along Z-axis)
+
+// Dimensions (in mm)
+handle_diameter = 8;        // Handle diameter
+handle_radius = 4;          // Handle radius
+handle_height = 45;         // Handle extends from z=0 to z=45
+
+cone_top_radius = 1.5;      // Cone top radius (3 mm diameter)
+cone_height = 17;           // Cone height = 62 - 45
+
+tip_radius = 1.5;           // Tip sphere radius (3 mm diameter)
+tip_center_z = 62;          // Tip sphere center at z=62
+
+// Groove dimensions
+groove_width = 2;           // Groove width in Z direction
+groove_depth = 1;           // Groove depth in radial direction
+groove_centers = [10, 15, 20, 25];  // Z-positions of groove centers
+
+$fn = 64;  // Resolution for curved shapes
+
+difference() {
+  // Main pestle body
+  union() {
+    // Cylindrical handle
+    cylinder(h = handle_height, r = handle_radius);
+    
+    // Tapered cone (from 8 mm diameter at z=45 to 3 mm diameter at z=62)
+    translate([0, 0, handle_height])
+      cylinder(h = cone_height, r1 = handle_radius, r2 = cone_top_radius);
+    
+    // Rounded tip (sphere at z=62)
+    translate([0, 0, tip_center_z])
+      sphere(r = tip_radius);
+  }
+  
+  // Cut circumferential grooves
+  for (i = [0:3]) {
+    z_center = groove_centers[i];
+    z_low = z_center - groove_width / 2;
+    z_high = z_center + groove_width / 2;
+    
+    // Create groove by rotating a rectangular profile around Z-axis
+    // In rotate_extrude: X-coordinate = radius, Y-coordinate = height (Z)
+    rotate_extrude($fn = 64) {
+      polygon(points = [
+        [handle_radius - groove_depth, z_low - 0.5],
+        [handle_radius + 0.5, z_low - 0.5],
+        [handle_radius + 0.5, z_high + 0.5],
+        [handle_radius - groove_depth, z_high + 0.5]
+      ]);
+    }
+  }
+}

@@ -1,0 +1,26 @@
+{
+ "started": "2026-10-05T17:08:01",
+ "args": {
+  "run": "lang-claude",
+  "models": [
+   "claude:claude-haiku-4-5"
+  ],
+  "tasks": null,
+  "samples": 1,
+  "max_repairs": 2,
+  "feedback": "report",
+  "temperature": 0.2,
+  "prompts": "bench/prompts/translations.yaml",
+  "lang": "sw",
+  "system": "/home/seb/printpaper/bench/prompts/system.md",
+  "render_timeout": 120,
+  "seed_base": 1000,
+  "num_predict": 1024,
+  "think": false
+ },
+ "host": "enamel",
+ "cpu": "x86_64",
+ "python": "3.14.4",
+ "openscad": "OpenSCAD version 2026.10.01",
+ "ollama": "0.30.11"
+}

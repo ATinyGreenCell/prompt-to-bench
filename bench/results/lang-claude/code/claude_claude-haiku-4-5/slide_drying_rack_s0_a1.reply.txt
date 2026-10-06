@@ -1,0 +1,40 @@
+```openscad
+// Microscope slide holder - holds 10 slides (75x25x1 mm) standing vertically
+// Base block dimensions
+block_length_x = 90;    // Length in X direction (mm)
+block_width_y = 45;     // Width in Y direction (mm)
+block_height_z = 20;    // Height in Z direction (mm)
+
+// Groove dimensions
+groove_length_x = 77;   // Groove length along X (mm)
+groove_width_y = 1.6;   // Groove width in Y direction (mm)
+groove_depth_z = 10;    // Groove depth in Z direction (mm)
+
+// Groove array parameters
+num_grooves = 10;       // Number of grooves
+groove_spacing_y = 3.5; // Center-to-center spacing in Y (mm)
+
+// Calculate groove positions to center the array
+total_groove_span_y = (num_grooves - 1) * groove_spacing_y;
+groove_start_y = -total_groove_span_y / 2;
+
+$fn = 64;
+
+difference() {
+    // Solid base block, centered in X and Y, resting on XY plane at z=0
+    translate([0, 0, block_height_z/2]) {
+        cube([block_length_x, block_width_y, block_height_z], center = true);
+    }
+    
+    // Cut 10 parallel grooves on top surface
+    for (i = [0:num_grooves-1]) {
+        groove_y = groove_start_y + i * groove_spacing_y;
+        
+        // Each groove: centered in X, positioned in Y, from top down
+        // Opens at top, extends to 10 mm depth
+        translate([0, groove_y, block_height_z - groove_depth_z/2]) {
+            cube([groove_length_x, groove_width_y, groove_depth_z + 0.5], center = true);
+        }
+    }
+}
+```

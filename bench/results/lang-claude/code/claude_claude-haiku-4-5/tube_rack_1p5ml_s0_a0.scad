@@ -1,0 +1,46 @@
+// Microcentrifuge tube holder - 24 tube grid (6x4)
+// All dimensions in millimetres
+
+// Block dimensions
+block_length = 106;    // X dimension
+block_width = 72;      // Y dimension
+block_height = 30;     // Z dimension
+
+// Hole specifications
+hole_diameter = 11.2;  // mm
+hole_depth = 25;       // mm (from top)
+floor_thickness = 5;   // mm (bottom solid thickness)
+
+// Grid layout
+holes_x = 6;           // number of holes along X
+holes_y = 4;           // number of holes along Y
+spacing = 16;          // center-to-center spacing in mm
+
+// Calculate grid offsets to center on the block
+grid_span_x = (holes_x - 1) * spacing;
+grid_span_y = (holes_y - 1) * spacing;
+start_x = -grid_span_x / 2;
+start_y = -grid_span_y / 2;
+
+$fn = 64;
+
+// Main block with holes
+difference() {
+    // Solid rectangular block, resting on XY plane at z=0, building to z=30
+    translate([0, 0, block_height / 2]) {
+        cube([block_length, block_width, block_height], center = true);
+    }
+    
+    // Cut 24 holes in 6x4 grid pattern
+    for (i = [0:holes_x - 1]) {
+        for (j = [0:holes_y - 1]) {
+            x_pos = start_x + i * spacing;
+            y_pos = start_y + j * spacing;
+            
+            // Each hole extends from near floor to past top surface
+            translate([x_pos, y_pos, floor_thickness - 0.5]) {
+                cylinder(h = hole_depth + 1, r = hole_diameter / 2, center = false);
+            }
+        }
+    }
+}

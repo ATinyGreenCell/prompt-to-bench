@@ -1,0 +1,31 @@
+// Lab funnel, printed upright (wide opening at top), open at both ends
+
+$fn = 96;
+
+spout_od     = 10;    // spout outer diameter
+spout_h      = 20;    // spout height (z = 0 to 20)
+rim_od       = 60;    // outer diameter at the rim
+cone_top_z   = 50;    // z of the rim
+wall         = 1.6;   // wall thickness (measured perpendicular to the surface)
+
+// derived values
+spout_or     = spout_od / 2;
+spout_ir     = spout_or - wall;                       // 3.4 mm bore radius
+rim_or       = rim_od / 2;
+cone_dr      = rim_or - spout_or;                     // radial growth of cone
+cone_dz      = cone_top_z - spout_h;                  // height of cone
+cone_ang     = atan(cone_dr / cone_dz);               // cone half-angle from vertical
+wall_h       = wall / cos(cone_ang);                  // horizontal wall width in the cone
+rim_ir       = rim_or - wall_h;                       // inner radius at rim
+// z where inner cone surface meets the spout bore
+inner_join_z = spout_h + (spout_ir - (spout_or - wall_h)) * cone_dz / cone_dr;
+
+rotate_extrude(convexity = 10)
+    polygon([
+        [spout_or, 0],
+        [spout_or, spout_h],
+        [rim_or,   cone_top_z],
+        [rim_ir,   cone_top_z],
+        [spout_ir, inner_join_z],
+        [spout_ir, 0]
+    ]);

@@ -1,0 +1,43 @@
+```openscad
+// 96-well PCR tube rack, ANSI/SLAS footprint
+
+$fn = 64;
+
+block_x = 127.76;   // block length (X)
+block_y = 85.48;    // block width (Y)
+block_z = 20;       // block height (Z)
+
+hole_d = 6.2;       // hole diameter
+pitch = 9.0;        // hole centre-to-centre spacing
+cols = 12;          // columns along X
+rows = 8;           // rows along Y
+a1_x = 14.38;       // A1 centre from left edge
+a1_y = 11.24;       // A1 centre from back edge
+
+chamfer = 5;        // chamfer leg length at A1 corner
+eps = 1;            // cutter overshoot
+
+// A1 corner (back-left) in centred coordinates
+cx = -block_x/2;
+cy = block_y/2;
+
+difference() {
+    translate([-block_x/2, -block_y/2, 0])
+        cube([block_x, block_y, block_z]);
+
+    // 96 through-holes
+    for (c = [0:cols-1])
+        for (r = [0:rows-1])
+            translate([cx + a1_x + c*pitch, cy - a1_y - r*pitch, -eps])
+                cylinder(d = hole_d, h = block_z + 2*eps);
+
+    // 45-degree vertical chamfer at A1 corner
+    translate([0, 0, -eps])
+        linear_extrude(height = block_z + 2*eps)
+            polygon([
+                [cx - eps, cy + eps],
+                [cx + chamfer + eps, cy + eps],
+                [cx - eps, cy - chamfer - eps]
+            ]);
+}
+```

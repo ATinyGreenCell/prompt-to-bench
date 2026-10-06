@@ -1,0 +1,59 @@
+$fn = 64;
+
+// Rod ring parameters
+rod_inner_r = 6.35;      // Inner radius (diameter 12.7)
+rod_outer_r = 9.35;      // Outer radius (diameter 18.7)
+
+// Tube ring parameters
+tube_center_x = 15;      // Center X position
+tube_inner_r = 3;        // Inner radius (diameter 6)
+tube_outer_r = 5;        // Outer radius (diameter 10)
+
+// Bridge parameters
+bridge_x_start = 8;      // Bridge start X
+bridge_x_end = 12;       // Bridge end X
+bridge_width_y = 6;      // Bridge width in Y direction
+
+// Extrusion height
+extrusion_h = 10;        // Z height (10 mm tall extrusion)
+
+// Create the 2D profile
+module profile_2d() {
+    difference() {
+        union() {
+            // Rod ring (complete annulus)
+            difference() {
+                circle(r = rod_outer_r);
+                circle(r = rod_inner_r);
+            }
+            
+            // Tube ring (complete annulus, centered at x=15)
+            translate([tube_center_x, 0]) {
+                difference() {
+                    circle(r = tube_outer_r);
+                    circle(r = tube_inner_r);
+                }
+            }
+            
+            // Solid bridge connecting the rings
+            translate([(bridge_x_start + bridge_x_end) / 2, 0]) {
+                square([bridge_x_end - bridge_x_start, bridge_width_y], center = true);
+            }
+        }
+        
+        // Opening cut for rod ring: x < 0 and -5 < y < 5
+        translate([-rod_outer_r - 1, -5]) {
+            square([rod_outer_r + 1, 10]);
+        }
+        
+        // Opening cut for tube ring: x > 15 and -2.25 < y < 2.25
+        translate([tube_center_x, -2.25]) {
+            square([tube_outer_r + 1, 4.5]);
+        }
+    }
+}
+
+// Extrude the 2D profile 10 mm in Z direction
+linear_extrude(height = extrusion_h) {
+    profile_2d();
+}
