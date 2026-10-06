@@ -49,9 +49,14 @@ ASK = "Reply with the complete corrected file in a single ```openscad code block
 
 # --------------------------------------------------------------------------- code extraction
 
+def strip_think(text):
+    """Drop reasoning blocks, including one that never closed (the reply was cut off inside it)."""
+    return re.sub(r"<think>.*?(</think>|$)", "", text, flags=re.S)
+
+
 def extract_code(text):
     """Return (code, how) from a model reply."""
-    text = re.sub(r"<think>.*?</think>", "", text or "", flags=re.S)
+    text = strip_think(text or "")
     blocks = FENCE.findall(text)
     if blocks:
         labelled = [b for lang, b in blocks if lang.lower() in ("openscad", "scad")]
@@ -69,7 +74,7 @@ def extract_code(text):
 
 def code_block_complete(text):
     """A closed ```...``` block containing OpenSCAD code has been emitted."""
-    return any(SCAD_HINT.search(b) for _, b in FENCE.findall(re.sub(r"<think>.*?</think>", "", text, flags=re.S)))
+    return any(SCAD_HINT.search(b) for _, b in FENCE.findall(strip_think(text)))
 
 
 def repeating(text, k=150, reps=3):
@@ -369,7 +374,13 @@ def main():
             print(f"dropped {len(lines) - len(good)} damaged line(s) from {res_path}; those tasks will rerun")
             open(res_path, "w").writelines(good)
     margs = {k: (os.path.relpath(v, ROOT) if isinstance(v, str) and v.startswith(ROOT) else v) for k, v in vars(args).items()}
+    if all(m.startswith("claude:") for m in args.models):  # the CLI sets neither; the API defaults apply
+        margs.update(temperature=None, num_predict=None, seed_base=None)
+    commit = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True, cwd=ROOT).stdout.strip()
+    dirty = bool(subprocess.run(["git", "status", "--porcelain", "bench", "tools"], capture_output=True, text=True,
+                                cwd=ROOT).stdout.strip())
     meta = {"started": dt.datetime.now().isoformat(timespec="seconds"), "args": margs,
+            "git_commit": commit + ("+uncommitted-changes" if dirty else ""),
             "host": platform.node(), "cpu": platform.processor() or platform.machine(),
             "python": platform.python_version()}
     try:

@@ -18,6 +18,7 @@ import json
 import math
 import os
 import re
+import statistics
 
 import matplotlib
 
@@ -67,6 +68,25 @@ def load_runs():
     return runs
 
 
+def dedupe(records):
+    """One record per conversation key across run folders (newest wins)."""
+    latest = {}
+    for r in sorted(records, key=lambda r: r.get("finished", "")):
+        latest[(r["model"], r["task"], r["sample"], r.get("lang", "en"), r.get("feedback", "report"))] = r
+    return list(latest.values())
+
+
+GEOM_AS_VALUE = re.compile(r"^\s*\w+\s*=\s*(cube|cylinder|sphere|translate|rotate|union|difference|intersection|"
+                           r"for|linear_extrude|rotate_extrude|polygon|hull|mirror)\s*[(\[]", re.M)
+
+
+def first_code(rec):
+    suffix = "".join(f"_{x}" for x, d in ((rec.get("lang", "en"), "en"), (rec.get("feedback", "report"), "report")) if x != d)
+    path = os.path.join(HERE, "results", rec["_run"], "code", re.sub(r"[^A-Za-z0-9._-]+", "_", rec["model"]),
+                        f"{rec['task']}_s{rec['sample']}{suffix}_a0.scad")
+    return open(path).read() if os.path.exists(path) else None
+
+
 def code_hash(rec, i):
     """Hash of the code in attempt i (recorded by newer runs; recomputed from the saved .scad otherwise)."""
     a = rec["attempts"][i]
@@ -105,6 +125,8 @@ def outcome(rec):
 def failure_stage(a):
     if a.get("error"):
         return "error"
+    if not a.get("render", {}).get("ok") and (a.get("usage") or {}).get("done_reason") in ("length", "repetition"):
+        return "truncated"  # hit the token cap or looped: the file never ended
     if a.get("extract") == "none":
         return "no code"
     if not a.get("render", {}).get("ok"):
@@ -117,6 +139,22 @@ def failure_stage(a):
             return "timeout"
         return "render error"
     return "pass" if a.get("passed") else "wrong geometry"
+
+
+def tier(rec):
+    """Best outcome reached in a conversation: 0 nothing rendered, 1 rendered,
+    2 rendered with the right overall size and number of bodies, 3 passed."""
+    best = 0
+    for a in rec["attempts"]:
+        if a.get("passed"):
+            return 3
+        chk = a.get("check")
+        if chk:
+            ok = {i["check"]: i["ok"] for i in chk["items"]}
+            best = max(best, 2 if ok.get("bbox") and ok.get("bodies", True) else 1)
+        elif a.get("render", {}).get("ok"):
+            best = max(best, 1)
+    return best
 
 
 def summarise(records, models_meta, tasks):
@@ -142,14 +180,20 @@ def summarise(records, models_meta, tasks):
         rows.append({
             "model": model, "label": meta.get("label", model), "family": meta.get("family", ""),
             "hosted": bool(meta.get("hosted")), "size_gb": meta.get("size_gb"), "params_b": meta.get("params_b"),
-            "licence": meta.get("licence", ""), "n_tasks": n, "complete": n >= len(tasks),
+            "licence": meta.get("licence", ""), "n_tasks": n, "complete": len({r["task"] for r in recs}) >= len(tasks),
             "pass1": k1, "pass2": k2, "pass3": k3, "render1": rend1,
             "pass1_rate": k1 / n, "pass3_rate": k3 / n, "pass3_ci": wilson(k3, n),
             "mean_best_score": sum(best) / n,
-            "median_task_min": walls[len(walls) // 2] / 60 if walls else None,
+            "median_task_min": statistics.median(walls) / 60 if walls else None,
             "total_min": sum(walls) / 60,
             "gen_tok_s": gtok / gsec if gsec else None,
             "first_stage": dict(stages), "repeat_repairs": same, "n_repairs": len(repairs),
+            "tiers": collections.Counter(tier(r) for r in recs),
+            "tasks_half": sum(1 for b in best if b >= 0.5),
+            "geom_as_value": sum(1 for r in recs if r["attempts"] and GEOM_AS_VALUE.search(first_code(r) or "")),
+            "truncated": sum(1 for r in recs for a in r["attempts"]
+                             if (a.get("usage") or {}).get("done_reason") in ("length", "repetition")),
+            "n_attempts": sum(len(r["attempts"]) for r in recs),
         })
     return rows
 
@@ -255,8 +299,8 @@ def fig_heatmap(records, rows, tasks, th, path, title):
     handles = [plt.Rectangle((0, 0), 1, 1, color=cols[2]), plt.Rectangle((0, 0), 1, 1, color=cols[1]),
                plt.Rectangle((0, 0), 1, 1, color=cols[0]),
                plt.Rectangle((0, 0), 1, 1, facecolor=th["surface"], edgecolor=th["axis"])]
-    labels = ["passed, 1st attempt (1)", "passed after feedback (2, 3)", "printable but wrong (·)",
-              "no printable part (×)"]
+    labels = ["passed, 1st attempt (1)", "passed after feedback (2, 3)", "rendered but wrong (·)",
+              "nothing rendered (×)"]
     fig.legend(handles, labels, loc="lower center", bbox_to_anchor=(0.55, 0.0), ncol=4, frameon=False,
                fontsize=8.5, labelcolor=th["ink2"], handlelength=1.2)
     fig.suptitle(title, x=0.01, y=1 - 0.08 / H, ha="left", va="top", fontsize=11.5, color=th["ink"],
@@ -347,7 +391,7 @@ def pct(k, n):
 
 
 def table_main(rows):
-    out = ["| Model | Download | Licence | Pass, 1st try | Pass, ≤3 tries (95% CI) | Printable 1st try | "
+    out = ["| Model | Download | Licence | Pass, 1st try | Pass, ≤3 tries (95% CI) | Renders 1st try | "
            "Median min/task | Tokens/s | Same code after feedback |",
            "|---|---:|---|---:|---:|---:|---:|---:|---:|"]
     for r in order_models(rows):
@@ -377,8 +421,53 @@ def table_categories(records, rows):
     return "\n".join(out)
 
 
+def table_graded(rows):
+    out = ["| Model | Rendered (any try) | Right size and body count | Passed | Tasks with ≥ half the checks | "
+           "First file treats geometry as a value | Attempts cut off (cap or loop) | Same code after feedback |",
+           "|---|---:|---:|---:|---:|---:|---:|---:|"]
+    for r in order_models(rows):
+        t, n = r["tiers"], r["n_tasks"]
+        out.append(f"| {r['label']}{'' if r['complete'] else ' *(partial)*'} | {t[1] + t[2] + t[3]}/{n} | "
+                   f"{t[2] + t[3]}/{n} | {t[3]}/{n} | {r['tasks_half']}/{n} | {r['geom_as_value']}/{n} | "
+                   f"{r['truncated']}/{r['n_attempts']} | {r['repeat_repairs']}/{r['n_repairs']} |")
+    return "\n".join(out)
+
+
+def fig_tiers(rows, th, path, title):
+    """Stacked bars: best outcome per task, ordinal single-hue ramp (validated palette)."""
+    rows = order_models(rows)
+    fig, ax = plt.subplots(figsize=(8.6, 0.42 * len(rows) + 1.6), dpi=150)
+    fig.patch.set_facecolor(th["surface"])
+    style(ax, th)
+    cols = {1: th["ramp"][0], 2: th["ramp"][1], 3: th["ramp"][2]}
+    y = list(range(len(rows)))[::-1]
+    for yi, r in zip(y, rows):
+        left = 0
+        for lvl in (3, 2, 1):
+            w = 100 * r["tiers"][lvl] / r["n_tasks"]
+            if w:
+                ax.barh(yi, w - 0.6, left=left, height=0.56, color=cols[lvl], linewidth=0)
+            left += w
+        ax.text(101, yi, f"{r['tiers'][3]}/{r['n_tasks']} passed" + ("" if r["complete"] else " (partial)"),
+                va="center", fontsize=8, color=th["ink2"])
+    ax.set_yticks(y)
+    ax.set_yticklabels([r["label"] + (f"  ·  {r['size_gb']:.1f} GB" if r["size_gb"] else "") for r in rows],
+                       fontsize=9, color=th["ink"])
+    ax.set_xlim(0, 122)
+    ax.set_xticks([0, 25, 50, 75, 100])
+    ax.set_xticklabels(["0%", "25%", "50%", "75%", "100%"])
+    handles = [plt.Rectangle((0, 0), 1, 1, color=cols[k]) for k in (3, 2, 1)]
+    ax.legend(handles, ["passed every check", "right overall size and body count", "rendered, wrong size"],
+              loc="lower center", bbox_to_anchor=(0.45, 1.0), ncol=3, frameon=False, fontsize=8.5,
+              labelcolor=th["ink2"])
+    fig.suptitle(title, x=0.01, ha="left", fontsize=11.5, color=th["ink"], fontweight="bold")
+    fig.tight_layout()
+    fig.savefig(path, facecolor=th["surface"])
+    plt.close(fig)
+
+
 def table_failures(rows):
-    stages = ["no code", "syntax error", "render error", "no solid", "timeout", "wrong geometry", "pass"]
+    stages = ["truncated", "no code", "syntax error", "render error", "no solid", "timeout", "wrong geometry", "pass"]
     out = ["| Model | " + " | ".join(stages) + " |", "|---|" + "---:|" * len(stages)]
     for r in order_models(rows):
         fs = r["first_stage"]
@@ -434,7 +523,7 @@ def main():
     runs = load_runs()
     os.makedirs(FIG, exist_ok=True)
 
-    main_recs = runs.get("main", []) + runs.get("main-claude", [])
+    main_recs = dedupe(runs.get("main", []) + runs.get("main-claude", []))
     main_recs = [r for r in main_recs if r.get("lang", "en") == "en" and r.get("feedback", "report") == "report"]
     rows = summarise(main_recs, models_meta, tasks)
 
@@ -452,9 +541,9 @@ def main():
                          "Lab parts that pass every geometric check (16 tasks)")
             fig_heatmap(main_recs, rows, tasks, th, os.path.join(FIG, f"fig_outcomes_{mode}.png"),
                         "Outcome per task (number = attempt that passed)")
-            fig_frontier(rows, th, os.path.join(FIG, f"fig_frontier_{mode}.png"),
-                         "What a laptop can run vs. how often the part comes out right")
-        lang_recs = [r for r in runs.get("lang", []) + runs.get("lang-claude", [])]
+            fig_tiers(rows, th, os.path.join(FIG, f"fig_tiers_{mode}.png"),
+                      "How far each model got: best outcome per task (blank = nothing rendered)")
+        lang_recs = dedupe(runs.get("lang", []) + runs.get("lang-claude", []))
         # English baselines for the same models come from the main run
         lang_models = {r["model"] for r in lang_recs}
         lang_recs += [r for r in main_recs if r["model"] in lang_models]
@@ -466,6 +555,8 @@ def main():
     print(table_categories(main_recs, rows))
     print()
     print(table_failures(rows))
+    print()
+    print(table_graded(rows))
 
     if not args.no_readme:
         readme = os.path.join(ROOT, "README.md")
@@ -476,6 +567,8 @@ def main():
             text = replace_block(text, "table-main", table_main(rows))
             text = replace_block(text, "table-categories", table_categories(main_recs, rows))
             text = replace_block(text, "table-failures", table_failures(rows))
+            text = replace_block(text, "table-graded", table_graded(rows))
+            text = replace_block(text, "fig-tiers", picture("fig_tiers", "Stacked bars of the best outcome each model reached per task"))
             text = replace_block(text, "fig-pass-rates", picture("fig_pass_rates", "Dumbbell chart of pass rates per model, first attempt vs after feedback"))
             text = replace_block(text, "fig-outcomes", picture("fig_outcomes", "Grid of outcomes per model and task"))
             text = replace_block(text, "fig-frontier", picture("fig_frontier", "Pass rate versus model download size and CPU time per task"))

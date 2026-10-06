@@ -9,7 +9,8 @@
   category: benchware
   title: 24-place 1.5 mL tube rack
   short: 1.5 mL rack
-  reference: designs/benchware/tube_rack_1p5ml.scad
+  reference: bench/reference/tube_rack_1p5ml.scad
+  library: designs/benchware/tube_rack_1p5ml.scad
   skills: [block, blind holes, 2-D hole grid]
   prompt: >-
     Design a bench rack for 1.5 mL microcentrifuge tubes. It is a solid rectangular
@@ -30,7 +31,8 @@
   category: benchware
   title: 50 mL conical tube rack, printed inverted
   short: 50 mL rack
-  reference: designs/benchware/conical_rack_50ml.scad
+  reference: bench/reference/conical_rack_50ml.scad
+  library: designs/benchware/conical_rack_50ml.scad
   skills: [print orientation, through holes, multi-feature union]
   prompt: >-
     Design a rack for six 50 mL conical (Falcon-type) tubes. It is printed upside
@@ -56,7 +58,8 @@
   category: benchware
   title: Microscope slide drying rack
   short: slide rack
-  reference: designs/benchware/slide_drying_rack.scad
+  reference: bench/reference/slide_drying_rack.scad
+  library: designs/benchware/slide_drying_rack.scad
   skills: [thin slots, 1-D array, small clearances]
   prompt: >-
     Design a drying rack that holds 10 microscope slides (75 x 25 x 1 mm) standing
@@ -78,7 +81,8 @@
   category: benchware
   title: 96-place PCR tube rack, SBS footprint
   short: 96 PCR rack
-  reference: designs/benchware/pcr_tube_rack_sbs.scad
+  reference: bench/reference/pcr_tube_rack_sbs.scad
+  library: designs/benchware/pcr_tube_rack_sbs.scad
   skills: [standard footprint, large grid, asymmetric feature]
   prompt: >-
     Design a rack for 96 PCR tubes (0.2 mL) with the standard microplate (ANSI/SLAS)
@@ -102,7 +106,8 @@
   category: tools
   title: 10-well agarose gel comb
   short: gel comb
-  reference: designs/tools/gel_comb_10well.scad
+  reference: bench/reference/gel_comb_10well.scad
+  library: designs/tools/gel_comb_10well.scad
   skills: [flat part, 2-D profile, tooth array]
   prompt: >-
     Design a 10-well comb for casting agarose gels, printed lying flat. The whole
@@ -124,7 +129,8 @@
   category: tools
   title: Micropestle for 1.5 mL tubes
   short: micropestle
-  reference: designs/tools/micropestle_1p5ml.scad
+  reference: bench/reference/micropestle_1p5ml.scad
+  library: designs/tools/micropestle_1p5ml.scad
   skills: [stacked primitives, cone, grooves at given heights]
   prompt: >-
     Design a pestle for grinding tissue inside a 1.5 mL microcentrifuge tube,
@@ -146,7 +152,8 @@
   category: tools
   title: 60 mm lab funnel
   short: funnel
-  reference: designs/tools/lab_funnel_60mm.scad
+  reference: bench/reference/lab_funnel_60mm.scad
+  library: designs/tools/lab_funnel_60mm.scad
   skills: [hollow solid of revolution, open ends, wall thickness]
   prompt: >-
     Design a small lab funnel, printed upright with the wide opening at the top. A
@@ -162,13 +169,16 @@
     - slice: {z: 35, islands: 1, holes: 1, island_d: [35, 0.6], hole_d: [31.4, 0.8]}
     - slice: {z: 49.5, islands: 1, holes: 1, hole_d: [55.5, 0.9]}
     - probes: {empty: [[0, 0, 0.3], [0, 0, 15], [0, 0, 30], [0, 0, 49.7]]}
-    - volume: {rel_tol: 0.15}
+    # "1.6 mm everywhere" can be read horizontally (reference, 1.23 mm normal to the cone)
+    # or normal to the cone (+24 % volume); both are correct, so volume is loose here.
+    - volume: {rel_tol: 0.35}
 
 - id: seed_sowing_template
   category: tools
   title: Seed-sowing template for a 90 mm Petri dish
   short: seed template
-  reference: designs/tools/seed_sowing_template.scad
+  reference: bench/reference/seed_sowing_template.scad
+  library: designs/tools/seed_sowing_template.scad
   skills: [disc, small-hole grid, orientation notch]
   prompt: >-
     Design a sowing template that sits inside a 90 mm Petri dish: a flat disc
@@ -188,7 +198,8 @@
   category: quick-fixes
   title: Replacement knob for a 6 mm D-shaft
   short: D-shaft knob
-  reference: designs/quick-fixes/dshaft_knob_6mm.scad
+  reference: bench/reference/dshaft_knob_6mm.scad
+  library: designs/quick-fixes/dshaft_knob_6mm.scad
   skills: [D-profile bore, polar array, feature alignment]
   prompt: >-
     Design a replacement knob for a hotplate stirrer with a 6 mm D-shaft. The knob
@@ -215,7 +226,8 @@
   category: quick-fixes
   title: 0.2 mL-in-1.5 mL tube adapter sleeve
   short: tube adapter
-  reference: designs/quick-fixes/pcr_tube_adapter.scad
+  reference: bench/reference/pcr_tube_adapter.scad
+  library: designs/quick-fixes/pcr_tube_adapter.scad
   skills: [concentric cylinders, print orientation, through bore]
   prompt: >-
     Design an adapter sleeve that lets a 0.2 mL PCR tube sit in a rack hole made for
@@ -235,7 +247,8 @@
   category: quick-fixes
   title: Hose-barb reducer, 8 mm to 5 mm tubing
   short: hose reducer
-  reference: designs/quick-fixes/hose_barb_reducer_8_5.scad
+  reference: bench/reference/hose_barb_reducer_8_5.scad
+  library: designs/quick-fixes/hose_barb_reducer_8_5.scad
   skills: [revolved profile, sawtooth barbs, through bore]
   prompt: >-
     Design a straight hose-barb reducer that joins silicone tubing with 8 mm inner
@@ -267,7 +280,8 @@
   category: quick-fixes
   title: Snap-on tubing clip for a lab stand rod
   short: rod clip
-  reference: designs/quick-fixes/rod_tubing_clip.scad
+  reference: bench/reference/rod_tubing_clip.scad
+  library: designs/quick-fixes/rod_tubing_clip.scad
   skills: [2-D profile booleans, open rings, explicit coordinates]
   prompt: >-
     Design a snap-on clip that holds a piece of tubing next to a 12.7 mm (1/2 inch)
@@ -292,7 +306,8 @@
   category: hardware
   title: Magnetic stirrer housing for an 80 mm PC fan
   short: stirrer housing
-  reference: designs/hardware/stirrer_fan_housing.scad
+  reference: bench/reference/stirrer_fan_housing.scad
+  library: designs/hardware/stirrer_fan_housing.scad
   skills: [shelled box, bolt pattern, print orientation, edge notch]
   prompt: >-
     Design the housing for a DIY magnetic stirrer built from an 80 mm PC case fan.
@@ -319,7 +334,8 @@
   category: hardware
   title: NEMA 17 motor L-bracket
   short: motor bracket
-  reference: designs/hardware/nema17_motor_bracket.scad
+  reference: bench/reference/nema17_motor_bracket.scad
+  library: designs/hardware/nema17_motor_bracket.scad
   skills: [L-bracket, horizontal holes, bolt patterns, gussets]
   prompt: >-
     Design an L-shaped mounting bracket for a NEMA 17 stepper motor, e.g. for a
@@ -349,7 +365,8 @@
   category: hardware
   title: Electronics enclosure with push-fit lid
   short: box + lid
-  reference: designs/hardware/enclosure_box_and_lid.scad
+  reference: bench/reference/enclosure_box_and_lid.scad
+  library: designs/hardware/enclosure_box_and_lid.scad
   skills: [multi-part layout, clearance fit, shelling]
   prompt: >-
     Design a two-part enclosure for a small electronics board (for example an
@@ -375,7 +392,8 @@
   category: hardware
   title: Mini gel-electrophoresis buffer tank
   short: gel tank
-  reference: designs/hardware/mini_gel_tank.scad
+  reference: bench/reference/mini_gel_tank.scad
+  library: designs/hardware/mini_gel_tank.scad
   skills: [shelled box, internal platform, horizontal holes]
   prompt: >-
     Design the buffer tank for a mini horizontal gel-electrophoresis box. It is an
