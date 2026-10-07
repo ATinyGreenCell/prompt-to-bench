@@ -436,7 +436,7 @@ Details, including the hosted reference and the language ablation, are in [`benc
 
 Cocioba SS (2026). *Prompt to Bench: language models as a no-CAD entry point to 3D printing for biology labs.* Zenodo. https://doi.org/10.5281/zenodo.23198097
 
-This DOI always resolves to the latest version; each release also has its own DOI (v0.1.0: [10.5281/zenodo.23198098](https://doi.org/10.5281/zenodo.23198098)). Machine-readable metadata: [`CITATION.cff`](CITATION.cff).
+This DOI always resolves to the latest version; each release also has its own DOI (v0.1.0: [10.5281/zenodo.23198098](https://doi.org/10.5281/zenodo.23198098); v0.2.0: [10.5281/zenodo.23212435](https://doi.org/10.5281/zenodo.23212435)). Machine-readable metadata: [`CITATION.cff`](CITATION.cff).
 
 ---
 
