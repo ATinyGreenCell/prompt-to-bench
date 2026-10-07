@@ -7,19 +7,28 @@
 // SPDX-License-Identifier: CERN-OHL-P-2.0
 
 /* [Enclosure] */
-box = [70, 50, 30];    // outer X, Y, Z
+// outer X, Y, Z
+box = [70, 50, 30];
 wall = 2;
 floor_t = 2;
 lid_t = 2;
 lip_h = 4;
-lip_wall = 1.5;
-clearance = 0.2;       // per side: 0.2 slip fit, 0.1 friction fit
-gap = 10;              // between the parts on the bed
-cable_d = 6;           // cable hole in the -X end wall, 8 mm above the floor
+lip_wall = 1.5; // 0.1
+// per side: 0.2 slip fit, 0.1 friction fit
+clearance = 0.2; // 0.1
+// between the parts on the bed
+gap = 10;
+// cable hole in the -X end wall, 8 mm above the floor
+cable_d = 6;
 
 /* [Hidden] */
 eps = 0.01;
 lip = [box.x - 2 * wall - 2 * clearance, box.y - 2 * wall - 2 * clearance];
+
+// parameter checks: stop with a message instead of building a broken part
+assert(wall >= 0.8 && floor_t >= 0.8 && lid_t >= 0.8 && lip_wall >= 0.8, "walls must be at least 0.8 mm (two perimeters)");
+assert(clearance >= 0 && clearance < wall, "clearance must be between 0 and the wall thickness");
+assert(cable_d < box.z - floor_t, "the cable hole is taller than the box wall");
 
 // box (left)
 translate([-box.x - gap / 2, -box.y / 2, 0])

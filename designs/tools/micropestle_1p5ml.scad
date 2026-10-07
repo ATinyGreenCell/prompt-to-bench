@@ -10,15 +10,23 @@
 /* [Pestle] */
 handle_d = 8;
 handle_h = 45;
-tip_d = 3;                   // rounded tip diameter
-cone_h = 17;                 // matches the conical bottom of a 1.5 mL tube
-groove_z = [10, 15, 20, 25]; // grip groove centres [mm]
+// rounded tip diameter
+tip_d = 3;
+// matches the conical bottom of a 1.5 mL tube
+cone_h = 17;
+// grip groove centres [mm]
+groove_z = [10, 15, 20, 25];
 groove_w = 2;
 groove_depth = 1;
 
 /* [Hidden] */
 $fn = 64;
 eps = 0.01;
+
+// parameter checks: stop with a message instead of building a broken part
+assert(groove_depth <= handle_d / 2 - 2 * 0.8, "the grip grooves cut too deep into the handle");
+assert(min(groove_z) - groove_w / 2 > 0 && max(groove_z) + groove_w / 2 < handle_h, "every groove must lie on the handle");
+assert(tip_d < handle_d, "tip_d must be smaller than handle_d");
 
 difference() {
     union() {

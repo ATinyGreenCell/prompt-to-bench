@@ -7,17 +7,30 @@
 // SPDX-License-Identifier: CERN-OHL-P-2.0
 
 /* [Rack] */
-plate = [130, 90, 4];  // X, Y, thickness [mm]
-height = 70;           // overall height = height of the plate when in use
-wall_t = 4;            // thickness of the two long walls
-cols = 3;              // holes along X
-rows = 2;              // holes along Y
-pitch = 40;            // centre-to-centre spacing [mm]
-hole_d = 31.0;         // 30 mm tube + 0.5 mm per side
+// plate thickness [mm]
+plate_t = 4;
+// overall height = height of the plate when in use
+height = 70;
+// thickness of the two long walls
+wall_t = 4;
+// holes along X
+cols = 3;
+// holes along Y
+rows = 2;
+// centre-to-centre spacing [mm]
+pitch = 40;
+// 30 mm tube + 0.5 mm per side
+hole_d = 31.0; // 0.1
 
 /* [Hidden] */
 $fn = 96;
 eps = 0.01;
+plate = [cols * pitch + 10, rows * pitch + 10, plate_t];  // 130 x 90 by default
+
+// parameter checks: stop with a message instead of building a broken part
+assert(cols >= 1 && rows >= 1, "cols and rows must be at least 1");
+assert(pitch - hole_d >= 0.8, "holes overlap: pitch must exceed hole_d by at least 0.8 mm");
+assert((pitch + 10 - hole_d) / 2 >= wall_t, "holes cut into the walls: increase pitch or reduce hole_d or wall_t");
 
 difference() {
     translate([-plate.x / 2, -plate.y / 2, 0]) cube(plate);

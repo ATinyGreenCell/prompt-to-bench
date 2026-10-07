@@ -9,19 +9,31 @@
 // SPDX-License-Identifier: CERN-OHL-P-2.0
 
 /* [Bracket] */
-base = [50, 45, 5];      // X, Y, Z: spans y = 0..45
-plate = [50, 5, 50];     // vertical plate at y = 0..5
-boss_d = 23;             // NEMA 17 centring boss is 22 mm
-boss_z = 28;             // motor axis height
-screw_d = 3.4;           // M3 clearance
-screw_spacing = 31;      // NEMA 17 bolt pattern
-mount_d = 4.5;           // M4 clearance
+// X, Y, Z: spans y = 0..45
+base = [50, 45, 5];
+// vertical plate at y = 0..5
+plate = [50, 5, 50];
+// NEMA 17 centring boss is 22 mm
+boss_d = 23;
+// motor axis height
+boss_z = 28;
+// M3 clearance
+screw_d = 3.4; // 0.1
+// NEMA 17 bolt pattern
+screw_spacing = 31;
+// M4 clearance
+mount_d = 4.5; // 0.1
 mount_pos = [[-17, 30], [17, 30]];
 gusset_t = 5;
 gusset_len = 20;
 
 /* [Hidden] */
 eps = 0.01;
+
+// parameter checks: stop with a message instead of building a broken part
+assert(screw_spacing / 2 + screw_d / 2 <= plate.x / 2 - 0.8, "the motor screw holes do not fit the plate width");
+assert(boss_z - screw_spacing / 2 - screw_d / 2 >= base.z, "the lower motor screws cut into the base: raise boss_z");
+assert(boss_z + screw_spacing / 2 + screw_d / 2 <= plate.z - 0.8, "the upper motor screws run off the plate: lower boss_z or raise plate.z");
 
 difference() {
     union() {

@@ -1,10 +1,11 @@
 # Design library
 
-Sixteen parametric OpenSCAD designs for biology labs. They started as the benchmark's reference solutions (frozen in [`bench/reference/`](../bench/reference/)) and were then revised for real use after an independent mechanical and biological audit ([`meta/audits/`](../meta/audits/)). They are geometry-checked and sliced; physical print-and-fit validation is in progress. Each file:
+Sixteen parametric OpenSCAD designs for biology labs, plus a printer calibration coupon. They started as the benchmark's reference solutions (frozen in [`bench/reference/`](../bench/reference/)) and were then revised for real use after a mechanical and biological audit and an adversarial review ([`meta/audits/`](../meta/audits/)). They are geometry-checked and sliced; physical print-and-fit validation is in progress. Each file:
 
 - is plain OpenSCAD with no libraries;
 - keeps its parameters at the top in Customizer sections, so you can change them in **Window → Customizer** without touching the code;
-- is modelled in the orientation it prints in.
+- is modelled in the orientation it prints in;
+- stops with a plain message (an `assert`) if you choose parameters that would break the part, such as overlapping holes or a floor under 0.8 mm. `make designs` renders every file with its defaults and with edge-case values.
 
 Licence: [CERN-OHL-P-2.0](../LICENSES/CERN-OHL-P-2.0.txt), a permissive open-hardware licence.
 

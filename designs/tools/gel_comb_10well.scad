@@ -10,16 +10,25 @@
 // SPDX-License-Identifier: CERN-OHL-P-2.0
 
 /* [Comb] */
-spine = [80, 12];      // back bar, X x Y [mm]; ends rest on the tray walls
+// back bar, X x Y [mm]; ends rest on the tray walls
+spine = [80, 12];
 n_teeth = 10;
-tooth_w = 5.0;         // well width
-tooth_len = 12;        // = (height of spine support above tray floor) - 1.5 mm
-gap = 1.5;             // gel between wells
-thickness = 1.5;       // well thickness (comb printed flat)
+// well width
+tooth_w = 5.0; // 0.1
+// = (height of spine support above tray floor) - 1.5 mm
+tooth_len = 12;
+// gel between wells
+gap = 1.5; // 0.1
+// well thickness (comb printed flat)
+thickness = 1.5; // 0.1
 
 /* [Hidden] */
 eps = 0.01;
 span = n_teeth * tooth_w + (n_teeth - 1) * gap;
+
+// parameter checks: stop with a message instead of building a broken part
+assert(n_teeth >= 1, "n_teeth must be at least 1");
+assert(span <= spine[0], "the teeth are wider than the spine: lengthen the spine or narrow the teeth/gaps");
 
 linear_extrude(thickness) {
     translate([-spine.x / 2, 0]) square(spine);

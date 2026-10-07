@@ -9,18 +9,29 @@
 // SPDX-License-Identifier: CERN-OHL-P-2.0
 
 /* [Housing] */
-outer = [90, 90, 40];  // X, Y, height [mm]
-wall = 2.5;
-top_t = 2;             // stir surface; thin keeps magnets close to the stir bar
-fan_hole_d = 4.5;      // M4 clearance
-fan_hole_spacing = 71.5; // 80 mm fan mounting pattern
-countersink_d = 8.4;   // M4 flat head (ISO 10642), 90 deg
-standoff = [9, 5];     // diameter, height: magnet thickness + ~1 mm
-notch = [12, 8];       // cable notch width x depth, from the open edge
+// X, Y, height [mm]
+outer = [90, 90, 40];
+wall = 2.5; // 0.1
+// stir surface; thin keeps magnets close to the stir bar
+top_t = 2;
+// M4 clearance
+fan_hole_d = 4.5; // 0.1
+// 80 mm fan mounting pattern
+fan_hole_spacing = 71.5; // 0.1
+// M4 flat head (ISO 10642), 90 deg
+countersink_d = 8.4; // 0.1
+// diameter, height: magnet thickness + ~1 mm
+standoff = [9, 5];
+// cable notch width x depth, from the open edge
+notch = [12, 8];
 
 /* [Hidden] */
 $fn = 32;
 eps = 0.01;
+
+// parameter checks: stop with a message instead of building a broken part
+assert(fan_hole_spacing + countersink_d <= outer.x - 2 * wall && fan_hole_spacing + countersink_d <= outer.y - 2 * wall, "the fan screw pattern does not fit inside the housing");
+assert(wall >= 0.8 && top_t >= 0.8, "walls must be at least 0.8 mm (two perimeters)");
 
 difference() {
     union() {

@@ -1,20 +1,30 @@
-// Snap-on clip that holds tubing next to a 12.7 mm (1/2") lab stand rod
+// Snap-on clip that holds tubing next to a 12 mm or 12.7 mm (1/2") lab stand rod
 // Category: quick fixes. Two C-shaped rings joined by a bridge, extruded 10 mm.
 // Measure first: stand rods are commonly 12 mm or 12.7 mm (1/2"). Set rod_id to the
 // measured rod diameter minus ~0.2 mm for grip, and tube_id to the tubing's OUTER
-// diameter (e.g. 8 mm ID silicone tubing is ~11 mm OD).
+// diameter (e.g. 8 mm ID silicone tubing is ~11 mm OD). The snap openings and the ring
+// spacing follow these two numbers.
 // Print: PETG (springier than PLA), flat, 0.2 mm layers, 100 % infill.
 // SPDX-License-Identifier: CERN-OHL-P-2.0
 
 /* [Clip] */
 height = 10;
-rod_id = 12.7;  rod_wall = 3;  rod_gap = 10;    // opening on the -X side
-tube_id = 6;    tube_wall = 2; tube_gap = 4.5;  // tube_id = tubing OD; opening on the +X side
-tube_x = 15;                                     // tubing ring centre
-bridge = [8, 12, 6];                             // x from, x to, width in Y
+// measured rod diameter - 0.2 mm; opening on the -X side
+rod_id = 12.5; // 0.1
+rod_wall = 3;
+// tubing OUTER diameter; opening on the +X side
+tube_id = 6;
+tube_wall = 2;
 
 /* [Hidden] */
 $fn = 96;
+rod_gap = 0.8 * rod_id;                                     // snap openings
+tube_gap = 0.75 * tube_id;
+tube_x = rod_id / 2 + rod_wall + tube_wall + tube_id / 2 + 0.65;  // tubing ring centre
+bridge = [rod_id / 2 + rod_wall - 1.35, tube_x - tube_id / 2 - tube_wall + 2, 6];  // x from, x to, width in Y
+
+// parameter checks: stop with a message instead of building a broken part
+assert(rod_wall >= 0.8 && tube_wall >= 0.8, "ring walls must be at least 0.8 mm");
 
 module ring(id, wall) difference() { circle(d = id + 2 * wall); circle(d = id); }
 

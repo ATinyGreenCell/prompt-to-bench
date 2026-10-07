@@ -9,19 +9,32 @@
 // SPDX-License-Identifier: CERN-OHL-P-2.0
 
 /* [Rack] */
-plate = [127.76, 85.48, 20]; // ANSI/SLAS 1-2004 footprint, X x Y; height Z
-corner_r = 3.18;             // ANSI/SLAS 1-2004 corner radius
+// ANSI/SLAS 1-2004 footprint, X x Y; height Z
+plate = [127.76, 85.48, 20];
+// ANSI/SLAS 1-2004 corner radius
+corner_r = 3.18; // 0.01
 cols = 12;
 rows = 8;
-pitch = 9.0;                 // ANSI/SLAS 4-2004 well spacing
-a1 = [14.38, 11.24];         // A1 centre from left edge / from top edge
-hole_d = 6.4;                // 0.2 mL tube OD ~6.0 mm + clearance
-chamfer = 5;                 // orientation mark at the A1 corner
-chamfer_z = 6;               // chamfer starts this far above the bed
+// ANSI/SLAS 4-2004 well spacing
+pitch = 9.0; // 0.1
+// A1 centre from left edge / from top edge
+a1 = [14.38, 11.24];
+// 0.2 mL tube OD ~6.0 mm + clearance
+hole_d = 6.4; // 0.1
+// orientation mark at the A1 corner
+chamfer = 5;
+// chamfer starts this far above the bed
+chamfer_z = 6;
 
 /* [Hidden] */
 $fn = 48;
 eps = 0.01;
+
+// parameter checks: stop with a message instead of building a broken part
+assert(cols >= 1 && rows >= 1, "cols and rows must be at least 1");
+assert(pitch - hole_d >= 0.8, "holes overlap: pitch must exceed hole_d by at least 0.8 mm");
+assert(a1.x - hole_d / 2 >= 0.8 && a1.x + (cols - 1) * pitch + hole_d / 2 <= plate.x - 0.8, "the hole grid does not fit the footprint in X");
+assert(a1.y - hole_d / 2 >= 0.8 && a1.y + (rows - 1) * pitch + hole_d / 2 <= plate.y - 0.8, "the hole grid does not fit the footprint in Y");
 
 module footprint(h) {
     linear_extrude(h)
