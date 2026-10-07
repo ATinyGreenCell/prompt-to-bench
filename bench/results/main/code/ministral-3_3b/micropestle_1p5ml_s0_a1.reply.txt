@@ -1,0 +1,76 @@
+```openscad
+// Dimensions for pestle in millimetres
+$fn = 64;
+
+// Handle dimensions
+handle_diameter = 8;
+handle_height = 45;
+
+// Cone dimensions (from top of handle to rounded tip)
+cone_start_radius = handle_diameter / 2; // 4 mm
+cone_end_radius = 3 / 2;                // 1.5 mm
+cone_total_height = cone_start_radius - cone_end_radius;
+cone_offset = 45 + cone_total_height;
+
+// Rounded tip (sphere)
+tip_radius = 3 / 2; // 1.5 mm
+
+// Groove dimensions for grip
+groove_width_z = 2;
+groove_depth = 1;
+num_grooves = 4;
+groove_z_positions = [10, 15, 20, 25];
+
+module handle() {
+    cylinder(diameter=handle_diameter, height=handle_height);
+}
+
+module cone() {
+    translate([0, 0, -cone_start_radius]) {
+        rotate(90) { // Changed to 90 degrees for proper extrusion
+            linear_extrude(height=(cone_total_height * 2 + 1)) {
+                polygon(points=[[0, 0], [cone_end_radius, 0],
+                              [cone_end_radius, cone_start_radius - cone_end_radius],
+                              [0, cone_start_radius - cone_end_radius]]);
+            }
+        }
+    }
+}
+
+module tip() {
+    translate([0, 0, cone_offset]) {
+        sphere(radius=tip_radius);
+    }
+}
+
+// Create grooves
+module groove() {
+    translate([0, 0, z_pos + handle_height/2]) { // Adjust for proper positioning
+        rotate(45) {
+            linear_extrude(height=groove_depth) {
+                polygon(points=[[-groove_width_z/2, -groove_width_z/2],
+                              [groove_width_z/2, -groove_width_z/2],
+                              [groove_width_z/2, groove_width_z/2],
+                              [-groove_width_z/2, groove_width_z/2]]);
+            }
+        }
+    }
+}
+
+// Combine all parts
+pestle = difference() {
+    union() {
+        handle();
+        cone();
+        tip();
+    }
+
+    // Cut grooves for grip
+    for (i in [0..num_grooves-1]) {
+        groove(z_positions[i]);
+    }
+};
+``` Here's the corrected version:
+
+```openscad
+//

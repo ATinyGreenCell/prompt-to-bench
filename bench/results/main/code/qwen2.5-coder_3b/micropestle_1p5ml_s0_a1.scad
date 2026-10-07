@@ -1,0 +1,55 @@
+// Define dimensions
+$fn = 64; // Number of facets for curved surfaces
+
+// Handle dimensions
+handle_dia = 8;
+handle_height = 45;
+
+// Cone dimensions
+cone_dia_bottom = handle_dia;
+cone_dia_top = 3;
+cone_height = cone_dia_top - cone_dia_bottom;
+
+// Tip dimensions
+tip_dia = 3;
+
+// Groove dimensions
+groove_width = 2;
+groove_depth = 1;
+groove_count = 4;
+groove_spacing = handle_height / (groove_count + 1);
+
+// Main body of the pestle
+body = difference() {
+    // Handle
+    cylinder(d=handle_dia, h=handle_height, center=true),
+    
+    // Cone
+    translate([0, 0, cone_height]) {
+        cylinder(d=cone_dia_top, h=handle_height - cone_height, center=true)
+    },
+    
+    // Tip
+    sphere(r=tip_dia, center=true)
+};
+
+// Grooves on the handle
+grooves = for (i=[1:groove_count]) {
+    translate([0, 0, i * groove_spacing + groove_depth / 2]) {
+        linear_extrude(height=groove_width) {
+            circle(d=handle_dia - groove_width)
+        }
+    }
+};
+
+// Final pestle model
+pestle = body - grooves;
+
+// Render the pestle
+view(rotate([0, 90, 0])) { // Rotate to print standing upright
+    translate([0, 0, handle_height + tip_dia]) { // Move up to center the tip
+        rotate_extrude(height=handle_height) {
+            pestle
+        }
+    }
+}

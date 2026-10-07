@@ -1,0 +1,34 @@
+// Define variables
+$fn = 64;
+
+// Create a box with dimensions 90x90mm
+box(90, 90);
+
+// Place the fan in the center of the box
+translate((0, 0, 0)) {
+    box(80, 80);
+}
+
+// Create a top plate for the fan
+cube(2, 4.5, 4.5, $fn);
+
+// Drill four 4.5mm holes for M4 screws through the top plate
+for (int i = 1; i <= 4; i++) {
+    translate((0, 0, 0)) {
+        box(4.5, 4.5, 4.5, $fn);
+        rotate_extrude(-90, 360 * (i - 1) / 4.5);
+        translate((0, 0, 0));
+    }
+}
+
+// Cut a notch for the power cable
+translate((0, 0, 0)) {
+    box(12, 8, 8, $fn);
+    rotate_extrude(-90, 360 * (4 / 4.5) - 90);
+    translate((0, 0, 0));
+}
+
+// Place the fan in the center of the box
+translate((0, 0, 0)) {
+    box(80, 80);
+}

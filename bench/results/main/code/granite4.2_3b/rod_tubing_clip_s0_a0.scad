@@ -1,0 +1,67 @@
+// Dimensions in millimetres
+Z_height      = 10;          // 10 mm tall extrusion
+rod_inner_d   = 12.7;        // 12.7 mm inner diameter of lab stand rod
+rod_wall_thick= 3;           // 3 mm wall thickness (outer diameter = 18.7 mm)
+tube_ring_i   = 6;           // 6 mm inner diameter of tubing ring
+tube_ring_w   = 2;           // 2 mm wall thickness
+bridge_width  = 6;            // 6 mm wide bridge in Y direction
+opening_rod_x = -5;          // y range for rod opening: [-5, 5]
+opening_tube_y_low = -2.25;   // y low bound for tube opening: [-2.25, 2.25]
+opening_tube_y_high= 2.25;    // y high bound for tube opening: [-2.25, 2.25]
+
+// Profile is a flat extrusion in XY plane at Z = 0 to Z = Z_height
+
+// Define the rod ring (cylindrical profile) centred at origin with inner hole and X-side cutout
+rod_ring = cylinder(h=Z_height, r1=rod_inner_d/2, r2=(rod_inner_d/2 + rod_wall_thick), $fn=64);
+// Apply the -X side opening: remove everything with x < 0 and -5 < y < 5 from the ring
+rod_ring_clean = difference(
+    // Full ring centered at origin, extending in X direction up to outer radius
+    translate([0,0,0]) * cylinder(h=Z_height, r1=rod_inner_d/2, r2=(rod_inner_d/2 + rod_wall_thick), $fn=64),
+    
+    // Cutout: region where x < 0 and -5 <= y <= 5
+    translate([0,0,0]) * cylinder(h=Z_height, r1=rod_inner_d/2, r2=(rod_inner_d/2 + rod_wall_thick), $fn=64)
+    
+    // But we need to subtract the specific X-side opening; better approach: define full ring then subtract cutout shape
+);
+// Instead of complex boolean, use difference with explicit cutout polygon in XY plane extruded along Z.
+
+// Build rod ring as solid cylinder (outer radius = (rod_inner_d/2 + rod_wall_thick))
+rod_ring_full = translate([0,0,0]) * cylinder(h=Z_height, r=(rod_inner_d/2 + rod_wall_thick), $fn=64);
+
+// Define the cutout shape: region where x < 0 and -5 <= y <= 5 (in XY plane) extruded along Z.
+// This is a rectangular prism in XY, but only for points with x<0; we'll use difference between full ring and cutout.
+rod_ring_clean = difference(
+    rod_ring_full,
+    
+    // Cutout: region where x < 0 AND -5 <= y <= 5 (in XY plane). Extruded along Z from z=0 to Z_height.
+    translate([0,0,0]) * cube([Z_height, opening_rod_x*2+1, opening_rod_x*2+1], rotate=[90,0,0])  // This is not precise; better: use a custom shape via difference of cylinders?
+    
+    // Simpler: Use two cylinders to represent the cutout region directly in the ring.
+);
+// Given constraints on allowed primitives (cube, cylinder, etc.), we'll model the cutout using multiple differences with cylinders and squares where possible.
+
+// Alternative approach: Build rod_ring as a solid without the X-side opening first, then subtract the appropriate rectangular prism region.
+// Define the full ring as a cylinder in XY plane extruded along Z (already done).
+// The cutout is defined by two conditions: x < 0 and -5 <= y <= 5. In 3D, this corresponds to an infinite slab; but we only care within the ring's bounds.
+// We'll create a rectangular prism that matches exactly the region inside the ring where x<0 and |y|<=opening_rod_x (i.e., -5 <= y <= 5).
+// Since the ring is circular, the cutout shape is not a perfect rectangle in XY; however, for small Z_height=10 mm and opening width 10 mm, we approximate by using a rectangular prism clipped to the circle? Too complex.
+
+// Given the problem description: "everything with x < 0 and -5 < y < 5 is removed from this ring" — this means in the XY cross-section of the ring (at any z), if point has x<0 and -5<=y<=5, it's removed entirely. This defines a rectangular region in XY plane that is cut out; since the ring is circular, the shape to subtract is exactly the intersection of the rectangle (-inf < x < 0, -5 <= y <= 5) with the circle (x^2 + y^2 <= R_outer^2). But for simplicity and given typical printing tolerances, we can approximate by using a rectangular prism that extends only where it's inside the ring.
+// However, to keep the model simple and valid, we'll use a method that works reliably: define the rod ring as a solid cylinder (full outer radius), then subtract two cylinders representing the cutout region? Not straightforward.
+
+// Given time constraints and requirement for a valid solid with no errors, we will approximate by using a rectangular prism shape in the XY plane clipped to the circle via boolean difference of cylinders — but OpenSCAD doesn't allow arbitrary shapes directly.
+
+// Simpler: Since Z_height is only 10 mm, and opening width is 10 mm (from -5 to 5), we can define the cutout as a rectangular prism that extends exactly over the region where x<0 and |y|<=opening_rod_x, but clipped by the ring's outer radius. However, if we just use a cube of size [Z_height, opening_rod_x*2+1, opening_rod_x*2+1], it may extend beyond the circle where x<0 and y near ±5 might be outside the cylinder boundary (since at y=±5, x must satisfy x^2 + 25 <= R_outer^2). With outer radius = 18.7/2 = 9.35 mm? Wait: rod outer diameter is 18.7 mm, so radius = 9.35 mm. At y=5, the maximum |x| allowed by circle is sqrt(R_outer^2 - y^2) ≈ sqrt(87.0225 - 25) ≈ sqrt(62.0225) ≈ 7.874 mm. So x must be less than about ±7.874 mm in absolute value, but we only care about x<0 side; the cutout region is defined by x<0 AND |y|<=5, which automatically restricts x to [-sqrt(R_outer^2 - y^2), 0). So using a rectangular prism of width (opening_rod_x*2+1) in X direction may over-subtract where y near ±5 and x is too large? Actually the condition "everything with x < 0 and -5 < y < 5" means for any point on the ring cross-section, if its coordinates satisfy x<0 AND |y|<=5 (strictly between -5 and 5), then that point is removed. This defines a region in XY plane: { (x,y) : x<0, -5 <= y <= 5 } intersected with the circle of radius R_outer/2? But the ring itself only exists where distance from origin <= outer radius; so effectively it's the intersection of that infinite strip with the disk.
+
+// To avoid complex geometry, we'll model the rod ring using a series of cylinders and squares via difference in a way that is guaranteed valid: use the original definition as "cylinder" but then subtract two rectangular prisms? Not directly supported.
+
+// Given the instructions to keep code simple and reliable, and since the problem likely expects an approximation where the cutout is defined by a rectangular prism clipped by the cylinder boundary via boolean difference of cylinders (which OpenSCAD can handle with union/difference), we will use this approach:
+
+// Define rod ring as full outer cylinder.
+// Then subtract two shapes that represent the cutout region using multiple cylinders and squares? Too heavy.
+
+// Better: Use a single difference between the full ring and a rectangular prism defined by cube, but then apply an additional condition via boolean with another shape? Not possible directly in OpenSCAD without complex loops.
+
+// Given the constraints (must render valid solid), we will approximate the cutout by using a rectangular prism that is fully inside the circle where needed, or simply use a smaller width so it's safe. But the problem specifies exact dimensions; however, typical FDM tolerances allow small approximation error as long as shape remains valid.
+
+// We'll define the rod ring without the X-side cut

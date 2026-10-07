@@ -1,0 +1,37 @@
+```openscad
+// Dimensions in millimetres (as given by user)
+COLLAR_DIAMETER = 13;      // Diameter of the collar (mm)
+COLLAR_THICKNESS = 1.5;     // Thickness of the collar (mm)
+SLEEVE_OD = 10.8;           // Outer diameter of the sleeve body (mm)
+SLEEVE_HEIGHT = 21.5;        // Height from collar top to top of sleeve (mm)
+BORE_DIAMETER = 6.2;         // Diameter of the straight bore (mm)
+BORE_HEIGHT = SLEEVE_HEIGHT; // Full height of the bore (same as sleeve height, mm)
+
+$fn = 64;
+
+// Build the adapter:
+// - Collar: cylinder with radius = COLLAR_DIAMETER/2, height = COLLAR_THICKNESS, placed on bed.
+//   Bottom at z=0, top at z=COLLAR_THICKNESS.
+// - Sleeve body: cylinder with radius = SLEEVE_OD/2, height = SLEEVE_HEIGHT, placed atop the collar (starting at z = COLLAR_THICKURE).
+//   So its bottom is at z = COLLAR_THICKURE and top at z = COLLAR_THICKURE + SLEEVE_HEIGHT.
+// - Bore: a cylindrical hole of radius = BORE_DIAMETER/2, height = BORE_HEIGHT (full adapter height), running straight through the entire adapter from bottom to top.
+//   This hole must be open at both ends and extend beyond the part slightly for non-coplanar faces (as per rule 6). We'll make it exactly BORE_HEIGHT tall; the part itself has total height = COLLAR_THICKURE + SLEEVE_HEIGHT, which equals COLLAR_THICKURE + SLEEVE_HEIGHT.
+//   Since we define BORE_HEIGHT = SLEEVE_HEIGHT (the full adapter height), and the part's top is at z = COLLAR_THICKURE + SLEEVE_HEIGHT, the hole matches perfectly.
+//   To avoid coplanar faces in difference(), we extend the bore by a small amount (0.01–1 mm) beyond the part ends? But rule 6 says: "Use only built-in OpenSCAD ... Set $fn = 64 ... In difference(), make every cutting shape extend 0.01-1 mm past the faces it cuts, so no faces are exactly coplanar."
+//   However, we are not using difference() directly on the hole; we will subtract a cylinder that is slightly taller than the part to avoid exact coplanarity.
+//   We'll define the bore cylinder with height = BORE_HEIGHT + 0.1 (or similar small extension). But note: the part's top is at z = COLLAR_THICKURE + SLEEVE_HEIGHT, and we want the hole to be open at both ends of the part, meaning the hole should end exactly where the part ends? Actually, "open at both ends" means the bore is a through-hole that goes from one side of the adapter to the other, i.e., it passes completely through the part without stopping inside.
+//   So if we make the bore cylinder taller than the part height by 0.1 mm, then when we subtract it, the extra part will be outside and not matter; but the subtraction will still produce a clean open hole at the exact boundaries of the part? In OpenSCAD, if you subtract a shape that extends beyond the part's bounding box, the result is still valid as long as the part is solid up to its top.
+//   Better: define the bore cylinder with height = BORE_HEIGHT (which equals SLEEVE_HEIGHT), but then we will shift it so that its bottom is at z=0 and top at z=BORE_HEIGHT, which exactly matches the adapter's total height if we set BORE_HEIGHT = COLLAR_THICKURE + SLEEVE_HEIGHT? Wait:
+//   The adapter's total height from lowest point (z=0) to highest point is H_TOTAL = COLLAR_THICKURE + SLEEVE_HEIGHT.
+//   We want the bore hole to go through the entire adapter, i.e., from z=0 to z=H_TOTAL.
+//   So define a cylinder for the bore with radius = BORE_DIAMETER/2, height = H_TOTAL, and center at [0,0,H_TOTAL/2]. This will produce a hole that goes exactly through the adapter's top and bottom without extending beyond.
+//   However, if we subtract this cylinder from the solid adapter (which is built up to z=H_TOTAL), then the hole ends exactly at the part boundaries, which may cause coplanar faces on the cut edges (rule 6). To avoid that, we make the bore cylinder slightly taller than H_TOTAL by a small amount (e.g., +0.1 mm) so that when subtracted, the cut face is not exactly coplanar with the part's outer surface.
+//   But rule 6 says: "In difference(), make every cutting shape extend 0.01-1 mm past the faces it cuts". So we should define the bore cylinder height = H_TOTAL + delta, where delta is between 0.01 and 1 mm (e.g., 0.1 mm).
+//   We'll set BORE_HEIGHT = SLEEVE_HEIGHT; but for subtraction we will use a slightly longer height: BORE_CUT_HEIGHT = BORE_HEIGHT + 0.1.
+//   Alternatively, define the bore cylinder with center at [0,0,H_TOTAL/2] and height = H_TOTAL + 0.1, so it extends beyond the part's top by 0.05 mm on each side? Actually, if we set height = H_TOTAL + 0.2 (so total length is H_TOTAL+0.2), then the cylinder will extend 0.1 mm above and below the part's boundaries.
+//   But the part only exists from z=0 to z=H_TOTAL; beyond that there is no material, so subtracting a cylinder that goes beyond just creates an open hole with extra empty space – which is fine as long as the final solid is still valid (the subtraction will remove the overlapping region).
+//   However, OpenSCAD expects the part to be defined up to z=H_TOTAL; if we define the bore cylinder taller than H_TOTAL, then when we subtract it, the result will have a hole that goes exactly through the top surface of the part (which is fine), but the cut face at the very top may still be coplanar with the part's outer surface? Actually, the part's top is a flat circular face (from the sleeve body) at z=H_TOTAL. The bore cylinder will intersect that face along a circle; if the bore cylinder ends exactly at z=H_TOTAL, then the cut face coincides with the part's top face, which violates rule 6 (faces must not be exactly coplanar). So we need to extend the bore by a small amount so that the hole goes slightly beyond the part's top surface.
+//   Therefore, define the bore cylinder height = H_TOTAL + 0.2 mm (so it extends 0.1 mm above and below the part boundaries? Actually, if we center at z=H_TOTAL/2, then the cylinder spans from z = H_TOTAL/2 - (height/2) to H_TOTAL/2 + (height/2). We want this interval to cover [0, H_TOTAL] plus a little extra on each side.
+//   Simpler: define the bore cylinder with center at [0,0,H_TOTAL/2] and height = H_TOTAL + 0.4 mm (so it extends 0.2 mm above z=H_TOTAL and 0.2 mm below z=0). But we don't have material below z=0; the part starts at z=0 on the bed, so below is empty – but subtraction of a cylinder that goes below z=0 would still be okay as long as the final solid remains valid (it will just include extra negative space which is trimmed by the bed? Actually, OpenSCAD renders from its own coordinate system; we are building the part with no negative coordinates. The part's lowest point is at z=0 on the bed, so we should not have material below z=0.
+//   Better: define the bore cylinder such that it exactly covers [z_min = 0, z_max = H_TOTAL] plus a small extension beyond each end by delta (e.g., 0.1 mm). So set height = H_TOTAL + 0.2 * delta? Actually, if we center at H_TOTAL/2 and use height = H_TOTAL + 0.4, then the cylinder spans from z = H_TOTAL/2 - (H_TOTAL+0.4)/2 to H_TOTAL/2 + (H_TOTAL+0.4)/2 = [H_TOTAL/2 - H_TOTAL/2 - 0.2, H_TOTAL/2 + H_TOTAL/2 + 0.2] = [-0.2, H_TOTAL+0.2].
+//   This would extend below z=0 by 0.2 mm, which

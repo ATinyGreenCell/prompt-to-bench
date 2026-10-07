@@ -1,0 +1,75 @@
+```openscad
+// Dimensions for agarose gel casting comb (measured with calipers)
+$fn = 64; // Ensure smooth curves and proper resolution
+
+// Main plate dimensions: resting on XY plane at z=0, building upward (+Z)
+plate_thickness_z = 1.5;
+spine_length_x = 70;
+spine_width_y = 12;
+
+// Tooth specifications
+tooth_count = 10; // Number of rectangular teeth
+tooth_width_x = 5.0; // Width of each tooth in X direction (mm)
+tooth_depth_y = 12.0; // Depth/length of each tooth from spine edge in Y direction (mm)
+
+// Spacing between teeth
+gap_size_between_teeth = 1.5; // Gap width between adjacent teeth (mm)
+
+// Positioning logic:
+// The comb rests flat on Z=0. 
+// The "spine" is the main rectangular block defined by spine_length_x and spine_width_y.
+// Teeth hang from one long edge of this spine in the -Y direction.
+// We assume the attachment point for teeth is at Y = +6 (the top edge).
+// Since they extend 12mm into the -Y direction, they will occupy space from Y=+6 down to Y=-6? 
+// Wait: If attached at Y=+6 and extending "in the -Y direction", does it mean towards negative infinity or just a length of 12mm?
+// Usually "hang ... in the -Y direction" implies orientation. But given they are teeth for wells, they likely extend OUTWARDS from the spine width to create depth below Z=0 if casting into a mold, OR they are part of the top surface structure.
+// However, standard agarose combs often have teeth that define the well shape ABOVE the plate or as protrusions FROM the plate. 
+// If the user says "flat plate ... lying on bed", and teeth hang from an edge... 
+// Let's interpret: The spine is 70x12. One long edge (say Y=+6) has teeth attached.
+// They extend into -Y direction by a length of tooth_depth_y = 12mm? Or do they just sit on the plate surface and hang down Z-wise? 
+// "Hang from one long edge ... in the -Y direction" strongly suggests extrusion along Y axis, perpendicular to spine width.
+// If attached at Y=+6 and extending 12mm towards negative Y: Range is [0, +6]? No, that's inside the plate if plate goes down to -6? 
+// Or does it mean they extend beyond the plate boundary in the -Y direction (i.e., further negative than +6)?
+// If attached at Y=+6 and go "in -Y direction", usually means towards lower values. 
+// Let's assume the teeth are extrusions that start at the edge of the spine and project OUTWARDS into free space or deeper Z? 
+// Re-reading: "teeth ... hang from one long edge". This implies they stick out FROM the plate.
+// If the plate is 12mm wide (Y:-6 to +6), and teeth attach at Y=+6, extending in -Y direction... 
+// Does it mean they go from Y=+6 down to Y=(+6)-12 = -6? That would cover the whole spine width.
+// Or does it mean they extend further negative than the plate exists? i.e., Plate is at Y:[-6, 6], Teeth attach at Y=6 and go to Y=-18 (if length 12)? 
+// "Hang ... in -Y direction" usually implies orientation of the tooth itself relative to gravity if suspended, but here it's a comb.
+// Let's assume standard casting comb geometry: The teeth are slots or protrusions that define wells. 
+// If they hang from an edge and extend 12mm deep... let's make them project OUTSIDE the original spine width in the -Y direction to maximize well depth below Z=0 (if pouring into a mold) OR simply as features on top?
+// Given "flat plate ... lying on bed", usually you pour liquid ON TOP. So teeth should be ABOVE Z=0 or part of the surface. 
+// If they hang from an edge in -Y direction, maybe they are slots cut INTO the plate extending outwards? No, "hang" implies protrusion.
+// Let's assume: Spine is 70x12 (Z=0 to 1.5). Teeth attach at Y=+6 and extend OUTWARDS into negative Y space by 12mm length? 
+// That would mean they occupy X:[-35, -35], Y:[6 down to -18]? No, that's huge.
+// Let's reconsider: Maybe the "spine" is just the back bar (70x12) and teeth are attached to it such that their BASES are on the spine surface? 
+// If they hang from an edge in -Y direction... maybe the tooth length IS 12mm, but they extend along Z? No, user said "5.0 mm wide (X) and 12 mm long (Y)".
+// So dimensions are X=5, Y=12. They attach to spine at one end of their Y dimension. 
+// If attached at Y=+6 (edge), and extend in -Y direction... does it mean they go from Y=+6 down to Y=(+6)-12 = -6?
+// That would make the teeth occupy exactly the same Y-range as the spine, just shifted X-wise? No, that doesn't create a "comb" with gaps. 
+// Unless the gap is between them along X? But user says "gaps ... 1.5mm". And tooth width is 5mm. Total span = 10*5 + 9*1.5 = 74mm > spine length (70).
+// So they must extend beyond the spine in X or Y. 
+// User said: "row of teeth is centred on the spine in X". Spine X=70, Teeth total width including gaps = 74? That doesn't fit inside 70 unless overlapping.
+// Wait, maybe the plate thickness Z includes something else? No, "flat plate ... straight spine". 
+// Maybe the "spine" is just the back bar and there is a base plate wider than the spine to hold teeth? 
+// User: "The whole comb is a flat plate 1.5 mm thick (Z) lying on the bed... straight spine (back bar) 70mm long ... and 12mm wide".
+// This implies Spine = Whole Comb dimensions in X/Y? Or just the back part? 
+// If teeth are centred on spine in X, and total width > spine length, they must overhang. That's fine for a comb (overhanging wells).
+// So: Plate is 70x12 at Z=0..1.5. Teeth attach to one long edge (say Y=+6) and extend OUTWARDS in -Y direction? 
+// If they extend outwards, their length would be measured from the attachment point away from the spine center?
+// "Hang ... in the -Y direction". Attachment at Y=+6. Direction is negative Y. So they go towards lower Y values. 
+// Length 12mm. Range: [0, +6]? Or [-18, +6]? 
+// If length is 12mm and attached at edge of a 12mm wide object... if it extends OUTWARDS (away from center), then range is [+6 down to -6] (if extending full width) or further?
+// Let's assume the teeth are extrusions that start at Y=+6 and go DOWN to Y=(+6)-12 = -6. 
+// This means they fill exactly the vertical span of the spine but shifted in X? No, centred on spine in X.
+// If they extend from +6 down to 0 (length 6)? Or full length 12 going into negative infinity relative to plate center?
+// Let's assume "hang ... in -Y direction" means their orientation is along Y axis pointing towards -infinity from the attachment edge. 
+// So if attached at Y=+6, they occupy Y:[-6, +6] (if length 12)? Or Y:[-18, +6]?
+// Given "flat plate ... lying on bed", and teeth are for casting... usually you want wells BELOW Z=0? No, agarose is poured into the comb. 
+// If the comb stays in place while pouring, the liquid fills around the teeth. The teeth must be ABOVE Z=0 or part of the mold walls.
+// Let's assume the user wants a standard comb where teeth are protrusions from one side. 
+// Attachment at Y=+6 (top edge). Teeth extend into -Y direction by length 12mm? That would mean they go to Y=-6. 
+// This creates a structure that is effectively a block of width 70 in X, and height 18 in Y (-9 to +9)? No.
+// Let's try this: Spine is the main body (70x12). Teeth are attached to one long edge (Y=+6) and extend OUTWARDS into negative Y space by a length of 12mm? 
+// That would mean they occupy X range, but Y from +6

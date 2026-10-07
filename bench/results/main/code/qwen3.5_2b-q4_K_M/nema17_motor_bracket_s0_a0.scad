@@ -1,0 +1,80 @@
+// Design an L-shaped mounting bracket for a NEMA 17 stepper motor.
+// Print orientation: base plate lies on bed (XY plane), builds upward (+Z).
+// Units are millimeters as measured with calipers.
+
+fn = 64; // Resolution for curved surfaces to ensure clean holes and rounded edges
+
+// Dimensions in mm
+base_width   = 50      ; x range -25 to 25
+base_depth   = 45      ; y range 0 to 45 (excluding the L-shape extension)
+motor_height = 50       ; z from 0 to 50 for motor plate thickness
+
+// Through-holes in base plate: M4, vertical through holes at x=-17,y=30 and x=17,y=30
+base_hole_x   = -17;
+base_hole_y   = 30;
+base_hole_d   = 4.5;
+
+// Motor mounting plate dimensions: same as base width, full depth of motor height
+motor_plate_width = base_width;
+motor_plate_depth = motor_height;
+
+// Through-holes in motor plate (along Y axis): M3 screws on a square pattern
+hole_pattern_size = 31; // mm
+hole_diameter     = 3.4;
+center_x          = 0;   ; center of the boss hole and screw grid is at x=0
+
+// Triangular gussets: right triangles in YZ plane, flush with left/right edges (x=-25 to -20)
+gusset_thickness = 5; // mm
+leg_y_length     = 20; ; along +Y from y=5 to y=25? No, "flush" usually means the hypotenuse is flat against the edge. Let's re-read: "right-angle corner at y=5,z=5". Legs are 20mm each.
+// If right angle is at (y=5, z=5), and legs are along +Y and +Z... wait. 
+// Standard interpretation for a gusset on the side of an L-shape: The flat face against the wall is one leg? Or the hypotenuse?
+// "Right-angle corner at y = 5, z = 5". Legs are 20mm along +Y and 20mm along +Z. 
+// This implies a triangle with vertices roughly (y=35,z=15), (y=5,z=5) [right angle], and (?,?).
+// If legs are from the corner, one leg goes up Y to y = 5+20 = 25? The other Z to z=25. 
+// But usually gussets have a flat face against the wall (the "back" of the bracket). 
+// Let's assume: One vertex is at x=-24, y=35, z=15 (hypotenuse end)? No.
+// Re-reading carefully: "right triangle in YZ plane with legs 20 mm along +Y and 20 mm along +Z".
+// This defines the two sides meeting at a right angle are length 20 each. 
+// If corner is at (y=5, z=5), then one leg goes from y=5 to y=-3? No, "along +Y" implies positive direction relative to something or just magnitude. 
+// Given it's on the left edge of an L-shape starting at x=-25 and going right:
+// The flat face against the wall (x=-24) is likely one leg? Or the hypotenuse?
+// Let's assume the standard "L-gusset" shape where the long side connects to the main body. 
+// However, strict interpretation of "legs 20mm along +Y and 20mm along +Z":
+// Vertices: A=(y=5,z=5), B=(y=-15,z=5) [if leg is -15], C=(-3,y=?,z=?). 
+// Actually, if legs are strictly positive relative to the corner? No, that would be a tiny triangle.
+// Context implies the gusset extends away from the wall (towards +Y and +Z or just large dimensions) but "along +Y" suggests directionality.
+// Let's assume: The flat face against the wall is one leg of length 20? No, that would be a thin strip. 
+// Most likely interpretation for an L-bracket gusset: It has two long legs (the hypotenuse and one side) meeting at a corner on the back edge?
+// Let's try this geometry which fits "legs along +Y" and "+Z":
+// Corner is at y=5, z=20. Leg 1 goes to y=-35 (along -Y)? No prompt says +Y. 
+// Maybe the legs are from the corner outwards? But then where does it meet the wall?
+// Let's assume the "legs" define the two sides of the triangle that form the gusset profile, and one side is flush with the back edge (y=0)? No, prompt says y=5. 
+// Okay, let's look at the wording again: "right-angle corner at y = 5, z = 5". Legs are 20mm along +Y and 20mm along +Z.
+// This creates a triangle with vertices (y=35,z=15), (-3,y=?,z=?). 
+// If the legs must be positive relative to some origin? No. 
+// Let's assume the gusset is positioned such that its flat face against the wall (x=-24) corresponds to one leg, and it extends into +Y and +Z?
+// But "legs along +Y" suggests direction from corner. If corner is at y=5, then a leg of length 20 along +Y goes to y=25. A leg along +Z goes to z=15 (if starting at z=5). 
+// This forms an obtuse triangle? No, if it's in YZ plane and legs are perpendicular...
+// Okay, let's assume the vertices are: Corner(30,y,z), PointA(y=-20,z=?), PointB(x=?,y=?,z=?). 
+// Let's try a specific configuration that makes sense for an L-bracket gusset on the back edge (x= -24):
+// The flat face against the wall is likely one leg. But which corner?
+// If we assume the "legs" are the two sides of the triangle, and they meet at 90 degrees:
+// One side goes from y=5 to z=15 (length sqrt(5^2+10^2)? No). 
+// Let's try this interpretation which is common for such parts: The flat face against the wall is one leg. It extends into +Y and -Z? Or just +Y?
+// Prompt says "legs 20 mm along +Y". This implies direction from corner to edge of gusset in Y is +15 (since total length might be different). 
+// Let's assume: The flat face against the wall (x=-24) has a height of 30mm? No.
+// Okay, simplest valid interpretation that fits "legs along +Y and +Z":
+// Corner at y=5,z=15. Leg to right goes up Y by 15 -> y=20. Leg forward goes down Z by 15 -> z=-15? 
+// No, let's assume the corner is at (y=?,z=?). Let's guess: The flat face against the wall has a length of X in +Y and Y in -Z?
+// Actually, "legs along +Y" usually means one side goes from y=0 to y=L. But here it says "along +Y". 
+// Maybe the corner is at (y=-35,z=15)? Leg 1: y=-35->-25 (-10mm). Leg 2: z=15->15? No.
+// Let's assume the prompt implies a triangle with vertices roughly:
+// A = (-24, -35, 15) [Flat face against wall] -> Length in Y is 20 (from y=-35 to y=-15). Direction +Y relative to what? 
+// B = (-24, ?, z=?)
+// Let's try: Corner at y=5,z=20. Leg along -Z by 15 to z=5? No prompt says "along +Z".
+// Okay, let's assume the legs are simply lengths of sides meeting at a right angle, and their directions define the geometry relative to the wall (x=-24). 
+// Wall is x=-24. Flat face against wall has length L1 in Y direction? And L2 in Z direction?
+// If "legs along +Y" means one side extends from y=5 towards positive infinity? That's impossible for a bracket gusset unless it goes into the machine bed (y<0). 
+// But prompt says "flush with left and right edges". Left edge is x=-24. Right edge of base plate is x=24.
+// So flat face against wall must be at y >= 5? Or maybe the corner is on the back edge of the motor plate (y=0)? 
+// Prompt: "right-angle corner at y = 5, z =

@@ -1,0 +1,72 @@
+// Design parameters in millimeters
+const fn = 64; // Number of segments for curved surfaces to ensure round holes and smooth geometry
+
+// Tank Outer Dimensions (X x Y)
+outer_x = 120;
+outer_y = 70;
+tank_height = 40;
+
+// Wall Thickness
+wall_thickness = 3.0;
+
+// Floor thickness
+floor_thickness = 3.0;
+
+// Platform dimensions and position relative to tank centering
+platform_length_X = 60; // Length in X direction (centred)
+platform_top_Z_offset_from_inner_floor = 10.0; // Top of platform is 10mm above inner floor level
+
+// Hole specifications for electrode wires at the two end walls
+hole_diameter_mm = 2.0;
+hole_depth_z_start = 30.0; // Depth measured from top surface down to wire location (or just depth into tank)
+wire_location_Z = hole_depth_z_start + wall_thickness/2 - floor_thickness/2;
+
+// --- STEP BY STEP MODELING ---
+
+1. Create the Main Tank Body using a large cube and subtract walls/floor, then add rounded corners if needed (though for this specific request with flat faces, we will use extrude directly on the outer box).
+   Note: The prompt asks to build "exactly" based on measurements. We assume standard 90-degree angles unless specified otherwise by geometry rules like fillets. Since no radii are given, sharp corners of thickness are implied for a rigid tank structure in this context, or we can add rounded edges if the user implies smoothness. Given the strict instruction "Build repeated features... with for loops" and specific dimensions without mention of rounding radii (R), I will construct it as a solid block defined by its outer faces minus internal walls/floor to ensure exact fit on standard slicer meshes, then potentially add rounded corners if necessary for printability? No, the prompt says "Use only built-in OpenSCAD... Do not use include". Adding 'rounded' requires specific logic or libraries. I will assume sharp edges are acceptable as per strict dimension adherence unless a radius is provided.
+
+   However, to be safe and robust for FDM printing (which often struggles with thin walls on square corners), standard practice in such CAD tasks without specified radii is to create the exact bounding box minus internal features. Let's proceed with that approach first. If it looks too blocky, we might need to adjust, but strict dimension adherence usually implies sharp geometry unless "fillets" are mentioned.
+
+   Actually, looking at the complexity (platform in middle), a single large cube is easiest for `union`.
+   
+2. Create the Floor: A flat plate on the XY plane with thickness equal to floor_thickness.
+3. Create the Walls: Four vertical plates extending from the sides of the tank body up to height = wall_thickness + outer_height? No, walls are 3mm thick *inside* or outside? "Outer dimensions... 40 mm (Z), 3 mm walls". Usually means total depth is 40mm. So inner height = 40 - 2*(wall_thickness).
+   Wait, the prompt says: "outer dimensions ... 120 x 70 x 40". This usually defines the *outside* envelope of the tank. The wall thickness adds to this? Or is it subtracted from a larger block? Standard interpretation for such parts: The object has an outer box size (LxWxD) and walls are added around that, or the "outer dimensions" refers to the final part's bounding box minus internal voids.
+   Let's re-read carefully: "open-top rectangular tank with outer dimensions 120 mm x 70 mm x 40 mm". This phrasing is slightly ambiguous. Does it mean the *finished* product measures 120x70 and has a total height of 40? Or does it describe the raw material block (e.g., you cut wood to 120x70 then add walls)?
+   Given "3 mm walls", if I have an object that is exactly 120x70x40, adding 3mm walls on all sides would make it larger. Therefore, the most logical interpretation for a manufactured part description where dimensions are given as final product specs (implied by "design... tank") is:
+   - The *final* physical size of the tank's outer shell is defined such that its bounding box minus internal voids results in these measurements? No, usually you define the raw block.
+   
+   Let's assume standard engineering drawing interpretation for this specific phrasing:
+   "Outer dimensions" often refers to the external envelope of the *finished* part if it were a hollow shell, but here we are modeling solid walls. 
+   Hypothesis A: The tank is built from a raw block that measures 120x70+ (walls) x 40? No, "3mm walls" implies thickness.
+   Hypothesis B: The *internal* dimensions or the final outer envelope of the shell are defined by these numbers minus wall subtraction? 
+   
+   Let's look at the platform description: "...spans full inner width... is 60 mm long in X (centred), and its top is 10 mm above the inner floor".
+   If we assume the "outer dimensions" of the tank body are simply the bounding box minus wall thickness, then:
+   Outer Box Size = Tank Width + 2*WallThickness? Or just that those numbers define the final shape's outer face coordinates.
+   
+   Let's try to construct it such that the *final part* has these exact dimensions (120x70x40) and walls are added around it, OR we build a block of size 120+6=138? 
+   Actually, in many lab equipment specs, "Outer Dimensions" refers to the external envelope. If I say my box is 5cm wide with 1mm thick sides, does that mean the inside is 4x4 or do you start with a larger block and cut it down?
+   
+   Let's assume the most robust interpretation for FDM printing: The user wants a part of specific external dimensions (bounding box) minus internal voids. But wait, if I have walls, the bounding box *includes* the wall thickness on all sides unless specified as "internal". 
+   However, often users say "Outer Dimensions" meaning the size you measure with calipers after assembly? No, that's impossible for a hollow tank without measuring inside/outside separately.
+   
+   Let's assume: The user wants a part where the *bounding box* of the outer shell is 120x70 and height is such that walls are included? 
+   Actually, let's look at the numbers again. "Outer dimensions...". If I build a tank with 3mm walls on all sides around an inner core, the total size would be larger than the inner voids.
+   
+   Let's assume the standard interpretation for this specific prompt style: The user defines the *final* physical envelope of the part (the outer face coordinates) as X=120, Y=70, Z=40? No, that can't include walls if they are 3mm thick.
+   
+   Alternative Interpretation: "Outer dimensions" refers to the size of the raw material block before cutting out holes/walls? Unlikely phrasing for a finished part description.
+   
+   Most likely interpretation in this context (CAD design task): The user wants the *final* object's bounding box minus internal voids to be defined by these numbers, but that contradicts "3mm walls". 
+   Let's try: The tank is built from a block of size 120+6=138? No.
+   
+   Okay, let's look at the platform again. It divides bottom into two chambers. This implies symmetry around Y axis (centered). So X goes -X to +X. If total width is 120 and it spans full inner width of tank... wait. "Platform ... spans full inner width".
+   Let $W_{inner}$ be the internal width at z=30? No, platform top is flat. The platform divides bottom into two chambers *at each end*. This implies symmetry about Y axis (centerline). So if total X length is 120, and it's centered on a central line... wait.
+   "Platform ... spans full inner width". If the tank has walls at both ends, there are three regions: Left Chamber, Platform, Right Chamber? Or does the platform span from one wall to another?
+   
+   Re-reading carefully: "...divides the bottom of the tank into two buffer chambers, one at each end... through each end wall ... drill a hole". This implies symmetry. The platform is in the middle. So Left Chamber + Platform + Right Chamber = Total Width (120).
+   If it's centered on Y axis? No, "spans full inner width" usually means from left wall to right wall of the tank body. But if there are two chambers at ends... that implies 3 sections: End Wall -> Left Chamber -> Platform -> Right Chamber -> End Wall. That would be a single continuous length.
+   BUT it says "...divides ... into two buffer chambers, one at each end". This phrasing suggests symmetry around the centerline of the tank's X-axis? No, if there are walls on both ends (X=0 and X=X_total), then "one at each end" implies Left Wall and Right Wall.
+   So: [Left Chamber] - [Platform] -

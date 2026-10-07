@@ -1,0 +1,54 @@
+// Dimensions for the Lab Funnel
+funnel_height = 50;      // Total height of the funnel in mm
+spout_length = 20;       // Length of the straight spout section in mm
+spout_od = 10;           // Outer diameter of the spout (mm)
+spout_id = spout_od - 2 * 1.6; // Inner diameter/bore of the spout (10 - 3.2 = 6.8 mm)
+cone_base_od = spout_od;  // Outer diameter at z=20 is the same as the spout OD
+cone_rim_od = 60;         // Outer diameter at the rim (z=50)
+wall_thickness = 1.6;     // Wall thickness of the funnel in mm
+
+// --- Main Funnel Body Construction ---
+
+// 1. Straight Spout Section (z=0 to z=20)
+translate([0, 0, 0]) {
+    difference() {
+        // Outer shape of the spout
+        cylinder(h = spout_length, r = spout_od / 2, $fn = 64);
+
+        // Inner bore (cut out)
+        translate([0, 0, -0.01]) { // Offset slightly to ensure clean cut
+            cylinder(h = spout_length + 0.02, r = spout_id / 2, $fn = 64);
+        }
+    }
+}
+
+// 2. Conical Section (z=20 to z=50)
+translate([0, 0, spout_length]) {
+    difference() {
+        // Outer cone shape
+        // We use a hull or a series of cylinders/spheres for a smooth cone approximation.
+        // For simplicity and robustness in OpenSCAD, we approximate the cone using a cylinder sweep or by defining the profile.
+        // Since it's a simple cone, we will use a series of stacked cylinders or a hull if possible.
+        // A simpler approach is to use a shape that defines the outer boundary:
+        hull() {
+            translate([0, 0, 0])
+                cylinder(h = funnel_height, r1 = cone_base_od / 2, r2 = cone_rim_od / 2, $fn = 64);
+        }
+
+        // Inner bore (cut out) - This is complex for a smooth cone. We approximate the inner radius at z=50.
+        // Inner rim OD at z=50: 60 - 2 * wall_thickness = 56.8 mm
+        // Inner base OD at z=20: 10 - 2 * wall_thickness = 6.8 mm
+
+        // To create the inner bore, we define an inner cone shape and subtract it.
+        translate([0, 0, 0]) {
+            hull() {
+                translate([0, 0, 0])
+                    cylinder(h = funnel_height, r1 = (cone_base_od - 2 * wall_thickness) / 2, r2 = (cone_rim_od - 2 * wall_thickness) / 2, $fn = 64);
+            }
+        }
+    }
+}
+
+// Note on open ends: The requirement states the funnel is open at the top and bottom.
+// Since we are modeling a solid object that runs through, the openings are implicitly defined by the geometry where the material is absent (the bore).
+// For printing, these open ends will be visible gaps in the structure.

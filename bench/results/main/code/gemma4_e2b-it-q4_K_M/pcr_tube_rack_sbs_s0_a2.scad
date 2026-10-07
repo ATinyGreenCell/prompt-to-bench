@@ -1,0 +1,64 @@
+// Dimensions for the PCR tube rack design
+
+// Plate dimensions (ANSI/SLAS footprint)
+plate_length = 127.76; // Length along X axis (mm)
+plate_width = 85.48;   // Width along Y axis (mm)
+plate_height = 20;     // Height along Z axis (mm)
+
+// Hole specifications
+hole_diameter = 6.2;    // Diameter of the vertical holes (mm)
+hole_radius = hole_diameter / 2; // Radius of the vertical holes (mm)
+hole_spacing = 9.0;     // Centre-to-centre spacing between holes (mm)
+
+// Grid dimensions calculation
+num_cols = 12;          // Number of columns along X
+num_rows = 8;           // Number of rows along Y
+
+// Calculate the required span for the grid based on spacing and edge offsets
+// The center of the first hole (A1) is 14.38 mm from the left edge (X=0)
+x_offset_start = 14.38; // Center position of the first column in X direction
+
+// The center of the first row (Row 1) is 11.24 mm from the back edge (Y=plate_width).
+y_offset_start = plate_width - 11.24; // Center position of the first row in Y direction
+
+
+// Chamfer dimensions
+chamfer_length = 5; // Length of the chamfer leg (mm)
+
+// --- Main Body Construction ---
+
+module tube_rack() {
+    // 1. Base Plate (The main block)
+    difference() {
+        // Outer bounding box
+        cube([plate_length, plate_width, plate_height], center = true);
+
+        // Cutouts for the holes
+        for (int r = [0 : num_rows - 1]) { // Rows along Y axis
+            for (int c = [0 : num_cols - 1]) { // Columns along X axis
+                
+                // Calculate the center position of the current hole
+                x_pos = x_offset_start + c * hole_spacing;
+                y_pos = y_offset_start + r * hole_spacing;
+
+                // Create a cylinder for the hole, translated to the calculated center
+                translate([x_pos, y_pos, 0]) {
+                    cylinder(r = hole_radius, h = plate_height + 1, $fn = 64); // Extend slightly above the plate height
+                }
+            }
+        }
+    }
+
+    // 2. Chamfer on the A1 corner (X=0, Y=plate_width)
+    // To create a 45-degree chamfer with 5mm legs off the vertical edge at the A1 corner.
+    // We use a difference operation to subtract the wedge shape from the main body.
+    difference() {
+        // Define the bounding box for the cut (a small prism/wedge)
+        // The cut starts at X=0, extends 5mm along X and Z, and runs along Y up to plate_width.
+        translate([0, 0, 0]) {
+            cube([chamfer_length, plate_width, chamfer_length], center = true);
+        }
+    }
+}
+
+tube_rack();

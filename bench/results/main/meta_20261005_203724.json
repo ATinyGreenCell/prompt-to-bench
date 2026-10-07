@@ -1,0 +1,39 @@
+{
+ "started": "2026-10-05T20:37:23",
+ "args": {
+  "run": "main",
+  "models": [
+   "qwen2.5-coder:1.5b",
+   "qwen2.5-coder:7b",
+   "gemma4:e4b-it-q4_K_M",
+   "qwen2.5-coder:3b",
+   "ministral-3:3b",
+   "gemma4:e2b-it-q4_K_M",
+   "granite4.2:3b",
+   "llama3.2:3b",
+   "lfm2.5:8b-a1b-q4_K_M",
+   "qwen2.5-coder:0.5b",
+   "qwen2.5:1.5b",
+   "qwen3.5:2b-q4_K_M",
+   "qwen3.5:4b-q4_K_M",
+   "qwen3.5:9b-q4_K_M"
+  ],
+  "tasks": null,
+  "samples": 1,
+  "max_repairs": 2,
+  "feedback": "report",
+  "temperature": 0.2,
+  "prompts": null,
+  "lang": "en",
+  "system": "bench/prompts/system.md",
+  "render_timeout": 120,
+  "seed_base": 1000,
+  "num_predict": 2048,
+  "think": false
+ },
+ "host": "enamel",
+ "cpu": "x86_64",
+ "python": "3.14.4",
+ "openscad": "OpenSCAD version 2026.10.01",
+ "ollama": "0.30.11"
+}

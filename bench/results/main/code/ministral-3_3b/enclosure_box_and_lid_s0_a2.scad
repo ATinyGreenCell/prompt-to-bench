@@ -1,0 +1,85 @@
+// Dimensions for Part 1: Box (outer size 70x50x30mm, walls=2mm, floor=2mm)
+box_outer_width = 70;    // Outer width
+box_outer_depth = 50;    // Outer depth
+box_height = 30;         // Total height including floor
+
+// Part 1: Box (open top)
+module box() {
+    translate([-box_outer_width/2 + 1, -box_outer_depth/2 + 1, 0]) {
+        // Floor (2mm thick)
+        cube([box_outer_width - 2, box_outer_depth - 2, 2]);
+
+        // Walls and top (2mm thick)
+        difference() {
+            cylinder(h=box_height + 4, r1=1.5, r2=3);
+            rotate([90, 0, 0])
+                cube([box_outer_width - 2, box_outer_depth - 2, box_height]);
+        }
+    }
+}
+
+// Dimensions for Part 2: Lid (plate + lip)
+lid_plate_size = [70, 50];
+lid_lip_inner_size = [65.6, 45.6]; // Clearance on each side
+lid_lip_thickness = 1.5;
+lid_lip_height = 4;
+
+// Part 2: Lid (upside down)
+module lid() {
+    translate([-lid_plate_size[0]/2 + 1, -lid_plate_size[1]/2 + 1, 0]) {
+        // Plate
+        cube([lid_plate_size[0], lid_plate_size[1], 2]);
+
+        // Lip cutout (4mm tall, 1.5mm thick)
+        difference() {
+            rotate([90, 0, 0])
+                linear_extrude(height=lid_lip_height) {
+                    polygon(points=[
+                        [-lid_lip_inner_size[0]/2, -lid_plate_size[1]/2],
+                        [ lid_lip_inner_size[0]/2, -lid_plate_size[1]/2],
+                        [ lid_lip_inner_size[0]/2,  lid_plate_size[1]/2],
+                        [-lid_lip_inner_size[0]/2,  lid_plate_size[1]/2]
+                    ]);
+                }
+            rotate([90, 0, 0])
+                linear_extrude(height=lid_lip_height) {
+                    polygon(points=[
+                        [-lid_plate_size[0]/2, -lid_plate_size[1]/2],
+                        [ lid_plate_size[0]/2, -lid_plate_size[1]/2],
+                        [ lid_plate_size[0]/2,  lid_plate_size[1]/2],
+                        [-lid_plate_size[0]/2,  lid_plate_size[1]/2]
+                    ]);
+                }
+        }
+
+        // Cut out the lip material
+        translate([-lid_lip_inner_size[0]/2 + lid_lip_thickness/2,
+                  -lid_plate_size[1]/2 + lid_lip_thickness/2, 0])
+            rotate([90, 0, 0])
+            linear_extrude(height=lid_lip_height) {
+                polygon(points=[
+                    [-lid_plate_size[0]/2 + lid_lip_inner_size[0]/2,
+                     -lid_plate_size[1]/2 + lid_lip_thickness/2],
+                    [ lid_plate_size[0]/2 + lid_lip_inner_size[0]/2,
+                     -lid_plate_size[1]/2 + lid_lip_thickness/2],
+                    [ lid_plate_size[0]/2 + lid_lip_inner_size[0]/2,
+                      lid_plate_size[1]/2 - lid_lip_thickness/2],
+                    [-lid_plate_size[0]/2 + lid_lip_inner_size[0]/2,
+                      lid_plate_size[1]/2 - lid_lip_thickness/2]
+                ]);
+            }
+    }
+}
+
+// Assembly: Box and Lid (10mm gap)
+translate([box_outer_width/2 - 5, box_outer_depth/2 - 5, 0]) {
+    rotate([0, 90, 0])
+        lid();
+}
+
+union() {
+    box();
+    translate([box_outer_width/2 + 5, box_outer_depth/2 - 5, 0])
+        rotate([0, 90, 0])
+            lid();
+}

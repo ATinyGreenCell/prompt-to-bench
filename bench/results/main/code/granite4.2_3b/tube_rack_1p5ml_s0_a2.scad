@@ -1,0 +1,56 @@
+// Dimensions (in mm)
+block_length = 106;   // X: length of bench rack
+block_width = 72;    // Y: width of bench rack
+block_height = 30;   // Z: height of bench rack
+hole_spacing = 16;   // centre-to-centre distance between holes (mm)
+hole_diameter = 11.2; // diameter of each hole (mm)
+hole_depth = 25;     // depth of each hole (mm)
+floor_thickness = 5;  // thickness of solid floor (mm)
+num_holes_per_row = 6;
+rows = 4;            // number of rows of holes
+
+// Build the bench rack as a rectangular block centred on the origin in X and Y,
+// resting on XY plane at z=0 and building upward (+Z). The block extends from z=0 to z=block_height.
+
+// Create the main block (solid rectangle) centered on the origin using linear_extrude for clarity.
+main_block = linear_extrude(height = block_height, center = true)(polygon([
+    [ -block_length/2, -block_width/2 ],
+    [  block_length/2, -block_width/2 ],
+    [  block_length/2,  block_width/2 ],
+    [ -block_length/2,  block_width/2 ]
+]));
+
+// Define hole positions relative to centre of block.
+// Each hole is a cylindrical cavity that starts at the top surface (z = block_height) and goes downward for depth = hole_depth.
+// At its deepest point, we want a solid floor of thickness floor_thickness beneath the cavity opening.
+// So the cavity extends from z = block_height down to z = block_height - hole_depth + floor_thickness? 
+// Actually: If we drill downward for hole_depth mm, then the cavity reaches z = block_height - hole_depth.
+// We want that at that deepest point there remains floor_thickness mm of solid material below it before reaching the bottom of the block (z=0).
+// Therefore we must stop carving at z = block_height - hole_depth + floor_thickness? Let's derive:
+//   Block occupies z in [0, block_height].
+//   Cavity starts at top surface z = block_height and goes downward.
+//   After traveling distance d along Z decreasing direction, the current z coordinate is block_height - d.
+//   We want that when d = hole_depth (the intended depth of cavity), we have:
+//        remaining solid thickness from that point down to z=0 should be floor_thickness? Actually "leaving a 5 mm solid floor" likely means that the cavity does not go all the way to the bottom; there is still 5 mm of solid material beneath the cavity opening before it would reach the block's bottom.
+//   So if we drill for hole_depth = 25 mm, then at z = block_height - hole_depth we are at the deepest point of the cavity.
+//   From that point down to z=0 is (block_height - hole_depth) mm of solid material remaining below the cavity bottom? But if the cavity stops exactly at z = block_height - hole_depth, then from that point downward there is still material until z=0; that total thickness is block_height - hole_depth.
+//   We want that total thickness to be floor_thickness = 5 mm? That would require block_height - hole_depth = 5 => hole_depth = block_height - 5 = 25, which matches given values (30-5=25). Indeed block_height = 30, hole_depth = 25, so block_height - hole_depth = 5 mm. Perfect!
+//   Therefore if we carve a cylindrical cavity that goes exactly hole_depth = 25 mm downward from the top surface, then at its deepest point (z = block_height - hole_depth) there is exactly floor_thickness = 5 mm of solid material remaining below it before reaching z=0. So no extra carving needed; the natural geometry already satisfies "leaving a 5 mm solid floor".
+//   Thus we simply carve out a cylindrical cavity with depth = hole_depth, starting at top surface and ending when it reaches z = block_height - hole_depth (which is exactly floor_thickness above bottom). This matches the numbers: 30 - 25 = 5 mm.
+//   So we will carve each hole as a cylinder of radius = hole_diameter/2, height = hole_depth, with its axis along Z direction, centered at the hole's (x,y) position, and extending downward from z = block_height to z = block_height - hole_depth.
+//   The cavity will be open at top surface (by design) and closed at bottom by the natural block boundary? Actually the cavity is carved out; the remaining solid includes the floor region automatically because we stop carving before reaching z=0. So it's fine.
+//   We'll use difference() to carve the hole from a full cylinder that extends all the way down, but then limit depth so that the bottom of the cavity stops at z = block_height - hole_depth (which is exactly floor_thickness above bottom). Since we will subtract a cylinder that goes too deep? Better: Use difference between a larger cylinder and a smaller one? Simpler: Use linear_extrude with hole? Actually OpenSCAD doesn't have built-in cylindrical hole directly; we can use difference of two cylinders or use cube with polygon cut.
+//   We'll model each hole by subtracting a vertical cylinder that goes from z = block_height - hole_depth to z = block_height (i.e., the cavity). But the cavity is defined as region where x^2 + y^2 <= (hole_diameter/2)^2 and z in [block_height - hole_depth, block_height].
+//   So we can create a cylinder representing the cavity using difference of two cylinders: one full cylinder from z = block_height - hole_depth to z = block_height? Actually a standard way: define a cylinder that extends fully downward and then subtract the part beyond. But easier: use linear_extrude with polygon cut via difference of two cubes? Not ideal.
+//   Instead we will build the final solid as: start from main block, then for each hole carve out a cylindrical cavity using difference() where we define the cavity shape explicitly.
+//   We'll create a cylinder that represents the cavity (including its top surface at z = block_height). Then subtract it from the block.
+//   The cavity should be defined as: all points with x^2 + y^2 <= (hole_diameter/2)^2 and z in [block_height - hole_depth, block_height].
+//   We can generate this using difference of two cylinders? Actually we can use the built-in cylinder() which creates a full infinite cylinder; but OpenSCAD's cylinder is axis-aligned and symmetric about origin if not centered. We can center it at (x0, y0, 0) by translating.
+//   Use: translate([x_pos, y_pos, 0]) * difference(cylinder(radius = hole_diameter/2, height = hole_depth, center = false), ...)? Not straightforward.
+//   Simpler approach: Since we have only a few holes (24 total), we can model each hole by subtracting a cube with rounded edges? But requirement is to use built-in primitives and avoid complex shapes; using cylinder() directly for cavity is acceptable if we center it correctly.
+//   OpenSCAD's cylinder(radius, height) creates a cylinder centered on the origin along Z axis when not specifying center. We can translate it so its axis aligns with Z direction and its bottom is at z = block_height - hole_depth? Actually cylinder() always has its axis aligned to global axes; we can set its base at appropriate location using translation.
+//   Define a cylinder that represents the cavity: radius = hole_diameter/2, height = hole_depth, with its axis along Z and its bottom face at z = block_height - hole_depth, top face at z = block_height.
+//   We can achieve this by translating the cylinder so that its base is at (x0, y0, block_height - hole_depth). But cylinder() expects origin-centered along its axis; we can use translate([x0, y0, block_height - hole_depth]) * cylinder(radius = hole_diameter/2, height = hole_depth, center = false) but then the cylinder's base is at that translation point? Actually if we do:
+//        cavity = translate([x0, y0, 0]) * cylinder(radius = hole_diameter/2, height = hole_depth, center = false);
+//   This places a cylinder whose axis runs along Z and its base is at z=0 in local coordinates; after translation by [x0,y0,0], the base is at global (x0, y0, 0). But we need the base to be at z = block_height - hole_depth.
+//   So better: define cavity as cylinder with its axis along Z and its bottom face at z = block_height - hole_

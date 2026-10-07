@@ -1,0 +1,46 @@
+// Define variables for dimensions
+$fn = 64; // For curved shapes
+
+// Function to create a barb
+barb() {
+    // Bottom part of the barb
+    linear_extrude(height=10, center=true) {
+        circle(d=7.5);
+    }
+    // Top part of the barb
+    rotate_extrude(angle=90, center=true) {
+        circle(d=9.5);
+    }
+}
+
+// Function to create a collar
+collar() {
+    cylinder(r=12, h=26, center=true);
+}
+
+// Main function to build the hose-barb reducer
+hose_barb_reducer() {
+    // Top part of the reducer
+    translate([0, 0, 20]) {
+        for (i = [0:9]) {
+            rotate_extrude(angle=360/10) {
+                barb();
+            }
+        }
+    }
+    // Bottom part of the reducer
+    translate([0, 0, 41]) {
+        for (i = [0:9]) {
+            rotate_extrude(angle=360/10) {
+                barb();
+            }
+        }
+    }
+    // Collar
+    translate([0, 0, 25]) {
+        collar();
+    }
+}
+
+// Call the main function to build the part
+hose_barb_reducer();

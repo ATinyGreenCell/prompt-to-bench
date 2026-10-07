@@ -1,0 +1,53 @@
+```openscad
+// Dimensions in mm
+X = 120;
+Y = 70;
+Z = 40;
+wall_thickness = 3;
+floor_thickness = 3;
+platform_height = 10;
+platform_length = 60;
+hole_diameter = 2;
+
+// Calculate inner dimensions
+inner_X = X - 2 * wall_thickness;
+inner_Y = Y - 2 * wall_thickness;
+inner_Z = Z - floor_thickness - platform_height;
+
+// Create the tank
+difference() {
+    linear_extrude(Z + 0.01) 
+        union() {
+            // Front and back walls
+            polygon(points=[[-wall_thickness, -Y/2], [X+wall_thickness, -Y/2], [X+wall_thickness, Y/2], [-wall_thickness, Y/2]]);
+            
+            // Side walls
+            polygon(points=[[0, -Y/2 + wall_thickness], [inner_X, -Y/2 + wall_thickness], [inner_X, Y/2 - wall_thickness], [0, Y/2 - wall_thickness]]);
+        }
+    translate([wall_thickness, 0, floor_thickness]) 
+        linear_extrude(Z + 0.01) 
+            union() {
+                // Floor
+                polygon(points=[[0, -Y/2], [inner_X, -Y/2], [inner_X, Y/2], [0, Y/2]]);
+                
+                // Platform
+                translate([0, inner_Y/2, platform_height]) 
+                    cube(size=[platform_length, inner_Y, platform_height]);
+            }
+    }
+
+    // Drill holes for electrode wires
+    for (angle = 0:360:360) {
+        rotate_extrude(10) 
+            circle(d=hole_diameter);
+    }
+    
+    translate([wall_thickness/2, -Y/4, Z + wall_thickness]) 
+        rotate_extrude(10) 
+            circle(d=hole_diameter);
+        
+    translate([-wall_thickness/2, -Y/4, Z + wall_thickness]) 
+        rotate_extrude(10) 
+            circle(d=hole_diameter);
+}
+```

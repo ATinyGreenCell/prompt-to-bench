@@ -1,0 +1,57 @@
+// Drying Rack for Microscope Slides
+
+// Base Block Dimensions
+base_length = 90;    // Length along X (mm) - Matches spec (90 mm)
+base_width = 45;     // Width along Y (mm) - Matches spec (45 mm)
+base_height = 20;    // Height along Z (mm) - Matches spec (20 mm)
+
+// Slide Slot Dimensions
+slot_length = 77;    // Length of the slot along X (mm) - Matches spec (77 mm)
+slot_width = 1.6;    // Width of the slot along Y (mm) - Matches spec (1.6 mm)
+slot_depth = 10;     // Depth of the slot into Z (mm) - Matches spec (10 mm)
+
+// Slot Arrangement Parameters
+num_slots = 10;      // Number of slots - Matches spec (10)
+slot_spacing = 3.5;  // Center-to-center spacing between slots in Y - Matches spec (3.5 mm)
+
+$fn = 64; // High resolution for curves
+
+// --- Base Block ---
+module base() {
+    cube([base_length, base_width, base_height]);
+}
+
+// --- Slot Cutting Tool (Extruded shape) ---
+// The slot is cut into the top face (Z=20). It needs to extend slightly past the faces.
+module slot_cutter(x_offset, y_offset) {
+    // The cutter must be long enough in X and deep enough in Z.
+    // We make it slightly longer than the required 77mm cut length for safety/coplanarity rule.
+    cut_length = slot_length + 1; // Extend past X faces (Ensures full cut)
+    cut_width = slot_width + 0.2; // Extend slightly past Y faces (Ensures full cut)
+    cut_depth = slot_depth + 1;  // Extend past Z face it cuts into (Ensures full cut)
+
+    translate([x_offset, y_offset, base_height - cut_depth]) {
+        cube([cut_length, cut_width, cut_depth]);
+    }
+}
+
+
+// --- Assembly ---
+difference() {
+    // 1. The main solid block
+    base();
+
+    // 2. Subtract the slots
+    for (i = [0 : num_slots - 1]) {
+        // Calculate Y position for the center of the i-th slot group
+        // Slots are centered on the block in Y.
+        // Total width occupied by centers: (num_slots - 1) * slot_spacing
+        // Center offset from origin (Y=0): -(Total spacing / 2) + (Spacing / 2)
+        y_center = (i - (num_slots - 1) / 2.0) * slot_spacing;
+
+        // The slots are centered on the block in X, so x_offset is 0.
+        x_center = 0;
+
+        slot_cutter(x_center, y_center);
+    }
+}

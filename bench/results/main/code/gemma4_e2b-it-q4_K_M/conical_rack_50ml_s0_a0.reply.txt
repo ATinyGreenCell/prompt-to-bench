@@ -1,0 +1,84 @@
+```openscad
+// Dimensions for the Falcon tube rack design
+
+// Plate dimensions
+plate_x = 130; // Length of the plate (X-axis) in mm
+plate_y = 90;  // Width of the plate (Y-axis) in mm
+plate_thickness = 4; // Thickness of the base plate (Z-dimension at z=0)
+
+// Hole dimensions
+hole_diameter = 30.5; // Diameter of the through-holes in mm
+hole_spacing = 40;    // Center-to-center spacing for holes in both X and Y directions in mm
+
+// Wall dimensions
+wall_length = plate_x; // Length of the side walls (X-dimension)
+wall_thickness = 4;   // Thickness of the side walls (Y-dimension)
+wall_height = 70;     // Height of the side walls from z=0 to z=70
+
+// Clearance for cutting operations
+clearance = 0.5; // Small offset for cuts
+
+// --- Base Plate ---
+module base_plate() {
+    cube([plate_x, plate_y, plate_thickness]);
+}
+
+// --- Through Holes ---
+module through_holes() {
+    // Calculate positions for the holes based on center-to-center spacing
+    // We need 3 holes along X and 2 rows along Y.
+    // The centers should be spaced by hole_spacing (40mm).
+
+    // X positions: Center at plate_x/2, then offset by +/- hole_spacing
+    x_positions = [
+        plate_x / 2 - hole_spacing,
+        plate_x / 2,
+        plate_x / 2 + hole_spacing
+    ];
+
+    // Y positions: Center at plate_y/2, then offset by +/- hole_spacing
+    y_positions = [
+        plate_y / 2 - hole_spacing,
+        plate_y / 2
+    ];
+
+    for (i = [0 : 2]) { // Iterate through the two rows along Y
+        for (j = [0 : 2]) { // Iterate through the three columns along X
+            // Calculate center coordinates for the hole
+            hole_center_x = x_positions[j];
+            hole_center_y = y_positions[i];
+
+            translate([hole_center_x, hole_center_y, 0]) {
+                cylinder(r = hole_diameter / 2, h = plate_thickness + clearance); // Hole goes through the plate thickness
+            }
+        }
+    }
+}
+
+// --- Side Walls ---
+module side_walls() {
+    // Wall along the long edge at Y=0 (or near it)
+    translate([0, 0, 0]) {
+        cube([wall_length, wall_thickness, wall_height]);
+    }
+
+    // Wall along the long edge at Y=plate_y (or near it)
+    translate([0, plate_y - wall_thickness, 0]) {
+        cube([wall_length, wall_thickness, wall_height]);
+    }
+}
+
+// --- Main Assembly ---
+module falcon_rack() {
+    // 1. Base Plate (at z=0 to z=plate_thickness)
+    base_plate();
+
+    // 2. Through Holes (cut through the plate)
+    through_holes();
+
+    // 3. Side Walls (rises from the plate to z=70)
+    side_walls();
+}
+
+falcon_rack();
+```

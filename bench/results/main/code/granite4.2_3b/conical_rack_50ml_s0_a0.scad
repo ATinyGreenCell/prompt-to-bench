@@ -1,0 +1,98 @@
+// Dimensions in millimeters
+plate_width    = 130;   // X dimension of flat plate (mm)
+plate_height   = 90;    // Y dimension of flat plate (mm)
+plate_thickness= 4;     // Thickness of the plate (mm)
+hole_diameter  = 30.5;  // Diameter of through-holes in mm
+hole_spacing   = 40;    // Center-to-center spacing between holes along X and Y (mm)
+wall_height    = 70;    // Height walls rise from plate to z=70 (mm)
+
+// Define the rack geometry based on user description
+module() {
+    // Plate centered at origin in XY plane, lying on bed (z=0 to z=plate_thickness)
+    translate([0, 0, 0])
+        cube([plate_width, plate_height, plate_thickness], center=true);
+
+    // Define hole positions: two rows along Y, three columns along X
+    // Holes are centered on the plate with spacing of 40 mm between centers
+    for (i = [0 : 2]) {          // Two rows along Y direction
+        for (j = [0 : 2]) {      // Three columns along X direction
+            // Calculate hole center coordinates relative to plate origin
+            x_center = j * hole_spacing;
+            y_center = i * hole_spacing;
+
+            // Create a cylinder representing the through-hole at that position
+            // The cylinder extends fully through the plate thickness (z from 0 to plate_thickness)
+            translate([x_center, y_center, 0])
+                cylinder(d=hole_diameter, h=plate_thickness, center=true);
+        }
+    }
+
+    // Define two solid walls along long edges of the plate (X direction)
+    // Each wall runs from z=0 to z=wall_height and is 4 mm thick in Y direction
+    // Walls are flush with the plate's long edge, so they extend beyond the plate on one side only
+
+    // Wall on the left side (negative X direction), extending from x = -plate_width/2 to x = 0? 
+    // Actually, we center the plate at origin in XY plane: plate occupies [-plate_width/2, plate_width/2] x [-plate_height/2, plate_height/2].
+    // The long edges are along X direction; walls run along Y and Z axes.
+
+    // Left wall (negative X side): extends from x = -plate_width/2 to x = 0? But the plate is centered at origin, so its left edge is at x = -plate_width/2.
+    // The wall should be flush with that edge: i.e., it starts exactly at the plate's left edge and extends outward in negative X direction by its thickness (4 mm).
+
+    // However, to avoid overlapping the plate itself, we define the wall as a rectangular prism extending from x = -plate_width/2 to x = -plate_width/2 + 4? 
+    // But simpler: since the plate is centered at origin and has thickness in X direction of plate_width (130 mm), its left edge is at x = -plate_width/2.
+    // The wall should be flush with that edge, meaning it starts exactly where the plate ends and extends outward by 4 mm in negative X direction? 
+    // Actually, "flush with the plate's long edge" means the wall is adjacent to the plate along its outer surface; so if the plate runs from x = -plate_width/2 to x = plate_width/2,
+    // then the left wall should occupy the region where x <= -plate_width/2 and |x + plate_width/2| = 4? 
+    // But we can define it as a rectangular prism that starts at x = -plate_width/2 and extends further in negative X direction by its thickness (which is 4 mm).
+
+    // Let's define the wall as:
+    //   From z=0 to z=wall_height, 
+    //   In XY plane: from x = -plate_width/2 to x = -plate_width/2 + 4? No, that would be extending in positive X direction.
+
+    // Actually, the wall is along the Y and Z axes; its thickness in X direction is exactly the plate's thickness (4 mm) but it extends beyond the plate on one side only.
+    // Since the plate is centered at origin, its left edge is at x = -plate_width/2. The wall should be flush with that edge, meaning it occupies the region where:
+    //   x in [-plate_width/2 + 4? No] -> Let's think clearly.
+
+    // We want a solid wall that is adjacent to the plate along its left side (negative X direction). 
+    // The plate occupies -plate_width/2 <= x <= plate_width/2, and similarly for y.
+    // The wall should be defined such that it shares the same Y and Z bounds as the plate but extends in negative X direction by 4 mm beyond the plate's left edge.
+
+    // So if the plate's leftmost point is at x = -plate_width/2, then the wall occupies:
+    //   x from -plate_width/2 to -plate_width/2 + 4? That would be extending in positive X direction, which is inside the plate.
+
+    // Correction: The plate's left edge is at x = -plate_width/2 (the smallest x-coordinate of the plate).
+    // A wall flush with that edge should extend from x = -plate_width/2 to x = -plate_width/2 + 4? 
+    // But if we go further in negative X direction, say x = -plate_width/2 - 4, then it's beyond the plate.
+
+    // Actually, "flush with the plate's long edge" means the wall is adjacent to the plate along that edge; so the wall starts exactly at the plate's edge and extends outward by its thickness (which is 4 mm in Y direction? Wait).
+
+    // The wall is a solid block that runs along the Y and Z axes. Its cross-section in XY plane is:
+    //   - Along X: from x = -plate_width/2 to x = -plate_width/2 + 4? No, because if we extend by 4 mm beyond the plate's edge in negative X direction, then the wall would be at x <= -plate_width/2.
+
+    // Let me define the wall as:
+    //   For the left wall (adjacent to the plate's left long edge):
+    //     It occupies all points where:
+    //        z between 0 and wall_height,
+    //        y between -plate_height/2 and plate_height/2 (same as plate),
+    //        x between -plate_width/2 - 4? No.
+
+    // Better approach: Since the plate is centered at origin in XY plane, we can define the wall without centering explicitly by using absolute coordinates relative to the plate's edge.
+
+    // We'll define two walls: one on the left (negative X side) and one on the right (positive X side).
+    // For the left wall: it should be flush with the plate's left long edge, meaning its inner surface is exactly at x = -plate_width/2 (the plate's left edge), and it extends further in negative X direction by 4 mm.
+
+    // So the wall occupies:
+    //   x from -plate_width/2 to -plate_width/2 + 4? No, that would be extending in positive X direction away from the plate's edge.
+
+    // Actually, if we want the wall to be adjacent to the plate along its left edge, then at the plate's left edge (x = -plate_width/2), the wall starts there and extends further in negative X direction by 4 mm.
+    // So the wall occupies x from -plate_width/2 - 4? No: if we go more negative, say x = -plate_width/2 - delta, then at x = -plate_width/2 we are inside the wall's interior? 
+
+    // Let's define a coordinate system where the plate is centered at origin.
+    // Plate occupies: -plate_width/2 <= x <= plate_width/2, and similarly for y.
+
+    // The left wall should be defined such that it shares the same Y bounds as the plate, but its X range extends beyond the plate's left edge by 4 mm in the negative X direction.
+    // So if the plate's leftmost x-coordinate is -plate_width/2, then the wall occupies:
+    //   x from -plate_width/2 - 4? No, that would be further left (more negative), which is correct for extending beyond the plate's edge in the negative X direction.
+
+    // But note: the plate thickness in X direction is plate_width = 130 mm, so its half-length is 65 mm.
+    // The wall thickness in Y direction is 4 mm? Actually, the wall is a solid block that is 4 mm thick in the Y direction (since it's flush with the plate's long edge along Y).

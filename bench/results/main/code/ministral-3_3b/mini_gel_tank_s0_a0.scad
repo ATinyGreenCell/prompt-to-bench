@@ -1,0 +1,84 @@
+// Dimensions in millimetres
+$fn = 64;
+outer_width = 120;      // X outer dimension
+outer_length = 70;     // Y outer dimension
+outer_height = 40;     // Z outer dimension
+wall_thickness = 3;    // Wall thickness
+floor_thickness = 3;   // Floor thickness
+
+// Tank walls and floor (subtracting wall thickness from outer dimensions)
+tank_wall_extent_x = outer_width - 2 * wall_thickness;
+tank_wall_extent_y = outer_length - 2 * wall_thickness;
+tank_wall_extent_z = outer_height;
+
+// Platform dimensions
+platform_length = 60;   // X length of platform (centred)
+platform_depth = outer_length;    // Y depth (full width)
+platform_elevation = 13;     // Z elevation above floor
+
+// Buffer chamber electrode holes
+hole_diameter = 2;
+hole_z_position = 30;
+
+module tank() {
+    // Outer tank shell
+    difference() {
+        cube([outer_width, outer_length, outer_height]);
+        translate([wall_thickness/2, wall_thickness/2, 0])
+            rotate([90, 0, 0]) cylinder(h=outer_height, r=(outer_width - wall_thickness)/2);
+        translate([-wall_thickness/2, wall_thickness/2, 0])
+            rotate([90, 0, 0]) cylinder(h=outer_height, r=(outer_length - wall_thickness)/2);
+    }
+}
+
+// Platform
+module platform() {
+    translate([0, outer_length / 2, platform_elevation])
+        linear_extrude(height=platform_depth)
+            polygon(points=[
+                [platform_length/2, 0],
+                [-platform_length/2, 0],
+                [-platform_length/2, platform_depth]
+            ]);
+}
+
+// Buffer chambers and electrode holes
+module buffer_chambers() {
+    // Left chamber (X = -60 to 0)
+    translate([-outer_width / 2 + wall_thickness, outer_length / 2 - wall_thickness, 0])
+        difference() {
+            cube([wall_thickness * 2, wall_thickness * 2, outer_height]);
+            translate([0, 0, hole_z_position])
+                cylinder(d=hole_diameter, h=(outer_height - hole_z_position));
+        }
+
+    // Right chamber (X = 60 to 120)
+    translate([outer_width / 2 - wall_thickness, outer_length / 2 - wall_thickness, 0])
+        difference() {
+            cube([wall_thickness * 2, wall_thickness * 2, outer_height]);
+            translate([0, 0, hole_z_position])
+                cylinder(d=hole_diameter, h=(outer_height - hole_z_position));
+        }
+}
+
+// Main assembly
+difference() {
+    // Tank walls and floor
+    union() {
+        translate([0, 0, -floor_thickness/2]) cube([tank_wall_extent_x + wall_thickness,
+                                                   tank_wall_extent_y + wall_thickness,
+                                                   outer_height]);
+        difference() {
+            translate([wall_thickness/2, wall_thickness/2, floor_thickness/2])
+                rotate([90, 0, 0]) cylinder(h=outer_height - floor_thickness, r=(tank_wall_extent_x)/2);
+            translate([-wall_thickness/2, wall_thickness/2, floor_thickness/2])
+                rotate([90, 0, 0]) cylinder(h=outer_height - floor_thickness, r=(tank_wall_extent_y)/2);
+        }
+    }
+
+    // Platform
+    platform()
+
+    // Buffer chambers (cutting out parts of the tank walls)
+    buffer_chambers()
+}

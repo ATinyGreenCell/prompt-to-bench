@@ -1,0 +1,36 @@
+```openscad
+// Design a two-part enclosure for an electronics board (Arduino temperature logger).
+// Parts printed together: Box and Lid, separated by a 10mm gap in Z direction.
+// Orientation: Both parts rest on XY plane at z=0, building upward (+Z).
+// Centered origin X,Y.
+
+fn = 64; // High number of segments for smooth curved surfaces (holes)
+
+variations_x = [70]; 
+variations_y = [50]; 
+
+box_walls = box_floor_thickness = 2;     // Wall and floor thickness in mm
+lid_plate_size_x = 65.6;   // Lid lip outer size X (mm)
+lid_plate_size_y = 45.6;  // Lid lip outer size Y (mm)
+
+// --- PART 1: THE BOX ---
+box_walls = box_floor_thickness; 
+
+variations_x = variations[0]; 
+variations_y = variations[1];
+
+// Create the main body of the box using a polygon extrusion with rounded corners for smoothness, then cut out top and floor.
+body_box_polygon = cube([variations_x, variations_y], [box_walls, 2]); // Base shape before cutting holes
+
+// Cut out the opening at the top (Z=0) to make it open-top using a polygon hole with offset
+top_cutout = box_top_opening; 
+difference(box_body_no_floor_1 = body_box_polygon - top_cutout); 
+
+// Create the floor plate on the bottom of this cut-out part. Note: The difference above already removed the Z>0 volume, so we just need a flat face at z=2mm (floor_thickness).
+box_with_floor = box_body_no_floor_1; // This is now an open-top shell with thickness 2mm
+
+// Cut out the floor plate itself from this body. 
+difference(box_final_part = box_with_floor - cube([variations_x, variations_y], [0, box_floor_thickness])); 
+
+print("Part 1: Box printed.");
+```

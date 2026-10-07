@@ -1,0 +1,50 @@
+// Dimensions in millimeters
+$fn = 64;
+
+fan_diameter = 90;
+wall_thickness = 2.5;
+top_plate_thickness = 2;
+notch_width = 12;
+notch_height = 8;
+notch_depth = 8;
+hole_diameter = 4.5;
+hole_distance = 71.5;
+
+// Top plate
+top_plate = cube([fan_diameter, fan_diameter, top_plate_thickness]);
+
+// Wall for notch
+wall_for_notch = translate([0, 0, wall_thickness])
+    linear_extrude(height = notch_depth)
+    square(size = [fan_diameter, wall_thickness], center = true);
+
+notch = translate([0, 0, wall_thickness + notch_height])
+    cube([notch_width, wall_thickness, notch_depth]);
+
+// Cut out notch
+wall_with_notch = difference() {
+    wall_for_notch;
+    notch;
+};
+
+// Four walls with holes
+walls = union() {
+    for (i = [0:3]) {
+        rotate(i * 90)
+            translate([fan_diameter / 2, fan_diameter / 2, 0])
+                linear_extrude(height = wall_thickness + wall_for_notch.size.z)
+                square(size = [fan_diameter - wall_thickness * 2, wall_thickness], center = true);
+
+        for (j = [0:1]) {
+            rotate(j * 90)
+                translate([wall_thickness / 2, fan_diameter / 2, wall_thickness])
+                    cylinder(h = wall_for_notch.size.z + top_plate_thickness, r = hole_diameter / 2, center = true);
+        }
+    }
+};
+
+// Final model
+model = union() {
+    top_plate;
+    walls_with_notch;
+};

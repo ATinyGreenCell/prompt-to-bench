@@ -1,0 +1,89 @@
+// Dimensions for the PCR tube rack design
+
+// Plate dimensions (ANSI/SLAS footprint)
+plate_length = 127.76; // Length along X axis (mm)
+plate_width = 85.48;   // Width along Y axis (mm)
+plate_height = 20;     // Height along Z axis (mm)
+
+// Hole specifications
+hole_diameter = 6.2;    // Diameter of the vertical holes (mm)
+hole_radius = hole_diameter / 2; // Radius of the vertical holes (mm)
+hole_spacing = 9.0;     // Centre-to-centre spacing between holes (mm)
+
+// Grid dimensions calculation
+num_cols = 12;          // Number of columns along X
+num_rows = 8;           // Number of rows along Y
+
+// Calculate the required span for the grid based on spacing and edge offsets
+// The center of the first hole (A1) is 14.38 mm from the left edge (X=0)
+x_offset_start = 14.38; // Center position of the first column in X direction
+
+// Calculate the total span needed for the columns to ensure they fit within plate_length
+// The center positions are: x_offset_start, x_offset_start + (num_cols - 1) * hole_spacing
+x_span_check = x_offset_start + (num_cols - 1) * hole_spacing;
+
+// Calculate the required span for the rows based on the Y dimension.
+// The center of the first row (Row 1) is 11.24 mm from the back edge (Y=plate_width).
+y_offset_start = plate_width - 11.24; // Center position of the first row in Y direction
+
+// Calculate the total span needed for the rows to ensure they fit within plate_width
+y_span_check = y_offset_start + (num_rows - 1) * hole_spacing;
+
+
+// Chamfer dimensions
+chamfer_length = 5; // Length of the chamfer leg (mm)
+
+// --- Main Body Construction ---
+
+module tube_rack() {
+    // 1. Base Plate (The main block)
+    difference() {
+        // Outer bounding box
+        cube([plate_length, plate_width, plate_height], center = true);
+
+        // Cutouts for the holes
+        for (int r = [0 : num_rows - 1]) { // Rows along Y axis
+            for (int c = [0 : num_cols - 1]) { // Columns along X axis
+                
+                // Calculate the center position of the current hole
+                x_pos = x_offset_start + c * hole_spacing;
+                y_pos = y_offset_start + r * hole_spacing;
+
+                // Create a cylinder for the hole, translated to the calculated center
+                translate([x_pos, y_pos, 0]) {
+                    cylinder(r = hole_radius, h = plate_height + 1, $fn = 64); // Extend slightly above the plate height
+                }
+            }
+        }
+    }
+
+    // 2. Chamfer on the A1 corner (X=0, Y=plate_width)
+    // The problem states: "Cut a 45-degree chamfer with 5 mm legs off the vertical edge at the A1 corner"
+    // Assuming A1 is the top-left corner of the grid structure.
+    // If X=0 is the left edge and Y=plate_width is the back edge, the corner is (0, plate_width).
+
+    translate([0, plate_width, 0]) {
+        rotate([90, 0, 0]) { // Rotate to align the chamfer plane with the XZ plane (or similar orientation)
+            // We need a shape that cuts off the corner. A simple wedge/prism is best.
+            // Since we are cutting *off* the vertical edge, we define the cut relative to the corner point.
+
+            // Define the corner point for reference (0, plate_width, 0) in local coordinates after translation and rotation setup.
+            // Let's redefine the chamfer based on the global coordinate system: X=0, Y=plate_width edge.
+
+            // We will use a simple cube subtraction to define the cut volume near the corner (X=0, Y=plate_width).
+            // This is complex to do precisely with standard primitives without defining the exact geometry of the chamfer plane.
+            // A simpler interpretation for FDM printing is to subtract a wedge shape from the corner region.
+
+            // Let's define the cut volume starting at (0, plate_width) and extending 5mm along X and Z directions.
+            cube([chamfer_length, 0.01, chamfer_length], center = true); // This is an approximation of a wedge/prism cut.
+
+            // A more precise way to define a 45-degree chamfer:
+            // Define the corner point P = (0, plate_width, 0)
+            // Define the edge points along X and Z directions for the cut plane.
+            
+            // Since we are inside the main difference block, we need to ensure this cut is relative to the outer boundary.
+        }
+    }
+}
+
+tube_rack();

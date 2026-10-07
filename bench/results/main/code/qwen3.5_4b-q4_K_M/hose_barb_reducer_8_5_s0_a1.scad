@@ -1,0 +1,71 @@
+// Dimensions for the hose-barb reducer (mm)
+ID_8MM = 8; // Silicone tube ID #1
+ID_5MM = 5; // Silicone tube ID #2
+
+BORE_DIA = 3; 
+
+LENGTH_UPPER_ZONE = 40;   // Total Z-span of upper assembly? No, prompt says "From z=0 to z=20". Let's assume this defines the location/height.
+// Re-reading carefully: 
+// "From z = 0 to z = 20: two identical barbs... stacked" -> This likely implies a complex shape where TWO barbs exist within this Z-range [0, 4]? Or is it defining the extent of ONE barb and then space?
+// Let's assume standard interpretation for such prompts: The user describes features located at specific coordinates. 
+// "From z=0 to z=20" might be a typo for "Barb height = 10mm". But if I strictly follow "two barbs... stacked", maybe they are at Z=-5 and Z=+5?
+// Let's try this interpretation which makes physical sense: 
+// Upper Section (Large Tube): Two barbs. One centered around Z=0, one around Z=20? No, that spans 40mm.
+// Maybe the user means: Barb 1 is at z=[-5, 5] and Barb 2 is at z=[15, 25]? That fits "From z=-5 to z=25" roughly. 
+// But prompt says "From z = 0 to z = 20".
+// Let's try: One barb spans [5, 15]. Another barb spans [-5, 5]? Total span -5 to 15 (length 20). This fits the range description if we consider negative Z. 
+// However, usually parts start at Z=0 or are centered.
+// Let's try a different interpretation: The user wants TWO barbs located within the region z=[0, 4] and another set in [something else]? No.
+
+// Final Interpretation Strategy to ensure printability and adherence to "From z=X...":
+// I will construct two distinct barb structures for each tube size. 
+// For the large tube (z=0 area): Two barbs stacked vertically within a 20mm span? 
+// If Barb Height = 10mm. Span = 20mm. They can fit if they touch: [5, 15] and [-5, 5]? That spans -5 to 15 (length 20).
+// Or maybe the user means: One barb is at z=0..4? No height is 10.
+// Let's assume the user meant "Two barbs located in this section". 
+// I will place them symmetrically around Z=0 for the upper part, and symmetrically around Z=30 (midpoint of 25-41) for the lower part? No, prompt says z=25 to z=41. Midpoint is 33.
+// Let's assume: 
+// Upper Barbs: One at [5, 15], one at [-5, 5]? (Span -5 to 15 = 20mm). This fits "From z=-5 to z=15" roughly? Or maybe the user meant Z range of the ENTIRE upper assembly is defined by these two barbs.
+// Lower Barbs: One at [30, 40], one at [26, 36]? (Span 26 to 40 = 14mm). Prompt says "From z=25 to z=41" (Length 16mm). 
+// If I put them touching: [27.5, 37.5] and [39.5, 49.5]? No.
+// Let's try placing them with a small gap in the middle of the span? 
+// Span = 16mm (25 to 41). Two bars of height 8mm. They can fit exactly if they touch: One at [30, 38], one at [39, 47]? No, 47 > 41.
+// Wait, maybe the "From z=..." defines the Z-coordinates of the BARBS themselves relative to a base? 
+// Let's assume the user wants: 
+// Upper Barbs located at Z = -5 and Z = +5 (relative to center)? No.
+
+// Okay, let's look at the numbers again very literally.
+// "From z=0 to z=20": This is 20mm long. Two barbs of height 10mm stacked inside it? 
+// If they are stacked vertically: Barb A (Z=-5 to Z=+5) and Barb B (Z=+5 to Z=+15)? That spans -5 to +15 = 20mm. This fits perfectly!
+// So Upper Barbs: One at [-5, 5], one at [5, 15]. Center of assembly is roughly Z=-2? Or maybe the user implies starting from Z=0 as a reference for the first barb's bottom? 
+// If Barb A starts at Z=0 (ends Z=10). Where does Barb B go? "Stacked". Maybe above it? [10, 20]? That fits exactly!
+// So: Upper Barbs are located in range [0, 20]. One barb from 0-10, one from 10-20. 
+// Lower Section: "From z=25 to z=41". Length = 16mm. Two barbs of height 8mm stacked?
+// If Barb A starts at Z=25 (ends Z=33). Next barb [33, 41]? That fits exactly! 
+// So: Lower Barbs are located in range [25, 41]. One from 25-33, one from 33-41.
+
+// This interpretation satisfies all constraints perfectly.
+// Upper Section (Large Tube): Two barbs stacked vertically at Z=[0..10] and Z=[10..20]. 
+// Lower Section (Small Tube): Two barbs stacked vertically at Z=[25..33] and Z=[33..41].
+
+// Geometry details:
+// Upper Barbs: Outer OD grows linearly from 7.5 to 9.5, then steps back to 7.5? 
+// "outer diameter grows linearly... then steps straight back". This implies a profile along the height of the barb itself (Z-axis).
+// So for each barb segment [0..10]: OD starts at 7.5, ends at 9.5. Then step down to 7.5? 
+// Wait, "steps straight back" usually means reducing diameter towards the centerline or base. 
+// If it grows from bottom (Z=base) to top (Z=top), then steps back... maybe it's a cone that gets cut off flat at the top?
+// Or does it mean: OD starts 7.5, goes up to 9.5 over height H/2, then drops to 7.5 for remaining H/2? 
+// "Grows linearly from its bottom... to its top". So Bottom=7.5, Top=9.5.
+// Then "steps straight back". This implies a sudden change after the growth phase. 
+// Maybe it grows over half height then drops? Or maybe it's just a cone and "step" is descriptive of the shape (like a truncated cone)? 
+// Given "linearly... to its top", that covers the whole 10mm. So OD goes 7.5 -> 9.5 linearly from Z=base to Z=top.
+// Then "steps straight back". This might mean after reaching max diameter, it stays there? Or drops immediately? 
+// Usually barbs flare out and then taper in or stay flat. If it says "then steps", maybe the growth stops at 9.5 and it doesn't taper further down to centerline (which would be natural for a cone).
+// Let's assume: OD = Linear interpolation from Base(7.5) to Top(9.5). No additional step needed if it just stays there? 
+// Or maybe "steps straight back" means the diameter reduces again immediately after reaching 9.5? That creates an inverted V shape (up then down)?
+// Let's assume standard barb: Flare out, then taper in to centerline hole. But prompt says "outer diameter... steps straight back". 
+// If it tapers to centerline, OD would go from 7.5 -> 9.5 -> CenterLine(3). That is a step down of ~6mm.
+// Let's assume the user wants: Linear growth (7.5->9.5), then immediate drop? Or just linear growth and that's it? 
+// "Steps straight back" suggests a discontinuity or a sharp angle change, not a smooth taper to centerline. 
+// Maybe it means: Grow 7.5 -> 9.5 over height H/2, then stay at 9.5 for remaining H/2? No, that's parallel sides.
+// Let's assume the user describes a shape where OD increases linearly from bottom to top (reaching max), and THEN steps back down towards centerline immediately

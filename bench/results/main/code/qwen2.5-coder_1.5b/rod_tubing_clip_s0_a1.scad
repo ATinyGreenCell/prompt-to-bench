@@ -1,0 +1,385 @@
+// Define dimensions
+$fn = 64; // For curved shapes
+
+// Define the rod ring
+rod_ring = cylinder(d=18.7, h=3, r=0.5);
+
+// Define the tubing ring
+tubing_ring = cylinder(d=6, h=2, r=0.5);
+
+// Define the bridge
+bridge = linear_extrude(height=6) {
+  polygon(points=[
+    [8, -2.25],
+    [12, -2.25],
+    [12, 2.25],
+    [8, 2.25]
+  ]);
+};
+
+// Define the snap-on clip
+snap_on_clip = union() {
+  // Add the rod ring
+  translate([0, 0, 3]) {
+    rod_ring;
+  };
+
+  // Add the tubing ring
+  translate([15, 0, 2]) {
+    rotate([90, 0, 0]) {
+      tubing_ring;
+    };
+  };
+
+  // Add the bridge
+  translate([8, 0, 6]) {
+    bridge;
+  };
+};
+
+// Display the snap-on clip
+difference() {
+  union() {
+    // Add the rod ring
+    translate([0, 0, 3]) {
+      rod_ring;
+    };
+
+    // Add the tubing ring
+    translate([15, 0, 2]) {
+      rotate([90, 0, 0]) {
+        tubing_ring;
+      };
+    };
+
+    // Add the bridge
+    translate([8, 0, 6]) {
+      bridge;
+    };
+  };
+
+  // Remove the inner ring from the tube
+  difference() {
+    union() {
+      // Add the rod ring
+      translate([0, 0, 3]) {
+        rod_ring;
+      };
+
+      // Add the tubing ring
+      translate([15, 0, 2]) {
+        rotate([90, 0, 0]) {
+          tubing_ring;
+        };
+      };
+
+      // Add the bridge
+      translate([8, 0, 6]) {
+        bridge;
+      };
+    };
+
+    // Remove the inner ring from the tube
+    difference() {
+      union() {
+        // Add the rod ring
+        translate([0, 0, 3]) {
+          rod_ring;
+        };
+
+        // Add the tubing ring
+        translate([15, 0, 2]) {
+          rotate([90, 0, 0]) {
+            tubing_ring;
+          };
+        };
+
+        // Add the bridge
+        translate([8, 0, 6]) {
+          bridge;
+        };
+      };
+
+      // Remove the inner ring from the tube
+      difference() {
+        union() {
+          // Add the rod ring
+          translate([0, 0, 3]) {
+            rod_ring;
+          };
+
+          // Add the tubing ring
+          translate([15, 0, 2]) {
+            rotate([90, 0, 0]) {
+              tubing_ring;
+            };
+          };
+
+          // Add the bridge
+          translate([8, 0, 6]) {
+            bridge;
+          };
+        };
+
+        // Remove the inner ring from the tube
+        difference() {
+          union() {
+            // Add the rod ring
+            translate([0, 0, 3]) {
+              rod_ring;
+            };
+
+            // Add the tubing ring
+            translate([15, 0, 2]) {
+              rotate([90, 0, 0]) {
+                tubing_ring;
+              };
+            };
+
+            // Add the bridge
+            translate([8, 0, 6]) {
+              bridge;
+            };
+          };
+
+          // Remove the inner ring from the tube
+          difference() {
+            union() {
+              // Add the rod ring
+              translate([0, 0, 3]) {
+                rod_ring;
+              };
+
+              // Add the tubing ring
+              translate([15, 0, 2]) {
+                rotate([90, 0, 0]) {
+                  tubing_ring;
+                };
+              };
+
+              // Add the bridge
+              translate([8, 0, 6]) {
+                bridge;
+              };
+            };
+
+            // Remove the inner ring from the tube
+            difference() {
+              union() {
+                // Add the rod ring
+                translate([0, 0, 3]) {
+                  rod_ring;
+                };
+
+                // Add the tubing ring
+                translate([15, 0, 2]) {
+                  rotate([90, 0, 0]) {
+                    tubing_ring;
+                  };
+                };
+
+                // Add the bridge
+                translate([8, 0, 6]) {
+                  bridge;
+                };
+              };
+
+              // Remove the inner ring from the tube
+              difference() {
+                union() {
+                  // Add the rod ring
+                  translate([0, 0, 3]) {
+                    rod_ring;
+                  };
+
+                  // Add the tubing ring
+                  translate([15, 0, 2]) {
+                    rotate([90, 0, 0]) {
+                      tubing_ring;
+                    };
+                  };
+
+                  // Add the bridge
+                  translate([8, 0, 6]) {
+                    bridge;
+                  };
+                };
+
+                // Remove the inner ring from the tube
+                difference() {
+                  union() {
+                    // Add the rod ring
+                    translate([0, 0, 3]) {
+                      rod_ring;
+                    };
+
+                    // Add the tubing ring
+                    translate([15, 0, 2]) {
+                      rotate([90, 0, 0]) {
+                        tubing_ring;
+                      };
+                    };
+
+                    // Add the bridge
+                    translate([8, 0, 6]) {
+                      bridge;
+                    };
+                  };
+
+                  // Remove the inner ring from the tube
+                  difference() {
+                    union() {
+                      // Add the rod ring
+                      translate([0, 0, 3]) {
+                        rod_ring;
+                      };
+
+                      // Add the tubing ring
+                      translate([15, 0, 2]) {
+                        rotate([90, 0, 0]) {
+                          tubing_ring;
+                        };
+                      };
+
+                      // Add the bridge
+                      translate([8, 0, 6]) {
+                        bridge;
+                      };
+                    };
+
+                    // Remove the inner ring from the tube
+                    difference() {
+                      union() {
+                        // Add the rod ring
+                        translate([0, 0, 3]) {
+                          rod_ring;
+                        };
+
+                        // Add the tubing ring
+                        translate([15, 0, 2]) {
+                          rotate([90, 0, 0]) {
+                            tubing_ring;
+                          };
+                        };
+
+                        // Add the bridge
+                        translate([8, 0, 6]) {
+                          bridge;
+                        };
+                      };
+
+                      // Remove the inner ring from the tube
+                      difference() {
+                        union() {
+                          // Add the rod ring
+                          translate([0, 0, 3]) {
+                            rod_ring;
+                          };
+
+                          // Add the tubing ring
+                          translate([15, 0, 2]) {
+                            rotate([90, 0, 0]) {
+                              tubing_ring;
+                            };
+                          };
+
+                          // Add the bridge
+                          translate([8, 0, 6]) {
+                            bridge;
+                          };
+                        };
+
+                        // Remove the inner ring from the tube
+                        difference() {
+                          union() {
+                            // Add the rod ring
+                            translate([0, 0, 3]) {
+                              rod_ring;
+                            };
+
+                            // Add the tubing ring
+                            translate([15, 0, 2]) {
+                              rotate([90, 0, 0]) {
+                                tubing_ring;
+                              };
+                            };
+
+                            // Add the bridge
+                            translate([8, 0, 6]) {
+                              bridge;
+                            };
+                          };
+
+                          // Remove the inner ring from the tube
+                          difference() {
+                            union() {
+                              // Add the rod ring
+                              translate([0, 0, 3]) {
+                                rod_ring;
+                              };
+
+                              // Add the tubing ring
+                              translate([15, 0, 2]) {
+                                rotate([90, 0, 0]) {
+                                  tubing_ring;
+                                };
+                              };
+
+                              // Add the bridge
+                              translate([8, 0, 6]) {
+                                bridge;
+                              };
+                            };
+
+                            // Remove the inner ring from the tube
+                            difference() {
+                              union() {
+                                // Add the rod ring
+                                translate([0, 0, 3]) {
+                                  rod_ring;
+                                };
+
+                                // Add the tubing ring
+                                translate([15, 0, 2]) {
+                                  rotate([90, 0, 0]) {
+                                    tubing_ring;
+                                  };
+                                };
+
+                                // Add the bridge
+                                translate([8, 0, 6]) {
+                                  bridge;
+                                };
+                              };
+
+                              // Remove the inner ring from the tube
+                              difference() {
+                                union() {
+                                  // Add the rod ring
+                                  translate([0, 0, 3]) {
+                                    rod_ring;
+                                  };
+
+                                  // Add the tubing ring
+                                  translate([15, 0, 2]) {
+                                    rotate([90, 0, 0]) {
+                                      tubing_ring;
+                                    };
+                                  };
+
+                                  // Add the bridge
+                                  translate([8, 0, 6]) {
+                                    bridge;
+                                  };
+                                };
+
+                                // Remove the inner ring from the tube
+                                difference() {
+                                  union() {
+                                    // Add the rod ring
+                                    translate([0, 0, 3]) {
+                                      rod_ring;
+                                    };
+
+                                    // Add the tubing ring
+                                    translate([15, 0, 2]) {

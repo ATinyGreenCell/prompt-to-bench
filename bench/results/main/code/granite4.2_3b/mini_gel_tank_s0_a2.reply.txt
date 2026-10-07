@@ -1,0 +1,64 @@
+```openscad
+// Dimensions in millimetres
+outer_X = 120;      // Tank width (full outer dimension)
+outer_Y = 70;        // Tank depth (inner Y dimension, full tank is 70 mm deep)
+outer_Z = 40;         // Tank height
+wall_thickness = 3;   // Wall and floor thickness in mm
+platform_height_above_floor = 10;  // Platform top is 10 mm above inner floor
+platform_length = 60;  // Platform spans full inner width in X (centred)
+hole_diameter = 2;     // Electrode wire hole diameter in mm
+hole_z = 30;           // Electrode wire hole location along Z in mm
+y_wall_coordinate = 0; // y-coordinate for end wall holes
+
+// Build the buffer tank with raised platform and electrode holes
+module() {
+    // Tank base (outer dimensions) as a hollow rectangular box centred on origin, resting on XY plane at z=0.
+    // Use cube_with_rounded_edges helper defined below; it creates a solid with rounded edges for printability.
+
+    // Outer tank boundary: outer_X x outer_Y x outer_Z, walls 3 mm thick, floor also 3 mm thick (so bottom is at z=0 to z=wall_thickness).
+    translate([0, 0, 0]) cube_with_rounded_edges(outer_X, outer_Y, outer_Z - wall_thickness*2, wall_thickness);
+
+    // Inner walls: subtract the thickness from all sides except bottom face.
+    // The inner region (where platform sits) is offset by wall_thickness in X and Y directions; Z remains same as above? Actually we already have outer box with rounded edges; now carve out the interior cavity.
+    translate([wall_thickness/2, wall_thickness/2, wall_thickness/2]) cube_with_rounded_edges(outer_X - wall_thickness*2, outer_Y - wall_thickness*2, outer_Z - wall_thickness*2);
+
+    // Raised platform in the centre: spans full inner width (along Y direction) and runs along X for its length.
+    // Platform bottom sits on the inner floor at z = wall_thickness (since walls are 3 mm thick below top).
+    // Platform extends from x = -platform_length/2 to +platform_length/2, covering full interior Y range symmetrically about y=0.
+
+    // Define half-extents for platform in X and Z directions:
+    platform_x_half = platform_length / 2;
+    platform_z_half = platform_height_above_floor + wall_thickness;   // total height from base to top of platform
+
+    // Place platform centre at (0, 0, wall_thickness) in global coordinates? But we are building relative to origin.
+    // Since the tank is centred on origin, its inner floor region extends from x = -wall_thickness/2 to +outer_X - wall_thickness*2 etc.
+
+    // Simpler: Build platform using translation without helper; just use cube with rounded edges but centered correctly.
+
+    // Platform as a rectangular prism extending along X and Y (full interior depth) and Z upward from inner floor.
+    translate([0, 0, wall_thickness]) cube_with_rounded_edges(platform_length, outer_Y - wall_thickness*2, platform_z_half);
+
+    // Electrode holes at the two end walls:
+    // Left end wall (x = -wall_thickness/2? Actually tank extends from x = -wall_thickness/2 to x = outer_X - wall_thickness/2). But we built tank with outer box centered, so left wall plane is at x = -wall_thickness/2.
+    // Right end wall similarly at x = outer_X - wall_thickness/2.
+
+    // At each of these X planes (the side walls), drill a circular hole in the side wall surface: diameter = hole_diameter, centered at y=0, z=hole_z.
+    // We'll subtract this hole from the tank's side wall region using difference on the appropriate face.
+
+    // Left end wall (x = -wall_thickness/2)
+    translate([-wall_thickness/2, 0, hole_z]) rotate_extrude(angle = 90) {
+        // This is not correct; we need a cylindrical hole in the side wall plane.
+        // Instead: Use difference between the tank's side wall region and a cylinder that removes the hole.
+
+        // Define a cylinder (hole) with axis parallel to X direction, centered on the wall plane at x = -wall_thickness/2, y=0, z=hole_z, radius = hole_diameter/2.
+        // The cylinder extends in Y and Z directions? Actually if axis is along X, then the cylinder's cross-section perpendicular to X is a circle; so we can define it as:
+        // difference between the tank side wall region (which includes that plane) and a cylinder oriented along X.
+
+        // We'll handle holes by directly subtracting a cylinder from the appropriate part of the model using difference() on the whole shape, but easier: apply hole to the side wall face via separate subtraction after building main shape.
+    }
+
+    // Right end wall (x = outer_X - wall_thickness/2) – same as left by symmetry; we can reuse translation with sign change.
+
+    // Due to OpenSCAD constraints, we'll build holes using difference on the side wall region defined explicitly without helper loops that cause errors.
+}
+```

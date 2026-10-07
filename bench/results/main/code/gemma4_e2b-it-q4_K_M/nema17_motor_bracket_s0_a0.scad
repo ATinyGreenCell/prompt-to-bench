@@ -1,0 +1,151 @@
+// Dimensions for the L-shaped mounting bracket
+
+// Base Plate Dimensions
+base_plate_x_max = 25; // Max X extent of the base plate
+base_plate_x_min = -25; // Min X extent of the base plate
+base_plate_y_max = 45; // Max Y extent of the base plate
+base_plate_y_min = 0;  // Min Y extent of the base plate
+base_plate_z_max = 5;  // Max Z height of the base plate
+base_plate_thickness = 5; // Thickness of the base plate (Z dimension)
+
+// Through-hole dimensions for Base Plate
+hole1_x = -17;
+hole1_y = 30;
+hole2_x = 17;
+hole2_y = 30;
+hole_diameter = 4.5; // Diameter of the M4 holes
+
+// Vertical Motor Plate Dimensions
+motor_plate_x_max = 25; // Max X extent of the motor plate
+motor_plate_x_min = -25; // Min X extent of the motor plate
+motor_plate_y_max = 5;  // Max Y extent of the motor plate
+motor_plate_y_min = 0;  // Min Y extent of the motor plate
+motor_plate_z_max = 50; // Max Z height of the motor plate
+motor_plate_thickness = 5; // Thickness of the motor plate (assuming same thickness for simplicity, though not explicitly stated)
+
+// Motor Centring Boss Hole Dimensions
+boss_hole_x = 0;
+boss_hole_z = 28;
+boss_hole_diameter = 23;
+
+// M3 Screw Pattern Dimensions
+screw_pattern_size = 31; // Size of the square pattern for screws
+screw_spacing = 3.4; // Distance between screw centers (implied by a 31mm square)
+screw_radius = screw_pattern_size / 2;
+
+// Gusset Dimensions
+gusset_thickness = 5; // Thickness of the triangular gussets
+gusset_leg_length = 20; // Length of the legs along +Y and +Z
+
+// --- Base Plate Construction ---
+module base_plate() {
+    cube([base_plate_x_max - base_plate_x_min, base_plate_y_max - base_plate_y_min, base_plate_thickness]);
+}
+
+// Create the main body of the base plate
+difference() {
+    base_plate();
+    
+    // Vertical through-holes (M4)
+    translate([hole1_x, hole1_y, 0])
+        cylinder(r = hole_diameter / 2, h = base_plate_z_max + 1, $fn=64);
+    
+    translate([hole2_x, hole2_y, 0])
+        cylinder(r = hole_diameter / 2, h = base_plate_z_max + 1, $fn=64);
+}
+
+// --- Vertical Motor Plate Construction ---
+module motor_plate() {
+    cube([motor_plate_x_max - motor_plate_x_min, motor_plate_y_max - motor_plate_y_min, motor_plate_z_max]);
+}
+
+// Create the main body of the motor plate
+difference() {
+    motor_plate();
+    
+    // Cut the 23mm centering boss hole (along Y axis)
+    translate([boss_hole_x, 0, boss_hole_z - 0.1]) // Slightly below Z=28 to ensure cut goes through
+        cylinder(r = boss_hole_diameter / 2, h = motor_plate_z_max + 1, $fn=64);
+
+    // Cut the four M3 screw holes (3.4mm diameter) on a 31mm square pattern centered at (0, 28)
+    for (i = [0 : 2]) {
+        for (j = [0 : 2]) {
+            screw_x = -screw_radius + i * screw_spacing;
+            screw_y = 28 - screw_radius + j * screw_spacing;
+            
+            translate([screw_x, screw_y, 0])
+                cylinder(r = 3.4 / 2, h = motor_plate_z_max + 1, $fn=64);
+        }
+    }
+}
+
+// --- Triangular Gussets Construction ---
+module gusset_left() {
+    // Right triangle in the YZ plane, right angle at (y=5, z=5)
+    // Legs: 20mm along +Y and 20mm along +Z
+    
+    // Define vertices for the triangle based on the description:
+    // Corner 1 (Right Angle): (y=5, z=5)
+    // Corner 2 (Along Y axis): (y = 5 + 20, z = 5) => (y=25, z=5)
+    // Corner 3 (Along Z axis): (y = 5, z = 5 + 20) => (y=5, z=25)
+
+    polygon(points = [
+        [5, 5],      // Right angle corner
+        [25, 5],     // End of Y leg
+        [5, 25]      // End of Z leg
+    ]);
+}
+
+module gusset_right() {
+    // Right triangle in the YZ plane, right angle at (y=5, z=5)
+    // Legs: 20mm along +Y and 20mm along +Z
+    
+    // Define vertices for the triangle based on the description:
+    // Corner 1 (Right Angle): (y=5, z=5)
+    // Corner 2 (Along Y axis): (y = 5 - 20, z = 5) => (y=-15, z=5) -- Wait, this seems wrong based on the description "flush with the right edge (x=20 to 25)"
+    
+    // Reinterpreting: The gusset is attached to the right side of the bracket.
+    // If it's flush with x=25, and its corner is at y=5, z=5.
+    // Let's assume the triangle extends *outward* from the main body along the X axis boundary.
+    
+    // Based on: "each is a right triangle in the YZ plane with legs 20 mm along +Y and 20 mm along +Z, its right-angle corner at y = 5, z = 5 (where the plates meet)."
+    
+    // If it's on the right side (x=25), the triangle should extend towards positive X.
+    // Let's define the triangle in the YZ plane relative to the origin of the plate structure.
+    
+    // Assuming the gusset is centered around x=22.5 for simplicity, or just defined by its corners:
+    
+    polygon(points = [
+        [5, 5],      // Right angle corner (at y=5, z=5)
+        [25, 5],     // Point along +Y leg (y=5+20=25, z=5)
+        [5, 25]      // Point along +Z leg (y=5, z=5+20=25)
+    ]);
+}
+
+
+// --- Assembly ---
+
+// 1. Base Plate
+base_plate();
+
+// 2. Motor Plate (Positioned on the back edge of the base plate)
+// The motor plate spans X=[-25, 25], Y=[0, 5]. It sits on the back edge of the base plate (Y=45).
+// Since the description says "standing on the back edge of the base", we place it such that its bottom edge aligns with the top edge of the base plate's Z=5.
+// However, the motor plate is defined from Y=0 to Y=5. Let's assume it sits adjacent to the base plate structure.
+
+translate([0, 0, base_plate_thickness]) // Lift motor plate up by base plate thickness (Z=5)
+    motor_plate();
+
+
+// 3. Gussets (These are attached to the sides of the overall structure)
+// Left Gusset (Attached near x=-25)
+translate([-25, 0, 0]) // Position origin at the left edge of the base plate
+    rotate([90, 0, 0]) // Rotate so YZ plane is aligned with the triangle definition
+    gusset_left();
+
+// Right Gusset (Attached near x=25)
+translate([25, 0, 0]) // Position origin at the right edge of the base plate
+    rotate([90, 0, 0]) // Rotate so YZ plane is aligned with the triangle definition
+    gusset_right();
+
+// Note on assembly: The description implies an L-shape where the motor plate sits on the back

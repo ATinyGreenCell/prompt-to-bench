@@ -1,0 +1,25 @@
+```openscad
+// Define dimensions
+$fn = 64; // For curved shapes
+
+// Base block
+base_block = cube([90, 45, 20]);
+
+// Top face with slots
+top_face = translate([0, 0, 10]) * cylinder(r=77/2, h=10, $fn=$fn);
+
+// Slots
+slots = for (x=[-45, -35, -25, -15, -5, 5, 15, 25, 35, 45]) {
+    translate([x, 0, 0]) * cylinder(r=77/2, h=10, $fn=$fn);
+};
+
+// Combine base block and top face with slots
+drying_rack = union([
+    base_block,
+    top_face,
+    slots
+]);
+
+// Render the final model
+render(drying_rack);
+```

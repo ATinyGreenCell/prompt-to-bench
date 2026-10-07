@@ -1,0 +1,140 @@
+<think>
+We need to produce a correct OpenSCAD script that meets all requirements and is syntactically valid. The previous attempt had errors likely due to missing semicolons or incorrect function usage.
+
+Let's design step by step:
+
+- Units: mm.
+- Named variables at top with dimensions and comment.
+
+Define:
+
+// dimensions in mm
+$top_width = 45;
+$top_depth = 45;
+$wall_thickness = 2.5;
+$top_plate_thickness = 2;
+$hole_diameter = 4.5; // for screw holes
+
+But we need to create the top plate with four circular holes (screw holes). Use extrude_circle? Not available directly, but we can use cylinder and then subtract from a solid.
+
+Simplify: Create a rectangular solid for the top plate, then subtract four cylindrical voids of radius hole_diameter/2 = 2.25 mm, height = top_plate_thickness (2 mm). Use difference.
+
+Define:
+
+top_plate = cube([$top_width, $top_depth, $top_plate_thickness]);
+
+hole_radius = $hole_diameter / 2;
+
+hole1 = cylinder([0, 0, $top_plate_thickness], [hole_radius, hole_radius, $top_plate_thickness]);
+hole2 = translate(hole1, [ -$top_width/2, 0, 0]); // left
+hole3 = translate(hole2, [ $top_width/2, 0, 0]); // right
+hole4 = translate(hole3, [ 0, -$top_depth/2, 0]); // back
+
+top_plate_holes = [0, 0, $top_plate_thickness, $top_plate_width, $top_plate_height]; where top_plate_width = $top_width, height = $top_plate_thickness.
+
+Then:
+
+top_plate = difference(top_plate, hole1);
+top_plate = difference(top_plate, hole2);
+top_plate = difference(top_plate, hole3);
+top_plate = difference(top_plate, hole4);
+
+Now walls: four walls of thickness $wall_thickness, height $top_plate_thickness, extending from top plate to z=40.
+
+Define coordinates:
+
+// left wall
+left_wall = cube([ -$top_width/2, 0, -$top_plate_thickness, -$wall_thickness, -$top_plate_thickness, 0, 0, $top_plate_thickness, 0]);
+// right wall
+right_wall = cube([ $top_width, 0, -$top_plate_thickness, -$wall_thickness, -$top_plate_thickness, 0, 0, $top_plate_thickness, 0]);
+// back wall
+back_wall = cube([ -$top_width/2, -$top_depth/2, -$top_plate_thickness, -$wall_thickness, -$top_plate_thickness, 0, 0, $top_plate_thickness, 0]);
+// front wall
+front_wall = cube([ 0, -$top_depth/2, -$wall_thickness, -$top_plate_thickness, 0, $top_plate_thickness, 0, 0, $top_plate_thickness]);
+
+Combine walls: union all.
+
+Now notch in one wall (say front wall). The notch is 12 mm wide, centered along the wall, reaching 8 mm down from open edge. So we need to cut a rectangular notch out of the front wall. The notch extends into the interior (negative y direction) by 12 mm and downwards by 8 mm.
+
+We can create a shape representing the notch: extrude a rectangular prism with dimensions width = 12 mm, depth = 8 mm, thickness = $wall_thickness (same as walls). Then translate it to the front wall's outer edge.
+
+Define:
+
+notch_shape = cube([0, -$top_depth/2, -$wall_thickness, 0, 0, 0, $top_plate_thickness, 0, 8]); // width x depth x height
+
+Then translate to position: front_wall's outer edge at y = -$top_depth/2? Actually the notch is cut from the wall, so we need to offset it outward. The front wall's plane is at y = -$top_depth/2. The notch extends into negative y direction (into box). So we can define:
+
+notch_position = translate(front_wall, [0, -12, 0]); // shift left by 12 mm
+
+But the shape dimensions: width = 12 mm (x direction), depth = 8 mm (z direction). The shape's x coordinate is measured from its origin. So we can use:
+
+notch = translate(notch_shape, [0, -12, 0]);
+
+Now subtract this notch from the combined walls? Actually we need to cut out the notch from the front wall, i.e., remove material where the notch exists. Since we have already unioned all walls, we can create a shape that includes everything except the notch by using difference.
+
+Thus:
+
+housing = union([top_plate, left_wall, right_wall, back_wall, front_wall]) - notch;
+
+But careful: Notch is defined relative to front_wall; we need to ensure it's positioned correctly. The notch shape should be placed such that its origin aligns with the outer edge of the front wall (i.e., at y = -$top_depth/2). So we can define:
+
+notch_position = translate(front_wall, [0, -12, 0]);
+
+Then subtract.
+
+Now screw holes: four M4 holes in top plate. We already defined hole shapes earlier. We'll create them similarly using cylinder and then difference.
+
+hole_shape = cylinder([0, 0, $top_plate_thickness], [hole_radius, hole_radius, $top_plate_thickness]);
+
+hole1 = translate(hole_shape, [-$top_width/2, 0, 0]);
+hole2 = translate(hole_shape, [ $top_width/2, 0, 0]);
+hole3 = translate(hole_shape, [ -$top_width/2, 0, 0]);
+hole4 = translate(hole_shape, [ 0, -$top_depth/2, 0]);
+
+Now subtract each hole from top_plate.
+
+top_plate = difference(top_plate, hole1);
+top_plate = difference(top_plate, hole2);
+top_plate = difference(top_plate, hole3);
+top_plate = difference(top_plate, hole4);
+
+Now we have the final solid. Ensure no syntax errors: Use correct semicolons, parentheses.
+
+We also need to set $fn = 64 on curved shapes; but there are no curved shapes (only extruded rectangles). However requirement says "Set $fn = 64 (or more) on curved shapes so holes come out round and to size." Since we have no curved surfaces, we can ignore or set for any shape that might be considered curved? There's none. But we could still set $fn globally: $fn = 64; at top.
+
+Also need named variables at top with short comment. We'll include:
+
+// dimensions
+size_XY = [90, 90];
+size_top_plate = [45, 45, 2];
+size_wall = [2.5, 2.5, 2];
+size_hole = [hole_diameter/2, hole_diameter/2, 2];
+
+But we also need to define $screw_hole_radius maybe.
+
+Let's craft final code:
+
+```openscad
+// dimensions in mm
+$top_width = 45;
+$top_depth = 45;
+$wall_thickness = 2.5;
+$top_plate_thickness = 2;
+$hole_diameter = 4.5; // for screw holes
+
+// top plate with screw hole pockets
+top_plate = cube([$top_width, $top_depth, $top_plate_thickness]);
+
+// create cylindrical voids for M4 screw holes
+hole_shape = cylinder([0, 0, $top_plate_thickness], [hole_diameter/2, hole_diameter/2, $top_plate_thickness]);
+
+// four screw hole pockets
+hole1 = translate(hole_shape, [-$top_width/2, 0, 0]);
+hole2 = translate(hole_shape, [ $top_width/2, 0, 0]);
+hole3 = translate(hole_shape, [-$top_width/2, 0, 0]);
+hole4 = translate(hole_shape, [ 0, -$top_depth/2, 0]);
+
+top_plate = difference(top_plate, hole1);
+top_plate = difference(top_plate, hole2);
+top_plate = difference(top_plate, hole3);
+top_plate = difference(top_

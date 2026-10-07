@@ -1,0 +1,48 @@
+```openscad
+// Dimensions for agarose comb
+$fn = 64;
+
+// Spine dimensions
+spine_length = 70;      // Long edge length (X)
+spine_width = 12;       // Width along Y
+
+// Tooth dimensions
+tooth_count = 10;
+tooth_width = 5.0;      // Width in X
+tooth_length = 12;     // Length in Y
+tooth_gap = 1.5;       // Gap between teeth in Y
+
+// Thickness and print orientation
+thickness = 1.5;       // Height (Z) of comb plate
+
+module agarose_comb() {
+    // Calculate X position of teeth (centered on spine)
+    tooth_x_offset = spine_width / 2 - tooth_count * (tooth_width + tooth_gap) / 2;
+
+    // Spine
+    spine = difference(
+        cube([spine_length, spine_width, thickness]),
+        [
+            translate([0, -thickness/2], rotate([90, 0, 0], cylinder(h=thickness*1.5, r=tooth_gap/2)))
+        ]
+    );
+
+    // Teeth
+    teeth = [];
+    for (i in [0:tooth_count-1]) {
+        tooth_x = spine_width / 2 - i * (tooth_width + tooth_gap) - tooth_width / 2;
+        teeth.push(
+            translate([tooth_x, -thickness/2], difference(
+                linear_extrude(height=thickness, straighten_tolerance=0.1),
+                    polygon(points=[[0, 0], [tooth_length, 0], [tooth_length, tooth_width], [0, tooth_width]])),
+            rotate([90, 0, 0])
+        );
+    }
+
+    // Combine spine and teeth
+    comb = union(spine, intersection(teeth));
+}
+module() {
+    agarose_comb();
+}
+```

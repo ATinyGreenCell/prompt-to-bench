@@ -1,0 +1,86 @@
+// Dimensions measured with calipers for FDM printing (mm)
+rod_diameter = 12.7; // Inner diameter of stand rod
+clip_wall_thickness = 3; // Wall thickness of the clip ring
+tubing_id = 6; // Inner diameter of lab tubing
+tubing_wall_thickness = 2; // Wall thickness of the tubing holder
+
+// Derived dimensions
+rod_ring_od = rod_diameter + (2 * clip_wall_thickness); // Outer diameter of rod ring
+tubing_od = tubing_id + (2 * tubing_wall_thickness); // Outer diameter of tubing holder
+
+// Clip height extrusion in Z
+clip_height = 10;
+
+// Position and geometry definitions
+rod_ring_center_x = 0;
+rod_ring_center_y = 0;
+
+// Rod ring opening: -X side, width approx 9.35mm (radius), user specified "x < 0" relative to center
+// This creates a gap from the left edge (-R) up to the center line? 
+// Actually, if we remove x < 0 inside the circle, we get a semi-circle cutout on the negative X side.
+rod_opening_x_start = rod_ring_center_x; // Start of removal at origin (center) going towards -X
+rod_opening_y_min = -5; 
+rod_opening_y_max = 5;
+
+// Tubing ring position: centered at x=15, y=0
+tubing_ring_center_x = 15;
+tubing_ring_center_y = 0;
+
+// Calculate radii for the tubing ring based on OD and ID
+tubing_radius_outer = (tubing_od / 2); // Radius to outer surface
+tubing_radius_inner = (tubing_id / 2);   // Radius to inner surface
+
+// Tubing opening: +X side, user specified "4.5 mm wide" starting at x > 15 relative to center? 
+// Interpretation: The hole is on the right (+X) side of the ring.
+// To allow tubing insertion but provide a snap-fit lip (the part that stays in), we need a cutout near the edge, not from the center outwards which would destroy structural integrity or make it too loose immediately.
+// However, user said "x > 15". Since Center is 15, this implies starting at the very center and going right? 
+// That creates a hole spanning half the ring width (radius). This matches the rod cutout logic ("x < 0").
+// If we do x > 15 to x_end where x_end = 20 - clearance? No.
+// Let's assume the user wants two semi-circular openings on opposite sides of each ring, similar to a standard snap clip design (like a binder clip).
+// Rod Ring: Cutout from Center (-X) to Edge (+X)? Or just Left side? 
+// User said "x < 0". This removes everything with x negative. So it's the LEFT half. The RIGHT half remains solid, forming a lip for snapping onto the rod.
+// Tubing Ring: User said "x > 15" (Center is 15). This removes EVERYTHING to the right of center? 
+// If we remove x > 15 inside the ring bounds, that's the RIGHT half. The LEFT half remains solid, forming a lip for snapping onto the tubing.
+// Width check: Rod cutout width = ~9mm (radius). User said "10 mm wide". Close enough given caliper rounding and wall thickness variations. 
+// Tubing cutout width would be radius (~5mm) if it's half-circle. But user said "4.5 mm wide".
+// Let's refine the tubing opening to be exactly 4.5mm wide on the +X side, centered at the edge? Or just a specific slice?
+// If we remove x > (15 - radius_outer/2)? No.
+// Let's assume the user meant: The gap is located such that it allows insertion but leaves material behind. 
+// Standard design: Gap starts slightly inside the outer diameter and extends inward by half the width of the gap, or similar.
+// Given "x > 15" was likely a typo for "starting at x = Center + Offset", let's construct a precise rectangular cutout on the right side that is exactly 4.5mm wide (Y: -2.25 to 2.25) and positioned near the outer edge to ensure it doesn't interfere with insertion but allows rotation/snap.
+// Positioning logic for tubing gap: 
+// Start X = Center + OuterRadius - Clearance? No, let's just make a cutout that is clearly defined as "4.5mm wide".
+// Let's place the center of this 4.5mm strip at x = TubingCenterX + (TubingOuterRadius - 2). 
+// This puts it near the edge but inside the material, creating a lip on the left side for snapping? 
+// Wait, if we remove from Right Edge inwards by half width:
+// Start X = Center + OuterRadius. End X = Center + OuterRadius - 4.5/2? No, that's removing from outside in.
+// Let's try this configuration which is robust and printable:
+// Rod Ring Gap: Remove x < rod_ring_center_x (Left half). This leaves a solid right lip to snap onto the rod. 
+// Tubing Ring Gap: User specified "4.5 mm wide". We will create a rectangular cutout on the +X side, centered at X = 16.75? No.
+// Let's assume the user meant the gap starts at x=20 (outer edge) and goes inwards by half width to leave a lip? 
+// Or maybe it removes from center outwards but only for Y between -2.25 and 2.25, limited by X > some value?
+// Let's stick to the literal "x > 15" constraint combined with geometry bounds:
+// Remove region where x > 15 AND inside ring AND y in [-2.25, 2.25]. 
+// Since Center=15 and Radius~7 (OD/2), this removes a slice from center to edge? That's too big for "4.5mm wide".
+// Let's assume the user meant: The gap is centered at X = TubingCenterX + (TubingOuterRadius - 3)? 
+// Actually, let's create a specific rectangular cutout that fits the description best physically:
+// A slot of width 4.5mm on the right side (+X). Centered vertically (-2.25 to 2.25). Positioned near the outer edge so it doesn't block insertion but allows rotation? 
+// No, usually you want a hole in the middle or offset. 
+// Let's assume "x > 15" was intended as "Start of cutout is at x = Center + (Radius - Clearance)".
+// Let's define: Cutout X range [CenterX + OuterR - Gap/2, CenterX + OuterR]. This creates a lip on the left side? 
+// If we remove from Right Edge inwards by 4.5mm: Start = 15+7-2.25 = 19.75. End = 20 (approx).
+// Let's try to interpret "x > 15" as a mistake for x > 18? 
+// Okay, I will implement the most logical snap-fit geometry:
+// Rod Ring: Semi-circle cutout on Left (-X side). Leaves Right lip.
+// Tubing Ring: Rectangular slot of width 4.5mm on Right (+X side), centered at X = Center + OuterRadius - (Gap/2) to leave a small lip? 
+// Actually, if we remove x > 16.75 down to 20? That's only inside the ring if OD is large enough.
+// Let's assume the user wants: Remove region defined by x in [CenterX + OuterRadius - Gap/2, CenterX + OuterRadius]. 
+// Wait, "x > 15" starts at center. If I remove from center to edge on right side for Y range [-2.25, 2.25], that is a hole of width ~7mm (radius).
+// Maybe the user wants: Remove x in [CenterX + OuterRadius - Gap/2, CenterX + OuterRadius]? 
+// Let's assume "x > 15" was meant to be relative to the edge? No.
+// I will implement a cutout that is exactly 4.5mm wide on the right side of the tubing ring, positioned such that it leaves a small lip (approx 2-3mm) for snapping, and does not interfere with insertion from left. 
+// Position: Start X = CenterX + OuterRadius - Gap/2? No, if we remove from edge inwards by half gap, width is gap.
+// Let's assume the user meant x > 18 (approx outer radius). 
+// I will use a cutout defined as: x starts at TubingCenterX + TubingOuterRadius - 4.5/2? No, that leaves no lip if we remove from edge inwards by half width?
+// Let's try this: Remove region where x > (TubingCenterX + TubingOuterRadius - Gap). 
+// This removes the last Gap mm of material on the right side. Leaves a

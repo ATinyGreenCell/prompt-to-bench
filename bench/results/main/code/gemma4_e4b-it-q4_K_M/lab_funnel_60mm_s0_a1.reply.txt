@@ -1,0 +1,82 @@
+```openscad
+// Lab Funnel Design Parameters
+spout_height = 20;      // Height of the straight spout section (mm)
+cone_start_z = 20;      // Z coordinate where the cone starts (mm)
+cone_end_z = 50;        // Z coordinate at the rim of the funnel (mm)
+spout_od = 10;           // Outer diameter of the spout tube (mm)
+wall_thickness = 1.6;   // Wall thickness everywhere (mm)
+
+// Derived dimensions
+spout_id = spout_od - 2 * wall_thickness; // Inner diameter of the spout (mm)
+cone_start_od = spout_od;  // Outer diameter at cone start (matches spout OD)
+cone_end_od = 60;          // Outer diameter at funnel rim (mm)
+
+$fn = 100; // High resolution for smooth curves
+
+// --- Module Definitions ---
+
+// Function to create a hollow cylinder/tube section
+module tube(height, outer_d, inner_d) {
+    cylinder(h = height, r1 = outer_d / 2, r2 = outer_d / 2);
+    translate([0, 0, -0.1]) difference() {
+        cylinder(h = height + 0.2, r1 = inner_d / 2, r2 = inner_d / 2);
+    }
+}
+
+// Function to create a hollow frustum (cone section)
+module funnel_section(z_start, z_end, od_start, od_end, thickness) {
+    // Outer shape (Frustum) - Not strictly needed as we use hull for the outer shell in main body
+    // Inner shape (Frustum - slightly smaller) - Used to define the void
+}
+
+
+// --- Assembly ---
+
+difference() {
+    // 1. Solid Outer Shape (Spout + Funnel)
+    union() {
+        // A. Spout Section (Cylinder)
+        translate([0, 0, 0]) tube(spout_height, spout_od, spout_id);
+
+        // B. Funnel Cone Section (Outer Shell - Solid Hull)
+        hull() {
+            translate([0, 0, cone_start_z]) sphere(r = cone_start_od / 2);
+            translate([0, 0, cone_end_z]) sphere(r = cone_end_od / 2);
+        }
+    }
+
+
+    // 2. Subtractions (To hollow out the part and ensure flow paths)
+
+    // A. Spout Bore Hole (Runs through the entire length of the spout)
+    translate([0, 0, -0.1]) { // Extend slightly past Z=0
+        cylinder(h = spout_height + 0.2, r = (spout_id / 2) + 0.5, r = (spout_id / 2) + 0.5);
+    }
+
+    // B. Funnel Inner Bore Hole (Hollows out the cone section)
+    inner_cone_od_start = cone_start_od - 2 * wall_thickness;
+    inner_cone_od_end = cone_end_od - 2 * wall_thickness;
+
+    // We use a hull to define the inner void shape, ensuring it's slightly larger than the required bore.
+    translate([0, 0, cone_start_z]) {
+        hull() {
+            sphere(r = inner_cone_od_start / 2);
+            translate([0, 0, (cone_end_z - cone_start_z)]) sphere(r = inner_cone_od_end / 2);
+        }
+    }
+
+
+    // C. Bottom Exit Hole (Ensures flow at Z=0)
+    // This cuts through the bottom of the spout tube section.
+    translate([0, 0, -0.1]) { // Start slightly below Z=0
+        cylinder(h = spout_height + 0.2, r = (spout_id / 2) + 0.5, r = (spout_id / 2) + 0.5);
+    }
+
+    // D. Top Opening Cut (Ensures the top rim is open)
+    // We cut a hole slightly larger than the outer diameter at Z=cone_end_z to ensure it's fully open.
+    translate([0, 0, cone_end_z - 0.1]) {
+        cylinder(h = 1, r = (cone_end_od / 2) + 0.5);
+    }
+
+}
+```

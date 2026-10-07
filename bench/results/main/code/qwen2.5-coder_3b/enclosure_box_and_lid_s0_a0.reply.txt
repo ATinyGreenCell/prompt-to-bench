@@ -1,0 +1,41 @@
+```openscad
+// Define dimensions
+$fn = 64; // Number of facets for rounded edges
+
+// Part 1: Box
+box_size_x = 70;
+box_size_y = 50;
+box_size_z = 30;
+wall_thickness = 2;
+floor_thickness = 2;
+
+// Part 2: Lid
+lid_size_x = 70;
+lid_size_y = 50;
+lid_wall_thickness = 1.5;
+lid_height = 4;
+lid_lip_width = 65.6;
+lid_lip_height = 45.6;
+lid_clearance = 0.2;
+
+// Box
+box = difference() {
+  cube([box_size_x + wall_thickness * 2, box_size_y + wall_thickness * 2, box_size_z + floor_thickness + wall_thickness], center=true);
+  translate([-wall_thickness, -wall_thickness, floor_thickness]) cube([box_size_x, box_size_y, wall_thickness]);
+};
+
+// Lid
+lid = difference() {
+  cube([lid_size_x + lid_wall_thickness * 2, lid_size_y + lid_wall_thickness * 2, lid_height], center=true);
+  translate([-lid_wall_thickness, -lid_wall_thickness, lid_height]) cube([lid_lip_width, lid_lip_height, lid_wall_thickness]);
+};
+
+// Place lid on the +X side of the box
+final_model = union() {
+  box;
+  translate([box_size_x + lid_clearance, 0, 0]) rotate_extrude(height=box_size_z) lid;
+};
+
+// Render the final model
+render() final_model;
+```

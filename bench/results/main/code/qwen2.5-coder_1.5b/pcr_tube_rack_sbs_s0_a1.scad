@@ -1,0 +1,44 @@
+// Define dimensions
+$fn = 64; // For curved shapes
+
+// Block dimensions
+block_length = 127.76;
+block_width = 85.48;
+block_height = 20;
+
+// Hole dimensions
+hole_diameter = 6.2;
+hole_spacing = 9.0;
+
+// Grid dimensions
+grid_columns = 12;
+grid_rows = 8;
+
+// A1 hole coordinates
+a1_x = block_length / 2 - (hole_spacing * (grid_columns - 1)) / 2;
+a1_y = block_width / 2 - (hole_spacing * (grid_rows - 1)) / 2;
+
+// Create the block
+block = cube([block_length, block_width, block_height]);
+
+// Create holes
+holes = for (x = [0:grid_columns-1], y = [0:grid_rows-1]) {
+    translate([x * hole_spacing + a1_x, y * hole_spacing + a1_y, 0])
+        cylinder(diameter=hole_diameter, height=block_height);
+};
+
+// Chamfer the vertical edge at A1
+chamfered_block = for (x = [0:grid_columns-1], y = [0:grid_rows-1]) {
+    translate([x * hole_spacing + a1_x, y * hole_spacing + a1_y, 0])
+        rotate_extrude(angle=45)
+            cylinder(diameter=hole_diameter - 1.0, height=block_height);
+};
+
+// Difference to remove the chamfer
+final_block = difference() {
+    block;
+    chamfered_block;
+};
+
+// Save the final block as a STL file
+stl(final_block, filename="rack_96_pcr_tubes.stl");

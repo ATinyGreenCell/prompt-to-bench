@@ -1,0 +1,41 @@
+// Define dimensions
+$fn = 64; // Number of facets for curved surfaces
+
+// Disc dimensions
+disc_diameter = 85;
+disc_thickness = 2;
+
+// Grid dimensions
+grid_size = 7;
+hole_diameter = 3;
+hole_spacing = 9;
+
+// Notch dimensions
+notch_width = 10;
+notch_depth = 4;
+
+// Create the disc
+disc = translate([0, 0, -disc_thickness / 2]) * cube([disc_diameter, disc_diameter, disc_thickness]);
+
+// Create the grid of holes
+grid_origin = [disc_diameter / 2 - (grid_size * hole_spacing) / 2, disc_diameter / 2 - (grid_size * hole_spacing) / 2];
+for (i in [0:grid_size-1]) {
+    for (j in [0:grid_size-1]) {
+        hole_center = [grid_origin[0] + i * hole_spacing, grid_origin[1] + j * hole_spacing];
+        disc -= translate(hole_center) * cylinder(r=hole_diameter / 2, h=disc_thickness);
+    }
+}
+
+// Create the notch
+notch_origin = [disc_diameter / 2 - notch_width / 2, disc_diameter / 2, disc_thickness + notch_depth / 2];
+notch = translate(notch_origin) * cube([notch_width, notch_depth, disc_thickness]);
+
+// Combine all parts
+sowing_template = union() {
+    disc,
+    grid,
+    notch
+};
+
+// Render the part
+render();

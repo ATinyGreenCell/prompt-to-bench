@@ -1,0 +1,62 @@
+```openscad
+// Adapter Sleeve for PCR Tube Rack
+
+// --- Dimensions (in mm) ---
+
+// Collar dimensions
+collar_diameter = 13;      // Outer diameter of the collar base
+collar_thickness = 1.5;     // Thickness of the collar (height from Z=0)
+
+// Sleeve body dimensions
+sleeve_outer_diameter = 10.8; // Outer diameter of the main sleeve body
+sleeve_total_height = 21.5;  // Total height of the sleeve structure
+bore_diameter = 6.2;        // Diameter of the central bore
+
+// --- Constants ---
+$fn = 100; // High resolution for curves
+
+// --- Calculations ---
+collar_radius = collar_diameter / 2;
+sleeve_outer_radius = sleeve_outer_diameter / 2;
+bore_radius = bore_diameter / 2;
+
+// The main body starts at Z=collar_thickness and goes up to Z=sleeve_total_height.
+// Total height of the cylindrical part is: sleeve_total_height - collar_thickness
+cylindrical_body_height = sleeve_total_height - collar_thickness;
+
+
+// --- Module Definitions ---
+
+// Creates a cylinder centered at (0, 0) with specified dimensions
+module cylinder(d, h) {
+    cylinder(h=h, r=d/2);
+}
+
+// Creates the solid structure of the adapter sleeve
+module adapter_sleeve() {
+    difference() {
+        // 1. Outer Shape (The entire assembled piece)
+        union() {
+            // A. The Collar (Base disc)
+            translate([0, 0, 0]) {
+                cylinder(d = collar_diameter, h = collar_thickness);
+            }
+
+            // B. The Main Sleeve Body (Cylinder rising from the collar top)
+            // This cylinder starts at Z=collar_thickness and has height cylindrical_body_height
+            translate([0, 0, collar_thickness]) {
+                cylinder(d = sleeve_outer_diameter, h = cylindrical_body_height);
+            }
+        }
+
+        // 2. The Bore (The hole running through the entire structure)
+        // We need to cut a cylinder that spans from Z=0 up to Z=sleeve_total_height + tolerance
+        translate([0, 0, -0.1]) { // Start slightly below Z=0 for clean cutting
+            cylinder(d = bore_diameter, h = sleeve_total_height + 0.2); // Extend past top and bottom
+        }
+    }
+}
+
+// --- Rendering ---
+adapter_sleeve();
+```

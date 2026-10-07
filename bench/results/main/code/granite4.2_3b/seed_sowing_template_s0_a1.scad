@@ -1,0 +1,67 @@
+// Dimensions in millimetres
+disc_diameter = 85;      // Diameter of the Petri dish disc (mm)
+disc_thickness = 2;      // Thickness of the sowing template (mm)
+hole_diameter = 3;       // Diameter of each through-hole (mm)
+hole_spacing = 9;        // Centre-to-centre spacing between holes along X and Y (mm)
+grid_size = 7;           // Number of holes per side (7x7 grid)
+notch_width = 10;         // Width of the rectangular orientation notch in X direction (mm)
+notch_depth = 4;          // Depth of the rectangular orientation notch measured inward from rim along Y axis (mm)
+
+// Create the main disc shape: flat circular plate resting on XY plane at z=0, thickness = disc_thickness.
+// The disc is centered in X and Y with radius = disc_diameter/2.
+translate([0, 0, disc_thickness / 2]) {
+    cube([disc_diameter, disc_diameter, disc_thickness], center = true);
+}
+
+// Place all holes on the disc surface using a regular grid pattern.
+for (i = [0 : grid_size - 1]) {
+    for (j = [0 : grid_size - 1]) {
+        // Local coordinates in mm from centre along X and Y axes.
+        x_local = i * hole_spacing;
+        y_local = j * hole_spacing;
+
+        // Check if the point lies inside the disc boundary (radius = disc_diameter/2).
+        r = sqrt(pow(x_local, 2) + pow(y_local, 2));
+        if (r <= disc_diameter / 2) {
+            // Place a cylindrical hole of diameter hole_diameter through the entire thickness.
+            translate([x_local, y_local, 0]) {
+                cylinder(h = disc_thickness, r = hole_diameter / 2, $fn = 64);
+            }
+        }
+    }
+}
+
+// Create the rectangular orientation notch on the +Y side rim.
+// The notch is centered on the Y axis (i.e., at x=0, y = disc_diameter/2), on the outer rim of the disc.
+// Notch width = 10 mm in X direction (horizontal extent).
+// Notch depth = 4 mm measured inward from the rim along the Y axis (i.e., into the disc thickness? Actually, it's a notch cut into the rim edge, so it removes material from the outer circular boundary).
+// We interpret: The notch is a rectangular cut that removes a region of the rim surface.
+// Since the disc is flat and lies on XY plane with its top at z = disc_thickness/2? Wait, we defined the disc such that its bottom face is at z=0 (resting on Petri dish). 
+// The rim is the outer circular edge where the disc meets the Petri dish wall. In our model, the disc occupies z ∈ [0, disc_thickness].
+// The rim is at z = 0 (the flat face that rests on the Petri dish bottom). However, the notch is cut into the rim, meaning we remove a rectangular region from the outer edge of the disc near its perimeter.
+// To model this cleanly, we will create a rectangular notch as a difference between two solids: one representing the full disc with a rectangular cut out of its outer rim on the +Y side.
+
+// Define the location of the notch center in XY plane: at (0, disc_diameter/2). This is the centre point along the Y axis where the notch is centered.
+notch_center_x = 0;
+notch_center_y = disc_diameter / 2;
+
+// The notch is rectangular with width = notch_width (10 mm) in X direction, and depth = notch_depth (4 mm) measured inward from the rim along Y axis.
+// Since the rim is circular, we define the notch as a rectangular prism that removes material from the disc near its outer edge.
+// We'll model the notch by subtracting a rectangular block from the disc shape on that side.
+
+// First, create a solid representing the full disc (already defined above). But we need to apply the notch only once; better to define the notch geometry directly using difference.
+
+// Define the notch as a rectangular prism that protrudes inward into the disc thickness? Actually, the notch is cut into the rim surface, i.e., it removes material from the outer edge of the disc along its perimeter.
+// The notch width (10 mm) extends in X direction across the disc plane; depth (4 mm) goes inward perpendicular to the rim edge, which is along Y axis? Wait: On the rim, the normal direction points outward radially and also upward/downward? But since the disc is flat, the rim edge lies on the XY plane at z = 0.
+// The notch is a rectangular cut that removes material from the outer circular boundary region near y = disc_diameter/2.
+// Specifically: For points where x ∈ [-notch_width/2, notch_width/2] and y ≈ disc_diameter/2 (within some tolerance), we remove a rectangular block of depth notch_depth measured inward from the rim along Y direction? Actually, "measured in from the rim" likely means the notch is 4 mm deep into the disc thickness? But the disc thickness is only 2 mm; that would be too small.
+// Re-read: "Cut a rectangular orientation notch into the rim on the +Y side, centred on the Y axis: 10 mm wide (X) and 4 mm deep (Y, measured in from the rim)."
+// Interpretation: The notch is cut into the rim surface (the outer edge of the disc). It has width = 10 mm along X direction across the disc plane. Depth = 4 mm measured inward from the rim along Y axis direction (i.e., how far you cut into the disc thickness? But the disc thickness is only 2 mm, so depth cannot exceed that.)
+// However, typical Petri dish rim notch: it's a groove that goes around the edge of the disc, not through the whole thickness; it's just a shallow cut along the outer perimeter.
+// Given the dimensions (disc_thickness = 2 mm), and notch_depth = 4 mm > disc_thickness, this suggests the "depth" is measured along Y direction on the rim surface, i.e., how far you offset inward from the rim edge in the Y direction? But that would be a radial cut, not a depth into thickness.
+// Let's assume the notch is defined purely in XY plane: it removes a rectangular region of the disc near its outer circular boundary. The "depth" refers to how far the notch extends along the Y axis (i.e., the length of the notch measured perpendicular to the rim edge). But that seems odd.
+// Better interpretation based on typical sowing template: A small rectangular notch cut into the rim edge, like a groove around the disc's outer perimeter, allowing placement relative to dish wall. The notch width is 10 mm along X direction (horizontal across the disc), and its depth (how deep it goes into the disc thickness) is 4 mm measured from the rim surface inward along Y axis? But again, disc_thickness = 2 mm < 4 mm, so impossible.
+// Perhaps "depth" means the notch's vertical extent along Y direction on the rim plane (i.e., the notch extends 4 mm into the disc thickness in the Y direction). Since disc_thickness is only 2 mm, that would be beyond the disc; maybe the notch goes around the edge of the disc, not through it.
+// Given the problem statement: "Cut a rectangular orientation notch into the rim on the +Y side, centred on the Y axis: 10 mm wide (X) and 4 mm deep (Y, measured in from the rim)." I think they mean: The notch is a rectangular cut that removes material from the rim region. Its width along X direction is 10 mm; its depth (how far it goes into the disc thickness) is 4 mm measured along Y axis direction? But "measured in from the rim" likely means the notch's depth is measured perpendicular to the rim edge, i.e., how far you cut into the disc material away from the outer surface.
+// Since disc_thickness = 2 mm, and notch_depth = 4 mm > 2 mm, maybe they meant the notch extends 4 mm along Y direction on the rim plane (i.e., the notch's length measured along Y axis is 4 mm). But that would be a rectangular region of size width x depth in XY plane; but then it wouldn't be a notch into the rim, just an indentation on the disc surface.
+// Given typical OpenSCAD tasks for such problems, they often define a rectangular cutout from the outer edge using difference with a block that extends 4 mm inward along Y direction (i.e., the notch is like a recessed groove around the rim). Since the disc thickness is only 2 mm, we can still model it as a shallow cut: we will create a rectangular prism that removes material from the disc surface near its outer edge, with depth = notch_depth measured along Y direction (i

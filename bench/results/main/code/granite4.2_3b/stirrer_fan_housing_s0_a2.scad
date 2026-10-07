@@ -1,0 +1,35 @@
+// Dimensions in millimetres
+box_width = 90;      // Outer size X dimension (mm)
+box_height = 90;     // Outer size Y dimension (mm)
+fan_thickness = 2;   // Top plate thickness (mm) - lid height above bed
+wall_thickness = 2.5; // Wall thickness (mm)
+hole_radius = 4.5/2;  // M4 screw hole radius (mm)
+hole_spacing = 71.5; // Square pattern spacing between holes (mm)
+cable_width = 12;     // Cable notch width (mm)
+cable_depth = 8;      // Cable notch depth from open edge (mm)
+wall_open_edge_z = 32; // Z level where the box is open (mm above bed)
+wall_top_z = 40;      // Top of walls (mm above bed)
+
+// Print orientation: upside-down, top plate on bed (z=0 to z=fan_thickness), walls rise from there.
+// Origin centered in XY plane for symmetry.
+$fn = 64;
+
+// Define the top plate (lid) as a solid with thickness fan_thickness.
+plate_x_half = box_width / 2;
+plate_y_half = box_height / 2;
+
+top_plate = cube([box_width, box_height, fan_thickness], center=true);
+
+// Add M4 screw holes on the top plate: four holes at corners of a square pattern of side hole_spacing, centered on the plate.
+for (i = [0 : 1]) {
+    for (j = [0 : 1]) {
+        x_offset = hole_spacing / 2 * (i == 0 ? -1 : 1);
+        y_offset = hole_spacing / 2 * (j == 0 ? -1 : 1);
+        rotate([90, 0, 0]) translate([-x_offset, -y_offset, fan_thickness/2]) cylinder(r=hole_radius, h=fan_thickness, center=true) {
+            // Ensure hole is exactly through the top plate; cylinder radius matches screw size.
+        }
+    }
+}
+
+// Define four walls explicitly using linear_extrude on cross-section polygons at their base edge (z = fan_thickness).
+// Each wall is a rectangular prism: extends from z = fan_thickness to z = wall

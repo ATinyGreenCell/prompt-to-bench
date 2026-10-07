@@ -1,0 +1,21 @@
+```openscad code block
+// Define dimensions
+$fn = 64; // For curved shapes
+
+// Create the bench rack
+bench_rack = translate([0, 36, -15]) * cube([106, 72, 30]);
+
+// Add vertical holes
+for (y = [0:4]) {
+    for (x = [0:6]) {
+        hole_y = y * 16 + 5;
+        hole_x = x * 11.2 + 5;
+        hole_depth = 25 - 5; // Subtract the 5 mm floor
+        hole = translate([hole_x, hole_y, 0]) * cylinder(diameter=11.2, height=hole_depth);
+        bench_rack = difference(bench_rack, hole);
+    }
+}
+
+// Display the bench rack
+render(bench_rack);
+```

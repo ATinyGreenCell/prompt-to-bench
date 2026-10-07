@@ -1,0 +1,32 @@
+// Define dimensions
+$fn = 64;
+rod_inner_diameter = 12.7;
+rod_wall_thickness = 3;
+tube_inner_diameter = 6;
+tube_wall_thickness = 2;
+bridge_width = 6;
+
+// Rod ring profile
+rod_ring = difference() {
+    cylinder(r=rod_inner_diameter/2, h=10, center=true);
+    translate([-5, -5, 0]) cube([10, 10, 10]);
+};
+
+// Tube ring profile
+tube_ring = difference() {
+    cylinder(r=tube_inner_diameter/2, h=10, center=true);
+    translate([15, 0, 0]) cube([10, 4.5, 10]);
+};
+
+// Bridge profile
+bridge = translate([8, 0, 0]) cube([bridge_width, 6, 10]);
+
+// Combine all profiles into the final part
+final_part = union() {
+    rod_ring;
+    tube_ring;
+    bridge;
+};
+
+// Linear extrude to create the flat shape
+linear_extrude(height=10) final_part;

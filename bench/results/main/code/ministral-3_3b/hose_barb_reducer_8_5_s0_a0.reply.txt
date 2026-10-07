@@ -1,0 +1,95 @@
+```openscad
+// Dimensions in millimetres
+$fn = 128;
+d_outer_barb_8mm = 9.5; // Max outer barb diameter for 8mm tubing
+d_inner_barb_8mm = 7.5; // Min outer barb diameter for 8mm tubing
+height_barb_8mm = 10;   // Height of each 8mm barb section (stacked twice)
+length_collar = 5;     // Length of cylindrical collar (z=20 to z=25)
+d_outer_barb_5mm = 6.5; // Max outer barb diameter for 5mm tubing
+d_inner_barb_5mm = 5.0; // Min outer barb diameter for 5mm tubing
+height_barb_5mm = 8;    // Height of each 5mm barb section (stacked twice)
+total_height = 41;     // Total height of the reducer
+
+// Main body cylinder (inner bore)
+cylinder_inner_bore = difference(
+    cylinder(d=3, h=total_height),
+    cylinder(d=d_outer_barb_8mm/2 + 0.5, z=[-height_barb_8mm*2, -length_collar, height_barb_5mm*2], center=true)
+);
+
+// Barb for 8mm tubing (stacked twice)
+for (i in [0,1]) {
+    translate([0, 0, i * height_barb_8mm])
+        rotate(45, [0, 0, 1])
+            difference(
+                cylinder(d=d_inner_barb_8mm/2 + 0.5, h=height_barb_8mm),
+                [
+                    // Sawtooth outer profile
+                    translate([0, 0, height_barb_8mm - (d_outer_barb_8mm-d_inner_barb_8mm)/2])
+                        rotate(45, [0, 0, 1])
+                            polygon(points=[[0, 0], [d_outer_barb_8mm/2, 0],
+                                          [d_outer_barb_8mm/2, d_outer_barb_8mm/2],
+                                          [-d_inner_barb_8mm/2, d_inner_barb_8mm/2],
+                                          [-d_inner_barb_8mm/2, 0]],
+                                    center=true),
+                    // Step cut for sawtooth
+                    translate([0, 0, height_barb_8mm - (d_outer_barb_8mm-d_inner_barb_8mm)/2])
+                        rotate(45, [0, 0, 1])
+                            polygon(points=[[0, 0], [d_inner_barb_8mm/2, 0],
+                                          [d_inner_barb_8mm/2, d_inner_barb_8mm/2],
+                                          [-d_inner_barb_8mm/2, d_inner_barb_8mm/2],
+                                          [-d_inner_barb_8mm/2, 0]],
+                                    center=true)
+                ]
+            );
+}
+
+// Cylindrical collar (z=20 to z=25)
+translate([0, 0, height_barb_8mm*2])
+    cylinder(d=d_outer_barb_8mm + 1, h=length_collar);
+
+// Barb for 5mm tubing (stacked twice)
+for (i in [0,1]) {
+    translate([0, 0, i * height_barb_5mm + length_collar])
+        rotate(45, [0, 0, 1])
+            difference(
+                cylinder(d=d_inner_barb_5mm/2 + 0.5, h=height_barb_5mm),
+                [
+                    // Linear taper cut for 5mm barb
+                    translate([0, 0, height_barb_5mm - (d_outer_barb_5mm-d_inner_barb_5mm)/2])
+                        rotate(45, [0, 0, 1])
+                            polygon(points=[[0, 0], [(d_outer_barb_5mm+d_inner_barb_5mm)/4, 0],
+                                          [(d_outer_barb_5mm-d_inner_barb_5mm)/2, (d_outer_barb_5mm-d_inner_barb_5mm)/2],
+                                          [-(d_outer_barb_5mm-d_inner_barb_5mm)/2, (d_outer_barb_5mm-d_inner_barb_5mm)/2],
+                                          [-(d_outer_barb_5mm+d_inner_barb_5mm)/4, 0]],
+                                    center=true),
+                    // Step cut for taper
+                    translate([0, 0, height_barb_5mm - (d_outer_barb_5mm-d_inner_barb_5mm)/2])
+                        rotate(45, [0, 0, 1])
+                            polygon(points=[[0, 0], [(d_inner_barb_5mm+d_inner_barb_5mm)/4, 0],
+                                          [(d_inner_barb_5mm-d_inner_barb_5mm)/2, (d_inner_barb_5mm-d_inner_barb_5mm)/2],
+                                          [-(d_inner_barb_5mm-d_inner_barb_5mm)/2, (d_inner_barb_5mm-d_inner_barb_5mm)/2],
+                                          [-(d_inner_barb_5mm+d_inner_barb_5mm)/4, 0]],
+                                    center=true)
+                ]
+            );
+}
+
+// Final assembly
+union(
+    cylinder_inner_bore,
+    rotate([90, 0, 0], // Rotate to show all barbs clearly
+        [
+            translate([0, 0, height_barb_8mm*2])
+                difference(
+                    cylinder(d=d_outer_barb_8mm + 1, h=length_collar),
+                    cylinder(d=3.5, z=[-length_collar/2, length_collar/2], center=true)
+                ),
+            translate([0, 0, height_barb_5mm*2 + length_collar])
+                difference(
+                    cylinder(d=d_outer_barb_5mm + 1, h=length_collar),
+                    cylinder(d=3.5, z=[-length_collar/2, length_collar/2], center=true)
+                )
+        ]
+    )
+);
+```

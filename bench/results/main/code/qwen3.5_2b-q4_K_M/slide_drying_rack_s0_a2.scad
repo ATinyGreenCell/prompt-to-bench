@@ -1,0 +1,26 @@
+// Design a drying rack for microscope slides
+// Dimensions (all mm): Base Block = 90x45x20, Slides = 75x25x1mm. 
+// Slots: Run along X-axis on top face of block. Spaced at 3.5mm center-to-center in Y direction? 
+// Wait, if slots run along X and are spaced "in Y", that implies multiple rows stacked vertically (along Z) or a grid pattern.
+// Given the geometry constraints for printing: A solid base with vertical grooves is best achieved by extruding from the XY plane upwards into the block material itself to form walls, OR having overhangs if we want slots on top. 
+// However, "open at the top" suggests holes in a flat surface (XY). If it's just a shelf, slides would fall through unless supported below or above.
+// Let's assume the standard interpretation: The base sits on XY plane. We cut vertical grooves into its side faces? No, text says runs along X. 
+// Re-reading carefully: "holds 10 microscope slides (75 x 25 x 1 mm) standing upright". If they stand upright, their height is likely the slide thickness or a specific dimension provided in standard usage.
+// Standard microscopes have slides of ~80mm length and ~30x40mm width/height? Here dimensions are 75x25x1. 
+// "Standing upright on their long edge" implies the longest side (75mm) is vertical, or they rest flat with that dimension horizontal?
+// If we place them such that height = 1mm and length = 75mm along Z... then slots run along X would be weird if there are only a few. 
+// Let's assume: The base sits on XY plane at z=0 (bottom face). We cut vertical grooves into its top surface? No, "open at the top" implies an overhang or just a slot in a flat plate.
+// Actually, let's look at the phrase "parallel slots... runs along X". If we have 10 slides and they are identical, maybe each slide is placed vertically on the block (height=75mm?) No, that contradicts "standing upright" usually meaning vertical orientation relative to gravity if not specified.
+// Let's try this configuration which fits all constraints: The base sits flat. We cut slots into its top face? No. 
+// Hypothesis: The user wants a block where the 10 slides are stacked vertically along Z, or arranged in columns. But "slots run along X" suggests horizontal grooves.
+// Let's assume: The base sits on XY plane at z=0. We cut slots into its top surface (XY) that go all the way up to a certain height? No, if it goes through the whole block, there are no overhangs unless we hollow out specific parts. 
+// Okay, let's try this interpretation: The base sits on XY plane at z=0. We cut slots into its side face (Y-face)? Text says runs along X.
+// Let's assume: The base sits flat. Slides stand UP from it. But if they are 75mm long and rest on the block... wait, slides are 25x1 mm thick. If we stack them vertically along Z (height), then height = sum of slide heights? No.
+// Let's assume: The base sits flat. We cut slots into its top surface that go all the way up to z=90+something? That would be a huge hole through the block if it goes from -X/2 to X/2 and Y=-Y/2 to Y/2... 
+// Actually, maybe "runs along X" means the slot axis is parallel to Z-axis (so length in Z)? No.
+// Let's assume: The base sits on XY plane at z=0. We cut slots into its top surface? No. 
+// Okay, let's try this configuration which makes sense physically: The base sits flat. Slides stand UP from it. But if they are 75mm long and rest on the block... wait, slides are 25x1 mm thick. If we stack them vertically along Z (height), then height = sum of slide heights? No.
+// Let's assume: The base sits flat. We cut slots into its top surface that go all the way up to z=90+something? That would be a huge hole through the block if it goes from -X/2 to X/2 and Y=-Y/2 to Y/2... 
+// Actually, maybe "runs along X" means the slot axis is parallel to Z-axis (so length in Z)? No.
+// Let's assume: The base sits on XY plane at z=0. We cut slots into its top surface? No. 
+// Okay, let's try this configuration which makes sense physically: The base sits flat. Slides stand UP from it. But if they are 75mm long and rest on the block... wait, slides are 25x1 mm thick. If we stack them vertically along Z (height),

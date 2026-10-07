@@ -1,0 +1,36 @@
+// Dimensions in mm
+tube_diameter = 0.2;
+adapter_outer_diameter = 13;
+adapter_thickness = 1.5;
+sleeve_body_outer_diameter = 10.8;
+bore_diameter = 6.2;
+
+// Print orientation: collar on bed, sleeve body above
+translate([0, 0, -1.5]) // Move to collar position
+    translate([0, (adapter_outer_diameter / 2) / 2, 0]) // Center in X
+    rotate_extrude([0, 0, 1], $fn = 64)
+        linear_extrusion(adapter_thickness) {
+            circle(adapter_outer_diameter / 2);
+        }
+    
+translate([0, 0, 21.5]) // Move to sleeve body position
+    translate([0, (sleeve_body_outer_diameter / 2) / 2, 0]) // Center in X
+    rotate_extrude([0, 0, 1], $fn = 64)
+        linear_extrusion(adapter_thickness) {
+            cylinder(h=21.5 - adapter_thickness, r=sleeve_body_outer_diameter / 2);
+        }
+    
+translate([0, 0, 21.5]) // Move to bore position
+    translate([0, (bore_diameter / 2), 0]) // Center in X
+    rotate_extrude([0, 0, 1], $fn = 64)
+        linear_extrusion(adapter_thickness) {
+            cylinder(h=21.5 - adapter_thickness, r=bore_diameter / 2);
+        }
+    
+// Add a small gap at the top to prevent the bore from being flush with the sleeve body
+translate([0, 0, 21.5 + adapter_thickness])
+    translate([0, (bore_diameter / 2), 0]) // Center in X
+    rotate_extrude([0, 0, 1], $fn = 64)
+        linear_extrusion(adapter_thickness) {
+            cylinder(h=adapter_thickness, r=bore_diameter / 2);
+        }

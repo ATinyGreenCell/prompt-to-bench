@@ -1,0 +1,51 @@
+```openscad
+// Dimensions of the PCR tube rack (mm)
+$fn = 64;
+
+// External dimensions
+var X = 127.76;   // Length
+var Y = 85.48;    // Width
+var Z = 20;       // Height
+
+// Hole grid parameters (96 tubes, ANSI/SLAS)
+var hole_diameter = 6.2;
+var tube_height = Z - 1.5;  // Clearance for tubes (~1mm)
+
+// Chamfer dimensions at A1 corner
+var chamfer_length = 5;
+
+// Calculate positions of hole centers relative to origin (centred in X/Y)
+var cols = 12;
+var rows = 8;
+var x_offset = (X - (cols * hole_diameter)) / 2 + hole_diameter/2; // Half-length offset
+var y_offset = (Y - (rows * hole_diameter)) / 2 + hole_diameter/2; // Half-width offset
+
+// Create the base block
+difference() {
+    cube([X, Y, Z]);
+    translate([-x_offset, -y_offset, 0])
+        rotate([90, 0, 0]) // Align chamfer plane with XZ
+            difference() {
+                cube([chamfer_length + 1.5, Z + 2, chamfer_length + 1.5]);
+                for (var i = 0; i < 4; i++) {
+                    rotate([90 * i, 0, 0])
+                        cube([chamfer_length + 2, Z + 2, hole_diameter + 1]);
+                }
+            };
+}
+
+// Create vertical holes
+for (var col = 0; col < cols; col++) {
+    var x_pos = -x_offset + col * hole_diameter;
+    for (var row = 0; row < rows; row++) {
+        var y_pos = -y_offset + row * hole_diameter;
+
+        translate([x_pos, y_pos, 0])
+            rotate([90, 0, 0]) // Align hole axis with Z-axis
+                difference() {
+                    cylinder(h=Z+1.5, $fn=$fn, diameter=hole_diameter+2);
+                    cube([hole_diameter + 1, hole_diameter + 1, tube_height]);
+                };
+    }
+}
+```

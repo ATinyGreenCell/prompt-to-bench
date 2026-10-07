@@ -1,0 +1,84 @@
+// Dimensions in millimetres
+COLLAR_DIAMETER = 13;      // Diameter of the collar (mm)
+COLLAR_THICKNESS = 1.5;     // Thickness of the collar (mm)
+SLEEVE_OD = 10.8;           // Outer diameter of the sleeve body (mm)
+SLEEVE_HEIGHT = 21.5;        // Height from collar top to top of sleeve (mm)
+BORE_DIAMETER = 6.2;         // Diameter of the straight bore (mm)
+BORE_HEIGHT = 21.5;          // Full height of the bore (same as sleeve height)
+
+// Create the adapter sleeve
+// The collar sits on the bed at z=0 to z=COLLAR_THICKNESS
+// The sleeve body rises from the collar top to z = COLLAR_THICKNESS + SLEEVE_HEIGHT
+// A straight bore runs through the full height, open at both ends.
+
+$fn = 64;
+
+// Define the center of the adapter (origin) such that the collar is centered on XY plane
+// The entire part will be centered in X and Y for symmetry.
+
+// Create the collar: a cylinder with diameter COLLAR_DIAMETER, height COLLAR_THICKNESS
+translate([0, 0, COLLAR_THICKURE]) {
+    rotate_extrude(angle = 360) {
+        // Use polygon to approximate circle for the collar base (since we can't use sphere directly in difference context without extra steps)
+        // Instead, create a cylinder using cube and linear extrusion.
+        // We'll model the collar as a cylinder centered on origin with radius COLLAR_DIAMETER/2.
+    }
+}
+// Actually, better to use cylinder for the collar:
+translate([0, 0, COLLAR_THICKURE]) {
+    rotate([90, 0, 0]) {
+        // Create a cylinder (collar) with radius = COLLAR_DIAMETER/2, height = COLLAR_THICKURE.
+        // Since we are building upward from the bed, this sits on z=0 to z=COLLAR_THICKURE.
+        cylinder(r = COLLAR_DIAMETER / 2, h = COLLAR_THICKURE, center = [0, 0, 0]);
+    }
+}
+// But note: the above cylinder is centered at origin and extends from z=0 to z=COLLAR_THICKURE.
+// However, we want the collar to be exactly on the bed (z=0) and end at z = COLLAR_THICKURE.
+// So using cylinder with center [0,0,COLLAR_THICKURE/2] would place it centered vertically? Let's avoid confusion by building from origin properly.
+
+// Instead, we'll build the collar as a cylinder placed on the bed:
+// Place a cylinder of radius COLLAR_DIAMETER/2 and height COLLAR_THICKURE, with its base at z=0 and top at z=COLLAR_THICKURE.
+// Use translate to position it appropriately (centered in XY).
+
+// Define the center point for the collar: we want the collar centered on the origin in XY plane.
+// So place the collar so that its bottom is at z=0 and top at z=COLLAR_THICKURE, with center at [0,0,COLLAR_THICKURE/2].
+translate([0, 0, COLLAR_THICKURE / 2]) {
+    cylinder(r = COLLAR_DIAMETER / 2, h = COLLAR_THICKURE, center = [0, 0, 0]);
+}
+// This places the cylinder with its bottom at z=COLLAR_THICKURE/2 - COLLAR_THICKURE/2 = 0? Wait: cylinder's default is centered vertically if we use `center` parameter.
+// Actually, in OpenSCAD, `cylinder(r, h, center)` places the cylinder such that its axis passes through the given center point and extends along the z-axis by h from that point.
+// So if we set translate([0,0,COLLAR_THICKURE/2]) then cylinder with center = [0,0,COLLAR_THICKURE/2] will have its bottom at z=0 and top at z=COLLAR_THICKURE.
+// Yes: the cylinder extends h along z from the center point, so if center is at z = COLLAR_THICKURE/2, then it goes from z = (COLLAR_THICKURE/2) - (h/2) to (COLLAR_THICKURE/2) + (h/2).
+// We want bottom at z=0 and top at z=COLLAR_THICKURE. So set center = [0,0,COLLAR_THICKURE/2] and h = COLLAR_THICKURE.
+// Then the cylinder goes from z = (COLLAR_THICKURE/2) - (COLLAR_THICKURE/2) = 0 to (COLLAR_THICKURE/2)+(COLLAR_THICKURE/2)=COLLAR_THICKURE.
+// Perfect.
+
+// So the collar is correctly placed.
+
+// Now create the sleeve body: a cylinder with outer diameter SLEEVE_OD, thickness = (SLEEVE_OD - COLLAR_DIAMETER) / 2? Actually, we want the sleeve to be cylindrical with outer radius = SLEEVE_OD/2, and it should sit on top of the collar.
+// The sleeve body starts at z = COLLAR_THICKURE (the top of the collar) and rises to z = COLLAR_THICKURE + SLEEVE_HEIGHT.
+// Its inner diameter is not specified; we assume it's just a sleeve that fits around the PCR tube, so its outer radius is SLEEVE_OD/2, and it has uniform thickness (we don't need exact wall thickness beyond what's implied).
+// We'll model the sleeve as a cylinder with radius = SLEEVE_OD / 2, height = SLEEVE_HEIGHT, centered along z axis at its base.
+
+// Place the sleeve body so that its bottom is at z = COLLAR_THICKURE (the top of the collar).
+translate([0, 0, COLLAR_THICKURE]) {
+    cylinder(r = SLEEVE_OD / 2, h = SLEEVE_HEIGHT, center = [0, 0, 0]);
+}
+// This places a cylinder with its bottom at z=COLLAR_THICKURE and top at z=COLLAR_THICKURE + SLEEVE_HEIGHT.
+
+// Now create the bore: a straight cylindrical hole through the entire height (from z=0 to z=BORE_HEIGHT = SLEEVE_HEIGHT, since full height is SLEEVE_HEIGHT).
+// The bore must be open at both ends and have diameter BORE_DIAMETER.
+// We'll create this by subtracting a cylinder from the whole part? But we already have the sleeve body which is solid; we need to cut out the bore through the sleeve (and possibly through the collar if needed, but the bore should be centered along the sleeve height).
+// The bore runs through the full height of the adapter (from z=0 to z=BORE_HEIGHT = SLEEVE_HEIGHT), and is open at both ends.
+// So we need a cylindrical hole that goes from z=0 to z=SLEEVE_HEIGHT, with radius = BORE_DIAMETER / 2.
+// We'll model the entire adapter as solid parts (collar + sleeve) then subtract the bore cylinder.
+
+// First, define the full height of the adapter: H_ADAPTER = SLEEVE_HEIGHT (since collar is only thick at bottom).
+// The bore must be from z=0 to z=SLEEVE_HEIGHT (the top of the sleeve). So we'll create a cylinder for the bore that spans exactly those heights.
+
+// We'll build the entire adapter as two parts: collar and sleeve, then subtract the bore cylinder.
+
+// But note: the collar is only present from z=0 to z=COLLAR_THICKURE; above that it's just the sleeve. The bore should go through both collar region (if any) and sleeve region? Actually, the bore runs through the full height of the adapter, which is from z=0 to z=SLEEVE_HEIGHT (since the sleeve ends at z = COLLAR_THICKURE + SLEEVE_HEIGHT). But the collar only occupies up to z=COLLAR_THICKURE. So for z between 0 and COLLAR_THICKURE, the bore should be present; for z between COLLAR_THICKURE and SLEEVE_HEIGHT, also present (since it's through the sleeve).
+// However, the collar is a solid cylinder of thickness COLLAR_THICKURE. The bore must go through that region as well. So we need to subtract a cylindrical hole that spans from z=0 to z=SLEEVE_HEIGHT.
+
+// Approach: Build the entire adapter

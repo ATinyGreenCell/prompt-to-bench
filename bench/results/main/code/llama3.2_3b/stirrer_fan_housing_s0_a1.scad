@@ -1,0 +1,46 @@
+// Dimensions in mm
+top_plate_thickness = 2;
+wall_thickness = 2.5;
+outer_size_x = 90;
+outer_size_y = 90;
+hole_diameter = 4.5;
+screw_pattern_square_side = sqrt((outer_size_x / 2) * (outer_size_y / 2));
+power_cable_notch_width = 12;
+power_cable_notch_depth = 8;
+
+// Top plate
+translate([0, 0, top_plate_thickness])
+    linear_extrude(top_plate_thickness)
+        polygon(points=[[0, 0], [outer_size_x, 0], [outer_size_x, outer_size_y], [0, outer_size_y]]);
+
+// Walls
+for (x = [-wall_thickness/2, wall_thickness/2]) {
+    for (y = [-wall_thickness/2, wall_thickness/2]) {
+        translate([x, y, top_plate_thickness])
+            linear_extrude(wall_thickness)
+                polygon(points=[[0, 0], [outer_size_x, 0], [outer_size_x, outer_size_y], [0, outer_size_y]]);
+    }
+}
+
+// Power cable notch
+for (y = [-power_cable_notch_depth/2, power_cable_notch_depth/2]) {
+    translate([0, y + top_plate_thickness])
+        linear_extrude(wall_thickness)
+            polygon(points=[[0, 0], [outer_size_x, 0], [outer_size_x, outer_size_y], [power_cable_notch_width, outer_size_y]]);
+}
+
+// M4 screw holes
+for (x = [-screw_pattern_square_side/2, screw_pattern_square_side/2]) {
+    for (y = [-screw_pattern_square_side/2, screw_pattern_square_side/2]) {
+        translate([x + top_plate_thickness/2, y + top_plate_thickness/2])
+            linear_extrude(top_plate_thickness)
+                circle(r=hole_diameter/2);
+    }
+}
+
+// Mirror to flip the model
+mirror([0, 0, -1])
+    // Fan mounting holes are at the bottom of the box, so we need to mirror this part as well
+    translate([-outer_size_x/2, -outer_size_y/2, top_plate_thickness + wall_thickness])
+        linear_extrude(top_plate_thickness + wall_thickness)
+            polygon(points=[[0, 0], [outer_size_x, 0], [outer_size_x, outer_size_y], [0, outer_size_y]]);

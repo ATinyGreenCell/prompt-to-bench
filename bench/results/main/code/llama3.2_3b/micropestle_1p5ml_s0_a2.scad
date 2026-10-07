@@ -1,0 +1,61 @@
+// Dimensions in mm
+handle_diameter = 8;
+groove_width = 2;
+groove_depth = 1;
+groove_z_offset = [10, 15, 20, 25];
+sphere_radius = 3;
+
+// Handle
+handle_height = 45;
+handle() {
+    translate([0, 0])
+        cylinder(h=handle_height, d=handle_diameter);
+}
+
+// Grooves
+for (z = groove_z_offset) {
+    translate([0, 0, z])
+        linear_extrude(groove_depth)
+            polygon(points=[[0, 0], [handle_diameter, 0], [handle_diameter, handle_diameter/2], [0, handle_diameter/2]]);
+}
+
+// Cone
+cone_height = 62 - 45;
+cone() {
+    translate([0, 0])
+        rotate_extrude(45)
+            cylinder(h=cone_height, d=[8 * (z / cone_height), 3]);
+}
+
+// Rounded tip
+tip() {
+    translate([0, 0, 62])
+        sphere(r=sphere_radius);
+}
+
+// Assembly
+union() {
+    handle();
+    mirror([0, 0, 1]) {
+        for (z = [45, 47.5, 50, 52.5, 55, 57.5, 60, 62]) {
+            translate([0, 0, z])
+                rotate_extrude(360)
+                    cylinder(h=0.01, d=[8 * (z / cone_height), 3]);
+        }
+    }
+    tip();
+}
+
+// Corrected dimensions
+translate([0, 0, -handle_height/2]) // moved to the top of the file
+    cylinder(h=handle_height, d=handle_diameter);
+for (z = groove_z_offset) {
+    translate([0, 0, z])
+        linear_extrude(groove_depth)
+            polygon(points=[[0, 0], [handle_diameter, 0], [handle_diameter, handle_diameter/2], [0, handle_diameter/2]]);
+}
+translate([0, 0, 45]) // moved to the top of the file
+    rotate_extrude(45)
+        cylinder(h=cone_height, d=[8 * (z / cone_height), 3]);
+translate([0, 0, 62])
+    sphere(r=sphere_radius);

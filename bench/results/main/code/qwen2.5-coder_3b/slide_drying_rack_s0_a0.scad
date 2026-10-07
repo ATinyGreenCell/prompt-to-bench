@@ -1,0 +1,43 @@
+// Define dimensions
+$fn = 64; // Number of facets for curved surfaces
+
+// Base block dimensions
+base_length = 90;
+base_width = 45;
+base_height = 20;
+
+// Slide dimensions
+slide_length = 75;
+slide_width = 25;
+slide_height = 1;
+
+// Slot dimensions
+slot_length = slide_length + 3.5; // Total length of the slot including space for the slide
+slot_width = 1.6;
+slot_depth = 10;
+slot_gap = 3.5; // Distance between slots in Y
+
+// Calculate total width of slots
+total_slot_width = (slot_gap * (num_slots - 1)) + slot_width;
+
+// Number of slots to fit within the base width
+num_slots = floor(base_width / total_slot_width);
+
+// Positioning for slots
+slot_start_x = (base_width - total_slot_width) / 2;
+slot_end_x = slot_start_x + total_slot_width;
+
+// Main model
+difference() {
+    // Base block
+    cube([base_length, base_width, base_height]);
+
+    // Slots
+    for (i = [0:num_slots-1]) {
+        translate([slot_start_x + i * slot_gap, 0, 0]) {
+            linear_extrude(height=slide_height) {
+                square([slot_length, slot_width]);
+            }
+        }
+    }
+}

@@ -1,0 +1,36 @@
+// --- Dimensions & Parameters ---
+dish_diameter = 90; 
+template_outer_radius = 85/2; // Radius of the main disc (mm)
+template_thickness = 2.0;      // Thickness in Z (mm)
+
+grid_rows = 7; 
+hole_diameter = 3.0;           // Diameter of through-holes (mm)
+center_spacing = 9.0;          // Centre-to-centre spacing between grid points (mm)
+
+notch_width_x = 10.0;          // Width in X direction (mm)
+notch_depth_y = 4.0;           // Depth from outer edge into disc, measured along Y axis (mm)
+
+// --- Main Body Construction ---
+
+final_part = difference() {
+    
+    // 1. Main Cylinder Body
+    cylinder(h = template_thickness + 1.0, r = template_outer_radius); 
+
+    // 2. Grid Holes Loop (7x7)
+    for (i = [-(grid_rows - 1)/2; i <= ((grid_rows - 1)/2)-1; i++]) {
+        y_pos = i * center_spacing; 
+        for (j = [-(grid_rows - 1)/2; j <= ((grid_rows - 1)/2)-1; j++]) {
+            x_pos = j * center_spacing; 
+            
+            // Cut holes extending slightly past the body to ensure full penetration and clean faces
+            cylinder(h = template_thickness + 0.5, r = hole_diameter/2); 
+        }
+    }
+
+    // 3. Notch on the +Y side rim (Centered on Y axis)
+    translate([0, template_outer_radius]) {
+        cube(size = [notch_width_x + 1.0, notch_depth_y], center=true); 
+    }
+
+};

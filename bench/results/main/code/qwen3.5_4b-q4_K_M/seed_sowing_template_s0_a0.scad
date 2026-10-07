@@ -1,0 +1,144 @@
+// --- Dimensions & Parameters ---
+// Petri dish inner diameter (reference for fit)
+dish_diameter = 90; 
+
+// Template outer dimensions
+template_outer_radius = 85/2; // Radius of the main disc
+template_thickness = 2.0;      // Thickness in Z
+
+// Grid parameters: 7x7 holes, centered on origin
+grid_rows = 7; 
+hole_diameter = 3.0;           // Diameter of through-holes (mm)
+center_spacing = 9.0;          // Centre-to-centre spacing between grid points (mm)
+
+// Notch dimensions on the +Y side rim
+notch_width_x = 10.0;          // Width in X direction (mm)
+notch_depth_y = 4.0;           // Depth from outer edge into disc, measured along Y axis (mm)
+notch_position_from_edge = notch_depth_y; 
+
+// --- Main Body Construction ---
+
+// The main body is a flat cylinder resting on the XY plane at z=0.
+// We use difference to cut holes and create the notch.
+// To ensure clean cuts without coplanar faces, we extend cutting shapes slightly past their intended boundaries 
+// (e.g., extending hole cylinders by 1mm in Z so they fully penetrate).
+
+main_body = cylinder(h = template_thickness, r = template_outer_radius); 
+
+// --- Feature Generation Loops ---
+
+// Calculate the coordinates for a 7x7 grid centered at origin with center_spacing.
+// The range of indices is -3 to +3 (total 7 points) if we start from index -3 up to current_index <= 2? 
+// Actually, let's define an offset loop: i goes from -(grid_rows-1)/2 to +(grid_rows-1)/2.
+// For grid_rows=7, indices are -3, -2, -1, 0, 1, 2, 3.
+
+holes = []; 
+for (i = [-((grid_rows-1)/2); i <= ((grid_rows-1)/2)-1; i++]) {
+    for (j = [-(grid_rows-1)/2]; j <= ((grid_rows-1)/2)-1; j++) {
+        // Calculate coordinates based on center_spacing. 
+        // The distance from the origin to the first point is 0 * spacing? No, usually grid starts at offset/2 or similar logic.
+        // Let's assume standard matrix indexing: row i corresponds to y = (i - ((grid_rows-1)/2)) * center_spacing ? 
+        // Wait, if indices are -3..3, then the first point (-3) should be at distance 0 from edge? Or is it centered on origin?
+        // "Centred on the disc" implies symmetry. If spacing is S and there are N points:
+        // Distance between center (index 0) and outermost (index +/-3) must be defined by geometry or just use indices directly as offsets if we assume unit step = spacing/2? 
+        // Re-reading prompt: "9 mm centre-to-centre spacing". This defines the delta.
+        // If we have points at y=..., -S, 0, S... then distance is S.
+        // Let's define an offset 'offset' such that the outermost point is centered on the rim? 
+        // Or simply: The grid spans from -(N-1)/2 * spacing to +(N-1)/2 * spacing relative to center if we treat indices as steps of 0, S, 2S...
+        // Let's use a simpler approach: Generate points at y = k * (center_spacing/2) ? No.
+        
+        // Correct logic for "7x7 grid ... 9mm centre-to-centre":
+        // Indices i from -3 to +3 represent the row/column number relative to center? 
+        // If we map index 'i' directly to position: pos = (index * spacing). Then outer points are at +/- 18mm.
+        // But usually, a grid of N items with spacing S has total span (N-1)*S.
+        // Let's assume the user wants the holes arranged such that adjacent rows/cols are exactly center-to-center by 9mm.
+        // We will generate coordinates based on an offset loop where we step by 'center_spacing'.
+        
+        int idx = i; 
+        if (idx < 0) {
+            pos_y = -((grid_rows-1)/2 + (-idx)) * center_spacing / ((grid_rows+1)); // This is getting complex. Let's simplify.
+            
+            // Simpler approach: Define the grid range explicitly in mm relative to origin.
+            // Total span needed for 7 points with spacing S? 
+            // If we place them at y = -3*S, -2*S ... +3*S -> distance between neighbors is S. Outermost are +/- 18mm from center.
+            // Let's try that: indices represent steps of 'center_spacing'.
+        } else {
+             pos_y = idx * center_spacing; 
+        }
+
+        // Actually, let's just use a loop variable `k` representing the step count.
+    }
+}
+
+// Refined Loop Logic for clarity and correctness:
+grid_points_x = []; grid_points_y = []; 
+
+for (i = [-(grid_rows-1)/2); i <= ((grid_rows-1)/2)-1; i++) { // Wait, loop range logic in OpenSCAD is tricky. 
+    // Let's use a standard for loop with explicit start/end/step
+}
+
+// Correct Loop Implementation:
+for (i = [-(grid_rows - 1) / 2]; i <= ((grid_rows - 1) / 2); i++) {
+    y_val = i * center_spacing; // Assuming outer points are at +/- 3*spacing? 
+                                // If indices go from -3 to +3, step is spacing. Distance between neighbors is spacing. Correct.
+    
+    for (j = [-(grid_rows - 1) / 2]; j <= ((grid_rows - 1) / 2); j++) {
+        x_val = j * center_spacing; 
+        
+        // Create hole cylinder extending slightly past the body to ensure clean cut
+        holes[holes_count] = difference() {
+            translate([x_val, y_val, template_thickness/2]) 
+                cylinder(h = template_thickness + 1.0, r = hole_diameter / 2);
+            
+            main_body; // Cut into existing union later? No, we build the final object in one diff chain or separate unions.
+        }
+    }
+}
+
+// Let's restructure to ensure valid solid construction without errors:
+// We will create a single 'main_diff' block that starts with the cylinder and subtracts everything else.
+
+final_part = difference() {
+    
+    // 1. Main Body (with slight extension in Z for clean top/bottom if needed, though prompt says z=0)
+    // Extending by 0.5mm ensures no floating faces at exact boundaries during subtraction
+    translate([0, 0, template_thickness/2]) 
+        cylinder(h = template_thickness + 1.0, r = template_outer_radius); 
+
+    // 2. Grid Holes Loop (Corrected Logic)
+    for (i = [-(grid_rows - 1) / 2]; i <= ((grid_rows - 1) / 2); i++) {
+        y_pos = i * center_spacing; 
+        for (j = [-(grid_rows - 1) / 2); j <= ((grid_rows - 1) / 2); j++) {
+            x_pos = j * center_spacing; 
+            
+            // Ensure we don't double count the origin if logic overlaps? No, distinct points.
+            
+            translate([x_pos, y_pos]) 
+                cylinder(h = template_thickness + 0.5, r = hole_diameter / 2); // Extend slightly to ensure full penetration
+        }
+    }
+
+    // 3. Notch on the +Y side rim
+    // Dimensions: Width X=10mm, Depth Y from edge (notch_position_from_edge)
+    // Positioning: Centered on Y axis of the disc? 
+    // "Centred on the Y axis" -> The notch spans x = -5 to 5. y goes from outer_radius down by depth.
+    
+    translate([0, template_outer_radius]) {
+        // Cut a rectangular prism out of the rim
+        difference() {
+            cube(size = [notch_width_x + 1.0, notch_position_from_edge + 2.0], center = true); 
+            main_body; // Re-reference to ensure it cuts into the body correctly? 
+                      // Actually, since we are inside a single 'difference' block:
+                      // We subtract the cube from the cylinder directly if they intersect properly.
+        }
+    }
+
+};
+
+// Wait, OpenSCAD difference() requires all inputs to be valid solids that can be combined.
+// If I put multiple cylinders and one big cylinder in ONE difference(), it works fine as long as order is correct (big first).
+// However, the notch logic above was slightly flawed inside the loop structure mentally. Let's clean up the code block below.
+
+final_part = union() { // Start with main body? No, use single diff for efficiency and accuracy
+    
+    cylinder(h = template_thickness + 1.0, r = template_outer_radius);

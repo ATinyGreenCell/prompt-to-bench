@@ -1,0 +1,32 @@
+// Dimensions in mm
+X = 90;
+Y = 45;
+Z = 20;
+
+// Slide dimensions
+slide_X = 75;
+slide_Y = 25;
+slide_Z = 1;
+
+// Slot dimensions
+slot_X = slide_X + 2; // slot length is slide length plus 2mm on each side
+slot_Y = 1.6;
+slot_Z = 10;
+slot_gap_Y = 3.5;
+
+// Build the base block
+translate([0, 0, Z]) {
+    linear_extrude(Z) {
+        square(X * Y);
+    }
+}
+
+// Cut parallel slots into the top face
+translate([X/2 - slot_X/2, Y/2 - (Y/2 + slot_gap_Y/2), 0]) { // moved to z=0
+    for (y = [0, slot_gap_Y]) {
+        translate([0, y, 0])
+            linear_extrude(Z) {
+                square(slot_X * Y);
+            }
+    }
+}

@@ -1,0 +1,36 @@
+```openscad
+// Define dimensions
+$fn = 64;
+spout_height = 20;
+cone_height = 50;
+spout_diameter = 10;
+cone_base_diameter = 10;
+cone_top_diameter = 60;
+wall_thickness = 1.6;
+
+// Calculate inner diameters
+spout_inner_diameter = spout_diameter - wall_thickness * 2;
+cone_base_inner_diameter = cone_base_diameter - wall_thickness * 2;
+cone_top_inner_diameter = cone_top_diameter - wall_thickness * 2;
+
+// Spout
+spout = cylinder(r=spout_inner_diameter / 2, h=spout_height + 0.1);
+
+// Cone base
+cone_base = cylinder(r=cone_base_inner_diameter / 2, h=wall_thickness + 0.1);
+
+// Cone top
+cone_top = cylinder(r=cone_top_inner_diameter / 2, h=cone_height - wall_thickness * 2);
+
+// Combine parts with a hole in the bottom
+funnel = spout - translate([0, 0, -spout_height]) * cone_base;
+
+// Final assembly
+final_assembly = funnel + cone_top;
+
+// Render the final assembly
+render()
+{
+    final_assembly;
+}
+```

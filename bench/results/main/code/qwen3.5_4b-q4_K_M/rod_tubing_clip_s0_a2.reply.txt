@@ -1,0 +1,87 @@
+```openscad
+// Dimensions measured with calipers for FDM printing (mm)
+rod_diameter = 12.7; // Inner diameter of lab stand rod
+clip_wall_thickness = 3; // Wall thickness of the clip ring
+tubing_id = 6; // Inner diameter of lab tubing
+tubing_wall_thickness = 2; // Wall thickness of the tubing holder
+
+// Derived dimensions
+rod_ring_od = rod_diameter + (2 * clip_wall_thickness); // Outer diameter of rod ring
+tubing_od = tubing_id + (2 * tubing_wall_thickness); // Outer diameter of tubing holder
+
+// Clip height extrusion in Z
+clip_height = 10;
+
+// Position and geometry definitions
+rod_ring_center_x = 0;
+rod_ring_center_y = 0;
+
+// Rod ring opening: -X side. 
+// User specified "x < 0". This removes the left half of the circle, leaving a solid right lip for snapping onto the rod.
+rod_opening_width = rod_diameter / 2 + clip_wall_thickness; // Approximate width to ensure full cutout on negative X
+
+// Tubing ring position: centered at x=15, y=0
+tubing_ring_center_x = 15;
+tubing_ring_center_y = 0;
+
+// Calculate radii for the tubing ring based on OD and ID
+tubing_radius_outer = (tubing_od / 2); // Radius to outer surface
+tubing_radius_inner = (tubing_id / 2);   // Radius to inner surface
+
+// Tubing opening: +X side. 
+// User specified "4.5 mm wide" and condition "(x > 15 ...)". 
+// Since center is x=15, the region x>15 starts at the geometric center of the ring.
+// To create a functional snap-fit that isn't just an open hole from center to edge (which would be unstable), 
+// we interpret "4.5 mm wide" as a specific slot width starting near the outer edge and moving inwards, 
+// OR simply follow the literal instruction but ensure it doesn't cut through the entire ring thickness unintentionally if interpreted loosely.
+// However, for a robust snap clip: The rod side needs to be open on one half (x < 0). The tubing side usually has an opening that allows insertion from the other direction or is offset. 
+// Given "4.5 mm wide" and "+X side", let's create a rectangular cutout starting at x = Center + OuterRadius - Clearance?
+// Actually, to satisfy "x > 15" literally while making it printable as a hole:
+// We will define the tubing ring geometry first (a thick-walled tube). 
+// Then we apply difference operations.
+// Rod Ring Cutout: Remove region x < rod_ring_center_x (-X side) within the circle bounds.
+rod_cutout_region = { rotate([0, 90, 0], -45) translate([-127/2 + clip_wall_thickness, 0]) cylinder(h=1, r=(rod_diameter+clip_wall_thickness)/2); }; 
+// Simpler approach for cutouts: Use a box or circle intersection.
+// Rod Ring Cutout Logic: Remove everything where x < rod_ring_center_x AND inside the ring geometry.
+
+// Tubing Opening Logic: User said "4.5 mm wide" and "(x > 15 ...)".
+// If we strictly follow x > 15, that is a cut from center to edge on the right side. 
+// Width of this region (from x=15 to x=20) would be ~7mm if it's a full radius slice? No, user said "4.5 mm wide".
+// Let's assume the user meant a specific width of 4.5mm starting at some point on the +X side. 
+// A common design is an opening near the edge to allow rotation but leave material for grip/snapping.
+// However, if we strictly follow "x > 15", that implies removing from center (15) outwards? That seems odd for a snap clip unless it's a specific type of connector. 
+// Let's assume the user meant: The opening is centered at x = TubingCenterX + Offset such that its width is 4.5mm on the right side.
+// Or perhaps "x > 15" was a typo for coordinates relative to the edge? 
+// Given the ambiguity, I will create a robust design where:
+// 1. Rod Ring has a semi-circular cutout on the left (-X). This allows it to slide over the rod and snap with the right lip.
+// 2. Tubing Ring has a rectangular slot of width 4.5mm on the right (+X side), positioned near the outer edge so that when inserted, there is material behind it (the "lip") but enough room for tubing? 
+// Actually, usually you want to insert the rod into the ring and then slide the tube in.
+// If I cut a hole from center outwards on both rings, they become open hoops which are hard to hold together without a bridge.
+// The user explicitly asked for: "a solid bridge ... that joins the two rings". This implies we DO NOT want full holes through the rings (which would disconnect them). 
+// Therefore, the cutouts must be partial cuts or slots on one side only of each ring, leaving material to connect via the bridge.
+// Rod Ring Cutout (-X side): Remove x < 0 inside the circle. This leaves a solid right half lip. Width is effectively diameter/2 + wall ~9mm+. User said "10 mm wide", which matches roughly (radius=6.35, plus some margin). 
+// Tubing Ring Cutout (+X side): User says "4.5 mm wide". If we remove x > 15 inside the ring... that starts at center. That would be a huge cut from center to edge (~7mm width for radius ~7?).
+// Let's assume the user meant: The opening is located on the +X side, has a width of 4.5mm, and is positioned such that it doesn't disconnect the ring (leaving material at x < X_start). 
+// If we place the cutout starting at x = Center + OuterRadius - Gap/2? No, let's assume the user meant: Cutout starts at x = TubingCenterX + 3mm and goes to x=7.5mm?
+// Let's try this interpretation which is standard for such clips: 
+// The "opening" allows insertion of a rod/tube from one side while keeping the ring closed on the other, or allowing rotation.
+// Given "x > 15", let's assume it means x starts at Center + (OuterRadius - Clearance). 
+// Let's define the cutout as: Remove region where x is between [CenterX + OuterRadius - Gap/2, CenterX + OuterRadius]? No, that leaves a lip on the left.
+// If we remove from center outwards? That disconnects it unless there's another piece holding it (the bridge). 
+// But if both rings are cut open by half or more, they can't be joined by a simple "solid bridge" without complex geometry.
+// Let's assume the user wants: Rod Ring cut on Left (-X), Tubing Ring cut on Right (+X) but ONLY 4.5mm wide starting from the edge inwards? 
+// If we start at x = Center + OuterRadius - Gap/2 and go to Center + OuterRadius, width is Gap/2? No.
+// Let's assume "x > 15" was meant to be relative to a specific coordinate system where center is different? No, user said centered at x=15.
+// Okay, I will implement the literal geometric constraints but ensure they don't result in disconnected rings by limiting the cutout depth or interpreting it as a slot near the edge if "x>15" implies starting from center (which would be too deep). 
+// Wait, if I remove x > 15 inside a ring of radius ~7mm centered at 15... that removes everything to the right. That is half the circle.
+// If Rod Ring also has half-circle cutout (-X), then both rings are open hoops. The bridge connects them. This works! 
+// It's like two C-clips connected by a bar. 
+// Let's verify widths:
+// Rod Cutout (x < 0): From x=-9.35 to x=0. Width ~9mm. User said "10 mm wide". Close enough for FDM tolerance and caliper measurement variance.
+// Tubing Cutout (x > 15): From x=15 to x=20 (approx). Radius is ~7mm? OD = ID + 4 = 6+4=10 -> R=5. 
+// Wait, recalculate tubing radius: ID=6, Wall=2 -> OD=10. Radius=5.
+// Center X=15. Outer Edge X=20. Inner Edge X=10.
+// If we remove x > 15... that is from center (15) to edge (20). Width = 5mm. 
+// User said "4.5 mm wide". This is very close to the radius of a 6mm ID ring with 2mm wall? No, R=5.
+// Maybe user meant OD calculation differently? Or maybe they measured slightly off. 
+// If I remove x >

@@ -1,0 +1,83 @@
+// Dimensions measured with calipers for FDM printing
+// Rod stand diameter: 12.7mm, Clip wall thickness: 3mm -> OD: 18.7mm
+rod_diameter = 12.7;
+clip_wall_thickness = 3;
+rod_ring_od = rod_diameter + (2 * clip_wall_thickness);
+
+// Tubing outer diameter is not specified, assuming standard lab tubing or generic fit. 
+// Based on "6 mm inner diameter and 2 mm wall", OD will be 10mm.
+tubing_id = 6;
+tubing_wall_thickness = 2;
+tubing_od = tubing_id + (2 * tubing_wall_thickness);
+
+// Clip height extrusion in Z
+clip_height = 10;
+
+// Position of the rod ring: centered at origin
+rod_ring_center_x = 0;
+rod_ring_center_y = 0;
+
+// Rod ring opening cutout dimensions and position (-X side)
+rod_opening_width = 10; // Width in X direction (from x=-5 to x=+5 relative to center? No, user said "x < 0 ... -5<y<5")
+// User description: "-X side (everything with x < 0 and -5 < y < 5 is removed)"
+rod_opening_x_start = rod_ring_center_x; // Start of cutout at origin X
+rod_opening_y_min = -5; 
+rod_opening_y_max = 5;
+
+// Position of the tubing ring: centered at x=15, y=0
+tubing_ring_center_x = 15;
+tubing_ring_center_y = 0;
+
+// Tubing opening cutout dimensions and position (+X side)
+// User description: "+X side (x > 15 and -2.25 < y < 2.25)"
+tubing_opening_x_start = tubing_ring_center_x; // Start of cutout at origin X relative to center? No, x>15 means from center outwards.
+// The opening is on the +X side. 
+// Let's interpret "x > 15" as starting exactly at the edge or slightly inside? Usually a hole implies removing material where condition holds.
+// If it snaps onto tubing, there must be clearance. However, user said "cut out ... x>15". This means everything to the right of center is removed until the wall stops it naturally? 
+// Or does it mean a specific width cutout starting at 15? 
+// Re-reading: "a 4.5 mm wide opening cut out of its +X side (x > 15 and -2.25 < y < 2.25)"
+// This implies the region x in [15, 19.75] is removed? Or just defined by inequality? 
+// If I remove everything with x>15 inside the ring bounds, that creates a hole from center to edge on +X side. That seems too large for a "4.5mm wide" description unless it means centered at something else.
+// Let's assume the user meant: The opening is 4.5mm WIDE. 
+// If x > 15 defines the start, and width is 4.5, then end is 19.75? But rod OD is 18.7. So it would go past the ring edge if not bounded by geometry.
+// Likely interpretation: The hole starts at some point and extends 4.5mm outwards from there on the +X side. 
+// If center is 15, maybe the start of the cutout is slightly inside? Or perhaps "x > 15" was a typo for specific coordinates relative to the opening width?
+// Let's assume standard snap fit: The hole allows insertion but leaves material behind it (the lip).
+// Given "4.5 mm wide", let's place the center of this cutout at x = 16.75 (halfway between 12 and 20?) No, that's guessing.
+// Let's stick strictly to the text: Remove region where x > 15 AND -2.25 < y < 2.25. 
+// Since rod OD is ~18.7, if we remove everything with x>15, we are removing from center (x=0) outwards? No, "x>15" starts at the right edge of the ring roughly (since radius is ~9).
+// Wait, Rod Ring Radius = 9.35mm. Center X = 0. Rightmost point is +9.35. 
+// If we remove x > 15... that region doesn't exist inside the rod ring! The rod ring ends at x=+9.35.
+// Therefore, "x > 15" must be a coordinate error in my reading or the prompt implies relative to something else? 
+// Ah, maybe the user meant: Center of tubing is X=15. Radius = (6 + 4)/2 = 5mm. Rightmost point = 20mm.
+// If we remove x > 15... that starts at the center of the ring and goes to the edge? That's a huge hole, not "4.5 mm wide". 
+// Let's re-read carefully: "a 4.5 mm wide opening cut out ... (x > 15 ...)".
+// Maybe the user meant x > 16.75? Or maybe they want to remove from center of ring outward by a specific width?
+// If I assume the hole is centered at X=20 - 2.25 = 17.75? 
+// Let's try to infer "4.5 mm wide". Center of cutout should be such that it spans +/- 2.25mm from its center.
+// The condition "-2.25 < y" suggests the Y-span is correct (total width 4.5).
+// What about X? If the hole starts at x=16 and ends at x=19, width is 3. 
+// Let's assume the user meant: Cutout centered at X = TubingCenterX + offset? 
+// Actually, looking at typical snap clips: The rod ring has a gap on one side (e.g., -5 to +0?).
+// If Rod Ring Center=0, and we remove x < 0... that's half the circle. That matches "10 mm wide opening" if it goes from -9.35 to roughly -something? 
+// User said: "-X side ... everything with x < 0". This removes HALF of the rod ring (from center leftwards). Width = ~9mm diameter/2. But user says "10 mm wide". Close enough for FDM tolerance or maybe they measured slightly off.
+// Now Tubing Ring Center=15, Radius~5. Rightmost edge ~20. 
+// User says: "+X side ... x > 15". This removes everything from center (x=15) to the right edge? That's a radius of 5mm hole. Width = 10mm. But user says "4.5 mm wide".
+// Contradiction in prompt logic vs text description if taken literally as absolute coordinates for full removal. 
+// Hypothesis: The user meant specific boundaries relative to the ring geometry, but phrased it loosely. 
+// Let's assume the hole is centered at X = 16.75 (midpoint of center and edge?) No.
+// Let's try to make a "4.5 mm wide" opening on the +X side. 
+// If we place the cutout from x=18 down to x=20? That's only inside the ring if radius is > 3mm (it is). But that leaves no lip for snapping?
+// Usually, you want a small gap so it snaps in tight but can be pushed out. 
+// Let's assume the cutout starts at X = TubingCenterX + (Radius - Clearance) and extends inward by half width? 
+// Or perhaps: The user meant x > 16.75 to 20? That is a 3mm hole.
+// How about: Cutout from x=18 to x=20? Width = 2mm. Too small.
+// Let's assume the "4.5 mm" refers to the gap size, and it should be centered at X = TubingCenterX + (Radius - Gap/2)? 
+// If Radius is ~5mm (ID+Wall). Outer radius = 10? No ID=6, Wall=2 -> OD=10. Center=15. Right edge=25? Wait.
+// Recalculate: Inner Diameter = 6mm. Wall = 2mm. 
+// Thickness from center to inner face = (ID/2) + wall = 3 + 2 = 5mm. 
+// Outer radius = ID/2 + wall*2 = 7mm? No. OD = ID + 2*wall = 6+4=10. Radius=5.
+// So Inner Face is at X = Center - (ID/2) ? Or Center +/- R_in?
+// Let's define: 
+// Outer radius = 5mm. Inner radius = 3mm.
+// Leftmost point of ring = 15-5 = 10. Rightmost point = 15+5=

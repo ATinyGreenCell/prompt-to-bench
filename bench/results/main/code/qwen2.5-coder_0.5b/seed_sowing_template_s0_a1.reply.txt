@@ -1,0 +1,31 @@
+```openscad code block
+// Define variables for dimensions
+$D = 85; // Diameter of disc
+$H = 2; // Thickness of disc
+$W = 7; // Number of holes along X-axis
+$Y = 7; // Number of holes along Y-axis
+
+// Create the disc
+cube($D, $H, $H);
+
+// Define the grid of through-holes
+for ($i = 0; $i < $W; $i++) {
+    for ($j = 0; $j < $Y; $j++) {
+        // Calculate the position of the hole
+        $x = $D / 2 + $i * $H;
+        $y = $H / 2 + $j * $H;
+
+        // Create a circle through the hole
+        sphere($x, $y, $H/4);
+    }
+}
+
+// Define the notch in the rim
+cube($W, 10, 4);
+
+// Center the notch on the disc
+translate((0, 0, -5), $D/2 + $W * 10 / 2 + $Y * 4 / 2);
+
+// Create a rectangular orientation notch into the rim
+cube($W, 10, 4);
+rotate_extrude(90, $H/4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,

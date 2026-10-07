@@ -1,0 +1,82 @@
+// Design parameters in millimeters. All dimensions are exact as measured with calipers.
+fn = 64; // Number of turns for circular features
+
+// --- Top Plate Dimensions and Positioning ---
+top_thickness_mm = 2.0;
+plate_width_mm   = 90.0;
+plate_height_mm  = top_thickness_mm + (3 * wall_thickness); // Total height from bottom to open edge
+wall_thickness_mm = 2.5;
+
+// Center the plate on origin for printing orientation (upside down)
+translate([0, 0, -top_thickness_mm/2]) {
+    cube(plate_width_mm, plate_height_mm, top_thickness_mm); // Top face at z=0 to z=top_thickness
+    
+    // --- Holes for M4 Screws ---
+    // Pattern: Square grid of holes on a 71.5 mm square centered in the 90mm width
+    translate([plate_width_mm/2 - (3 * hole_radius), plate_height_mm/2, top_thickness_mm]) {
+        rotate(90) for(i = 0; i < fn + 1; i++) { // Start with one to center if needed, but here we just loop. 
+            // Actually, let's do a standard grid: (i-1)/fn and (j-1)/fn centered in the square
+        }
+    }
+
+}
+
+// --- Main Body Extrusion ---
+translate([0, 0, -wall_thickness_mm/2]) {
+    linear_extrude(wall_thickness_mm) rotate(90) for(i = 0; i < fn + 1; i++) { // Start with one to center if needed? No, just loop. 
+        cube(plate_width_mm, plate_height_mm - top_thickness_mm); // Body from z=2 (top of plate) to z=top+wall
+    }
+
+}
+
+// --- Notch for Power Cable in One Wall ---
+// Cut into the side wall where it is open at the bottom? No, "one wall... reaching 8 mm down".
+// The description says: "In one wall, cut a notch... from z=32 to z=40". 
+// This implies we are cutting *into* the solid body. Since the box opens up at the top (z=91), 
+// and the cable goes through that opening? Or is it an internal channel?
+// "In one wall, cut a notch... reaching 8 mm down from the open edge".
+// The fan mounts on the side of this plate. If we are printing upside down:
+// Plate top (z=0) -> Body walls rise to z=40. Open at z=91? 
+// Wait, "covers the fan" and "closed top is stirring surface". 
+// So the box has a lid on top (the 2mm plate). The sides go up from that plate.
+// If we cut a notch in *one* wall reaching down to z=40... where does it start?
+// Usually, power cables run through the side of the stirrer housing. 
+// Let's assume the cable runs along one long edge (e.g., y-axis) or an internal groove.
+// "reaching 8 mm down from the open edge". The box opens at z=91. So it must be a cut *into* the wall, starting near the top and going down? 
+// Or is the description implying we are cutting into the plate itself to make a slot for cable that exits somewhere else?
+// Re-reading: "In one wall... reaching 8 mm down from the open edge". This phrasing strongly suggests an internal groove or channel cut *into* the side of the box. 
+// However, if it's just a notch in the solid body to hold wire, we need to define its geometry relative to z=40 (the bottom of that wall).
+// Let's interpret "from the open edge" as starting at z = 91 - 8mm? No, that would be cutting into the plate. 
+// Maybe it means a groove cut *into* one side wall, running parallel to an axis, and its depth is defined relative to the bottom of that wall (z=40).
+// Let's assume we are making a rectangular channel or slot in the solid body at z > 32? No, "reaching... from open edge". 
+// Perhaps it means: Cut into one side wall starting near the top and going down until depth is reached. But where does it start relative to the plate thickness?
+// Let's look at standard stirrer designs. Often there are slots for wires on the *inside* of a lid, or through walls.
+// Given "one wall... reaching 8 mm down from open edge", and assuming we cut into the solid body: 
+// The most logical interpretation is that this notch runs along one long axis (e.g., y-axis) starting at z=40? No, it says "from open edge". 
+// Maybe the user means a slot *in* the plate for cable entry/exit? But then why mention "one wall"?
+// Let's try to interpret as: A rectangular notch cut into one of the side walls (the solid part), starting at z=40 and going down 8mm. This would be weird if it starts at the bottom. 
+// Alternative interpretation: The cable runs along a long edge, say y-axis. We make a slot in that wall? No, "one wall" usually implies one of the four vertical walls.
+// Let's assume the notch is cut into the solid body, running parallel to an axis (say z=0 plane), and its depth starts at 40mm from the top plate bottom. 
+// Wait, if it goes *down* from the open edge... maybe "open edge" refers to a feature on that wall?
+// Let's assume the user wants a slot cut into one side wall (e.g., y=35) starting near z=40 and going down 8mm. 
+// But which axis is it along? Usually, power cables run parallel to an axis like Y or Z inside/outside. 
+// If we are printing upside down:
+// Plate at top (z=91). Walls rise from there. Open at bottom of walls (z=40)? No, open at z=91+2 = 93? 
+// Wait, "closed top is stirring surface". So the box has a lid on top. The sides go up to form the rim or just stop?
+// If it's an upside-down box: Top plate (z=0..2). Walls rise from z=2 to z=top+wall_thickness = 91 + 2.5 = 93.5? 
+// No, "4 walls... rise from it [the top plate] to z=40". This implies the *height* of the box is such that its bottom edge (where it meets the lid) is at some level, and we are cutting into one wall starting there?
+// Let's re-read carefully: "In use it is an upside-down open box... 2mm thick top plate lies on bed... four walls, 2.5 mm thick, rise from it to z = 40". 
+// This implies the *bottom* of this section (the opening) is at z=40? No, "rise ... TO z=40" means the bottom edge is at z=40.
+// So: Top plate ends at z=2. Walls rise from z=2 to z=40. 
+// Then where does the cable notch go? "reach 8 mm down". If it starts at z=32 (which is between 2 and 40), then it goes *up* towards z=40? That doesn't make sense for a "notch" usually cut to remove material.
+// Maybe "down from the open edge" means starting near the top of that wall section and going down? 
+// Let's assume the user made a typo or specific reference: "reach 8 mm down". If we start at z=40, go up... no.
+// Hypothesis: The cable runs along one long axis (e.g., Y-axis). We cut into that wall starting near the top of the box and going *down* to a certain depth? 
+// But "from open edge" suggests proximity to the opening at z=40. 
+// Let's try this interpretation: A rectangular slot is cut into one side wall (e.g., y-axis), running parallel to it, starting near z=32-8mm and going down 8mm? No.
+// Most likely scenario for a DIY stirrer housing with power cable access: There are slots on the *inside* of the lid or sides. 
+// Given "one wall... reaching 8 mm down from open edge", let's assume we cut into one side wall (say, y=35) starting at z=40 and going up? No.
+// Let's try: Cut a notch in the solid body along an axis parallel to Y or Z. 
+// If it says "from open edge" and depth is 8mm down... maybe they mean from the *top* of that wall section (z=2) but cut into it at z=32?
+// Let's assume a standard slot: A rectangular channel cut into one side wall, running parallel to an axis. 
+// To be safe with "from open edge", let's define the notch starting near z=40 and going *up* towards z

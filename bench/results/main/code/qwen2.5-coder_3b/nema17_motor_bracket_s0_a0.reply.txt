@@ -1,0 +1,50 @@
+```scad
+// Define dimensions
+$fn = 64;
+base_width = 50; // Width of base plate
+base_height = 5; // Height of base plate
+motor_plate_height = 50; // Height of motor plate
+motor_centre_x = 0; // X-coordinate of motor's centring boss
+motor_centre_z = 28; // Z-coordinate of motor's centring boss
+motor_screw_diameter = 3.4; // Diameter of M3 screws
+motor_screw_pattern_side_length = 31; // Side length of the square pattern for M3 screws
+gusset_thickness = 5; // Thickness of gussets
+gusset_leg_length = 20; // Length of legs of gussets
+
+// Base plate
+base_plate = difference() {
+    cube([base_width, base_height, base_height], center=true);
+    translate([-17, 30, 0]) cylinder(r=4.5, h=base_height, center=true);
+    translate([17, 30, 0]) cylinder(r=4.5, h=base_height, center=true);
+};
+
+// Motor plate
+motor_plate = difference() {
+    cube([base_width, motor_plate_height, base_height], center=true);
+    translate([motor_centre_x, 0, motor_centre_z]) sphere(r=motor_screw_diameter/2, center=true);
+    for (i=[-1, 1]) {
+        translate([i*motor_screw_pattern_side_length/2, 0, 0]) cube([motor_screw_pattern_side_length, motor_screw_diameter, motor_screw_diameter], center=true);
+    }
+};
+
+// Gussets
+gusset_left = difference() {
+    square([gusset_leg_length, gusset_thickness], center=true);
+    translate([-gusset_leg_length/2, 0, 5]) rotate_extrude(height=gusset_thickness) polygon([[0, 0], [gusset_leg_length, 0], [gusset_leg_length, gusset_leg_length]]);
+};
+gusset_right = difference() {
+    square([gusset_leg_length, gusset_thickness], center=true);
+    translate([gusset_leg_length/2, 0, 5]) rotate_extrude(height=gusset_thickness) polygon([[0, 0], [-gusset_leg_length, 0], [-gusset_leg_length, gusset_leg_length]]);
+};
+
+// Combine parts
+final_part = union() {
+    base_plate;
+    motor_plate;
+    gusset_left;
+    gusset_right;
+};
+
+// Render the final part
+render();
+```

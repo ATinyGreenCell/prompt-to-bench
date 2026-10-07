@@ -1,0 +1,28 @@
+// Dimensions from user's measurements
+$fn = 64; // for round holes
+
+// Define variables with units
+mm = 0.001;
+Z = 1.5 * mm; // thickness of comb
+X = 70 * mm;   // length of spine (back bar)
+Y = 12 * mm;   // width of spine
+W = 5.0 * mm;  // width of teeth
+L = 12 * mm;   // length of teeth
+
+// Define the comb structure
+comb = union() {
+    // The spine
+    spine = translate([0, 0, Z]) cube([X, Y, W]);
+
+    // The teeth
+    for (i in [0:9]) {
+        tooth = translate([W/2 + i*1.5 - L/2, 0, 0]) cube([L, Y, W]);
+        spine = union() with tooth;
+    }
+};
+
+// Print orientation is XY plane at z=0
+print_orientation = translate([0, 0, Z]) comb;
+
+// Export the model for printing
+export("comb.scad");

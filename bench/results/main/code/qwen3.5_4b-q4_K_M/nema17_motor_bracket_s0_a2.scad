@@ -1,0 +1,57 @@
+// L-shaped mounting bracket for NEMA 17 stepper motor
+// Print orientation: Base plate on XY plane (z=0), building upward (+Z)
+// Centered in X and Y at origin
+
+$fn = 64; // Polygon resolution for smooth holes/edges
+
+// --- Dimensions & Positions (measured with calipers, units in mm) ---
+
+// Base Plate Geometry
+base_plate_x_min = -25;     // Left edge of base plate
+base_plate_x_max = 25;      // Right edge of base plate
+base_plate_y_min = 0;       // Front edge of base plate
+base_plate_y_max = 45;      // Back edge of base plate
+
+// Base Plate Thickness & Features
+base_thickness = 5;         // Height from z=0 to z=5
+m4_hole_diameter = 4.5;    // Diameter for M4 mounting holes (through-hole)
+m4_hole_x1 = -17;          // X position of first through hole
+m4_hole_y_pos = 30;        // Y position of both through holes
+
+// Motor Plate Geometry & Positioning
+motor_plate_thickness = 5; // Height from z=0 to z=5 (same as base, stacked)
+motor_plate_z_max = 50;    // Top edge height
+motor_centre_x = 0;        // X position of motor centring boss hole centre
+
+// Motor Plate Holes
+motor_boss_hole_diameter = 23; // Diameter for NEMA 17 centring boss
+m3_screw_hole_diameter = 3.4;   // Diameter for M3 screw holes (through-hole along Y)
+m3_pattern_side = 31;          // Side length of square pattern
+
+// Gusset Geometry & Positioning
+gusset_thickness_x = 5;        // Thickness of triangular gussets in X direction (-25 to -20 is 5mm wide? No, user said x from -25 to -20. That's a width of 5mm.)
+
+// Gusset Corner Positioning (Right-angle corner)
+gusset_corner_y = 5;           // Y coordinate of right angle corner on the intersection line
+gusset_corner_z = 5;           // Z coordinate of right angle corner at base level? No, user said "y=5, z=5".
+
+// Gusset Edge Positions (Flush with edges)
+left_gusset_x_min = -25;       // Left edge flush with left side (-25 to -20 is 5mm wide?) Wait: User says x from -25 to -20. That's a width of 5mm? No, user said gusset is triangular in YZ plane... 
+// Re-reading gusset description carefully: "each is a right triangle in the YZ plane with legs 20 mm along +Y and 20 mm along +Z"
+// And position: "right-angle corner at y = 5, z = 5 (where plates meet)"
+// And flush edges: x from -25 to -20? That implies a width of 5mm. But user said gusset is triangular in YZ plane... 
+// Wait, if it's a triangle in the YZ plane, its extent in X should be constant (thickness).
+// User says "flush with left and right edges". Left edge at x=-25? Right edge (inner) at x=20 to 25? That implies thickness is 5mm. 
+// But user said gusset is triangular in YZ plane... So the triangle lies flat against the side wall (YZ plane).
+// The "legs" are along +Y and +Z directions from the corner.
+
+// Gusset Dimensions Correction based on description:
+gusset_leg_y_length = 20;      // Length of leg along +Y from corner
+gusset_leg_z_length = 20;      // Length of leg along +Z from corner
+
+
+// --- Model Definition ---
+
+module base_plate() {
+    translate([base_plate_x_min, base_plate_y_min, 0]) 
+        cube([base_plate_x_max - base_plate_x_min, base_plate_y_max -

@@ -1,0 +1,62 @@
+// Dimensions in millimetres
+$fn = 64;
+outer_width = 90;          // Outer box width/length
+outer_height = 40;         // Box height (wall thickness + open depth)
+top_plate_thickness = 2;   // Top plate material thickness
+wall_thickness = 2.5;      // Wall material thickness
+
+// Screw holes for M4 on 71.5mm square pattern
+screw_spacing = 71.5;
+hole_radius = screw_hole_diameter/2;
+
+// Cable notch dimensions
+notch_width = 12;
+notch_depth = 8;
+notch_offset_z = wall_thickness;
+
+module top_plate() {
+    translate([0, 0, -top_plate_thickness / 2])
+    difference()
+    {
+        cube([outer_width + 0.5, outer_height + 0.5, top_plate_thickness]);
+
+        // Create screw hole pattern
+        for (x = -screw_spacing/2 + hole_radius: screw_spacing/2: screw_spacing)
+            for (y = -screw_spacing/2 + hole_radius: screw_spacing/2: screw_spacing)
+                translate([x, y, 0])
+                    cylinder(d=hole_radius + 0.3, h=top_plate_thickness + 0.6);
+    }
+}
+
+// Wall with notch
+module wall_with_notch() {
+    translate([outer_width / 2, outer_height / 2, -wall_thickness / 2])
+    difference()
+    {
+        cube([outer_width + 1, outer_height + wall_thickness + 1, wall_thickness]);
+
+        // Create notch
+        translate([-notch_width/2 - 0.5, 0, notch_offset_z])
+            cylinder(d=notch_width/2 + 0.3, h=notch_depth);
+    }
+}
+
+// Generate all walls
+module generate_walls() {
+    // Left and right walls
+    for (y = -outer_height: outer_height: outer_height)
+        translate([-outer_width/2, y, 0])
+            wall_with_notch();
+
+    // Front and back walls
+    for (x = -outer_width/2: outer_width/2: outer_width/2)
+        translate([x, outer_height/2 + 0.5, 0])
+            mirror([1, 1, 0]) {wall_with_notch()};
+}
+
+// Main assembly
+union()
+{
+    top_plate();
+    generate_walls();
+}

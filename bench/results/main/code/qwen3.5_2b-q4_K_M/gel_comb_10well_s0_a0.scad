@@ -1,0 +1,119 @@
+// Design a 10-well comb for casting agarose gels, printed lying flat.
+// Units: millimeters (mm).
+// Orientation: Lying flat on XY plane at Z=0, building up +Z.
+// Spine dimensions: X = 70 mm, Y = 12 mm.
+
+define fn = 64; // Number of segments for the comb teeth grid
+
+void main() {
+    // --- Dimensions (mm) ---
+    const spine_length_x   = 70.0;      // Length along X axis of the back bar
+    const spine_width_y   = 12.0;      // Width along Y axis of the back bar
+    const tooth_width_x   = 5.0;       // Width of each tooth in X direction (measured from center to edge)
+    const tooth_length_y  = 12.0;      // Length of each tooth hanging down (-Y)
+    const gap_between_teeth_mm = 1.5;  // Gap between adjacent teeth along Y axis
+
+    // --- Geometry Construction ---
+    
+    // The spine (back bar): A flat plate extending from the origin to a point at X=70, Y=-6 (centered).
+    // We start with a large block and subtract away the sides.
+    const total_spine_length = 35;   // Half of 70 mm centered on spine length
+    const half_width         = spine_width_y / 2;
+
+    // Create the main body: A flat plate from Z=0 to Z=-total_spine_length, 
+    // spanning X=[-spine_length_x/2, spine_length_x/2] and Y=[half_width - total_spine_length + half_width, half_width].
+    const start_y = (spine_width_y / 2) - total_spine_length;
+    
+    cube(
+        x   = spine_length_x * 0.5, // +/- 35 mm from center to get full length of 70mm
+        y   = half_width + total_spine_length, 
+        z   = -(total_spine_length)
+    ) {
+        translate([spine_length_x/2 - spine_length_x*0.1, start_y]) // Offset slightly inward from edge for safety in difference
+        
+        // Subtract the right side (positive X) to leave a flat face at Y=half_width + total_spine_length
+        polygon(
+            points = [
+                35 * (-spine_length_x/2), half_width, spine_length_y - half_width, 
+                0.1,          // Offset by ~0.1mm past edge for difference operation (fn >= 64 ensures this)
+                0.1,
+                35 * spine_length_x/2, half_width + total_spine_length, 
+            ]
+        ) {
+            translate([spine_length_x*0.9]) // Offset slightly inward from edge for difference operation (fn >= 64 ensures this)
+            
+            cube(
+                x   = -35 * spine_length_x/2, // +/- 17.5 mm to get full length of 70mm
+                y   = half_width + total_spine_length, 
+                z   = -(total_spine_length)
+            ) {
+                translate([spine_length_x*0.9]) // Offset slightly inward from edge for difference operation (fn >= 64 ensures this)
+
+                cube(
+                    x     = spine_length_x * 0.5 - tooth_width_x, 
+                    y     = half_width + total_spine_length - tooth_length_y, 
+                    z     = -(total_spine_length)
+                ) {
+                    translate([tooth_width_x/2]) // Offset slightly inward from edge for difference operation (fn >= 64 ensures this)
+
+                    cube(
+                        x   = spine_length_x * 0.5 - tooth_width_x, 
+                        y   = half_width + total_spine_length - tooth_length_y, 
+                        z   = -(total_spine_length)
+                    ) {
+                        
+                        // Create the teeth: A block of width 'tooth_width_x' and length 'tooth_length_y', hanging down (-Y).
+                        // We use a for loop to create 10 identical blocks.
+                        for (i = -9; i <= 8; i++) {
+                            translate([spine_length_x * 0.5 + tooth_width_x/2, spine_width_y / 2 + total_spine_length + gap_between_teeth_mm*i]) 
+                                cube(
+                                    x   = -(tooth_width_x), // Negative X to hang down in -Y direction? Wait, let's re-evaluate coordinate system logic for hanging.
+                                    
+                                    // Correction: If the spine is at Y=0 (conceptually) and teeth hang into negative Y...
+                                    // The spine ends are at Y = half_spine_width + total_length. 
+                                    // Teeth must be placed such that their top edge aligns with this plane? No, they "hang from one long edge".
+                                    
+                                    // Let's refine the placement logic:
+                                    // Spine is a flat plate on XY plane (Z=0). It has thickness Z = -total_spine_length.
+                                    // The bottom face of the spine is at Y_start + total_spine_length? No, we built it from 0 to negative depth.
+                                    
+                                    // Let's restart the "hanging" logic with a clearer coordinate system for the teeth block itself.
+                                    // A tooth hanging down in -Y direction means its top surface (at Z=depth) is at Y = some value, and bottom face extends further into negative Y? 
+                                    // Actually, standard printing: The part rests on XY plane. Teeth hang "down" usually meaning they are cut away from the main body such that their vertical extent goes deeper in -Z or sideways in -Y depending on orientation.
+                                    
+                                    // User says: "hangs ... in the -Y direction". This implies the teeth extend along the Y axis into negative values? 
+                                    // Or does it mean they hang vertically (along Z) but are positioned such that their top surface is at a specific Y level and they go down (-Z)?
+                                    
+                                    // Re-reading: "rectangular teeth ... 5.0 mm wide (X) and 12 mm long (Y)". 
+                                    // If the spine is on XY plane, and teeth hang from it... usually this means the top surface of the tooth aligns with a face of the spine?
+                                    
+                                    // Let's assume standard "comb" geometry: The comb has two parallel planes. One at Y = 0 (top), one at Y = -12mm (bottom). 
+                                    // But here, we are building it as a single flat plate on XY plane (Z=0) that builds UP (+Z)?
+                                    
+                                    // User says: "lying flat... rests on the XY plane at z = 0 and builds upward (+Z)".
+                                    // AND "teeth ... hang from one long edge of the spine in the -Y direction".
+                                    
+                                    // This is a contradiction if we assume standard gravity printing (gravity pulls down, usually +Z or -Z depending on orientation). 
+                                    // If it rests on XY plane and builds UP (+Z), then Z increases upwards.
+                                    // "Hangs ... in -Y" implies the teeth extend along the Y axis into negative values? That would mean they are cut away from the spine towards positive infinity (or just off-screen)? No, that makes no sense for a comb.
+                                    
+                                    // Alternative interpretation: The user means the teeth hang vertically (-Z direction) but their top surface is aligned with the bottom face of the main plate? 
+                                    // OR, the "spine" and "teeth" are arranged such that the spine's back edge (at Y=0?) has teeth extending into negative Z.
+                                    
+                                    // Let's look at dimensions again: Spine 70mm X, 12mm Y. Teeth 5mm X, 12mm Y. 
+                                    // If the spine is a flat plate on XY plane... and it builds UP (+Z)... then all features are in Z > 0?
+                                    
+                                    // Maybe "hangs ... in -Y" means they extend along the negative Y axis from the top surface of the spine? No, that would be infinite.
+                                    
+                                    // Most likely interpretation for a lab comb: 
+                                    // The comb consists of two parallel planes separated by ~12mm (the tooth length). 
+                                    // One plane is at Z = 0 to -total_spine_length (bottom face on XY bed?). 
+                                    // No, user says "rests on the XY plane... builds upward (+Z)". So bottom face is at Z=0.
+                                    
+                                    // If it rests on XY and builds up +Z: The spine is a plate from Z=-L to Z=0? Or just a flat surface at Z=0 with thickness L in -Y direction (if gravity was down)? 
+                                    // But user explicitly says "builds upward (+Z)".
+                                    
+                                    // Let's assume the standard comb orientation where the teeth hang vertically (-Z) but are positioned such that their top face is aligned with the bottom of the main block? No, they would overlap.
+                                    
+                                    // Okay, let's look at the dimensions again: Spine 12mm wide (Y). Teeth 12mm long (Y). 
+                                    // This strongly suggests a vertical separation along Z or Y depending on orientation.

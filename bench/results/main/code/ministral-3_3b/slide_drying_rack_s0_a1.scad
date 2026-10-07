@@ -1,0 +1,35 @@
+// Dimensions for the drying rack base (mm)
+$fn = 64;
+var(
+    base_length   = 90;      // X: 90 mm long
+    base_width     = 45;     // Y: 45 mm wide
+    base_height    = 20;     // Z: 20 mm tall
+
+    slide_width    = 75;     // Slide width (long edge)
+    slot_length     = 77;    // Slot length along X
+    slot_width      = 1.6;   // Slot width in Y
+    slot_depth      = 10;    // Slot depth into Z
+    slot_spacing    = 3.5;   // Centre-to-centre spacing between slots
+
+    // Number of slides (10)
+    num_slides = 10;
+);
+
+// Base block (solid)
+cube([base_length, base_width, base_height]);
+
+// Create 10 parallel slots for microscope slides
+for (i in [0..num_slides-1]) {
+    var(
+        y_pos = -slot_spacing/2 + i * slot_spacing; // Center Y position of each slot
+        x_offset = -(base_length / 2) + (slot_length / 2); // Center X offset
+
+    );
+
+    translate([x_offset, y_pos, 0]) {
+        difference() {
+            cube([slot_length + 1.6*2, slot_width + 1.6*2, slot_depth + 1.6*2]); // Outer box
+            translate([-0.8, -0.8, 0]) { cube([slot_length+1.4, slot_width+1.4, slot_depth+1.4]); } // Inner cut
+        }
+    };
+}

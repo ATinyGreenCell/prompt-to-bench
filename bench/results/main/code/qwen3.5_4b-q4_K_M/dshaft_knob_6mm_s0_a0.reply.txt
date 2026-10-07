@@ -1,0 +1,136 @@
+```openscad
+// Dimensions for replacement hotplate stirrer knob
+// Measured with calipers; units in millimetres
+$fn = 64; // Ensure smooth curves and accurate hole sizes
+
+// Main body dimensions
+diameter_main = 30.0;      // Outer diameter of the cylinder (mm)
+height_main = 15.0;        // Total height of the knob (mm)
+
+// Shaft interface dimensions
+shaft_dia = 6.0;           // Diameter of D-shaft hole (mm)
+d_flat_to_tip = 4.7;       // Distance from flat side to tip of D-bore (mm)
+
+// Grip groove specifications
+num_grooves = 18;          // Number of grooves around the circumference
+groove_depth = 2.0;        // Depth of each grip groove (radius, mm)
+
+// Pointer groove specifications on top face
+pointer_width = 1.5;       // Width of pointer slot (mm)
+pointer_depth = 1.0;       // Depth of pointer slot (mm)
+
+// Offset for cutting shapes in difference() to ensure no coplanar faces
+offset_cut = 0.02;        // Extra extension beyond face for clean cuts (mm)
+
+// ---------------------------------------------------------
+// Build the main cylinder body first
+// Orientation: Side facing hotplate is at z=0, building upward (+Z).
+// Centered on origin in X and Y.
+// ---------------------------------------------------------
+
+main_cylinder = translate([0, 0, height_main/2]) {
+    // Cylinder with rounded top/bottom edges for better fit
+    cylinder(h = diameter_main + offset_cut * 2, r1 = (diameter_main - shaft_dia)/2, 
+             r2 = (diameter_main + groove_depth), $fn=64);
+}
+
+// ---------------------------------------------------------
+// D-shaped blind bore on the bottom face (z = height/2)
+// The flat side of the 'D' faces outward from the center.
+// Dimensions: 6.2mm diameter circle, but one radial edge is flattened to make a trapezoid/D-shape.
+// ---------------------------------------------------------
+
+d_bore_shape = translate([0, 0, height_main/2]) {
+    // Create D-profile using polygon (flat side on left at x=-(shaft_dia+1)/2)
+    d_flat_to_tip_radius = d_flat_to_tip / 2; 
+    circle(r = shaft_dia/2 + offset_cut); // Outer circular part of bore
+    
+    // Cut out the flat portion to create D-shape (truncating one side)
+    polygon([
+        [-(shaft_dia+1)/2, -d_flat_to_tip_radius],  // Start bottom-left corner
+        [-((shaft_dia/2)+offset_cut), d_flat_to_tip_radius] // Top edge of flat part
+    ]);
+
+    // Extrude the D-profile to create a hole (using difference logic later)
+}
+
+// ---------------------------------------------------------
+// Vertical grip grooves around outer surface
+// 18 evenly spaced half-cylinders, depth = groove_depth.
+// ---------------------------------------------------------
+
+groove_features = for(i=[0:num_grooves-1]) {
+    angle_step = 360 / num_grooves; // Degrees per groove
+    
+    rotate([90 + i*angle_step, 0, 0]); // Rotate around Z axis (side view) to align half-cylinder radially outward
+    
+    translate([(diameter_main/2 - offset_cut), 0, height_main/2]) {
+        cylinder(h = diameter_main, r1=groove_depth + offset_cut, r2=groove_depth+offset_cut); // Half-cylinders (radius)
+        
+        // Cut the groove using difference: remove a half-cylinder from main body
+    }
+};
+
+// ---------------------------------------------------------
+// Pointer groove on top face
+// 1.5mm wide x 1mm deep, radial slot starting at center to outer edge.
+// Located on same side as flat of D (left side).
+// ---------------------------------------------------------
+
+pointer_feature = translate([0, 0, height_main]) { // Top surface is at z=height/2 + diameter? No: top face is at z=diameter_main/2 relative to center if cylinder starts there. 
+    // Wait, let's re-orient the main body logic for clarity in final code block below
+};
+
+// ---------------------------------------------------------
+// Final Assembly Logic (Revised for robustness)
+// 1. Main Cylinder: Centered on origin. Height = height_main. Radius = diameter/2.
+// 2. D-Bore: At z=0, centered at x=-shaft_dia/2 to align flat side outward? 
+//    Actually user said "flat side faces hotplate" (bottom). So the 'D' shape is vertical relative to bottom face.
+//    Let's define coordinates carefully:
+//    - Main body extends from z=0 to z=height_main. Centered at origin means top/bottom are +/- height/2? 
+//      No, "rests on XY plane at z = 0". So base is at z=0, top is at z=15.
+//      Let's re-calculate: Base at z=0, Top at z=height_main. Center of mass in Z is height/2. 
+//      But user said "centre it on the origin in X and Y". This implies symmetry around x,y axes regardless of Z position?
+//      Usually "centered" means geometric center (x=0, y=0). If base is at z=0, then top is at z=h. Center is h/2. 
+//      That satisfies "rests on XY plane". The X/Y centering just means the object spans -R to +R in X and Y.
+    
+    // Re-defining main body:
+main_body = cylinder(h = height_main, r1=diameter_main/2, r2=(diameter_main+groove_depth)/2);
+
+// D-Bore (Blind hole at bottom z=0):
+// Shape is a circle with one side flattened. 
+// The flat side should face the hotplate? No, "From that bottom face...". So it's inside the part starting from bottom.
+// Dimensions: 6.2mm diameter circle -> radius = 3.1mm. Flat to tip distance = 4.7mm (radius).
+// This means we have a full cylinder hole of r=3.05, but one side is cut flat? 
+// Or the D-shape itself has height 4.7 and width 6.2? Yes: "distance from flat to opposite side... is 4.7mm".
+// So it's like a semi-circle extruded up by half its diameter (making a full circle) but one radial edge removed.
+
+d_bore = translate([0, 0, -offset_cut]) { // Start slightly below z=0 for clean cut
+    cylinder(h=d_flat_to_tip + offset_cut*2, r1=(shaft_dia+groove_depth)/2, r2=(shaft_dia/2)+offset_cut); 
+};
+
+// Wait, the D-shape is defined by: Circle diameter 6.2mm (radius ~3.1). Flat to tip = 4.7mm.
+// This implies a trapezoid where one side is straight and parallel? Or just truncated circle?
+// "D-shaped blind bore... distance from flat to opposite side of the circle is 4.7 mm". 
+// Standard D-shape: Rectangle + Semi-circle. Here, likely a semi-cylinder (radius ~3.1) with one radial edge removed.
+
+d_bore_final = translate([0, 0, -offset_cut]) {
+    // Outer radius of bore hole is shaft_dia/2 + offset_cut? No, the D-shape defines the cutout size relative to center.
+    // Let's assume the "6.2mm diameter circle" part refers to the curved side width (approx 3.1 each way). 
+    // And flat side length = d_flat_to_tip - radius_of_curve_part? Or is it a full D where height=4.7 and max_width=6.2?
+    // Let's assume: Max Width = shaft_dia + offset_cut (to fit the 6mm shaft tightly with clearance). 
+    // The "flat to tip" distance defines the depth of the cutout from center line.
+    
+    cylinder(h=d_flat_to_tip, r1=(shaft_dia/2)+offset_cut*0.5, r2=shaft_dia/2+offset_cut); // Approximate D-shape
+    
+};
+
+// Actually simpler approach for OpenSCAD: 
+// Use a polygon profile extruded along Z (upwards).
+d_bore_poly = translate([-(shaft_dia)/4 - offset_cut*0.5, 0, height_main/2]) { // Center of bore in X/Y? No, centered at origin X,Y for symmetry if possible. 
+    // Let's place the D-bore center at x=0, y=0 relative to main body axis.
+};
+
+// Corrected Logic:
+// Main Body: Cylinder r = 15mm (30/2), h = 15mm. Centered at origin? If base is z=0, then top is z=15. 
+// User said "centre it on the origin in X and Y". This usually means x_center=0

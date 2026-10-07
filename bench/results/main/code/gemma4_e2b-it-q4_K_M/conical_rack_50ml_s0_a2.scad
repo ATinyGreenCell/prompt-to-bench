@@ -1,0 +1,78 @@
+// Dimensions for the Falcon tube rack design
+
+// Plate dimensions
+plate_x = 130; // Length of the plate (X-axis) in mm
+plate_y = 90;  // Width of the plate (Y-axis) in mm
+plate_thickness = 4; // Thickness of the base plate (Z-dimension at z=0)
+
+// Hole dimensions
+hole_diameter = 30.5; // Diameter of the through-holes in mm
+hole_spacing = 40;    // Center-to-center spacing for holes in both X and Y directions in mm
+
+// Wall dimensions
+wall_length = plate_x; // Length of the side walls (X-dimension) in mm
+wall_thickness = 4;   // Thickness of the side walls (Y-dimension)
+wall_height = 70;     // Height of the side walls from z=0 to z=70
+
+// Clearance for cutting operations
+clearance = 1.0; // Small offset for cuts
+
+// --- Base Plate ---
+module base_plate() {
+    cube([plate_x, plate_y, plate_thickness]);
+}
+
+// --- Through Holes (Cutout from the plate) ---
+module through_holes() {
+    // X positions: Centers at 25, 65, 85 (based on 40mm spacing for 130mm length)
+    x_positions = [
+        plate_x / 2 - hole_spacing / 2, // 25
+        plate_x / 2,                     // 65
+        plate_x / 2 + hole_spacing / 2  // 85
+    ];
+
+    // Y positions: Centers at 20, 45 (based on 40mm spacing for 90mm width)
+    y_positions = [
+        plate_y / 2 - hole_spacing / 2, // 20
+        plate_y / 2                      // 45
+    ];
+
+    for (i = [0 : 1]) { // Iterate through the two rows along Y
+        for (j = [0 : 2]) { // Iterate through the three columns along X
+            hole_center_x = x_positions[j];
+            hole_center_y = y_positions[i];
+
+            // Cut cylinder extending slightly beyond plate thickness to ensure clean cut
+            translate([hole_center_x, hole_center_y, 0]) {
+                cylinder(r = hole_diameter / 2, h = plate_thickness + clearance);
+            }
+        }
+    }
+}
+
+// --- Side Walls (Prisms rising from the base) ---
+module side_walls() {
+    // Wall 1: Along the edge Y=0
+    translate([0, 0, 0]) {
+        cube([wall_length, wall_thickness, wall_height]);
+    }
+
+    // Wall 2: Along the edge Y=plate_y (90mm)
+    translate([0, plate_y - wall_thickness, 0]) {
+        cube([wall_length, wall_thickness, wall_height]);
+    }
+}
+
+// --- Main Assembly ---
+module falcon_rack() {
+    // Start with the base plate
+    base_plate();
+
+    // Cut holes in the plate (This operation modifies the base_plate geometry)
+    through_holes();
+
+    // Add the side walls on top of the structure
+    side_walls();
+}
+
+falcon_rack();

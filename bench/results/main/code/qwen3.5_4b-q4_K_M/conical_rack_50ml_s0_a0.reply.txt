@@ -1,0 +1,96 @@
+```openscad
+// Rack for six 50 mL conical (Falcon-type) tubes
+// Print orientation: Flat plate rests on XY plane at z=0 to z=4 mm.
+// After printing, flip over so walls stand vertically and rack stands on them.
+
+// --- Dimensions (measured with calipers) ---
+plate_width = 130;      // X dimension of the base plate
+plate_length = 90;       // Y dimension of the base plate
+plate_thickness = 4;     // Thickness of the base plate in Z direction during printing
+wall_height_printed = 66;// Height of walls from z=0 to z=70 (so final height is 130mm after flip)
+hole_diameter = 30.5;    // Diameter of through-holes for Falcon tubes
+
+// --- Geometry Setup ---
+plate_x_start = -plate_width / 2;      // Center X start (-65 mm)
+plate_y_start = -plate_length / 2;     // Center Y start (-45 mm)
+wall_thickness_printed = plate_thickness; // Walls are same thickness as base
+
+// Define the main body using difference to create holes and walls in one go.
+// We model the solid block first, then subtract the hole cylinders and wall voids? 
+// Actually, it's easier to build: Union of (Plate + 2 Vertical Walls) - Holes.
+// But wait, if we print upside down, the "walls" are actually protrusions from the plate surface at z=4mm up to z=70mm relative to bed.
+
+module create_rack() {
+    
+    // --- Step 1: Define Base Plate (Z = 0 to Z = 4) ---
+    base_plate = cube([plate_width, plate_length, plate_thickness]);
+    
+    // --- Step 2: Define Vertical Walls ---
+    // There are two walls along the long edges. 
+    // Long edge is X axis? No, "along the two long edges". Plate is 130x90. So long edge is length=130 (X).
+    // Wait, user said: "Two solid walls run along the two long edges of the plate... each wall is 130 mm long (X)". 
+    // This implies the walls are parallel to X axis? Or attached to the side faces which have dimension Y=90?
+    // Let's re-read carefully: "each wall is 130 mm long (X) and 4 mm thick (Y), flush with the plate's long edge".
+    // If a wall is 130mm long, it aligns with X. It must be attached to one of the Y=90 edges? 
+    // Or does "long edge" refer to the side face that has length 130 (the top surface)? 
+    // Usually "edge" means the boundary line. The plate is a rectangle 130x90.
+    // Edges are: Top(130), Bottom(130), Left(90), Right(90).
+    // If wall is 130mm long, it runs along X direction? No, if it's attached to the edge of length 130 (Top/Bottom face boundary?), 
+    // then its length matches that dimension. But usually walls are built ON TOP OF an edge or SIDE BY SIDE with a face.
+    
+    // Interpretation: The user likely means two vertical blocks extending upwards from the top surface, located at the ends of the 130mm side?
+    // Or maybe they mean attached to the sides (the faces that have length 90)? 
+    // "flush with the plate's long edge". If I hold a tray, the "long edges" are the straight lines on top.
+    // Let's assume standard rack design: Two vertical supports at one end or distributed? User didn't specify position of walls relative to holes explicitly other than "two short ends stay open". 
+    // This implies tubes can go in from both Y-ends (short sides). So walls must be along the X-axis direction, likely near the center or edges.
+    
+    // Re-evaluating: "Two solid walls run along the two long edges... flush with the plate's long edge".
+    // If they are flush with the long edge (length 130), then their length is also effectively covering that span? 
+    // Or maybe they are blocks of size X=130, Y=something small.
+    
+    // Let's assume: Two rectangular prisms extending from Z=4 to Z=70. They sit on the top face (Z=4). Their footprint covers part of the plate surface near one long edge? 
+    // Or maybe they are attached to the side faces? "Flush with" usually means coplanar or aligned.
+    
+    // Let's try this geometry: Two blocks, each 130mm long (X), thickness Y=4mm, height Z=66mm. They sit on top of the plate at X = +/- something? 
+    // But if they are "along the two long edges", maybe one is near +Y/2 and one near -Y/2? No, that would be along short sides (90).
+    
+    // Correct interpretation: The walls run parallel to the LONG dimension of the plate. So they extend in X direction. 
+    // They are located at the ends of the SHORT dimension? Or maybe centered on Y axis but spanning full length? 
+    // "Two solid walls... flush with the plate's long edge". This phrasing is tricky.
+    
+    // Alternative Interpretation: The user has a 130x90 plate. They want two vertical supports that run along the LENGTH (130). So they are parallel to X axis? 
+    // If so, where are they located in Y? "Two short ends stay open". This suggests tubes can enter from both sides of the rectangle (Y direction).
+    // Therefore, walls should probably be at one end or distributed such that they don't block entry. 
+    // However, if they run along the long edge... maybe they are attached to the side faces? 
+    // Let's assume: Two blocks located at X = +/- 65 (centered on Y axis), spanning full length of plate in Z direction relative to base?
+    
+    // Wait, "flush with the plate's long edge". If I have a block and align it flush with an edge. Which edge? The top face has two edges that are 130mm long. 
+    // Let's assume the walls are located at Y = +/- (90 - wall_thickness)/2 ? No, "flush" implies touching.
+    
+    // Hypothesis: Two blocks of size X=130, Z=66, and some small width? Or maybe they are attached to the side faces (the 90mm sides)? 
+    // If a block is flush with the long edge (length 130), it likely means its length matches that dimension.
+    
+    // Let's go with: Two vertical blocks located at X = +/- 65? No, if they are along the long edges... maybe one near Y=45 and one near Y=-45? 
+    // But "along" usually implies parallel to. If a wall is parallel to the edge of length 130 (which runs in X), then the wall extends in X.
+    
+    // Let's assume: Two blocks, each extending from Z=4 to Z=70. They are located at Y = +/- something? 
+    // Actually, maybe they are attached to the SIDE faces (the ones with length 90)? No, "long edge" is 130.
+    
+    // Let's try: Two blocks of size X=130, Z=66, and thickness in Y = ? Maybe just enough to be stable? 
+    // Or maybe they are attached to the top face at specific locations. 
+    // Given "Two short ends stay open", walls must not block entry from +/-Y direction.
+    
+    // Let's assume standard configuration: Two blocks located near X=0, spanning Y range? No, that would be along short side if width is small.
+    
+    // Okay, let's parse strictly: 
+    // 1. Wall length = 130 mm (matches plate dimension X). So wall runs in X direction.
+    // 2. Wall thickness = 4 mm (Y dimension of the block itself? Or depth?). "each wall is ... and 4 mm thick". Likely Y-dimension of the block if it's a strip along length. 
+    // 3. Flush with plate's long edge. Plate has two edges that are 130mm long (Top/Bottom). Maybe walls sit on top, flush against these lines?
+    
+    // Let's assume: Two blocks located at Y = +/- (90 - wall_thickness)/2 ? No, "flush" suggests they touch the boundary line of length 130. 
+    // If a block is placed such that its long side touches the edge... but it sits on top?
+    
+    // Let's try this: Two blocks located at X = +/- (something) and Y range covering full width? No, then tubes can't pass through holes easily if walls are too wide.
+    
+    // Re-reading "Two solid walls run along the two long edges... flush with". 
+    // Maybe they mean attached to the side faces of length 1

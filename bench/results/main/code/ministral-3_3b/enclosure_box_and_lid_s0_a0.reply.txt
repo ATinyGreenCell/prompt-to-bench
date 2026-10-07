@@ -1,0 +1,121 @@
+```openscad
+// Dimensions for Part 1: Box (outer size 70x50x30mm, walls=2mm, floor=2mm)
+$fn = 64;
+box_part_width = 70 - 2 * 2;      // Inner width after wall subtraction
+box_part_depth = 50 - 2 * 2;     // Inner depth after wall subtraction
+box_height = 30 - 2;             // Height including floor
+
+// Part 1: Box (open top)
+module box() {
+    translate([0, 0, 0]) {
+        // Floor
+        difference() {
+            cube([box_part_width, box_part_depth, 2], center=true);
+            rotate([0, 90, 0])
+                cube([box_part_width, box_part_depth, 1.5]);
+        }
+
+        // Walls (left and right)
+        translate([-1, -1, 0]) {
+            difference() {
+                cylinder(h=box_height + 2, r1=1, r2=1.5);
+                rotate([90, 0, 0])
+                    cube([box_part_width, box_part_depth, 1]);
+            }
+        }
+
+        translate([-1, box_part_depth - 1, 0]) {
+            difference() {
+                cylinder(h=box_height + 2, r1=1, r2=1.5);
+                rotate([90, 0, 0])
+                    cube([box_part_width, box_part_depth, 1]);
+            }
+        }
+
+        // Top wall (open)
+        translate([-1, -1, box_height]) {
+            difference() {
+                cylinder(h=4, r1=1.5, r2=2);
+                rotate([90, 0, 0])
+                    cube([box_part_width + 2, box_part_depth + 2, 1]);
+            }
+        }
+
+        // Front and back walls
+        translate([-1, -1, 0]) {
+            cylinder(h=box_height + 2, r1=1.5, r2=2);
+        }
+
+        translate([-1, box_part_depth - 1, 0]) {
+            cylinder(h=box_height + 2, r1=1.5, r2=2);
+        }
+    }
+}
+
+// Dimensions for Part 2: Lid (plate + lip)
+lid_plate_width = 70;
+lid_plate_depth = 50;
+lid_lip_inner_size_x = 65.6 - 4; // Clearance on each side
+lid_lip_inner_size_y = 45.6 - 4;
+lid_lip_height = 4;
+lid_lip_thickness = 1.5;
+
+// Part 2: Lid (upside down)
+module lid() {
+    translate([0, 0, 0]) {
+        // Plate
+        cube([lid_plate_width, lid_plate_depth, 2]);
+
+        // Lip (cut from plate)
+        difference() {
+            rotate([0, 90, 0])
+                linear_extrude(height=lid_lip_height) {
+                    polygon(points=[
+                        [-lid_lip_inner_size_x / 2, -lid_lip_inner_size_y / 2],
+                        [ lid_lip_inner_size_x / 2, -lid_lip_inner_size_y / 2],
+                        [ lid_lip_inner_size_x / 2,  lid_lip_inner_size_y / 2],
+                        [-lid_lip_inner_size_x / 2,  lid_lip_inner_size_y / 2]
+                    ]);
+                }
+            rotate([0, 90, 0])
+                linear_extrude(height=lid_lip_height) {
+                    polygon(points=[
+                        [-lid_plate_width / 2, -lid_plate_depth / 2],
+                        [ lid_plate_width / 2, -lid_plate_depth / 2],
+                        [ lid_plate_width / 2,  lid_plate_depth / 2],
+                        [-lid_plate_width / 2,  lid_plate_depth / 2]
+                    ]);
+                }
+        }
+
+        // Cut out the lip material
+        translate([0, 0, -lid_lip_thickness])
+            rotate([90, 0, 0])
+            linear_extrude(height=lid_lip_height) {
+                polygon(points=[
+                    [-lid_plate_width / 2 + lid_lip_inner_size_x / 2,
+                     -lid_plate_depth / 2 + lid_lip_inner_size_y / 2],
+                    [ lid_plate_width / 2 + lid_lip_inner_size_x / 2,
+                     -lid_plate_depth / 2 + lid_lip_inner_size_y / 2],
+                    [ lid_plate_width / 2 + lid_lip_inner_size_x / 2,
+                      lid_plate_depth / 2 + lid_lip_inner_size_y / 2],
+                    [-lid_plate_width / 2 + lid_lip_inner_size_x / 2,
+                      lid_plate_depth / 2 + lid_lip_inner_size_y / 2]
+                ]);
+            }
+    }
+}
+
+// Combined assembly: Box and Lid (10mm gap)
+translate([box_part_width/2 + 5, box_part_depth/2 - 5, 0]) {
+    rotate([0, 90, 0])
+        lid();
+}
+
+union() {
+    box();
+    translate([box_part_width/2 + 5, box_part_depth/2 - 5, 0])
+        rotate([0, 90, 0])
+            lid();
+}
+```

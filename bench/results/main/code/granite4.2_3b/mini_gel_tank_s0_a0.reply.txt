@@ -1,0 +1,82 @@
+```openscad
+// Dimensions in millimetres
+outer_X = 120;      // Tank width
+outer_Y = 70;       // Tank depth (inner Y dimension)
+outer_Z = 40;        // Tank height
+wall_thickness = 3;  // Wall and floor thickness
+platform_height_above_floor = 10;  // Platform top is 10 mm above inner floor
+platform_length = 60; // Platform spans full inner width in X (centred)
+hole_diameter = 2;   // Electrode wire hole diameter
+hole_z = 30;         // Electrode wire hole location along Z
+y_wall_coordinate = 0; // y-coordinate for end wall holes
+
+// Helper function to create a rectangular box with rounded edges (for solidity)
+cube_with_rounded_edges(x, y, z, thickness) {
+    difference({
+        translate([thickness/2, thickness/2, thickness/2]),
+        cube([x - thickness*2 + 4, y - thickness*2 + 4, z - thickness*2 + 4])
+    });
+}
+
+// Build the buffer tank with raised platform and electrode holes
+module() {
+    // Tank base (outer dimensions)
+    translate([0, 0, 0]) cube_with_rounded_edges(outer_X, outer_Y, outer_Z - wall_thickness*2, wall_thickness);
+
+    // Inner walls: subtract the thickness from all sides to create a hollow tank with 3 mm walls and floor
+    translate([wall_thickness/2, wall_thickness/2, wall_thickness/2]) cube_with_rounded_edges(outer_X - wall_thickness*2, outer_Y - wall_thickness*2, outer_Z - wall_thickness*2);
+
+    // Raised platform in the centre
+    // Inner dimensions of tank (excluding walls)
+    inner_X = outer_X - 2*wall_thickness;
+    inner_Y = outer_Y - 2*wall_thickness;
+    inner_Z_bottom = wall_thickness; // Platform sits on top of floor, so bottom is at z = wall_thickness (since floor is at z=0)
+
+    // Platform extends from y = 0 to y = inner_Y/2? Actually platform spans full inner width in X and runs along Y direction.
+    // Clarification: The tank's inner Y dimension is outer_Y - 2*wall_thickness, but the platform runs across that entire Y range (full width).
+    // Platform length is 60 mm along X, centred horizontally.
+    // Platform top height above inner floor = platform_height_above_floor = 10 mm.
+    // So platform z-coordinate: base of tank at z=0 for floor; the inner floor is at z = wall_thickness (since outer tank has walls).
+    // The platform's bottom sits on the inner floor, which is at z = wall_thickness.
+    // Platform top is 10 mm above that inner floor, so its top plane is at z = wall_thickness + platform_height_above_floor.
+
+    // Create platform as a rectangular prism centered in X and Y
+    translate([inner_X/2, inner_Y/2, wall_thickness]) cube_with_rounded_edges(platform_length, inner_Y, platform_height_above_floor + wall_thickness);
+
+    // Electrode holes at the two end walls (X = 0 and X = outer_X - wall_thickness*2? Actually tank extends from x=wall_thickness to x=outer_X - wall_thickness)
+    // The end walls are at x = wall_thickness and x = outer_X - wall_thickness.
+    // At each of these X positions, we drill a horizontal hole along X direction (i.e., through the tank side wall) with diameter 2 mm, located at y=0, z=30.
+
+    // Left end wall (x = wall_thickness)
+    translate([wall_thickness, wall_thickness/2, hole_z]) rotate_extrude(angle = 90) {
+        // Create a cylindrical hole along X direction? Actually we want a circular hole in the side wall at x=wall_thickness.
+        // Better: Use difference with a cylinder that extends across Y and Z appropriately.
+        // Since the tank is symmetric, we can define the hole as a cylinder of diameter hole_diameter, centered on the wall plane, extending along X direction? Wait: The hole is horizontal along X (i.e., through the side wall perpendicular to X axis). Actually "horizontal hole along X at y = 0, z = 30" means we drill a circular hole in the side wall that runs parallel to the X-axis? Let's interpret clearly:
+        // - The tank has walls extending from x=wall_thickness to x=outer_X - wall_thickness.
+        // - At each of these two X planes (the end walls), we want a circular hole in the side wall, centered at y = 0 and z = 30, with diameter 2 mm.
+        // This is a cylindrical hole that goes through the side wall perpendicular to the X axis? Actually if it's along X direction, then the hole is oriented such that its axis is parallel to X (i.e., the cylinder extends in Y-Z plane). But typical "hole along X" means the hole runs in the X direction, i.e., you drill a circular cross-section perpendicular to X? Usually in 3D printing, when we say "drill a 2 mm diameter horizontal hole along X", it means the hole is cylindrical with axis parallel to X, so its cross-section (in Y-Z plane) is a circle of diameter 2 mm.
+        // So we can model this as: In the side wall at x = wall_thickness, create a cylinder that extends in Y and Z directions? Actually the side wall is a rectangular prism; we want to remove a circular hole from it.
+
+        // We'll use difference with a cylinder oriented along X (i.e., axis parallel to X). But OpenSCAD's cylinder expects axis direction as parameter; we can rotate appropriately.
+        // Simpler: Use difference between the tank side wall and a cylinder that is centered on the wall plane, extending in Y-Z directions? Actually if we place a cylinder with its axis along X, then at x = wall_thickness + radius (but we want it exactly on the wall plane). Better to define the hole as a cylinder whose axis is parallel to X, and whose center lies on the wall plane.
+
+        // Approach: At x = wall_thickness, create a cylinder of diameter hole_diameter, centered at y=0, z=hole_z, with radius = hole_diameter/2, extending in Y-Z directions? But if axis is along X, then the cylinder's cross-section perpendicular to X is a circle; that matches "circular hole" in side wall.
+        // So we define: Cylinder centered at (wall_thickness, 0, hole_z), with radius = hole_diameter/2, and extend in Y and Z directions? Actually if axis is along X, then the cylinder's extent in Y and Z is limited by the circle equation: (y - y0)^2 + (z - z0)^2 <= (hole_diameter/2)^2.
+        // So we can use difference with a cylinder oriented along X using rotate_extrude? Or just use union of two half-cylinders? Simpler: Use the built-in cylinder with appropriate parameters and translate appropriately, but OpenSCAD's cylinder expects axis direction; if we set c = [0,0,0] etc.
+
+        // We'll define a cylinder using difference between the tank side wall (which is part of the tank) and a cylinder that removes the hole.
+        // But since we already have the tank as a solid, we can directly subtract the circular hole from the side wall region.
+
+        // Instead, let's model the entire tank with platform first, then subtract the electrode holes using difference on the side walls only where needed.
+
+        // We'll handle holes after building main shape.
+    }
+
+    // Right end wall (x = outer_X - wall_thickness) – same as left but mirrored in X direction? Actually it's symmetric; we can reuse code with translation.
+
+    // For simplicity, define a function to create the hole at an end wall given x-coordinate of wall plane.
+    // But due to constraints (no loops over external functions), we'll just do two explicit translations using for loop in the main module? Actually we are allowed for loops; but this is inside module() which may not be ideal.
+
+    // We'll restructure: Build tank and platform first, then apply electrode holes via difference on specific regions.
+}
+```

@@ -1,0 +1,37 @@
+```openscad code block
+// Define variables for dimensions
+$D = 30; // Diameter of the cylinder
+$H = 15; // Height of the cylinder
+$D_shaft = 6; // Diameter of the D-shaft
+$D_blind_bore = 12; // Diameter of the blind bore
+$groove_grooves = 18; // Number of grooves
+$groove_depth = 1; // Depth of each groove
+$pointer_groove = 1.5; // Width and depth of the pointer groove
+
+// Define variables for centering
+$center_x = $D / 2;
+$center_y = $H / 2;
+
+// Define variables for creating the cylinder
+cylinder($center_x, $center_y, $D, $fn);
+
+// Define variables for creating the blind bore
+cube($center_x - $D_shaft / 2, $center_y + $groove_depth / 2, $D_shaft, $fn);
+
+// Define variables for creating the grooves
+for (i = 0; i < $groove_grooves; i++) {
+    cylinder($center_x - $D_shaft / 2 + ($i * 4.7), $center_y + $groove_depth / 2, $D_shaft, $fn);
+}
+
+// Define variables for creating the pointer groove
+cube($center_x - $D_shaft / 2 + ($groove_grooves * 1.5), $center_y + $pointer_depth / 2, $D_shaft, $fn);
+
+// Define variables for printing the part
+translate((0, 0, 0)) {
+    union(
+        cylinder($center_x - $D_shaft / 2, $center_y + $groove_depth / 2, $D_shaft, $fn),
+        cube($center_x - $D_shaft / 2 + ($i * 4.7), $center_y + $groove_depth / 2, $D_shaft, $fn),
+        cube($center_x - $D_shaft / 2 + ($groove_grooves * 1.5), $center_y + $pointer_depth / 2, $D_shaft, $fn)
+    );
+}
+```

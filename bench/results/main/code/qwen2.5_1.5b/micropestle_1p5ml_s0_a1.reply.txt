@@ -1,0 +1,28 @@
+```openscad
+// Define dimensions from user input
+$fn = 64; // Number of points for circular shapes
+
+// Handle cylinder (8mm diameter)
+translate([0, 0, -45]) {
+    cube([10, 8, 1]);
+}
+
+// Cone tapering from 8mm to 3mm at z=62
+translate([0, 0, 45]) {
+    linear_extrude(height = 17) {
+        cylinder(r = [10, 3], h = 1);
+    }
+}
+
+// Rounded tip sphere (3mm diameter)
+translate([0, 0, 62]) {
+    sphere(3);
+}
+
+// Handle grooves
+for (i in range(4)) {
+    translate([10 * i, 0, -0.5]) {
+        cylinder(r = [2], h = 1);
+    }
+}
+```

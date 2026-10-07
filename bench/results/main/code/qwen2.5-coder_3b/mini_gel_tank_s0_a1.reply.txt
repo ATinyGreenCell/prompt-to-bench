@@ -1,0 +1,54 @@
+```openscad
+// Define dimensions
+$fn = 64; // Number of facets for round shapes
+
+// Outer dimensions
+outer_x = 120;
+outer_y = 70;
+outer_z = 40;
+
+// Wall thickness
+wall_thickness = 3;
+
+// Floor thickness
+floor_thickness = 3;
+
+// Platform dimensions
+platform_length = outer_y / 2; // Half the inner width
+platform_width = 60;
+platform_height = floor_thickness + 10; // Top is 10 mm above the floor
+
+// Hole diameter for electrode wires
+hole_diameter = 2;
+
+// Calculate inner dimensions
+inner_x = outer_x - wall_thickness * 2;
+inner_y = outer_y - wall_thickness * 2;
+inner_z = outer_z - wall_thickness * 2;
+
+// Calculate platform position
+platform_x = (outer_x - platform_length) / 2;
+
+// Create the buffer tank
+buffer_tank = difference(
+    // Outer box
+    cube([outer_x, outer_y, outer_z], center=true),
+    
+    // Inner walls
+    translate([-wall_thickness/2, -wall_thickness/2, -wall_thickness/2]) * cube([inner_x + wall_thickness, inner_y + wall_thickness, inner_z + wall_thickness], center=true),
+    
+    // Platform
+    translate([platform_x, 0, floor_thickness]) * cube([platform_length, platform_width, platform_height], center=true),
+    
+    // Floor
+    translate([-wall_thickness/2, -wall_thickness/2, 0]) * cube([inner_x + wall_thickness, inner_y + wall_thickness, floor_thickness], center=true),
+    
+    // Electrode holes
+    for (x = [0, outer_x-1]) {
+        translate([x, 0, 30]) * cylinder(d=hole_diameter, h=wall_thickness, center=true)
+    }
+);
+
+// Render the buffer tank
+view(buffer_tank);
+```

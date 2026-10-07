@@ -1,0 +1,93 @@
+```openscad
+// --- Dimensions ---
+// Box dimensions (Outer)
+box_x = 70; // Outer X dimension of the box (mm)
+box_y = 50; // Outer Y dimension of the box (mm)
+box_z = 30; // Outer Z dimension of the box (mm)
+
+// Box wall thickness and floor thickness
+wall_thickness = 2; // Wall thickness of the box (mm)
+floor_thickness = 2; // Thickness of the floor (mm)
+
+// Lid dimensions
+lid_plate_x = 70; // Plate X dimension of the lid (mm)
+lid_plate_y = 50; // Plate Y dimension of the lid (mm)
+lid_plate_z = 2; // Plate thickness of the lid (mm)
+
+// Lid lip dimensions
+lip_wall_thickness = 1.5; // Thickness of the lip wall (mm)
+lip_height = 4; // Height of the lip (mm)
+lip_outer_x = 65.6; // Outer X dimension of the lip (mm)
+lip_outer_y = 45.6; // Outer Y dimension of the lip (mm)
+
+// Spacing and clearance
+gap_spacing = 10; // Gap between the two parts on the bed (mm)
+lid_clearance = 0.2; // Clearance for lid insertion (mm)
+
+// --- Part 1: The Box ---
+module box() {
+    // Outer dimensions of the box
+    outer_x = box_x;
+    outer_y = box_y;
+    outer_z = box_z;
+
+    // Inner dimensions calculation
+    inner_x = outer_x - 2 * wall_thickness;
+    inner_y = outer_y - 2 * wall_thickness;
+    // The internal cavity height is the total Z minus the floor thickness.
+    inner_z_cavity = outer_z - floor_thickness;
+
+    // Build using difference to define the walls and floor within the outer bounds.
+    difference() {
+        // Outer solid block (This defines the maximum extent)
+        cube([outer_x, outer_y, outer_z], center = true);
+
+        // Inner void (The space inside)
+        // The void starts at wall_thickness on X/Y and extends up to inner_z_cavity.
+        translate([wall_thickness, wall_thickness, floor_thickness])
+            cube([inner_x, inner_y, inner_z_cavity - wall_thickness], center = true);
+    }
+}
+
+// --- Part 2: The Lid ---
+module lid() {
+    // Plate (Base of the lid)
+    color("red")
+    translate([0, 0, 0])
+        cube([lid_plate_x, lid_plate_y, lid_plate_z], center = true);
+
+    // Lip (The raised part that fits into the box)
+    translate([0, 0, lid_plate_z]) {
+        color("red")
+        
+        // Calculate placement offset for centering the lip on the plate
+        offset_x = (lid_plate_x - lip_outer_x) / 2; // (70 - 65.6) / 2 = 2.2
+        offset_y = (lid_plate_y - lip_outer_y) / 2; // (50 - 45.6) / 2 = 2.2
+
+        // The lip structure is a rectangular prism that rises up.
+        difference() {
+            // Outer shape of the lip (Height = lip_height)
+            translate([offset_x, offset_y, 0])
+                cube([lip_outer_x, lip_outer_y, lip_height], center = true);
+
+            // Inner void to create the wall thickness (1.5 mm)
+            // The inner dimensions must account for the outer shape being centered around the desired wall thickness.
+            translate([offset_x + lip_wall_thickness, offset_y + lip_wall_thickness, 0])
+                cube([lip_outer_x - 2 * lip_wall_thickness, lip_outer_y - 2 * lip_wall_thickness, lip_height], center = true);
+        }
+    }
+}
+
+// --- Assembly and Placement ---
+
+// Position Box at origin (0, 0)
+translate([0, 0, 0]) {
+    box();
+}
+
+// Position Lid on the +X side of the box, separated by gap_spacing
+// The lid is placed such that its X position starts after the box ends and the gap.
+translate([box_x + gap_spacing, 0, 0]) {
+    lid();
+}
+```

@@ -1,0 +1,87 @@
+// Dimensions in millimetres
+$fn = 64;
+
+// Knob dimensions
+knob_diameter = 30;
+knob_height = 15;
+
+// D-shaft bore dimensions
+bore_depth = 12;
+bore_radius = 3.1; // 6.2 mm diameter circle radius
+flat_offset = (bore_radius - 4.7 / 2); // Half of the flat side length
+
+// Grip grooves
+grip_groove_diameter = 2;
+num_grip_grooves = 18;
+
+// Pointer groove dimensions
+pointer_width = 1.5;
+pointer_depth = 1mm;
+
+// Knob position and orientation
+translate([0, 0, 0]);
+
+module knob_base() {
+    return difference(
+        rotate([90, 0, 0], -flat_offset), // Rotate to align flat side down
+        cylinder(diameter=knob_diameter, height=bore_depth + 1.5)
+    );
+}
+
+module grip_grooves() {
+    module groove() {
+        return intersection(
+            cylinder(diameter=knob_diameter, height=knob_height),
+            rotate([0, 90, 0], -360/num_grip_grooves * i),
+            cylinder(diameter=grip_groove_diameter + 1.5)
+        );
+    }
+
+    return difference(
+        union(
+            for (i in [0:num_grip_grooves-1]) {
+                rotate([0, 90, 0], -360/num_grip_grooves * i) * groove()
+            }
+        ),
+        cylinder(diameter=knob_diameter + grip_groove_diameter + 2.5, height=knob_height)
+    );
+}
+
+module pointer_groove() {
+    return difference(
+        rotate([90, 0, 0], -flat_offset),
+        union(
+            translate([-pointer_width/2, 0, 0]),
+            cylinder(diameter=knob_diameter + 1.5, height=pointer_depth)
+        )
+    );
+}
+
+module knob() {
+    return difference(
+        union(
+            rotate([90, 0, 0], -flat_offset),
+            cylinder(diameter=knob_diameter, height=knob_height)
+        ),
+        union(
+            translate([0, 0, 0]),
+            rotate([90, 0, 0], flat_offset), // Rotate to align D-shaft bore
+            difference(
+                cylinder(diameter=bore_radius + 1.5, height=bore_depth),
+                cylinder(diameter=flat_offset + 2, center=[0, 0, -bore_depth/2])
+            )
+        ),
+        grip_grooves(),
+        pointer_groove()
+    );
+}
+
+// Main assembly
+union(
+    rotate([90, 0, 0], flat_offset), // Align D-shaft bore correctly
+    translate([0, 0, 0]),
+    knob_base(),
+    translate([0, 0, -bore_depth + 1.5]), // Position the rest of the knob
+    rotate([90, 0, 0], -flat_offset),
+    cylinder(diameter=knob_diameter, height=knob_height)
+);

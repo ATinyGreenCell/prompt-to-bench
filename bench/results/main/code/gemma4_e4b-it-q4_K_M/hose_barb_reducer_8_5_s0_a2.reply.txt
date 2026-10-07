@@ -1,0 +1,139 @@
+```openscad
+// Hose-Barb Reducer Design
+
+// Global settings
+$fn = 100; // High resolution for smooth curves
+
+// --- Dimensions (in mm) ---
+
+// Overall dimensions
+total_height = 41;     // Total height of the part
+bore_diameter = 3;     // Diameter of the central bore
+bore_radius = bore_diameter / 2;
+
+// Section 1: 8mm Barb Side (Z=0 to Z=20)
+hose_in_id = 8;         // Inner diameter for large tubing
+barb_height_large = 10; // Height of one large barb
+num_barbs_large = 2;   // Number of barbs on the large side
+z_start_large = 0;     // Start Z for large barb section
+z_end_large = 20;      // End Z for large barb section
+
+// Large Barb Profile (Sawtooth)
+barb_bottom_od_large = 7.5; // Outer diameter at the base of the sawtooth profile
+barb_top_od_large = 9.5;    // Outer diameter at the peak of the sawtooth profile
+step_back_width_large = 10; // Width of the step back (height of the barb)
+
+// Section 2: Collar (Z=20 to Z=25)
+collar_diameter = 12;  // Diameter of the collar section
+collar_radius = collar_diameter / 2;
+z_start_collar = z_end_large; // Start Z for collar
+z_end_collar = 25;        // End Z for collar
+
+// Section 3: 5mm Barb Side (Z=25 to Z=41)
+hose_out_id = 5;        // Inner diameter for small tubing
+barb_height_small = 8;  // Height of one small barb
+num_barbs_small = 2;    // Number of barbs on the small side
+z_start_small = z_end_collar; // Start Z for small barb section
+z_end_small = total_height; // End Z for small barb section
+
+// Small Barb Profile (Sawtooth)
+barb_bottom_od_small = 6.5; // Outer diameter at the base of the sawtooth profile
+barb_top_od_small = 5.0;    // Outer diameter at the peak of the sawtooth profile
+step_back_width_small = 8; // Width of the step back (height of the barb)
+
+// --- Helper Functions ---
+
+// Function to create a single large barb segment (sawtooth profile)
+module large_barb_segment() {
+    // The sawtooth shape is approximated by three stacked/connected cylindrical sections:
+    // 1. Base cylinder (bottom of the step)
+    // 2. Tapered section (the ramp up to the peak OD, using hull for smooth transition)
+    // 3. Step back cylinder (return to base OD)
+
+    module barb_shape() {
+        // 1. Base section (height = half the step width + small tolerance)
+        cylinder(h = step_back_width_large * 0.5 + 1, r = barb_bottom_od_large/2);
+
+        // 2. Tapered section (the ramp up to the peak OD)
+        hull() {
+            translate([0, 0, step_back_width_large * 0.5]) sphere(r = barb_bottom_od_large/2);
+            translate([0, 0, step_back_width_large * 0.5 + step_back_width_large]) sphere(r = barb_top_od_large/2);
+        }
+
+        // 3. Step back section (return to the base OD)
+        cylinder(h = step_back_width_large * 0.5 + 1, r = barb_bottom_od_large/2);
+    }
+
+    barb_shape();
+}
+
+// Function to create a single small barb segment (sawtooth profile)
+module small_barb_segment() {
+    // The sawtooth shape is approximated by three stacked/connected cylindrical sections:
+    // 1. Base cylinder (bottom of the step)
+    // 2. Tapered section (the ramp up to the peak OD, using hull for smooth transition)
+    // 3. Step back cylinder (return to base OD)
+
+    module barb_shape() {
+        // 1. Base section (height = half the step width + small tolerance)
+        cylinder(h = step_back_width_small * 0.5 + 1, r = barb_bottom_od_small/2);
+
+        // 2. Tapered section (the ramp up to the peak OD)
+        hull() {
+            translate([0, 0, step_back_width_small * 0.5]) sphere(r = barb_bottom_od_small/2);
+            translate([0, 0, step_back_width_small * 0.5 + step_back_width_small]) sphere(r = barb_top_od_small/2);
+        }
+
+        // 3. Step back section (return to the base OD)
+        cylinder(h = step_back_width_small * 0.5 + 1, r = barb_bottom_od_small/2);
+    }
+
+    barb_shape();
+}
+
+
+// --- Main Assembly ---
+
+difference() {
+    // 1. Outer Shape (The main body)
+    union() {
+        // Section 1: Large Barb Area (Z=0 to Z=20)
+        translate([0, 0, z_start_large]) {
+            for (i = [0 : num_barbs_large - 1]) {
+                // Stacked barbs. Offset each subsequent barb by its height + a small gap for separation/printing ease.
+                translate([0, 0, i * (barb_height_large + 0.5)]) {
+                    large_barb_segment();
+                }
+            }
+
+            // The main body connecting the barbs in this section (cylinder)
+            // Radius must accommodate the largest barb OD (9.5mm/2 = 4.75mm) and the collar radius (6mm). Max is 6mm.
+            cylinder(h = z_end_large - z_start_large, r = max(barb_top_od_large/2 + 0.5, collar_radius));
+        }
+
+        // Section 2: Collar (Z=20 to Z=25)
+        translate([0, 0, z_start_collar]) {
+            cylinder(h = z_end_collar - z_start_collar, r = collar_radius);
+        }
+
+        // Section 3: Small Barb Area (Z=25 to Z=41)
+        translate([0, 0, z_start_small]) {
+            for (i = [0 : num_barbs_small - 1]) {
+                // Stacked barbs. Offset each subsequent barb by its height + a small gap for separation/printing ease.
+                translate([0, 0, i * (barb_height_small + 0.5)]) {
+                    small_barb_segment();
+                }
+            }
+
+            // The main body connecting the barbs in this section (cylinder)
+            // Radius must accommodate the largest barb OD (6.5mm/2 = 3.25mm). Max is 6mm.
+            cylinder(h = z_end_small - z_start_small, r = max(barb_bottom_od_small/2 + 0.5, collar_radius));
+        }
+    }
+
+    // 2. Central Bore Cutout (Runs through the entire height)
+    translate([0, 0, 0]) {
+        cylinder(h = total_height + 2, r = bore_radius); // Extend slightly past top/bottom for clean cut
+    }
+}
+```

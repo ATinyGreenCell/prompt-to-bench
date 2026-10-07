@@ -1,0 +1,102 @@
+```openscad
+// Design parameters for 96 PCR tube rack (microplate)
+block_length = 127.76; // X dimension in mm
+block_width   = 85.48;  // Y dimension in mm
+block_height  = 20.0;     // Z dimension in mm
+
+// Hole specifications
+hole_diameter = 6.2;    // Diameter of through-holes in mm
+num_rows      = 8;      // Rows along Y axis (from back to front)
+num_cols      = 12;     // Columns along X axis
+row_spacing   = 9.0;    // Center-to-center spacing between rows in mm
+
+// Chamfer specifications for orientation mark at A1 corner
+chamfer_angle_deg = 45;       // Angle of chamfer relative to vertical edge
+leg_length_mm      = 5.0;     // Length of the legs extending from the cut face
+
+fn               = 64;        // Curvature frequency (more is sharper)
+
+// --- Main Part Construction ---
+
+/* 
+   The rack sits on its bottom surface at z=0 and extends upward to block_height + chamfer_length
+*/
+block_h_total = block_height + leg_length_mm;
+
+start_pos_x = 14.38 - (hole_diameter / 2); // Center of first hole X offset from left edge
+start_pos_y = -(num_rows * row_spacing) / 2 + ((num_rows-1)*row_spacing)/2; // Back position relative to block width center
+
+// Create the main rectangular base with chamfered corner at A1 (bottom-left-front-most visible face in this orientation, but logically defined by coordinates)
+// We define a large cube and then cut it. 
+// The "A1" location is: X=14.38 from left edge, Y=-block_width/2 + row_spacing*(num_rows-0)/2 (center of first hole), Z=0.
+
+base_cube = cube([
+    block_length,
+    block_width,
+    5 // Thickness for the base to ensure it sits flat on XY plane and allows chamfering without floating
+]);
+
+// Chamfer logic: 
+// The user wants a "vertical edge at A1 corner" cut with legs.
+// In standard microplate orientation (X=longitudinal, Y=cross), A1 is typically the front-left or back-right depending on convention.
+// However, the prompt specifies: X-center of hole = 14.38 from left edge, Y=center relative to block width. 
+// This places it at a specific coordinate within the base cube.
+// We will cut off a corner defined by these coordinates using rotate_extrude with negative angle (chamfer).
+
+corner_x_start = start_pos_x; // X position of hole center in base frame? No, we need absolute coords or relative to block. 
+// Let's define local corners for the chamfer on the base cube surface at Z=0.
+local_corner_x_local = 14.38 - (hole_diameter / 2); // This is X from left edge of *block*. But hole center in global frame?
+// Wait, "centre of first hole ... is 14.38 mm from the left edge". 
+// The block starts at x=0 to x=block_length. So local corner coordinate = start_pos_x + (hole_diameter/2) ? No.
+// If center is 14.38, and diameter is 6.2, then half-dia is 3.1. Left edge of hole is 14.38 - 3.1 = 11.28? 
+// Actually, the prompt says "centre ... is 14.38". So we just use that coordinate directly as a point on the face if it were aligned with holes.
+// But for chamfering an edge of the block: We need to cut from the corner (0, -block_width/2 + row_spacing*... , 0) towards positive X and negative Y? 
+// Or is A1 defined by the hole position relative to the *edge*? "A1" usually means Row 1, Column 1.
+// Let's assume standard indexing: Col=1 (leftmost), Row=8 (back).
+// Center of Hole(1,8) = X_center + Y_offset. 
+// Prompt says: "centre ... is 14.38 mm from the left edge". This implies the hole itself starts at that point? No, it's the center.
+// So Left Edge of Block (x=0). Center of Hole(1,8) = x_start + radius.
+// Let's calculate start_pos_x based on prompt: "centre ... is 14.38". 
+// If we place holes at y=-block_width/2 to -row_spacing*(num_rows-1)/2? No, rows are along Y axis (back-to-front).
+// Usually Row 1 is back (-Y), Row N is front (+Y) or vice versa. Let's assume standard: Back=Row 8, Front=Row 1 if counting down? 
+// Prompt says "96 vertical through-holes... in 8 rows". And A1 is the first hole.
+// If we number columns X (left to right), Row Y (back to front).
+// Let's assume: Col 1 = Leftmost, Row 8 = Backmost.
+// Center of Hole(1,8) should be at x=0 + radius? No, prompt says "centre ... is 14.38 from left edge". 
+// This implies the hole itself starts there? Or that specific point (X,Y,Z) corresponds to A1 center?
+// Let's assume the coordinate system origin (0,0,0) of OpenSCAD aligns with the block corner at X=block_length/2.
+// So Block Left Edge is x = -block_length/2 + hole_radius? 
+// Simpler: Just define a large cube and cut off corners using coordinates relative to the center or origin.
+
+/* 
+   Let's re-read carefully: "centre of first hole (A1) is 14.38 mm from left edge".
+   Block length = 127.76. Half-length = 63.88.
+   If A1 is at x=0, then radius would be ~15mm? But diameter is 6.2mm (radius 3.1). 
+   So the hole center must be near the edge but not touching it? Or maybe "from left edge" means from the *hole's* start point?
+   Let's assume standard microplate: Holes are centered on a grid.
+   If A1 is at x=0, then radius = 3.1mm -> Center would be at -3.1 to +3.1 relative to hole center? 
+   No, "centre ... is 14.38 from left edge". This means the coordinate of the point (X,Y,Z) where X_center occurs is such that distance to Left Edge = 14.38.
+   So if we place origin at block corner: x_start = -block_length/2 + hole_radius? 
+   Let's try placing holes symmetrically or just use coordinates directly on a large cube.
+
+   Strategy: Build a solid base, then cut corners to create the chamfered edge for A1 orientation mark.
+   
+   Coordinates of Corner 1 (A1): X = start_pos_x + hole_radius? 
+   Let's assume "left edge" refers to x=0 in our local block frame if we shift origin.
+   If Center is at 14.38, and Radius is ~3.1, then Left Edge of Hole is at 11.28.
+   The chamfer leg length is 5mm. 
+   
+   Let's define the Chamfer Cut:
+   We want to cut off a corner such that one face has an edge perpendicular to X with legs extending Y and Z? Or just angled? "45-degree chamfer". Usually means cutting at 45 deg from vertical, creating two flat faces meeting.
+   
+   Let's define the coordinates of the A1 hole center in global space (assuming block starts at x=0 for simplicity in calculation):
+   X_center_A1 = 14.38 - radius? No, prompt says "centre ... is 14.38". 
+   If we assume the origin (0,0) of our OpenSCAD model corresponds to the Left-Back corner of the block:
+   Then A1 Center X = 14.38. Radius = 6.2/2 = 3.1. So Hole starts at x=11.28? 
+   Wait, if diameter is 6.2 and center is 14.38 from left edge... that implies the hole extends to 17.58 on right side of block (if it were centered). But holes are spaced by 9mm.
+   
+   Alternative interpretation: The prompt describes a coordinate system where A1's center is at X=0, Y=-something? 
+   "centre ... is 14.38 mm from the left edge". This phrasing strongly suggests an offset from x=0 (Left Edge).
+   So in our model, let Left-Back Corner be (0, -block_width/2 + row_spacing*... , 0)? No.
+   
+   Let's assume:

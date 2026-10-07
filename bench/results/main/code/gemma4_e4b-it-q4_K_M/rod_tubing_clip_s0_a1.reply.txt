@@ -1,0 +1,110 @@
+```openscad
+// Snap-on Clip for Lab Stand Rod and Tubing
+
+// Global settings
+$fn = 64;
+
+// Dimensions based on user input (in mm)
+clip_height = 10;       // Total height of the clip extrusion (Z dimension)
+
+// Rod Ring Dimensions (for 12.7mm rod)
+rod_inner_diameter = 12.7; // Inner diameter for the lab stand rod
+rod_wall_thickness = 3;    // Wall thickness of the ring
+rod_outer_diameter = rod_inner_diameter + 2 * rod_wall_thickness; // Outer diameter (18.7mm)
+
+// Rod Ring Cutout Dimensions
+rod_cutout_width = 10;     // Width of the opening cut on the -X side
+rod_cutout_y_range = 5;    // Y range for the cutout (-5 to 5)
+
+// Tubing Ring Dimensions (for tubing)
+tubing_inner_diameter = 6; // Inner diameter for the tubing
+tubing_wall_thickness = 2;  // Wall thickness of the ring
+tubing_outer_diameter = tubing_inner_diameter + 2 * tubing_wall_thickness; // Outer diameter (10mm)
+
+// Tubing Ring Position and Cutout
+tubing_center_x = 15;      // X position of the tubing ring center
+tubing_cutout_width = 4.5;  // Width of the opening cut on the +X side
+tubing_cutout_y_range = 2.25; // Y range for the cutout (-2.25 to 2.25)
+
+// Bridge Dimensions
+bridge_width_y = 6;       // Width in Y direction
+bridge_start_x = 8;       // Start X coordinate of the bridge
+bridge_end_x = 12;        // End X coordinate of the bridge
+
+
+// --- Module Definitions ---
+
+// Creates a hollow ring shape centered at (cx, cy)
+module create_ring(inner_d, outer_d, cx, cy) {
+    difference() {
+        circle(r = outer_d / 2, center = [cx, cy]);
+        // Cutout slightly larger than inner diameter to ensure clean hole
+        circle(r = inner_d / 2 + 0.1, center = [cx, cy]); 
+    }
+}
+
+// --- Component Construction (2D Profile) ---
+
+module rod_ring() {
+    // Base ring centered at origin
+    create_ring(rod_inner_diameter, rod_outer_diameter, 0, 0);
+
+    // Cutout on the -X side to snap onto the rod. The cutout must be positioned relative to its center point.
+    // We want the cutout to span from X = -(OuterDiameter/2) to X = -(OuterDiameter/2) + RodCutoutWidth
+    // Since we are cutting a rectangle, we define its center based on where it starts.
+    cutout_center_x = -rod_outer_diameter / 2 + rod_cutout_width / 2;
+    translate([cutout_center_x, 0, 0]) {
+        difference() {
+            // The cube must be large enough to cut through the ring material.
+            cube([rod_cutout_width + 0.1, 2 * rod_cutout_y_range + 0.2, 0.1]);
+            // Translate cutout vertically so it is centered around Y=0 relative to its own center point (which is at y=0 here)
+            translate([0, -rod_cutout_y_range]) {
+                cube([rod_cutout_width + 0.1, 2 * rod_cutout_y_range + 0.2, 0.1]);
+            }
+        }
+    }
+}
+
+module tubing_ring() {
+    // Base ring centered at (tubing_center_x, 0)
+    create_ring(tubing_inner_diameter, tubing_outer_diameter, tubing_center_x, 0);
+
+    // Cutout on the +X side to allow tubing passage.
+    cutout_center_x = tubing_center_x + (tubing_outer_diameter / 2) - tubing_cutout_width / 2;
+    translate([cutout_center_x, 0, 0]) {
+        difference() {
+            // The cube must be large enough to cut through the ring material.
+            cube([tubing_cutout_width + 0.1, 2 * tubing_cutout_y_range + 0.2, 0.1]);
+             // Translate cutout vertically so it is centered around Y=0 relative to its own center point (which is at y=0 here)
+            translate([0, -tubing_cutout_y_range]) {
+                cube([tubing_cutout_width + 0.1, 2 * tubing_cutout_y_range + 0.2, 0.1]);
+            }
+        }
+    }
+}
+
+module bridge() {
+    // Solid rectangular bridge connecting the two rings
+    cube([bridge_end_x - bridge_start_x, bridge_width_y, 0.1]); // Thickness of the bridge profile
+    translate([bridge_start_x, 0, 0]);
+}
+
+
+// --- Final Assembly (2D Profile) ---
+
+module clip_profile() {
+    union() {
+        rod_ring();
+        tubing_ring();
+        bridge();
+    }
+}
+
+// Extrude the final profile to create the 3D part
+difference() {
+    // Main body extrusion
+    linear_extrude(height = clip_height) {
+        clip_profile();
+    }
+}
+```

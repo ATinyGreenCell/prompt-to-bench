@@ -1,0 +1,48 @@
+```openscad code block
+// Define dimensions in millimeters
+$fn = 64; // For curved shapes
+
+// Top plate dimensions
+top_plate_width = 90;
+top_plate_height = 90;
+
+// Wall thicknesses
+wall_thickness = 2.5;
+
+// Fan mounting holes pattern
+hole_pattern_spacing = 71.5 / 8; // 71.5 mm square pattern divided by 8 holes
+
+// Power cable notch dimensions
+notch_width = 12;
+notch_depth = 8;
+
+// Generate the top plate
+top_plate = cube([top_plate_width, top_plate_height, wall_thickness]);
+
+// Generate the walls
+walls = for (i = [0:7]) {
+    translate([hole_pattern_spacing * i, hole_pattern_spacing * i, 0])
+        rotate([90, 0, 0])
+        cube([wall_thickness, top_plate_height, wall_thickness]);
+};
+
+// Generate the holes
+holes = for (i = [0:8]) {
+    translate([hole_pattern_spacing * i, hole_pattern_spacing * i, wall_thickness / 2 + 1.5])
+        rotate([90, 0, 0])
+        cylinder(r=4.5, h=top_plate_height - 3);
+};
+
+// Generate the notch for the power cable
+notch = translate([hole_pattern_spacing * 7, hole_pattern_spacing * 7, 32])
+    rotate([90, 0, 0])
+    cube([notch_width, notch_depth, wall_thickness]);
+
+// Combine all parts to form the housing
+housing = union([
+    top_plate,
+    walls,
+    holes,
+    notch
+]);
+```

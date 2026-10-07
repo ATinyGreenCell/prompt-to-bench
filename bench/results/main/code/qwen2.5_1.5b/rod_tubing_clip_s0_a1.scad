@@ -1,0 +1,36 @@
+// Snap-on clip design for holding tubing next to a lab stand rod
+
+// Dimensions in millimeters
+$fn = 64; // Number of segments for holes, roundness
+
+// Tube and rod dimensions
+tube_dia = 12.7;
+rod_dia = 3;
+bridge_wd = 6;
+
+// Ring dimensions
+ring_rod_dia = tube_dia - rod_dia;
+ring_bridge_wd = bridge_wd / 2; // Half the width of the bridge
+
+// Profile for snap-on clip
+profile = translate([0, 0, 10]) [
+    rotate_extrude(rotate=[90, [0, 0, 1]]) [
+        cylinder(r=ring_rod_dia, h=3)
+    ],
+    rotate_extrude(rotate=[-90, [0, 0, 1]]) [
+        translate([-5, 0, -5]) [
+            cylinder(r=ring_bridge_wd, h=2.25)
+        ]
+    ],
+    translate([15, 0, 0]) [
+        rotate_extrude(rotate=[90, [0, 0, 1]]) [
+            cylinder(r=tube_dia - ring_rod_dia, h=3)
+        ],
+        translate([-2.25, 0, -2.25]) [
+            cylinder(r=ring_bridge_wd, h=4.5)
+        ]
+    ]
+];
+
+// Solid part
+solid = profile;

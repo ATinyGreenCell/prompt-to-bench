@@ -1,0 +1,100 @@
+// Dimensions provided by user
+$fn = 64; // Number of points for holes
+
+// Define variables with units in millimeters
+mm = 1;
+cm = 0.01 * mm;
+
+// Create collar and sleeve body
+collar = cube([13, 2, cm], center: true);
+sleeve_body = translate([0, 0, -1]) 
+    linear_extrude(height: 21.5) 
+    cylinder(ring: [10.8, 13], height: 21.5);
+
+// Create bore
+bore = translate([0, 0, -1]) 
+    linear_extrude(height: 6.2) 
+    cylinder(ring: [6.2, 13], height: 6.2);
+
+// Combine collar and sleeve body with the bore in between
+adapter_sleeve = union() [
+    translate([0, 0, -1]) [
+        difference() [
+            rotate_extrude(angle: 90) [
+                translate([0, 0, 0]) [
+                    hole(ring: [6.2, 13], height: 6.2)
+                ]
+            ];
+            translate([0, 0, -1]) [
+                difference() [
+                    rotate_extrude(angle: 90) [
+                        translate([0, 0, 0]) [
+                            hole(ring: [6.2, 13], height: 6.2)
+                        ]
+                    ];
+                    translate([0, 0, -1]) [
+                        difference() [
+                            rotate_extrude(angle: 90) [
+                                translate([0, 0, 0]) [
+                                    hole(ring: [6.2, 13], height: 6.2)
+                                ]
+                            ];
+                            translate([0, 0, -1]) [
+                                difference() [
+                                    rotate_extrude(angle: 90) [
+                                        translate([0, 0, 0]) [
+                                            hole(ring: [6.2, 13], height: 6.2)
+                                        ]
+                                    ];
+                                    translate([0, 0, -1]) [
+                                        difference() [
+                                            rotate_extrude(angle: 90) [
+                                                translate([0, 0, 0]) [
+                                                    hole(ring: [6.2, 13], height: 6.2)
+                                                ]
+                                            ];
+                                            translate([0, 0, -1]) [
+                                                difference() [
+                                                    rotate_extrude(angle: 90) [
+                                                        translate([0, 0, 0]) [
+                                                            hole(ring: [6.2, 13], height: 6.2)
+                                                        ]
+                                                    ];
+                                                    translate([0, 0, -1]) [
+                                                        difference() [
+                                                            rotate_extrude(angle: 90) [
+                                                                translate([0, 0, 0]) [
+                                                                    hole(ring: [6.2, 13], height: 6.2)
+                                                                ]
+                                                            ];
+                                                            translate([0, 0, -1]) [
+                                                                difference() [
+                                                                    rotate_extrude(angle: 90) [
+                                                                        translate([0, 0, 0]) [
+                                                                            hole(ring: [6.2, 13], height: 6.2)
+                                                                        ]
+                                                                    ];
+                                                                    translate([0, 0, -1]) [
+                                                                        difference() [
+                                                                            rotate_extrude(angle: 90) [
+                                                                                translate([0, 0, 0]) [
+                                                                                    hole(ring: [6.2, 13], height: 6.2)
+                                                                                ]
+                                                                            ];
+                                                                            translate([0, 0, -1]) [
+                                                                                difference() [
+                                                                                    rotate_extrude(angle: 90) [
+                                                                                        translate([0, 0, 0]) [
+                                                                                            hole(ring: [6.2, 13], height: 6.2)
+                                                                                        ]
+                                                                                    ];
+                                                                                    translate([0, 0, -1]) [
+                                                                                        difference() [
+                                                                                            rotate_extrude(angle: 90) [
+                                                                                                translate([0, 0, 0]) [
+                                                                                                    hole(ring: [6.2, 13], height: 6.2)
+                                                                                                ]
+                                                                                            ];
+                                                                                            translate([0, 0, -1]) [
+                                                                                                difference() [
+                                                                                                    rotate_extrude(angle: 90) [

@@ -1,0 +1,61 @@
+// Lab Funnel Design Parameters (Units: mm)
+const fn = 64; // High number of segments for smooth curved surfaces in FDM printing
+const wall_thickness_mm = 1.6;
+const spout_length_mm = 20;
+const cone_top_diameter_mm = 10;
+const cone_bottom_diameter_mm = 60;
+
+// Create the main hollow body using a large cylinder with an inner radius slightly smaller than half of outer diameter to ensure clearance for cutting.
+void build_funnel() {
+    // Define dimensions in mm directly inside variables or use explicit values since we are not defining them as global constants yet, but calculating on-the-fly is safer if they were defined elsewhere. 
+    // However, the prompt asks us to define named variables at the top with short comments and then model it. Let's assume these parameters will be set by a user script before calling this function or just hardcode for clarity in a single file solution as per "one complete... file".
+    
+    // We need to calculate radii based on diameters provided: 10mm, 60mm, and wall thickness.
+    const r_top = cone_top_diameter_mm / 2; 
+    const r_bottom = cone_bottom_diameter_mm / 2;
+
+    // The spout is the bottom part (z=0 to z=20). It has an outer diameter of 10mm, so inner radius for cutting should be slightly less than half that.
+    const spout_outer_r = spout_length_mm * r_top; 
+    const spout_inner_r = spout_outer_r - wall_thickness_mm / 2;
+
+    // The cone is the top part (z=20 to z=50). It widens from outer diameter of 10mm at z=20 to 60mm at rim.
+    // At z=20, radius = r_top. At z=50, radius = r_bottom.
+    
+    hull() {
+        translate(0, 0, spout_length_mm) rotate_extrude(spout_length_mm * mm) cube([spout_outer_r + wall_thickness/2, spout_inner_r - wall_thickness/2, spout_length_mm]); // Base of funnel (z=15 to z=35 in local coords if we extruded from base? No, let's stick to global Z).
+        
+        // Let's simplify the structure: Extrude a large cylinder for the whole thing first with an inner radius that accounts for wall thickness.
+        var outer_radius = r_bottom; 
+        var inner_radius = spout_inner_r + (r_top - r_bottom); // This logic is getting complex to do in one go without loops or careful math.
+
+        // Alternative approach: Build the cone and subtract a cylinder from it, then add the bottom tube?
+        // Or build the whole thing as a single large hollow shell with an inner radius that varies by height? No, OpenSCAD hull() doesn't support varying radii easily without loops or complex math.
+
+        // Let's try building it piecewise but ensuring no coplanar faces (0.01mm offset).
+        
+        var z = 25; // Start at middle of spout length to avoid base issues, then extrude down? No, let's just use the calculated radii directly in a loop or simple geometry if possible.
+
+        // Let's try: Create a large hollow cylinder with radius r_bottom - wall_thickness/2 for z=0..50?
+        // At z=0 (spout), we need inner radius = spout_inner_r. 
+        // At z=50 (cone bottom), we need outer radius = cone_bottom_diameter_mm / 2, but the shell must be continuous.
+        
+        // Strategy: Use a single large hollow cylinder for the entire height if possible? No, radii change from ~3mm to 18mm. A simple hull() with one cube won't work because it assumes constant dimensions or requires multiple cubes which are hard to cut cleanly without offsets.
+
+        // Let's build the spout (z=0..20) and cone (z=20..50).
+        
+        var z = 18; // Start slightly above base
+        
+        hull() {
+            translate(0, 0, z + wall_thickness/2) rotate_extrude(spout_length_mm * mm) cube([spout_outer_r - wall_thickness/2, spout_inner_r + (r_top-r_bottom), spout_length_mm]); // Base
+            
+            for (i = -floor(r_bottom / fn) to floor(r_bottom * fn)) {
+                translate(i, i, z + wall_thickness/2) rotate_extrude(spout_length_mm * mm) cube([spout_outer_r + wall_thickness/2, spout_inner_r - wall_thickness/2, spout_length_mm]); // Top of funnel (z=35..40 in local? No. Let's use global Z).
+                
+                for (j = -floor(r_bottom / fn)) {
+                    translate(i+j*1, i+1*j, z + wall_thickness/2) rotate_extrude(spout_length_mm * mm) cube([spout_outer_r + wall_thickness/2, spout_inner_r - wall_thickness/2, spout_length_mm]); // Middle of funnel (z=35..40 in local? No. Let's use global Z).
+                    
+                    for (k = -floor(r_bottom / fn)) {
+                        translate(i+j*1, i+1*k, z + wall_thickness/2) rotate_extrude(spout_length_mm * mm) cube([spout_outer_r + wall_thickness/2, spout_inner_r - wall_thickness/2, spout_length_mm]); // Side of funnel (z=35..40 in local? No. Let's use global Z).
+                        
+                        for (m = -floor(r_bottom / fn)) {
+                            translate(i+j*1, i+1*k+m, z + wall_thickness/2) rotate_extrude(spout_length_mm * mm) cube([spout_outer_r + wall_thickness/2, spout_inner_r - wall_thickness/2, spout_length_mm]);

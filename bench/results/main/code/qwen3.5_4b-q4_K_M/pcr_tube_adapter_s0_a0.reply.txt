@@ -1,0 +1,55 @@
+```openscad
+// Dimensions for PCR tube adapter sleeve (FDM)
+// Collar inner diameter: 0.2 mL tube ~ 13mm OD -> needs clearance? 
+// User specified collar is 13 mm in diameter, likely meaning the hole size or outer edge of collar ring.
+// Let's interpret "collar 13 mm in diameter" as the opening at z=0 to allow insertion.
+// However, a standard PCR tube (2mL) has OD ~19mm? No wait: 
+// Standard 0.5-2 mL PCR tubes are typically cylindrical with an outer diameter of about 18-20 mm for larger ones and smaller for micro-tubes.
+// Wait, the user says "lets a 0.2 mL PCR tube sit". A standard 0.2mL (micro) tube has OD ~6mm? 
+// But then they say rack hole is made for 1.5 mL tubes (~18-20mm). This implies we are making an adapter to fit into the larger hole, holding a smaller tube inside it?
+// Or perhaps the user means: The sleeve itself fits INTO the large (1.5mL) rack hole, and holds the small (0.2mL) tube INSIDE the sleeve via friction or snap-fit? 
+// Given "straight 6.2 mm diameter bore runs through", that matches a standard micro-tube OD (~6mm).
+// So: Outer part fits into large hole -> Inner part is 13mm ID to hold... wait, if inner is 13mm and tube is 6mm, there's huge clearance. 
+// Re-reading carefully: "collar 13 mm in diameter". If this collar sits on the bed (z=0), it likely defines the outer boundary of the base that fits into the rack hole?
+// No, usually adapters are designed so their OUTER dimension matches the RACK HOLE and INNER dimension holds the TUBE. 
+// BUT user says: "collar 13 mm in diameter... lies on bed". And "sleeve body, 10.8 mm outer diameter rises from collar".
+// This implies the COLLAR is wider (13mm) than the BODY (10.8mm). So it's a stepped cylinder? 
+// If rack hole is for 1.5mL tubes (~20mm OD), then a 13mm base won't fit into a 20mm hole unless... wait, maybe I have the logic inverted.
+// Let's re-read: "adapter sleeve that lets a 0.2 mL PCR tube sit in a rack hole made for 1.5 mL tubes". 
+// This phrasing is ambiguous. Does it mean: The adapter goes into the large hole and holds the small tube? Yes, most likely.
+// So Adapter Outer Diameter must be ~20mm to fit the 1.5mL hole. But user says collar is 13mm diameter. 
+// Contradiction unless... "collar" refers to something else or my assumption about rack sizes is wrong for this specific lab context? 
+// Alternatively, maybe the "rack hole made for 1.5 mL tubes" actually has a smaller effective size in their setup (e.g., plastic inserts)?
+// Or perhaps the user meant: The adapter fits into a hole that was originally sized for 0.2mL but they want to use it with something else? No, "rack hole made for 1.5 mL". 
+// Let's trust the USER'S DIMENSIONS EXACTLY as per rule #1 ("Use the user's dimensions exactly").
+// User says: Collar = 13mm diameter (likely ID or OD of base?). Sleeve body OD = 10.8mm. Bore = 6.2mm. 
+// If we build it with these numbers, and print upside down as instructed... wait "Print it upside down".
+// Instruction: "a collar ... lies on the bed (z=0 to 1.5)". So when printed upright in slicer, this is at bottom? No, if we model z=0..21.5 normally, then printing UP means Z grows away from bed. 
+// But user says "Print it upside down: a collar ... lies on the bed". This implies our MODEL should have the COLLAR AT THE TOP (z=max) so that when flipped (-Z direction in slicer), it sits on bed?
+// OR does it mean we model normally, but tell printer to flip orientation? Usually OpenSCAD models are built Z-up. If user says "print upside down", they might want us to build the collar at z=0 (bed contact) directly? 
+// Let's parse: "Print it upside down: a collar ... lies on the bed". This describes the FINAL PRINTED PART'S orientation relative to the printer bed.
+// So in our code, if we place the COLLAR at Z=21.5 and BODY below it (Z<21.5), then when printed normally (Z-up from 0), collar would be off-bed? No. 
+// Standard practice: Model with base on XY plane (z=0). If user wants to print "upside down", they will rotate the model in slicer by -90deg or flip Y/Z axes so that what we modeled as top becomes bottom touching bed.
+// However, rule #3 says: "Model the part ... rests on the XY plane at z = 0 and builds upward (+Z)". This is a constraint for our MODELING orientation regardless of printing instruction? 
+// Rule #3 overrides user's print direction description regarding how we define coordinates in code? Let me re-read rules.
+// Rule 3: "Model the part ... rests on the XY plane at z = 0 and builds upward (+Z)". This is a hard rule for our file structure.
+// The user's instruction about printing upside down likely describes their INTENDED usage, but we must follow Rule #3 for modeling orientation? 
+// Wait, if I model collar at Z=21.5 (top) and body below it, then when they print "upside down" (flip Y/Z), the collar will be on bed. That makes sense!
+// So: Model normally with base (body bottom?) no... Let's construct logically first ignoring printing flip for a moment to satisfy Rule #3 strictly? 
+// Actually, if I model the COLLAR at Z=0 and BODY rising from it to 21.5, then when printed "upside down" (flipped), the collar would be on top again? No flipping makes bottom become top.
+// If current model: Base = Body Bottom @ z=0, Top = Collar @ z=21.5. 
+// Flip Y/Z axis in slicer -> New Z' = -Z_old + H. So old Z=0 becomes new Z'=H (top), old Z=21.5 becomes new Z'=0 (bottom).
+// Thus: If we model BODY at bottom (z=0) and COLLAR at top (z=21.5), then after flipping, COLLAR is on bed. Perfect! 
+// So our code should have: Body base at z=0, Collar extending from body to z=21.5? But user says "collar ... lies on the bed". Yes, that matches flipped state.
+// BUT wait, rule #3 says "Model... rests on XY plane at z=0 and builds upward (+Z)". If we model collar at top (z>body), then after flip it's bottom. Correct.
+// Now dimensions: 
+// Collar diameter = 13mm. Is this ID or OD? Since it's a sleeve holding the tube, likely the INNER opening of the adapter where the small tube sits? Or outer edge that fits into rack? 
+// Given "sleeve body, 10.8 mm in outer diameter", and bore is 6.2mm (tube size).
+// If collar OD = 13mm -> too big for 10.8mm body? That would be an inverted step (wider top than bottom)? Unusual for a sleeve unless it's to grip the tube from above? 
+// Alternatively, maybe "collar" refers to the ring that fits INTO the rack hole? If so, its OD should match rack size (~20mm). But user says 13mm.
+// Let's assume USER MEASURED VALUES ARE CORRECT for their specific setup (maybe custom racks?). We must use EXACT numbers given: 
+// Collar diameter = 13 mm -> let's make this the OUTER DIAMETER of the collar ring? Or inner? 
+// Context: "adapter sleeve that lets a 0.2 mL PCR tube sit". The tube goes through the bore (6.2mm). So anything larger than 6.2mm is clearance for the tube.
+// If collar OD = 13mm, then ID of collar would be... wait, if it's a solid ring? No, sleeve implies hollow. 
+// Perhaps: Collar is an annular piece at top with OD=13mm and some thickness (1.5mm). Body below has OD=10.8mm. So the collar overhangs the body by 1.2mm on each side? That creates a lip to hold the tube in place via friction against its outer wall? But tube is only 6.2mm... huge clearance inside collar (if ID of collar = ?). 
+// Wait, maybe "collar" means the part that fits into the rack hole? If

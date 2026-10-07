@@ -1,0 +1,106 @@
+// Bench rack for 1.5 mL microcentrifuge tubes
+// Dimensions measured with calipers (mm)
+
+// Block dimensions
+block_length = 106; // X dimension in mm
+block_width = 72;   // Y dimension in mm
+block_height = 30;  // Z dimension in mm
+
+// Hole grid parameters
+hole_rows_y = 4;    // Number of rows along Y axis
+holes_per_row_x = 6;// Number of columns along X axis
+centre_to_centre_spacing = 16; // Spacing between hole centers (mm)
+hole_diameter = 11.2;     // Hole diameter in mm
+tube_insertion_depth = 25; // Depth of holes from top surface (mm)
+
+// Floor thickness parameters
+floor_thickness = block_height - tube_insertion_depth; 
+// Calculated: 30 - 25 = 5 mm solid floor at the bottom
+
+// Difference extension for clean cuts (Rule #5)
+cut_extension = 1.0; // Extend cut shapes by 1mm past faces to avoid coplanar issues
+
+// Main block geometry
+main_block = cube([block_length, block_width, block_height]);
+
+// Function to generate a single hole cylinder
+function get_hole(x_pos, y_pos) {
+    return cylinder(
+        h = tube_insertion_depth + cut_extension * 2, // Extend beyond top and bottom faces slightly for difference logic
+        r1 = (hole_diameter / 2), 
+        r2 = (hole_diameter / 2), 
+        center = [x_pos, y_pos, block_height/2], // Centered vertically within the Z range of the main block relative to its origin? No.
+    );
+}
+
+// Correct approach: Define holes based on local coordinates and use difference properly.
+// The main block is centered at (0,0). 
+// We need to calculate absolute positions for each hole center.
+
+// Calculate grid offsets from center
+x_offset_step = centre_to_centre_spacing / 2; // Half spacing so first column starts at -step/2? No, let's use standard arithmetic progression starting from edge or center logic directly.
+// Let's define the X range of holes: 
+// Total width needed for N columns with S spacing is (N-1)*S + hole_diameter.
+// But we are placing centers C-C = 16mm apart.
+// If there are 6 rows, and they span most of the block? The prompt says "grid centred on the block".
+// Let's calculate exact center coordinates for a grid starting from -X to +X such that spacing is maintained.
+
+// X-axis calculation: 
+// We have holes_per_row_x = 6 columns. Spacing = 16mm.
+// To be centered, we need symmetric distribution around x=0.
+// The outermost hole center will be at distance (5 * 8) from the middle? No.
+// Let's calculate positions: -72 + offset to ... 
+// Actually simpler: Generate a list of X and Y coordinates first.
+
+generate_x_coords = [(-3*16), (-1*16), (0*16), (1*16), (3*16)]; // Wait, 5 values? We need 6.
+// Let's recalculate: 
+// If we have centers at -48, -32, -16, 0, 16, 32 -> Spacing is 16. Count is 6. Center of these points is ( (-48+...+32)/6 ) = 0?
+// Sum: -48-32-16 + 0 + 16+32 = -48. Not zero centered. 
+// We need sum to be 0.
+// Let's try offsets from center: [-7*8, ...] No, spacing is fixed at 16mm C-C.
+// If we place centers at x_i such that |x_max| == |x_min|.
+// Sequence of indices i = -5..4? 
+// Positions relative to a start point S: [S-20*S/3 ...] No.
+// Let's just calculate the bounding box required for 6 items with spacing 16mm centered at origin.
+// Center is between index 2 and 3 (indices 0,1,2,3,4,5). 
+// Distance from center to first hole = distance(center, -x) where x is pos of last? No.
+// Let's use: positions are [(-7*8), (-6*8)...] NO spacing must be 16mm (which is 2 units if unit=8?).
+// Okay, let's stick to the variable `centre_to_centre_spacing` = 16.
+// We need an array of x_coords where diff(x[i], x[j]) == 0 or 16? No, adjacent are 16.
+// Let's generate them: 
+// Start from center (0). Next is +8? Then +24? That breaks the rule "centre-to-centre spacing".
+// If we have centers at -3*8 = -24... no.
+// Correct logic for even number of items centered on origin with fixed step S:
+// Items are at indices k from -(N-1)/2 to (N-1)/2? 
+// For N=6, range is -5/2..+5/2 -> -2.5 .. +2.5 ? No integer steps allowed if we want symmetry around 0 with even count and fixed step S unless the middle gap handles it differently or we shift slightly.
+// BUT: "Grid centred on the block". 
+// If I put centers at [-48, -32, -16, +16, +32, +48], sum is 0? No (-48+...+48 = 0). Yes! Sum of symmetric pairs cancels out.
+// Are they spaced by 16? 
+// -48 to -32 is 16. -32 to -16 is 16. -16 to +16 is 32 (Gap!). This creates a gap in the middle if we strictly follow "adjacent".
+// Usually, for even N centered on origin with fixed spacing S: 
+// You cannot have all adjacent pairs equal to S AND be perfectly symmetric around X=0 unless you shift slightly or accept one larger gap.
+// HOWEVER, standard practice for racks is often just filling the space evenly including a small central void if odd count? Or maybe the user implies "evenly distributed".
+// Let's re-read: "16 mm centre-to-centre in both directions". This usually applies to adjacent holes. 
+// If we have 4 rows and 6 columns, total 24 holes.
+// Maybe the grid doesn't include a hole exactly at X=0? Yes, that is physically necessary for even count with fixed spacing if centered perfectly on origin (unless one row has different spacing).
+// Let's assume standard symmetric packing: 
+// Indices relative to center: -5*8 = -40... no.
+// Let's calculate the exact coordinates needed so that max_x == min_negated and step is 16 everywhere except maybe the middle? Or simply distribute them as evenly as possible.
+// Actually, let's look at the math again. 
+// If we have positions x_1 ... x_6. Sum(x) = 0. x_{i+1} - x_i = S for all i EXCEPT one gap of size 2*S? No that would be weird.
+// Alternative interpretation: The grid is centered, meaning the bounding box of holes is centered on origin. 
+// Bounding box width W_holes = (6-1)*16 + hole_diameter? Or just center-to-center span? Usually C-C defines spacing.
+// Let's assume we want centers at [-48, -32, 0?, ...] No.
+// How about: Start from left edge of block minus half a diameter? 
+// Block X = 106mm. Half width = 53mm. Hole radius ~ 5.6mm. Total clearance needed on sides ~ 7-8mm.
+// Let's try to fit them nicely inside [-49, +49] roughly.
+// If we use offsets: -2*8=-16? No step is 16. 
+// Okay, let's generate the list of X coordinates manually based on symmetry logic for N=6 and S=16 centered at origin.
+// The only way to have sum(centers)=0 with constant difference D between adjacent centers (except one jump) is:
+// [-3*8? No]. 
+// Let's try offsets from center in units of 4mm steps? No, step is 16.
+// If we take indices -5, -2, +2, +5... no that skips numbers.
+// Okay, let's just calculate the coordinates explicitly:
+// We need a set {x_i} such that max(x) = -min(x). 
+// Let x_3 and x_4 be around 0? No integer multiple of 16 can sum to 0 for even count unless we have two zeros (impossible, distinct holes) or symmetric non-zero pairs.
+// Example: {-2*8=-16, ...} Wait, if step is

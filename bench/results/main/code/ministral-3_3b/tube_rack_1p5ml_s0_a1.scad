@@ -1,0 +1,84 @@
+// Dimensions of the bench rack (mm)
+$fn = 64;
+X = 106; // Length
+Y = 72;  // Width
+Z = 30;  // Height
+
+// Hole parameters
+hole_diameter = 11.2;
+floor_height = Z - hole_depth;
+
+// Create the solid block
+block = cube([X, Y, Z]);
+
+// Subtract vertical holes (4 rows × 6 columns)
+for (y in [0..5]) {
+    for (x in [0..3]) {
+        translate([
+            x * spacing_X + spacing_X / 2 - X/2,
+            y * spacing_Y + spacing_Y / 2 - Y/2,
+            floor_height
+        ])
+        cylinder(
+            r = hole_diameter / 2 + 1, // Extend slightly beyond for clean cut
+            h = Z - floor_height,
+            $fn = 64
+        )
+    }
+}
+
+// Subtract the bottom floor (5mm solid)
+translate([0, 0, 0])
+cylinder(
+    r = hole_diameter / 2 + 1,
+    h = floor_height,
+    $fn = 64
+);
+
+// Correct hole depth and positioning
+spacing_X = 16;
+spacing_Y = 16;
+
+// Recalculate holes with correct positions
+for (y in [0..3]) { // Now correctly 4 rows
+    for (x in [0..5]) { // Now correctly 6 columns
+        translate([
+            x * spacing_X + spacing_X / 2 - X/2,
+            y * spacing_Y + spacing_Y / 2 - Y/2,
+            floor_height
+        ])
+        cylinder(
+            r = hole_diameter / 2,
+            h = hole_depth,
+            $fn = 64
+        )
+    }
+}
+
+// Final subtraction of the open top portions
+for (y in [0..3]) {
+    for (x in [0..5]) {
+        translate([
+            x * spacing_X + spacing_X / 2 - X/2,
+            y * spacing_Y + spacing_Y / 2 - Y/2,
+            Z - hole_depth
+        ])
+        cylinder(
+            r = hole_diameter / 2 + 1, // Extend slightly beyond for clean cut
+            h = hole_depth,
+            $fn = 64
+        )
+    }
+}
+
+bench_rack = difference(block, [
+    translate([0, 0, floor_height]) * cylinder(r=hole_diameter/2+1, h=Z-floor_height),
+    union(
+        for (y in [0..3], x in [0..5])
+            translate([
+                x*spacing_X + spacing_X/2 - X/2,
+                y*spacing_Y + spacing_Y/2 - Y/2,
+                Z - hole_depth
+            ]) * cylinder(r=hole_diameter/2+1, h=hole_depth)
+    )
+]);

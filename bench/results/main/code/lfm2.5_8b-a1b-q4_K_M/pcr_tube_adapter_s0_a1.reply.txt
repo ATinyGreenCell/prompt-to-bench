@@ -1,0 +1,47 @@
+<think>
+We need to produce a corrected OpenSCAD file that builds the described adapter sleeve. The previous attempt had syntax errors. We must ensure correct syntax: variable declarations, proper use of functions, and no include/internals.
+
+We need to define dimensions in mm, named variables at top with comments.
+
+Let's design geometry:
+
+- Collar: a cylindrical ring (annulus) lying on XY plane at z=0 to 1.5 mm. Outer radius = 13/2 = 6.5 mm. Inner radius = outer - collar thickness = 6.5 - 1.5 = 5.0 mm. Height = 1.5 mm.
+
+- Body: a cylindrical tube of outer diameter 10.8 mm => radius = 5.4 mm, height from z=1.5 to z=21.5 => length = 20 mm. This body sits on top of collar (i.e., its bottom face at z=1.5). So we can define a solid cylinder extruded upward.
+
+- Bore: straight cylindrical hole through full height, diameter 6.2 mm => radius = 3.1 mm, extending from z=0 to z=21.5? But if it goes through the collar region, that would cut into the collar. However typical design: bore starts after collar, so we offset by collar thickness. The problem says "A straight 6.2 mm diameter bore runs through the full height, open at both ends." It doesn't specify that it must avoid the collar; but if it goes through the collar region, then the collar would be removed entirely, which is not intended. So we should offset the bore by the collar thickness (i.e., its bottom at z=1.5). However "full height" could mean from bottom of collar to top of sleeve? Usually you'd have a hole that goes through the entire sleeve including the collar area; but then the collar would be removed, which is not correct. The phrase "rests on the XY plane at z = 0 and builds upward (+Z). Unless told otherwise, centre it on the origin in X and Y." So collar sits on bed. Then the sleeve body rises from the collar to z=21.5. So the bore likely goes through the sleeve body only, not through the collar region. So we offset.
+
+Thus we need to create a solid that is the union of:
+
+- Collar (annulus)
+- Body (cylinder radius 5.4 mm, height 20 mm) placed at z=1.5
+- Bore (cylinder radius 3.1 mm, height 21.5 mm) placed at z=0? Actually open at both ends: so it extends from bottom of collar to top of sleeve. So its bottom is at z=1.5 (top of collar). But we can define the bore as a cylinder of height 21.5 and then subtract the collar region where they intersect? That would be messy.
+
+Simplify: Define the sleeve as a solid that includes:
+
+- A cylindrical ring (annulus) from z=0 to 1.5 mm.
+- Then a cylindrical tube (solid) from z=1.5 to 21.5 mm, radius 5.4 mm, with a central cylindrical void of radius 3.1 mm for the bore.
+
+Thus we can define:
+
+```
+// dimensions
+collar_outer_radius = 6.5;
+collar_inner_radius = 5.0;
+collar_height = 1.5;
+body_outer_radius = 5.4;
+body_length = 20; // from z=1.5 to 21.5
+bore_radius = 3.1;
+bore_height = 21.5;
+
+// collar
+collar = translate(0,0,collar_height) cylinder(r=collar_outer_radius, h=collar_height);
+
+// body (solid)
+body = translate(0,0,collar_height + body_length) cylinder(r=body_outer_radius, h=body_length);
+
+// bore (hole)
+bore = translate(0,0,0) cylinder(r=bore_radius, h=bore_height);
+```
+
+But we need to ensure the collar is centered on origin in XY

@@ -1,0 +1,60 @@
+```openscad
+// Dimensions in millimetres
+outer_X = 120;      // Tank width (full outer dimension)
+outer_Y = 70;        // Tank depth (inner Y dimension, full tank is 70 mm deep)
+outer_Z = 40;         // Tank height
+wall_thickness = 3;   // Wall and floor thickness in mm
+platform_height_above_floor = 10;  // Platform top is 10 mm above inner floor
+platform_length = 60;  // Platform spans full inner width in X (centred)
+hole_diameter = 2;     // Electrode wire hole diameter in mm
+hole_z = 30;           // Electrode wire hole location along Z in mm
+y_wall_coordinate = 0; // y-coordinate for end wall holes
+
+// Helper function to create a rectangular box with rounded edges (for solidity)
+cube_with_rounded_edges(x, y, z, thickness) {
+    difference({
+        translate([thickness/2, thickness/2, thickness/2]),
+        cube([x - thickness*2 + 4, y - thickness*2 + 4, z - thickness*2 + 4])
+    });
+}
+
+module() {
+    // Tank base (outer dimensions)
+    translate([0, 0, 0]) cube_with_rounded_edges(outer_X, outer_Y, outer_Z - wall_thickness*2, wall_thickness);
+
+    // Inner walls: subtract the thickness from all sides to create a hollow tank with 3 mm walls and floor
+    translate([wall_thickness/2, wall_thickness/2, wall_thickness/2]) cube_with_rounded_edges(outer_X - wall_thickness*2, outer_Y - wall_thickness*2, outer_Z - wall_thickness*2);
+
+    // Raised platform in the centre
+    inner_X = outer_X - 2*wall_thickness;   // Tank interior width (excluding walls)
+    inner_Y = outer_Y - 2*wall_thickness;   // Tank interior depth along Y direction
+    base_z = wall_thickness;                // Bottom of tank floor is at z=0, but the tank's bottom surface is at z=0 for the outer shape. The inner floor (where platform sits) is at z = wall_thickness because walls are 3 mm thick below the top.
+
+    // Platform extends from y = 0 to y = inner_Y/2? Actually platform runs across full interior Y range, centered in Y direction.
+    // Since tank's interior Y dimension is symmetric about y=0 (because we center it), we place platform at y = inner_Y/2? But the problem says "spans the full inner width (Y) of the tank", meaning along the Y axis across the entire interior depth, so its extent in Y direction is from -inner_Y/2 to +inner_Y/2.
+    // We'll center it on the origin in XY plane as required: the part rests on XY plane at z=0 and builds upward; centre it on the origin in X and Y (i.e., platform centered horizontally).
+
+    // Platform is a rectangular prism extending from x = inner_X/2 - platform_length/2 to x = inner_X/2 + platform_length/2,
+    // covering full interior Y range: y from -inner_Y/2 to +inner_Y/2 (but we will use absolute coordinates in the model).
+
+    // Define platform center at (inner_X/2, 0, base_z) because it's centred horizontally and runs along Y direction.
+    // Platform length is along X axis: from x = inner_X/2 - platform_length/2 to x = inner_X/2 + platform_length/2.
+    // Its height extends upward from its bottom (which sits on the inner floor) by platform_height_above_floor mm, so top plane is at z = base_z + platform_height_above_floor.
+
+    translate([inner_X/2 - platform_length/2, 0, base_z]) cube_with_rounded_edges(platform_length, inner_Y, platform_height_above_floor + wall_thickness);
+    // Note: The cube_with_rounded_edges expects x, y, z dimensions; here we pass platform_length along X, full interior Y extent (inner_Y), and height = platform_height_above_floor + base_z? Wait base_z is the bottom plane of platform relative to global origin.
+
+    // Actually cube_with_rounded_edges(x, y, z) creates a box with dimensions x, y, z in mm; but we want:
+    // - X extent = platform_length (along tank's X axis)
+    // - Y extent = inner_Y (full interior depth along Y direction) – because platform spans full inner width in Y.
+    // - Z extent = platform_height_above_floor + base_z? No: The cube dimensions are the side lengths; we want a rectangular prism with X dimension = platform_length, Y dimension = inner_Y (full interior depth), and Z dimension = platform_height_above_floor + wall_thickness? But that's mixing units.
+
+    // Let's clarify model geometry clearly using translation only:
+    // We'll build the tank as a hollow rectangular box with outer dimensions [outer_X, outer_Y, outer_Z] and thickness wall_thickness on all sides except floor which is also wall_thickness thick (so bottom is at z=0 to z=wall_thickness).
+
+    // Then we add platform as an additional solid inside the tank.
+    // Better approach: Build the entire tank shape including walls, then add platform as a separate solid that sits on top of inner floor and does not intersect walls.
+
+    // We'll rebuild using clear steps without helper function causing syntax error; but we already have cube_with_rounded_edges defined at top level (outside module) which is fine in OpenSCAD if placed before module().
+}
+```

@@ -1,0 +1,122 @@
+// Dimensions for the L-shaped mounting bracket
+
+// Base Plate Dimensions
+base_plate_x_max = 25; // Max X extent of the base plate
+base_plate_x_min = -25; // Min X extent of the base plate
+base_plate_y_max = 45; // Max Y extent of the base plate
+base_plate_y_min = 0;  // Min Y extent of the base plate
+base_plate_z_max = 5;  // Max Z height of the base plate (Thickness)
+
+// Through-hole dimensions for Base Plate
+hole1_x = -17;
+hole1_y = 30;
+hole2_x = 17;
+hole2_y = 30;
+hole_diameter = 4.5; // Diameter of the M4 holes
+
+// Vertical Motor Plate Dimensions
+motor_plate_x_max = 25; // Max X extent of the motor plate
+motor_plate_x_min = -25; // Min X extent of the motor plate
+motor_plate_y_max = 5;  // Max Y extent of the motor plate
+motor_plate_y_min = 0;  // Min Y extent of the motor plate
+motor_plate_z_max = 50; // Max Z height of the motor plate
+motor_plate_thickness = 5; // Assuming thickness matches base plate for structural integrity
+
+// Motor Centring Boss Hole Dimensions
+boss_hole_x = 0;
+boss_hole_z = 28;
+boss_hole_diameter = 23;
+
+// M3 Screw Pattern Dimensions
+screw_pattern_size = 31; // Size of the square pattern for screws
+screw_spacing = 3.4; // Distance between screw centers (implied by a 31mm square)
+screw_radius = screw_pattern_size / 2;
+
+// Gusset Dimensions
+gusset_thickness = 5; // Thickness of the triangular gussets
+gusset_leg_length = 20; // Length of the legs along +Y and +Z
+
+// --- Base Plate Construction ---
+module base_plate() {
+    cube([base_plate_x_max - base_plate_x_min, base_plate_y_max - base_plate_y_min, base_plate_z_max]);
+}
+
+// Create the main body of the base plate
+difference() {
+    base_plate();
+    
+    // Vertical through-holes (M4)
+    translate([hole1_x, hole1_y, 0])
+        cylinder(r = hole_diameter / 2, h = base_plate_z_max + 1, $fn=64);
+    
+    translate([hole2_x, hole2_y, 0])
+        cylinder(r = hole_diameter / 2, h = base_plate_z_max + 1, $fn=64);
+}
+
+// --- Vertical Motor Plate Construction ---
+module motor_plate() {
+    cube([motor_plate_x_max - motor_plate_x_min, motor_plate_y_max - motor_plate_y_min, motor_plate_z_max]);
+}
+
+// Create the main body of the motor plate
+difference() {
+    motor_plate();
+    
+    // Cut the 23mm centering boss hole (along Y axis)
+    translate([boss_hole_x, 0, boss_hole_z - 0.1]) // Slightly below Z=28 to ensure cut goes through
+        cylinder(r = boss_hole_diameter / 2, h = motor_plate_z_max + 1, $fn=64);
+
+    // Cut the four M3 screw holes (3.4mm diameter) on a 31mm square pattern centered at (0, 28)
+    for (i = [0 : 2]) {
+        for (j = [0 : 2]) {
+            screw_x = -screw_radius + i * screw_spacing;
+            screw_y = 28 - screw_radius + j * screw_spacing;
+            
+            translate([screw_x, screw_y, 0])
+                cylinder(r = 3.4 / 2, h = motor_plate_z_max + 1, $fn=64);
+        }
+    }
+}
+
+// --- Triangular Gussets Construction ---
+module gusset_left() {
+    // Right triangle in the YZ plane, right angle at (y=5, z=5)
+    polygon(points = [
+        [5, 5],      // Right angle corner
+        [25, 5],     // End of Y leg (y=5+20=25, z=5)
+        [5, 25]      // End of Z leg (y=5, z=5+20=25)
+    ]);
+}
+
+module gusset_right() {
+    // Right triangle in the YZ plane, right angle at (y=5, z=5)
+    polygon(points = [
+        [5, 5],      // Right angle corner
+        [-15, 5],     // End of Y leg (y=5-20=-15, z=5)
+        [5, 25]      // End of Z leg (y=5, z=5+20=25)
+    ]);
+}
+
+
+// --- Assembly ---
+
+// 1. Base Plate (Base structure)
+base_plate();
+
+// 2. Motor Plate (Positioned on the back edge of the base plate, assuming it sits on Y=45 boundary or adjacent to it)
+// Placing motor plate centered in X and sitting on top of the base plate volume.
+translate([0, 0, base_plate_z_max]) // Lift motor plate up by base plate thickness (Z=5)
+    motor_plate();
+
+
+// 3. Gussets (Attached to the sides of the overall structure)
+
+// Left Gusset: Attached near x=-25 edge. Positioned at Y=10 for visibility, attached to the side face.
+translate([-25, 10, 0]) // Position origin at the left edge of the base plate
+    rotate([90, 0, 0]) // Rotate so YZ plane is aligned with the triangle definition
+    gusset_left();
+
+// Right Gusset: Attached near x=25 edge. Positioned at Y=10 for visibility, attached to the side face.
+translate([25, 10, 0]) // Position origin at the right edge of the base plate
+    rotate([90, 0, 0]) // Rotate so YZ plane is aligned with the triangle definition
+    gusset_right();

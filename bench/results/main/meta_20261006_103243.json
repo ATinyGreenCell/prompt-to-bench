@@ -1,0 +1,29 @@
+{
+ "started": "2026-10-06T10:32:43",
+ "args": {
+  "run": "main",
+  "models": [
+   "qwen3.5:9b-q4_K_M"
+  ],
+  "tasks": [
+   "tube_rack_1p5ml",
+   "pcr_tube_adapter"
+  ],
+  "samples": 1,
+  "max_repairs": 2,
+  "feedback": "report",
+  "temperature": 0.2,
+  "prompts": null,
+  "lang": "en",
+  "system": "bench/prompts/system.md",
+  "render_timeout": 120,
+  "seed_base": 1000,
+  "num_predict": 2048,
+  "think": false
+ },
+ "host": "enamel",
+ "cpu": "x86_64",
+ "python": "3.14.4",
+ "openscad": "OpenSCAD version 2026.10.01",
+ "ollama": "0.30.11"
+}

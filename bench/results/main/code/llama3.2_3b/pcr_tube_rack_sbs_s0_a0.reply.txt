@@ -1,0 +1,49 @@
+```openscad
+// Dimensions in mm
+X = 127.76;
+Y = 85.48;
+Z = 20;
+
+// Hole dimensions and grid parameters
+hole_diameter = 6.2;
+hole_spacing_x = 9.0;
+hole_spacing_y = hole_spacing_x * sqrt(3);
+num_rows = 8;
+num_cols = 12;
+first_hole_x = (X - num_cols * hole_spacing_x) / 2;
+first_hole_y = (Y - num_rows * hole_spacing_y) / 2;
+
+// Chamfer dimensions
+chamfer_leg_length = 5.0;
+chamfer_angle = 45;
+
+// Build the rack
+translate([0, 0, Z]) {
+    // Top and bottom plates
+    linear_extrude(Z) {
+        square(X * Y);
+    }
+    
+    // Vertical edges with chamfers
+    for (y = [0, hole_spacing_y]) {
+        translate([first_hole_x + num_cols * hole_spacing_x / 2, first_hole_y + y, Z])
+            rotate_extrude(45) {
+                linear_extrude(Z - chamfer_leg_length)
+                    square(chamfer_leg_length);
+            }
+    }
+
+    // Vertical through-holes
+    for (y = [0, hole_spacing_y]) {
+        translate([first_hole_x + num_cols * hole_spacing_x / 2, first_hole_y + y, Z])
+            cylinder(h = Z, r = hole_diameter / 2, $fn = 64);
+    }
+
+    // Orientation mark at A1 corner
+    translate([first_hole_x + num_cols * hole_spacing_x / 2 - chamfer_leg_length / 2, first_hole_y + num_rows * hole_spacing_y / 2, Z])
+        rotate_extrude(45) {
+            linear_extrude(Z - chamfer_leg_length)
+                square(chamfer_leg_length);
+        }
+}
+```

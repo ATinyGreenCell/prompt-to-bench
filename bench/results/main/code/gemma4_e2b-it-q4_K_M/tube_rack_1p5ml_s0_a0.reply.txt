@@ -1,0 +1,63 @@
+```openscad
+// Dimensions for the bench rack design
+
+// Overall dimensions of the rectangular block
+length_x = 106;  // Length along the X-axis (mm)
+width_y = 72;     // Width along the Y-axis (mm)
+height_z = 30;    // Height along the Z-axis (mm)
+
+// Hole dimensions
+hole_diameter = 11.2; // Diameter of the microcentrifuge tubes (mm)
+hole_depth = 25;      // Depth of the holes (mm)
+floor_thickness = 5;  // Thickness of the solid floor (mm)
+
+// Grid spacing
+center_to_center = 16; // Center-to-center distance for holes (mm)
+
+// Hole grid configuration
+num_holes_x = 6;      // Number of holes along the X-axis
+num_holes_y = 4;      // Number of holes along the Y-axis
+
+// Calculate positioning to center the grid on the block
+// Total span for holes in X: (num_holes_x - 1) * center_to_center
+// The total length occupied by the holes and spaces must fit within length_x.
+// We need to determine the starting position so the whole pattern is centered.
+
+// Calculate the required space for the grid structure itself
+total_span_x = (num_holes_x - 1) * center_to_center;
+start_x = (length_x - total_span_x) / 2;
+
+total_span_y = (num_holes_y - 1) * center_to_center;
+start_y = (width_y - total_span_y) / 2;
+
+// Calculate the radius for the circular holes
+hole_radius = hole_diameter / 2;
+
+// --- Main Module ---
+module bench_rack() {
+    // 1. Main solid block
+    cube([length_x, width_y, height_z], center = true);
+
+    // 2. Cut out the floor (bottom solid section)
+    // The floor is defined by Z=0 to Z=floor_thickness
+    translate([0, 0, 0]) {
+        cube([length_x, width_y, floor_thickness], center = false);
+    }
+
+    // 3. Create the vertical holes
+    for (i = [0 : num_holes_x - 1]) {
+        for (j = [0 : num_holes_y - 1]) {
+            // Calculate the center coordinates for the current hole
+            hole_center_x = start_x + (i * center_to_center) + (center_to_center / 2);
+            hole_center_y = start_y + (j * center_to_center) + (center_to_center / 2);
+
+            // Create the cylinder for the hole
+            translate([hole_center_x, hole_center_y, floor_thickness]) {
+                cylinder(r = hole_radius, h = hole_depth, $fn = 64);
+            }
+        }
+    }
+}
+
+bench_rack();
+```

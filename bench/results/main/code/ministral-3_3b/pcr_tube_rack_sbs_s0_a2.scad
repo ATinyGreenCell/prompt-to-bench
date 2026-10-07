@@ -1,0 +1,48 @@
+// PCR Tube Rack (ANSI/SLAS) - 96 tubes (0.2mL)
+$fn = 64;
+
+// Dimensions (mm)
+var X = 127.76;    // Length
+var Y = 85.48;     // Width
+var Z = 20;        // Height
+
+// Hole parameters
+var hole_diameter = 6.2;
+var tube_height = Z - 1.5;   // Clearance for tubes
+var chamfer_length = 5;
+
+// Calculate grid positions (centred)
+var cols = 12;
+var rows = 8;
+var spacing = hole_diameter + 0.4;  // Effective spacing including clearance
+
+// Create base block with chamfer at A1 corner
+difference() {
+    cube([X, Y, Z]);
+
+    // Chamfer position (A1 corner)
+    translate([-X/2 - hole_diameter/2, -Y/2 + (rows*spacing)/2 + spacing/4, 0])
+        rotate([90, 0, 0])  // Align chamfer plane with XZ
+            difference() {
+                cube([chamfer_length + 1.5, Z + 1.5, chamfer_length + 1.5]);
+                for (var i = 0; i < 4; i++) {
+                    rotate([90 * i, 0, 0])
+                        cube([chamfer_length + 2, Z + 1.5, hole_diameter + 1]);
+                }
+            };
+}
+
+// Create all tube holes
+for (var col = 0; col < cols; col++) {
+    for (var row = 0; row < rows; row++) {
+        var x_pos = -X/2 + col * spacing;
+        var y_pos = -Y/2 + row * spacing;
+
+        translate([x_pos, y_pos, 0])
+            rotate([90, 0, 0])  // Align hole axis with Z
+                difference() {
+                    cylinder(h=Z+1.5, $fn=$fn, diameter=hole_diameter+1);
+                    cube([hole_diameter + 2, hole_diameter + 2, tube_height]);
+                };
+    }
+}

@@ -1,0 +1,153 @@
+// --- Dimensions in mm ---
+
+// Main Knob Dimensions
+knob_diameter = 30;    // Total diameter of the knob
+knob_height = 15;      // Total height of the knob
+shaft_diameter = 6;    // Diameter of the D-shaft bore (nominal)
+
+// D-Shaft Bore Dimensions
+bore_depth = 12;       // Depth of the blind bore
+bore_diameter = 6.2;   // Diameter of the circular cross-section for the bore
+bore_flat_distance = 4.7; // Distance across the flat side of the bore (height)
+
+// Grip Groove Dimensions
+num_grooves = 18;      // Number of grip grooves
+groove_diameter = 2;   // Diameter of the half-cylinder groove
+groove_depth = knob_height; // Full height of the groove
+
+// Pointer Groove Dimensions
+pointer_width = 1.5;   // Width of the pointer groove
+pointer_depth = 1;     // Depth of the pointer groove
+
+// Tolerance for cutting operations
+tolerance = 0.2;
+
+$fn = 64;
+
+// --- Module Definitions ---
+
+// Function to create a half-cylinder profile (for grip grooves)
+module half_cylinder(d, h) {
+    translate([0, 0, -h/2])
+    rotate([90, 0, 0])
+    cylinder(r = d/2, h = d);
+}
+
+// Function to create the D-bore profile (a circle cut in half)
+module bore_profile() {
+    // Create a full circle and then use difference to cut it into a half-circle shape
+    difference() {
+        cylinder(r = bore_diameter / 2, h = tolerance * 2); // Slightly taller than the cut depth for clean intersection
+        // Cut away the portion that is not needed (the other half)
+        translate([0, -bore_flat_distance/2 + tolerance*1.5, 0])
+        cylinder(r = bore_diameter / 2, h = tolerance * 2);
+    }
+}
+
+// --- Main Assembly ---
+
+// 1. Base Knob Body (Cylinder)
+knob = cylinder(h = knob_height, r = knob_diameter / 2);
+
+// 2. D-Shaft Bore Cutout
+// The bore is centered on the Z axis and starts at Z=0.
+// We need to model the shape of the cut (the half-circle) extruded along the depth.
+module d_bore_cut() {
+    // Create a profile that represents the cross-section of the D-shape, oriented correctly for extrusion.
+    // The bore is centered on X=0, Y=0 in its local frame.
+    difference() {
+        // Start with a full circle shape (the maximum extent)
+        cylinder(r = bore_diameter / 2, h = tolerance * 2);
+
+        // Cut away the unwanted half using translation along the flat axis (Y-axis in this orientation)
+        // The distance from the center to the flat edge is bore_flat_distance / 2.
+        translate([0, -bore_flat_distance/2 + tolerance*1.5, 0])
+        cylinder(r = bore_diameter / 2, h = tolerance * 2);
+    }
+}
+
+// Extrude the profile along the Z axis to create the blind hole shape (D-shape)
+d_bore_cut_extruded() {
+    // The D-shape needs to be extruded from Z=0 up to bore_depth.
+    linear_extrude(height = bore_depth + tolerance*2) {
+        difference() {
+            // Full circle profile (used as the base shape for extrusion)
+            circle(r = bore_diameter / 2);
+
+            // Cut away the unwanted half using translation along the Y-axis of the profile plane
+            translate([0, -bore_flat_distance/2 + tolerance*1.5])
+            circle(r = bore_diameter / 2);
+        }
+    }
+}
+
+
+// 3. Grip Grooves (Vertical Half-Cylinders)
+module grip_groove() {
+    // The groove is a half-cylinder cut into the side wall.
+    // It must be centered on the outer surface and run vertically (along Z).
+    translate([0, 0, -knob_height/2]) // Center the cylinder height around knob center
+    rotate([90, 0, 0]) // Orient it to cut into the side wall along X-axis
+    half_cylinder(d = groove_diameter, h = groove_depth);
+}
+
+// 4. Pointer Groove (Top Surface Cutout)
+module pointer_groove() {
+    // This is a rectangular slot cut into the top face (Z=knob_height/2).
+    // It runs from center (X=0) to edge (X = knob_diameter/2), along one side of the D-bore flat.
+
+    // Determine which side corresponds to the flat of the bore.
+    // Assuming the D-bore is oriented such that its flat face is perpendicular to the Y-axis when viewed from above,
+    // and the pointer groove should be on the same side as this flat (i.e., along the positive Y direction relative to the bore's center).
+
+    // The cut starts at X=0 and goes to X = knob_diameter/2 - tolerance*1.5
+    translate([0, 0, knob_height/2]) // Position at the top surface
+    linear_extrude(height = pointer_width + tolerance) {
+        rectangle(outer_radius = (knob_diameter / 2) - tolerance*1.5, r = 0); // Use a rectangle for simplicity in extrusion
+        // Since we are cutting into the side wall defined by the D-bore, we must ensure this cut is on the correct face.
+        // We will model it as a slot running from center to edge along the Y direction (assuming the flat bore side faces +Y).
+
+        // Re-evaluating pointer groove: It runs from centre to outer edge, 1.5mm wide, 1mm deep.
+        // Let's assume the D-bore is oriented such that its flat face is parallel to the XZ plane (i.e., along Y=+/- bore_flat_distance/2).
+        // The pointer groove should be cut on this side.
+
+        // Slot dimensions: Length = knob_diameter / 2, Width = pointer_width, Depth = pointer_depth.
+        translate([0, bore_flat_distance/2 + tolerance*1.5, 0]) // Positioned on the flat face side (+Y)
+        cube([knob_diameter/2 - tolerance, pointer_width, pointer_depth]);
+    }
+}
+
+
+// --- Final Construction ---
+
+difference() {
+    // Start with the solid knob body
+    union() {
+        knob;
+
+        // Add a small cylinder to ensure the grip grooves are cut into the main body volume correctly if they overlap complexly.
+        // This is mostly for robustness, but we rely on difference operations below.
+    }
+
+    // 1. Cut D-Shaft Bore (Must be done first as it affects subsequent cuts)
+    translate([0, 0, -tolerance]) // Start slightly below Z=0 to ensure full cut through the base
+    d_bore_cut_extruded();
+
+    // 2. Cut Grip Grooves (18 evenly spaced vertical half-cylinders)
+    for (i = [0 : num_grooves - 1]) {
+        angle = i * (360 / num_grooves);
+        rotate([0, 0, angle])
+        translate([knob_diameter/2 - groove_diameter/2 + tolerance*0.5, 0, 0]) // Position slightly outside the main body radius to ensure clean cut on outer surface
+        half_cylinder(d = groove_diameter, h = knob_height);
+    }
+
+    // 3. Cut Pointer Groove (Top Surface)
+    // We model this as a subtraction from the top face volume.
+    translate([0, bore_flat_distance/2 + tolerance*1.5, knob_height/2 - pointer_depth/2]) // Positioned on the flat side (+Y), centered vertically at Z=knob_height/2
+    linear_extrude(height = pointer_width + tolerance) {
+        // Cut from center (X=0) to edge (X = knob_diameter/2 - tolerance*1.5) along Y axis of the slot
+        translate([0, 0])
+        rectangle([knob_diameter/2 - tolerance*1.5, pointer_depth], [0, pointer_width]); // Slot shape: Length x Width
+    }
+
+}

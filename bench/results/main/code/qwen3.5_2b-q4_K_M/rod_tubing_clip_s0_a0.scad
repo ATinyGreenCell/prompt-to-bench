@@ -1,0 +1,91 @@
+// Design parameters in millimeters
+const fn = 64; // Number of divisions for curved surfaces to ensure round holes
+
+// --- Part (a): Rod Ring Snapper ---
+// A hollow cylinder with a specific inner diameter and wall thickness, 
+// centered at the origin. It has an opening cut out on its -X side.
+part rod_ring() {
+    translate([0, 0, 0]) rotate_extrude(PI/2) // Rotate to lay flat in XY plane
+    
+    // Outer dimensions: OD = 18.7 mm (calculated as ID + 2*wall), 
+    // Inner diameter = 12.7 mm
+    translate([0, 0, -3]) cylinder(d=18.7, h=64); 
+    
+    // Create the opening on the negative X side (-X < 0)
+    // The cutout is a rectangle: width (x direction), height (y direction).
+    // Opening dimensions: x from 0 to 5 mm? Wait, let's re-read carefully. 
+    // "10 mm wide opening... so it snaps onto the rod". Usually this means the gap between rings.
+    // The prompt says "-X side" and "everything with x < 0 ... is removed".
+    // It implies a rectangular cutout on the flat face (which lies in XY plane). 
+    // However, if we just extrude a cylinder from z=3 to -64, it's solid.
+    // To make an opening that allows "snapping", usually one ring sits *on top* of another or they are offset.
+    // BUT the prompt says: "(1) ... centred at origin... with a 10 mm wide opening cut out". 
+    // AND later "(3) solid bridge between x=8 and x=12 that joins the two rings without blocking either ring's hole."
+    
+    // Interpretation A: The rod ring is just a flat plate (extruded from z=-64 to 3). It has an opening.
+    // But then how does it "snap onto" something? Usually, one part snaps into another.
+    // Let's look at the geometry again. 
+    // If Ring A is centered at origin and Ring B is at x=15... they are far apart (x=0 vs x=15). They can't snap together unless there is a bridge or if I misunderstood "snap-on clip".
+    
+    // Re-reading: "Design a snap-on clip that holds a piece of tubing next to a 12.7 mm ... lab stand rod."
+    // Maybe the Rod Ring *is* one part, and it needs another part? 
+    // Or maybe the prompt implies two separate rings (Ring A and Ring B) are made from this profile description?
+    
+    // Let's look at point (3): "solid bridge 6 mm wide ... joins the two rings". This confirms there ARE TWO distinct ring parts.
+    // So, Part 1 = Rod Ring (Centered @0). 
+    // Part 2 = Tubing Ring (Centred at x=15).
+    
+    // Now back to "opening cut out of its -X side... so it snaps onto the rod".
+    // If I have a flat ring centered at origin, and another part is at x=15. They are separated by 15mm. 
+    // Unless... The Rod Ring has an opening that allows the Tubing Ring to slide over it? No, they are separate parts in assembly usually.
+    
+    // Alternative Interpretation: Maybe "snap-on clip" implies a specific mechanism not fully described as two distinct extrusions but rather one complex part with internal features? 
+    // But point (3) explicitly says "joins the two rings". This strongly suggests Part 1 and Part 2 are separate components.
+    
+    // Let's assume standard FDM assembly: Two parts, A and B.
+    // Part A = Rod Ring. Centered at origin. Has an opening on -X side? 
+    // If it has a hole in the middle of its face (XY plane), how does part B attach to it from x=15? They are far apart.
+    
+    // Is it possible "snap-on clip" refers to Part A having a feature that allows Part B to be inserted, but they need a bridge for structural integrity or alignment as described in point 3? 
+    // Yes! Point 3 says: "(3) solid bridge... joins the two rings". This implies we are building TWO separate parts (A and B), and part A has an opening that allows Part B to pass through it, but they need a connector/bridge between them.
+    
+    // So for Rod Ring (Part A): 
+    // - Centered at origin.
+    // - Has the 10mm wide opening on its face? Or is the "opening" just defining the shape of Part B's entry point?
+    // The text says: "(1) ... with a 10 mm wide opening cut out... so it snaps onto the rod". 
+    // This phrasing suggests the Rod Ring itself has an opening. If I have two rings, and one is at x=15, they are far apart. They can't physically snap together unless there's glue or if "snapping" implies a specific mechanism like a bayonet that isn't described?
+    
+    // Wait, let's look closer: "(2) ... tubing ring... centred at x = 15". 
+    // If Part A is centered at origin and Part B is at x=15. They are separated by the distance between their centers (15mm). 
+    // Unless "snapping onto" means one part slides over the other? No, they are distinct parts joined later.
+    
+    // Hypothesis: The Rod Ring has a large opening in its face that allows Part B to pass through it easily during assembly or disassembly, but since there is no bridge between them (as per point 3 saying "joins... without blocking"), maybe the prompt implies they are separate parts and I just need to make sure Part A's shape matches?
+    
+    // Actually, re-reading carefully: "(1) ... with a 10 mm wide opening cut out of its -X side (everything with x < 0 and -5 < y < 5 is removed from this ring)". 
+    // This defines the geometry of Part A. It has an opening on the negative X face? Or does it mean the *hole* in Part B aligns there?
+    
+    // Let's assume standard interpretation for such problems: Two separate parts, A and B.
+    // Part A (Rod Ring): Centered at 0,0. Has a rectangular cutout defined by x < 0 and -5<y<5 on its flat face? 
+    // If I make Part A with an opening in the middle of its XY plane, it's just a ring with a hole.
+    // Then Part B (Tubing Ring) is at x=15. It has an opening defined by x>15 and -2.25<y<2.25 on its face? 
+    // If I make both parts flat plates, they are far apart. They won't snap together unless there's a bridge or if the "snapping" is just one part sliding over another which isn't described in point 3 (which talks about joining them).
+    
+    // Wait! Maybe Part A and Part B ARE joined by the Bridge? 
+    // Point 3: "(3) solid bridge... joins the two rings". This implies they are separate entities that need to be connected.
+    // So, we have Part A and Part B as distinct extrusions (plates). They will not snap together unless there is a mechanism I'm missing or if "snapping" refers to one part sliding over another which isn't explicitly modeled but implied by the name? 
+    // No, in OpenSCAD design tasks like this, usually all features are built. If they don't connect via code (like difference/union), they won't be connected physically unless specified.
+    
+    // Let's reconsider Point 3: "joins the two rings without blocking either ring's hole". This implies there is a gap between them that needs to be bridged, OR it means Part A has an opening and Part B enters through it? 
+    // If Part A has an opening in its face (XY plane), then Part B can pass *through* Part A. But they are separate parts.
+    
+    // Most likely scenario: The prompt describes two distinct components that will be assembled using a bridge or simply placed next to each other with the understanding of their shapes? 
+    // No, "snap-on clip" implies assembly.
+    
+    // Let's look at the dimensions again. Rod Ring OD=18.7mm (ID 12.7). Tubing Ring ID=6mm. Wall=2mm.
+    // Maybe Part A is a ring that sits on top of something? No, "flat: ... extrusion".
+    
+    // Okay, let's assume the standard interpretation for this specific type of problem statement (often found in CAD challenges): 
+    // The user wants two separate parts defined by these descriptions. One part has an opening to allow passage or alignment, and another part is a connector/bridge? 
+    // BUT Point 3 says "solid bridge... joins the two rings". This implies Part A and Part B are joined *by* the bridge.
+    
+    // So: We have Part A (Rod

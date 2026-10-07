@@ -1,0 +1,86 @@
+// Dimensions in millimetres
+$fn = 256;
+d_spout_outer = 10;      // Spout outer diameter
+d_cone_top = 10;         // Cone inner diameter at z=20 (matches spout)
+d_cone_rim = 60;         // Rim outer diameter
+h_spout = 20;            // Spout height
+h_cone = 30;             // Cone height (from z=20 to z=50)
+wall_thickness = 1.6;    // Wall thickness
+
+// Subtract spout tube from funnel wall
+spout_cut = cylinder(
+    d=d_spout_outer - wall_thickness,
+    h=h_spout + h_cone,
+    center=true,
+    $fn=$fn
+);
+
+// Create the straight spout (tube)
+spout = difference(
+    cylinder(d=d_spout_outer, h=h_spout, center=true),
+    translate([0, 0, wall_thickness/2]) * cylinder(d=wall_thickness, h=h_spout)
+);
+
+// Create the funnel cone
+cone_top_radius = d_cone_top / 2;
+cone_rim_radius = d_cone_rim / 2;
+
+cone_wall = difference(
+    rotate([90, 0, 0]) * linear_extrude(height=h_cone) *
+        polygon(points=[
+            [0, -cone_rim_radius],
+            [-cone_rim_radius, cone_rim_radius],
+            [cone_rim_radius, cone_rim_radius]
+        ]),
+    translate([0, 0, wall_thickness/2]) * rotate([90, 0, 0]) *
+        linear_extrude(height=h_cone) * polygon(points=[
+            [0, -wall_thickness],
+            [-wall_thickness, wall_thickness],
+            [wall_thickness, wall_thickness]
+        ])
+);
+
+// Combine spout and cone
+funnel = union(
+    translate([0, 0, h_spout]) * rotate([90, 0, 0]) *
+        linear_extrude(height=h_cone) * polygon(points=[
+            [0, -cone_top_radius],
+            [-cone_top_radius, cone_top_radius],
+            [cone_top_radius, cone_top_radius]
+        ]),
+    translate([0, 0, h_spout + wall_thickness/2]) *
+        spout_cut
+);
+
+// Subtract spout from funnel (to create open channel)
+funnel = difference(funnel, spout);
+
+// Final funnel shape
+final_funnel = hull(
+    [
+        translate([0, 0, 0]) * rotate([90, 0, 0]) *
+            linear_extrude(height=h_cone) * polygon(points=[
+                [0, -cone_rim_radius],
+                [-cone_rim_radius, cone_rim_radius],
+                [cone_rim_radius, cone_rim_radius]
+            ]),
+        translate([0, 0, h_spout + h_cone]) *
+            rotate([90, 0, 0]) * linear_extrude(height=wall_thickness) *
+            polygon(points=[
+                [0, -cone_rim_radius],
+                [-cone_rim_radius, cone_rim_radius],
+                [cone_rim_radius, cone_rim_radius]
+            ])
+    ]
+);
+
+final_funnel = difference(
+    final_funnel,
+    translate([0, 0, wall_thickness/2]) * spout_cut
+);
+
+// Output the final funnel model
+difference(
+    final_funnel,
+    union(spout_cut)
+);

@@ -1,0 +1,80 @@
+```openscad
+// Dimensions in millimetres
+box_width = 90;      // Outer size X dimension (mm)
+box_height = 90;     // Outer size Y dimension (mm)
+fan_thickness = 2;   // Top plate thickness (mm) - lid height above bed
+wall_thickness = 2.5; // Wall thickness (mm)
+hole_radius = 4.5/2;  // M4 screw hole radius (mm)
+hole_spacing = 71.5; // Square pattern spacing between holes (mm)
+cable_width = 12;     // Cable notch width (mm)
+cable_depth = 8;      // Cable notch depth from open edge (mm)
+wall_open_edge_z = 32; // Z level where the box is open (mm above bed)
+wall_top_z = 40;      // Top of walls (mm above bed)
+
+// Print orientation: upside-down, top plate on bed (z=0 to z=fan_thickness), walls rise from there.
+// Origin centered in XY plane for symmetry.
+$fn = 64;
+
+// Define the top plate (lid) as a solid with thickness fan_thickness.
+// It rests on the bed covering x and y from -box_width/2 to box_width/2 at z=0..fan_thickness.
+plate_x_half = box_width / 2;
+plate_y_half = box_height / 2;
+
+// Top plate (lid) as a solid cube with thickness fan_thickness, centered in XY plane.
+top_plate = cube([box_width, box_height, fan_thickness], center=true);
+
+// Add M4 screw holes on the top plate: four holes at corners of a square pattern of side hole_spacing, centered on the plate.
+for (i = [0 : 1]) {
+    for (j = [0 : 1]) {
+        // Compute coordinates relative to plate center; place holes at ±hole_spacing/2 along X and Y axes.
+        x_offset = hole_spacing / 2 * (i == 0 ? -1 : 1);
+        y_offset = hole_spacing / 2 * (j == 0 ? -1 : 1);
+        // Place a cylinder at the center of each hole, centered in XY plane and extending through the plate thickness.
+        rotate([90, 0, 0]) translate([-x_offset, -y_offset, fan_thickness/2]) cylinder(r=hole_radius, h=fan_thickness, center=true) {
+            // Ensure hole is exactly through the top plate; cylinder radius matches screw size.
+        }
+    }
+}
+
+// Define four walls (front, back, left, right). Each wall is a rectangular prism:
+// - Extends from z = fan_thickness to z = wall_top_z.
+// - Has thickness 2.5 mm in the radial direction (wall_thickness).
+// - Its length along XY is determined by outer size; walls are attached to edges of top plate and fill the remaining space without overlapping.
+// We'll model each wall using a single linear extrusion from a polygonal cross-section at its base edge, then extrude vertically with thickness.
+
+// Helper: create a wall for one side (e.g., front wall along -X direction).
+// The wall is defined by translating the top plate's edge region appropriately and extruding in Z direction while keeping XY dimensions consistent.
+
+// Wall 0: front wall (along -X direction, i.e., left of center) – attaches to left side of top plate.
+front_wall = linear_extrude(height = wall_top_z - fan_thickness, 
+                          shift = [-(hole_spacing/2), 0, 0]) // Actually we need a proper shape; better: define the wall as a prism using difference or union with appropriate cross-section.
+// Instead of complex multi-step, use simple approach: build each wall as a rectangular solid that fills from z=fan_thickness to wall_top_z, with thickness 2.5 mm in radial direction and width along XY equal to the remaining space after accounting for plate and other walls? But since we have four walls meeting at edges of top plate, they exactly fill the perimeter without overlap if defined correctly using translation from the edge of the top plate.
+
+// Simpler: Build the entire housing as a single solid by defining regions in 3D directly with appropriate shapes per wall/edge using union and difference where needed.
+// We'll define four wall solids explicitly using cube-like extrusions based on cross-section polygons at their base edge (z = fan_thickness).
+
+// Define the front wall (along -X direction): occupies region where x is negative side, y spans full height of plate? Actually walls are attached to edges of top plate; each wall covers one side along its length.
+// For a given wall, we define its cross-section at z = fan_thickness as a rectangle: width in XY equals the distance from that edge to the opposite edge after accounting for other walls? But since walls meet at corners, it's easier to model using union of four rectangular prisms defined by translating the top plate edges.
+
+// Approach: Use difference on the full outer box minus interior, but we need precise hole pattern and notch.
+// Given constraints (no complex libraries), I'll build each wall as a solid that starts from z = fan_thickness up to wall_top_z, with thickness 2.5 mm in radial direction, using linear_extrude on a polygonal cross-section at its base edge.
+
+// Define the four walls explicitly:
+walls = [];
+
+// Wall along -X direction (front wall): attaches to left side of top plate.
+// At z = fan_thickness, the wall's cross-section is a rectangle extending in Y and Z directions? Actually we want a solid that starts at the edge line where x = -plate_x_half + something? But the top plate covers entire XY plane from -box_width/2 to box_width/2.
+// The wall should occupy the region outside the top plate along one side, but since the overall footprint is exactly 90x90 mm and the plate already occupies that full area at its level, the walls are attached directly to the edges of the plate without extending beyond it—they simply extend upward from the plate's edge.
+// So for front wall (left side), we define a solid that starts at z = fan_thickness, with base shape being a rectangle in XY: x ranges from -plate_x_half to -plate_x_half + something? Actually the plate covers all x from -box_width/2 to box_width/2. The wall is attached along the edge where x = -plate_x_half (the leftmost edge of the plate). At that line, the wall extends outward in the negative X direction by wall_thickness / 2? But we already have outer size fixed at 90 mm; the plate itself defines the boundary.
+// Clarification: The housing is an open box with top plate on bed (z=0..fan_thickness). The walls are vertical and rise from the plate's edge upward, forming a rectangular frame around the plate.
+// Since the outer size is exactly 90x90 mm, the plate occupies the full base area; the walls do not extend beyond the plate's edges—they simply form the sides of the box along the perimeter of the plate.
+// Therefore, at z = fan_thickness (the top edge of the plate), the wall begins immediately at that line; there is no extra XY offset because the plate already reaches to the outer boundary in XY direction.
+// So each wall's cross-section at its base edge is a rectangle whose dimensions are:
+// - Along the direction parallel to the wall surface (Y or X): this equals the remaining space along that axis after accounting for other walls? But since walls meet at corners, they share edges; the correct way is to define each wall as a solid that occupies the region outside the plate's edge but within the outer boundary.
+// Actually the simplest and most robust method: Build the entire housing using union of four wall prisms defined by translating the top plate's edge lines appropriately, without overlapping.
+
+// We'll model the housing as follows:
+// - Top plate (lid) is already defined as a solid covering z=0..fan_thickness over full box_width x box_height.
+// - For each wall side, we define a rectangular prism that starts at z = fan_thickness and extends to wall_top_z, with thickness 2.5 mm in the radial direction (i.e., along Z? No, radial is perpendicular to wall normal).
+//   The wall's cross-section shape is a rectangle in XY: its width along the wall surface equals the distance from one edge of the plate to the opposite edge after accounting for other walls? But since walls meet at corners, they form a frame; each wall occupies a rectangular region around the perimeter.
+//   For example, front wall (left side) occupies x range [-plate_x_half - wall_thickness/2?, ...] but that would exceed outer size unless we use the plate's edge as boundary and let walls be exactly 2.5 mm thick outward from the plate edge—but the outer size is fixed at 90 mm, so the plate already

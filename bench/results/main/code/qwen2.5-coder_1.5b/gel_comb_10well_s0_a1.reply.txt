@@ -1,0 +1,32 @@
+```openscad
+// Define dimensions
+$fn = 64; // For curved shapes
+
+// Spine
+spine_length = 70; // mm
+spine_width = 12; // mm
+spine_thickness = 1.5; // mm
+
+// Teeth
+teeth_width = 5.0; // mm
+teeth_length = 12; // mm
+gap_between_teeth = 1.5; // mm
+row_of_teeth_centered_on_spine = true;
+
+// Calculate the number of teeth
+num_teeth = (spine_length - gap_between_teeth * (num_teeth - 1)) / gap_between_teeth + 1;
+
+// Generate the teeth
+teeth = for (i = [0:num_teeth-1]) {
+    translate([row_of_teeth_centered_on_spine ? (spine_length - teeth_width) / 2 : 0, i * (teeth_length + gap_between_teeth), spine_thickness])
+        rotate_x(90)
+        cylinder(teeth_width, teeth_length, spine_thickness);
+};
+
+// Combine the spine and teeth
+comb = union() {
+    translate([0, 0, spine_thickness])
+        cube(spine_length, spine_width, spine_thickness),
+    teeth
+};
+```

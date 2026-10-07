@@ -1,0 +1,61 @@
+// Bench Rack for 1.5 mL Microcentrifuge Tubes
+
+// --- Dimensions ---
+rack_length = 106;      // Total length along X (mm)
+rack_width = 72;        // Total width along Y (mm)
+rack_height = 30;       // Total height of the block (mm)
+hole_diameter = 11.2;   // Diameter of each tube hole (mm)
+hole_depth = 25;        // Depth of the holes (mm)
+floor_thickness = 5;    // Thickness of the solid floor (mm)
+
+// --- Hole Grid Parameters ---
+num_rows_y = 4;         // Number of rows along Y
+holes_per_row_x = 6;   // Number of holes along X
+spacing_xy = 16;        // Center-to-center spacing in both X and Y (mm)
+
+// --- Calculations for Centering ---
+// Total span covered by the grid centers: (N-1) * Spacing
+span_x = (holes_per_row_x - 1) * spacing_xy;
+span_y = (num_rows_y - 1) * spacing_xy;
+
+// Offset from center to the first hole center
+offset_x = span_x / 2;
+offset_y = span_y / 2;
+
+// --- Constants ---
+$fn = 64; // High resolution for curves
+
+// --- Main Module: The Rack Body ---
+module bench_rack() {
+    difference() {
+        // 1. Solid Outer Block (The main body)
+        cube([rack_length, rack_width, rack_height]);
+
+        // 2. Cutting the Holes
+        for (i = [0 : holes_per_row_x - 1]) { // Loop along X (columns)
+            for (j = [0 : num_rows_y - 1]) { // Loop along Y (rows)
+
+                // Calculate center position for this hole
+                // Center X: Rack center + offset from rack center to first hole + i * spacing
+                hole_center_x = -(rack_length / 2) + offset_x + i * spacing_xy;
+                // Center Y: Rack center + offset from rack center to first row + j * spacing
+                hole_center_y = -(rack_width / 2) + offset_y + j * spacing_xy;
+
+                // The cutting cylinder must extend past the top and bottom faces.
+                // It starts at Z=0 (the base of the rack).
+                // We cut down to -1mm relative to the floor, ensuring it goes through the 5mm floor.
+                cylinder(h = hole_depth + 1, r = hole_diameter / 2, center = [hole_center_x, hole_center_y, -(floor_thickness/2) - (hole_depth/2)]);
+
+            }
+        }
+
+        // 3. Cutting the Solid Floor (Creating the open top structure)
+        // We cut a block that is slightly larger than the rack body, but only up to the floor thickness.
+        // This ensures the holes are fully formed and the bottom remains solid.
+        translate([0, 0, -1]) // Start cutting just below Z=0
+        cube([rack_length + 2, rack_width + 2, floor_thickness]);
+
+    }
+}
+
+bench_rack();

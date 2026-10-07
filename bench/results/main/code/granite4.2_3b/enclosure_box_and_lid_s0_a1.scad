@@ -1,0 +1,48 @@
+// Dimensions in millimetres
+box_outer_x = 70;      // X size of the box (outer dimension)
+box_outer_y = 50;      // Y size of the box (outer dimension)
+box_outer_z = 30;      // Z height of the box (overall)
+box_wall_thickness = 2; // Wall thickness for the box
+box_floor_thickness = 2; // Floor thickness for the box
+lid_plate_thickness = 2; // Thickness of the lid plate
+lid_lip_height = 4;      // Height of the lip on top of the lid
+lid_lip_outer_x = 65.6;  // Outer X size of the lid lip (centered)
+lid_lip_outer_y = 45.6;  // Outer Y size of the lid lip (centered)
+gap_between_parts = 10;   // Gap between box and lid on the bed
+clearance_per_side = 0.2; // Clearance from edge for proper fit
+
+// Build the box part: outer size 70 x 50 x 30 mm, walls 2mm thick, floor 2mm thick, open top.
+box_part = difference(
+    translate([0, 0, 0]) * cube([box_outer_x, box_outer_y, box_wall_thickness]),
+    // Cut out the interior cavity: remove a rectangular prism from the center to create walls and floor.
+    // The box has thickness = wall_thickness in Z direction (floor/walls), so we subtract an inner box.
+    translate([box_wall_thickness/2, box_wall_thickness/2, 0]) * cube([
+        box_outer_x - box_wall_thickness,
+        box_outer_y - box_wall_thickness,
+        box_wall_thickness
+    ])
+);
+
+// Build the lid part (plate with lip) as a single solid.
+// Plate: lies on the bed (z=0 to z=lid_plate_thickness), thickness = lid_plate_thickness in Z.
+// Lip: centered on the plate's outer edge, extending upward by lid_lip_height, with XY thickness = lid_plate_thickness.
+// We model the lid as a union of the plate and the lip (both are solids).
+
+// Plate part (on the bed)
+plate = translate([0, 0, 0]) * cube([lid_lip_outer_x, lid_lip_outer_y, lid_plate_thickness]);
+
+// Lip part: centered on the plate's outer edge, extending upward.
+// The lip is a rectangular prism with XY dimensions = lid_plate_thickness (full width/height), Z extent = lid_lip_height.
+// Its center in XY is at (lid_lip_outer_x/2, lid_lip_outer_y/2).
+lip = translate([
+    lid_lip_outer_x/2 - lid_plate_thickness/2,
+    lid_lip_outer_y/2 - lid_plate_thickness/2,
+    lid_plate_thickness   // bottom face of lip is at z = lid_plate_thickness (top of plate)
+]) * cube([
+    lid_plate_thickness,   // full width in X direction
+    lid_plate_thickness,   // full height in Y direction
+    lid_lip_height         // extends upward from the plate top
+]);
+
+// Combine plate and lip into one solid for the lid.
+lid_part = union([plate, lip]);

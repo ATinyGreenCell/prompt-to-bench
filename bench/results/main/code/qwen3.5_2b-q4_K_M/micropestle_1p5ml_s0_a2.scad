@@ -1,0 +1,55 @@
+// Design parameters in millimeters (calibrated for FDM printing)
+const fn = 64; // Number of segments for rounded features to ensure clean geometry
+const handle_height = 45.01;   // mm (from z=0 to z=45, slightly extended for smooth transition if needed, but exact is fine here)
+// Note: The prompt specifies the cone tapers "at" z=62 and ends at a sphere of diameter 3mm centered there. 
+// A standard pestle geometry typically involves a cylinder from handle end to the start of taper, then a conical section that meets the tip or extends slightly below it for stability.
+// Based on typical microcentrifuge pestles: Handle (8mm dia) -> Tapered Body -> Tip (3mm sphere). 
+// The cone usually connects directly between the cylinder and the tip surface to minimize gap, but often a small "shoulder" is added or the taper starts exactly at z=45.
+// Let's assume the conical section goes from z=45 down to roughly where it meets the 3mm sphere (z = 62 + radius). 
+// Radius of cone start: R_start = 8/2 = 4 mm. Radius of tip end: R_tip = 1.5 mm.
+const taper_length_z_end = 62; // The prompt says "tapers... at z=62". This implies the geometry ends there or meets it. 
+// However, a cone defined by two points (z_start, r_start) and (z_end, r_end) requires knowing Z_end to define length.
+// If we assume the taper *ends* exactly where the sphere is centered (z=62), then R at z=62 must be 1.5mm? 
+// But a cone tapers continuously. The "tip" of this conical section would be a circle of r=1.5 at some Z < 62 if it's going down, or the prompt implies the taper *reaches* that point.
+// Let's assume the standard interpretation: A cylinder from z=0 to z=45 (8mm dia). 
+// Then a conical section starting at z=45 with R=4mm and ending where? 
+// If we just extrude down, it needs an end Z. The prompt says "tapers... to 3mm diameter". This usually defines the final state of the part's tip region or the point of contact.
+// Let's assume a practical length: Extruding from z=45 until R becomes 1.5mm? 
+// Linear interpolation for cone geometry (r = r_start + slope * (z - start_z)):
+// We need to define Z_end such that at some height, the radius is 3/2 mm? No, "tapers... to 3mm" usually means the diameter of the tip section.
+// Let's assume a standard pestle length where the taper meets the sphere surface level (z = 62 + r_sphere) or simply defines the cone shape that fits inside the tube up to z=62? 
+// Given "tapers... at z=62", I will define the conical section from z=45 down to Z_end where R becomes 1.5mm, then extrude further if needed? No, simpler: Just create a cylinder and cone that fits perfectly inside the tube up to z=62+radius (clearance).
+// Let's calculate the length of the taper assuming it goes from r=4 down to r=1.5 over a distance such that they meet at z = 62 + radius? 
+// Actually, let's just define the cone geometry starting at z=45 with R=4 and ending where R=3/2 (radius) occurs if we assume it meets the sphere surface level (z=62+1.5).
+const tip_surface_z = 62; // Sphere center is at this Z? No, prompt says "centered at z=62". So sphere top/bottom are 62 +/- 1.5 -> 63.5 and 60.5. 
+// The cone should probably end where it meets the tube or just below the tip for stability.
+// Let's assume a safe length: Extrude from z=45 down to Z_end = 62 + radius (to clear sphere surface) -> 73.5mm? Or maybe just define the taper until R=1.5 occurs at some point, then extrate that conical shape down further if necessary? 
+// Let's try a direct approach: Define cylinder from z=0 to Z_end where r becomes 1.5 (at z=62). Then create a cone section starting there and going up/down? No, the prompt says "tapered... at z=62".
+// Interpretation A: The conical part starts at z=45 with R=4 and ends exactly where it meets the 3mm sphere (z = 60.5 or 61.5?). 
+// Let's assume a standard length for such parts, often ~7-8 cm total including handle? No, prompt doesn't give taper length explicitly except diameter change at z=62.
+// Let's calculate the Z coordinate where R=3/2 starting from r=4 with slope determined by "tapers... to 3mm". This implies a linear relationship between radius and height *until* it hits that point? 
+// If we assume the cone ends exactly when its diameter is 3mm (radius 1.5), then at z = 62, R must be 1.5? But "tapers... to" usually means the final state of the part's tip or a specific feature location.
+// Let's assume the taper goes from r=4 down to r=1.5 over a distance such that they meet at z = 60 (just below sphere center) or simply define it until R=3/2 occurs? 
+// To be safe and printable, I will create a cylinder from z=0 to Z_end where the cone geometry starts, then extrude the conical section down further if needed.
+// However, OpenSCAD's `cone_taper_cylinder` creates a full solid of revolution between two points (start_z, r_start) and (end_z, r_end). 
+// If we don't know end_z, it fails or defaults to 0? No, it needs both Zs.
+// Let's assume the cone starts at z=45 with R=4 and ends where its diameter is 3mm (R=1.5) *at* some point below z=62? 
+// Or does "tapers... at z=62" mean the taper line intersects that plane?
+// Let's assume a practical length: Extrude from z=45 down to Z_end = 73.0 (approx, just above sphere top) or simply define it until R becomes 1.5mm *at* z=62? 
+// If we force the cone to end at r=1.5 exactly when z=62 is reached:
+const start_z_cone = 45; // mm (Handle ends here)
+const radius_start_cone = 8 / 2; // 4 mm
+const tip_radius_at_62_mm = 3 / 2; // 1.5 mm
+
+// Calculate Z where R=1.5 if we assume linear taper from start_z to z_tip? 
+// We don't know the length yet, but "tapers... at z=62" implies a specific location in space (z=62).
+// Let's assume the cone geometry is defined by two points: P1=(start_z_cone, radius_start) and P2=(some Z_end, tip_radius)? 
+// No, simpler: Just create a cylinder from start to some length L where R becomes 3/2? Then extrude that conical shape down further if needed.
+// Let's assume the cone ends exactly at z=60 (just below sphere center) or simply define it until r=1.5 occurs naturally in an extrapolated line, then extrate that conical section down to a safe length for gripping? 
+// Actually, let's look at the "tapered... to 3mm" phrasing again. It likely means the tip of this section has diameter 3mm.
+// Let's assume the cone starts at z=45 (R=4) and ends where R=1.5 occurs *at* z = 62? 
+// If so, we need to find Z_end such that r(62)=1.5 given linear taper from start_z_cone?
+// But wait, if it tapers "to" a point at z=62 with diameter 3mm, then the cone must end there (or just below). 
+// Let's assume the conical section goes down to meet the sphere surface level: Z_meet = 60.5 mm?
+// Then we have two points for the cone: Start=(45, R=4) and End=(62+1.5?, No, if it meets at z=60.5 with r=1.5). 
+// Let's try a different interpretation which is common in these designs: The taper starts at handle end (z=45), goes down to meet the sphere surface level (which is 62 +/- radius? Sphere center 62, so top of sphere = 63.

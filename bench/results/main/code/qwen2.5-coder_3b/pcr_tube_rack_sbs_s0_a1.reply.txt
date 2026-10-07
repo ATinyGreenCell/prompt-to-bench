@@ -1,0 +1,43 @@
+```openscad
+// Define dimensions
+$fn = 64;
+length = 127.76; // X dimension in mm
+width = 85.48;   // Y dimension in mm
+height = 20;    // Z dimension in mm
+
+hole_diameter = 6.2; // Diameter of through-holes in mm
+rows = 8;            // Number of rows along Y
+columns = 12;         // Number of columns along X
+spacing = 9.0;       // Centre-to-centre spacing between holes in mm
+
+// Calculate hole positions and orientation mark position
+hole_positions = [];
+for (i = [0:columns-1]) {
+    for (j = [0:rows-1]) {
+        x = i * spacing + width / 2 - columns * spacing / 2;
+        y = j * spacing + length / 2 - rows * spacing / 2;
+        hole_positions += [x, y];
+    }
+}
+
+// Create the rack
+rack = difference() {
+    cube([length, width, height], center=true);
+    for (i = [0:length-1]) {
+        for (j = [0:width-1]) {
+            translate([i, j, 0]) {
+                cylinder(d=hole_diameter, h=height+0.01, center=true);
+            }
+        }
+    }
+    // Add chamfer to the A1 corner
+    translate([-5, -5, height/2]) {
+        rotate_extrude(angle=45) {
+            square([10, 10]);
+        }
+    }
+};
+
+// Export the rack as an STL file
+export(rack);
+```

@@ -1,0 +1,149 @@
+// --- Dimensions and Parameters (measured in mm) ---
+
+// Part 1: Box
+box_outer_x = 70;
+box_outer_y = 50;
+box_height_z = 30;
+wall_thickness_box = 2; // Wall thickness for sides, top rim
+floor_thickness_box = 2; // Floor is solid (part of wall)
+
+// Part 2: Lid Plate and Lip
+lid_plate_x = 70;
+lid_plate_y = 50;
+lip_wall_thickness = 1.5;
+lip_height_z = 4;
+lip_outer_x = 65.6; // Outer size of the lip rectangle
+lip_outer_y = 45.6;
+
+// Clearance calculation: Box inner is (70-2*2) x (50-2*2) = 66x46. 
+// Lip outer is 65.6x45.6. Gap on each side = (Inner - Outer)/2 = 0.2mm.
+lid_plate_thickness_z = 2; // Thickness of the plate lying on bed
+
+// Positioning parameters
+gap_between_parts_x = 10;
+box_center_y_offset = box_outer_y / 2; 
+
+// --- Part Construction Functions ---
+
+module build_box() {
+    // Construct the open-top box. 
+    // We use a difference operation to create walls and floor from a solid block,
+    // then remove the top lid volume so it remains open.
+    
+    translate([box_outer_x/2, 0]) {
+        cube([box_outer_x, box_outer_y, box_height_z]); 
+        
+        // Cut out the interior void (walls) starting from Z=wall_thickness_box up to Z=30? 
+        // Actually, simpler: Build floor + walls.
+        
+        difference() {
+            // Solid base block including floor and full height sides initially
+            cube([box_outer_x, box_outer_y, box_height_z]); 
+            
+            // Cut the inner void to create vertical walls of thickness wall_thickness_box
+            translate([0, 0]) {
+                cube([box_outer_x - (2 * wall_thickness_box), 
+                       box_outer_y - (2 * wall_thickness_box), 
+                       box_height_z - floor_thickness_box + wall_thickness_box]); // Cut from just above floor to top? No.
+                
+                // Let's refine the cut logic:
+                // We want walls of 2mm thickness on all sides, and a 2mm thick floor.
+                // The "hole" we subtract defines the empty space inside.
+                // Inner dimensions: X = 70 - 4 = 66; Y = 50 - 4 = 46.
+                
+                cube([box_outer_x - (2 * wall_thickness_box), 
+                       box_outer_y - (2 * wall_thickness_box), 
+                       floor_thickness_box]); // This cuts the top open? No, this only cuts a block at Z=0 to Z=floor.
+            }
+
+            // Correct approach: Build up from bottom.
+        }
+    }
+
+    module build_open_top_box() {
+        translate([box_outer_x/2, 0]) {
+            cube([box_outer_x, box_outer_y, floor_thickness_box]); 
+            
+            // Extrude walls and top rim upwards to Z=30 (relative to base)
+            linear_extrude(height = box_height_z - floor_thickness_box) 
+                polygon([[box_inner_x/2 + wall_thickness_box, 0], [box_inner_x/2 + wall_thickness_box, -(box_outer_y)/2 + wall_thickness_box], [-box_inner_x/2 - wall_thickness_box, -(box_outer_y)/2 + wall_thickness_box], [-box_inner_x/2 - wall_thickness_box, (box_outer_y)/2 - wall_thickness_box]]);
+            
+            // Wait, linear_extrude from a polygon creates vertical walls. 
+            // The polygon defined above is the cross-section at Z=floor+thickness? No.
+        }
+    }
+
+    module build_open_top_box_v2() {
+        translate([box_outer_x/2, 0]) {
+            cube([box_outer_x, box_outer_y, floor_thickness_box]); 
+            
+            // Create walls by extruding a profile that goes up to Z=30.
+            // Profile: Bottom line at Y = - (50)/2 + wall? No.
+            // Let's define the cross section of the "walls" relative to center X,Y.
+            
+            linear_extrude(height = box_height_z) 
+                polygon([[box_outer_x/2, 0], [-(box_inner_x/2), -(box_outer_y)/2 + wall_thickness_box], [-box_outer_x/2, -wall_thickness_box], [-box_outer_x/2, (box_outer_y)/2 - wall_thickness_box], [(box_inner_x/2), (box_outer_y)/2 - wall_thickness_box]]);
+            
+            // This creates a shape with: 
+            // Bottom plate at Z=0 to Z=floor? No, linear_extrude starts from the polygon base.
+        }
+    }
+
+    module build_open_top_box_final() {
+        translate([box_outer_x/2, 0]) {
+            cube([box_outer_x, box_outer_y, floor_thickness_box]); 
+            
+            // Walls: Extrude a rectangle that defines the inner void boundaries? 
+            // No, we want solid walls. Let's build them as extrusions from Z=floor up to Z=30.
+            
+            linear_extrude(height = box_height_z - floor_thickness_box) {
+                polygon([[box_outer_x/2 + wall_thickness_box, 0], [-(box_inner_x/2), -(box_outer_y)/2 + wall_thickness_box], [-box_outer_x/2, -wall_thickness_box], [-box_outer_x/2, (box_outer_y)/2 - wall_thickness_box], [(box_inner_x/2), (box_outer_y)/2 - wall_thickness_box]]);
+            }
+
+            // Wait, the polygon above is not closed correctly for a simple extrusion if I just list points. 
+            // Let's use difference again but carefully placed.
+            
+            translate([0, 0]) {
+                cube([box_outer_x, box_outer_y, floor_thickness_box]); 
+            
+                // Cut out inner void from Z=floor to Z=30? No, that leaves walls of thickness (Outer - Inner)/2 = wall_thickness. 
+                // But we need the top rim too. The "cut" must stop at Z=box_height_z so there is no lid.
+                
+                cube([box_outer_x - 4*wall_thickness_box + floor_thickness_box? No], [box_inner_x, box_inner_y, box_height_z]); 
+            
+            }
+
+        }
+    }
+
+// --- Corrected Box Construction Logic ---
+module build_open_top_box() {
+    translate([box_outer_x/2, 0]) {
+        cube([box_outer_x, box_outer_y, floor_thickness_box]); 
+        
+        // Build walls and top rim using linear_extrude from a polygon that represents the cross-section at Z=floor+thickness? 
+        // No, let's build it as: Full block MINUS Inner Void (which creates open top).
+        
+        difference() {
+            cube([box_outer_x, box_outer_y, floor_thickness_box]); 
+            
+            translate([0, 0]) {
+                cube([box_inner_x + wall_thickness_box * 2 - floor_thickness_box? No], [box_inner_x, box_inner_y, floor_thickness_box]); 
+                
+                // Actually, let's just build the walls as extrusions. It is more robust for FDM support logic if we avoid complex difference nesting near Z=0.
+            }
+
+        }
+    }
+
+// --- Final Robust Construction Strategy ---
+module make_part_1() {
+    translate([box_outer_x/2, 0]) {
+        cube([box_outer_x, box_outer_y, floor_thickness_box]); 
+        
+        // Extrude walls up to Z=30. 
+        // The extrusion profile should be the inner void boundaries? No, that would cut out material if we subtracted it from a larger block.
+        // If we add an extruded shape on top of the base...
+        
+        linear_extrude(height = box_height_z - floor_thickness_box) {
+            polygon([[box_outer_x/2 + wall_thickness_box, 0], [-(box_inner_x/2), -(box_outer_y)/2 + wall_thickness_box], [-box_outer_x/2, -wall_thickness_box], [-box_outer_x/2, (box_outer_y)/2 - wall_thickness_box], [(box_inner_x

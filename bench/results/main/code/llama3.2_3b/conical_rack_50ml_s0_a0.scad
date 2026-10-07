@@ -1,0 +1,55 @@
+// Dimensions in mm
+tube_diameter = 30.5;
+hole_centre_to_centre = 40;
+wall_thickness = 4;
+plate_width = 130;
+plate_height = 90;
+rack_height = 70;
+
+// Plate dimensions
+plate_x = plate_width;
+plate_y = plate_height;
+plate_z = [0, rack_height];
+
+// Hole positions
+hole_row1 = [(plate_x - hole_centre_to_centre) / 2, (plate_y - hole_centre_to_centre) / 2];
+hole_row2 = [(plate_x + hole_centre_to_centre) / 2, (plate_y - hole_centre_to_centre) / 2];
+
+// Rack walls
+wall_x1 = [0, plate_x];
+wall_z1 = [0, rack_height];
+wall_x2 = [0, plate_x];
+wall_z2 = [-rack_height, 0];
+
+// Create the plate
+difference() {
+    linear_extrude(plate_z[1] - plate_z[0]) {
+        square([plate_x, plate_y]);
+    }
+    for (x = hole_row1[0] - hole_centre_to_centre / 2; x <= hole_row1[0] + hole_centre_to_centre / 2; x += hole_centre_to_centre) {
+        circle(r = tube_diameter / 2, $fn = 64);
+    }
+    for (y = hole_row2[1] - hole_centre_to_centre / 2; y <= hole_row2[1] + hole_centre_to_centre / 2; y += hole_centre_to_centre) {
+        circle(r = tube_diameter / 2, $fn = 64);
+    }
+}
+
+// Create the rack walls
+union() {
+    translate([0, plate_y / 2]) linear_extrude(wall_z1[1] - wall_z1[0]) {
+        square([wall_x1[1], wall_thickness]);
+    }
+    translate([-plate_x / 2, plate_y / 2]) linear_extrude(wall_z1[1] - wall_z1[0]) {
+        square([wall_x2[1], wall_thickness]);
+    }
+}
+
+// Flip the rack
+translate([0, 0, rack_height + wall_z1[1]]) mirror([0, 1, 0]) union() {
+    translate([-plate_x / 2, plate_y / 2]) linear_extrude(wall_z2[1] - wall_z2[0]) {
+        square([wall_x1[1], wall_thickness]);
+    }
+    translate([plate_x / 2, plate_y / 2]) linear_extrude(wall_z2[1] - wall_z2[0]) {
+        square([wall_x2[1], wall_thickness]);
+    }
+}

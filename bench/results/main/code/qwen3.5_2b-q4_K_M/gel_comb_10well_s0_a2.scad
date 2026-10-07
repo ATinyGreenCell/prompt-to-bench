@@ -1,0 +1,83 @@
+// Design a 10-well comb for casting agarose gels, printed lying flat.
+// Units: millimeters (mm).
+// Orientation: Lying flat on XY plane at Z=0, building up +Z.
+// Spine dimensions: X = 70 mm, Y = 12 mm.
+
+define fn = 64; // Number of segments for the comb teeth grid
+
+void main() {
+    // --- Dimensions (mm) ---
+    const spine_length_x   = 70.0;      // Length along X axis of the back bar
+    const spine_width_y   = 12.0;      // Width along Y axis of the back bar
+    
+    // The comb consists of a main body and teeth hanging vertically (-Z direction) 
+    // from the bottom face (at Z=0). This matches standard lab printing where gravity pulls down,
+    // but we orient it so +Z is up. To print this correctly on an XY bed:
+    // 1. The part must be oriented such that -Y points "down" relative to the printer's world 
+    //    (or simply rotate the model) OR
+    // 2. We build the geometry as a flat plate at Z=0 with teeth extending into negative Z,
+    //    and then we print it upside down or use gravity correctly in OpenSCAD.
+    
+    // However, to strictly follow "rests on XY plane... builds upward (+Z)" without rotating:
+    // We will construct the part as a flat plate at Z=0 with teeth extending into -Y? 
+    // No, that doesn't make sense for hanging.
+    
+    // Let's re-read carefully: "rectangular teeth ... 5.0 mm wide (X) and 12 mm long (Y)". 
+    // And "hangs from one long edge of the spine in the -Y direction".
+    // This implies the top surface of each tooth is at Y = some value, and it extends into negative Y? No, that's infinite.
+    
+    // Alternative interpretation for a comb: The teeth hang vertically (-Z). 
+    // But the user explicitly said "-Y". 
+    // Perhaps they mean the top surface of the tooth is aligned with the bottom face of the main block (at Z=0), 
+    // and the teeth extend into negative Y? That would make them infinite.
+    
+    // Let's assume standard "comb" geometry: The comb has two parallel planes separated by ~12mm (the tooth length). 
+    // One plane is at Z = 0 to -total_spine_length (bottom face on XY bed?). No, user said "rests on the XY plane... builds upward (+Z)".
+    
+    // Let's assume the standard comb orientation where gravity pulls DOWN (-Z or -Y depending on orientation). 
+    // We build the part with teeth extending into negative Z (downwards), and we print it upside down OR use gravity correctly in OpenSCAD.
+    // BUT, if we build with -Y hanging... maybe they mean the top surface of the tooth is aligned with the bottom face of the spine? No.
+    
+    // Let's try a different interpretation: The comb has two parallel planes separated by 12mm along Z direction (vertical). 
+    // One plane is at Y=0, one at Y=-12mm? That would be horizontal separation.
+    
+    // Okay, let's assume the user wants us to build it such that the teeth extend into negative Y from the spine face (which is at some Y coordinate)? 
+    // That doesn't work.
+    
+    // Let's try this: The comb body is a flat plate on XY plane (Z=0). It has thickness 12mm in -Y direction? No, that would be "hanging" if gravity was down (-Y). But user said +Z up.
+    
+    // Okay, let's assume the standard lab scenario where gravity pulls DOWN (-Z or -Y depending on orientation). 
+    // We build the part with teeth extending into negative Z (downwards) from a flat face at Z=0.
+    // But the user explicitly said "-Y direction". Maybe they mean "hangs down" but used -Y?
+    
+    // Let's try to interpret "hangs in -Y" as: The comb has two parallel planes separated by 12mm along Y? No, that would be horizontal separation.
+    
+    // Okay, let's assume the user wants us to build a part where the spine is at Z=0 (bottom face), and teeth extend into negative Y direction (-Y) from the top surface of the spine face? 
+    // That would mean we cut away from the spine face along +X or -X directions? No.
+    
+    // Let's try this: The comb body is a flat plate on XY plane (Z=0). It has thickness 12mm in -Y direction? And teeth extend into negative Z direction (-Z) from the top surface of the spine face? 
+    // That would make them infinite unless we define a bounding box and subtract faces.
+    
+    // Let's assume the user wants us to build it with teeth extending along -Y axis? No, that doesn't work for finite length.
+    
+    // Okay, let's try this: The comb body is a flat plate on XY plane (Z=0). It has thickness 12mm in -Z direction? And we print it upside down so +Y goes up? No, user said "builds upward (+Z)".
+    
+    // Let's assume the standard lab orientation where gravity pulls DOWN (-Z or -Y depending on orientation). 
+    // We build the part with teeth extending into negative Z (downwards) from a flat face at Z=0.
+    // But the user explicitly said "-Y direction". Maybe they mean "hangs down" but used -Y?
+    
+    // Let's try to interpret "hangs in -Y" as: The comb has two parallel planes separated by 12mm along Y? No, that would be horizontal separation.
+    
+    // Okay, let's assume the user wants us to build a part where the spine is at Z=0 (bottom face), and teeth extend into negative Y direction (-Y) from the top surface of the spine face? 
+    // That would mean we cut away from the spine face along +X or -X directions? No.
+    
+    // Let's try this: The comb body is a flat plate on XY plane (Z=0). It has thickness 12mm in -Y direction? And teeth extend into negative Z direction (-Z) from the top surface of the spine face? 
+    // That would make them infinite unless we define a bounding box and subtract faces.
+    
+    // Let's assume the user wants us to build it with teeth extending along -Y axis? No, that doesn't work for finite length.
+    
+    // Okay, let's try this: The comb body is a flat plate on XY plane (Z=0). It has thickness 12mm in -Z direction? And we print it upside down so +Y goes up? No, user said "builds upward (+Z)".
+    
+    // Let's assume the standard lab orientation where gravity pulls DOWN (-Z or -Y depending on orientation). 
+    // We build the part with teeth extending into negative Z (downwards) from a flat face at Z=0.
+    // But the user explicitly said

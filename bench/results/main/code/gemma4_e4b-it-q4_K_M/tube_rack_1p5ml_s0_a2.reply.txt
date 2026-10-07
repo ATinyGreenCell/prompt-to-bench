@@ -1,0 +1,59 @@
+```openscad
+// Bench Rack for 1.5 mL Microcentrifuge Tubes
+
+// --- Dimensions ---
+rack_length = 106;      // Total length along X (mm)
+rack_width = 72;        // Total width along Y (mm)
+rack_height = 30;       // Total height of the block (mm)
+hole_diameter = 11.2;   // Diameter of each tube hole (mm)
+hole_depth = 25;        // Depth of the holes (mm)
+floor_thickness = 5;    // Thickness of the solid floor (mm)
+
+// --- Hole Grid Parameters ---
+num_rows_y = 4;         // Number of rows along Y
+holes_per_row_x = 6;   // Number of holes along X
+spacing_xy = 16;        // Center-to-center spacing in both X and Y (mm)
+
+// --- Calculations for Centering ---
+// Total span covered by the grid centers: (N-1) * Spacing
+span_x = (holes_per_row_x - 1) * spacing_xy;
+span_y = (num_rows_y - 1) * spacing_xy;
+
+// Offset from center to the first hole center
+offset_x = span_x / 2;
+offset_y = span_y / 2;
+
+// --- Constants ---
+$fn = 64; // High resolution for curves
+
+// --- Main Module: The Rack Body ---
+module bench_rack() {
+    difference() {
+        // 1. Solid Outer Block (The main body) - Starts at Z=0, ends at Z=30
+        cube([rack_length, rack_width, rack_height]);
+
+        // 2. Cutting the Holes
+        for (i = [0 : holes_per_row_x - 1]) { // Loop along X (columns)
+            for (j = [0 : num_rows_y - 1]) { // Loop along Y (rows)
+
+                // Calculate center position for this hole
+                hole_center_x = -(rack_length / 2) + offset_x + i * spacing_xy;
+                hole_center_y = -(rack_width / 2) + offset_y + j * spacing_xy;
+
+                // The tube cavity must be 25mm deep, starting at Z=-floor_thickness (-5mm).
+                // It ends at Z = -5 - 25 = -30.
+                // We cut cylinders of height 'hole_depth' (25mm).
+                // Center Z must be: Start_Z + (Height / 2) = -5 + (25/2) = -5 + 12.5 = 7.5? NO.
+
+                // If the cylinder is centered at Z_c and has height H, it spans [Z_c - H/2, Z_c + H/2].
+                // We want: Z_top = -floor_thickness (-5) AND Z_bottom = -floor_thickness - hole_depth (-30).
+                // Center Z_c = (Z_top + Z_bottom) / 2 = (-5 + -30) / 2 = -35 / 2 = -17.5
+
+                cylinder(h = hole_depth, r = hole_diameter / 2, center = [hole_center_x, hole_center_y, -(floor_thickness + hole_depth)/2]);
+            }
+        }
+    }
+}
+
+bench_rack();
+```

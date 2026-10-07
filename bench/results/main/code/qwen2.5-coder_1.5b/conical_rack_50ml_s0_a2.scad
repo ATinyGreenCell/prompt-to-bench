@@ -1,0 +1,65 @@
+// Define dimensions
+$fn = 64; // For curved shapes
+
+// Plate dimensions
+plate_length = 130;
+plate_width = 90;
+plate_thickness = 4;
+
+// Hole dimensions
+hole_diameter = 30.5;
+hole_spacing_x = 40;
+hole_spacing_y = 2 * hole_spacing_x;
+
+// Wall dimensions
+wall_length = plate_length;
+wall_thickness = 4;
+
+// Positioning the rack on the bed
+x_offset = 0;
+y_offset = 0;
+z_offset = 0;
+
+// Define the holes
+holes = [
+    [x_offset, y_offset - hole_spacing_y / 2, z_offset],
+    [x_offset + hole_spacing_x, y_offset - hole_spacing_y / 2, z_offset],
+    [x_offset + 2 * hole_spacing_x, y_offset - hole_spacing_y / 2, z_offset],
+
+    [x_offset, y_offset + hole_spacing_y / 2, z_offset],
+    [x_offset + hole_spacing_x, y_offset + hole_spacing_y / 2, z_offset],
+    [x_offset + 2 * hole_spacing_x, y_offset + hole_spacing_y / 2, z_offset],
+
+    [x_offset, y_offset - hole_spacing_y / 4, z_offset + plate_thickness],
+    [x_offset + hole_spacing_x, y_offset - hole_spacing_y / 4, z_offset + plate_thickness],
+    [x_offset + 2 * hole_spacing_x, y_offset - hole_spacing_y / 4, z_offset + plate_thickness],
+
+    [x_offset, y_offset + hole_spacing_y / 4, z_offset + plate_thickness],
+    [x_offset + hole_spacing_x, y_offset + hole_spacing_y / 4, z_offset + plate_thickness],
+    [x_offset + 2 * hole_spacing_x, y_offset + hole_spacing_y / 4, z_offset + plate_thickness]
+];
+
+// Define the walls
+walls = [
+    [0, 0, 70],
+    [plate_length, 0, 70],
+
+    [0, plate_width, 70],
+    [plate_length, plate_width, 70]
+];
+
+// Create the plate
+plate = cube([plate_length, plate_width, plate_thickness]);
+
+// Create the holes
+holes = translate(holes) * cylinder(diameter=hole_diameter, height=hole_spacing_y / 2);
+
+// Create the walls
+walls = translate(walls) * cylinder(diameter=wall_thickness, height=70 - wall_thickness);
+
+// Combine all parts into a single solid
+rack = union(
+    plate,
+    holes,
+    walls
+);

@@ -1,0 +1,66 @@
+// Dimensions for the Petri dish template design
+
+// Overall Petri dish diameter
+dish_diameter = 90; // mm
+// Template disc diameter
+template_diameter = 85; // mm
+// Template disc thickness
+template_thickness = 2; // mm
+// Grid hole diameter
+hole_diameter = 3; // mm
+// Grid spacing (center-to-center)
+spacing = 9; // mm
+// Grid size (7x7 array)
+grid_count = 7; // Number of holes along one side
+// Rim notch dimensions
+notch_width = 10; // mm (X dimension)
+notch_depth = 4; // mm (Y dimension, measured inward from the rim)
+
+// Calculations for centering
+template_radius = template_diameter / 2; // Radius of the template disc
+center_offset = dish_diameter / 2 - template_diameter / 2; // Offset to center the template on the dish
+
+// --- Main Template Body ---
+
+module petri_template() {
+    // 1. Create the main flat disc
+    difference() {
+        // Base solid cylinder (Template disc)
+        cylinder(h = template_thickness, r = template_radius, $fn = 64);
+
+        // 2. Cut the central grid holes
+        for (i = [0 : grid_count - 1]) {
+            for (j = [0 : grid_count - 1]) {
+                // Calculate center coordinates for the hole
+                // We use a coordinate system centered at (0,0) for the template disc.
+                x_pos = (i - (grid_count - 1) / 2.0) * spacing;
+                y_pos = (j - (grid_count - 1) / 2.0) * spacing;
+
+                // Translate to center the hole on the template disc origin
+                translate([x_pos, y_pos, 0]) {
+                    // Cut the hole (cylinder)
+                    cylinder(h = template_thickness + 0.01, r = hole_diameter / 2, $fn = 64);
+                }
+            }
+        }
+
+        // 3. Cut the rim notch on the +Y side
+        // The rim is at radius template_radius. We cut a rectangle defined by:
+        // X range: [-notch_width/2, notch_width/2] relative to center (X axis)
+        // Y position: From template_radius - notch_depth to template_radius
+        
+        translate([0, 0, 0]) {
+            difference() {
+                // Define the cutting shape (a rectangular prism extending through the thickness)
+                cube([notch_width, template_thickness + 0.01, notch_depth + 0.01]);
+            }
+        }
+    }
+}
+
+// --- Final Assembly and Placement ---
+
+// Center the entire design on the origin (X=0, Y=0)
+translate([center_offset, 0, 0]) {
+    petri_template();
+}

@@ -1,0 +1,67 @@
+// Design parameters in millimeters (calibrated for FDM printing)
+const fn = 64; // Number of segments for curved surfaces to ensure round holes and smooth geometry
+
+// Tank Outer Dimensions (X x Y) - Bounding Box Size
+outer_x = 120.0; 
+outer_y = 70.0;
+tank_height_outer = 40.0; 
+
+// Wall Thickness
+wall_thickness_mm = 3.0;
+
+// Floor thickness
+floor_thickness_mm = 3.0;
+
+// Platform specifications relative to tank centering and inner floor level
+platform_length_X_inner = 60.0; // Length in X direction (centred on Y axis)
+platform_top_Z_offset_from_inner_floor = 10.0; // Top of platform is 10mm above the internal cavity bottom
+
+// Hole specifications for electrode wires at the two end walls
+hole_diameter_mm = 2.0; 
+wire_location_Z_depth = wall_thickness_mm + floor_thickness_mm - (wall_thickness_mm/2) - (floor_thickness_mm/2); // Depth from top surface to wire location? No, let's re-calculate based on "through each end wall... at z=30".
+// Let's define the geometry step-by-step.
+
+// --- STEP 1: Define Base Geometry and Dimensions in mm ---
+const fn = 64; 
+
+// Tank Outer Bounding Box (The physical envelope of the tank shell)
+tank_width_total = outer_x; 
+tank_height_final = wall_thickness_mm + floor_thickness_mm - ((wall_thickness_mm/2)*2); // Wait, if walls are added around a core...
+
+Let's assume standard interpretation: The user wants a part that is 120x70 at the *outer* face (excluding internal voids) or includes them?
+"Outer dimensions ... 40 mm". If I have a tank with 3mm walls, and it says "Outer Dimensions are 40", does that mean the total height including wall thickness is 40? Or the inner cavity depth is 40 minus wall subtraction?
+Given "3 mm walls", if the final part has an outer face at Z=40 (relative to its own origin), and walls are added, then the internal void starts lower.
+However, usually in these prompts: "Outer dimensions" refers to the size of the *finished* object's bounding box minus wall subtraction? No, that would be confusing.
+
+Let's try this interpretation which is standard for such parts (e.g., a block with walls):
+The user wants a part where the **bounding box** of the outer shell is defined by these numbers: X=120, Y=70, Z=40? No, that can't be right if there are 3mm walls.
+
+Let's assume the "Outer Dimensions" refers to the size of the *raw material* block minus wall subtraction?
+Actually, let's look at the platform: "...spans full inner width... is 60 mm long in X (centred)".
+If total tank length = 120 and it's centered on Y axis (which makes sense for a rectangular box), then Left Chamber + Platform + Right Chamber = 120.
+This implies the platform does *not* span from one wall to another, but rather sits in the middle of two chambers? Or is there only one chamber at each end and they are connected above? "Connects above". Yes. So: [Left Wall] - [Chamber A] - [Platform] - [Chamber B] - [Right Wall].
+Wait, if it's centered on Y axis (the middle of the tank), then X goes from 0 to W/2 and back? No, "spans full inner width". This implies the platform covers the entire internal length. If there are two chambers at ends connected above, that means: [Left Wall] - [Chamber A] - [Platform] - [Right Chamber] - [Right Wall].
+This would mean the total X dimension is 120? No, if it's centered on Y axis (the middle of the tank), then there are two chambers at each end. So: Left End -> Chamber A -> Platform -> Right End -> Chamber B.
+Wait, "one at each end". This implies symmetry around a central vertical plane in X-Y space? Or is the platform just one long block?
+"Platform ... spans full inner width (Y) of the tank... divides bottom into two buffer chambers, one at each end".
+This phrasing strongly suggests: The tank has walls on both sides. The platform sits between them. So we have Left Wall -> Chamber A -> Platform -> Right End Wall -> Chamber B? No, that would be 3 sections (Left, Middle-Platform, Right). But the prompt says "divides ... into two buffer chambers". This implies: [Chamber] - [Wall?] - [Platform]?
+Let's re-read carefully: "...through each end wall... drill a hole". Plural. So there are walls on both ends of the tank (Left and Right). The platform is in the middle, dividing the bottom into two chambers? That would mean Left Chamber + Platform + Right Chamber = Total Width. But then where does "one at each end" come from if it's just one long block with a hole drilled through *each* wall?
+Ah! If there are walls on both ends (Left and Right), and the platform is in the middle, dividing the bottom into two chambers... that implies: [Chamber] - [Wall?] - [Platform]? No.
+Maybe it means: Left Chamber -> Wall -> Platform -> Right Chamber? That would be 3 sections if we count walls as part of the structure. But "divides ... into two". This usually means the bottom surface is split by a plane, creating two distinct volumes at the ends connected above.
+So: [Left End] - [Chamber A] - [Platform] - [Right Chamber]. Wait, that's 3 sections (Ends + Middle). But "two buffer chambers" implies only two? Maybe one chamber connects to both sides via a bridge? No, it says "connects above the platform".
+Okay, let's assume the standard layout: Left Wall -> Platform -> Right Wall. And there are holes drilled through *each* wall (Left and Right). This creates two separate chambers at each end of the tank body. So we have [Chamber] - [Wall?] No, that doesn't make sense with "connects above".
+Let's assume: Left Chamber connects to Platform? Or is it a U-shape?
+"Through each end wall... drill a hole ... for electrode wires." This implies holes in the vertical walls.
+Okay, let's simplify based on common lab tank designs (like Mini-GE boxes): They are usually rectangular blocks with internal chambers at both ends connected by a bridge or just separate tanks side-by-side? No, "connects above".
+Let's assume: [Left Chamber] - [Wall?] - [Platform]? No.
+Maybe the platform is *not* in the middle of X=0 to 120, but rather centered on Y axis (the vertical centerline)? Yes, "centred" usually refers to the tank's symmetry plane along Z or Y? In this context, it likely means centered on the Y-axis (middle of the width).
+So: The platform is a long block in X-Y space. It sits at some height. Above it, there are two chambers connected by bridges? Or maybe just one chamber connecting to both ends via holes drilled through *each* wall? No, "connects above".
+Let's assume the simplest valid interpretation that fits all constraints:
+The tank is a block of size 120x70. The walls have thickness 3mm. So internal dimensions are roughly (120-6)x(70-6) = 114 x 58? No, "Outer Dimensions" usually means the final part's bounding box minus wall subtraction if it were a hollow shell. But here we build solid walls.
+Let's assume: The user wants a block of size X=120+ (walls)? Or just that those are the dimensions *after* cutting out holes? No, "Outer Dimensions" usually means external envelope. If I say my box is 5cm wide with 1mm thick sides, does it mean inside is 3x4 or do you start with a larger block and cut down to get internal size?
+Given the ambiguity, let's assume: The **bounding box** of the final part (the outer face coordinates) are X=120, Y=70, Z=40. And walls are added around it? No, that would make inner dimensions smaller.
+Let's try this: The user wants a part where the *internal* cavity is 60x58 and height is such that... no.
+
+Let's go with the most literal interpretation of "Outer Dimensions ... 40 mm" for a tank with walls: It means the total depth including wall thickness is 40mm? Or does it mean the inner void is 40mm deep?
+If I say my box is 120x70 and has 3mm walls, usually that implies the *final* part's outer face size. But if we build solid walls around a core of X=60 (inner width), then total length = 60 + 3 + 3 = 66? No, "Outer Dimensions" are given as fixed numbers.
+Let's assume: The **bounding box** of the *finished* part is

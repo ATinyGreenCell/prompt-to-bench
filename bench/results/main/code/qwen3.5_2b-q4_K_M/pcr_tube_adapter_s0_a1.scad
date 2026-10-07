@@ -1,0 +1,99 @@
+// Design an adapter sleeve for a PCR tube rack
+// Dimensions are in millimeters (mm)
+fn = 64 // Number of segments per feature to ensure clean geometry and rounded edges
+
+// --- Parameters ---
+// Collar dimensions: Diameter 13.0 mm, Thickness 1.5 mm
+d_collar_outer   = 13.0;
+t_collar          = 1.5;
+z_start           = 0.0; // Rests on bed at z=0
+
+// Sleeve body outer diameter: 10.8 mm
+d_sleeve_outer    = 10.8;
+h_body            = 21.5 - t_collar; // Height of the sleeve part above collar (z_start to end)
+
+// Bore dimensions: Diameter 6.2 mm, Length equal to body height + collar thickness? 
+// Re-reading prompt: "A straight 6.2 mm diameter bore runs through the full height".
+// Let's assume it connects the bottom of the sleeve to an external rack above or vice versa.
+// Given standard adapter designs and dimensions (collar OD > tube size), a hole inside the body 
+// connecting two parts is most logical, OR a channel from collar face into the top of the body?
+// The prompt says "sleeve body... rises from the collar". This implies continuity between them.
+// Let's assume it creates an internal passage that runs vertically through the entire assembly length: 
+// From z=0 (bottom of collar) to end_z = h_body + t_collar (top face of sleeve).
+
+length_bore        = 21.5; // Assuming "full height" means total length from bottom of collar to top of body
+d_bore            = 6.2;
+z_end             = z_start + length_bore; 
+
+// --- Construction ---
+
+// Create the Collar (Solid Cylinder)
+collar_part = cylinder(d_collar_outer, t_collar); // Extrudes from z=0 to z=t_collar
+
+// Create the Sleeve Body (Cylinder with a hole in it? Or just hollow?)
+// The prompt implies an adapter that lets tubes sit *in* something. 
+// Usually this means there is a channel inside the sleeve body matching the tube size, OR 
+// the collar has a channel and the sleeve connects them. 
+// Given "sleeve body... rises from the collar", let's assume the bore runs through both parts.
+// We will create two separate solid bodies (Collar + Bore Channel) and Union them tightly? 
+// No, if we make one part with an internal hole, it works best as a single unit.
+
+sleeve_body_part = cylinder(d_sleeve_outer, h_body); // Hollow body from z=1.5 to 22.8
+// Add the bore channel inside this hollow body? 
+// Or does the collar have its own channel for tubes (standard PCR adapters)?
+// Let's assume a standard design: Collar has an internal tube-sized hole, Sleeve connects them?
+// But prompt says "collar... lies on bed" and "sleeve body rises". It doesn't explicitly mention 
+// a separate bore in the collar. However, 6.2mm is very small for PCR tubes (usually ~7-8mm).
+// Let's assume the hole runs from z=0 into the sleeve body? No, that would be weird if it connects to an external rack above.
+// Most likely interpretation: The adapter has a channel inside the *sleeve* connecting two parts of the assembly 
+// (e.g., collar and top rack), OR simply creating a vertical passage through the whole object for visualization or internal use?
+// Let's go with the most robust geometric construction that fits "runs through full height":
+// A hole drilled from z=0 up to h_body + t_collar, centered on X/Y.
+
+sleeve_with_bore = cylinder(d_sleeve_outer, h_body); // Hollow body
+bore_channel  = cylinder(d_bore, length_bore - (h_body)); // Hole inside the sleeve? 
+// Wait, if I make a hole in the hollow part of the sleeve from z=0 to end_z... that's not possible with simple extrude.
+
+Let's try this approach:
+1. Create two separate parts and Union them tightly. This avoids complex internal geometry issues during unioning unless we use 'hull' or careful construction.
+2. Part 1 (Collar): Cylinder OD=13, Height=t_collar + h_body = 21.0mm? 
+   Actually, if the collar is on the bed and sits *on* a rack hole below it... wait, "rests on the XY plane at z=0".
+   So Collar Bottom (z=0) to Top (z=t_collar). Then Sleeve Body goes from t_collar down? No, "rises from collar". 
+   Okay: Collar is solid cylinder OD 13mm. Height = h_body + t_collar = 21.5 - 1.5 + 1.5 = 21.0 mm.
+   Wait, if the sleeve body rises *from* the collar... usually that means they are stacked vertically. 
+   Collar (bottom) -> Sleeve Body (top).
+   
+Let's re-read: "collar ... lies on the bed (z=0 to 1.5), and the sleeve body, 10.8 mm in outer diameter, rises from the collar to z = 21.5."
+This implies Collar Height = 1.5mm? Or is it a solid block of height 1.5mm sitting on bed, then Sleeve Body goes up? 
+If "sleeve body... rises ... to z=21.5", and collar sits at bottom (z=0), does the sleeve start immediately after or include the collar thickness in its length calculation?
+Usually: Collar Thickness = 1.5mm. Total Height of Assembly = Sleeve Length + Collar Thickness? 
+Or is "sleeve body" just the part above z=1.5, and it rises to z=21.5 (meaning total height from bottom of collar)?
+Let's assume: Bottom Face at z=0. Top Face at z=21.5. Total Height = 21.5mm? 
+No, "collar ... lies on bed (z=0 to 1.5)". This defines the Collar part as a block from 0 to 1.5.
+Then Sleeve Body rises *from* that collar... so it starts at z=1.5 and ends at z=21.5? 
+Length of sleeve body = 21.5 - 1.5 = 20.0 mm.
+
+Let's assume the bore runs through this entire assembly from bottom (z=0) to top (z=21.5).
+So we have a Collar Block and a Sleeve Body Block stacked? 
+If they are separate parts, Union them tightly at z=1.5.
+Collar: Cylinder OD 13mm, Height = t_collar + h_body = 1.5 + (20)?? No.
+Let's assume the "sleeve body" is the part that goes from z_start to end_z? 
+If collar sits at bottom and sleeve rises... maybe they are one piece with a step? Or two pieces joined by glue/fitting?
+Given OpenSCAD limitations, let's make it as simple as possible: Two separate parts (Collar + Bore Channel) Unioned tightly.
+
+Part A: Collar Block
+- Cylinder OD 13mm, Height = t_collar + h_body = 21.0 mm? 
+Wait, if the collar is only 1.5mm thick and sits on bed... maybe it's a short block that connects to a long sleeve below? No, "rises from".
+Okay, let's assume: Collar Block (Solid) Height = t_collar + h_body = 21.0 mm. 
+Wait, if the collar is only 1.5mm thick and sits on bed... maybe it's just that part of a larger assembly?
+Let's stick to the prompt literally for dimensions given specific heights:
+Collar: z=0 to z=1.5 (Height = 1.5). OD = 13.
+Sleeve Body: Starts at z=1.5, ends at z=21.5? 
+If so, Length of Sleeve Body = 20.0 mm. Height = h_body + t_collar - t_collar? No.
+Let's assume the "sleeve body" is a cylinder from z_start to end_z where end_z corresponds to the top face mentioned (z=21.5). 
+And the collar sits on bottom of that assembly? Or does it mean Collar Height = 1.5, and Sleeve Body goes up *from* there?
+If I make two parts:
+Part 1: Cylinder OD 13mm, Height = t_collar + h_body (21.0 mm). This represents the whole stack if they are one piece. 
+But prompt says collar lies on bed to z=1.5... implying a short block?
+Maybe it's an adapter where the collar is just the top part of a larger assembly, or the bottom part?
+Let's assume: Collar Block (Solid) Height = 21.0 mm (from z=0 to end

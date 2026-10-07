@@ -1,0 +1,105 @@
+```openscad
+// Dimensions
+hose_length = 41;      // Total height of the part (Z dimension)
+bore_diameter = 3;       // Diameter of the central bore
+barb1_height = 10;       // Height of the 8mm tubing barbs (Z range: 0 to 10)
+collar_height = 5;      // Height of the collar section (Z range: 20 to 25)
+barb2_height = 16;       // Height of the 5mm tubing barbs (Z range: 25 to 41)
+
+// Barb 1 (8mm tubing) dimensions
+barb1_bottom_od = 7.5;   // Outer diameter at the bottom of barb 1
+barb1_top_od = 9.5;      // Outer diameter at the top of barb 1
+barb1_step_od = 7.5;     // Outer diameter at the step back (sawtooth)
+
+// Barb 2 (5mm tubing) dimensions
+barb2_bottom_od = 6.5;   // Outer diameter at the bottom of barb 2
+barb2_top_od = 5.0;      // Outer diameter at the top of barb 2
+barb2_step_od = 6.5;     // Outer diameter at the step out (sawtooth)
+
+collar_diameter = 12;    // Diameter of the cylindrical collar
+
+// Feature parameters
+bore_radius = bore_diameter / 2;
+fn = 64; // Resolution for curved shapes
+
+module create_barb(z_start, height, bottom_od, top_od, step_od) {
+    // This module creates a rotationally symmetric shape (a barb) with a central bore.
+    
+    // Define the cross-section profile points in the R-Z plane for one side of the barb.
+    // We define key points to approximate the linear growth and the step back.
+    profile_points = [
+        [0, z_start], // Start point (center line)
+        [bottom_od / 2, z_start + height/4], // Approximation for initial slope
+        [top_od / 2, z_start + 3*height/4], // Approximation for final slope before step
+        [step_od / 2, z_start + height] // End point (step back)
+    ];
+
+    // Create the outer body using hull to define the shape based on the profile points.
+    // We use a series of stacked cylinders or linear extrusion with offset for better FDM compatibility if hull fails complex profiles.
+    
+    // For robustness, we will use a series of extruded shapes to define the profile segments explicitly.
+    
+    barb_segments = [];
+
+    // Segment 1: Linear growth approximation (from bottom_od to top_od)
+    num_segments = 4; // Use more segments for smoother transition if needed, but sticking to key points defined above.
+    for (i = [0 : num_segments]) {
+        z_current = z_start + (i / num_segments) * height;
+        
+        // Calculate the radius at this Z level using linear interpolation between known ODs
+        if (i < num_segments - 1) {
+            t = i / num_segments;
+            r_current = (1 - t) * (bottom_od / 2) + t * (top_od / 2);
+        } else {
+            // Last point is the step back OD
+            r_current = step_od / 2;
+        }
+
+        // Create a thin slice/cylinder for this section. Since we are building a solid, we use linear_extrude around the center line (R=0) and offset it.
+        segment = linear_extrude(height / num_segments, circle(r = r_current));
+        barb_segments = concat(barb_segments, segment);
+    }
+
+    // Combine all segments into one solid shape
+    barb_body = union(barb_segments);
+
+
+    // Create the inner bore cutout (must be centered)
+    bore_cutout = cylinder(r = bore_radius, h = height + 1, $fn = fn);
+
+
+    // Combine them.
+    union() {
+        barb_body;
+        difference() {
+            bore_cutout;
+        }
+    }
+}
+
+
+// --- Main Assembly ---
+
+// 1. Central Bore (runs full length)
+central_bore = cylinder(r = bore_radius, h = hose_length, $fn = fn);
+
+// 2. Barb 1 (Z=0 to Z=10)
+barb1_z_start = 0;
+barb1_body = create_barb(barb1_z_start, barb1_height, barb1_bottom_od, barb1_top_od, barb1_step_od);
+
+// 3. Collar (Z=20 to Z=25)
+collar = cylinder(r = collar_diameter / 2, h = collar_height, $fn = fn);
+
+// 4. Barb 2 (Z=25 to Z=41)
+barb2_z_start = 25;
+barb2_body = create_barb(barb2_z_start, barb2_height, barb2_bottom_od, barb2_top_od, barb2_step_od);
+
+
+// Combine all parts
+union() {
+    central_bore;
+    barb1_body;
+    collar;
+    barb2_body;
+}
+```

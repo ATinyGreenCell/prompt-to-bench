@@ -1,0 +1,28 @@
+// Dimensions
+spine_length = 70; // X
+spine_width = 12; // Y
+teeth_count = 10;
+tooth_width = 5; // X
+tooth_height = 12; // Y
+gap_between_teeth = 1.5; // Z
+
+// Calculate the total width of the teeth and gaps
+total_tooth_and_gap_width = (tooth_width + gap_between_teeth) * teeth_count - gap_between_teeth;
+
+// Ensure the row of teeth is centered on the spine in X
+x_offset = (spine_length - total_tooth_and_gap_width) / 2;
+
+// Create the comb
+comb = difference() {
+    // Spine
+    cube([spine_length, spine_width, 1.5], center=true);
+    
+    // Teeth
+    for (i = [0:teeth_count-1]) {
+        translate([x_offset + i * (tooth_width + gap_between_teeth), -6, 0])
+            cube([tooth_width, tooth_height, 1.5]);
+    }
+};
+
+// Render the comb
+comb;

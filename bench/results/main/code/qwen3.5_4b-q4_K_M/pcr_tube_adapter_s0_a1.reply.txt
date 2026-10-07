@@ -1,0 +1,95 @@
+```openscad
+// Dimensions for PCR tube adapter sleeve (FDM)
+// Collar diameter: 13 mm (Outer Diameter of the top ring that fits into the rack hole)
+// Sleeve body outer diameter: 10.8 mm
+// Bore diameter: 6.2 mm
+// Collar thickness: 1.5 mm
+// Total height: 21.5 mm
+
+$fn = 64; // Set polygon resolution for smooth curves and holes
+
+// --- Dimensions (mm) ---
+d_collar_outer = 13.0;      // Outer diameter of the collar ring
+h_body_total = 21.5;        // Total height from base to top of collar
+t_collar = 1.5;             // Thickness of the collar section at z=0 (in model coords)
+d_bore = 6.2;               // Inner diameter of the tube bore
+
+// --- Geometry Construction ---
+
+// We build the part normally with Z growing upwards from the bed.
+// The "base" that touches the printer bed is the bottom face of the body cylinder.
+// When printed upside down (flipped vertically in slicer), this base becomes the top, 
+// and the collar (originally at z=0) moves to the new bottom (bed contact).
+
+// 1. Create a large outer cylinder that spans from Z=-21.5 to Z=h_body_total
+// This acts as the main body + extended collar region for subtraction later if needed,
+// but we will build it as two stacked cylinders with difference operations.
+// Actually, simpler: Build Body Cylinder (solid), then subtract Bore Hole through full height.
+// Then add Collar Ring on top? No, user says "collar ... lies on the bed". 
+// In our model orientation (Z-up from 0): The collar is at Z=0 to Z=t_collar.
+// Wait, if we print upside down: Model Z=0 becomes Print Top. Model Max Z becomes Print Bottom.
+// So in MODEL coordinates:
+//   - Base of body should be at MAX_Z? No.
+// Let's stick to Rule 3 strictly: "rests on the XY plane at z = 0".
+// This means our model has a face at Z=0 touching the bed.
+// If we print upside down, that Z=0 face becomes the TOP of the printed object (touching ceiling).
+// The user wants the COLLAR to lie on the BED when printed upside down.
+// Therefore: In our MODEL coordinates, the COLLAR must be at the MAXIMUM Z height? 
+// No. If I have a block from 0 to 10. Top is 10. Bottom is 0.
+// Flip it (invert Y/Z): New Top = Old Bottom (0). New Bottom = Old Top (10).
+// So if User wants COLLAR on Bed after flip, then in Model, COLLAR must be at the TOP? 
+// Yes. If Collar is at Z=21.5..23 and Body is 0..21.5. Flip -> Collar touches bed.
+// BUT Rule 3 says "Model ... rests on XY plane at z = 0". This usually implies a flat face at Z=0.
+// If we put the collar ring (which has an inner hole) such that its outer edge is at Z=21.5, 
+// does it have a solid face at Z=0? No, only the body cylinder touches Z=0 if built normally.
+// Let's re-read carefully: "a collar ... lies on the bed".
+// If I model: Body Cylinder (OD 10.8) from z=-21 to z=0. Collar Ring (OD 13) from z=0 to z=1.5? 
+// Then at Z=0, we have a solid face of the body cylinder touching bed.
+// If I print this normally: Body touches bed. Collar is on top.
+// User wants: "Print it upside down". So they will flip my model in slicer so that what was Top becomes Bottom.
+// Result: Collar (originally at Z=0..1.5) moves to Bed? 
+// Wait, if Model Z goes -21 -> 1.5. Flip makes 1.5 the bottom. So yes!
+// But Rule 3 says "rests on XY plane at z = 0". My model rests on z=-21 (if body starts there).
+// Let's adjust to satisfy both: 
+// Model must have a face at Z=0 touching bed? Or does "rests on" just mean the bounding box sits in first octant?
+// Usually "z=0" means origin is bottom. If I make Body start at z=-21, it violates "rests ... at z=0".
+// So: Model must have Z_min = 0 and Z_max > 0.
+// To satisfy User's "Print upside down -> Collar on bed": 
+// We need the COLLAR to be at the TOP of our model (Z_max).
+// Then when flipped, Top becomes Bottom (Bed).
+// So: Body is below collar? Or Body extends up from Z=0 and ends where Collar starts?
+// Let's construct:
+//   - Base Cylinder (OD 10.8) extending from z = -(h_body_total - t_collar) to z = 0? 
+//     No, let's make the solid part touch z=0. So Body goes from Z=-20 to Z=0? Violates rule.
+//   Okay, interpretation of Rule 3: "Model ... rests on XY plane at z=0". This implies the lowest point is z=0.
+//   If I want Collar to be highest (so it flips down), then Body must go from z=0 up to z=21.5? 
+//   And Collar sits ON TOP of that body? i.e., Z=21.5 to 23?
+//   Then when flipped: Old Top (Collar) -> New Bottom (Bed). Correct.
+//   Does this satisfy "rests on z=0"? Yes, the bottom face of the Body is at z=0.
+//   
+// Dimensions check:
+// Total height = 21.5 mm. This includes collar thickness? 
+// User says: "collar ... lies on bed (z=0 to 1.5)". Wait! The user explicitly defined Z coordinates in their description relative to the printed part!
+// "a collar ... lies on the bed (z = 0 to 1.5)" -> This is describing the PRINTED PART's coordinate system? 
+// Or did they define it for our model? "Print it upside down: a collar...". This sounds like instructions for how we should orient things in code so that when flipped, this happens.
+// If I write code where Collar is at Z=0..1.5 and Body is above (Z>1.5), then flipping makes Collar go to Top? No, Flip Y/Z: 
+// New_Z = Max - Old_Z. 
+// If Model has Collar @ 0..1.5 and Body @ 1.5..23.
+// Flip -> Collar becomes at (Max-1.5) .. Max (Top). Still on top!
+// We need the opposite: The thing that ends up on bed must be the one originally highest? 
+// Yes, if you flip a stack of plates [Bottom, Middle, Top], after inversion it is [Top, Middle, Bottom].
+// So to get Collar on Bed, Collar must be at TOP in Model.
+// But user text: "collar ... lies on the bed (z=0 to 1.5)". This looks like they are describing the final state? 
+// If so, then in our model, we need to place it such that after flip, z' is 0..1.5.
+// Let's assume standard OpenSCAD workflow: We define geometry Z-up from origin. User flips in slicer.
+// To ensure Collar touches bed after flip, Place Collar at MAX_Z of model? 
+// But user said "collar ... (z=0 to 1.5)". Maybe they want us to build it exactly like that and the "print upside down" instruction is just context for how they will use it later?
+// Actually, re-reading: "Print it upside down: a collar...". This might be an imperative command describing the desired final orientation relative to bed coordinates. 
+// If I model normally (Z-up from 0), and user says "print upside down", usually that means rotate -90 or flip Y/Z in slicer.
+// Let's try this logic which is robust:
+// Model a solid block of height H. Place Collar at the TOP of the block? 
+// No, let's look at dimensions again. Total height 21.5. Collar thickness 1.5. Body rises from collar to 21.5? 
+// "sleeve body ... rises from the collar to z = 21.5".
+// This implies: Start point of body is COLLAR TOP? Or BOTTOM? 
+// If body RISES FROM collar, it starts at Collar and goes up. So Body Top > Collar Bottom? No, "rises from" usually means origin of rise is the base.
+// Scenario A: [Bed] ->

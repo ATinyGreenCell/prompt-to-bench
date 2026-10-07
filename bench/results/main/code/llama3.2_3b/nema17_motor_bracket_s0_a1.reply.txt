@@ -1,0 +1,63 @@
+```openscad
+// Dimensions in mm
+base_plate_width = 50;
+base_plate_height = 45;
+motor_plate_thickness = 50;
+hole_diameter = 4.5;
+screw_hole_diameter = 3.4;
+gusset_length = 20;
+gusset_width = 20;
+
+// Base plate
+base_plate = linear_extrude(height = base_plate_height) {
+    translate([0, -base_plate_width / 2, 0]) 
+        square(size = [base_plate_width, base_plate_height], center = true);
+}
+
+// Vertical motor plate
+motor_plate = linear_extrude(height = motor_plate_thickness) {
+    translate([0, 0, motor_plate_thickness]) 
+        square(size = [base_plate_width, motor_plate_thickness], center = true);
+    
+    // Cut out hole for centring boss
+    translate([0, 0, 28])
+        cylinder(h = 1, r = 11.5 / 2, $fn = 64);
+        
+    // Add M3 screw holes
+    for (angle = [0, 90, 180, 270]) {
+        translate([0, 0, motor_plate_thickness + 28])
+            rotate_extrude(angle = angle)
+                circle(d = screw_hole_diameter / 2, $fn = 64);
+        
+        translate([0, 31 * sqrt(2) / 2, motor_plate_thickness + 28])
+            square(size = [screw_hole_diameter, screw_hole_diameter], center = true);
+    }
+}
+
+// Triangular gussets
+gusset1 = linear_extrude(height = motor_plate_thickness) {
+    translate([0, -base_plate_width / 2, 5]) 
+        rotate_extrude(angle = [90, 0])
+            polygon(points = [[-gusset_length/2, 0], [gusset_length/2, 0], [0, gusset_width]]);
+}
+
+gusset2 = linear_extrude(height = motor_plate_thickness) {
+    translate([0, base_plate_width / 2, 5]) 
+        rotate_extrude(angle = [90, 0])
+            polygon(points = [[-gusset_length/2, 0], [gusset_length/2, 0], [0, gusset_width]]);
+}
+
+// Combine all parts
+union() {
+    base_plate;
+    
+    translate([0, 0, motor_plate_thickness + 5])
+        rotate_extrude(angle = [90, 0])
+            union() {
+                gusset1;
+                mirror([0, 0, 1]) gusset2;
+            };
+            
+    motor_plate;
+}
+```

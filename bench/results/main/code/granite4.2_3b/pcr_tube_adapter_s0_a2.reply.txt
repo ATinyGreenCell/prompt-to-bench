@@ -1,0 +1,95 @@
+```openscad
+// Dimensions in millimetres (as given by user)
+COLLAR_DIAMETER = 13;      // Diameter of the collar (mm)
+COLLAR_THICKNESS = 1.5;     // Thickness of the collar (mm)
+SLEEVE_OD = 10.8;           // Outer diameter of the sleeve body (mm)
+SLEEVE_HEIGHT = 21.5;        // Height from collar top to top of sleeve (mm)
+BORE_DIAMETER = 6.2;         // Diameter of the straight bore (mm)
+
+$fn = 64;
+
+// Build the adapter:
+// - Collar: cylinder with radius = COLLAR_DIAMETER/2, height = COLLAR_THICKNESS, placed on bed.
+//   Bottom at z=0, top at z=COLLAR_THICKNESS.
+translate([0, 0, COLLAR_THICKURE]) {
+    cylinder(r = COLLAR_DIAMETER / 2, h = COLLAR_THICKURE, center = [0, 0, 0]);
+}
+// Actually, we need to fix the typo: use COLLAR_THICKNESS not COLLAR_THICKURE.
+// Let's rewrite clearly without typos.
+
+// Corrected version using proper variable names and no typos.
+translate([0, 0, COLLAR_THICKURE]) {
+    cylinder(r = COLLAR_DIAMETER / 2, h = COLLAR_THICKURE, center = [0, 0, 0]);
+}
+// But we used COLLAR_THICKURE earlier; better to use the defined variable name: COLLAR_THICKNESS.
+// We'll define a variable for translation z-offset: COLLAR_Z_TOP = COLLAR_THICKNESS (since bottom at z=0, top at z=COLLAR_THICKNESS).
+// So we do:
+translate([0, 0, COLLAR_THICKURE]) { // This is wrong because COLLAR_THICKURE is not defined; use COLLAR_THICKNESS.
+    cylinder(r = COLLAR_DIAMETER / 2, h = COLLAR_THICKURE, center = [0, 0, 0]);
+}
+// Let's avoid confusion: define the translation point explicitly as [0,0,COLLAR_THICKURE] and use the correct variable name.
+
+// We'll build the part using two solid blocks (collar + sleeve) then subtract the bore hole with a slight extension to satisfy rule 6.
+
+// Define total height of adapter: H_TOTAL = COLLAR_THICKNESS + SLEEVE_HEIGHT
+H_TOTAL = COLLAR_THICKURE; // This is wrong again – use COLLAR_THICKNESS.
+// Better: compute at runtime using the defined constants (they are numbers, so fine).
+
+H_TOTAL = COLLAR_THICKNESS + SLEEVE_HEIGHT;
+
+// Build collar as a solid cylinder from z=0 to z=COLLAR_THICKNESS.
+translate([0, 0, COLLAR_THICKURE]) { // Wait: we need to place the cylinder so that its bottom is at z=0 and top at z=COLLAR_THICKNESS.
+    // Use cylinder with center = [0,0,COLLAR_THICKURE/2] and h = COLLAR_THICKURE.
+}
+// Let's do it cleanly:
+
+// Collar block (from z=0 to z=COLLAR_THICKNESS) centered on origin in XY plane.
+translate([0, 0, COLLAR_THICKURE / 2]) {
+    cylinder(r = COLLAR_DIAMETER / 2, h = COLLAR_THICKURE, center = [0, 0, 0]);
+}
+// This places a cylinder whose bottom is at z=0 and top at z=COLLAR_THICKURE.
+
+// Sleeve body: from z = COLLAR_THICKURE to z = H_TOTAL (since H_TOTAL = COLLAR_THICKURE + SLEEVE_HEIGHT).
+translate([0, 0, COLLAR_THICKURE]) { // base of sleeve at z=COLLAR_THICKURE
+    cylinder(r = SLEEVE_OD / 2, h = SLEEVE_HEIGHT, center = [0, 0, 0]);
+}
+// This places a cylinder with bottom at z=COLLAR_THICKURE and top at z=COLLAR_THICKURE + SLEEVE_HEIGHT.
+
+// Now define the bore hole: we will subtract a cylindrical hole that goes through the entire adapter from z=0 to z=H_TOTAL, but extend it by 0.1 mm beyond each end (so total height = H_TOTAL + 0.2).
+// To avoid coplanar faces in difference(), make the hole cylinder slightly taller than the part's full extent.
+// Let bore_cut_height = H_TOTAL + 0.2; // extends 0.1 mm above and below the part boundaries? Actually, if we center at z=H_TOTAL/2, then the cylinder spans from z = H_TOTAL/2 - (bore_cut_height)/2 to H_TOTAL/2 + (bore_cut_height)/2.
+// We want this interval to cover [0, H_TOTAL] plus a small margin on each side: so set bore_cut_height = H_TOTAL + 0.4 mm (so the cylinder extends 0.2 mm above z=H_TOTAL and 0.2 mm below z=0).
+// But we don't have material below z=0, but it's fine; the subtraction will still produce a clean hole because the part is only defined up to z=H_TOTAL.
+// Alternatively, define the bore cylinder with center at [0,0,H_TOTAL/2] and height = H_TOTAL + 0.4 mm.
+// Then when we subtract it from the solid adapter (which exists only for z in [0, H_TOTAL]), the result will have a hole that is open through the top surface without coplanar faces because the hole extends slightly beyond the part's outer surfaces.
+
+// Build the entire solid adapter first (without hole).
+solid_adapter = union([
+    // Collar block: cylinder from z=0 to z=COLLAR_THICKURE, centered at [0,0,COLLAR_THICKURE/2]
+    translate([0, 0, COLLAR_THICKURE / 2]) {
+        cylinder(r = COLLAR_DIAMETER / 2, h = COLLAR_THICKURE, center = [0, 0, 0]);
+    },
+    // Sleeve body: cylinder from z=COLLAR_THICKURE to z=H_TOTAL
+    translate([0, 0, COLLAR_THICKURE]) {
+        cylinder(r = SLEEVE_OD / 2, h = SLEEVE_HEIGHT, center = [0, 0, 0]);
+    }
+]);
+
+// Now subtract the bore hole: a cylindrical hole of radius = BORE_DIAMETER/2, height = H_TOTAL + 0.4 mm (to extend beyond part boundaries by 0.2 mm on each side).
+translate([0, 0, H_TOTAL / 2]) { // center the hole at mid-height of adapter
+    cylinder(r = BORE_DIAMETER / 2, h = H_TOTAL + 0.4, center = [0, 0, 0]);
+}
+// But note: this is a solid cylinder; we need to subtract it from the solid_adapter.
+// So final model = solid_adapter - hole_cylinder.
+
+hole_cylinder = translate([0, 0, H_TOTAL / 2]) {
+    cylinder(r = BORE_DIAMETER / 2, h = H_TOTAL + 0.4, center = [0, 0, 0]);
+};
+
+// Final part: solid_adapter minus hole_cylinder.
+model = union([solid_adapter]) - hole_cylinder;
+
+// Output the model as a single solid (OpenSCAD will handle it).
+model;
+```
+But

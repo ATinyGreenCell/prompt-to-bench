@@ -1,0 +1,99 @@
+```openscad
+// Dimensions in millimeters
+$fn = 64; // Number of segments for circular arcs
+
+// Top plate dimensions
+top_plate_diameter_mm = 90;
+top_plate_thickness_mm = 2;
+
+// Wall thicknesses and heights
+wall_thickness_mm = 2.5;
+wall_height_mm = 40;
+
+// Fan mounting holes pattern
+fan_holes_pattern_size_mm = 71.5;
+fan_holes_spacing_mm = 38; // Distance between holes
+
+// Power cable dimensions
+power_cable_width_mm = 12;
+power_cable_depth_mm = 8;
+power_cable_height_mm = 40 - power_cable_depth_mm;
+
+// Fan mounting hole positions
+fan_mounting_hole_x_mm = fan_holes_pattern_size_mm / 2;
+fan_mounting_hole_y_mm = fan_holes_pattern_size_mm / 2;
+
+// Power cable notch dimensions
+notch_width_mm = power_cable_width_mm;
+notch_height_mm = power_cable_depth_mm + wall_thickness_mm;
+
+// Fan case dimensions in mm
+case_dimensions_mm = [90, 90, 40];
+
+// Top plate material and color (optional)
+top_plate_material = "white";
+top_plate_color = "white";
+
+// Wall material and color (optional)
+wall_material = "black";
+wall_color = "black";
+
+// Fan case material and color (optional)
+case_material = "aluminum";
+case_color = "silver";
+
+// Function to create a cylinder with rounded corners
+function round_cylinder(r, h) {
+    return translate([0, 0, r]) [
+        cube([h, h, 2*r], center: true);
+    ];
+}
+
+// Function to create a square hole in the wall
+function square_hole(w, h, x, y, z) {
+    return rotate_extrude(90) [
+        translate([x, y, z]) [
+            cube([w, h, 2*z], center: true);
+        ]
+    ];
+}
+
+// Function to create a rectangular groove in the wall
+function rectangle_groove(w1, w2, h, x, y, z) {
+    return rotate_extrude(90) [
+        translate([x, y, z]) [
+            cube([w1, h, 2*z], center: true);
+        ]
+    ];
+}
+
+// Function to create a rectangular slot in the wall
+function rectangle_slot(w1, w2, h, x, y, z) {
+    return rotate_extrude(90) [
+        translate([x, y, z]) [
+            cube([w1, h, 2*z], center: true);
+        ]
+    ];
+}
+
+// Function to create a rectangular groove in the wall
+function rectangle_groove(w1, w2, h, x, y, z) {
+    return rotate_extrude(90) [
+        translate([x, y, z]) [
+            cube([w1, h, 2*z], center: true);
+        ]
+    ];
+}
+
+// Function to create a rectangular slot in the wall
+function rectangle_slot(w1, w2, h, x, y, z) {
+    return rotate_extrude(90) [
+        translate([x, y, z]) [
+            cube([w1, h, 2*z], center: true);
+        ]
+    ];
+}
+
+// Function to create a rectangular groove in the wall
+function rectangle_groove(w1, w2, h, x, y, z) {
+    return rotate_extrude(90

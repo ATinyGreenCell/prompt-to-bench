@@ -1,0 +1,81 @@
+// Dimensions in millimetres
+$fn = 64;
+
+// Knob dimensions
+knob_diameter = 30;
+knob_height = 15;
+
+// D-shaft bore dimensions
+bore_depth = 12;
+bore_radius = 3.1; // 6.2 mm diameter circle radius
+flat_offset = (bore_radius - 4.7 / 2); // Half of the flat side length
+
+// Grip grooves
+grip_groove_diameter = 2;
+num_grip_grooves = 18;
+
+// Pointer groove dimensions
+pointer_width = 1.5;
+pointer_depth = 1; // Fixed typo from "1mm" to 1
+
+module knob_base() {
+    return difference(
+        rotate([90, flat_offset], [0, 0, 1]),
+        cylinder(diameter=knob_diameter, height=bore_depth + 1.5)
+    );
+}
+
+module grip_groove() {
+    return intersection(
+        cylinder(diameter=knob_diameter, height=knob_height),
+        rotate([0, 90, 0], -360/num_grip_grooves * i),
+        cylinder(diameter=grip_groove_diameter + grip_groove_diameter*2.5)
+    );
+}
+
+module all_grip_grooves() {
+    return difference(
+        union(for (i in [0:num_grip_grooves-1]) rotate([0, 90, 0], -360/num_grip_grooves * i) * grip_groove()),
+        cylinder(diameter=knob_diameter + grip_groove_diameter*2.5, height=knob_height)
+    );
+}
+
+module pointer_groove() {
+    return difference(
+        rotate([90, flat_offset], [0, 0, 1]),
+        union(
+            translate([-pointer_width/2, 0, 0]),
+            cylinder(diameter=knob_diameter + 1.5, height=pointer_depth)
+        )
+    );
+}
+
+module knob_top() {
+    return difference(
+        rotate([90, flat_offset], [0, 0, 1]),
+        union(
+            cylinder(diameter=knob_diameter, height=knob_height),
+            translate([0, 0, -bore_depth + 1.5]),
+            cylinder(diameter=bore_radius + 1.5, height=bore_depth)
+        )
+    );
+}
+
+module main_knob() {
+    return difference(
+        union(
+            rotate([90, flat_offset], [0, 0, 1]),
+            cylinder(diameter=knob_diameter, height=knob_height),
+            translate([0, 0, -bore_depth + 1.5]),
+            rotate([90, -flat_offset], [0, 0, 1]),
+            cylinder(diameter=bore_radius + 2, center=[0, 0, -bore_depth/2])
+        ),
+        difference(
+            union(all_grip_grooves(), pointer_groove()),
+            cylinder(diameter=knob_diameter + grip_groove_diameter*3.5, height=knob_height)
+        )
+    );
+}
+
+// Main assembly
+union(rotate([90, 0, 0], -flat_offset), main_knob());

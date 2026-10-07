@@ -1,0 +1,94 @@
+```openscad
+// Dimensions in millimetres
+box_width = 90;      // Outer size X dimension
+box_height = 90;     // Outer size Y dimension
+fan_thickness = 2;   // Top plate thickness (mm)
+wall_thickness = 2.5; // Wall thickness (mm)
+fan_diameter = 80;    // Fan diameter (mm) - not directly used but context
+hole_radius = 4.5/2;  // M4 screw hole radius (mm)
+hole_spacing = 71.5;  // Square pattern spacing between holes (mm)
+cable_width = 12;     // Cable notch width (mm)
+cable_depth = 8;      // Cable notch depth from open edge (mm)
+wall_open_edge_z = 32; // Z level where the box is open (mm above bed)
+wall_top_z = 40;      // Top of walls (mm above bed)
+
+// Print orientation: upside-down, top plate on bed (z=0 to z=fan_thickness), walls rise from there.
+// Origin centered in XY plane for symmetry.
+
+$fn = 64;
+
+// Define the top plate (lid) as a square with thickness fan_thickness.
+// It rests on the bed, covering x and y from -box_width/2 to box_width/2 at z=0..fan_thickness.
+plate_x_half = box_width / 2;
+plate_y_half = box_height / 2;
+
+// Create top plate (lid) as a solid with thickness fan_thickness.
+top_plate = cube([box_width, box_height, fan_thickness], center=true);
+
+// Add M4 screw holes on the top plate: centered in a square pattern of side hole_spacing.
+// Place four holes at positions (±hole_spacing/2, ±hole_spacing/2) relative to origin.
+for (i = [0 : 1]) {
+    for (j = [0 : 1]) {
+        // Only process the correct quadrant based on i and j; but simpler: use four corners of square pattern centered at origin.
+        // We'll generate holes only where they are needed by checking if coordinates fall within plate bounds.
+        x_pos = hole_spacing / 2 * (i == 0 ? -1 : 1);
+        y_pos = hole_spacing / 2 * (j == 0 ? -1 : 1);
+        // Translate to center of plate: origin is at plate's center.
+        rotate([90, 0, 0]) translate([-x_pos, -y_pos, 0]) circle(r=hole_radius) {
+            // Ensure hole extends fully through the top plate thickness (fan_thickness).
+            // The circle is centered on the XY plane; we need to extrude only fan_thickness thick.
+            // Actually cube already gives us a solid with thickness, so just subtract a cylinder at that location.
+        }
+    }
+}
+// Better approach: use difference with cylinders placed correctly.
+
+// Rebuild top plate with hole cuts using difference.
+top_plate = cube([box_width, box_height, fan_thickness], center=true);
+for (i = [0 : 1]) {
+    for (j = [0 : 1]) {
+        x_pos = hole_spacing / 2 * (i == 0 ? -1 : 1);
+        y_pos = hole_spacing / 2 * (j == 0 ? -1 : 1);
+        // Place a cylinder at the center of each hole.
+        rotate([90, 0, 0]) translate([-x_pos, -y_pos, fan_thickness/2]) cylinder(r=hole_radius, h=fan_thickness, center=true) {
+            // The cylinder goes through the top plate thickness; it's centered on XY plane at mid-height.
+        }
+    }
+}
+
+// Define walls: four 2.5 mm thick walls rising from z = fan_thickness to wall_top_z.
+// Walls are open at the top edge (from z=wall_open_edge_z to wall_top_z).
+// Each wall is centered along X or Y axis, with thickness in Z direction as well? Actually wall is a rectangular prism: 2.5 mm thick in all directions except height and width.
+// We'll model each wall as a solid extruded from the open edge region.
+
+// Wall geometry: For each of four walls (front, back, left, right), define its shape.
+// The box is centered; walls extend outward by half-wall_thickness in X or Y direction? Actually outer size 90 mm means total width = 2 * wall_half_width + fan_diameter? But we are given outer size as 90 x 90 mm, which already includes the plate and walls.
+// Since top plate is on bed (z=0 to z=fan_thickness), and walls rise from there, the overall footprint in XY plane should be exactly box_width x box_height = 90x90 mm.
+// So each wall occupies a rectangular region of size (box_width - fan_diameter) by fan_thickness? But simpler: we define walls as prisms that fill the outer region beyond the plate, using translation and rotation appropriately.
+
+// We'll model four walls explicitly:
+walls = [];
+for (side = ["front", "back", "left", "right"]) {
+    if (side == "front") {
+        // Wall along +Y direction? Actually front wall is in -X direction from center? Let's define consistently.
+        // We'll use a loop with indices 0,1,2,3 corresponding to walls at x = ±wall_half, y = 0..box_height/2 etc.
+        // Instead of naming sides arbitrarily, we'll generate four walls using for loops over directions: +X, -X, +Y, -Y.
+    }
+}
+// Given the complexity and time, I will use a simpler constructive approach that respects all constraints without overly complex indexing.
+
+// Approach: Build the entire housing as one solid with top plate and four walls using union of primitives where appropriate.
+// We'll define each wall as a rectangular prism extending from z = fan_thickness to wall_top_z, with thickness 2.5 mm in X or Y direction depending on side.
+
+// Define half-widths for walls: The outer box is 90 mm; the top plate occupies full width/height at its level (fan_thickness thick). Walls extend outward beyond the plate? Actually the overall footprint is exactly 90x90 mm, so the walls must fill the region outside the plate but within the 90mm boundary.
+// Since the top plate covers the entire base area of size box_width x box_height at z=0..fan_thickness, the walls are attached to its edges and extend upward from fan_thickness to wall_top_z.
+// The walls have thickness 2.5 mm in all directions perpendicular to their plane (i.e., they are like a rectangular slab of thickness 2.5 mm along Z direction? Wait: wall is vertical, so it has thickness in the radial direction = 2.5 mm; its height is from fan_thickness to wall_top_z; its width along XY is determined by outer size minus plate thickness).
+// Actually the walls are like a rectangular prism with dimensions:
+// - Along Z (vertical): wall_height = wall_top_z - fan_thickness = 40 - 2 = 38 mm.
+// - Along radial direction perpendicular to wall normal: wall_thickness = 2.5 mm (the thickness of the wall material).
+// - Along the direction parallel to wall surface (along XY): this is the width along the wall's length, which should be such that total footprint remains 90x90 mm.
+// The top plate occupies a square region in XY plane from z=0 to fan_thickness. At its edges, walls begin; they extend outward beyond the plate? But the outer size is fixed at 90x90 mm, so the walls must exactly fill the remaining space without overlapping.
+// Since the plate covers the entire base area (size box_width x box_height), there is no extra region outside it—the plate itself defines the footprint. Therefore, the walls are attached to the edges of the top plate and extend upward from z = fan_thickness to wall_top_z, with thickness 2.5 mm in the radial direction (i.e., they are like a "box" that wraps around the plate).
+// In other words, the housing is an open box: the top plate is at bottom; walls rise up from it along its perimeter, forming four vertical walls of thickness 2.5 mm, meeting at the edges where the box is open (from z=wall_open_edge_z to wall_top_z).
+// The overall XY footprint remains exactly box_width x box_height = 90x90 mm because the plate and walls share the same base area—the walls are attached along the perimeter of the plate, so they don't extend beyond it.
+// Thus we can model each wall as a rectangular prism that starts at z = fan_thickness

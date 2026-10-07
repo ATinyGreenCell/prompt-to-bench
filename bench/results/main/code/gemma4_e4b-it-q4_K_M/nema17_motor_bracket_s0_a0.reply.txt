@@ -1,0 +1,144 @@
+```openscad
+// L-shaped Mounting Bracket for NEMA 17 Stepper Motor
+
+// --- Global Settings ---
+$fn = 64; // High resolution for curves
+
+// --- Dimensions ---
+
+// Base Plate Dimensions
+base_plate_x_min = -25;    // X min of base plate (mm)
+base_plate_x_max = 25;     // X max of base plate (mm)
+base_plate_y_min = 0;      // Y min of base plate (mm)
+base_plate_y_max = 45;     // Y max of base plate (mm)
+base_plate_z_height = 5;   // Z height of base plate (mm)
+
+// Base Plate Holes (M4)
+hole_diameter_m4 = 4.5;    // Diameter for M4 holes (mm)
+hole_offset_x1 = -17;      // X position of first hole (mm)
+hole_offset_y = 30;        // Y position of both holes (mm)
+hole_diameter_cut_extension = 1.0; // Extension for cutting operation
+
+// Motor Plate Dimensions
+motor_plate_x_min = -25;   // X min of motor plate (mm)
+motor_plate_x_max = 25;    // X max of motor plate (mm)
+motor_plate_y_min = 0;     // Y min of motor plate (mm)
+motor_plate_y_max = 5;     // Y max of motor plate (mm)
+motor_plate_z_height = 50; // Z height of motor plate (mm)
+
+// Motor Boss Hole (Centring)
+boss_hole_diameter = 23;   // Diameter for central boss hole (mm)
+boss_hole_center_x = 0;    // X center of boss hole (mm)
+boss_hole_center_z = 28;   // Z center of boss hole (mm)
+boss_hole_cut_extension = 1.0; // Extension for cutting operation
+
+// M3 Screw Holes Pattern
+screw_hole_diameter_m3 = 3.4; // Diameter for M3 holes (mm)
+screw_pattern_size = 31;     // Side length of the square pattern (mm)
+screw_pattern_center_x = 0;  // X center of screw pattern (mm)
+screw_pattern_center_z = boss_hole_center_z; // Z center of screw pattern (mm)
+num_screws = 4;              // Number of screws
+
+// Gusset Dimensions
+gusset_thickness = 5;        // Thickness of gussets (mm)
+gusset_x1_min = -25;         // X min for left gusset (mm)
+gusset_x1_max = -20;         // X max for left gusset (mm)
+gusset_x2_min = 20;          // X min for right gusset (mm)
+gusset_x2_max = 25;          // X max for right gusset (mm)
+
+// Gusset Triangle Legs (in YZ plane, relative to corner at y=5, z=5)
+gusset_leg_y = 20;           // Length along +Y from corner (mm)
+gusset_leg_z = 20;           // Length along +Z from corner (mm)
+
+// --- Modules ---
+
+// Module to create a simple rectangular block
+module block(x_min, x_max, y_min, y_max, z_min, z_max) {
+    translate([x_min, y_min, z_min])
+    cube([x_max - x_min, y_max - y_min, z_max - z_min]);
+}
+
+// Module to create a circular hole cutter (slightly oversized for clean cutting)
+module round_cutter(diameter, center_x, center_y, center_z, extension) {
+    translate([center_x, center_y, center_z])
+    cylinder(h = 100, r = diameter / 2 + extension, $fn = 64);
+}
+
+// --- Geometry Construction ---
+
+// 1. Base Plate (Lying on XY plane)
+base_plate = block(
+    base_plate_x_min, base_plate_x_max,
+    base_plate_y_min, base_plate_y_max,
+    0, base_plate_z_height
+);
+
+// 2. Motor Plate (Standing on the back edge of the base plate)
+// The motor plate sits from Y=0 to Y=5. Its bottom Z starts at Z=0.
+motor_plate = block(
+    motor_plate_x_min, motor_plate_x_max,
+    motor_plate_y_min, motor_plate_y_max,
+    0, motor_plate_z_height
+);
+
+// 3. Base Plate Holes (M4) - Cutouts from the base plate
+base_holes = union();
+for (i = [1:2]) {
+    x_pos = (i == 1) ? hole_offset_x1 : -hole_offset_x1; // Use symmetry for X positions if needed, but here we use specified ones
+    if (i == 1) x_pos = hole_offset_x1;
+    if (i == 2) x_pos = -hole_offset_x1;
+
+    // Note: The prompt specifies (-17, 30) and (17, 30). Let's stick to that.
+}
+base_holes = union()
+for (i = [1:2]) {
+    if (i == 1) {
+        round_cutter(hole_diameter_m4, hole_offset_x1, hole_offset_y, base_plate_z_height/2, hole_diameter_cut_extension);
+    } else {
+        round_cutter(hole_diameter_m4, -hole_offset_x1, hole_offset_y, base_plate_z_height/2, hole_diameter_cut_extension);
+    }
+};
+
+
+// 4. Motor Plate Cutouts
+
+// A. Central Boss Hole (Cut from motor plate)
+boss_cutter = round_cutter(
+    boss_hole_diameter,
+    boss_hole_center_x,
+    motor_plate_y_min + boss_hole_diameter/2, // Center Y position for the hole through the thin plate
+    boss_hole_center_z,
+    boss_hole_cut_extension
+);
+
+// B. M3 Screw Holes (Cut from motor plate)
+screw_holes = union();
+for (i = [0:1]) { // Row index (Z direction relative to pattern center)
+    for (j = [-1:1]) { // Column index (X direction relative to pattern center)
+        // Calculate position based on 31mm square pattern centered at (0, boss_hole_center_z)
+        x_pos = j * (screw_pattern_size / 2) + screw_pattern_center_x;
+        z_pos = i * (screw_pattern_size / 2) - (screw_pattern_size / 2) + boss_hole_center_z; // Adjusting for pattern centering around Z=boss_hole_center_z
+
+        // Simplified positioning based on a 31x31 square centered at (0, Z_center):
+        // X positions: -7.75, 7.75
+        // Z positions: boss_hole_center_z - 15.5, boss_hole_center_z + 15.5
+
+        if (i == 0) { // Lower row in the pattern relative to center Z
+            z_pos = screw_pattern_center_z - (screw_pattern_size / 2);
+        } else if (i == 1) { // Upper row in the pattern relative to center Z
+            z_pos = screw_pattern_center_z + (screw_pattern_size / 2);
+        }
+
+        // Let's use a simpler grid approach for 4 holes centered on 31x31:
+        // X positions: -7.75, 7.75
+        // Z positions: boss_hole_center_z - 15.5, boss_hole_center_z + 15.5
+
+        if (i == 0) { // Bottom pair of screws
+            x_pos = j * (screw_pattern_size / 2); // X offset from center
+            z_pos = screw_pattern_center_z - (screw_pattern_size/2);
+        } else if (i == 1) { // Top pair of screws
+             x_pos = j * (screw_pattern_size / 2);
+             z_pos = screw_pattern_center_z + (screw_pattern_size/2);
+        }
+
+        // Re-evaluating the 4-hole pattern centered

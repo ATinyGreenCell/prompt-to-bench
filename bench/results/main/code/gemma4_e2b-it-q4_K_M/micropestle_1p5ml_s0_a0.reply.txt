@@ -1,0 +1,111 @@
+```openscad
+// Dimensions for the Pestle design
+
+// Handle dimensions
+handle_diameter = 8;      // Diameter of the cylindrical handle (mm)
+handle_height = 45;       // Height of the cylindrical handle (mm)
+handle_start_z = 0;       // Starting Z position of the handle
+
+// Cone dimensions
+cone_base_diameter = handle_diameter; // Diameter at z=45 (8 mm)
+cone_top_diameter = 3;              // Diameter at z=62 (3 mm)
+cone_height = 62 - 45;              // Height of the conical section (17 mm)
+cone_start_z = 45;                  // Starting Z position of the cone
+
+// Tip dimensions
+tip_diameter = 3;           // Diameter of the rounded tip (mm)
+tip_z = 62;                  // Z position of the sphere center
+
+// Groove dimensions
+groove_width = 2;            // Width of the circumferential grooves (mm)
+groove_depth = 1;            // Depth of the circumferential grooves (mm)
+groove_z_positions = [10, 15, 20, 25]; // Z positions for the grooves
+
+// --- Handle Construction ---
+
+// 1. Cylindrical Handle
+cylinder_handle = cylinder(r = handle_diameter / 2, h = handle_height, center = false);
+
+// 2. Circumferential Grooves on the Handle
+for (z = groove_z_positions) {
+    // Create a cutter shape for the groove at the specified Z level
+    groove_cutter = cylinder(r = handle_diameter / 2 + 0.1, h = groove_depth + 0.01, center = false);
+
+    // Translate and rotate to cut the groove. We use a small offset (0.01) for separation.
+    translate([0, 0, z - (handle_start_z + handle_height / 2)]) {
+        rotate([90, 0, 0]) { // Rotate to align the cylinder axis with the Z-axis for easier cutting visualization/logic, though here we just need a slice.
+            // For circumferential grooves, we cut along the circumference. We use a thin cylinder rotated around the Z-axis.
+            // Since OpenSCAD doesn't have easy slicing tools, we model the subtraction directly.
+
+            // A simpler approach for groove cutting: Use a shape that is extruded along the circumference.
+            // We define a cutter that is slightly larger than the handle and extrude it in the Z direction over the depth.
+            
+            // To create a circumferential groove, we need to subtract material around the cylinder.
+            // We use a thin cylinder rotated around the Z axis, positioned at the desired Z level.
+            rotate([0, 0, 90]) { // Rotate so the cutter is aligned with the circumference plane (X-Y plane)
+                translate([handle_diameter / 2 + 0.01, 0, z - handle_start_z]) {
+                    cylinder(r = groove_width / 2, h = groove_depth + 0.01, center = false);
+                }
+            }
+        }
+    }
+}
+
+// --- Cone Construction ---
+
+// 3. Cone (using hull or linear_extrude/rotate_extrude for a smooth cone shape)
+// We use linear_extrude of a trapezoid to create the cone profile.
+cone_profile = linear_extrude(height = cone_height)
+    polygon(points = [
+        [cone_base_diameter / 2, 0],
+        [cone_top_diameter / 2, cone_height]
+    ]);
+
+cone_body = linear_extrude(height = cone_height, center = true)
+    polygon(points = [
+        [cone_base_diameter / 2, 0],
+        [cone_base_diameter / 2, cone_height],
+        [cone_top_diameter / 2, cone_height]
+    ]);
+
+// Since linear_extrude creates a shape based on the profile extruded along an axis, we need to ensure it's centered correctly.
+// A simpler way for a cone is using hull or revolving a profile. Let's use revolution for clarity and robustness.
+
+cone_shape = rotate_extrude(angle = 360)
+    polygon(points = [
+        [cone_base_diameter / 2, 0],
+        [cone_top_diameter / 2, cone_height]
+    ]);
+
+// We need to shift the profile so it forms a cone shape centered at (0,0).
+cone_body_final = rotate_extrude(angle = 360)
+    polygon(points = [
+        [cone_base_diameter / 2, 0],
+        [cone_top_diameter / 2, cone_height]
+    ]);
+
+// Translate the cone so its base starts at Z=45
+translate([0, 0, cone_start_z]) {
+    rotate([90, 0, 0]) { // Rotate to align the profile correctly if needed, but for a standard cone centered on Z axis, this is fine.
+        cone_body_final;
+    }
+}
+
+
+// --- Rounded Tip Construction ---
+
+// 4. Rounded Tip (Sphere)
+sphere_tip = sphere(r = tip_diameter / 2, center = true);
+
+// Translate the sphere to its correct Z position
+translate([0, 0, tip_z]) {
+    sphere_tip;
+}
+
+// Combine all parts (Union is implicitly handled by stacking if they don't overlap significantly, but union ensures a single solid)
+union() {
+    cylinder_handle;
+    cone_body_final;
+    sphere_tip;
+}
+```

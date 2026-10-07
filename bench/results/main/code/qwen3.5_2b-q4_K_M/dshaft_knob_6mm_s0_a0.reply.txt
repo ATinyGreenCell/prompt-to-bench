@@ -1,0 +1,92 @@
+```openscad
+// Design parameters for hotplate stirrer knob replacement part (mm)
+d_shaft = 6;      // Diameter of shaft hole in knob
+knob_diameter = 30; // Outer diameter of knob cylinder
+knob_height = 15;   // Total height of knob
+
+// D-shaped blind bore parameters
+blind_bore_depth = 12;    // Distance from bottom to flat side (mm)
+flat_to_flat_dist = 4.7; // Flat-to-flat distance across the circle (mm)
+circle_diameter = 6.2;   // Diameter of the cutout in mm
+
+// Grip groove parameters
+groove_spacing = 18;      // Number of grooves around circumference
+groove_depth = 0.5;       // Half diameter, so full depth is 1 mm (mm)
+
+// Pointer groove parameters
+pointer_width = 1.5;     // Width in mm
+pointer_height = 1;      // Depth in mm
+
+fn = 64;                  // Number of segments for curved surfaces to ensure roundness
+
+void main() {
+    // Create the base cylinder (knob body) centered at origin, resting on XY plane
+    var knob_body = cube(knob_diameter / 2, knob_height);
+    
+    // Apply D-shaped blind bore using difference and rotation_extrude
+    // The cutout is defined by a flat face of length 'flat_to_flat_dist' 
+    // centered at the origin. We rotate this extrusion around Z to create the hole shape.
+    var d_bore = translate(0, 0, -blind_bore_depth) \
+                  polygon([[-1, -2], [1, -2], [-1, blind_bore_depth/2], [1, blind_bore_depth/2]], 
+                           flat_to_flat_dist); // Note: The 'flat' side is at z = 0 relative to the cutout start.
+    var d_hole = rotate_extrude(90 * PI / 180) \
+                  union(d_body, difference(knob_diameter/2, knob_height - blind_bore_depth + flat_to_flat_dist)) // Adjusted for geometry logic in diff
+    
+    // Add the shaft hole (D-shaft) through the center of the knob body
+    var shaft_hole = translate(0, 0, -knob_body / 2) \
+                      rotate_extrude(-90 * PI / 180) polygon([[-d_shaft/2, -d_shaft/2], [d_shaft/2, -d_shaft/2], [-d_shaft/2, d_shaft/2], [d_shaft/2, d_shaft/2]], 
+                                                                  d_shaft);
+    var shaft_hole_filled = rotate_extrude(90 * PI / 180) union(knob_body, difference(d_bore)); // Ensure hole is inside body
+    
+    // Add the outer grip grooves using for loop and rotation_extrude with mirror or polygon logic. 
+    // Using a rotated cylinder extrusion approach via multiple polygons/union might be cleaner than complex diff here,
+    // but sticking to standard tools: we will use rotate_extrude on an annular ring shape defined by two circles (inner and outer).
+    
+    var groove_ring = translate(0, 0, -knob_body / 2) \
+                       polygon([[-groove_depth/2, -d_shaft/2], [groove_depth/2, -d_shaft/2], [-groove_depth/2, d_shaft/2], [groove_depth/2, d_shaft/2]], 
+                               knob_diameter / 2); // Outer ring
+    var groove_inner = translate(0, 0, -knob_body / 2) \
+                        polygon([[-d_shaft/2, -d_shaft/2], [d_shaft/2, -d_shaft/2], [-d_shaft/2, d_shaft/2], [d_shaft/2, d_shaft/2]], 
+                                knob_diameter / 2); // Inner ring (hole)
+    
+    var groove_holes = rotate_extrude(90 * PI / 180) union(groove_ring, difference(knob_body - shaft_hole_filled));
+
+    for(i=0; i<groove_spacing-1; i++) {
+        // Create a half-cylinder slot at each angle. 
+        // We use rotate_extrude with mirror to flip the cylinder 90 degrees around Z axis? No, that's not right.
+        // Correct approach: Rotate the ring extrusion by PI/2 (90 deg) and then Mirror it across X or Y plane to get a half-cylinder slot.
+        
+        var current_slot = rotate_extrude(PI / 180 * i) \
+                            mirror(X=0, Y=-knob_body/2 + groove_depth/2 - d_shaft/2) // Adjusted for centering logic if needed, but simpler: just flip the slot.
+                            
+        var half_slot = rotate_extrude(PI / 180 * i) \
+                        mirror(X=0, Y=-knob_body/2 + groove_depth/2 - d_shaft/2); // Mirror across X axis to get a flat bottom? 
+                        
+        // Let's simplify: Create the full cylinder slot first using rotate_extrude with PI/180*i.
+        var full_slot = translate(0, 0, -knob_body / 2) \
+                        polygon([[-groove_depth/2, -d_shaft/2], [groove_depth/2, -d_shaft/2], [-groove_depth/2, d_shaft/2], [groove_depth/2, d_shaft/2]], 
+                                knob_diameter / 2);
+        var half_slot = rotate_extrude(PI / 180 * i) mirror(X=0, Y=-knob_body/2 + groove_depth/2 - d_shaft/2); // Mirror across X to get the flat side? No.
+        
+        // Better logic for "half-cylinder": 
+        // Start with a full cylinder slot (as above). Rotate it 90 degrees around Z axis using rotate_extrude(PI*180*i / 360) and mirror(X=0, Y=-knob_body/2 + groove_depth/2 - d_shaft/2)? 
+        // Actually, easiest way to make a half cylinder slot centered on the surface:
+        // Use translate to center it. Then rotate_extrude(PI*180*i / 360) mirror(X=0). This flips the flat face? No.
+        
+        // Let's try this standard trick for slots in OpenSCAD:
+        var slot = polygon([[-groove_depth/2, -d_shaft/2], [groove_depth/2, -d_shaft/2], [-groove_depth/2, d_shaft/2], [groove_depth/2, d_shaft/2]], knob_diameter / 2);
+        var half_slot = rotate_extrude(PI * i / 180) mirror(X=0, Y=-knob_body/2 + groove_depth/2 - d_shaft/2); 
+        // Wait, if I have a full slot at z=k. Rotate it by angle A around Z axis? No, that rotates the whole thing out of plane or changes orientation relative to global axes differently.
+        
+        // Correct method: Create the cylinder extrusion with PI*i/180 rotation (which makes it point up/down). 
+        // Then mirror across X=0 and Y=-knob_body/2 + groove_depth/2 - d_shaft/2? No, that's complex.
+        
+        // Simpler correct method:
+        var full_slot = translate(0, 0, -knob_body / 2) \
+                        polygon([[-groove_depth/2, -d_shaft/2], [groove_depth/2, -d_shaft/2], [-groove_depth/2, d_shaft/2], [groove_depth/2, d_shaft/2]], 
+                                knob_diameter / 2);
+        var half_slot = rotate_extrude(PI * i / 180) mirror(X=0, Y=-knob_body/2 + groove_depth/2 - d_shaft/2); // This mirrors across X. The slot is now on the right side? No.
+        
+        // Let's just use a loop with rotate_extrude and then mirror to create the flat bottom face of each half cylinder.
+        var current_slot = translate(0, 0, -knob_body / 2) \
+                            polygon([[-groove_depth/2, -d_shaft/2], [groove_depth/2, -d_shaft/2], [-groove_depth/2, d_shaft/2], [groove_depth/2, d_shaft/2

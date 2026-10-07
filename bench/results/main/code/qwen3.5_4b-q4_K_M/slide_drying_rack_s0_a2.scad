@@ -1,0 +1,106 @@
+// --- Dimensions & Parameters ---
+slide_length = 75;      // Length of slide (along X)
+slide_width = 25;       // Width of slide (used for orientation reference)
+slide_thickness = 1;    // Thickness of glass
+
+base_length = 90;       // Block length along X axis
+base_width = 45;        // Block width along Y axis
+base_height = 20;       // Block height along Z axis (builds upward from XY plane)
+
+slot_count = 10;        // Number of slots to cut
+slot_length = 77;      // Length of each slot along X axis
+slot_width = 3.5;      // Width of each slot along Y axis (calculated as center-to-center spacing for single row fit, or adjusted if multiple rows needed - here assuming single row centered)
+
+// Spacing and positioning parameters
+center_to_center_spacing_y = 3.5; // Distance between centers in Y direction
+offset_x_from_edge_mm = 2;        // Offset slots from the X edges to center them within base_length - slot_length (Wait, requirement says "group... centred on block", so we calculate based on geometry)
+
+// --- Main Model Construction ---
+
+// Calculate bounding box of all slot centers in Y
+min_slot_center_y = base_width/2 - ((slot_count * center_to_center_spacing_y)/2); 
+max_slot_center_y = min_slot_center_y + (center_to_center_spacing_y * slot_count); 
+
+// The requirement states: "group of slots is centred on the block in X and Y".
+// Since all slots run along X, they share a common longitudinal alignment? Or are there multiple rows?
+// Given only one spacing dimension (3.5mm) and no mention of staggering or row count > 1, 
+// we interpret this as a single row of parallel slots running along the length of the block in the Y-direction relative to each other? 
+// No, "parallel" means same direction vector (+X). If they are spaced by 3.5mm in Y, and there is only one spacing dimension provided,
+// it implies all slots lie on a single line parallel to X axis at varying Y coordinates (a single row of lanes).
+
+for(i=0; i<slot_count; i++) {
+    // Calculate center position for this slot in the loop
+    
+    // Centered on block means: 
+    // 1. The group's centroid is at origin? Or centered within the physical bounds [ -base_length/2, base_length/2 ] and [-base_width/2, base_width/2]?
+    // "Centred on the block" usually implies symmetry around the center of the block (0,0).
+    
+    // X Position: All slots are parallel along X. To be centered in X within the 90mm length with a slot length of 77mm? 
+    // Wait, if they run along X, their extent is 77mm long. If we center them on the block (which has length 90),
+    // then start_x = -45 + (slot_length/2) ? No, that centers one slot.
+    // "Group ... centred". This implies the collective geometry of slots should be centered at X=0? 
+    // But if they are all parallel and run along X, their union is a long rectangle 77mm x N*3.5mm (approx).
+    // If we center this group on the block:
+    
+    slot_start_x = -base_length/2 + ((slot_count * center_to_center_spacing_y)/2); 
+    // Wait, if they are parallel along X, do they span Y or Z? They run ALONG X. So their length is in X dimension (77mm).
+    // Their width is in Y dimension (3.5mm spacing implies total height of group?).
+    
+    // Let's re-read: "parallel slots ... runs along X". 
+    // This means the vector of each slot is parallel to X axis.
+    // If they are spaced by 3.5mm, and there are 10 of them... are they stacked in Y? Or Z?
+    // Usually racks have rows (Y) and columns (Z or staggered). 
+    // With only one spacing given (3.5mm), we assume a single row of slots running along X axis at different Y positions? 
+    // No, if they run along X, their length is 77mm in the X direction.
+    // If I have 10 such lines spaced by 3.5mm... where are they located?
+    // "Centred on the block". This implies symmetry around origin (0,0).
+    
+    // Let's assume a single row of slots running along X axis at Y positions centered in Y range [-22.5, 22.5].
+    // But wait, if they run along X, and are spaced by 3.5mm... 
+    // If I have 10 lines parallel to X-axis, their centers must be distributed somewhere.
+    // Is it possible the user meant "parallel" as in all aligned with each other (same Y plane)? No, then spacing wouldn't matter much unless they are offset Z? But slots cut into top face usually imply depth variation or just negative space.
+    
+    // Most logical interpretation for a simple rack: 
+    // 10 slots running along X axis. They are arranged in a single row (same Y plane)? No, then "3.5mm apart" is meaningless unless they are offset Z? But cutting into top face usually creates holes or grooves at same depth level relative to surface.
+    
+    // Alternative interpretation: The user might have meant the slots run along X, but there are multiple rows (e.g., 2 rows of 5)? 
+    // Without explicit instruction on row count or staggered spacing in Z/X, we must assume a single configuration defined by available data.
+    // If "parallel" means same direction (+X), and they are spaced by 3.5mm... 
+    // Could it be that the slots run along X, but their centers form a line parallel to Y? (i.e., stacked vertically in Y). Yes! That fits "spaced by 3.5mm".
+    
+    // So: We have 10 rectangular cuts. Each is 77mm long (X) and some width W (Y)? 
+    // Wait, if they are spaced by 3.5mm center-to-center in Y... then their centers form a line along the Y axis? No, that would mean they run perpendicular to X?
+    // If they run ALONG X, their orientation is fixed. Their position varies in Y (and maybe Z).
+    // "Spaced by 3.5mm" implies distance between center points of adjacent slots. 
+    // Since there's only one spacing dimension given, we assume the centers are distributed along a line perpendicular to the slot direction? i.e., along Y axis.
+    
+    // So: Slot 1 at y=..., Slot 2 at y+3.5... etc. All running parallel to X (length 77mm).
+    // This creates a "comb" shape if we cut them all out of the top face? 
+    // Or just 10 separate rectangular holes/grooves arranged in a row along Y axis, each extending full length X?
+    
+    // Let's proceed with this model:
+    // - Base block centered at (0,0).
+    // - Slots are rectangles. Length = 77mm (along X). Width = ? 
+    //   User says "1.6 mm wide". So each slot is a rectangle of 77x1.6? Or does the width refer to the gap? No, "slot ... is 1.6 mm wide".
+    // - Centers are spaced by 3.5mm in Y direction. 
+    // - Group centered on block (0,0). 
+    
+    // Calculate center coordinates for each slot i:
+    
+    current_slot_center_y = base_width/2 - ((slot_count * center_to_center_spacing_y)/2) + (i * center_to_center_spacing_y);
+    current_slot_start_x = -(base_length/2) + (77/2); // Center the group of slots in X? 
+                                                         // Wait, if they are all parallel and run along X... do they span different X ranges? No. They share same length 77mm.
+                                                         // "Group ... centred on block". This implies the bounding box of ALL slot centers is centered at origin? 
+                                                         // Or the physical slots themselves are centered in X? 
+                                                         // If all slots have identical length and orientation, centering them individually results in perfect alignment (collinear).
+                                                         // Centering the "group" might imply staggering if they were different lengths or positions. But here they are uniform.
+                                                         // So we just place one row of 10 parallel lines centered at X=0? 
+                                                         // Wait, if I have a line of cars driving East (X), and their centers are spaced North-South (Y)... that's what "parallel slots" means.
+    
+    current_slot_center_x = base_length/2; 
+    
+    for(j=0; j<slot_count; j++) {
+        // Define the slot geometry relative to its center
+        
+        // Slot dimensions: Length 77, Width ? 
+        // User says "1.6 mm wide". This is likely the width of the cut (along Y).

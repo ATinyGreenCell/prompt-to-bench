@@ -1,0 +1,66 @@
+// Dimensions in millimetres
+$fn = 256;
+d_spout_outer = 10;      // Spout outer diameter
+h_spout = 20;            // Spout height (z=0 to z=20)
+cone_height = 30;        // Cone height from z=20 to z=50
+wall_thickness = 1.6;
+d_cone_top = d_spout_outer - wall_thickness * 2; // Inner diameter at cone top (z=20)
+d_cone_rim = 60;         // Rim outer diameter
+
+// Create the funnel cone wall
+cone_base_radius = d_cone_top / 2;
+cone_rim_radius = d_cone_rim / 2;
+
+linear_extrude(height=cone_height) * polygon(points=[
+    [0, -cone_base_radius],
+    [-cone_base_radius, cone_base_radius],
+    [cone_base_radius, cone_base_radius]
+]) -
+
+translate([0, 0, wall_thickness/2]) *
+linear_extrude(height=cone_height) * polygon(points=[
+    [-wall_thickness, -wall_thickness],
+    [-wall_thickness, wall_thickness],
+    [wall_thickness, wall_thickness]
+]);
+
+// Spout tube (cut-out)
+cylinder(d=d_spout_outer - wall_thickness, h=h_spout + cone_height);
+
+// Funnel top opening
+translate([0, 0, h_spout]) * rotate([90, 0, 0]) *
+linear_extrude(height=wall_thickness) * polygon(points=[
+    [0, -(d_cone_rim/2)],
+    [-d_cone_rim/2, d_cone_rim/2],
+    [d_cone_rim/2, d_cone_rim/2]
+]);
+
+// Funnel bottom opening
+translate([0, 0, -wall_thickness]) * cylinder(d=d_spout_outer - wall_thickness*2, h=h_spout + cone_height);
+
+// Combine all parts
+(
+    translate([0, 0, h_spout]) *
+    (
+        difference(
+            rotate([90, 0, 0]) * linear_extrude(height=cone_height) * polygon(points=[
+                [0, -cone_rim_radius],
+                [-cone_rim_radius, cone_rim_radius],
+                [cone_rim_radius, cone_rim_radius]
+            ]),
+            translate([0, 0, wall_thickness/2]) *
+            rotate([90, 0, 0]) * linear_extrude(height=cone_height) * polygon(points=[
+                [-wall_thickness, -wall_thickness],
+                [-wall_thickness, wall_thickness],
+                [wall_thickness, wall_thickness]
+            ])
+        )
+    ) -
+    cylinder(d=d_spout_outer - wall_thickness*2, h=h_spout + cone_height)
+) +
+translate([0, 0, h_spout]) * rotate([90, 0, 0]) *
+linear_extrude(height=wall_thickness) * polygon(points=[
+    [0, -(d_cone_rim/2)],
+    [-d_cone_rim/2, d_cone_rim/2],
+    [d_cone_rim/2, d_cone_rim/2]
+]);

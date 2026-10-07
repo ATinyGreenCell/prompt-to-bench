@@ -1,0 +1,74 @@
+```openscad
+// Dimensions in millimetres
+
+$fn = 64;
+
+// Knob dimensions
+knob_diameter = 30;
+knob_height = 15;
+
+// D-shaft bore (blind hole)
+bore_depth = 12;
+bore_radius = 3.1; // 6.2 mm diameter circle radius
+flat_side_length = 4.7; // Distance from flat to opposite side of circle
+
+// Grip grooves
+grip_groove_diameter = 2;
+num_grip_grooves = 18;
+
+// Pointer groove
+pointer_width = 1.5;
+pointer_depth = 1;
+
+// Calculate flat offset for D-shaft bore
+flat_offset = (bore_radius - flat_side_length/2);
+
+// Main assembly function
+module knob() {
+    // Create outer cylinder
+    outer_cylinder = cylinder(diameter=knob_diameter, height=knob_height);
+
+    // Create bottom base with D-bore
+    bottom_base = difference(
+        rotate([90, 0, 0], flat_offset),
+        cylinder(diameter=bore_radius+1.5, center=[0, 0, -bore_depth/2])
+    );
+
+    // Create D-shaft bore cutout
+    ds_bore_cut = difference(
+        rotate([90, 0, 0], flat_offset),
+        union(
+            cylinder(diameter=bore_radius+1.5, height=bore_depth),
+            translate([0, flat_side_length/2, -bore_depth/2]),
+            cylinder(diameter=flat_side_length+1.5)
+        )
+    );
+
+    // Create grip grooves
+    module groove() {
+        return difference(
+            rotate([0, 90, 0], -360/num_grip_grooves * i),
+            cylinder(diameter=grip_groove_diameter + 2, center=[0, 0, 0])
+        );
+    }
+
+    grip_union = union(for (i in [0:num_grip_grooves-1]) groove());
+
+    // Create pointer groove
+    pointer_cut = difference(
+        rotate([90, flat_offset], [0, 0, 1]),
+        translate([pointer_width/2, -flat_side_length/4, 0]),
+        cylinder(diameter=knob_diameter + 1.5, height=pointer_depth)
+    );
+
+    // Combine all parts
+    return difference(
+        union(outer_cylinder, bottom_base),
+        union(ds_bore_cut, grip_union, pointer_cut)
+    );
+}
+
+// Main assembly
+translate([0, 0, 0])
+knob();
+```

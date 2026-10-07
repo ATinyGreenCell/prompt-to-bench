@@ -1,0 +1,35 @@
+```openscad
+// Define dimensions
+$fn = 64;
+plate_width = 130;
+plate_height = 90;
+plate_thickness = 4;
+hole_diameter = 30.5;
+wall_length = plate_width;
+wall_thickness = plate_thickness;
+rack_height = 70;
+
+// Create the plate with six through-holes
+plate = translate([0, 0, 0]) * cube([plate_width, plate_height, plate_thickness]);
+holes = for (x=[0:2], y=[0:1]) {
+    translate([x*hole_diameter/2 + (x+1)*hole_diameter/2, y*hole_diameter/2 + (y+1)*hole_diameter/2, 0])
+        * circle(hole_diameter);
+};
+plate_with_holes = plate - holes;
+
+// Create the walls
+walls = for (x=[0:1]) {
+    translate([x*wall_length, 0, 0]) * cube([wall_length, plate_height, wall_thickness]);
+};
+
+// Combine the plate with holes and walls
+rack = plate_with_holes + walls;
+
+// Flip the rack over
+flipped_rack = rotate_extrude(angle=180) * rack;
+
+// Render the final model
+render() {
+    flipped_rack;
+}
+```

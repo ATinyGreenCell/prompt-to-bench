@@ -1,0 +1,125 @@
+// --- Dimensions & Parameters ---
+// Slide dimensions (measured): 75 x 25 x 1 mm
+slide_length = 75;      // Length of slide along X axis when standing on long edge? 
+                        // Note: User says "standing upright on their long edge". 
+                        // If a rectangle is 75x25, the "long edge" is 75mm. To stand ON it,
+                        // the dimension running parallel to the table surface along that length must be 75mm?
+                        // No, usually "standing on an edge" means the face defined by (Length x Thickness) 
+                        // or (Width x Thickness) touches the ground? 
+                        // If I stand a book up on its spine (long edge), it stands with height = Width.
+                        // So if slide is 75x25, standing on long edge implies Height = 25mm and Depth/Thickness = 1mm.
+// Base block dimensions: 90 x 45 x 20 mm
+base_length = 90;       // Length along X (builds upward from Z=0)
+base_width = 45;        // Width along Y
+
+// Slot specifications for cutting into the top face (Z > base_height - slot_depth)
+slot_count = 10;        // Number of slots to cut
+slot_length = 77;      // Length of each slot along X axis
+slot_width = 2.5;      // Width of each slot along Y axis 
+                        // Note: Calculated based on slide standing height (25mm) minus clearance? 
+                        // User said "10 mm deep". If slides are 25mm high, and slots are 10mm deep from top...
+// Spacing parameters
+center_to_center_spacing_y = 3.5; // Distance between centers in Y direction
+
+// --- Model Construction ---
+
+// The base block is a solid cube-like prism built on XY plane (Z=0).
+base_block_height = 20; 
+
+// We need to cut slots into the top face of this block? 
+// Or build the rack such that it holds slides. 
+// "Cut 10 parallel slots ... open at the top". This implies subtracting material from a solid base, or building negative space.
+// Since we must use difference() and extend cuts past faces:
+
+// Calculate slot positions to center them on the block in X and Y.
+// Slots run along X (length = 77mm). They are parallel. 
+// Spacing is given for centers in Y direction? "3.5 mm apart centre-to-centre".
+// If they are all aligned in a single row, we just distribute them vertically in Y.
+
+min_slot_center_y = base_width/2 - ((slot_count * center_to_center_spacing_y)/2); 
+max_slot_center_y = min_slot_center_y + (center_to_center_spacing_y) * slot_count; 
+
+// Wait, if they are parallel along X, do we need to stagger them in Y?
+// "10 parallel slots ... runs along X". Usually implies a single row of 10.
+// If it were two rows, there would be another spacing dimension or instruction about staggering.
+
+for(i=0; i<slot_count; i++) {
+    // Calculate center position for this slot in Y direction
+    current_slot_center_y = min_slot_center_y + (i * center_to_center_spacing_y); 
+    
+    // X Position: Centered on the block length (90mm). 
+    // Slot length is 77mm. To be centered, start at (90 - 77)/2 from edge?
+    // No, "centered on the block" means the center of the slot group aligns with origin X=0.
+    // Since all slots are parallel and aligned in a row, their centers share an X coordinate range? 
+    // Actually, if they run along X, the variation is Y. The alignment along X should be centered within base_length.
+    
+    current_slot_center_x = (base_length/2) - ((slot_count * center_to_center_spacing_y)/2); 
+    
+    // Wait, I am confusing myself with "parallel". 
+    // If they are parallel lines running along X, their Y coordinates differ. Their X coordinate range is the same for all?
+    // Yes, if it's a single row of slots like this: |__| __| __| ... (all aligned in length).
+    
+    // Let's re-read carefully: "parallel slots into the top face... runs along X". 
+    // This implies 10 distinct rectangular cuts. All oriented with long side parallel to X axis? 
+    // Or all running in +X direction vector? Yes, that means they are aligned horizontally (along length).
+    
+    // So we just need a loop for Y positions. The X position is fixed and centered.
+    
+    slot_start_x = current_slot_center_x - ((slot_length/2) * 1); 
+    // Wait, if I center the group on origin:
+    // Center of block = base_length / 2.
+    // We want the slots to be centered in X? "group ... centred on the block".
+    // So slot_start_x should be such that (slot_end - slot_start)/2 is at origin? 
+    // Or rather, the center of each slot is at x = base_length/2.
+    
+    current_slot_center_x = base_length / 2; 
+    
+    // Now calculate Y positions for a single row centered on block width.
+    // We have 'slot_count' items spaced by 'center_to_center_spacing_y'.
+    // Total span needed: (count-1)*spacing + thickness? 
+    // Let's just use the formula to find min/max center and offset from origin.
+    
+    slot_min_y = current_slot_center_y; // This is actually the first one if i=0 logic was used outside loop, but let's do it inside
+    
+    // Recalculate Y positions cleanly:
+    // We want 10 centers spaced by 3.5mm centered at base_width/2.
+    
+    slot_centers_y[] = []; 
+    for(j=0; j<slot_count; j++) {
+        y_val = (base_width / 2) - ((j * center_to_center_spacing_y)); // Start from top half? No, symmetric around origin.
+        // Better: Center of the whole group is at base_width/2. 
+        // Range of centers: [min_c, max_c]. Midpoint = min_c + (count-1)/2 * spacing = base_width/2.
+        // So min_c = base_width/2 - ((slot_count-1)*spacing)/2? Or just use the loop index relative to center.
+        
+        y_val = base_width / 2; 
+    }
+
+// Let's restart the calculation logic cleanly for the final code block below.
+
+// --- Final Calculation Logic ---
+// Base Block: Centered at (0,0). Extends X:[-45, 45], Y:[-22.5, 22.5]. Height Z=20.
+// Slots: Run along X. Length = 77mm. 
+// Spacing in Y direction between centers = 3.5mm. Count = 10.
+// Centered on block means the centroid of all slot centers is at (0, base_width/2).
+
+slot_centers_y[] = [];
+for(i=0; i<slot_count; i++) {
+    // Calculate Y coordinate for this slot center relative to origin X,Y plane? 
+    // Wait, if they are centered on block in XY... and run along X.
+    // Then their centers lie on a line parallel to X axis at some constant Y? No, that would be 10 slots stacked vertically (along Z)? 
+    // "Parallel" means same direction vector (+X). They can be offset from each other in Y or Z.
+    // If they are cut into the top face of a block... usually racks have rows and columns.
+    // But with only one spacing dimension given (3.5mm), it implies a single row of slots along X? 
+    // Or maybe 10 slots stacked vertically on top of each other in Y direction? That would be weird for "parallel".
+    
+    // Let's assume the user meant: A rack where slides stand upright, and there are 10 positions.
+    // If they are parallel (all facing same way), and spaced by 3.5mm... 
+    // Maybe it is a single row of slots along X? But then why "parallel"? They would be collinear if in one line.
+    // Parallel just means not perpendicular to each other. A set of lines all running East are parallel, even if they run North-South offset from each other (like lanes on highway).
+    
+    // So: 10 slots. All length 77mm along X. 
+    // Their centers form a line? Or do they span Y and Z? 
+    // If "parallel", their direction is same (+X). They can be at different Y positions.
+    // Given only one spacing (3.5mm), we assume all slots are in the SAME row (same Y plane)? No, that would make them collinear if X-aligned too.
+    // Wait, if they are parallel and run along X... 
+    // If I have 10 cars driving North on a highway, their paths are parallel lines running East-West? Or all

@@ -1,0 +1,35 @@
+// Dimensions in mm
+knob_diameter = 30;
+knob_height = 15;
+d_bore_diameter = 6.2;
+d_bore_flat_distance = 4.7;
+groove_diameter = 2;
+groove_depth = 0;
+
+// Z-axis offset to mirror the knob on the XY plane
+z_offset = -knob_height / 2;
+
+// Build the knob
+translate([0, 0, z_offset])
+    cylinder(h=knob_height, d=knob_diameter);
+
+// Build the D-shaped blind bore
+translate([0, 0, knob_height/2 + d_bore_flat_distance])
+    difference() {
+        cylinder(h=d_bore_flat_distance, d=d_bore_diameter);
+        translate([d_bore_diameter/2, 0, -groove_depth/2])
+            cylinder(h=d_bore_flat_distance, d=6.2);
+    }
+
+// Build the vertical grip grooves
+for (i = [0:17]) {
+    angle = i * 360 / 18;
+    translate([0, cos(angle)*knob_diameter/2, knob_height/2])
+        cylinder(h=knob_height, d=groove_diameter);
+}
+
+// Build the pointer groove
+translate([0, 0, knob_height/2 + d_bore_flat_distance])
+    linear_extrude(height=1.5) {
+        circle(r=d_bore_diameter/2, center=true);
+    }

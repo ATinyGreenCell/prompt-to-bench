@@ -1,0 +1,25 @@
+// Define dimensions in millimeters
+$fn = 64; // for better hole roundness
+
+// Cylinder part
+cube([30, 15, 2]);
+
+// D-shaft blind bore
+translate([-15, -12, 0])
+    cylinder(diameter=6.2, height=12);
+
+// Grip grooves on the outside of the knob
+for (i in [0:18]) {
+    translate([30 * i / 18, 14.7, 15])
+        sphere(2);
+}
+
+// Pointer groove on top face
+translate([-15, -0.5, 15])
+    cylinder(diameter=6.2, height=1);
+
+// Final union to form the complete part
+union() {
+    translate([0, 0, 0])
+        cube([30, 15, 2]);
+}
