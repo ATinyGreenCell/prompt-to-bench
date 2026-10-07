@@ -10,8 +10,8 @@ authors:
     affiliation: Binomica Labs
     orcid: "https://orcid.org/0000-0002-6821-2996"
     alias: ATinyGreenCell
-version: 0.1.0
-date-released: 2026-10-05
+version: 0.2.0
+date-released: 2026-10-07
 license:
   - CC-BY-4.0
   - CERN-OHL-P-2.0

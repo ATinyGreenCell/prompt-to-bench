@@ -8,14 +8,15 @@ measures, decides and prints; you write, render, check and fix the code.
 - Printer: Original Prusa MK4, 0.4 mm nozzle, build volume 250 x 210 x 220 mm
 - Slicer: PrusaSlicer (CLI below)
 - Default material: PLA; PETG for heat (up to ~65 °C), flexing parts or ethanol
-- Clearance per side (from designs/calibration/clearance_coupon.scad): press 0.05, sliding 0.15, loose 0.25  <- replace with your measurements
+- Clearance per side (from designs/calibration/clearance_coupon.scad): press 0.05, sliding 0.25, loose 0.4  <- starting values; replace with your measurements
 - Max overhang without supports: 45°; minimum wall: 0.9 mm (2 perimeters)
 
 ## Workflow for every part
 
 1. Ask for anything missing: measured dimensions, which face sits on the bed, what must fit what.
 2. Write one self-contained `.scad` file in `parts/`, named after the part.
-   - Millimetres. Every dimension a named variable at the top, in `/* [Section] */` Customizer groups.
+   - Millimetres. Every dimension a named variable at the top, in `/* [Section] */` Customizer groups,
+     with its description as a comment on the line above (the Customizer shows it).
    - Model in print orientation: resting on z = 0, centred in X/Y unless told otherwise.
    - Built-in OpenSCAD only (no `include`/`use`). Cutters overshoot faces by `eps = 0.01`.
      `$fn = 64` or more on round holes. Loops for arrays. Clearances from "Printer facts".
@@ -35,6 +36,7 @@ measures, decides and prints; you write, render, check and fix the code.
   enclosures, or anything that touches patients. Say why and suggest a commercial part instead.
 - Electrophoresis and other high-voltage devices: the design must keep live parts enclosed, and
   the header must say what is missing (lid, interlock) before it may be powered.
-- PLA softens at 55-60 °C; no printed plastic is autoclavable. Ethanol disinfects but does not
+- PLA softens at 55-60 °C; treat printed parts as not autoclavable (printed PLA, PETG, PP and PC
+  all deformed at 121 °C in tests). Ethanol disinfects but does not
   sterilise. PETG is attacked by acetone, phenol and chloroform. Say so when it matters.
 - Keep unpublished or client designs in this folder; do not upload them anywhere.

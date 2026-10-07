@@ -2,20 +2,20 @@
 
 *A hands-on tutorial for students and lab staff. No CAD experience needed. Part of the [Prompt to Bench](../README.md) project · CC BY 4.0*
 
-You will learn to turn "I need something that holds these tubes" into a printed part that fits, using a language model as your CAD assistant. The model writes the 3D design as a short program in **OpenSCAD**. Your job is to measure, describe, check and decide. Those are the parts no model can do for you.
+You will learn to turn "I need something that holds these tubes" into a printed part that fits, using a language model as your CAD assistant. The model writes the 3D design as a short program in **OpenSCAD**. Your job is to measure, describe, check and decide.
 
 **Time:** about 3 hours for parts 1-4; the rest whenever you need it.
 **You need:**
 
 - a computer (Windows, macOS or Linux; 8 GB RAM is enough for most of this, 16 GB for local AI models);
-- digital calipers (about US$10-20 — the single best investment in this tutorial);
+- digital calipers (about US$10-20);
 - access to an FDM 3D printer (your own, a shared one or a makerspace).
 
 **You do not need:** a GPU or a permanent internet connection. A hosted chatbot is the most reliable option; see [Part 8](#part-8-working-offline-with-a-free-local-model) for the offline option and its current limits.
 
 ---
 
-**New here? Start with [SETUP.md](SETUP.md):** our exact setup (Claude Code + Prusa MK4), the same workflow with any printer, slicer or chatbot, a setup-assistant prompt, and a 15-minute calibration for your printer.
+**New here? Start with [SETUP.md](SETUP.md):** our exact setup (Claude Code + Prusa MK4), the same workflow with any printer, slicer or chatbot, a setup-assistant prompt, and a 35-minute calibration print for your printer.
 
 ## Contents
 
@@ -101,16 +101,23 @@ Copy the code the model returns into a new OpenSCAD file, save it as `rack.scad`
 
 ```openscad
 /* [Rack] */
-cols = 6;              // holes along X
-rows = 4;              // holes along Y
-pitch = 16;            // centre-to-centre spacing [mm]
-hole_d = 11.6;         // tube body 10.8 mm + clearance
-hole_depth = 25;       // blind holes, leaves a 5 mm floor
-block = [106, 72, 30]; // X, Y, Z [mm]
+// holes along X
+cols = 6;
+// holes along Y
+rows = 4;
+// centre-to-centre spacing [mm]
+pitch = 16;
+// tube body 10.8 mm + clearance (see header)
+hole_d = 11.6; // 0.1
+// blind holes, leaves a 5 mm floor
+hole_depth = 25;
+// block height [mm]
+height = 30;
 
 /* [Hidden] */
 $fn = 64;
 eps = 0.01;            // cutters overshoot by eps so no faces are coplanar
+block = [cols * pitch + 10, rows * pitch + 8, height];  // 106 x 72 x 30 by default
 
 difference() {
     translate([-block.x / 2, -block.y / 2, 0]) cube(block);
@@ -120,7 +127,7 @@ difference() {
 }
 ```
 
-Read it once. It is a block **minus** (`difference`) 24 cylinders placed by two nested loops (`for`). Almost every lab part you will make is boxes and cylinders, added and subtracted. That is all OpenSCAD is.
+Read it once. It is a block **minus** (`difference`) 24 cylinders placed by two nested loops (`for`). The comment above each number is what the Customizer shows (Part 5), and the block size is computed from the hole grid, so changing `cols` or `pitch` keeps the walls intact. Most lab parts are boxes and cylinders, added and subtracted.
 
 ## Part 3. Check the part before you print it
 
@@ -150,7 +157,7 @@ Compare every line with your request:
 - Floor solid at z = 2.5? ✓
 - 24 holes of 11.6 mm on a 16 mm grid? ✓ (11.59: a 64-sided polygon is a hair smaller than a circle)
 
-> **Rule 3: when something is wrong, paste the report into the chat.** A language model cannot see your part; a report like this is the next best thing. In our benchmark it helped the hosted models fix most of their remaining mistakes. The small local models we tested usually ignored feedback and returned the same file - with them, start a new chat, simplify the request, or fix the code yourself.
+> **Rule 3: when something is wrong, paste the report into the chat.** A language model cannot see your part; a report like this is the next best thing. In our benchmark it helped Claude Haiku fix 3 of its 5 first-try failures. Some small local models (the Qwen2.5 family) almost always returned the same file - with them, start a new chat, simplify the request, or fix the code yourself.
 
 **Common problems and what they mean:**
 
@@ -237,9 +244,9 @@ You can run a model on your own laptop, with no account and no internet once it 
    ```
 3. Chat with it in a terminal (`ollama run <model>`), or connect any OpenAI-compatible chat app or OpenSCAD's experimental AI assistant to `http://localhost:11434`.
 
-**Which model?** We tested 14 free models on a 2022 laptop without a GPU ([paper, §6](../README.md#6-results)). None passed a task. The code models (Qwen2.5-Coder) mostly wrote OpenSCAD as if it were another language; the reasoning models (Qwen3.5, Granite, LFM2.5) ran out of tokens; the Gemma 4 models (E2B, E4B) came closest, rendering most parts but rarely at the right size. If you have any internet access, a hosted chatbot will save you hours. If you don't, a Gemma 4 model plus the starter prompt can draft code that you then fix by hand - which is also a fine way to learn OpenSCAD.
+**Which model?** We tested 14 free models on a 2022 laptop without a GPU ([paper, §6](../README.md#6-results)). None passed a task. The code models (Qwen2.5-Coder) mostly wrote OpenSCAD as if it were another language; the reasoning models (Qwen3.5, Granite, LFM2.5) ran out of tokens; the Gemma 4 models (E2B, E4B) came closest, rendering most parts but rarely at the right size. If you have internet access, use a hosted chatbot. If you don't, a Gemma 4 model plus the starter prompt can draft code that you then fix by hand - which is also a fine way to learn OpenSCAD.
 
-**Tips that make small models work better:**
+**Things to try with small models** (we have not measured whether they help):
 
 - Use the starter prompt from Part 2, and one part per chat.
 - Give every number. Small models cannot fill gaps sensibly.
@@ -275,7 +282,7 @@ Say which AI model and prompt you used. A permissive open-hardware licence, such
 - **Fix an error:** "OpenSCAD says: [paste the error lines]. Fix it and reply with the complete corrected file."
 - **Fix the geometry:** "Here is a measurement report of the part your file produces: [paste the scadreport output]. Compare it with my specification, find what doesn't match and fix it."
 - **Change a parameter:** do it yourself in the Customizer.
-- **Explain:** "Explain what each line of this file does, as if to a biology student." This is a great way to learn OpenSCAD.
+- **Explain:** "Explain what each line of this file does, as if to a biology student."
 
 ### OpenSCAD in 15 lines
 
@@ -294,7 +301,9 @@ for (i = [0 : n - 1]) translate([i * pitch, 0, 0]) child();
 linear_extrude(height = 2) polygon([[0,0], [10,0], [0,10]]);   // 2-D shape -> 3-D slab
 rotate_extrude() polygon(profile);     // spin a 2-D (r, z) profile around Z: funnels, barbs
 module my_part(size = 10) { cube(size); }  // define your own; call it with my_part(5);
-/* [Section] */  value = 3;  // [1:10]    // Customizer sliders
+/* [Section] */                        // Customizer tab; the comment line above a
+// hole diameter [mm]                   //   parameter is its description, and a
+hole_d = 11.6; // 0.1                  //   trailing number its step (// [1:10] = slider)
 ```
 
 ### Glossary

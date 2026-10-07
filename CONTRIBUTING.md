@@ -6,7 +6,7 @@ Thank you for helping. This repository is a *living paper*: [`README.md`](README
 
 - **Never commit confidential material.** No client designs, unpublished collaborators' parts, patient or personal data, or anything you do not have the right to share under the licences below.
 - **Be kind and constructive.** We follow the [Contributor Covenant](https://www.contributor-covenant.org/version/2/1/code_of_conduct/). Many contributors write in a second language; edit for clarity, never mock.
-- **Disclose AI assistance.** Using AI tools is welcome, and is literally the subject of this paper. Say in your pull request what you used and for what. You are responsible for checking what you submit, especially references and numbers.
+- **Disclose AI assistance.** Using AI tools is welcome; it is the subject of this paper. Say in your pull request what you used and for what. You are responsible for checking what you submit, especially references and numbers.
 - **Cite primary sources.** Every new factual claim in the paper needs a reference that you have opened yourself. Give its DOI or URL and the date you accessed it.
 
 ## Ways to contribute
@@ -32,13 +32,13 @@ ollama pull qwen2.5-coder:7b            # or any model from bench/models.yaml
 
 ### 3. Add a task from your lab
 
-A good task is a part your lab really prints, described the way a careful student would describe it. It needs three things:
+A good task is a part your lab prints, described the way a careful student would describe it. It needs three things:
 
 - **A prompt** in [`bench/tasks.yaml`](bench/tasks.yaml). It gives every dimension in mm, the print orientation (which face is on the bed at z = 0), and coordinates wherever position matters. It must be checkable: avoid "nice", "ergonomic" or "about".
-- **A reference design** in [`designs/<category>/`](designs/), following the design conventions below.
+- **A reference design** in [`bench/reference/`](bench/reference/) that is exactly what the prompt asks for (and, if you like, a lab-ready version in [`designs/<category>/`](designs/)), following the design conventions below.
 - **Checks** in the same YAML entry, using the check types in [`bench/checks.py`](bench/checks.py): `bbox`, `bodies`, `slice` (holes, sizes, grids, areas), `probes`, `line`, `arc` and `volume`. Write probe coordinates in the frame of your reference design.
 
-Then run `python bench/build_refs.py`. Your reference must pass its own checks, still pass after rotation and mirroring, fail when scaled by 3%, and not pass any other task's checks.
+Then run `python bench/build_refs.py --write` (this adds your task to `reference_stats.json`). Your reference must pass its own checks, still pass after rotation and mirroring, fail when scaled by 3%, and not pass any other task's checks. Add one or two plausible wrong versions to [`bench/mutants/`](bench/mutants/) (`<task>__<what is wrong>.scad`): they must fail.
 
 ### 4. Add or review a translation
 
@@ -67,13 +67,14 @@ Typos, unclear sentences, missing references, better figures and translations of
   - category, purpose, print settings and orientation, and any safety notes;
   - `// SPDX-License-Identifier: CERN-OHL-P-2.0`.
 - **Parameters:**
-  - Every dimension is a named variable at the top, in mm, with a comment.
+  - Every dimension is a named variable at the top, in mm, with its description on the line above (that is where the Customizer reads it). Give decimal values a step, e.g. `hole_d = 11.6; // 0.1`.
   - Group them under `/* [Section] */` Customizer headings.
   - Put helper values under `/* [Hidden] */`.
 - **Modelling:**
   - Model the part in print orientation: it rests on z = 0, needs no supports where possible, and is centred in XY unless the geometry says otherwise.
   - Cutters overshoot by `eps` so no faces are coplanar.
   - Set `$fn` for round holes.
+  - Add `assert()` checks for parameter combinations that would break the part (holes overlapping, a floor or wall under 0.8 mm), and add a valid and an impossible case for your design to [`tools/check_designs.py`](tools/check_designs.py). Run `make designs`.
 - **Repository hygiene:**
   - Commit only the `.scad` source.
   - STL and G-code files are build outputs (see `.gitignore`).

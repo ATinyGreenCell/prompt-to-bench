@@ -6,7 +6,7 @@ This page has three parts:
 
 - [A](#a-our-exact-setup): how the author's setup works: Claude Code, an Original Prusa MK4, PrusaSlicer and OpenSCAD.
 - [B](#b-any-printer-any-slicer-any-chatbot): the same workflow with whatever printer, slicer and AI you have, including free and offline options.
-- [C](#c-calibrate-once-your-printer-facts-card): a 15-minute calibration that makes every design fit better on *your* printer.
+- [C](#c-calibrate-once-your-printer-facts-card): a 35-minute calibration print that makes every design fit better on *your* printer.
 
 You do not need the setup in A. Most of the value is in B and C.
 
@@ -46,7 +46,7 @@ Open PrusaSlicer once and run its configuration wizard for your printer. The wiz
 
 ### 2. Make a project folder that teaches Claude Code the workflow
 
-Claude Code reads a file called `CLAUDE.md` in the folder you start it from and follows it. We provide one ([`claude-code/CLAUDE.md`](claude-code/CLAUDE.md)). It contains the design rules, the render-and-check loop, the PrusaSlicer command for an MK4, and safety rules it will not override.
+Claude Code reads a file called `CLAUDE.md` in the folder you start it from and follows it. We provide one ([`claude-code/CLAUDE.md`](claude-code/CLAUDE.md)). It contains the design rules, the render-and-check loop, the PrusaSlicer command for an MK4, and safety rules for it to follow.
 
 ```bash
 mkdir -p ~/lab-parts/parts ~/lab-parts/build && cd ~/lab-parts
@@ -58,7 +58,7 @@ claude
 
 ### 3. Work
 
-Inside Claude Code, just describe the part:
+Inside Claude Code, describe the part:
 
 > Design a rack for six 15 mL tubes (I measured 16.8 mm across). Two rows of three, 25 mm apart, plate on the bed, 60 mm tall walls. Print a test coupon of one hole first.
 
@@ -112,7 +112,7 @@ The plan must include:
 - how to run the loop: describe the part with measured numbers -> AI writes OpenSCAD -> I render
   in OpenSCAD (F6) -> paste errors back -> check the size -> export STL (F7) -> slice -> print a
   small test coupon of the critical feature first;
-- a 15-minute calibration: print a clearance coupon (a plate with holes 0.0-0.5 mm larger than a
+- a short calibration: print a clearance coupon (a plate with holes 0.0-1.0 mm larger than a
   10 mm peg) and record my press, sliding and loose fits;
 - a "printer facts" card I can paste at the top of every future design request (printer, nozzle,
   build volume, material, my measured clearances, max overhang about 45 degrees, minimum wall
@@ -133,7 +133,7 @@ Use the starter prompt from [tutorial Part 2](README.md#step-2---give-the-model-
 
 Every printer and material prints holes a little differently. Measure yours once:
 
-1. Print [`designs/calibration/clearance_coupon.scad`](../designs/calibration/clearance_coupon.scad) (about 15 minutes) with your normal settings and material. It is a plate with six holes for a 10 mm peg, from +0.0 to +0.5 mm, and the peg itself.
+1. Print [`designs/calibration/clearance_coupon.scad`](../designs/calibration/clearance_coupon.scad) (about 35 minutes) with your normal settings and material. It is a plate with six holes for a 10 mm peg, from +0.0 to +1.0 mm on the diameter, and the peg itself. Push the peg's top end in from the plate's top face.
 
    ![Clearance coupon](../figures/designs/clearance_coupon.png)
 
