@@ -4,6 +4,7 @@ set -u
 MODELS=(
   qwen2.5-coder:0.5b
   qwen2.5-coder:1.5b
+  qwen2.5:1.5b
   qwen3.5:2b-q4_K_M
   granite4.2:3b
   llama3.2:3b

@@ -4,6 +4,7 @@
     python tools/render_designs.py
 """
 import os
+import shutil
 import subprocess
 
 import yaml
@@ -13,6 +14,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(ROOT, "figures", "designs")
 CATS = ["benchware", "tools", "quick-fixes", "hardware"]
 CAT_LABEL = {"benchware": "Benchware", "tools": "Tools", "quick-fixes": "Quick fixes", "hardware": "Full hardware"}
+OPENSCAD = os.environ.get("OPENSCAD", "openscad")
 CAT_COLOR = {"benchware": "#2a78b5", "tools": "#2f9e6e", "quick-fixes": "#c77b18", "hardware": "#8a4fbf"}
 
 
@@ -25,6 +27,8 @@ def font(size, bold=False):
 
 
 def main():
+    if shutil.which(OPENSCAD) is None:
+        raise SystemExit(f"OpenSCAD not found ({OPENSCAD!r}) - install it (openscad.org) or set OPENSCAD=/path/to/openscad")
     os.makedirs(OUT, exist_ok=True)
     tiles = []
     tasks = yaml.safe_load(open(os.path.join(ROOT, "bench", "tasks.yaml")))
@@ -32,10 +36,12 @@ def main():
         scad = os.path.join(ROOT, t.get("library", t["reference"]))
         png = os.path.join(OUT, t["id"] + ".png")
         # preview mode (OpenCSG) gives every part the same colour scheme
-        cmd = ["openscad", "-o", png, "--imgsize", "900,700", "--viewall", "--autocenter", "--colorscheme", "Tomorrow"]
+        cmd = [OPENSCAD, "-o", png, "--imgsize", "900,700", "--viewall", "--autocenter", "--colorscheme", "Tomorrow"]
         if subprocess.run(cmd + [scad], capture_output=True).returncode != 0:
             # preview needs OpenGL; on headless machines fall back to a full render (or run under xvfb-run)
-            subprocess.run(cmd + ["--render", scad], check=True, capture_output=True)
+            p = subprocess.run(cmd + ["--render", scad], capture_output=True, text=True, errors="replace")
+            if p.returncode != 0 or not os.path.exists(png):
+                raise SystemExit(f"OpenSCAD could not render {scad}:\n{(p.stdout + p.stderr)[-800:]}")
         tiles.append((t["category"], t["title"], png))
         print("rendered", t["id"])
     # 4 x 4 contact sheet, one column per category

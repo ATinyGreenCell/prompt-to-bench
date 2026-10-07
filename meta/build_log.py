@@ -24,6 +24,7 @@ EXTRA = os.path.join(ROOT, "meta", "redact.txt")
 PATTERNS = [
     (re.compile(r"<system-reminder>.*?</system-reminder>", re.S), ""),
     (re.compile(r"[\w.+-]+@[\w-]+\.[\w.-]+"), "[email]"),
+    (re.compile(r"[\w.+-]+@(?=[^\w.]|$)"), "[email]"),  # a bare "user@", e.g. in a grep pattern
     (re.compile(r"\b(gho|ghp|github_pat|sk-ant|sk)-?_?[A-Za-z0-9_\-]{12,}"), "[token]"),
     (re.compile(r"/tmp/claude-\d+/[^\s`'\")]*"), "[scratch]"),
     (re.compile(re.escape(os.path.expanduser("~"))), "~"),
@@ -46,6 +47,8 @@ def redact(text, extra):
 
 def tool_line(block):
     name, inp = block.get("name", "?"), block.get("input") or {}
+    if not isinstance(inp, dict):
+        inp = {"input": inp}
     if name == "Bash":
         cmd = (inp.get("command") or "").strip().splitlines()
         desc = inp.get("description") or ""
@@ -57,14 +60,16 @@ def tool_line(block):
         return f"`Agent` (sub-agent) {inp.get('description', '')}"
     if name in ("AskUserQuestion",):
         qs = inp.get("questions") or []
-        return "`AskUserQuestion` " + " / ".join(q.get("question", "") for q in qs)
+        return "`AskUserQuestion` " + " / ".join(str(q.get("question", "")) for q in qs if isinstance(q, dict))
     return f"`{name}` " + ", ".join(f"{k}={str(v)[:60]}" for k, v in list(inp.items())[:3])
 
 
 def text_of(content):
     if isinstance(content, str):
         return content
-    return "\n".join(b.get("text", "") for b in content if isinstance(b, dict) and b.get("type") == "text")
+    if not isinstance(content, list):
+        return ""
+    return "\n".join(str(b.get("text", "")) for b in content if isinstance(b, dict) and b.get("type") == "text")
 
 
 def is_human(txt):
@@ -75,15 +80,15 @@ def is_human(txt):
 
 
 def events(path):
-    for line in open(path):
+    for line in open(path, errors="replace"):
         try:
             d = json.loads(line)
         except json.JSONDecodeError:
             continue
-        if d.get("isSidechain"):
+        if not isinstance(d, dict) or d.get("isSidechain"):
             continue
-        t, ts = d.get("type"), d.get("timestamp", "")
-        m = d.get("message") or {}
+        t, ts = d.get("type"), str(d.get("timestamp") or "")
+        m = d.get("message") if isinstance(d.get("message"), dict) else {}
         if t == "user" and not d.get("isMeta") and not d.get("toolUseResult"):
             c = m.get("content")
             if isinstance(c, list) and any(b.get("type") == "tool_result" for b in c if isinstance(b, dict)):
@@ -96,8 +101,11 @@ def events(path):
         elif t == "queue-operation" and d.get("operation") == "enqueue" and is_human(str(d.get("content") or "")):
             yield ts, "human", str(d["content"])
         elif t == "assistant":
-            for b in m.get("content") or []:
-                if b.get("type") == "text" and b.get("text", "").strip():
+            content = m.get("content") or []
+            for b in [{"type": "text", "text": content}] if isinstance(content, str) else content:
+                if not isinstance(b, dict):
+                    continue
+                if b.get("type") == "text" and str(b.get("text") or "").strip():
                     yield ts, "claude", b["text"]
                 elif b.get("type") == "tool_use":
                     yield ts, "tool", tool_line(b)

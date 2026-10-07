@@ -13,6 +13,7 @@ Check types (see tasks.yaml):
          hole_grid, island_d, island_rects, material_area),
   probes, line, arc
 """
+import collections
 import math
 import os
 import sys
@@ -172,7 +173,7 @@ def build_items(task, ref):
                 def f(ctx, k, m, z=z, d=d, tol=tol):
                     hs = ctx["S"].get(z)["holes"]
                     bad = [round(h["d"], 2) for h in hs if abs(h["d"] - d) > tol]
-                    return bool(hs) and not bad, f"hole d off: {bad[:5]}" if bad else "ok"
+                    return bool(hs) and not bad, f"hole d off: {bad[:5]}" if bad else ("ok" if hs else "no holes")
                 items.append((f"{tag} hole_d", f, False))
             if "hole_area" in spec:
                 a, rel = spec["hole_area"]
@@ -188,7 +189,7 @@ def build_items(task, ref):
                 def f(ctx, k, m, z=z, l=l, w=w, ltol=ltol, wtol=wtol):
                     hs = ctx["S"].get(z)["holes"]
                     bad = [(round(h["l"], 2), round(h["w"], 2)) for h in hs if abs(h["l"] - l) > ltol or abs(h["w"] - w) > wtol]
-                    return bool(hs) and not bad, f"off: {bad[:3]}" if bad else "ok"
+                    return bool(hs) and not bad, f"off: {bad[:3]}" if bad else ("ok" if hs else "no holes")
                 items.append((f"{tag} hole_rect", f, False))
             if "hole_rects" in spec:
                 items.append((f"{tag} hole_rects", lambda ctx, k, m, z=z, e=spec["hole_rects"], t=spec.get("rect_tol", 0.4):
@@ -266,21 +267,41 @@ def build_items(task, ref):
                 pts = np.stack([c[0] + r * np.cos(th), c[1] + r * np.sin(th)], axis=1)
                 p = to_model(pts, k, m, dc)
                 mask = shapely.contains_xy(ctx["S"].get(z)["region"], p[:, 0], p[:, 1])
+                if not mask.any():
+                    return False, "no material on the arc"
                 if mask.all():
                     n = 0
                 else:
-                    i0 = int(np.argmax(mask)) if mask.any() else 0  # start inside material
+                    i0 = int(np.argmax(mask))  # start inside material
                     n = len(_runs(~np.roll(mask, -i0)))
                 return n == gaps, f"{n} gaps vs {gaps}"
             items.append((f"arc z={z}", f, True))
         else:
             raise ValueError(f"unknown check {kind}")
-    return items
+    # results are keyed by name: two checks with the same name (e.g. two lines at one height)
+    # would overwrite each other, so number the repeats
+    seen, unique = collections.Counter(), []
+    for name, f, dep in items:
+        seen[name] += 1
+        unique.append((name if seen[name] == 1 else f"{name} #{seen[name]}", f, dep))
+    return unique
+
+
+def ref_problems(task, ref):
+    """What is missing from a task's reference statistics (empty list = usable)."""
+    if not isinstance(ref, dict):
+        return ["no entry in reference_stats.json"]
+    need = ["design_center", "volume", "material_area"]
+    need += [f"material_area[{c['slice']['z']}]" for c in task["checks"]
+             if "material_area" in (c.get("slice") or {}) and str(c["slice"]["z"]) not in (ref.get("material_area") or {})]
+    return [k for k in need if "[" in k or k not in ref]
 
 
 def evaluate(mesh_or_path, task, ref):
     """Run all checks. Returns dict(passed, score, n, items=[...], transform)."""
     mesh = load_mesh(mesh_or_path) if isinstance(mesh_or_path, str) else mesh_or_path
+    if mesh is None or len(mesh.faces) == 0:
+        raise ValueError("empty mesh")
     mesh = normalise(mesh)
     bodies = mesh.split(only_watertight=False)
     ctx = {

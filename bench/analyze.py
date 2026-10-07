@@ -57,12 +57,19 @@ def load_runs():
         if run.startswith(("smoke", "calib", "_")):
             continue
         latest = {}
-        for line in open(path):
+        for line in open(path, errors="replace"):
             try:
                 r = json.loads(line)
             except json.JSONDecodeError:
                 continue
+            if not isinstance(r, dict) or not {"model", "task", "sample", "attempts"} <= r.keys():
+                continue  # valid JSON but not a record (hand edit, foreign file)
             r["_run"] = run
+            # A rescore can turn an earlier attempt into a pass; the attempts after it would never
+            # have been requested, so they are dropped (they would count as repairs and cut-offs).
+            first = next((i for i, a in enumerate(r["attempts"]) if a.get("passed")), None)
+            if first is not None:
+                r["attempts"] = r["attempts"][:first + 1]
             latest[(r["model"], r["task"], r["sample"], r.get("lang", "en"), r.get("feedback", "report"))] = r
         runs[run] = list(latest.values())
     return runs
@@ -112,7 +119,7 @@ def wilson(k, n, z=1.96):
 
 def outcome(rec):
     """Ordinal outcome of one conversation: 3 pass on 1st try, 2 pass after feedback,
-    1 rendered but never matched the spec, 0 never produced a printable part."""
+    1 rendered but never matched the spec, 0 nothing rendered."""
     atts = rec["attempts"]
     for i, a in enumerate(atts):
         if a.get("passed"):
@@ -190,7 +197,9 @@ def summarise(records, models_meta, tasks):
             "first_stage": dict(stages), "repeat_repairs": same, "n_repairs": len(repairs),
             "tiers": collections.Counter(tier(r) for r in recs),
             "tasks_half": sum(1 for b in best if b >= 0.5),
-            "geom_as_value": sum(1 for r in recs if r["attempts"] and GEOM_AS_VALUE.search(first_code(r) or "")),
+            # only real code: a whole unfenced reply ("bare") is usually prose about the code
+            "geom_as_value": sum(1 for r in recs if r["attempts"] and r["attempts"][0].get("extract") in ("fenced", "unterminated")
+                                 and GEOM_AS_VALUE.search(first_code(r) or "")),
             "truncated": sum(1 for r in recs for a in r["attempts"]
                              if (a.get("usage") or {}).get("done_reason") in ("length", "repetition")),
             "n_attempts": sum(len(r["attempts"]) for r in recs),
@@ -218,38 +227,6 @@ def order_models(rows):
     return hosted + local
 
 
-def fig_dumbbell(rows, th, path, title):
-    rows = order_models(rows)
-    fig, ax = plt.subplots(figsize=(8.2, 0.42 * len(rows) + 1.5), dpi=150)
-    fig.patch.set_facecolor(th["surface"])
-    style(ax, th)
-    y = list(range(len(rows)))[::-1]
-    for yi, r in zip(y, rows):
-        a, b = 100 * r["pass1"] / r["n_tasks"], 100 * r["pass3"] / r["n_tasks"]
-        ax.plot([a, b], [yi, yi], color=th["axis"], linewidth=2, solid_capstyle="round", zorder=1)
-        ax.scatter([a], [yi], s=60, color=th["first"], edgecolor=th["surface"], linewidth=2, zorder=3)
-        ax.scatter([b], [yi], s=60, color=th["after"], edgecolor=th["surface"], linewidth=2, zorder=4)
-        note = f"{r['pass3']}/{r['n_tasks']}" + ("" if r["complete"] else " (partial)")
-        ax.text(102, yi, note, va="center", ha="left", fontsize=8.5, color=th["ink2"])
-    ax.set_yticks(y)
-    ax.set_yticklabels([f"{r['label']}" + (f"  ·  {r['size_gb']:.1f} GB" if r["size_gb"] else "") for r in rows],
-                       fontsize=9, color=th["ink"])
-    if any(r["hosted"] for r in rows):
-        nh = sum(r["hosted"] for r in rows)
-        ax.axhline(y[nh - 1] - 0.5, color=th["grid"], linewidth=1)
-    ax.set_xlim(-2, 112)
-    ax.set_xticks([0, 25, 50, 75, 100])
-    ax.set_xticklabels(["0%", "25%", "50%", "75%", "100%"])
-    ax.set_ylim(-0.7, len(rows) - 0.3)
-    ax.scatter([], [], s=60, color=th["first"], label="first attempt")
-    ax.scatter([], [], s=60, color=th["after"], label="after up to 2 rounds of feedback")
-    leg = ax.legend(loc="lower center", bbox_to_anchor=(0.45, 1.0), ncol=2, frameon=False, fontsize=9,
-                    labelcolor=th["ink2"], handletextpad=0.3, columnspacing=1.5)
-    leg.set_in_layout(True)
-    fig.suptitle(title, x=0.01, ha="left", fontsize=11.5, color=th["ink"], fontweight="bold")
-    fig.tight_layout()
-    fig.savefig(path, facecolor=th["surface"])
-    plt.close(fig)
 
 
 def fig_heatmap(records, rows, tasks, th, path, title):
@@ -309,41 +286,6 @@ def fig_heatmap(records, rows, tasks, th, path, title):
     plt.close(fig)
 
 
-def fig_frontier(rows, th, path, title):
-    """Pass rate vs download size and vs CPU time per task (two panels, one y-scale each)."""
-    local = [r for r in rows if not r["hosted"] and r["size_gb"]]
-    hosted = [r for r in rows if r["hosted"]]
-    fig, axes = plt.subplots(1, 2, figsize=(10.5, 4.3), dpi=150, sharey=True)
-    fig.patch.set_facecolor(th["surface"])
-    for ax, key, xlabel in ((axes[0], "size_gb", "download size (GB, 4-bit)"),
-                            (axes[1], "median_task_min", "median minutes per task on a laptop CPU")):
-        style(ax, th, xgrid=False)
-        ax.grid(axis="y", color=th["grid"], linewidth=1)
-        for r in local:
-            x = r[key]
-            if x is None:
-                continue
-            yv = 100 * r["pass3_rate"]
-            ax.scatter([x], [yv], s=55, color=th["cat"][0], edgecolor=th["surface"], linewidth=2, zorder=3)
-            ax.annotate(r["label"].replace(" (general)", "*").replace(" (MoE)", ""), (x, yv),
-                        textcoords="offset points", xytext=(5, 4), fontsize=7.5, color=th["ink2"])
-        for h in hosted:
-            yv = 100 * h["pass3_rate"]
-            ax.axhline(yv, color=th["axis"], linewidth=1, zorder=1)
-            ax.text(0.99, yv, f"{h['label'].replace(' (hosted)', '')}: {yv:.0f}%",
-                    transform=ax.get_yaxis_transform(), ha="right", va="bottom", fontsize=7.5, color=th["muted"])
-        ax.set_xlabel(xlabel, color=th["ink2"], fontsize=9)
-        ax.set_ylim(-3, 108)
-        ax.set_yticks([0, 25, 50, 75, 100])
-        ax.set_yticklabels(["0%", "25%", "50%", "75%", "100%"])
-    axes[0].set_xscale("log")
-    axes[0].set_xticks([0.4, 1, 2, 4, 7])
-    axes[0].set_xticklabels(["0.4", "1", "2", "4", "7"])
-    axes[0].set_ylabel("tasks passed (≤3 attempts)", color=th["ink2"], fontsize=9)
-    fig.suptitle(title, x=0.01, ha="left", fontsize=11.5, color=th["ink"], fontweight="bold")
-    fig.tight_layout()
-    fig.savefig(path, facecolor=th["surface"])
-    plt.close(fig)
 
 
 def fig_lang(records, models_meta, th, path, title):
@@ -351,7 +293,7 @@ def fig_lang(records, models_meta, th, path, title):
     lang_label = {"en": "English", "es": "Spanish", "hi": "Hindi", "sw": "Swahili"}
     by = collections.defaultdict(lambda: [0, 0])
     for r in records:
-        k = (r["model"], r["lang"])
+        k = (r["model"], r.get("lang", "en"))
         by[k][1] += 1
         by[k][0] += any(a.get("passed") for a in r["attempts"])
     models = sorted({m for m, _ in by}, key=lambda m: (models_meta.get(m, {}).get("hosted", False), m))
@@ -385,6 +327,33 @@ def fig_lang(records, models_meta, th, path, title):
 
 
 # --------------------------------------------------------------------------- tables
+
+def mcnemar_exact(b, c):
+    """Two-sided exact McNemar test on b and c discordant pairs."""
+    n = b + c
+    return 1.0 if n == 0 else min(1.0, 2 * sum(math.comb(n, i) for i in range(min(b, c) + 1)) / 2 ** n)
+
+
+def language_tests(recs):
+    """Paired comparison of each language with English, per model (passes and first tries)."""
+    by = collections.defaultdict(dict)
+    for r in recs:
+        by[(r["model"], r.get("lang", "en"))][r["task"]] = (any(a.get("passed") for a in r["attempts"]),
+                                                          bool(r["attempts"] and r["attempts"][0].get("passed")))
+    out = ["| Model | Language | Pass ≤3 (vs English) | McNemar p | Pass 1st (vs English) | McNemar p |", "|---|---|---:|---:|---:|---:|"]
+    for (model, lang), res in sorted(by.items()):
+        en = by.get((model, "en"))
+        if lang == "en" or not en:
+            continue
+        tasks = sorted(set(res) & set(en))
+        row = [model, lang]
+        for j in (0, 1):
+            b = sum(en[t][j] and not res[t][j] for t in tasks)
+            c = sum(res[t][j] and not en[t][j] for t in tasks)
+            row += [f"{sum(res[t][j] for t in tasks)} ({sum(en[t][j] for t in tasks)})/{len(tasks)}", f"{mcnemar_exact(b, c):.3f}"]
+        out.append("| " + " | ".join(row) + " |")
+    return "\n".join(out)
+
 
 def pct(k, n):
     return f"{100 * k / n:.0f}%" if n else "-"
@@ -517,13 +486,16 @@ def picture(name, alt):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--no-readme", action="store_true")
+    ap.add_argument("--runs", nargs="+", default=["main", "main-claude"],
+                    help="run folders for the main tables (e.g. your own --run name)")
+    ap.add_argument("--lang-runs", nargs="+", default=["lang", "lang-claude"])
     args = ap.parse_args()
     tasks = yaml.safe_load(open(os.path.join(HERE, "tasks.yaml")))
     models_meta = {m["id"]: m for m in yaml.safe_load(open(os.path.join(HERE, "models.yaml")))}
     runs = load_runs()
     os.makedirs(FIG, exist_ok=True)
 
-    main_recs = dedupe(runs.get("main", []) + runs.get("main-claude", []))
+    main_recs = dedupe([r for run in args.runs for r in runs.get(run, [])])
     main_recs = [r for r in main_recs if r.get("lang", "en") == "en" and r.get("feedback", "report") == "report"]
     rows = summarise(main_recs, models_meta, tasks)
 
@@ -541,7 +513,7 @@ def main():
                         "Outcome per task (number = attempt that passed)")
             fig_tiers(rows, th, os.path.join(FIG, f"fig_tiers_{mode}.png"),
                       "How far each model got: best outcome per task (blank = nothing rendered)")
-        lang_recs = dedupe(runs.get("lang", []) + runs.get("lang-claude", []))
+        lang_recs = dedupe([r for run in args.lang_runs for r in runs.get(run, [])])
         # English baselines for the same models come from the main run
         lang_models = {r["model"] for r in lang_recs}
         lang_recs += [r for r in main_recs if r["model"] in lang_models]
@@ -555,6 +527,9 @@ def main():
     print(table_failures(rows))
     print()
     print(table_graded(rows))
+    if lang_recs:
+        print()
+        print(language_tests(lang_recs))
 
     if not args.no_readme:
         readme = os.path.join(ROOT, "README.md")
@@ -567,9 +542,7 @@ def main():
             text = replace_block(text, "table-failures", table_failures(rows))
             text = replace_block(text, "table-graded", table_graded(rows))
             text = replace_block(text, "fig-tiers", picture("fig_tiers", "Stacked bars of the best outcome each model reached per task"))
-            text = replace_block(text, "fig-pass-rates", picture("fig_pass_rates", "Dumbbell chart of pass rates per model, first attempt vs after feedback"))
             text = replace_block(text, "fig-outcomes", picture("fig_outcomes", "Grid of outcomes per model and task"))
-            text = replace_block(text, "fig-frontier", picture("fig_frontier", "Pass rate versus model download size and CPU time per task"))
             if has_lang:
                 text = replace_block(text, "fig-languages", picture("fig_languages", "Pass rates for prompts in English, Spanish, Hindi and Swahili"))
             open(readme, "w").write(text)

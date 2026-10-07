@@ -33,6 +33,7 @@ import trimesh
 OPENSCAD = os.environ.get("OPENSCAD", "openscad")
 PLA_DENSITY = 1.24  # g/cm^3
 MAX_FACES = 2_000_000  # bigger meshes are almost always runaway $fn / minkowski and would stall the analysis
+MESH_EXT = (".stl", ".obj", ".off", ".ply", ".3mf")  # analysed directly, without OpenSCAD
 MSG_RE = re.compile(r"^\s*(ERROR|WARNING|DEPRECATED|TRACE)\b|top level object|not a 3D object")
 
 
@@ -46,13 +47,20 @@ def render(scad_path, out_path, defines=(), timeout=180):
     for d in defines:
         cmd += ["-D", d]
     cmd.append(os.path.basename(scad_path))
+    if os.path.exists(out_path):  # a stale file from an earlier render must never count as this one's output
+        os.remove(out_path)
     t0 = time.time()
     try:  # run next to the file so messages show only its name
-        p = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout,
+        p = subprocess.run(cmd, capture_output=True, text=True, errors="replace", timeout=timeout,
                            cwd=os.path.dirname(os.path.abspath(scad_path)))
         log, rc = (p.stdout or "") + (p.stderr or ""), p.returncode
     except subprocess.TimeoutExpired:
         log, rc = f"ERROR: OpenSCAD timed out after {timeout} s (simplify the model, avoid minkowski)", -1
+    except FileNotFoundError as e:
+        if not os.path.exists(scad_path):
+            raise
+        raise FileNotFoundError(f"OpenSCAD not found ({OPENSCAD!r}) - install it (openscad.org) "
+                                "or set OPENSCAD=/path/to/openscad") from e
     name = os.path.basename(scad_path)
     for p_ in (os.path.abspath(scad_path), os.path.relpath(scad_path), scad_path):
         log = log.replace(p_, name)
@@ -63,6 +71,13 @@ def render(scad_path, out_path, defines=(), timeout=180):
     ok = rc == 0 and os.path.exists(out_path) and os.path.getsize(out_path) > 84
     return {"ok": ok, "returncode": rc, "messages": msgs[:20], "log": log[-4000:],
             "seconds": round(time.time() - t0, 2)}
+
+
+def openscad_missing():
+    """Message if the OpenSCAD binary cannot be found, else None."""
+    if shutil.which(OPENSCAD) is None and not os.path.exists(OPENSCAD):
+        return f"OpenSCAD not found ({OPENSCAD!r}) - install it (openscad.org) or set OPENSCAD=/path/to/openscad"
+    return None
 
 
 def load_mesh(path):
@@ -230,10 +245,16 @@ def analyse(mesh, extra_z=()):
 
 def format_report(r, data=None):
     out = []
-    if r["ok"]:
+    if r.get("mesh_input") and r["ok"]:  # scadreport on an .stl: nothing was rendered
+        out.append("MESH FILE: analysed as given (no OpenSCAD render).")
+    elif r["ok"]:
         w = [m for m in r["messages"] if m.startswith("WARNING")]
         out.append(f"OPENSCAD: rendered OK in {r['seconds']:.1f} s, " + (f"{len(w)} warning(s):" if w else "no warnings."))
         out += [f"  {m}" for m in r["messages"]]
+    elif r.get("mesh_input"):
+        out.append("MESH FILE: could not be analysed.")
+        out += [f"  {m}" for m in r["messages"]]
+        return "\n".join(out)
     else:
         out.append("OPENSCAD: FAILED - no printable geometry was produced.")
         out += [f"  {m}" for m in r["messages"]] or [f"  {r['log'][-600:]}"]
@@ -281,12 +302,16 @@ def report(scad_path, extra_z=(), defines=(), stl_out=None, timeout=180):
     if stl_out is None:
         tmpdir = tempfile.mkdtemp(prefix="scadreport_")
         stl_out = os.path.join(tmpdir, "part.stl")
+    mesh_input = scad_path.lower().endswith(MESH_EXT)
     try:
-        r = render(scad_path, stl_out, defines, timeout)
+        if mesh_input:
+            r = {"ok": True, "returncode": 0, "messages": [], "log": "", "seconds": 0.0, "mesh_input": True}
+        else:
+            r = render(scad_path, stl_out, defines, timeout)
         data, mesh = None, None
         if r["ok"]:
             try:
-                mesh = load_mesh(stl_out)
+                mesh = load_mesh(scad_path if mesh_input else stl_out)
                 data = analyse(mesh, extra_z)
             except Exception as e:  # noqa: BLE001
                 r["ok"] = False
@@ -299,16 +324,19 @@ def report(scad_path, extra_z=(), defines=(), stl_out=None, timeout=180):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("scad")
+    ap.add_argument("scad", help="OpenSCAD file, or a mesh (.stl/.obj/.off/.ply/.3mf) to analyse as it is")
     ap.add_argument("--z", type=float, nargs="*", default=[], help="extra slice heights (mm above lowest point)")
     ap.add_argument("-D", action="append", default=[], help="OpenSCAD variable override, e.g. -D pitch=18")
     ap.add_argument("--stl", help="also keep the exported STL here")
     ap.add_argument("--json", action="store_true")
     a = ap.parse_args()
-    if not os.path.exists(a.scad):
+    if not os.path.isfile(a.scad):
         sys.exit(f"no such file: {a.scad}")
-    if shutil.which(OPENSCAD) is None and not os.path.exists(OPENSCAD):
-        sys.exit("OpenSCAD not found - install it (openscad.org) or set OPENSCAD=/path/to/openscad")
+    mesh_input = a.scad.lower().endswith(MESH_EXT)
+    if mesh_input and (a.D or a.stl):
+        sys.exit("-D and --stl only apply to .scad files")
+    if not mesh_input and openscad_missing():
+        sys.exit(openscad_missing())
     text, data, _ = report(a.scad, a.z, a.D, a.stl)
     if a.json:
         print(json.dumps(data, indent=1, default=float))

@@ -123,6 +123,8 @@
     - slice: {z: 0.75, islands: 1, holes: 0, material_area: 0.04}
     - line: {z: 0.75, from: [-36, -6], to: [36, -6], intervals: 10, length: [5.0, 0.3]}
     - line: {z: 0.75, from: [-36, 6], to: [36, 6], intervals: 1, length: [70, 0.5]}
+    - probes: {empty: [[0, -6, 0.75], [13, -6, 0.75], [-26, -6, 0.75]],
+               solid: [[3.25, -6, 0.75], [29.25, -6, 0.75], [-16.25, -6, 0.75]]}
     - volume: {rel_tol: 0.05}
 
 - id: micropestle_1p5ml
@@ -144,6 +146,9 @@
     - bodies: 1
     - slice: {z: 12.5, islands: 1, holes: 0, island_d: [8, 0.3]}
     - slice: {z: 10, islands: 1, island_d: [6, 0.3]}
+    - slice: {z: 15, islands: 1, island_d: [6, 0.3]}
+    - slice: {z: 20, islands: 1, island_d: [6, 0.3]}
+    - slice: {z: 25, islands: 1, island_d: [6, 0.3]}
     - slice: {z: 53.5, islands: 1, island_d: [5.5, 0.35]}
     - slice: {z: 63, islands: 1}
     - volume: {rel_tol: 0.06}
@@ -216,6 +221,7 @@
     - bbox: {size: [30, 30, 15], tol: 0.4}
     - bodies: 1
     - slice: {z: 6, islands: 1, holes: 1, hole_area: [24.6, 0.12]}
+    - slice: {z: 11.5, islands: 1, holes: 1}
     - slice: {z: 13, islands: 1, holes: 0}
     - arc: {z: 7, center: [0, 0], r: 14.6, gaps: 18}
     - probes: {solid: [[2.5, 0, 5], [0, 0, 13], [-10, 0, 14.6], [0, 10, 14.6]],

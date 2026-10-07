@@ -38,11 +38,13 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 sys.path.insert(0, HERE)
 sys.path.insert(0, os.path.join(ROOT, "tools"))
-from checks import evaluate  # noqa: E402
-from scadreport import analyse, format_report, load_mesh, render  # noqa: E402
+from checks import evaluate, ref_problems  # noqa: E402
+from scadreport import analyse, format_report, load_mesh, openscad_missing, render  # noqa: E402
 
 OLLAMA = os.environ.get("OLLAMA_HOST", "http://localhost:11434")
-FENCE = re.compile(r"```[ \t]*([A-Za-z0-9_+-]*)[^\n]*\n(.*?)```", re.S)
+if "://" not in OLLAMA:  # the ollama CLI also accepts OLLAMA_HOST=host:port
+    OLLAMA = "http://" + OLLAMA
+FENCE = re.compile(r"```[ \t]*+([A-Za-z0-9_+-]*+)[^\n]*+\n(.*?)```", re.S)  # possessive: linear on long lines
 SCAD_HINT = re.compile(r"\b(cube|cylinder|difference|union|module|linear_extrude|rotate_extrude|polygon)\s*\(")
 ASK = "Reply with the complete corrected file in a single ```openscad code block."
 
@@ -57,11 +59,13 @@ def strip_think(text):
 def extract_code(text):
     """Return (code, how) from a model reply."""
     text = strip_think(text or "")
-    blocks = FENCE.findall(text)
+    blocks = [(lang, b) for lang, b in FENCE.findall(text) if b.strip()]
     if blocks:
         labelled = [b for lang, b in blocks if lang.lower() in ("openscad", "scad")]
         cands = labelled or [b for _, b in blocks]
         return max(cands, key=len).strip(), "fenced"
+    if FENCE.search(text):  # only empty code blocks
+        return None, "none"
     m = re.search(r"```[^\n]*\n(.*)$", text, re.S)
     if m:
         return m.group(1).strip(), "unterminated"
@@ -99,6 +103,12 @@ def ollama_ready(model, wait_s=300):
             if model not in names and f"{model}:latest" not in names:
                 raise SystemExit(f"model {model!r} is not installed - run: ollama pull {model}")
             return
+        except (urllib.error.HTTPError, ValueError) as e:
+            if not isinstance(e, urllib.error.HTTPError) or e.code < 500:
+                raise SystemExit(f"{OLLAMA} did not answer like an Ollama server ({e}) - check OLLAMA_HOST")
+            if time.time() - t0 > wait_s:
+                raise SystemExit(f"Ollama at {OLLAMA} keeps failing ({e}) - restart it with `ollama serve`")
+            time.sleep(5)
         except (urllib.error.URLError, ConnectionError, TimeoutError, OSError):
             if time.time() - t0 > wait_s:
                 raise SystemExit(f"Ollama is not reachable at {OLLAMA} - start it with `ollama serve`")
@@ -117,14 +127,15 @@ class Ollama:
         model is stuck repeating itself (closing the stream makes Ollama stop generating)."""
         req = urllib.request.Request(f"{OLLAMA}/api/chat", data=json.dumps(body).encode(),
                                      headers={"Content-Type": "application/json"})
-        parts, thinking, final, stop, n = [], [], None, None, 0
+        parts, thinking, final, stop, n, err = [], [], None, None, 0, None
         t0, t_first = time.time(), None
         with urllib.request.urlopen(req, timeout=3600) as resp:
             for line in resp:
                 if not line.strip():
                     continue
                 ev = json.loads(line)
-                msg = ev.get("message", {})
+                err = err or ev.get("error")
+                msg = ev.get("message") or {}
                 if msg.get("content") or msg.get("thinking"):
                     n += 1
                     t_first = t_first or time.time()
@@ -148,6 +159,8 @@ class Ollama:
                      "prompt_eval_count": None, "prompt_eval_duration": int(((t_first or now) - t0) * 1e9),
                      "load_duration": 0, "done_reason": stop}
         final["message"] = {"content": text, "thinking": "".join(thinking)}
+        if err:
+            final["stream_error"] = str(err)[:300]
         return final
 
     def chat(self, system, user):
@@ -188,6 +201,7 @@ class Ollama:
             "load_s": round(r.get("load_duration", 0) / 1e9, 2),
             "thinking_chars": len(msg.get("thinking") or ""),
             "done_reason": r.get("done_reason"),
+            **({"stream_error": r["stream_error"]} if r.get("stream_error") else {}),
         }
 
     def close(self):
@@ -219,8 +233,12 @@ class ClaudeCLI:
             try:
                 p = subprocess.run(cmd, capture_output=True, text=True, timeout=1800, cwd=self.cwd)
                 d = json.loads(p.stdout)
-            except (json.JSONDecodeError, subprocess.TimeoutExpired, FileNotFoundError) as e:
+            except FileNotFoundError as e:
+                raise SystemExit("Claude Code CLI (`claude`) not found - install it or put it on PATH") from e
+            except (json.JSONDecodeError, subprocess.TimeoutExpired) as e:
                 d = {"is_error": True, "result": str(e)[-500:]}
+            if not isinstance(d, dict):
+                d = {"is_error": True, "result": str(d)[-500:]}
             if not d.get("is_error"):
                 break
             time.sleep(60 * (attempt + 1))
@@ -274,16 +292,17 @@ def run_one(backend, system, task, ref, args, code_dir, tag):
         if hasattr(backend, "opts"):  # fresh sampling noise for every attempt
             backend.opts["seed"] = args.seed_base + 100 * args.sample_idx + a
         text, usage = backend.chat(system, user)  # InfraError propagates: the task is retried later
+        text = text or ""
         code, how = extract_code(text)
         rec.update({"usage": usage, "extract": how, "reply_chars": len(text),
                     "code_lines": code.count("\n") + 1 if code else 0,
-                    "code_sha1": hashlib.sha1(code.encode()).hexdigest()[:12] if code else None,
+                    "code_sha1": hashlib.sha1(code.encode(errors="surrogatepass")).hexdigest()[:12] if code else None,
                     # libraries make results machine-dependent (and break the starter prompt's rule 4)
                     "uses_library": bool(code and re.search(r"^\s*(include|use)\s*<", code, re.M))})
         path = os.path.join(code_dir, f"{tag}_a{a}.scad")
-        with open(path, "w") as fh:
+        with open(path, "w", encoding="utf-8", errors="replace") as fh:
             fh.write(code or f"// no code found in reply\n/*\n{text[:4000]}\n*/\n")
-        with open(path.replace(".scad", ".reply.txt"), "w") as fh:
+        with open(path.replace(".scad", ".reply.txt"), "w", encoding="utf-8", errors="replace") as fh:
             fh.write(text)
         stl = path.replace(".scad", ".stl")
         if code:
@@ -293,7 +312,9 @@ def run_one(backend, system, task, ref, args, code_dir, tag):
                 raise SystemExit("OpenSCAD not found - put it on PATH or set $OPENSCAD") from e
         else:
             rr = {"ok": False, "messages": ["no code"], "log": "", "seconds": 0}
-        rec["render"] = {"ok": rr["ok"], "messages": rr["messages"][:10], "seconds": rr["seconds"]}
+        # keep the decisive messages (errors, "top level object is empty") if there are more than 10
+        key = lambda m: not (m.startswith("ERROR") or "top level" in m or "not a 3D" in m)  # noqa: E731
+        rec["render"] = {"ok": rr["ok"], "messages": sorted(rr["messages"], key=key)[:10], "seconds": rr["seconds"]}
         report_text, result = None, None
         if rr["ok"]:
             try:
@@ -305,6 +326,7 @@ def run_one(backend, system, task, ref, args, code_dir, tag):
                 rr["ok"] = False
                 rr["messages"].append(f"ERROR: mesh analysis failed: {e}")
                 rec["render"]["ok"] = False
+                rec["render"]["messages"].append(f"ERROR: mesh analysis failed: {e}")
         if os.path.exists(stl):
             os.remove(stl)  # keep the repo small; .scad files are enough to reproduce
         rec["check"] = result
@@ -337,13 +359,34 @@ def main():
     ap.add_argument("--num-predict", type=int, default=2048, help="max reply tokens (local models)")
     ap.add_argument("--think", action="store_true", help="let local models think (default: thinking off)")
     args = ap.parse_args()
+    if not re.fullmatch(r"[A-Za-z0-9_][A-Za-z0-9._-]*", args.run):
+        ap.error(f"--run must be a plain folder name, not {args.run!r}")
+    if args.samples < 1 or args.max_repairs < 0 or args.render_timeout < 1:
+        ap.error("need --samples >= 1, --max-repairs >= 0 and --render-timeout >= 1")
+    for f in [args.system] + ([args.prompts] if args.prompts else []):
+        if not os.path.isfile(f):
+            ap.error(f"no such file: {f}")
 
     tasks = yaml.safe_load(open(os.path.join(HERE, "tasks.yaml")))
     if args.tasks:
+        unknown = sorted(set(args.tasks) - {t["id"] for t in tasks})
+        if unknown:
+            raise SystemExit(f"unknown task id(s): {', '.join(unknown)} (see bench/tasks.yaml)")
         tasks = [t for t in tasks if t["id"] in args.tasks]
     refs = json.load(open(os.path.join(HERE, "reference_stats.json")))
+    for t in tasks:  # a broken reference would be scored as the model's failure
+        if ref_problems(t, refs.get(t["id"])):
+            raise SystemExit(f"{t['id']}: {ref_problems(t, refs.get(t['id']))} - run bench/build_refs.py")
+    if openscad_missing():
+        raise SystemExit(openscad_missing())
+    if any(m.startswith("claude:") for m in args.models) and shutil.which("claude") is None:
+        raise SystemExit("Claude Code CLI (`claude`) not found - install it or put it on PATH")
     system = open(args.system).read().strip()
-    translated = yaml.safe_load(open(args.prompts))[args.lang] if args.prompts else {}
+    translated = {}
+    if args.prompts and args.lang != "en":
+        translated = (yaml.safe_load(open(args.prompts)) or {}).get(args.lang)
+        if not isinstance(translated, dict):
+            raise SystemExit(f"{args.prompts} has no {args.lang!r} section")
     if args.lang != "en":
         missing = [t["id"] for t in tasks if t["id"] not in translated]
         if missing:  # never silently fall back to English and call it another language
@@ -361,23 +404,26 @@ def main():
         raise SystemExit(f"another run_bench.py is already writing {out_dir} - not starting a second one")
     done = set()
     if os.path.exists(res_path):
-        lines = open(res_path).read().splitlines(keepends=True)
+        lines = open(res_path, errors="replace").read().splitlines(keepends=True)
         good = []
         for line in lines:
             try:
                 r = json.loads(line)
-            except json.JSONDecodeError:  # half-written line from a crash or power loss
+                key = (r["model"], r["task"], r["sample"], r.get("lang", "en"), r.get("feedback", "report"))
+            except (json.JSONDecodeError, KeyError, TypeError):  # half-written line from a crash or power loss
                 continue
             good.append(line if line.endswith("\n") else line + "\n")
-            done.add((r["model"], r["task"], r["sample"], r.get("lang", "en"), r.get("feedback", "report")))
+            done.add(key)
         if len(good) != len(lines):
             print(f"dropped {len(lines) - len(good)} damaged line(s) from {res_path}; those tasks will rerun")
+        if len(good) != len(lines) or (lines and not lines[-1].endswith("\n")):  # next append starts a fresh line
             open(res_path, "w").writelines(good)
     margs = {k: (os.path.relpath(v, ROOT) if isinstance(v, str) and v.startswith(ROOT) else v) for k, v in vars(args).items()}
     if all(m.startswith("claude:") for m in args.models):  # the CLI sets neither; the API defaults apply
         margs.update(temperature=None, num_predict=None, seed_base=None)
     commit = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True, cwd=ROOT).stdout.strip()
-    dirty = bool(subprocess.run(["git", "status", "--porcelain", "bench", "tools"], capture_output=True, text=True,
+    dirty = bool(subprocess.run(["git", "status", "--porcelain", "--untracked-files=no", "--", "bench", "tools",
+                                 ":!bench/results", ":!bench/logs"], capture_output=True, text=True,
                                 cwd=ROOT).stdout.strip())
     meta = {"started": dt.datetime.now().isoformat(timespec="seconds"), "args": margs,
             "git_commit": commit + ("+uncommitted-changes" if dirty else ""),

@@ -11,7 +11,7 @@ Sixteen biology-lab parts, described in words and numbers. A model writes OpenSC
 | [`prompts/translations.yaml`](prompts/translations.yaml) | the same prompts in Spanish, Hindi and Swahili |
 | [`checks.py`](checks.py) | the checker (bbox, bodies, slices, probes, lines, arcs, volume; symmetry-aware) |
 | [`reference/`](reference/) | the 16 frozen answer keys (v1); the lab-ready parts in `designs/` have since diverged |
-| [`build_refs.py`](build_refs.py) | renders the reference designs and validates the checker against them |
+| [`build_refs.py`](build_refs.py) | renders the reference designs and validates the checker against them and against known-wrong parts in [`mutants/`](mutants/) |
 | [`rescore.py`](rescore.py) | re-checks every saved attempt of a run with the current checker and reports changed verdicts |
 | [`reference_stats.json`](reference_stats.json) | reference volumes, slice areas and design-frame centres (generated) |
 | [`run_bench.py`](run_bench.py) | runs models: Ollama (local) or `claude:<model>` via the Claude Code CLI |
@@ -27,7 +27,7 @@ python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 .venv/bin/python bench/build_refs.py                  # sanity-check the checker (about 30 s)
 ollama pull qwen2.5-coder:7b
 .venv/bin/python bench/run_bench.py --run mytest --models qwen2.5-coder:7b --tasks tube_rack_1p5ml gel_comb_10well
-.venv/bin/python bench/analyze.py --no-readme
+.venv/bin/python bench/analyze.py --no-readme --runs mytest
 ```
 
 You need OpenSCAD on your `PATH`. A development snapshot with the Manifold backend is strongly recommended, because CGAL renders of the 96-hole rack take minutes. You also need Ollama for local models.
@@ -35,9 +35,9 @@ You need OpenSCAD on your `PATH`. A development snapshot with the Manifold backe
 ## Protocol (as used in the paper)
 
 - **Prompt:** the system prompt plus the task prompt.
-  - Local models run at temperature 0.2 and top-p 0.95, with a fixed seed per attempt, an 8,192-token context and "thinking" switched off.
-  - Replies are streamed and end at 2,048 tokens, at the first complete OpenSCAD code block, or when the model repeats itself verbatim.
-- **Code extraction:** the longest fenced OpenSCAD block, or bare code if there is no fence.
+  - Local models run at temperature 0.2 and top-p 0.95, with a fixed seed per attempt, an 8,192-token context and "thinking" requested off (LFM2.5 ignores the switch).
+  - Replies are streamed and end at 2,048 tokens (1,024 for the Qwen2.5-Coder 3B and 7B runs, which never reached it), at the first complete OpenSCAD code block, or when the model repeats itself verbatim.
+- **Code extraction:** the longest OpenSCAD-labelled fenced block; otherwise the longest fenced block of any label, the text after an unclosed fence, or the whole reply if it contains OpenSCAD calls. `<think>` reasoning is removed first.
 - **Render:** OpenSCAD with the default Manifold backend and a 120 s timeout.
 - **Feedback** (`--feedback report`, the default; up to `--max-repairs 2` rounds):
   - When the file did not render: OpenSCAD's messages.
@@ -51,8 +51,9 @@ You need OpenSCAD on your `PATH`. A development snapshot with the Manifold backe
 - **Resumable and crash-safe.** Each conversation is appended with `fsync`. A line damaged by a power cut is dropped on the next start and that task reruns. Run the same command again to resume.
 - **One writer per run.** A lock file refuses a second `run_bench.py` on the same `--run` folder.
 - **No sleep.** `run_main_local.sh` and `run_lang.sh` hold a `systemd-inhibit` lock (where available), so the laptop does not suspend mid-run.
-- **Machine-independent.** Attempts that `include`/`use` an external library are flagged (`uses_library`), because their result depends on what is installed locally.
+- **Library use is flagged.** Attempts that `include`/`use` an external library are flagged (`uses_library`), because their result depends on what is installed locally.
 - `python bench/test_harness.py` (or `make test`) exercises all of the above with a fake model.
+- **Resume keys ignore settings.** A run folder is resumed by (model, task, sample, language, feedback); use a new `--run` name when you change `--num-predict`, `--think` or the temperature.
 - After any change to `checks.py` or `tasks.yaml`, run `python bench/rescore.py <run> --dry-run` to see which verdicts would change, then without `--dry-run` to apply.
 
 ## Check types

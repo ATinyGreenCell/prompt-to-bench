@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Main benchmark, local open-weight models (CPU only, one model at a time so timings are clean).
+# Main benchmark, local open-weight models (CPU only, one model at a time; timings are
+# indicative, because other work on the laptop overlapped some runs).
 # 16 tasks x 1 sample, up to 2 repair rounds with geometry-report feedback.
 # Replies are streamed and capped at 2048 tokens; a reply ends early once a complete
 # ```openscad block has arrived or when the model is stuck repeating itself verbatim.

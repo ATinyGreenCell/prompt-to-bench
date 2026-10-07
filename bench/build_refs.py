@@ -3,12 +3,15 @@
 
     python bench/build_refs.py
 
-1. renders every reference solution and stores reference_stats.json
+1. renders every reference solution and compares it with reference_stats.json
+   (`--write` regenerates that file instead; only do this when adding or changing a task)
 2. every reference must pass all of its own checks
 3. invariance: a reference that is rotated 90 deg / mirrored / moved must still pass
 4. discrimination: references scaled by 3 % must fail; every reference must fail
    every *other* task's checks (cross-task false positives)
+5. known-wrong parts in bench/mutants/ must fail their task
 """
+import glob
 import json
 import os
 import sys
@@ -23,10 +26,12 @@ ROOT = os.path.dirname(HERE)
 sys.path.insert(0, HERE)
 sys.path.insert(0, os.path.join(ROOT, "tools"))
 from checks import evaluate, reference_stats  # noqa: E402
-from scadreport import load_mesh, render  # noqa: E402
+from scadreport import load_mesh, openscad_missing, render  # noqa: E402
 
 
 def main():
+    if openscad_missing():
+        sys.exit(openscad_missing())
     tasks = yaml.safe_load(open(os.path.join(HERE, "tasks.yaml")))
     out_dir = os.path.join(ROOT, "build", "ref")
     os.makedirs(out_dir, exist_ok=True)
@@ -39,7 +44,19 @@ def main():
         assert abs(m.bounds[0][2]) < 1e-6, f"{t['id']}: reference must start at z = 0"
         stats[t["id"]] = reference_stats(m, t)
         meshes[t["id"]] = m
-    json.dump(stats, open(os.path.join(HERE, "reference_stats.json"), "w"), indent=1)
+    path = os.path.join(HERE, "reference_stats.json")
+    if "--write" in sys.argv:  # only when adding or changing a task: every score depends on this file
+        json.dump(stats, open(path, "w"), indent=1)
+    else:  # validate against the frozen statistics, and say so if this OpenSCAD build disagrees
+        frozen = json.load(open(path))
+        for tid, st in stats.items():
+            fz = frozen.get(tid)
+            assert fz is not None, f"{tid}: not in reference_stats.json (run with --write)"
+            pairs = [(st["volume"], fz["volume"])] + [(v, fz["material_area"].get(z)) for z, v in st["material_area"].items()]
+            for new, old in pairs:
+                assert old is not None and abs(new - old) <= 1e-3 * abs(old), \
+                    f"{tid}: reference statistics differ from reference_stats.json ({new:.1f} vs {old}); check your OpenSCAD version"
+        stats = frozen
 
     fails = 0
     print(f"{'task':28s} {'own':>7s} {'rot+mir':>8s} {'scaled':>8s}  cross-task false positives")
@@ -64,7 +81,17 @@ def main():
             for i in res["items"]:
                 if not i["ok"]:
                     print(f"    {label} FAIL {i['check']}: {i['msg']}")
-    print("ALL OK" if not fails else f"{fails} task(s) with validation problems")
+    # known-wrong parts (bench/mutants/<task>__<what is wrong>.scad) must fail their task
+    by_id = {t["id"]: t for t in tasks}
+    for path in sorted(glob.glob(os.path.join(HERE, "mutants", "*.scad"))):
+        tid = os.path.basename(path).split("__")[0]
+        assert tid in by_id, f"{path}: name must start with a task id and '__'"
+        stl = os.path.join(out_dir, "mutant.stl")
+        assert render(path, stl)["ok"], path
+        res = evaluate(load_mesh(stl), by_id[tid], stats[tid])
+        fails += bool(res["passed"])
+        print(f"mutant {os.path.basename(path):40s} {'PASSED - checks too weak' if res['passed'] else 'fails, as it should'}")
+    print("ALL OK" if not fails else f"{fails} validation problem(s)")
     sys.exit(1 if fails else 0)
 
 

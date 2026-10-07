@@ -24,6 +24,7 @@ MATERIAL = "Prusament PLA @PG"
 PLA_G_PER_CM3 = 1.24
 PLA_USD_PER_KG = 25.0  # typical spool price; adjust for your market
 CMD = shlex.split(os.environ.get("PRUSASLICER", "flatpak run --command=prusa-slicer com.prusa3d.PrusaSlicer"))
+OPENSCAD = os.environ.get("OPENSCAD", "openscad")
 
 
 def setup_datadir():
@@ -51,10 +52,17 @@ def hms(s):
     h = re.search(r"(\d+)h", s)
     m = re.search(r"(\d+)m", s)
     d = re.search(r"(\d+)d", s)
-    return (int(d.group(1)) * 24 if d else 0) + (int(h.group(1)) if h else 0) + (int(m.group(1)) / 60 if m else 0)
+    sec = re.search(r"(\d+)s", s)
+    return ((int(d.group(1)) * 24 if d else 0) + (int(h.group(1)) if h else 0) + (int(m.group(1)) / 60 if m else 0)
+            + (int(sec.group(1)) / 3600 if sec else 0))
 
 
 def main():
+    if not CMD or shutil.which(CMD[0]) is None:
+        raise SystemExit(f"PrusaSlicer command not found ({' '.join(CMD) or 'empty'}) - install PrusaSlicer "
+                         "(flatpak com.prusa3d.PrusaSlicer) or set PRUSASLICER=/path/to/prusa-slicer")
+    if shutil.which(OPENSCAD) is None:
+        raise SystemExit(f"OpenSCAD not found ({OPENSCAD!r}) - install it (openscad.org) or set OPENSCAD=/path/to/openscad")
     setup_datadir()
     tasks = yaml.safe_load(open(os.path.join(ROOT, "bench", "tasks.yaml")))
     out_dir = os.path.join(ROOT, "build", "slice")
@@ -62,8 +70,10 @@ def main():
     rows = []
     for t in tasks:
         stl = os.path.join(out_dir, t["id"] + ".stl")
-        subprocess.run(["openscad", "-o", stl, "--export-format", "binstl", os.path.join(ROOT, t.get("library", t["reference"]))],
-                       check=True, capture_output=True)
+        p = subprocess.run([OPENSCAD, "-o", stl, "--export-format", "binstl", os.path.join(ROOT, t.get("library", t["reference"]))],
+                           capture_output=True, text=True, errors="replace")
+        if p.returncode != 0:
+            raise SystemExit(f"OpenSCAD failed on {t['id']}:\n{(p.stdout + p.stderr)[-800:]}")
         gcode = stl.replace(".stl", ".gcode")
         p = subprocess.run(CMD + ["--datadir", DATADIR, "--printer-profile", PRINTER, "--print-profile", PRINT,
                                   "--material-profile", MATERIAL, "--threads", "1", "--export-gcode",
@@ -75,6 +85,8 @@ def main():
             m = re.match(r"; (filament used \[cm3\]|estimated printing time \(normal mode\)) = (.*)", line)
             if m:
                 meta[m.group(1)] = m.group(2).strip()
+        if len(meta) < 2:
+            raise SystemExit(f"{gcode}: no filament/time estimate in the G-code (PrusaSlicer version changed?)")
         cm3 = float(meta["filament used [cm3]"])
         g = cm3 * PLA_G_PER_CM3
         rows.append({"task": t["id"], "category": t["category"], "title": t["title"],
@@ -84,6 +96,8 @@ def main():
                      "cost_usd": round(g / 1000 * PLA_USD_PER_KG, 2)})
         os.remove(gcode)
         print(f"{t['id']:26s} {rows[-1]['print_time']:>12s} {g:7.1f} g")
+    if not rows:
+        raise SystemExit("no tasks in bench/tasks.yaml")
     path = os.path.join(ROOT, "figures", "print_estimates.csv")
     with open(path, "w", newline="") as fh:
         w = csv.DictWriter(fh, fieldnames=list(rows[0]))

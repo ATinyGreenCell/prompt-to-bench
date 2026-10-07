@@ -10,6 +10,10 @@ build/
 *.gcode
 *.bgcode
 
+# Benchmark lock files and self-test output
+bench/results/*/.lock
+bench/results/_selftest/
+
 # Editors / OS
 .DS_Store
 *.swp
