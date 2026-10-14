@@ -404,10 +404,16 @@ def ollama_edges():
                 self.wfile.write(json.dumps({"models": [{"name": "a:1"}]}).encode())
 
         def do_POST(self):
-            self.rfile.read(int(self.headers["Content-Length"]))
+            body = self.rfile.read(int(self.headers["Content-Length"]))
             self.send_response(200)
             self.end_headers()
-            self.wfile.write(b'{"message": {"content": "partial "}}\n{"error": "model runner has unexpectedly stopped"}\n')
+            if self.server.mode == "think" and b'"think"' not in body:
+                self.wfile.write(b'{"message": {"content": "cube(1);"}}\n'
+                                 b'{"message": {"content": ""}, "done": true, "eval_count": 2, "eval_duration": 1000}\n')
+            elif self.server.mode == "think":  # a model whose thinking cannot be switched off (gpt-oss on the Tiiny)
+                self.wfile.write(b'{"error": "thinking is always on for this model"}\n')
+            else:
+                self.wfile.write(b'{"message": {"content": "partial "}}\n{"error": "model runner has unexpectedly stopped"}\n')
 
     srv = http.server.HTTPServer(("127.0.0.1", 0), H)
     srv.mode = "ok"
@@ -430,9 +436,23 @@ def ollama_edges():
                 check(f"ollama: {mode} server, model {model} -> clear message", False)
             except SystemExit as e:
                 check(f"ollama: {mode} server, model {model} -> clear message", want in str(e), str(e))
-        text, usage = run_bench.Ollama("a:1", 0.2, 1).chat("s", "u")
-        check("ollama: error event mid-stream is recorded", text == "partial " and "unexpectedly" in usage.get("stream_error", ""),
-              str(usage))
+        srv.mode = "ok"
+        sleep, ready = run_bench.time.sleep, run_bench.ollama_ready
+        run_bench.time.sleep = lambda s: None  # skip the retry back-off
+        run_bench.ollama_ready = lambda m, wait_s=0: None
+        try:
+            try:
+                run_bench.Ollama("a:1", 0.2, 1).chat("s", "u")
+                check("ollama: error event mid-stream -> runtime error, partial reply not scored", False)
+            except run_bench.InfraError as e:
+                check("ollama: error event mid-stream -> runtime error, partial reply not scored", "unexpectedly" in str(e),
+                      str(e))
+            srv.mode = "think"
+            text, usage = run_bench.Ollama("c:1", 0.2, 1).chat("s", "u")
+            check("ollama: 'thinking always on' mid-stream -> retried without the switch",
+                  text == "cube(1);" and run_bench.THINK.get("c:1", False) is None, str((text, usage)))
+        finally:
+            run_bench.time.sleep, run_bench.ollama_ready = sleep, ready
     finally:
         run_bench.OLLAMA = old
         srv.shutdown()

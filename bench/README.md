@@ -47,7 +47,7 @@ You need OpenSCAD on your `PATH`. A development snapshot with the Manifold backe
 
 ## Robustness
 
-- **Runtime errors are never scored.** If Ollama or the Claude CLI fails (server restart, dropped connection, rate limit), the request is retried with back-off. If it still fails, the task is skipped *without* a record, so a later run picks it up. Three runtime errors in a row stop the run.
+- **Runtime errors are never scored.** If Ollama or the Claude CLI fails (server restart, dropped connection, rate limit, or an error event in the middle of a streamed reply), the request is retried with back-off, and a partial reply is discarded. If it still fails, the task is skipped *without* a record, so a later run picks it up. Three runtime errors in a row stop the run.
 - **Resumable and crash-safe.** Each conversation is appended with `fsync`. A line damaged by a power cut is dropped on the next start and that task reruns. Run the same command again to resume.
 - **One writer per run.** A lock file refuses a second `run_bench.py` on the same `--run` folder.
 - **No sleep.** `run_main_local.sh` and `run_lang.sh` hold a `systemd-inhibit` lock (where available), so the laptop does not suspend mid-run.

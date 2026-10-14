@@ -93,6 +93,11 @@ class InfraError(RuntimeError):
     """The runtime (Ollama server, Claude CLI) failed - not the model. Never scored."""
 
 
+class StreamError(RuntimeError):
+    """The server sent an error event in the middle of a streamed reply (runner crash, model
+    unloaded, context overflow). The partial reply is discarded and the request retried."""
+
+
 def ollama_ready(model, wait_s=300):
     """Wait for the Ollama server (it may still be starting after a reboot) and check the model exists."""
     t0 = time.time()
@@ -152,6 +157,8 @@ class Ollama:
                         stop = "repetition"
                     if stop:
                         break
+        if err:
+            raise StreamError(str(err)[:300])
         text = "".join(parts)
         if final is None:  # we stopped the stream ourselves: estimate the stats
             now = time.time()
@@ -159,8 +166,6 @@ class Ollama:
                      "prompt_eval_count": None, "prompt_eval_duration": int(((t_first or now) - t0) * 1e9),
                      "load_duration": 0, "done_reason": stop}
         final["message"] = {"content": text, "thinking": "".join(thinking)}
-        if err:
-            final["stream_error"] = str(err)[:300]
         return final
 
     def chat(self, system, user):
@@ -182,6 +187,13 @@ class Ollama:
                     continue
                 if e.code < 500 or attempt == 3:
                     raise InfraError(f"Ollama HTTP {e.code}: {msg[:300]}") from e
+            except StreamError as e:
+                if "think" in str(e).lower() and "think" in body:
+                    self.think = THINK[self.model] = None
+                    body.pop("think")
+                    continue
+                if attempt == 3:
+                    raise InfraError(f"Ollama stream failed: {e}") from e
             except (urllib.error.URLError, ConnectionError, TimeoutError, OSError, json.JSONDecodeError) as e:
                 if attempt == 3:
                     raise InfraError(f"Ollama connection failed: {e}") from e
@@ -201,7 +213,6 @@ class Ollama:
             "load_s": round(r.get("load_duration", 0) / 1e9, 2),
             "thinking_chars": len(msg.get("thinking") or ""),
             "done_reason": r.get("done_reason"),
-            **({"stream_error": r["stream_error"]} if r.get("stream_error") else {}),
         }
 
     def close(self):
