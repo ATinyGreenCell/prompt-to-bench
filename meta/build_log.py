@@ -6,9 +6,10 @@
 Includes: the human's prompts (verbatim), the assistant's visible replies, and one line
 per tool call (what was run / which file was written). Excludes: model reasoning,
 raw tool outputs, images, and the system context Claude Code injects.
-Redacts: e-mail addresses, home paths, tokens, and anything listed in meta/redact.txt
-(one literal string per line - put private names there). Review the output before
-publishing it.
+Redacts: e-mail addresses, home paths, tokens, private IP and MAC addresses, 32-hex device ids,
+and anything listed in meta/redact.txt (one literal string per line - put private names there).
+Tool inputs are redacted before they are shortened, and MCP tools (mail, documents, devices)
+are logged by name only. Review the output before publishing it.
 """
 import glob
 import json
@@ -25,7 +26,12 @@ PATTERNS = [
     (re.compile(r"<system-reminder>.*?</system-reminder>", re.S), ""),
     (re.compile(r"[\w.+-]+@[\w-]+\.[\w.-]+"), "[email]"),
     (re.compile(r"[\w.+-]+@(?=[^\w.]|$)"), "[email]"),  # a bare "user@", e.g. in a grep pattern
-    (re.compile(r"\b(gho|ghp|github_pat|sk-ant|sk)-?_?[A-Za-z0-9_\-]{12,}"), "[token]"),
+    (re.compile(r"\b(?:sk-ant-|sk-|ghp_|gho_|ghs_|github_pat_)[A-Za-z0-9_-]{12,}"), "[token]"),
+    (re.compile(r"\b(?:10(?:\.\d{1,3}){3}|172\.(?:1[6-9]|2\d|3[01])(?:\.\d{1,3}){2}|192\.168(?:\.\d{1,3}){2})\b"),
+     "[private-ip]"),
+    (re.compile(r"\bfe80::[0-9a-fA-F:%\w]*"), "[private-ip]"),
+    (re.compile(r"\b[0-9a-fA-F]{2}(?::[0-9a-fA-F]{2}){5}\b"), "[mac]"),
+    (re.compile(r"\b[0-9a-f]{32}\b"), "[id]"),
     (re.compile(r"/tmp/claude-\d+/[^\s`'\")]*"), "[scratch]"),
     (re.compile(re.escape(os.path.expanduser("~"))), "~"),
 ]
@@ -45,10 +51,15 @@ def redact(text, extra):
     return text.strip()
 
 
-def tool_line(block):
+def tool_line(block, extra=()):
+    """One line per tool call. Inputs are redacted before they are cut short, so a truncated
+    e-mail address or token can never slip past the patterns."""
     name, inp = block.get("name", "?"), block.get("input") or {}
     if not isinstance(inp, dict):
         inp = {"input": inp}
+    if name.startswith("mcp__"):  # mail, documents, device tools: their inputs are private by nature
+        return f"`{name}`"
+    inp = {k: redact(v, extra) if isinstance(v, str) else v for k, v in inp.items()}
     if name == "Bash":
         cmd = (inp.get("command") or "").strip().splitlines()
         desc = inp.get("description") or ""
@@ -61,7 +72,7 @@ def tool_line(block):
     if name in ("AskUserQuestion",):
         qs = inp.get("questions") or []
         return "`AskUserQuestion` " + " / ".join(str(q.get("question", "")) for q in qs if isinstance(q, dict))
-    return f"`{name}` " + ", ".join(f"{k}={str(v)[:60]}" for k, v in list(inp.items())[:3])
+    return f"`{name}` " + ", ".join(f"{k}={redact(str(v), extra)[:60]}" for k, v in list(inp.items())[:3])
 
 
 def text_of(content):
@@ -79,7 +90,7 @@ def is_human(txt):
                                          "<task-notification", "[SYSTEM NOTIFICATION", "<system-reminder", "<agent-message"))
 
 
-def events(path):
+def events(path, extra=()):
     for line in open(path, errors="replace"):
         try:
             d = json.loads(line)
@@ -108,7 +119,7 @@ def events(path):
                 if b.get("type") == "text" and str(b.get("text") or "").strip():
                     yield ts, "claude", b["text"]
                 elif b.get("type") == "tool_use":
-                    yield ts, "tool", tool_line(b)
+                    yield ts, "tool", tool_line(b, extra)
 
 
 def main():
@@ -122,7 +133,7 @@ def main():
            "output and images are omitted; private details are redacted.", ""]
     seen = set()
     for f in files:
-        evs = list(events(f))
+        evs = list(events(f, extra))
         if not evs:
             continue
         out += [f"## Session {os.path.basename(f)[:8]} (started {evs[0][0][:16].replace('T', ' ')} UTC)", ""]
@@ -147,7 +158,9 @@ def main():
             out += ["<details><summary>" + f"{len(tools)} tool call(s)" + "</summary>", ""]
             out += [f"- {t}" for t in tools] + ["", "</details>", ""]
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
-    open(OUT, "w").write("\n".join(out) + "\n")
+    with open(OUT + ".tmp", "w", encoding="utf-8") as fh:  # write-then-rename: never a half-written log
+        fh.write("\n".join(out) + "\n")
+    os.replace(OUT + ".tmp", OUT)
     print(f"wrote {OUT} ({len(out)} lines) from {len(files)} session file(s)")
 
 

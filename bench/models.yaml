@@ -71,6 +71,7 @@
   family: Gemma 4
   params_b: 2.3
   params_note: 2.3B effective, 5.1B with per-layer embeddings
+  params_total_b: 5.1  # the size axis of fig_scale uses total parameters
   size_gb: 4.6
   licence: Apache-2.0
   coder: false
@@ -94,6 +95,7 @@
   family: Gemma 4
   params_b: 4.5
   params_note: 4.5B effective, 8B with per-layer embeddings
+  params_total_b: 8  # the size axis of fig_scale uses total parameters
   size_gb: 6.6
   licence: Apache-2.0
   coder: false
@@ -104,6 +106,169 @@
   size_gb: 6.6
   licence: Apache-2.0
   coder: false
+# Tiiny AI Pocket Lab (NPU box on USB-C), reached through the tiinykit bridge as tiiny/<store id>.
+# Sizes are the Tiiny store's download sizes (vendor format, not GGUF); parameters, licences and the
+# thinking mode are from the Hugging Face model cards (read 2026-10-14). `thinking`: none, switchable or always.
+- id: tiiny/Qwen/Qwen3-Coder-Next
+  label: Qwen3-Coder-Next 80B-A3B
+  family: Qwen3-Coder
+  params_b: 80
+  active_b: 3
+  size_gb: 37.7
+  licence: Apache-2.0
+  coder: true
+  thinking: none
+  runtime: tiiny
+- id: tiiny/Qwen/Qwen3-Coder-30B-A3B-Instruct
+  label: Qwen3-Coder 30B-A3B
+  family: Qwen3-Coder
+  params_b: 30.5
+  active_b: 3.3
+  size_gb: 14.6
+  licence: Apache-2.0
+  coder: true
+  thinking: none
+  runtime: tiiny
+- id: tiiny/deepreinforce-ai/Ornith-1.0-35B
+  label: Ornith-1.0 35B (MoE)
+  family: Ornith (Qwen3.5 MoE fine-tune)
+  params_b: 35
+  params_note: 35B MoE (~3B active; inferred, the card gives no figure)
+  size_gb: 18.0
+  licence: MIT
+  coder: true
+  thinking: always
+  runtime: tiiny
+- id: tiiny/openai/gpt-oss-120b
+  label: gpt-oss-120b
+  family: gpt-oss
+  params_b: 117
+  active_b: 5.1
+  size_gb: 67.3
+  licence: Apache-2.0
+  coder: false
+  thinking: always
+  runtime: tiiny
+- id: tiiny/openai/gpt-oss-20b
+  label: gpt-oss-20b
+  family: gpt-oss
+  params_b: 21
+  active_b: 3.6
+  size_gb: 10.3
+  licence: Apache-2.0
+  coder: false
+  thinking: always
+  runtime: tiiny
+- id: tiiny/Qwen/Qwen3.8-27B
+  label: Qwen3.8 27B
+  family: Qwen3.8
+  params_b: 27
+  params_note: 27B dense
+  size_gb: 15.9
+  licence: Apache-2.0
+  coder: false
+  thinking: switchable
+  runtime: tiiny
+- id: tiiny/Qwen/Qwen3.6-35B-A3B
+  label: Qwen3.6 35B-A3B
+  family: Qwen3.6
+  params_b: 35
+  active_b: 3
+  size_gb: 17.6
+  licence: Apache-2.0
+  coder: false
+  thinking: switchable
+  runtime: tiiny
+- id: tiiny/Qwen/Qwen3.6-27B
+  label: Qwen3.6 27B
+  family: Qwen3.6
+  params_b: 27
+  params_note: 27B dense
+  size_gb: 15.6
+  licence: Apache-2.0
+  coder: false
+  thinking: switchable
+  runtime: tiiny
+- id: tiiny/Qwen/Qwen3.5-35B-A3B
+  label: Qwen3.5 35B-A3B
+  family: Qwen3.5
+  params_b: 35
+  active_b: 3
+  size_gb: 16.9
+  licence: Apache-2.0
+  coder: false
+  thinking: switchable
+  runtime: tiiny
+- id: tiiny/Qwen/Qwen3.5-9B
+  label: Qwen3.5 9B (Tiiny)
+  family: Qwen3.5
+  params_b: 9.65
+  params_note: 9.65B dense (same model as the laptop row)
+  size_gb: 6.2
+  licence: Apache-2.0
+  coder: false
+  thinking: switchable
+  runtime: tiiny
+- id: tiiny/google/gemma-4-26B-A4B-it
+  label: Gemma 4 26B-A4B
+  family: Gemma 4
+  params_b: 25.2
+  active_b: 3.8
+  size_gb: 13.4
+  licence: Apache-2.0
+  coder: false
+  thinking: switchable
+  runtime: tiiny
+- id: tiiny/zai-org/GLM-4.7-Flash
+  label: GLM-4.7-Flash 30B-A3B
+  family: GLM-4.7
+  params_b: 30
+  params_note: 30B MoE, ~3B active ("30B-A3B")
+  size_gb: 15.8
+  licence: MIT
+  coder: false
+  thinking: switchable
+  runtime: tiiny
+- id: tiiny/Qwen/Qwen3-30B-A3B-Instruct
+  label: Qwen3 30B-A3B Instruct-2507
+  family: Qwen3
+  params_b: 30.5
+  active_b: 3.3
+  size_gb: 14.7
+  licence: Apache-2.0
+  coder: false
+  thinking: none
+  runtime: tiiny
+- id: tiiny/Qwen/Qwen3-30B-A3B-Thinking
+  label: Qwen3 30B-A3B Thinking-2507
+  family: Qwen3
+  params_b: 30.5
+  active_b: 3.3
+  size_gb: 14.5
+  licence: Apache-2.0
+  coder: false
+  thinking: always
+  runtime: tiiny
+- id: tiiny/Qwen/Qwen3-8B
+  label: Qwen3 8B
+  family: Qwen3
+  params_b: 8.2
+  params_note: 8.2B dense
+  size_gb: 4.3
+  licence: Apache-2.0
+  coder: false
+  thinking: switchable
+  runtime: tiiny
+- id: tiiny/Qwen/Qwen3-4B-Instruct-2507
+  label: Qwen3 4B Instruct-2507
+  family: Qwen3
+  params_b: 4.0
+  params_note: 4.0B dense
+  size_gb: 2.3
+  licence: Apache-2.0
+  coder: false
+  thinking: none
+  runtime: tiiny
 - id: claude:claude-haiku-4-5
   label: Claude Haiku 4.5 (hosted)
   family: Claude
