@@ -83,7 +83,7 @@ The library has two versions on purpose. The benchmark's answer keys are frozen 
 | **All 16 parts** | | **33.7 h** | **508** | **12.71** |
 <!-- /AUTO:table-prints -->
 
-PrusaSlicer 2.9.6, stock "0.20mm SPEED @MK4 0.4" profile and "Prusament PLA @PG" for every part - not the finer per-part settings some headers recommend, which take longer. Mass assumes 1.24 g/cm³; cost assumes US$25/kg. Reproduce with `python tools/slice_library.py`.
+PrusaSlicer 2.9.6, stock "0.20mm SPEED @MK4 0.4" profile and "Prusament PLA @PG" for every part - not the finer per-part settings some headers recommend, which take longer. Mass assumes 1.24 g/cm³; cost assumes US$25/kg. Reproduce with `.venv/bin/python tools/slice_library.py`.
 </details>
 
 ## 3. The workflow
@@ -166,14 +166,20 @@ Each task is a request as a careful student would write it after measuring: dime
 
 The model never sees the checks. A candidate is rendered with OpenSCAD's Manifold kernel ([Lalish et al.](#manifold)), normalised (bounding-box centre at the origin in XY, lowest point at z = 0) and tested with:
 
-- **global checks:** bounding box, number of bodies, watertightness, volume relative to the reference;
-- **horizontal sections:** number of solid regions and holes, hole sizes, positions and grids, section areas;
-- **probe points** that must be solid or empty (notches, chamfers, horizontal holes);
-- **line and arc probes** that count solid intervals (comb teeth, grip grooves).
+- **global checks:** bounding box, number of bodies (a cavity sealed only by a floating-point skin, left by a cutter that ends exactly at a face, does not count), watertightness, volume relative to the reference;
+- **horizontal sections:** number of solid regions and holes, hole sizes, shapes, positions and grids, section areas, and pairs of sections that bracket each depth;
+- **probe points** that must be solid or empty, at the centre of a feature and just inside and outside its edges (notches, chamfers, horizontal holes);
+- **line and arc probes** that count solid intervals (comb teeth, grip grooves);
+- **bore rays** that must pass up every vertical bore and through-hole without entering material.
 
-Position-dependent checks are evaluated under all eight symmetries of the bed (90° rotations and mirroring), which do not change how a part prints, and the best match is kept. A part passes only if every check passes. Absolute tolerances are 0.15-0.9 mm (most 0.3-0.5 mm, tighter for the 0.2 mm clearance fit, looser where the prompt allows two readings), plus 4-35% on areas and volumes; they are set to accept every correct reading of the prompt, not to mimic print accuracy.
+Position-dependent checks are evaluated under all eight symmetries of the bed (90° rotations and mirroring), which do not change how a part prints, and the best match is kept; the knob, whose prompt fixes no azimuth, is also tried at every 1° rotation. A part passes only if every check passes. Absolute tolerances are 0.15-0.9 mm (most 0.3-0.5 mm, tighter for the 0.2 mm clearance fit, looser where the prompt allows two readings), plus 4-35% on areas and volumes; they are set to accept every correct reading of the prompt, not to mimic print accuracy.
 
-[`bench/build_refs.py`](bench/build_refs.py) confirms that the references pass their own checks, still pass after rotation, mirroring and translation, fail when scaled by 3%, and pass no other task's checks. These tests show the checks are self-consistent, not that every correct design passes or every wrong one fails. Two audits found both kinds of error. One false negative: "a 1.6 mm wall everywhere" on the funnel can be measured horizontally (our reference) or perpendicular to the cone (+24% volume), so we widened that task's volume tolerance. Three false positives: a comb with nine teeth or the wrong tooth pitch, a pestle with one grip groove instead of four, and a knob with a 7 mm bore instead of 12 mm all passed (two comb checks shared a name, so one silently replaced the other). We fixed the checks and added these parts to `build_refs.py` as known-wrong cases that must fail. Re-checking every saved hosted-model attempt with [`bench/rescore.py`](bench/rescore.py) changed the funnel verdict and no other; re-checking the local-model attempts changed partial scores but no verdict. Building the checks also caught an error in our own design: a 7 x 7 grid at 10 mm pitch put the corner holes through the rim of the 85 mm seed template.
+[`bench/build_refs.py`](bench/build_refs.py) confirms that the references pass their own checks, still pass after rotation, mirroring and translation, fail when scaled by 3%, and pass no other task's checks. These tests show the checks are self-consistent, not that every correct design passes or every wrong one fails. Two audits found both kinds of error. One false negative: "a 1.6 mm wall everywhere" on the funnel can be measured horizontally (our reference) or perpendicular to the cone (+24% volume), so we widened that task's volume tolerance. Three false positives: a comb with nine teeth or the wrong tooth pitch, a pestle with one grip groove instead of four, and a knob with a 7 mm bore instead of 12 mm all passed (two comb checks shared a name, so one silently replaced the other). We fixed the checks and added these parts to `build_refs.py` as known-wrong cases that must fail. Re-checking every saved hosted-model attempt with [`bench/rescore.py`](bench/rescore.py) changed the funnel verdict and no other; re-checking the local-model attempts changed partial scores but no verdict. A third audit (14 October 2026, [`meta/audits/`](meta/audits/2026-10-14_hardening.md)), run when larger open models on an NPU box began to pass tasks, found one more false negative and several gaps:
+- A correct funnel failed. Its cutters ended 5 × 10⁻¹⁵ mm short of the rim, and the zero-thickness skins they left sealed the cavity, which was counted as a second body.
+- A correct knob turned to another azimuth failed.
+- Some features were checked only at their centres or by their area, so several wrong parts passed: a funnel blocked by a 2.5 mm shell, racks whose holes were skinned over or 3 mm too deep, slots with the area of a round hole, and holes of the wrong size or spacing in vertical walls.
+
+We added the bore rays, the edge probes, the bracketing sections and a roundness test. Another 28 known-wrong parts must now fail, and three known-right ones ([`bench/variants/`](bench/variants/)) must pass. Re-checking every saved attempt again changed no verdict in the laptop, hosted or language runs. On the NPU box it made one funnel pass on its first attempt. It turned three earlier passes into failures, all of them real defects: a lopsided chamfer, an off-centre notch and a 12 mm notch where 10 mm was asked. Those three conversations need to be run again. Building the checks also caught an error in our own design: a 7 x 7 grid at 10 mm pitch put the corner holes through the rim of the 85 mm seed template.
 
 ### 5.3 Protocol
 
@@ -288,7 +294,7 @@ The zeros hide three different failures:
 - **Feedback changed nothing for them.** The same three models returned byte-identical code in 31-32 of 32 repair attempts, even with a new random seed; Qwen2.5-Coder 0.5B and the general Qwen2.5 1.5B did so in 24 and 27 of 32. A bare "syntax error, line 18" from OpenSCAD did not tell them what to change.
 - **Reasoning models ran out of tokens.** With thinking requested off, Qwen3.5 and Granite 4.2 reasoned inside code comments, and LFM2.5 ignored the switch and wrote `<think>` reasoning in every reply. In the four complete runs (Qwen3.5 2B and 4B, Granite 4.2, LFM2.5), 37-42 of 48 attempts ended at the 2,048-token cap or in a loop. Their scores say as much about the protocol as about their design ability.
 
-The closest were the Gemma 4 models (E2B and E4B), which rendered 11-12 of 16 parts and met half the checks on 6 tasks, but got the overall size right on only 3. The single best local attempt (Gemma 4 E4B, micropestle) failed one check: its grip grooves were 1.5 mm deep instead of 1 mm.
+The closest were the Gemma 4 models (E2B and E4B), which rendered 11-12 of 16 parts and met half the checks on 6 tasks, but got the overall size right on only 3. The best attempt in a complete local run (Gemma 4 E4B, micropestle) had a single defect: its grip grooves were 1.5 mm deep instead of 1 mm, which fails the four groove slices (13 of 17 checks met). In the partial Qwen3.5 9B run, the tube rack's third attempt met 8 of 9 checks; its holes went through the floor.
 
 <!-- AUTO:fig-outcomes -->
 <picture>
@@ -404,7 +410,7 @@ A language model plus OpenSCAD can already turn a measured, written request into
 This is a living paper; contributions are credited and substantial ones earn authorship ([CONTRIBUTING.md](CONTRIBUTING.md)). Most useful:
 
 - **Run the benchmark on your hardware** (`bench/run_bench.py`), especially in low-resource settings, and send the `results/` folder in a pull request.
-- **Add a model** (one line in [`bench/models.yaml`](bench/models.yaml) plus a run) or **a task** from your lab ([`bench/tasks.yaml`](bench/tasks.yaml), validated with `python bench/build_refs.py`).
+- **Add a model** (one line in [`bench/models.yaml`](bench/models.yaml) plus a run) or **a task** from your lab ([`bench/tasks.yaml`](bench/tasks.yaml), validated with `.venv/bin/python bench/build_refs.py`).
 - **Review or add a language** in [`bench/prompts/translations.yaml`](bench/prompts/translations.yaml).
 - **Print and measure** a design and report the fit with photos and caliper readings.
 - **Translate the tutorial.**

@@ -40,7 +40,7 @@ You will learn to turn "I need something that holds these tubes" into a printed 
 | **OpenSCAD** | turns code into a 3D model | [openscad.org/downloads](https://openscad.org/downloads.html). Use a recent **development snapshot**: its new geometry engine (Manifold) renders orders of magnitude faster than the old 2021.01 release. |
 | **A slicer** | turns the model into printer instructions (G-code) | PrusaSlicer, OrcaSlicer, Cura or your printer's own slicer |
 | **An AI model** | writes the OpenSCAD code | either a chatbot you already use, or a free local model (Part 8) |
-| *Optional:* **Python 3 + `scadreport`** | measures what you actually built, so you or the AI can compare it with what you wanted | this repository: `pip install -r requirements.txt`, then `python tools/scadreport.py yourpart.scad` |
+| *Optional:* **Python 3 + `scadreport`** | measures what you actually built, so you or the AI can compare it with what you wanted | this repository: `python3 -m venv .venv` and `.venv/bin/pip install -r requirements.txt` (Windows: `.venv\Scripts\pip`), then `.venv/bin/python tools/scadreport.py yourpart.scad` |
 
 When OpenSCAD starts, open **Window** and make sure the **Editor**, **Console** and **Customizer** panels are visible. You need three keys:
 
@@ -140,7 +140,7 @@ Your eyes come first. Rotate the model and ask yourself:
 Then **measure**. You can do it inside OpenSCAD, but the easiest way is `scadreport`, which prints the facts about what you built:
 
 ```text
-$ python tools/scadreport.py rack.scad
+$ .venv/bin/python tools/scadreport.py rack.scad
 OPENSCAD: rendered OK in 0.5 s, no warnings.
 SOLID: 1 separate body, watertight (valid solid); volume 165,652 mm3 (~205 g of PLA if printed solid).
 BOUNDING BOX: X -53.00 .. 53.00 (size 106.00) | Y -36.00 .. 36.00 (size 72.00) | Z 0.00 .. 30.00 (size 30.00) mm
@@ -173,16 +173,18 @@ Compare every line with your request:
 
 ## Part 4. Make it fit: coupons and clearances
 
-Printers are not perfect. Holes print slightly small, posts slightly fat, and the first layer squishes. **Never print the full part first.** Print a **coupon**: a thin slice that contains the features that must fit. In OpenSCAD, keep only the bottom 3 mm of any part with `intersection()`:
+Printers are not perfect. Holes print slightly small, posts slightly fat, and the first layer squishes. **Never print the full part first.** Print a **coupon**: a thin slice that contains the features that must fit. Take the slice where those features are. In the tube rack the holes open at the top and stop above a 5 mm floor, so keep the top 3 mm and move it down onto the bed with `intersection()`:
 
 ```openscad
-intersection() {
-    import("rack.stl");            // or paste your design here
-    translate([-500, -500, 0]) cube([1000, 1000, 3]);
-}
+h = 30;                            // the part's height
+translate([0, 0, -(h - 3)])
+    intersection() {
+        import("rack.stl");        // or paste your design here
+        translate([-500, -500, h - 3]) cube([1000, 1000, 3]);
+    }
 ```
 
-Or ask the model: "Make a 3 mm tall test coupon with just the first row of holes." Print it in 10 minutes, try your real tube, adjust `hole_d`, and repeat.
+With a parametric design it is simpler to change its parameters, for example `openscad -D height=4 -D hole_depth=3 -D rows=1 -o coupon.stl rack.scad` for one row of holes in a 4 mm plate. Or ask the model: "Make a 4 mm tall test coupon with just the first row of holes." Print it in 10 minutes, try your real tube, adjust `hole_d`, and repeat.
 
 **Starting clearances** (per side; calibrate for your own printer and material):
 

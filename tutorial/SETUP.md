@@ -38,8 +38,8 @@ openscad --version
 flatpak install flathub com.prusa3d.PrusaSlicer
 
 # this repository, for scadreport, the designs and the starter prompt
-git clone https://github.com/ATinyGreenCell/prompt-to-bench.git
-cd prompt-to-bench && python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
+git clone https://github.com/ATinyGreenCell/prompt-to-bench.git ~/prompt-to-bench
+cd ~/prompt-to-bench && python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 ```
 
 Open PrusaSlicer once and run its configuration wizard for your printer. The wizard installs the printer profiles that the command line uses later.
@@ -53,6 +53,7 @@ mkdir -p ~/lab-parts/parts ~/lab-parts/build && cd ~/lab-parts
 cp ~/prompt-to-bench/tutorial/claude-code/CLAUDE.md .
 cp ~/prompt-to-bench/tools/scadreport.py .
 # edit the "Printer facts" block in CLAUDE.md with your printer and your coupon results (part C)
+source ~/prompt-to-bench/.venv/bin/activate   # scadreport needs the Python packages installed there
 claude
 ```
 
@@ -85,7 +86,7 @@ With a chat window instead of Claude Code, *you* run the loop:
 
 1. Copy the code into OpenSCAD and press F6.
 2. Paste any errors back into the chat.
-3. Check the part (by eye, or with `python scadreport.py part.scad`).
+3. Check the part (by eye, or with `scadreport`: `.venv/bin/python tools/scadreport.py part.scad` in this repository, set up as in section A).
 4. Export the STL (F7) and open it in your slicer.
 
 ### The setup assistant prompt
