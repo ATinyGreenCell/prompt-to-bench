@@ -29,4 +29,4 @@ MODELS=(
   qwen3.5:4b-q4_K_M
   qwen3.5:9b-q4_K_M
 )
-"${INHIBIT[@]}" .venv/bin/python bench/run_bench.py --run main --models "${MODELS[@]}" "$@"
+${INHIBIT[@]+"${INHIBIT[@]}"} .venv/bin/python bench/run_bench.py --run main --models "${MODELS[@]}" ${@+"$@"}

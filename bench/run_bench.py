@@ -20,6 +20,7 @@ import argparse
 import datetime as dt
 import fcntl
 import hashlib
+import http.client
 import json
 import os
 import platform
@@ -39,7 +40,7 @@ ROOT = os.path.dirname(HERE)
 sys.path.insert(0, HERE)
 sys.path.insert(0, os.path.join(ROOT, "tools"))
 from checks import evaluate, ref_problems  # noqa: E402
-from scadreport import analyse, format_report, load_mesh, openscad_missing, render  # noqa: E402
+from scadreport import analyse, format_report, keep_messages, load_mesh, openscad_missing, render  # noqa: E402
 
 OLLAMA = os.environ.get("OLLAMA_HOST", "http://localhost:11434")
 if "://" not in OLLAMA:  # the ollama CLI also accepts OLLAMA_HOST=host:port
@@ -52,8 +53,10 @@ ASK = "Reply with the complete corrected file in a single ```openscad code block
 # --------------------------------------------------------------------------- code extraction
 
 def strip_think(text):
-    """Drop reasoning blocks, including one that never closed (the reply was cut off inside it)."""
-    return re.sub(r"<think>.*?(</think>|$)", "", text, flags=re.S)
+    """Drop reasoning blocks, including one that never closed (the reply was cut off inside it) and
+    one whose opening tag the chat template wrote itself, so the reply holds only the closing tag."""
+    text = re.sub(r"<think>.*?(</think>|$)", "", text, flags=re.S)
+    return text.rsplit("</think>", 1)[1] if "</think>" in text else text
 
 
 def extract_code(text):
@@ -139,8 +142,10 @@ class Ollama:
                 if not line.strip():
                     continue
                 ev = json.loads(line)
+                msg = (ev.get("message") or {}) if isinstance(ev, dict) else None
+                if not isinstance(msg, dict):
+                    raise StreamError(f"unexpected line in the reply stream: {line[:80]!r}")
                 err = err or ev.get("error")
-                msg = ev.get("message") or {}
                 if msg.get("content") or msg.get("thinking"):
                     n += 1
                     t_first = t_first or time.time()
@@ -159,6 +164,8 @@ class Ollama:
                         break
         if err:
             raise StreamError(str(err)[:300])
+        if final is None and stop is None:  # the server closed the stream before saying "done"
+            raise StreamError("the reply stream ended before the server finished it")
         text = "".join(parts)
         if final is None:  # we stopped the stream ourselves: estimate the stats
             now = time.time()
@@ -174,15 +181,15 @@ class Ollama:
                 "options": self.opts, "keep_alive": "30m"}
         if self.think is not None:
             body["think"] = self.think
-        t0 = time.time()
-        for attempt in range(4):  # server hiccups (restart, OOM, dropped socket) are retried
+        t0, r, attempt = time.time(), None, 0
+        while r is None:  # server hiccups (restart, OOM, dropped socket) are retried, 4 attempts in all
             try:
                 r = self._post(body)
                 break
             except urllib.error.HTTPError as e:
                 msg = e.read().decode(errors="replace")
                 if "think" in msg.lower() and "think" in body:
-                    self.think = THINK[self.model] = None  # model has no thinking switch
+                    self.think = THINK[self.model] = None  # model has no thinking switch; not an attempt
                     body.pop("think")
                     continue
                 if e.code < 500 or attempt == 3:
@@ -194,10 +201,12 @@ class Ollama:
                     continue
                 if attempt == 3:
                     raise InfraError(f"Ollama stream failed: {e}") from e
-            except (urllib.error.URLError, ConnectionError, TimeoutError, OSError, json.JSONDecodeError) as e:
+            except (urllib.error.URLError, ConnectionError, TimeoutError, OSError, json.JSONDecodeError,
+                    http.client.HTTPException) as e:  # HTTPException: e.g. IncompleteRead mid-chunk
                 if attempt == 3:
-                    raise InfraError(f"Ollama connection failed: {e}") from e
-            time.sleep(15 * (attempt + 1))
+                    raise InfraError(f"Ollama connection failed: {e!r}") from e
+            attempt += 1
+            time.sleep(15 * attempt)
             ollama_ready(self.model)
         self.messages = msgs  # commit the turn only once it succeeded
         wall = time.time() - t0
@@ -206,7 +215,7 @@ class Ollama:
         self.messages.append({"role": "assistant", "content": text})
         return text, {
             "wall_s": round(wall, 2),
-            "prompt_tokens": r.get("prompt_eval_count") or 0,
+            "prompt_tokens": r.get("prompt_eval_count"),  # None when we stopped the stream early
             "prompt_s": round(r.get("prompt_eval_duration", 0) / 1e9, 2),
             "gen_tokens": r.get("eval_count", 0),
             "gen_s": round(r.get("eval_duration", 0) / 1e9, 2),
@@ -272,10 +281,10 @@ class ClaudeCLI:
         shutil.rmtree(self.cwd, ignore_errors=True)
 
 
-def make_backend(name, temperature, seed, num_predict=2048, think=False):
+def make_backend(name, temperature, seed, num_predict=2048, think=False, num_ctx=8192):
     if name.startswith("claude:"):
         return ClaudeCLI(name.split(":", 1)[1])
-    return Ollama(name, temperature, seed, num_predict=num_predict, think=think)
+    return Ollama(name, temperature, seed, num_ctx=num_ctx, num_predict=num_predict, think=think)
 
 
 # --------------------------------------------------------------------------- one conversation
@@ -284,7 +293,7 @@ def feedback_message(kind, render_res, report_text, how):
     if how == "none":
         return "I could not find any OpenSCAD code in your reply. " + ASK
     if not render_res["ok"]:
-        msgs = "\n".join(render_res["messages"][:15]) or render_res["log"][-800:]
+        msgs = "\n".join(keep_messages(render_res["messages"], 15)) or render_res["log"][-800:]
         return ("OpenSCAD could not build a printable part from your file. Its messages were:\n"
                 f"{msgs}\nFix the problem. " + ASK)
     if kind == "report":
@@ -310,12 +319,12 @@ def run_one(backend, system, task, ref, args, code_dir, tag):
                     "code_sha1": hashlib.sha1(code.encode(errors="surrogatepass")).hexdigest()[:12] if code else None,
                     # libraries make results machine-dependent (and break the starter prompt's rule 4)
                     "uses_library": bool(code and re.search(r"^\s*(include|use)\s*<", code, re.M))})
-        path = os.path.join(code_dir, f"{tag}_a{a}.scad")
+        base = os.path.join(code_dir, f"{tag}_a{a}")  # never str.replace on the path: a folder may contain ".scad"
+        path, stl = base + ".scad", base + ".stl"
         with open(path, "w", encoding="utf-8", errors="replace") as fh:
             fh.write(code or f"// no code found in reply\n/*\n{text[:4000]}\n*/\n")
-        with open(path.replace(".scad", ".reply.txt"), "w", encoding="utf-8", errors="replace") as fh:
+        with open(base + ".reply.txt", "w", encoding="utf-8", errors="replace") as fh:
             fh.write(text)
-        stl = path.replace(".scad", ".stl")
         if code:
             try:
                 rr = render(path, stl, timeout=args.render_timeout)
@@ -331,13 +340,17 @@ def run_one(backend, system, task, ref, args, code_dir, tag):
             try:
                 mesh = load_mesh(stl)
                 result = evaluate(mesh, task, ref)
-                if args.feedback == "report":
-                    report_text = format_report(rr, analyse(mesh))
             except Exception as e:  # noqa: BLE001
+                result = None
                 rr["ok"] = False
                 rr["messages"].append(f"ERROR: mesh analysis failed: {e}")
                 rec["render"]["ok"] = False
                 rec["render"]["messages"].append(f"ERROR: mesh analysis failed: {e}")
+            if result is not None and args.feedback == "report" and not result["passed"]:
+                try:  # a failed report must not undo a verdict: the model then gets the generic feedback
+                    report_text = format_report(rr, analyse(mesh))
+                except Exception as e:  # noqa: BLE001
+                    rec["report_error"] = repr(e)[:300]
         if os.path.exists(stl):
             os.remove(stl)  # keep the repo small; .scad files are enough to reproduce
         rec["check"] = result
@@ -346,7 +359,8 @@ def run_one(backend, system, task, ref, args, code_dir, tag):
         attempts.append(rec)
         if rec["passed"] or a == args.max_repairs:
             break
-        user = feedback_message(args.feedback, rr, report_text, how)
+        kind = "generic" if args.feedback == "report" and rr["ok"] and report_text is None else args.feedback
+        user = feedback_message(kind, rr, report_text, how)
         rec["feedback"] = user
     return attempts
 
@@ -369,11 +383,22 @@ def main():
     ap.add_argument("--seed-base", type=int, default=1000)
     ap.add_argument("--num-predict", type=int, default=2048, help="max reply tokens (local models)")
     ap.add_argument("--think", action="store_true", help="let local models think (default: thinking off)")
+    ap.add_argument("--num-ctx", type=int, default=8192,
+                    help="context window requested from Ollama (the Tiiny bridge ignores it: models get their full window)")
     args = ap.parse_args()
+    args.models = list(dict.fromkeys(args.models))  # the same model twice would write two records per task
     if not re.fullmatch(r"[A-Za-z0-9_][A-Za-z0-9._-]*", args.run):
         ap.error(f"--run must be a plain folder name, not {args.run!r}")
-    if args.samples < 1 or args.max_repairs < 0 or args.render_timeout < 1:
-        ap.error("need --samples >= 1, --max-repairs >= 0 and --render-timeout >= 1")
+    if args.samples < 1 or args.max_repairs < 0 or args.render_timeout < 1 or args.num_ctx < 1 or args.num_predict < 1:
+        ap.error("need --samples >= 1, --max-repairs >= 0, --render-timeout >= 1, --num-ctx >= 1, --num-predict >= 1")
+    folders = {}
+    for m in args.models:  # two names that mean the same model, or share a code folder, would overwrite files
+        same = folders.setdefault(re.sub(r"[^A-Za-z0-9._-]+", "_", re.sub(r":latest$", "", m)), m)
+        if same != m:
+            ap.error(f"--models {same!r} and {m!r} are the same model or share a code folder - keep one")
+    if args.num_predict + 2000 > args.num_ctx and not all(m.startswith(("claude:", "tiiny/")) for m in args.models):
+        print(f"warning: --num-predict {args.num_predict} plus the prompt may not fit --num-ctx {args.num_ctx}; "
+              "Ollama would cut the reply or drop the start of the conversation - raise --num-ctx", file=sys.stderr)
     for f in [args.system] + ([args.prompts] if args.prompts else []):
         if not os.path.isfile(f):
             ap.error(f"no such file: {f}")
@@ -413,7 +438,7 @@ def main():
         fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
     except BlockingIOError:
         raise SystemExit(f"another run_bench.py is already writing {out_dir} - not starting a second one")
-    done = set()
+    done, newest = set(), {}
     if os.path.exists(res_path):
         lines = open(res_path, errors="replace").read().splitlines(keepends=True)
         good = []
@@ -424,11 +449,18 @@ def main():
             except (json.JSONDecodeError, KeyError, TypeError):  # half-written line from a crash or power loss
                 continue
             good.append(line if line.endswith("\n") else line + "\n")
-            done.add(key)
+            if key not in newest or str(r.get("finished", "")) >= newest[key][0]:
+                newest[key] = (str(r.get("finished", "")), bool(r.get("needs_rerun")))
+        # a conversation a rescore flagged needs_rerun is redone; the new record supersedes it
+        done = {k for k, (_, rerun) in newest.items() if not rerun}
         if len(good) != len(lines):
             print(f"dropped {len(lines) - len(good)} damaged line(s) from {res_path}; those tasks will rerun")
         if len(good) != len(lines) or (lines and not lines[-1].endswith("\n")):  # next append starts a fresh line
-            open(res_path, "w").writelines(good)
+            with open(res_path + ".tmp", "w") as fh:  # write-then-rename: a full disk cannot eat the good lines
+                fh.writelines(good)
+                fh.flush()
+                os.fsync(fh.fileno())
+            os.replace(res_path + ".tmp", res_path)
     margs = {k: (os.path.relpath(v, ROOT) if isinstance(v, str) and v.startswith(ROOT) else v) for k, v in vars(args).items()}
     if all(m.startswith("claude:") for m in args.models):  # the CLI sets neither; the API defaults apply
         margs.update(temperature=None, num_predict=None, seed_base=None)
@@ -451,6 +483,8 @@ def main():
     suffix = "".join(f"_{x}" for x, default in ((args.lang, "en"), (args.feedback, "report")) if x != default)
     infra_fails = 0
     for model in args.models:
+        if all((model, t["id"], s, args.lang, args.feedback) in done for s in range(args.samples) for t in tasks):
+            continue  # finished already: no need for the model to still be installed
         if not model.startswith("claude:"):
             ollama_ready(model)
         safe = re.sub(r"[^A-Za-z0-9._-]+", "_", model)
@@ -461,7 +495,7 @@ def main():
                 if (model, t["id"], s, args.lang, args.feedback) in done:
                     continue
                 backend = make_backend(model, args.temperature, seed=args.seed_base + 100 * s,
-                                       num_predict=args.num_predict, think=args.think)
+                                       num_predict=args.num_predict, think=args.think, num_ctx=args.num_ctx)
                 args.sample_idx = s
                 t0 = time.time()
                 try:
@@ -487,6 +521,7 @@ def main():
                     fh.write(json.dumps(rec) + "\n")
                     fh.flush()
                     os.fsync(fh.fileno())
+                done.add((model, t["id"], s, args.lang, args.feedback))
                 flag = "PASS" if rec["passed"] else "fail"
                 print(f"{dt.datetime.now():%H:%M:%S} {model:28s} {t['id']:24s} s{s} {flag} "
                       f"after {len(attempts)} attempt(s), best score "

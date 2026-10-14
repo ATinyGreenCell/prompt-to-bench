@@ -126,12 +126,14 @@ class Fake:
 
 
 REAL_READY = run_bench.ollama_ready
+REAL_BACKEND = run_bench.make_backend
 
 
 def run(args, script):
     Fake.script = list(script)
     run_bench.make_backend = lambda *a, **k: Fake()
     run_bench.ollama_ready = lambda m, wait_s=0: None
+    run_bench.OLLAMA = "http://127.0.0.1:9"  # the meta lookup must never reach a real server (or the bridge)
     sys.argv = ["run_bench.py"] + args
     try:
         run_bench.main()
@@ -160,6 +162,40 @@ def harness_cases():
     check("resume after damaged line", sorted(r["task"] for r in recs) == ["gel_comb_10well", "tube_rack_1p5ml"])
     check("reference passes through the full harness",
           any(r["task"] == "tube_rack_1p5ml" and r["passed"] for r in recs))
+    # 2b: a conversation a rescore flagged needs_rerun is redone on resume; the new record supersedes it
+    for r in recs:
+        if r["task"] == "tube_rack_1p5ml":
+            r["needs_rerun"] = True
+    open(res, "w").writelines(json.dumps(r) + "\n" for r in recs)
+    run(base, [good])
+    tube = [json.loads(line) for line in open(res) if '"tube_rack_1p5ml"' in line]
+    check("needs_rerun conversation is redone on resume",
+          not Fake.script and len(tube) == 2 and not tube[-1].get("needs_rerun"), str([len(tube), Fake.script[:1]]))
+    # 2c: a model whose tasks are all done is skipped without asking the server for it (it may be deleted)
+    def gone(m, wait_s=0):
+        raise SystemExit(f"model {m!r} is not installed")
+    Fake.script = []
+    run_bench.make_backend = lambda *a, **k: Fake()
+    run_bench.ollama_ready = gone
+    sys.argv = ["run_bench.py"] + base
+    try:
+        run_bench.main()
+        code = 0
+    except SystemExit as e:
+        code = e.code
+    run_bench.ollama_ready = lambda m, wait_s=0: None
+    check("finished model is not looked up on resume", code == 0, str(code))
+    # 2e: a folder name containing ".scad" does not confuse the file names
+    dot_dir = os.path.join(HERE, "results", "_selftest.scad")
+    shutil.rmtree(dot_dir, ignore_errors=True)
+    code = run(["--run", "_selftest.scad", "--models", "fake:1", "--tasks", "tube_rack_1p5ml"], [good])
+    check("a run folder named *.scad works", code == 0 and os.path.exists(os.path.join(
+        dot_dir, "code", "fake_1", "tube_rack_1p5ml_s0_a0.reply.txt")), str(code))
+    shutil.rmtree(dot_dir, ignore_errors=True)
+    # 2d: two names for one model, or two models sharing a code folder, are refused up front
+    for pair in (["m", "m:latest"], ["tiiny/Q/x", "tiiny/Q_x"]):
+        code = run(["--run", "_selftest", "--models", *pair, "--tasks", "tube_rack_1p5ml"], [])
+        check(f"colliding model names refused ({pair[1]})", code == 2, str(code))
     # 3: three runtime errors in a row stop the run with a clear message
     code = run(base + ["--lang", "es", "--prompts", os.path.join(HERE, "prompts", "translations.yaml"),
                        "--tasks", "tube_rack_1p5ml", "gel_comb_10well", "lab_funnel_60mm"], [None, None, None])
@@ -199,6 +235,8 @@ def extraction_cases():
         ("longest of several openscad blocks", "```openscad\ncube(1);\n```\n```openscad\ncube([1,2,3]);\n```", "cube([1,2,3]);", "fenced"),
         ("fence inside <think> ignored", "<think>```openscad\nsphere(1);\n```</think>```openscad\ncube(1);\n```", "cube(1);", "fenced"),
         ("unclosed <think> (cut off while reasoning)", "<think>```openscad\nsphere(1);\n```", None, "none"),
+        ("orphan </think> (the template wrote <think>): the draft before it is not the answer",
+         "draft:\n```openscad\nsphere(1);\n```\n</think>\n```openscad\ncube(1);\n```", "cube(1);", "fenced"),
         ("empty reply", "", None, "none"),
         ("None reply", None, None, "none"),
         ("prose only", "Sorry, I cannot design that part.", None, "none"),
@@ -233,6 +271,13 @@ def extraction_cases():
 # ------------------------------------------------------------------ render edge cases
 def render_edges():
     import scadreport
+    msgs = [f"WARNING: w{i}" for i in range(30)] + ["WARNING: Current top level object is not a 3D object."]
+    kept = scadreport.keep_messages(msgs, 20)
+    check("render messages: a decisive one survives the cap, order kept",
+          len(kept) == 20 and kept[-1].endswith("not a 3D object.") and kept[:19] == msgs[:19], str(kept[-2:]))
+    fb = run_bench.feedback_message("report", {"ok": False, "messages": kept, "log": ""}, None, "fenced")
+    check("feedback names the decisive message after many warnings", "not a 3D object" in fb)
+    check("15 or fewer messages: feedback list unchanged", scadreport.keep_messages(msgs[:15], 15) == msgs[:15])
     tmp = tempfile.mkdtemp(prefix="p2b test ")  # a path with spaces
     p = os.path.join(tmp, "my part.scad")
 
@@ -386,6 +431,7 @@ def harness_edges():
 def ollama_edges():
     import http.server
     import threading
+    import urllib.error
 
     class H(http.server.BaseHTTPRequestHandler):
         def log_message(self, *a):
@@ -412,6 +458,10 @@ def ollama_edges():
                                  b'{"message": {"content": ""}, "done": true, "eval_count": 2, "eval_duration": 1000}\n')
             elif self.server.mode == "think":  # a model whose thinking cannot be switched off (gpt-oss on the Tiiny)
                 self.wfile.write(b'{"error": "thinking is always on for this model"}\n')
+            elif self.server.mode == "nodone":  # the server closes the stream mid-reply without an error
+                self.wfile.write(b'{"message": {"content": "```openscad\\ncube("}}\n')
+            elif self.server.mode == "junk":  # a line that is JSON but not an event
+                self.wfile.write(b'[]\n')
             else:
                 self.wfile.write(b'{"message": {"content": "partial "}}\n{"error": "model runner has unexpectedly stopped"}\n')
 
@@ -451,6 +501,43 @@ def ollama_edges():
             text, usage = run_bench.Ollama("c:1", 0.2, 1).chat("s", "u")
             check("ollama: 'thinking always on' mid-stream -> retried without the switch",
                   text == "cube(1);" and run_bench.THINK.get("c:1", False) is None, str((text, usage)))
+            for mode in ("nodone", "junk"):
+                srv.mode = mode
+                try:
+                    run_bench.Ollama("a:1", 0.2, 1).chat("s", "u")
+                    check(f"ollama: {mode} stream -> runtime error, nothing scored", False)
+                except run_bench.InfraError as e:
+                    check(f"ollama: {mode} stream -> runtime error, nothing scored", True, str(e))
+            import http.client
+            import io
+            orig = run_bench.Ollama._post
+
+            def incomplete(self, body):
+                raise http.client.IncompleteRead(b"half")
+            run_bench.Ollama._post = incomplete
+            try:
+                run_bench.Ollama("a:1", 0.2, 1).chat("s", "u")
+                check("ollama: IncompleteRead -> runtime error, not a crash", False)
+            except run_bench.InfraError:
+                check("ollama: IncompleteRead -> runtime error, not a crash", True)
+            seq = [500, 500, 500, 400, None]
+
+            def flaky(self, body):  # three busy answers, then "no thinking switch", then a reply
+                code = seq.pop(0)
+                if code is None:
+                    return {"message": {"content": "cube(1);"}, "eval_count": 1, "done_reason": "stop"}
+                raise urllib.error.HTTPError("u", code, "x", {}, io.BytesIO(
+                    b"model does not support thinking" if code == 400 else b"busy"))
+            run_bench.Ollama._post = flaky
+            try:
+                text, _ = run_bench.Ollama("d:1", 0.2, 1).chat("s", "u")
+                check("ollama: dropping the thinking switch is not counted as an attempt", text == "cube(1);", text)
+            except Exception as e:  # noqa: BLE001
+                check("ollama: dropping the thinking switch is not counted as an attempt", False, repr(e))
+            finally:
+                run_bench.Ollama._post = orig
+            check("ollama: --num-ctx reaches the request",
+                  REAL_BACKEND("a:1", 0.2, 1, num_ctx=20480).opts["num_ctx"] == 20480)
         finally:
             run_bench.time.sleep, run_bench.ollama_ready = sleep, ready
     finally:
@@ -482,8 +569,14 @@ def rescore_analyze_edges():
     tmp = tempfile.mkdtemp()
     rec = {"model": "not-in-models-yaml", "task": "tube_rack_1p5ml", "category": "benchware", "sample": 0,
            "attempts": [], "wall_s": 3, "finished": "2026-01-01T00:00:00"}
+    passing = [{"passed": True, "render": {"ok": True}}]
     files = {"empty": "", "damaged": '{"model": "x", "ta', "junk": "[]\n{}\n\"text\"\n", "zero": json.dumps(rec) + "\n",
-             "spanish": json.dumps(dict(rec, lang="es", attempts=[{"passed": True, "render": {"ok": True}}])) + "\n"}
+             "spanish": json.dumps(dict(rec, lang="es", attempts=passing)) + "\n",
+             # a merged file: the newer (passing) record comes first; a rescore-flagged one is left out
+             "merged": json.dumps(dict(rec, attempts=passing, finished="2026-02-01T00:00:00")) + "\n"
+                       + json.dumps(rec) + "\n"
+                       + json.dumps(dict(rec, task="gel_comb_10well", needs_rerun=True)) + "\n",
+             "multi": json.dumps(rec) + "\n" + json.dumps(dict(rec, sample=1)) + "\n"}
     for name, content in files.items():
         os.makedirs(os.path.join(tmp, "results", name))
         open(os.path.join(tmp, "results", name, "results.jsonl"), "w").write(content)
@@ -503,6 +596,61 @@ def rescore_analyze_edges():
         check("analyze: language run without an English baseline -> no rows", lt.count("\n") == 1, lt)
         drawn = analyze.fig_lang(runs["spanish"] + runs["zero"], meta, analyze.THEMES["light"], os.path.join(tmp, "f.png"), "t")
         check("analyze: language figure without English", drawn and os.path.exists(os.path.join(tmp, "f.png")))
+        # several samples per task (the Tiiny box): one complete sample, one still running, one zero-attempt record
+        ok = {"passed": True, "render": {"ok": True}, "usage": {"gen_tokens": 10, "gen_s": 1.0}}
+        box = [dict(rec, model="box", task=t["id"], category=t["category"], sample=0, attempts=[ok] if i < 3 else [])
+               for i, t in enumerate(all_tasks)]
+        box += [dict(rec, model="box", task=t["id"], category=t["category"], sample=1, attempts=[ok])
+                for t in all_tasks[:2]]
+        brows = analyze.summarise_box(box, meta, all_tasks)
+        btable = analyze.table_box(brows, len(all_tasks))
+        check("analyze: per-sample box rows (complete + partial sample, zero-attempt records)",
+              len(brows) == 1 and brows[0]["per_sample"] == [(0, 3, 16), (1, 2, 2)] and brows[0]["mean_pass3"] == 3
+              and brows[0]["tasks_any"] == 3 and brows[0]["tasks_every"] == 3 and "3 · 2 of 2" in btable, btable)
+        check("analyze: pooled box columns use the complete sample only",
+              brows[0]["samples_used"] == [0] and brows[0]["n"] == 16 and brows[0]["pass1"] == 3, str(brows[0]["n"]))
+        analyze.fig_box_heatmap(box, brows, all_tasks, analyze.THEMES["dark"], os.path.join(tmp, "b.png"), "t")
+        check("analyze: box outcome grid draws", os.path.exists(os.path.join(tmp, "b.png")))
+        check("analyze: no box records -> no rows", analyze.summarise_box([], meta, all_tasks) == [])
+        think = [dict(r, think=True, attempts=[dict(ok, usage={"thinking_chars": 900, "done_reason": "length"})])
+                 for r in box if r["sample"] == 0]
+        ttable = analyze.table_think(analyze.summarise_box(think, meta, all_tasks), brows, len(all_tasks))
+        check("analyze: thinking table next to the thinking-off samples",
+              "| 3 · 2 of 2\\* | 16 |" in ttable and "| 16/16 | 900 | 16/16 |" in ttable, ttable)
+        # newest record wins whatever the line order; needs_rerun records wait for their rerun
+        merged = runs["merged"]
+        check("analyze: newest record wins in a merged file; needs_rerun left out",
+              len(merged) == 1 and merged[0]["attempts"] == passing, str(merged)[:200])
+        # unknown local model: no size, not "hosted"
+        check("analyze: a model missing from models.yaml shows no download size",
+              "| not-in-models-yaml *(partial)* | - |" in analyze.table_main(rows), analyze.table_main(rows)[:300])
+        # README blocks: exactly one whole-line pair, otherwise left alone
+        rb = analyze.replace_block
+        doc = "a\n<!-- AUTO:x -->\nold\n<!-- /AUTO:x -->\nb\n"
+        check("analyze: README block replaced", rb(doc, "x", "new") == "a\n<!-- AUTO:x -->\nnew\n<!-- /AUTO:x -->\nb\n")
+        for bad in ("a\n", doc + doc, "x <!-- AUTO:x --> y\n<!-- /AUTO:x -->\n", "<!-- /AUTO:x -->\n<!-- AUTO:x -->\n"):
+            check(f"analyze: odd README markers left alone ({bad[:18]!r})", rb(bad, "x", "new") == bad)
+        # main(): a typo in --runs, or a several-samples folder in --runs, writes nothing
+        shutil.copy(os.path.join(HERE, "tasks.yaml"), tmp)
+        shutil.copy(os.path.join(HERE, "models.yaml"), tmp)
+        old_fig, old_root, argv = analyze.FIG, analyze.ROOT, sys.argv
+        analyze.FIG, analyze.ROOT = os.path.join(tmp, "figures"), tmp
+        try:
+            for args, why in ((["--runs", "no_such_run"], "typo"), (["--runs", "multi"], "several samples")):
+                sys.argv = ["analyze.py", "--no-readme"] + args
+                try:
+                    analyze.main()
+                    code = 0
+                except SystemExit as e:
+                    code = e.code
+                check(f"analyze: --runs with a {why} -> error, nothing written",
+                      code == 2 and not os.path.exists(os.path.join(tmp, "results", "summary.csv")), str(code))
+            os.makedirs(analyze.FIG, exist_ok=True)
+            with open(os.path.join(analyze.FIG, "print_estimates.csv"), "w") as fh:
+                fh.write("title,category,print_time,filament_g,cost_usd,hours\nA,tools,1h,10,0.2,1\nB,tools,2h,5,0.1,2\n")
+            check("analyze: print total counts the parts it lists", "**All 2 parts**" in analyze.table_prints())
+        finally:
+            analyze.FIG, analyze.ROOT, sys.argv = old_fig, old_root, argv
     finally:
         analyze.HERE = old
         shutil.rmtree(tmp)
@@ -533,6 +681,14 @@ def tool_edges():
     except Exception as e:  # noqa: BLE001
         check("build_log: malformed session lines skipped", False, repr(e))
     shutil.rmtree(tmp)
+    red = build_log.redact("skip_existing_files sk-ant-api03-AbCdEfGhIjKlMnOp usb 172.30.56.221 lan 192.168.1.153 "
+                           "mac 02:ef:a1:0e:77:01 id 6730c8f1a1154072b4a2f0bcb6f263e4 local 127.0.0.1", [])
+    check("build_log: tokens, private IPs, MACs and device ids redacted; ordinary words kept",
+          red == "skip_existing_files [token] usb [private-ip] lan [private-ip] mac [mac] id [id] local 127.0.0.1", red)
+    line = build_log.tool_line({"name": "Bash", "input": {"command": "x" * 135 + " jane.doe@example.com"}})
+    check("build_log: a long command is redacted before it is cut short", "jane" not in line and "@" not in line, line)
+    line = build_log.tool_line({"name": "mcp__mail__search", "input": {"query": "from:someone private"}})
+    check("build_log: MCP tool inputs are not logged", line == "`mcp__mail__search`", line)
 
 
 if __name__ == "__main__":

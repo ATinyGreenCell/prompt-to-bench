@@ -11,7 +11,8 @@ if command -v systemd-inhibit >/dev/null 2>&1; then
   INHIBIT=(systemd-inhibit --what=sleep:idle:handle-lid-switch --who=prompt-to-bench --why="benchmark running")
 fi
 RUN=${1:?usage: run_lang.sh <run-name> <models...>}; shift
+[ $# -ge 1 ] || { echo "usage: run_lang.sh <run-name> <model> [<model> ...]" >&2; exit 2; }
 for lang in es hi sw; do
-  "${INHIBIT[@]}" .venv/bin/python bench/run_bench.py --run "$RUN" --lang "$lang" \
+  ${INHIBIT[@]+"${INHIBIT[@]}"} .venv/bin/python bench/run_bench.py --run "$RUN" --lang "$lang" \
       --prompts bench/prompts/translations.yaml --models "$@"
 done

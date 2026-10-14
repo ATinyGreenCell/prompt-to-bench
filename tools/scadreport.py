@@ -64,13 +64,29 @@ def render(scad_path, out_path, defines=(), timeout=180):
     name = os.path.basename(scad_path)
     for p_ in (os.path.abspath(scad_path), os.path.relpath(scad_path), scad_path):
         log = log.replace(p_, name)
-    msgs = []
+    msgs, seen = [], set()  # a set: a file that floods the log with warnings must not cost minutes here
     for line in log.splitlines():
-        if MSG_RE.search(line) and line.strip() not in msgs:
+        if MSG_RE.search(line) and line.strip() not in seen:
+            seen.add(line.strip())
             msgs.append(line.strip())
     ok = rc == 0 and os.path.exists(out_path) and os.path.getsize(out_path) > 84
-    return {"ok": ok, "returncode": rc, "messages": msgs[:20], "log": log[-4000:],
+    return {"ok": ok, "returncode": rc, "messages": keep_messages(msgs, 20), "log": log[-4000:],
             "seconds": round(time.time() - t0, 2)}
+
+
+def decisive(message):
+    """A message that says why nothing printable came out."""
+    return message.startswith("ERROR") or "top level" in message or "not a 3D" in message
+
+
+def keep_messages(msgs, n):
+    """At most n messages in their original order, never dropping a decisive one for a warning:
+    a file that prints 30 warnings before 'not a 3D object' must still be told why it failed."""
+    if len(msgs) <= n:
+        return list(msgs)
+    dec = [m for m in msgs if decisive(m)][:n]
+    keep = set(dec) | set([m for m in msgs if not decisive(m)][:n - len(dec)])
+    return [m for m in msgs if m in keep]
 
 
 def openscad_missing():

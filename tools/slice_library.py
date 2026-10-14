@@ -74,7 +74,7 @@ def main():
                            capture_output=True, text=True, errors="replace")
         if p.returncode != 0:
             raise SystemExit(f"OpenSCAD failed on {t['id']}:\n{(p.stdout + p.stderr)[-800:]}")
-        gcode = stl.replace(".stl", ".gcode")
+        gcode = os.path.splitext(stl)[0] + ".gcode"  # not str.replace: a folder name may contain ".stl"
         p = subprocess.run(CMD + ["--datadir", DATADIR, "--printer-profile", PRINTER, "--print-profile", PRINT,
                                   "--material-profile", MATERIAL, "--threads", "1", "--export-gcode",
                                   "--output", gcode, stl], capture_output=True, text=True)
