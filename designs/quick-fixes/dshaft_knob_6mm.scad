@@ -32,7 +32,7 @@ eps = 0.01;
 assert(shaft_flat > shaft_d / 2 && shaft_flat < shaft_d, "shaft_flat must be between half and all of shaft_d");
 assert(bore_depth <= knob_h - pointer_depth - 0.8, "the bore breaks through the pointer groove: reduce bore_depth or raise knob_h");
 assert(round_len <= bore_depth, "round_len cannot be longer than the bore");
-assert(knob_d - shaft_d >= 4 * 0.8, "the knob wall around the shaft is too thin");
+assert(knob_d / 2 - groove_d / 2 - shaft_d / 2 - mouth_chamfer >= 0.8, "the wall between the bore and the grip grooves is under 0.8 mm: enlarge knob_d");
 
 difference() {
     cylinder(d = knob_d, h = knob_h, $fn = 128);

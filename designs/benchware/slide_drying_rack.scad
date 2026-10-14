@@ -32,6 +32,8 @@ assert(n_slots >= 1, "n_slots must be at least 1");
 assert(slot_pitch - slot_w >= 0.8, "slots overlap: slot_pitch must exceed slot_w by at least 0.8 mm");
 assert(slot_len <= block_xz[0] - 2 * 0.8, "slots are longer than the block");
 assert(slot_depth <= block_xz[1] - 2 - 0.8, "slots reach the drain channels: reduce slot_depth or raise the block");
+assert(slot_len / 2 - drain_d / 2 + 2 <= block_xz[0] / 2 - 0.8, "the drain channels leave thin fins at the block ends: lengthen the block");
+assert(slot_pitch - drain_d >= 0.8, "neighbouring drain holes merge: increase slot_pitch or reduce drain_d");
 
 difference() {
     translate([-block.x / 2, -block.y / 2, 0]) cube(block);

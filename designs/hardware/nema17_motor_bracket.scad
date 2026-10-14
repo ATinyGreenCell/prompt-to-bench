@@ -23,7 +23,9 @@ screw_d = 3.4; // 0.1
 screw_spacing = 31;
 // M4 clearance
 mount_d = 4.5; // 0.1
-mount_pos = [[-17, 30], [17, 30]];
+// the two M4 holes in the base sit at x = -mount_x and +mount_x, y = mount_y
+mount_x = 17;
+mount_y = 30;
 gusset_t = 5;
 gusset_len = 20;
 
@@ -34,6 +36,9 @@ eps = 0.01;
 assert(screw_spacing / 2 + screw_d / 2 <= plate.x / 2 - 0.8, "the motor screw holes do not fit the plate width");
 assert(boss_z - screw_spacing / 2 - screw_d / 2 >= base.z, "the lower motor screws cut into the base: raise boss_z");
 assert(boss_z + screw_spacing / 2 + screw_d / 2 <= plate.z - 0.8, "the upper motor screws run off the plate: lower boss_z or raise plate.z");
+assert(mount_x + mount_d / 2 <= base.x / 2 - 0.8 && mount_y + mount_d / 2 <= base.y - 0.8, "the M4 holes run off the base: move them in or enlarge the base");
+assert(mount_y - mount_d / 2 >= plate.y + gusset_len + 0.8 || mount_x + mount_d / 2 <= base.x / 2 - gusset_t - 0.8, "the M4 holes cut into the gussets: move them");
+assert(base.x / 2 - gusset_t >= screw_spacing / 2 + 3, "the gussets cover the motor screw heads: widen the base or thin the gussets");
 
 difference() {
     union() {
@@ -54,6 +59,6 @@ difference() {
     for (sx = [-1, 1], sz = [-1, 1])
         translate([sx * screw_spacing / 2, -1, boss_z + sz * screw_spacing / 2])
             rotate([-90, 0, 0]) cylinder(d = screw_d, h = plate.y + 2, $fn = 32);
-    for (p = mount_pos)
-        translate([p.x, p.y, -1]) cylinder(d = mount_d, h = base.z + 2, $fn = 32);
+    for (sx = [-1, 1])
+        translate([sx * mount_x, mount_y, -1]) cylinder(d = mount_d, h = base.z + 2, $fn = 32);
 }

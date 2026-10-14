@@ -3,7 +3,7 @@
 // inside, so standard 7 cm trays fit. The library's 80 mm comb needs a tray with side
 // walls or comb slots to rest on (not included).
 // Electrodes: a wire runs across the floor of each chamber along Y, held in the floor
-// groove, and climbs the end wall in the vertical groove to the rim. That keeps it under
+// groove, and climbs the +Y side wall in the vertical groove to the rim. That keeps it under
 // a normal buffer level (2-6 mm over the gel) and spans the whole chamber for straight
 // bands. Use platinum (or graphite) for the anode; stainless steel only as the cathode.
 // The end walls are engraved "+" (+X, anode, red) and "-" (-X, cathode, black): load the

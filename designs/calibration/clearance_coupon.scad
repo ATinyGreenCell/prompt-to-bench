@@ -28,7 +28,9 @@ plate = [len(extra) * pitch + 4, 26, 4];  // X, Y, Z [mm]
 
 // parameter checks: stop with a message instead of building a broken part
 assert(peg_d + max(extra) <= pitch - 0.8, "holes overlap: increase pitch");
-assert(peg_d + max(extra) <= 2 * (plate.y / 2 + 2) - 2 * 0.8, "holes are too big for the 26 mm plate");
+// the holes sit at y = +2 on the 26 mm plate: 11 mm from the near edge, with the labels below them
+assert(peg_d + max(extra) <= 2 * (plate.y / 2 - 2) - 2 * 0.8, "holes would break through the edge of the 26 mm plate");
+assert(peg_d + max(extra) <= 18.6, "holes would cut into the labels: this coupon suits pegs up to about 17.6 mm");
 
 difference() {
     translate([0, -plate.y / 2, 0]) cube(plate);

@@ -37,5 +37,6 @@ profile = concat(
 assert(n_barbs >= 1, "n_barbs must be at least 1");
 assert(small[1] - bore_d >= 2 * 1.2, "the small barb tip wall is under 1.2 mm: reduce bore_d");
 assert(collar[0] >= big[1], "the collar must be at least as wide as the big barbs");
+assert(collar[1] >= (collar[0] - big[1]) / 2 + 0.8, "the collar is too short for its 45 deg underside: make it taller or narrower");
 
 rotate_extrude() polygon(profile);

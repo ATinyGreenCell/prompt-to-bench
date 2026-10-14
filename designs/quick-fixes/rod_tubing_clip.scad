@@ -35,8 +35,9 @@ linear_extrude(height)
             translate([tube_x, 0]) ring(tube_id, tube_wall);
             translate([bridge[0], -bridge[2] / 2]) square([bridge[1] - bridge[0], bridge[2]]);
         }
-        translate([-20, -rod_gap / 2]) square([20, rod_gap]);      // rod snap opening
-        translate([tube_x, -tube_gap / 2]) square([10, tube_gap]); // tubing snap opening
+        // snap openings, each long enough to cut through its ring whatever the sizes
+        translate([-(rod_id / 2 + rod_wall + 1), -rod_gap / 2]) square([rod_id / 2 + rod_wall + 1, rod_gap]);
+        translate([tube_x, -tube_gap / 2]) square([tube_id / 2 + tube_wall + 1, tube_gap]);
         circle(d = rod_id);
         translate([tube_x, 0]) circle(d = tube_id);
     }

@@ -45,7 +45,7 @@ Print times are PrusaSlicer estimates for an Original Prusa MK4 (0.20 mm SPEED p
 - **Check the result** before printing:
 
   ```bash
-  python tools/scadreport.py designs/benchware/tube_rack_1p5ml.scad
+  .venv/bin/python tools/scadreport.py designs/benchware/tube_rack_1p5ml.scad
   ```
 
 ## Safety

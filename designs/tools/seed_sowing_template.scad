@@ -27,6 +27,7 @@ eps = 0.01;
 
 // parameter checks: stop with a message instead of building a broken part
 assert(sqrt(2) * (n - 1) / 2 * pitch + hole_d / 2 <= disc_d / 2 - 1, "the corner holes reach the rim: reduce n or pitch, or enlarge disc_d");
+assert(pitch - hole_d >= 0.8, "the holes merge: pitch must exceed hole_d by at least 0.8 mm");
 
 difference() {
     cylinder(d = disc_d, h = thickness, $fn = 180);

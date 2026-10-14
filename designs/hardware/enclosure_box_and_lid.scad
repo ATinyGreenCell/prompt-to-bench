@@ -20,6 +20,8 @@ clearance = 0.2; // 0.1
 gap = 10;
 // cable hole in the -X end wall, 8 mm above the floor
 cable_d = 6;
+// bottom of the cable hole above the floor
+cable_z = 8;
 
 /* [Hidden] */
 eps = 0.01;
@@ -28,14 +30,14 @@ lip = [box.x - 2 * wall - 2 * clearance, box.y - 2 * wall - 2 * clearance];
 // parameter checks: stop with a message instead of building a broken part
 assert(wall >= 0.8 && floor_t >= 0.8 && lid_t >= 0.8 && lip_wall >= 0.8, "walls must be at least 0.8 mm (two perimeters)");
 assert(clearance >= 0 && clearance < wall, "clearance must be between 0 and the wall thickness");
-assert(cable_d < box.z - floor_t, "the cable hole is taller than the box wall");
+assert(floor_t + cable_z + cable_d <= box.z - lip_h, "the cable hole reaches the lid's lip: lower cable_z, use a smaller cable_d or a taller box");
 
 // box (left)
 translate([-box.x - gap / 2, -box.y / 2, 0])
     difference() {
         cube(box);
         translate([wall, wall, floor_t]) cube([box.x - 2 * wall, box.y - 2 * wall, box.z]);
-        translate([-1, box.y / 2, floor_t + 8 + cable_d / 2]) rotate([0, 90, 0]) cylinder(d = cable_d, h = wall + 2, $fn = 32);
+        translate([-1, box.y / 2, floor_t + cable_z + cable_d / 2]) rotate([0, 90, 0]) cylinder(d = cable_d, h = wall + 2, $fn = 32);
     }
 // lid (right), lip pointing up
 translate([gap / 2, -box.y / 2, 0]) {
