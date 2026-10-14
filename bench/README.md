@@ -11,7 +11,7 @@ Sixteen biology-lab parts, described in words and numbers. A model writes OpenSC
 | [`prompts/translations.yaml`](prompts/translations.yaml) | the same prompts in Spanish, Hindi and Swahili |
 | [`checks.py`](checks.py) | the checker (bbox, bodies, slices, probes, lines, arcs, volume; symmetry-aware) |
 | [`reference/`](reference/) | the 16 frozen answer keys (v1); the lab-ready parts in `designs/` have since diverged |
-| [`build_refs.py`](build_refs.py) | renders the reference designs and validates the checker against them and against known-wrong parts in [`mutants/`](mutants/) |
+| [`build_refs.py`](build_refs.py) | renders the reference designs and validates the checker against them, against known-wrong parts in [`mutants/`](mutants/) (must fail) and against known-right parts in [`variants/`](variants/) (must pass) |
 | [`rescore.py`](rescore.py) | re-checks every saved attempt of a run with the current checker and reports changed verdicts |
 | [`reference_stats.json`](reference_stats.json) | reference volumes, slice areas and design-frame centres (generated) |
 | [`run_bench.py`](run_bench.py) | runs models: Ollama (local) or `claude:<model>` via the Claude Code CLI |
@@ -52,23 +52,24 @@ You need OpenSCAD on your `PATH`. A development snapshot with the Manifold backe
 - **One writer per run.** A lock file refuses a second `run_bench.py` on the same `--run` folder.
 - **No sleep.** `run_main_local.sh` and `run_lang.sh` hold a `systemd-inhibit` lock (where available), so the laptop does not suspend mid-run.
 - **Library use is flagged.** Attempts that `include`/`use` an external library are flagged (`uses_library`), because their result depends on what is installed locally.
-- `python bench/test_harness.py` (or `make test`) exercises all of the above with a fake model.
+- `.venv/bin/python bench/test_harness.py` (or `make test`) exercises all of the above with a fake model.
 - **Resume keys ignore settings.** A run folder is resumed by (model, task, sample, language, feedback); use a new `--run` name when you change `--num-predict`, `--think` or the temperature.
-- After any change to `checks.py` or `tasks.yaml`, run `python bench/rescore.py <run> --dry-run` to see which verdicts would change, then without `--dry-run` to apply.
+- After any change to `checks.py` or `tasks.yaml`, run `.venv/bin/python bench/rescore.py <run> --dry-run` to see which verdicts would change, then without `--dry-run` to apply.
 
 ## Check types
 
-A check is written in the *design frame*: the part as the prompt describes it, with its lowest point at z = 0. Candidates are normalised by bounding-box centre. The position-dependent checks are tried under the eight bed symmetries (90° rotations and mirroring), and the best match is kept.
+A check is written in the *design frame*: the part as the prompt describes it, with its lowest point at z = 0. Candidates are normalised by bounding-box centre. The position-dependent checks are tried under the eight bed symmetries (90° rotations and mirroring), and the best match is kept. A task whose prompt leaves the azimuth free (the round knob) sets `rotation_step: 1` to try every 1° rotation as well.
 
 | Check | Example | Meaning |
 |---|---|---|
 | `bbox` | `{size: [106, 72, 30], tol: 0.5}` | overall size (X and Y may be swapped) |
-| `bodies` | `2` | number of separate solids |
+| `bodies` | `2` | number of separate solids; a sealed cavity counts, unless it is closed only by a floating-point skin (a cutter ending exactly at a face) |
 | `volume` | `{rel_tol: 0.05}` | volume within 5% of the reference |
-| `slice` | `{z: 15, islands: 1, holes: 24, hole_d: [11.2, 0.4], hole_grid: {...}}` | horizontal cross-section at height z |
+| `slice` | `{z: 15, islands: 1, holes: 24, hole_d: [11.2, 0.4], hole_grid: {...}}` | horizontal cross-section at height z; `hole_d` and `island_d` also require a round outline (its enclosing rectangle within 1.5 × tol of d) |
 | `probes` | `{solid: [[x,y,z]], empty: [[x,y,z]]}` | points that must be inside or outside material |
 | `line` | `{z, from, to, intervals: 10, length: [5, 0.3]}` | count of solid stretches along a line (teeth, slots) |
 | `arc` | `{z, center, r, gaps: 18}` | count of gaps around a circle (grip grooves) |
+| `bores` | `{z: [0.15, 19.85], grid: {nx: 12, ny: 8, px: 9, py: 9}}` or `{z, at: [[x, y]]}` | vertical passages: a ray up each one must not enter material between the two heights (a skin, plug or floor fails) |
 
 ## Adding results from your machine
 

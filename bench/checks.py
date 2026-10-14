@@ -5,13 +5,14 @@ normalised (bounding-box centre in XY at the origin, lowest point at z = 0) and
 compared with the task spec in the *design frame* of the reference solution.
 Rotations by 90 degrees about Z and mirroring are allowed - they do not change
 how a part prints or works - so every transform-dependent check is evaluated
-for all 8 symmetries of the bed and the best one is kept.
+for all 8 symmetries of the bed and the best one is kept. A task whose prompt leaves
+the part's azimuth free (a round knob) sets `rotation_step` (degrees) for a finer search.
 
 Check types (see tasks.yaml):
   bbox, bodies, body_sizes, watertight, volume,
   slice (islands, holes, hole_d, hole_area, hole_rect, hole_rects, hole_centers,
          hole_grid, island_d, island_rects, material_area),
-  probes, line, arc
+  probes, line, arc, bores
 """
 import collections
 import math
@@ -20,13 +21,15 @@ import sys
 
 import numpy as np
 import shapely
+import trimesh
 from shapely.ops import unary_union
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "tools"))
 from scadreport import load_mesh, section, shape_info  # noqa: E402
 
 NUDGE = 0.0137  # keep slice planes off exact face heights
-TRANSFORMS = [(k, m) for m in (False, True) for k in range(4)]
+TRANSFORMS = [(a, m) for m in (False, True) for a in (0, 90, 180, 270)]  # (rotation in degrees, mirror)
+SKIN = 1e-3  # mm: a sealed void this close to the outside is a zero-thickness skin, not a cavity
 
 
 class Slices:
@@ -58,10 +61,10 @@ def normalise(mesh):
     return m
 
 
-def to_model(pts, k, mirror, dc):
-    """Map design-frame XY points into the normalised model frame for symmetry (k, mirror)."""
+def to_model(pts, angle, mirror, dc):
+    """Map design-frame XY points into the normalised model frame for (rotation in degrees, mirror)."""
     q = np.atleast_2d(np.asarray(pts, float))[:, :2] - np.asarray(dc, float)
-    a = -k * math.pi / 2
+    a = -math.radians(angle)
     c, s = math.cos(a), math.sin(a)
     p = np.stack([c * q[:, 0] - s * q[:, 1], s * q[:, 0] + c * q[:, 1]], axis=1)
     if mirror:
@@ -92,6 +95,12 @@ def _rects_match(shapes, expected, tol):
         if abs(gl - el) > tol or abs(gw - ew) > tol:
             return False, f"got {gl:.2f}x{gw:.2f}, expected {el}x{ew}"
     return True, "ok"
+
+
+def _round(shape, d, tol):
+    """Area-equivalent diameter within tol of d, and a round outline: the smallest enclosing rectangle is
+    about d by d (a 15.6 x 7 mm slot has the area of an 11.2 mm hole but no tube fits)."""
+    return abs(shape["d"] - d) <= tol and abs(shape["l"] - d) <= 1.5 * tol and abs(shape["w"] - d) <= 1.5 * tol
 
 
 def _runs(mask):
@@ -172,7 +181,7 @@ def build_items(task, ref):
 
                 def f(ctx, k, m, z=z, d=d, tol=tol):
                     hs = ctx["S"].get(z)["holes"]
-                    bad = [round(h["d"], 2) for h in hs if abs(h["d"] - d) > tol]
+                    bad = [round(h["d"], 2) for h in hs if not _round(h, d, tol)]
                     return bool(hs) and not bad, f"hole d off: {bad[:5]}" if bad else ("ok" if hs else "no holes")
                 items.append((f"{tag} hole_d", f, False))
             if "hole_area" in spec:
@@ -203,7 +212,7 @@ def build_items(task, ref):
                 def f(ctx, k, m, z=z, d=d, tol=tol):
                     isl = ctx["S"].get(z)["islands"]
                     got = [round(i["d"], 2) for i in isl]
-                    return len(isl) >= 1 and all(abs(g - d) <= tol for g in got), f"outer d {got} vs {d}"
+                    return len(isl) >= 1 and all(_round(i, d, tol) for i in isl), f"outer d {got} vs {d}"
                 items.append((f"{tag} island_d", f, False))
             if "material_area" in spec:
                 rel = spec["material_area"]
@@ -242,6 +251,34 @@ def build_items(task, ref):
                             bad.append(("solid" if want else "empty", p))
                 return not bad, f"wrong at {bad[:4]}" if bad else f"{len(solid) + len(empty)} probes ok"
             items.append(("probes", f, True))
+
+        elif kind == "bores":
+            # vertical passages that must be open over their whole length: a ray up each one may not cross a face
+            z0, z1 = spec["z"]
+            if "grid" in spec:
+                g = spec["grid"]
+                cx, cy = g.get("center", [0, 0])
+                at = [(cx + (i - (g["nx"] - 1) / 2) * g["px"], cy + (j - (g["ny"] - 1) / 2) * g["py"])
+                      for i in range(g["nx"]) for j in range(g["ny"])]
+            else:
+                at = [tuple(p) for p in spec["at"]]
+
+            def f(ctx, k, m, z0=z0, z1=z1, at=at):
+                mesh = ctx["mesh"]
+                xy = to_model(at, k, m, dc) + np.array([0.0137, 0.0173])  # off exact vertices and edges
+                origins = np.column_stack([xy, np.full(len(xy), z0)])
+                locs, ray, tri = mesh.ray.intersects_location(origins, np.tile([0.0, 0.0, 1.0], (len(xy), 1)))
+                nz = mesh.face_normals[tri, 2] if len(tri) else np.zeros(0)
+
+                def solid(r, z):  # material just above height z (the slice is nudged NUDGE up)
+                    return bool(shapely.contains_xy(ctx["S"].get(z)["region"], xy[r][0], xy[r][1]))
+                # blocked: the ray starts in material, or enters material that is really there just above
+                # the face (a skin left by a cutter ending exactly at a face is entered and gone at once)
+                blocked = [r for r in range(len(at)) if solid(r, z0) or any(
+                    solid(r, float(loc[2])) for loc, n, rr in zip(locs, nz, ray) if rr == r and n < 0 and loc[2] < z1)]
+                return not blocked, f"{len(blocked)} of {len(at)} blocked, e.g. at {at[blocked[0]]}" if blocked \
+                    else f"{len(at)} open from z={z0} to {z1}"
+            items.append((f"bores z={z0}-{z1}", f, True))
 
         elif kind == "line":
             z, a, b = spec["z"], spec["from"], spec["to"]
@@ -297,18 +334,35 @@ def ref_problems(task, ref):
     return [k for k in need if "[" in k or k not in ref]
 
 
+def split_bodies(mesh):
+    """The separate solids of a mesh. A sealed cavity is a closed inward-facing shell; it still counts
+    (a hole covered by a real skin is a wrong part), unless it lies within SKIN of the outside: a cutter
+    that ends exactly at a face (5e-15 mm short, in floating point) seals the cavity with a skin no
+    printer can make, and the part is open in every way that matters."""
+    shells = mesh.split(only_watertight=False)
+    outside = [b for b in shells if not (b.is_watertight and b.volume < 0)]
+    kept = list(outside)
+    for v in (b for b in shells if b.is_watertight and b.volume < 0):
+        gap = min((float(np.min(trimesh.proximity.closest_point(o, v.vertices)[1])) for o in outside),
+                  default=math.inf)
+        if gap >= SKIN:
+            kept.append(v)
+    return kept
+
+
 def evaluate(mesh_or_path, task, ref):
     """Run all checks. Returns dict(passed, score, n, items=[...], transform)."""
     mesh = load_mesh(mesh_or_path) if isinstance(mesh_or_path, str) else mesh_or_path
     if mesh is None or len(mesh.faces) == 0:
         raise ValueError("empty mesh")
     mesh = normalise(mesh)
-    bodies = mesh.split(only_watertight=False)
+    bodies = split_bodies(mesh)
     ctx = {
         "size": (mesh.bounds[1] - mesh.bounds[0]).tolist(),
         "bodies": len(bodies),
         "body_sizes": [(b.bounds[1] - b.bounds[0]).tolist() for b in bodies],
         "watertight": bool(mesh.is_watertight),
+        "mesh": mesh,
         "volume": float(mesh.volume) if mesh.is_watertight else None,
         "S": Slices(mesh),
     }
@@ -320,8 +374,10 @@ def evaluate(mesh_or_path, task, ref):
                 fixed[name] = f(ctx, 0, False)
             except Exception as e:  # noqa: BLE001
                 fixed[name] = (False, f"error: {e}")
+    step = task.get("rotation_step")
+    transforms = [(a, m) for m in (False, True) for a in np.arange(0, 360, step)] if step else TRANSFORMS
     best = None
-    for k, mir in TRANSFORMS:
+    for k, mir in transforms:
         res = {}
         for name, f, dep in items:
             if dep:
@@ -338,7 +394,7 @@ def evaluate(mesh_or_path, task, ref):
     out = [{"check": n, "ok": bool(allres[n][0]), "msg": allres[n][1]} for n, _, _ in items]
     n_ok = sum(i["ok"] for i in out)
     return {"passed": n_ok == len(out), "score": n_ok / len(out), "n_ok": n_ok, "n": len(out),
-            "transform": {"rot90": best[1][0], "mirror": best[1][1]}, "items": out}
+            "transform": {"rot_deg": float(best[1][0]), "mirror": best[1][1]}, "items": out}
 
 
 def reference_stats(mesh, task):

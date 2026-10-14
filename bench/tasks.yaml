@@ -25,6 +25,10 @@
     - slice: {z: 15, islands: 1, holes: 24, hole_d: [11.2, 0.4],
               hole_grid: {nx: 6, ny: 4, px: 16, py: 16}, tol: 0.5}
     - slice: {z: 2.5, islands: 1, holes: 0}
+    # added by the 2026-10-14 checker audit
+    - slice: {z: 4.4, holes: 0}      # the 5 mm floor, within 0.6 mm
+    - slice: {z: 5.6, holes: 24}
+    - slice: {z: 29.6, holes: 24}    # open at the top
     - volume: {rel_tol: 0.05}
 
 - id: conical_rack_50ml
@@ -52,6 +56,8 @@
     - slice: {z: 40, islands: 2, island_rects: [[130, 4], [130, 4]], island_tol: 0.4}
     - probes: {solid: [[0, 43, 40], [0, -43, 40], [0, 0, 2]],
                empty: [[0, 0, 40], [63, 0, 40], [0, 20, 2]]}
+    # added by the 2026-10-14 checker audit
+    - bores: {z: [0.15, 3.85], grid: {nx: 3, ny: 2, px: 40, py: 40}}   # through, no skin
     - volume: {rel_tol: 0.05}
 
 - id: slide_drying_rack
@@ -75,6 +81,9 @@
               hole_centers: [[0, -15.75], [0, -12.25], [0, -8.75], [0, -5.25], [0, -1.75],
                              [0, 1.75], [0, 5.25], [0, 8.75], [0, 12.25], [0, 15.75]], tol: 0.4}
     - slice: {z: 5, islands: 1, holes: 0}
+    # added by the 2026-10-14 checker audit
+    - slice: {z: 9.4, holes: 0}      # slots 10 mm deep, within 0.6 mm
+    - slice: {z: 10.6, holes: 10}
     - volume: {rel_tol: 0.05}
 
 - id: pcr_tube_rack_sbs
@@ -100,6 +109,9 @@
     - slice: {z: 1, holes: 96}
     - probes: {empty: [[-62.88, 41.74, 10]],
                solid: [[62.88, 41.74, 10], [62.88, -41.74, 10], [-62.88, -41.74, 10]]}
+    # added by the 2026-10-14 checker audit
+    - bores: {z: [0.15, 19.85], grid: {nx: 12, ny: 8, px: 9, py: 9}}   # through, no skin or floor
+    - probes: {empty: [[-61.88, 40.74, 10]], solid: [[-57.88, 42.24, 10], [-63.38, 36.74, 10]]}   # chamfer legs ~5 mm
     - volume: {rel_tol: 0.05}
 
 - id: gel_comb_10well
@@ -125,6 +137,8 @@
     - line: {z: 0.75, from: [-36, 6], to: [36, 6], intervals: 1, length: [70, 0.5]}
     - probes: {empty: [[0, -6, 0.75], [13, -6, 0.75], [-26, -6, 0.75]],
                solid: [[3.25, -6, 0.75], [29.25, -6, 0.75], [-16.25, -6, 0.75]]}
+    # added by the 2026-10-14 checker audit
+    - line: {z: 0.75, from: [0, -13], to: [0, 13], intervals: 1, length: [12, 0.3]}   # spine 12 wide (in a gap)
     - volume: {rel_tol: 0.05}
 
 - id: micropestle_1p5ml
@@ -176,6 +190,8 @@
     - probes: {empty: [[0, 0, 0.3], [0, 0, 15], [0, 0, 30], [0, 0, 49.7]]}
     # "1.6 mm everywhere" can be read horizontally (reference, 1.23 mm normal to the cone)
     # or normal to the cone (+24 % volume); both are correct, so volume is loose here.
+    # added by the 2026-10-14 checker audit
+    - bores: {z: [0.2, 49.8], at: [[0, 0]]}   # liquid runs straight through
     - volume: {rel_tol: 0.35}
 
 - id: seed_sowing_template
@@ -197,6 +213,9 @@
     - slice: {z: 1, islands: 1, holes: 49, hole_d: [3.0, 0.3],
               hole_grid: {nx: 7, ny: 7, px: 9, py: 9}, tol: 0.4, material_area: 0.04}
     - probes: {empty: [[0, 41.5, 1]], solid: [[0, -41.5, 1], [41.5, 0, 1], [-41.5, 0, 1]]}
+    # added by the 2026-10-14 checker audit
+    - probes: {empty: [[4.4, 41.5, 1], [-4.4, 41.5, 1], [0, 39.1, 1]],
+               solid: [[5.6, 41.5, 1], [-5.6, 41.5, 1], [0, 37.9, 1]]}   # notch 10 x 4
     - volume: {rel_tol: 0.05}
 
 - id: dshaft_knob_6mm
@@ -206,6 +225,7 @@
   reference: bench/reference/dshaft_knob_6mm.scad
   library: designs/quick-fixes/dshaft_knob_6mm.scad
   skills: [D-profile bore, polar array, feature alignment]
+  rotation_step: 1  # the prompt fixes the pointer only relative to the flat, so any azimuth is correct
   prompt: >-
     Design a replacement knob for a hotplate stirrer with a 6 mm D-shaft. The knob
     is a cylinder 30 mm in diameter and 15 mm tall. It is printed with the side that
@@ -220,12 +240,16 @@
   checks:
     - bbox: {size: [30, 30, 15], tol: 0.4}
     - bodies: 1
-    - slice: {z: 6, islands: 1, holes: 1, hole_area: [24.6, 0.12]}
+    - slice: {z: 6, islands: 1, holes: 1, hole_area: [24.6, 0.12],
+              hole_rect: [6.2, 4.7, 0.25, 0.25]}   # the D: 6.2 round, 4.7 flat-to-round (2026-10-14 audit)
     - slice: {z: 11.5, islands: 1, holes: 1}
     - slice: {z: 13, islands: 1, holes: 0}
     - arc: {z: 7, center: [0, 0], r: 14.6, gaps: 18}
     - probes: {solid: [[2.5, 0, 5], [0, 0, 13], [-10, 0, 14.6], [0, 10, 14.6]],
                empty: [[-2.5, 0, 5], [0, 2.4, 5], [10, 0, 14.6]]}
+    # added by the 2026-10-14 checker audit
+    - probes: {empty: [[1.5, 0, 14.6], [13, 0.45, 14.6], [13, -0.45, 14.6], [13, 0, 14.3]],
+               solid: [[13, 1.05, 14.6], [13, -1.05, 14.6], [13, 0, 13.7]]}   # pointer from the centre, 1.5 x 1 at the rim
     - volume: {rel_tol: 0.06}
 
 - id: pcr_tube_adapter
@@ -247,6 +271,8 @@
     - slice: {z: 0.75, islands: 1, holes: 1, island_d: [13, 0.3], hole_d: [6.2, 0.3]}
     - slice: {z: 11, islands: 1, holes: 1, island_d: [10.8, 0.3], hole_d: [6.2, 0.3]}
     - probes: {empty: [[0, 0, 0.3], [0, 0, 21.2]]}
+    # added by the 2026-10-14 checker audit
+    - bores: {z: [0.15, 21.35], at: [[0, 0]]}
     - volume: {rel_tol: 0.06}
 
 - id: hose_barb_reducer_8_5
@@ -280,6 +306,8 @@
     - slice: {z: 33.5, island_d: [6.41, 0.3]}
     - slice: {z: 40.5, island_d: [5.09, 0.3]}
     - probes: {empty: [[0, 0, 0.2], [0, 0, 15], [0, 0, 22.5], [0, 0, 30], [0, 0, 40.8]]}
+    # added by the 2026-10-14 checker audit
+    - bores: {z: [0.15, 40.85], at: [[0, 0]]}
     - volume: {rel_tol: 0.06}
 
 - id: rod_tubing_clip
@@ -334,6 +362,9 @@
     - slice: {z: 36, islands: 1, holes: 0}
     - probes: {empty: [[0, 43.75, 36], [0, 0, 20]],
                solid: [[0, -43.75, 36], [43.75, 0, 36], [-43.75, 0, 36], [0, 0, 1]]}
+    # added by the 2026-10-14 checker audit
+    - probes: {empty: [[5.4, 43.75, 36], [-5.4, 43.75, 36], [0, 43.75, 32.6]],
+               solid: [[6.6, 43.75, 36], [-6.6, 43.75, 36], [0, 43.75, 31.4]]}   # cable notch 12 x 8
     - volume: {rel_tol: 0.05}
 
 - id: nema17_motor_bracket
@@ -365,6 +396,15 @@
     - probes: {empty: [[0, 2.5, 28], [0, 2.5, 38], [15.5, 2.5, 12.5], [-15.5, 2.5, 12.5],
                        [15.5, 2.5, 43.5], [-15.5, 2.5, 43.5], [0, 20, 20]],
                solid: [[0, 2.5, 45], [-20, 2.5, 28], [0, 30, 2.5], [22.5, 10, 10], [-22.5, 10, 10]]}
+    # added by the 2026-10-14 checker audit
+    - probes: {empty: [[11.2, 2.5, 28], [-11.2, 2.5, 28], [0, 2.5, 16.8]],
+               solid: [[11.8, 2.5, 28], [-11.8, 2.5, 28], [0, 2.5, 16.2]]}   # boss hole 23
+    - probes: {empty: [[14.1, 2.5, 12.5], [16.9, 2.5, 12.5], [-14.1, 2.5, 12.5], [-16.9, 2.5, 12.5],
+                       [14.1, 2.5, 43.5], [16.9, 2.5, 43.5], [-14.1, 2.5, 43.5], [-16.9, 2.5, 43.5],
+                       [15.5, 2.5, 13.9], [15.5, 2.5, 11.1]],
+               solid: [[13.5, 2.5, 12.5], [17.5, 2.5, 12.5], [-13.5, 2.5, 12.5], [-17.5, 2.5, 12.5],
+                       [13.5, 2.5, 43.5], [17.5, 2.5, 43.5], [-13.5, 2.5, 43.5], [-17.5, 2.5, 43.5],
+                       [15.5, 2.5, 14.5], [15.5, 2.5, 10.5]]}   # M3 holes 3.4 on a 31 mm square
     - volume: {rel_tol: 0.06}
 
 - id: enclosure_box_and_lid
@@ -419,4 +459,7 @@
     - slice: {z: 1.5, islands: 1, holes: 0}
     - probes: {empty: [[58.5, 0, 30], [-58.5, 0, 30], [0, 0, 14]],
                solid: [[58.5, 10, 30], [-58.5, 10, 30], [0, 0, 12]]}
+    # added by the 2026-10-14 checker audit
+    - probes: {empty: [[58.5, 0.7, 30], [58.5, -0.7, 30], [58.5, 0, 30.7], [58.5, 0, 29.3], [-58.5, 0.7, 30], [-58.5, -0.7, 30]],
+               solid: [[58.5, 1.3, 30], [58.5, -1.3, 30], [58.5, 0, 31.3], [58.5, 0, 28.7], [-58.5, 1.3, 30], [-58.5, -1.3, 30]]}   # wire holes 2 mm
     - volume: {rel_tol: 0.05}

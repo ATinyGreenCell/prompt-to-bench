@@ -10,6 +10,8 @@
 4. discrimination: references scaled by 3 % must fail; every reference must fail
    every *other* task's checks (cross-task false positives)
 5. known-wrong parts in bench/mutants/ must fail their task
+6. known-right parts in bench/variants/ (an allowed difference from the reference, such as another
+   azimuth, or a floating-point skin from a cutter that ends exactly at a face) must pass their task
 """
 import glob
 import json
@@ -29,6 +31,12 @@ from checks import evaluate, reference_stats  # noqa: E402
 from scadreport import load_mesh, openscad_missing, render  # noqa: E402
 
 
+def need(ok, message):
+    """Like assert, but still checked under `python -O`."""
+    if not ok:
+        sys.exit(f"build_refs: {message}")
+
+
 def main():
     if openscad_missing():
         sys.exit(openscad_missing())
@@ -39,9 +47,9 @@ def main():
     for t in tasks:
         stl = os.path.join(out_dir, t["id"] + ".stl")
         r = render(os.path.join(ROOT, t["reference"]), stl)
-        assert r["ok"], (t["id"], r["messages"])
+        need(r["ok"], f"{t['id']}: the reference did not render: {r['messages']}")
         m = load_mesh(stl)
-        assert abs(m.bounds[0][2]) < 1e-6, f"{t['id']}: reference must start at z = 0"
+        need(abs(m.bounds[0][2]) < 1e-6, f"{t['id']}: reference must start at z = 0")
         stats[t["id"]] = reference_stats(m, t)
         meshes[t["id"]] = m
     path = os.path.join(HERE, "reference_stats.json")
@@ -51,11 +59,11 @@ def main():
         frozen = json.load(open(path))
         for tid, st in stats.items():
             fz = frozen.get(tid)
-            assert fz is not None, f"{tid}: not in reference_stats.json (run with --write)"
+            need(fz is not None, f"{tid}: not in reference_stats.json (run with --write)")
             pairs = [(st["volume"], fz["volume"])] + [(v, fz["material_area"].get(z)) for z, v in st["material_area"].items()]
             for new, old in pairs:
-                assert old is not None and abs(new - old) <= 1e-3 * abs(old), \
-                    f"{tid}: reference statistics differ from reference_stats.json ({new:.1f} vs {old}); check your OpenSCAD version"
+                need(old is not None and abs(new - old) <= 1e-3 * abs(old),
+                     f"{tid}: reference statistics differ from reference_stats.json ({new:.1f} vs {old}); check your OpenSCAD version")
         stats = frozen
 
     fails = 0
@@ -83,14 +91,18 @@ def main():
                     print(f"    {label} FAIL {i['check']}: {i['msg']}")
     # known-wrong parts (bench/mutants/<task>__<what is wrong>.scad) must fail their task
     by_id = {t["id"]: t for t in tasks}
-    for path in sorted(glob.glob(os.path.join(HERE, "mutants", "*.scad"))):
-        tid = os.path.basename(path).split("__")[0]
-        assert tid in by_id, f"{path}: name must start with a task id and '__'"
-        stl = os.path.join(out_dir, "mutant.stl")
-        assert render(path, stl)["ok"], path
-        res = evaluate(load_mesh(stl), by_id[tid], stats[tid])
-        fails += bool(res["passed"])
-        print(f"mutant {os.path.basename(path):40s} {'PASSED - checks too weak' if res['passed'] else 'fails, as it should'}")
+    for kind, folder, should_pass in (("mutant", "mutants", False), ("variant", "variants", True)):
+        for path in sorted(glob.glob(os.path.join(HERE, folder, "*.scad"))):
+            tid = os.path.basename(path).split("__")[0]
+            need(tid in by_id, f"{path}: name must start with a task id and '__'")
+            stl = os.path.join(out_dir, f"{kind}.stl")
+            need(render(path, stl)["ok"], f"{path} did not render")
+            res = evaluate(load_mesh(stl), by_id[tid], stats[tid])
+            fails += bool(res["passed"]) != should_pass
+            verdict = ("passes, as it should" if should_pass else "PASSED - checks too weak") if res["passed"] else \
+                ("FAILED - checks too strict: " + "; ".join(i["check"] for i in res["items"] if not i["ok"])[:120]
+                 if should_pass else "fails, as it should")
+            print(f"{kind:7s} {os.path.basename(path):52s} {verdict}")
     print("ALL OK" if not fails else f"{fails} validation problem(s)")
     sys.exit(1 if fails else 0)
 

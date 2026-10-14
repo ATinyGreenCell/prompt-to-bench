@@ -38,7 +38,7 @@ A good task is a part your lab prints, described the way a careful student would
 - **A reference design** in [`bench/reference/`](bench/reference/) that is exactly what the prompt asks for (and, if you like, a lab-ready version in [`designs/<category>/`](designs/)), following the design conventions below.
 - **Checks** in the same YAML entry, using the check types in [`bench/checks.py`](bench/checks.py): `bbox`, `bodies`, `slice` (holes, sizes, grids, areas), `probes`, `line`, `arc` and `volume`. Write probe coordinates in the frame of your reference design.
 
-Then run `python bench/build_refs.py --write` (this adds your task to `reference_stats.json`). Your reference must pass its own checks, still pass after rotation and mirroring, fail when scaled by 3%, and not pass any other task's checks. Add one or two plausible wrong versions to [`bench/mutants/`](bench/mutants/) (`<task>__<what is wrong>.scad`): they must fail.
+Then run `.venv/bin/python bench/build_refs.py --write` (this adds your task to `reference_stats.json`). Your reference must pass its own checks, still pass after rotation and mirroring, fail when scaled by 3%, and not pass any other task's checks. Add one or two plausible wrong versions to [`bench/mutants/`](bench/mutants/) (`<task>__<what is wrong>.scad`): they must fail. If a correct reading of your prompt can look different from your reference (another azimuth, another way to build the same part), add it to [`bench/variants/`](bench/variants/) (`<task>__<what differs>.scad`): it must pass.
 
 ### 4. Add or review a translation
 
