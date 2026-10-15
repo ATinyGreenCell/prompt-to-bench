@@ -29,6 +29,7 @@ from scadreport import analyse, load_mesh, render  # noqa: E402
 BBOX_ABS = 1.0    # mm of slack per axis, whichever is larger
 BBOX_REL = 0.03   # or 3% of the reference size
 VOL_REL = 0.08    # volume within 8%
+TRI_FLOOR = 0.3   # candidate triangles >= 30% of the reference (catches gross faceting / too-low $fn)
 
 
 def measure(scad_text: str, timeout: int = 60) -> dict:
@@ -49,7 +50,7 @@ def measure(scad_text: str, timeout: int = 60) -> dict:
             return {"ok": False, "reason": "not watertight"}
         size = (mesh.bounds[1] - mesh.bounds[0])
         return {"ok": True, "watertight": True, "bbox": [float(v) for v in size],
-                "volume": float(a["volume"]), "bodies": int(a["bodies"])}
+                "volume": float(a["volume"]), "bodies": int(a["bodies"]), "triangles": int(len(mesh.faces))}
 
 
 def matches(cand_text: str, ref_text: str | None = None, ref_measure: dict | None = None,
@@ -81,6 +82,12 @@ def matches(cand_text: str, ref_text: str | None = None, ref_measure: dict | Non
     body_ok = cand["bodies"] == ref["bodies"]
     checks.append(body_ok)
     detail["bodies"] = {"cand": cand["bodies"], "ref": ref["bodies"], "ok": body_ok}
+
+    # curve resolution: a faceted part (too-low $fn) keeps a similar bbox/volume but its triangle count
+    # collapses, so require the candidate not to fall far below the reference's
+    tri_ok = ref.get("triangles", 0) > 0 and cand["triangles"] >= TRI_FLOOR * ref["triangles"]
+    checks.append(tri_ok)
+    detail["triangles"] = {"cand": cand["triangles"], "ref": ref.get("triangles"), "ok": tri_ok}
 
     score = sum(checks) / len(checks)
     return (score == 1.0), round(score, 3), detail
