@@ -1,0 +1,27 @@
+// Gel comb for agarose casting - a flat plate with a straight back bar and 10 hanging
+// rectangular teeth. NOVEL general part.
+//
+
+plate  = 70;
+spine  = 12;
+teeth  = 10;
+tooth_w= 5;
+tooth_l= 12;
+gap    = 1.5;
+t      = 1.5;
+
+$fn = 48;
+
+back_bore = min(3, tooth_w / 2);              // keep the teeth linked if t is very small
+
+difference() {
+    union() {
+        cube([plate, spine, t]);                  // plate
+        for (i = [0 : teeth - 1])
+            translate([plate / 2 - tooth_w / 2, -spine + gap + i * (tooth_l + gap), 0])
+                cube([tooth_w, tooth_l, t]);     // teeth
+    }
+    for (i = [0 : teeth - 1])
+        translate([plate / 2 - tooth_w / 2 - 1, -spine + gap + i * (tooth_l + gap), -1])
+            cylinder(h = t + 2, d = back_bore);   // link the teeth to the back bar
+}

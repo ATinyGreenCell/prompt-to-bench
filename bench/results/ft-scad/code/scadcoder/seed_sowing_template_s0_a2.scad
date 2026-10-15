@@ -1,0 +1,30 @@
+// Sowing template - a flat disc with through-holes that overlays a round petri dish,
+// with an orientation notch. NOVEL general part.
+//
+
+plate_d  = 90;
+hole_grid  = 7;
+hole_phi   = 3;
+centre_to_centre = 9;
+board_t    = 2;
+notch_l    = 10;
+notch_y    = 4;
+
+$fn = 72;
+
+outer_r = plate_d / 2;
+grid_d  = centre_to_centre * (hole_grid - 1) + hole_phi * 2;
+clearance = 1.5;
+
+difference() {
+    union() {
+        cylinder(h = board_t, d = plate_d + 2 * clearance);                 // disc
+        translate([0, -outer_r - 1, 0]) cylinder(h = board_t + 4, d = outer_r + 2);   // rim around the hole grid
+    }
+    for (i = [0 : hole_grid - 1])
+        for (j = [0 : hole_grid - 1])
+            translate([centre_to_centre * i - grid_d / 2,
+                       centre_to_centre * j - grid_d / 2,
+                       0]) cylinder(h = board_t + 2, d = hole_phi);
+    translate([-outer_r, -outer_r - 4, 0]) cube([2 * outer_r, notch_l, board_t + 4]);   // orientation notch
+}

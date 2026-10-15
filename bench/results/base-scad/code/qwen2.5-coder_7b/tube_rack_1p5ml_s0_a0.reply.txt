@@ -1,0 +1,36 @@
+```openscad
+// Dimensions
+length = 106; // X dimension in mm
+width = 72;   // Y dimension in mm
+height = 30;  // Z dimension in mm
+
+hole_diameter = 11.2; // Diameter of each hole in mm
+hole_depth = 25;      // Depth of each hole in mm
+floor_thickness = 5;  // Thickness of the solid floor at the bottom of each hole in mm
+
+// Calculate hole positions
+row_spacing = 16; // Centre-to-centre spacing between rows in Y direction in mm
+col_spacing = 16; // Centre-to-centre spacing between columns in X direction in mm
+
+// Create the main block
+block = cube([length, width, height]);
+
+// Create the holes
+holes = for (y = [0:3]) // 4 rows
+        translate([0, y * row_spacing - width / 2 + row_spacing / 2, 0])
+        for (x = [0:5]) // 6 columns
+        translate([x * col_spacing - length / 2 + col_spacing / 2, 0, 0])
+        difference() {
+            cylinder(hole_depth, hole_diameter, center=true);
+            cube([hole_diameter + 1, floor_thickness + 1, hole_depth], center=true);
+        };
+
+// Combine the block and holes
+result = union() {
+    block;
+    holes;
+};
+
+// Render the result
+render(result);
+```

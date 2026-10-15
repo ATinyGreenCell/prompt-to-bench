@@ -1,0 +1,96 @@
+# OpenSCAD fine-tune (laptop-deployable)
+
+A follow-up to the paper: can a **small, laptop-runnable** open model be fine-tuned into a capable
+**general OpenSCAD assistant** — one that turns a written request into a correct 3D-printable part,
+across mechanical parts, mounts, enclosures, fasteners, adapters and any lab or general hardware,
+not only lab equipment? The paper's best laptop model scored 0/16 on the lab benchmark; the bet is
+that a broad fine-tune on verified OpenSCAD closes the gap (the literature in §5.5 says narrow CAD
+fine-tunes lift small models a lot; breadth should help the model learn OpenSCAD *as a language*,
+which is the paper's core diagnosis of why they fail).
+
+**Scope: general OpenSCAD, strong in the lab.** The seed library and generated tasks span general
+3D-printing design — mechanical (gears, couplers, brackets, hinges, clamps), mounts (VESA, pipe,
+rail), enclosures and boxes, fasteners and spacers, adapters and couplers, containers and
+organizers, knobs and handles — with lab hardware as one well-covered domain. The lab benchmark
+stays the held-out eval; broader training should still lift it, and demonstrates general competence.
+
+**Deployment target: the laptop (Ollama/GGUF), not the Tiiny box.** We verified on 2026-10-15 that
+`tiiny import` rejects LLM architectures (`MODEL_ARCHITECTURE_UNSUPPORTED`; it takes only image
+pipelines) - so a custom LLM cannot run on the box. See
+[`../meta/audits/2026-10-14_box_platform.md`](../meta/audits/2026-10-14_box_platform.md). The box's
+role here is only an optional (slow) data generator; the eval still runs it as a benchmark tier.
+
+## Base model
+
+**Qwen2.5-Coder-7B-Instruct** (Apache-2.0): code-specialized, ~4.7 GB as a Q4 GGUF so it fits the
+16 GB laptop with context headroom, and it is already in the paper's lineup (0/16), giving a clean
+before/after. Alternative to A/B later: Qwen3.5-9B (newer, 6.6 GB). Revisitable.
+
+Pipeline: QLoRA on a rented GPU (RunPod, ~$10-75) -> merge -> convert to GGUF -> `ollama create` ->
+run the benchmark harness on it.
+
+## The one hard rule
+
+**Training data must be disjoint from the 16 eval tasks.** If any leak in, the comparison is void.
+Off-limits (do not use as seeds or targets): `tube_rack_1p5ml`, `conical_rack_50ml`,
+`slide_drying_rack`, `pcr_tube_rack_sbs`, `gel_comb_10well`, `micropestle_1p5ml`, `lab_funnel_60mm`,
+`seed_sowing_template`, `dshaft_knob_6mm`, `pcr_tube_adapter`, `hose_barb_reducer_8_5`,
+`rod_tubing_clip`, `stirrer_fan_housing`, `nema17_motor_bracket`, `enclosure_box_and_lid`,
+`mini_gel_tank`. Seeds are *novel* lab parts (e.g. `reagent_bottle_stand`).
+
+## Pipeline
+
+1. **Seeds** (`seeds/*.scad`) - novel parametric lab-hardware designs, each with `// @param name lo:hi`
+   ranges. Hand-authored and model-authored, every one verified.
+2. **`scripts/verify.py`** - the quality gate: render + measure, reusing `tools/scadreport.py` so
+   "valid" matches the eval. Exit 0 + JSON on a sane watertight mesh. *(done, proven)*
+3. **`scripts/augment.py`** *(next)* - sweep each seed's `@param` ranges, verify every variant, emit
+   the valid (params -> scad) set. Valid-by-construction + verified; near-instant (~0.5 s/render).
+4. **`scripts/gen_candidates.py`** *(next)* - generate novel `(prompt -> scad)` pairs with a strong
+   model (the box or Claude), verified by `verify.py`; include feedback triples
+   `(prompt -> flawed -> error/measurement -> corrected)` to teach using error messages (the paper's
+   key failure mode).
+5. **`scripts/build_dataset.py`** *(next)* - assemble verified pairs into chat-format JSONL in the
+   base's template, dedup, train/val split (val from held-out seeds, never the 16 tasks), record
+   provenance.
+6. **`scripts/train_qlora.py`** *(next, on RunPod)* - QLoRA fine-tune -> merge -> GGUF.
+7. **Eval** - run `bench/run_bench.py` on the fine-tune; compare to the base (0/16) and the paper's
+   viability bar (8/16 within three attempts).
+
+## Hosting / deploy
+
+The fine-tune and any dataset live on Hugging Face under **`ATinyGreenCell`**
+(<https://huggingface.co/ATinyGreenCell>). The merged model is converted to GGUF and run locally
+with Ollama; RunPod pulls the base and pushes the result from/to that account.
+
+## Status (2026-10-15)
+
+- Quality gate (`verify.py`) and augmenter (`augment.py`) done and proven.
+- **Seed library (7, all verified watertight, all disjoint from the 16 eval tasks):** general
+  mechanical/3D-printing breadth, not just lab - `reagent_bottle_stand` (holder), `hex_standoff`
+  (fastener/spacer), `pipe_saddle_clamp` (mount), `shaft_coupler` (mechanical), `spur_gear`
+  (mechanical), `desk_bin` (container), `vesa_adapter` (mount). Each parametric; `augment.py` turns
+  each into many verified `(prompt -> scad)` pairs.
+- Next: keep growing the seed library (more mechanical/general categories), then `gen_candidates.py`
+  (novel model-generated verified pairs + error-feedback triples), then `build_dataset.py`.
+## Validation run (2026-10-15) — it works
+
+First end-to-end run on a RunPod A40 (QLoRA on Qwen2.5-Coder-7B, 1,464 pairs / 13 families, 2
+epochs; attempt-1 / pass@1 on the 16 eval tasks, identical protocol for base and fine-tuned):
+
+| | base Qwen2.5-Coder-7B | fine-tuned |
+|---|---|---|
+| renders valid OpenSCAD | 2/16 | **13/16** |
+| pass@1 | 0/16 | **1/16** (+ near-misses 0.3-0.6) |
+
+The base writes broken OpenSCAD (14/16 don't render - the paper's diagnosis); the fine-tune renders
+13/16 **zero-shot** on parts it never saw, with one full pass and a cluster of near-misses the
+3-attempt repair loop + more data should convert. Clear go signal. Outputs in `validation_run/`.
+
+**Cost:** training 15.2 min = **$0.15** (whole pod session ~37 min ≈ $0.36). ~$0.000051 per
+example-epoch, so a 10k-ex x3-epoch "go ham" run ≈ ~$1.5, 50k x3 ≈ ~$7.7 — the $15 covers a large
+run with iterations.
+
+- Next: build breadth (`gen_candidates.py` + feedback triples), train bigger, score with the full
+  3-attempt protocol, and prove GGUF -> Ollama laptop deploy.
+- RunPod: pod terminated after the run; SSH key left registered for future runs.

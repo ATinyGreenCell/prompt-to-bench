@@ -1,0 +1,1 @@
+{"train_seconds": 914.5, "n_examples": 1464, "epochs": 2.0, "base": "unsloth/Qwen2.5-Coder-7B-Instruct-bnb-4bit"}

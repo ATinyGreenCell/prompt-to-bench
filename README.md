@@ -12,7 +12,7 @@
 
 ## Abstract
 
-Biology labs run on small plastic parts: tube racks, gel combs, adapters, knobs, brackets and housings. A desktop 3D printer makes them for cents, but designing them has required CAD skills most biologists never learn. Language models lower that barrier when the CAD is written as code: the user describes a part in words and measured numbers, the model writes an OpenSCAD program, and the user renders, checks and prints it. We describe this workflow and the practices we use to make it reliable, and release 16 parametric, geometry-checked designs across four kinds of lab prints (benchware, tools, quick fixes and parts of instruments; 33.7 h and about US$13 of PLA on a Prusa MK4), a benchmark that scores model-written OpenSCAD against hidden geometric checks, and a tool that measures the part a model actually built. Two hosted models passed nearly every task: Claude Sonnet 5.5 16 of 16 on the first try, Claude Haiku 4.5 14 of 16 within three attempts. None of the open-weight models (0.4-6.6 GB) we ran offline on a 2022 laptop CPU passed a task (the Qwen3.5 9B run is still being completed): the code models mostly wrote syntax OpenSCAD cannot parse and repeated the same file after feedback, and the reasoning models ran out of tokens. The best small models (Gemma 4 E2B and E4B) rendered most parts but rarely got their dimensions right. With this protocol, no open-weight model small enough for a typical student laptop is yet a usable design assistant; with a hosted model, the workflow already produces correct parts. We have not yet tested it with users who lack CAD experience.
+Biology labs run on small plastic parts: tube racks, gel combs, adapters, knobs, brackets and housings. A desktop 3D printer makes them for cents, but designing them has required CAD skills most biologists never learn. Language models lower that barrier when the CAD is written as code: the user describes a part in words and measured numbers, the model writes an OpenSCAD program, and the user renders, checks and prints it. We describe this workflow and the practices we use to make it reliable, and release 16 parametric, geometry-checked designs across four kinds of lab prints (benchware, tools, quick fixes and parts of instruments; 33.7 h and about US$13 of PLA on a Prusa MK4), a benchmark that scores model-written OpenSCAD against hidden geometric checks, and a tool that measures the part a model actually built. Two hosted models passed nearly every task: Claude Sonnet 5.5 16 of 16 on the first try, Claude Haiku 4.5 14 of 16 within three attempts. None of the open-weight models (0.4-6.6 GB) we ran offline on a 2022 laptop CPU passed a task (the Qwen3.5 9B run is still being completed): the code models mostly wrote syntax OpenSCAD cannot parse and repeated the same file after feedback, and the reasoning models ran out of tokens. The best off-the-shelf small models (Gemma 4 E2B and E4B) rendered most parts but rarely got their dimensions right. Fine-tuning the 7B model on 8,000 verified synthetic parts lifted it from 1 to 14 of 16 rendered and from 0.01 to 0.32 of the hidden geometry checks - the most of any laptop model - but it still passed none, largely because it does not apply the error feedback. With this protocol, no open-weight model small enough for a typical student laptop is yet a usable design assistant; with a hosted model, the workflow already produces correct parts. We have not yet tested it with users who lack CAD experience.
 
 ---
 
@@ -193,24 +193,24 @@ We added the bore rays, the edge probes, the bracketing sections and a roundness
 ### 5.4 Models
 
 <!-- AUTO:table-models -->
-| Model | Family | Parameters | Download | Licence |
-|---|---|---|---:|---|
-| Qwen2.5-Coder 0.5B (`qwen2.5-coder:0.5b`) | Qwen2.5-Coder | 0.49B | 0.4 GB | Apache-2.0 |
-| Qwen2.5-Coder 1.5B (`qwen2.5-coder:1.5b`) | Qwen2.5-Coder | 1.54B | 0.99 GB | Apache-2.0 |
-| Qwen2.5 1.5B (general) (`qwen2.5:1.5b`) | Qwen2.5 | 1.54B | 0.99 GB | Apache-2.0 |
-| Qwen3.5 2B (`qwen3.5:2b-q4_K_M`) | Qwen3.5 | 2.27B | 1.9 GB | Apache-2.0 |
-| Qwen2.5-Coder 3B (`qwen2.5-coder:3b`) | Qwen2.5-Coder | 3.09B | 1.9 GB | Qwen Research (non-commercial) |
-| Llama 3.2 3B (`llama3.2:3b`) | Llama 3.2 | 3.21B | 2 GB | Llama 3.2 Community |
-| Granite 4.2 3B (`granite4.2:3b`) | Granite 4.2 | 3B | 2.2 GB | Apache-2.0 |
-| Ministral 3 3B (`ministral-3:3b`) | Ministral 3 | 3.4B | 3 GB | Apache-2.0 |
-| Qwen3.5 4B (`qwen3.5:4b-q4_K_M`) | Qwen3.5 | 4.66B | 3.3 GB | Apache-2.0 |
-| Gemma 4 E2B (`gemma4:e2b-it-q4_K_M`) | Gemma 4 | 2.3B effective, 5.1B with per-layer embeddings | 4.6 GB | Apache-2.0 |
-| Qwen2.5-Coder 7B (`qwen2.5-coder:7b`) | Qwen2.5-Coder | 7.61B | 4.7 GB | Apache-2.0 |
-| LFM2.5 8B-A1B (MoE) (`lfm2.5:8b-a1b-q4_K_M`) | LFM2.5 | 8.3B total, ~1.5B active per token | 5.2 GB | LFM Open v1.0 (revenue cap) |
-| Gemma 4 E4B (`gemma4:e4b-it-q4_K_M`) | Gemma 4 | 4.5B effective, 8B with per-layer embeddings | 6.6 GB | Apache-2.0 |
-| Qwen3.5 9B (`qwen3.5:9b-q4_K_M`) | Qwen3.5 | 9.65B | 6.6 GB | Apache-2.0 |
-| Claude Haiku 4.5 (hosted) (`claude:claude-haiku-4-5`) | Claude | - | hosted | proprietary API |
-| Claude Sonnet 5.5 (hosted) (`claude:claude-sonnet-5-5`) | Claude | - | hosted | proprietary API |
+| Model | Family | Parameters | Download | Runs on | Licence |
+|---|---|---|---:|---|---|
+| Qwen2.5-Coder 0.5B (`qwen2.5-coder:0.5b`) | Qwen2.5-Coder | 0.49B | 0.4 GB | laptop CPU | Apache-2.0 |
+| Qwen2.5-Coder 1.5B (`qwen2.5-coder:1.5b`) | Qwen2.5-Coder | 1.54B | 0.99 GB | laptop CPU | Apache-2.0 |
+| Qwen2.5 1.5B (general) (`qwen2.5:1.5b`) | Qwen2.5 | 1.54B | 0.99 GB | laptop CPU | Apache-2.0 |
+| Qwen3.5 2B (`qwen3.5:2b-q4_K_M`) | Qwen3.5 | 2.27B | 1.9 GB | laptop CPU | Apache-2.0 |
+| Qwen2.5-Coder 3B (`qwen2.5-coder:3b`) | Qwen2.5-Coder | 3.09B | 1.9 GB | laptop CPU | Qwen Research (non-commercial) |
+| Llama 3.2 3B (`llama3.2:3b`) | Llama 3.2 | 3.21B | 2 GB | laptop CPU | Llama 3.2 Community |
+| Granite 4.2 3B (`granite4.2:3b`) | Granite 4.2 | 3B | 2.2 GB | laptop CPU | Apache-2.0 |
+| Ministral 3 3B (`ministral-3:3b`) | Ministral 3 | 3.4B | 3 GB | laptop CPU | Apache-2.0 |
+| Qwen3.5 4B (`qwen3.5:4b-q4_K_M`) | Qwen3.5 | 4.66B | 3.3 GB | laptop CPU | Apache-2.0 |
+| Gemma 4 E2B (`gemma4:e2b-it-q4_K_M`) | Gemma 4 | 2.3B effective, 5.1B with per-layer embeddings | 4.6 GB | laptop CPU | Apache-2.0 |
+| Qwen2.5-Coder 7B (`qwen2.5-coder:7b`) | Qwen2.5-Coder | 7.61B | 4.7 GB | laptop CPU | Apache-2.0 |
+| LFM2.5 8B-A1B (MoE) (`lfm2.5:8b-a1b-q4_K_M`) | LFM2.5 | 8.3B total, ~1.5B active per token | 5.2 GB | laptop CPU | LFM Open v1.0 (revenue cap) |
+| Gemma 4 E4B (`gemma4:e4b-it-q4_K_M`) | Gemma 4 | 4.5B effective, 8B with per-layer embeddings | 6.6 GB | laptop CPU | Apache-2.0 |
+| Qwen3.5 9B (`qwen3.5:9b-q4_K_M`) | Qwen3.5 | 9.65B | 6.6 GB | laptop CPU | Apache-2.0 |
+| Claude Haiku 4.5 (hosted) (`claude:claude-haiku-4-5`) | Claude | - | hosted | hosted API | proprietary API |
+| Claude Sonnet 5.5 (hosted) (`claude:claude-sonnet-5-5`) | Claude | - | hosted | hosted API | proprietary API |
 <!-- /AUTO:table-models -->
 
 The 14 local models come from eight families: Qwen2.5-Coder ([Hui et al. 2024](#hui2024)), Qwen2.5 ([Qwen Team 2024](#qwen2024)), Qwen3.5 ([Qwen Team 2026](#qwen2026)), Gemma 4 ([Gemma Team 2026](#gemma2026)), Ministral 3 ([Liu et al. 2026](#liu2026)), Granite 4.2 ([IBM Granite Team 2026](#ibm2026)), LFM2.5 ([Liquid AI 2026](#liquid2026)) and Llama 3.2 ([Meta 2024](#meta2024)), all run through Ollama ([Ollama](#ollama)) on llama.cpp ([Gerganov et al.](#llamacpp)) as 4-bit GGUF files ([Kawrakow 2023](#kawrakow2023)). Sizes are Ollama download sizes; parameter counts and licences are from the model cards (accessed 5 October 2026). "Open-weight" is not open source, and licences matter for labs that sell services: the Qwen2.5-Coder 3B weights are non-commercial, LFM2.5 has a revenue threshold, and Llama 3.2 has its own licence ([Qwen 2024](#qwen3blicense); [Liquid AI 2026](#liquid2026); [Meta 2024](#meta2024)). Tags and digests are in [`bench/logs/model_digests.txt`](bench/logs/model_digests.txt).
@@ -243,6 +243,7 @@ The 14 local models come from eight families: Qwen2.5-Coder ([Hui et al. 2024](#
 | Qwen3.5 4B | 3.3 GB | Apache-2.0 | 0/16 | 0/16 (0-19%) | 1/16 | 15.2 | 8.3 | 0/32 |
 | Gemma 4 E2B | 4.6 GB | Apache-2.0 | 0/16 | 0/16 (0-19%) | 12/16 | 3.6 | 18.6 | 3/32 |
 | Qwen2.5-Coder 7B | 4.7 GB | Apache-2.0 | 0/16 | 0/16 (0-19%) | 1/16 | 3.1 | 5.8 | 32/32 |
+| scadcoder (fine-tuned, ours) | 4.7 GB | Apache-2.0 | 0/16 | 0/16 (0-19%) | 14/16 | 5.9 | 4.1 | 25/32 |
 | LFM2.5 8B-A1B (MoE) | 5.2 GB | LFM Open v1.0 (revenue cap) | 0/16 | 0/16 (0-19%) | 0/16 | 5.1 | 20.8 | 0/32 |
 | Gemma 4 E4B | 6.6 GB | Apache-2.0 | 0/16 | 0/16 (0-19%) | 9/16 | 6.1 | 11.7 | 5/32 |
 | Qwen3.5 9B *(partial)* | 6.6 GB | Apache-2.0 | 0/2 | 0/2 (0-66%) | 1/2 | 17.2 | 4.7 | 1/4 |
@@ -252,7 +253,7 @@ The 14 local models come from eight families: Qwen2.5-Coder ([Hui et al. 2024](#
 
 The hosted models are at or near the ceiling. Claude Sonnet 5.5 passed all 16 tasks on the first try; Claude Haiku 4.5 passed 11 on the first try and 14 within three attempts, failing the 96-place rack (one chamfer probe) and the enclosure (a lid with a solid floor under its lip, +14% volume). With one run each, the two cannot be ranked (paired exact test on first tries, p = 0.06); the task set is too easy to separate hosted models of this class.
 
-No local model passed a task. Every complete local model scored 0 of 16 (Wilson upper bound 19%), so none met the viability bar in [§5.5](#55-what-to-expect-from-open-models). The Qwen3.5 9B run is still being completed (2 of 16 tasks so far); its partial row is marked.
+No local model passed a task. Every complete local model scored 0 of 16 (Wilson upper bound 19%), so none met the viability bar in [§5.5](#55-what-to-expect-from-open-models). Our fine-tuned model ([§6.4](#64-fine-tuning-a-local-model-on-verified-synthetic-data)) passed none either, though it rendered the most parts of any local model (14 of 16) and came closest on their geometry. The Qwen3.5 9B run is still being completed (2 of 16 tasks so far); its partial row is marked.
 
 ### 6.2 How far the local models got
 
@@ -273,14 +274,15 @@ No local model passed a task. Every complete local model scored 0 of 16 (Wilson 
 | Qwen2.5-Coder 0.5B | 0/16 | 0/16 | 0/16 | 0/16 | 0/16 | 27/48 | 24/32 |
 | Qwen2.5 1.5B (general) | 2/16 | 0/16 | 0/16 | 0/16 | 6/16 | 15/48 | 27/32 |
 | Qwen2.5-Coder 1.5B | 1/16 | 0/16 | 0/16 | 0/16 | 14/16 | 3/48 | 32/32 |
-| Qwen2.5-Coder 3B | 3/16 | 2/16 | 0/16 | 2/16 | 11/16 | 0/48 | 31/32 |
+| Qwen2.5-Coder 3B | 3/16 | 2/16 | 0/16 | 1/16 | 11/16 | 0/48 | 31/32 |
 | Qwen3.5 2B | 0/16 | 0/16 | 0/16 | 0/16 | 3/16 | 42/48 | 0/32 |
 | Llama 3.2 3B | 10/16 | 0/16 | 0/16 | 0/16 | 2/16 | 1/48 | 6/32 |
 | Granite 4.2 3B | 5/16 | 2/16 | 0/16 | 1/16 | 8/16 | 37/48 | 0/32 |
 | Ministral 3 3B | 2/16 | 1/16 | 0/16 | 1/16 | 8/16 | 1/48 | 0/32 |
 | Qwen3.5 4B | 1/16 | 0/16 | 0/16 | 0/16 | 5/16 | 39/48 | 0/32 |
-| Gemma 4 E2B | 12/16 | 3/16 | 0/16 | 6/16 | 2/16 | 1/48 | 3/32 |
+| Gemma 4 E2B | 12/16 | 3/16 | 0/16 | 5/16 | 2/16 | 1/48 | 3/32 |
 | Qwen2.5-Coder 7B | 1/16 | 0/16 | 0/16 | 0/16 | 15/16 | 0/48 | 32/32 |
+| scadcoder (fine-tuned, ours) | 14/16 | 2/16 | 0/16 | 4/16 | 0/16 | 0/48 | 25/32 |
 | LFM2.5 8B-A1B (MoE) | 0/16 | 0/16 | 0/16 | 0/16 | 0/16 | 41/48 | 0/32 |
 | Gemma 4 E4B | 11/16 | 3/16 | 0/16 | 6/16 | 3/16 | 5/48 | 5/32 |
 | Qwen3.5 9B *(partial)* | 1/2 | 1/2 | 0/2 | 1/2 | 0/2 | 1/6 | 1/4 |
@@ -321,6 +323,7 @@ The closest were the Gemma 4 models (E2B and E4B), which rendered 11-12 of 16 pa
 | Qwen3.5 4B | 0/4 | 0/4 | 0/4 | 0/4 |
 | Gemma 4 E2B | 0/4 | 0/4 | 0/4 | 0/4 |
 | Qwen2.5-Coder 7B | 0/4 | 0/4 | 0/4 | 0/4 |
+| scadcoder (fine-tuned, ours) | 0/4 | 0/4 | 0/4 | 0/4 |
 | LFM2.5 8B-A1B (MoE) | 0/4 | 0/4 | 0/4 | 0/4 |
 | Gemma 4 E4B | 0/4 | 0/4 | 0/4 | 0/4 |
 | Qwen3.5 9B | 0/1 | - | 0/1 | - |
@@ -344,6 +347,7 @@ The closest were the Gemma 4 models (E2B and E4B), which rendered 11-12 of 16 pa
 | Qwen3.5 4B | 14 | 0 | 1 | 0 | 0 | 0 | 1 | 0 |
 | Gemma 4 E2B | 0 | 0 | 4 | 0 | 0 | 0 | 12 | 0 |
 | Qwen2.5-Coder 7B | 0 | 0 | 15 | 0 | 0 | 0 | 1 | 0 |
+| scadcoder (fine-tuned, ours) | 0 | 0 | 1 | 0 | 1 | 0 | 14 | 0 |
 | LFM2.5 8B-A1B (MoE) | 16 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
 | Gemma 4 E4B | 3 | 0 | 3 | 1 | 0 | 0 | 9 | 0 |
 | Qwen3.5 9B | 0 | 0 | 1 | 0 | 0 | 0 | 1 | 0 |
@@ -361,6 +365,25 @@ The closest were the Gemma 4 models (E2B and E4B), which rendered 11-12 of 16 pa
 <!-- /AUTO:fig-languages -->
 
 With Claude Haiku 4.5, requests in Spanish, Hindi and Swahili (system prompt in English) passed 13, 12 and 11 of 16 tasks within three attempts, against 14 in English; first-try passes were 12, 10 and 6 against 11. With one sample per task at the default temperature, none of these differences is statistically detectable (paired exact McNemar tests, p ≥ 0.375 for passes, p = 0.125 for Swahili first tries). Some failures recurred with the same failing check - the NEMA 17 bracket in all three translations (English passed it first time), and the 96-place rack's chamfer in English, Hindi and Swahili - so not all of the variation is sampling noise. We did not run the language ablation on local models, which passed nothing in English. A bug overwrote the generated code of the Spanish and Hindi runs (their scores were recorded first), so those two runs cannot be re-checked; it is fixed for future runs.
+
+### 6.4 Fine-tuning a local model on verified synthetic data
+
+[§6.2](#62-how-far-the-local-models-got) found that no off-the-shelf local model passed a task, and the small-model CAD successes in the literature come from fine-tuning on narrow datasets ([§5.5](#55-what-to-expect-from-open-models)). We therefore tested, under the identical protocol and on the same laptop, whether fine-tuning a laptop-sized open model on verified synthetic OpenSCAD closes the gap. We fine-tuned the benchmark's own **Qwen2.5-Coder 7B** (Apache-2.0, 7.61B parameters, the largest model that already runs on the laptop) and ran the result, which we call `scadcoder`, through the same 16 tasks.
+
+**The training data is valid by construction.** We wrote 34 parametric part families — generic mechanical and lab hardware (component trays, lidded boxes, funnels, stepped adapters, brackets, knobs, bushings, a spur gear, and so on), **disjoint from the 16 benchmark tasks** — and sampled each across its parameter ranges, keeping only the variants that render to a watertight solid under the *same* `scadreport` checker the benchmark uses: 5,042 verified (prompt → OpenSCAD) pairs. To those we added 3,000 **repair** examples, each pairing a deliberately flawed file and the checker's own feedback message — verbatim the text the benchmark returns on a failed attempt — with the corrected file, to teach directly the read-the-feedback-and-fix behaviour the base models lacked ([§6.2](#62-how-far-the-local-models-got), "same code after feedback"). In total 8,042 verified examples (7,238 for training, 804 held back for validation). The generator, the checker and the exact system/prompt format all match the benchmark, so the model is trained against the same target it is tested on — with the 16 tasks held out.
+
+**Training and deployment.** QLoRA (rank 16) on Qwen2.5-Coder-7B-Instruct, three epochs, on one rented NVIDIA A40 GPU — about 2.8 hours and ≈ US$2, via Unsloth; a 4,096-token sequence length held every training example with none truncated (the longest was 2,479 tokens). We exported a 4-bit GGUF (Q4_K_M — the same quantisation the benchmark's local models use, a 4.7 GB download) and ran it in Ollama on the same 2022 laptop CPU under the identical protocol. The data engine, training and deployment recipe are in [`finetune/`](finetune/).
+
+**Pre vs post, same protocol, same laptop.**
+
+| Model | Renders, 1st try | Pass, ≤3 tries | Mean best score |
+|---|---:|---:|---:|
+| Qwen2.5-Coder 7B (base) | 1/16 | 0/16 | 0.01 |
+| `scadcoder` (fine-tuned) | **14/16** | 0/16 | **0.32** |
+
+**Table 7.** Fine-tuned vs base on the 16 held-out tasks, same three-attempt protocol and same laptop (both rows are also in Table 3). "Mean best score" is the mean over tasks of the largest fraction of the hidden checks any of the three attempts met.
+
+Fine-tuning moved the same 7B model a long way on two measures and not at all on the third. It went from rendering a valid solid for **1 of 16** tasks to **14 of 16** - more than any off-the-shelf local model - and its mean geometry score rose from **0.01 to 0.32**; on several parts it came close, all held out: the PCR-tube adapter reached **0.85** of its hidden checks, the micro-pestle 0.59, the 1.5 mL rack and the D-shaft knob 0.50. But it **passed none of the 16 tasks**, the same as its base. Two things hold it short. It does not yet hit exact dimensions - most renders land between 0.1 and 0.5 of the checks - and, like the base models ([§6.2](#62-how-far-the-local-models-got)), **it barely uses the feedback**: 25 of 32 repair attempts returned a byte-identical file, so the two extra tries changed almost nothing (the PCR-tube adapter scored 0.85 on all three attempts). Verified-synthetic fine-tuning thus makes a laptop-sized model write *valid, close* OpenSCAD, but not yet *correct* OpenSCAD. The two levers it points to - training on the model's own checker-passing generations (rejection sampling) and on multi-turn repairs whose target actually applies the feedback - are the next step. The 16 tasks are held out of the parametric training families, so this is transfer, not memorisation; it is a single run.
 
 ## 7. Global access
 
@@ -390,6 +413,7 @@ With Claude Haiku 4.5, requests in Spanish, Hindi and Swahili (system prompt in 
 ## 9. Limitations
 
 - **Scale.** Sixteen tasks, one run per model, one computer. Intervals are wide and do not include run-to-run variation.
+- **The NPU-box tier is a closed platform.** The desktop NPU box on which we test larger open models (§5.2) runs only the vendor's pre-compiled builds. The set of runnable models is vendor-gated: language models come only from the vendor's store, the box cannot train (its accelerator toolchains are inference-only), and its `import` command accepts only image-generation pipelines — a direct test rejected a standard LLM architecture (`Qwen3_5ForConditionalGeneration`) as unsupported. A user's own fine-tuned language model therefore cannot be run on the box at all; box-tier results are "this device's build of model X". We checked by read-only inspection and one failed import on a single unit, not by opening the appliance; the evidence is in [`meta/audits/2026-10-14_box_platform.md`](meta/audits/2026-10-14_box_platform.md).
 - **Protocol choices decide some results.** Thinking was requested off and replies were capped at 2,048 tokens, so models that reason before answering (Qwen3.5, Granite 4.2, LFM2.5) were mostly cut off; with thinking on and a larger budget they might do better, at a large cost in CPU time. Local models ran at temperature 0.2, which made several repeat themselves exactly; Claude ran at its default temperature. Feedback was triggered by the hidden checks (an optimistic bound).
 - **Who wrote the tasks.** The tasks, checks, reference designs and translations were drafted with Claude (Anthropic), which may favour Claude's phrasing; the hosted models are near ceiling, so the benchmark cannot rank them. Independent tasks would help.
 - **The harness evolved during the study.** We fixed bugs and added robustness after the first runs; re-checking every saved attempt with the final checker changed one verdict (§5.2). Two language runs cannot be re-checked (§6.3).
@@ -401,7 +425,7 @@ With Claude Haiku 4.5, requests in Spanish, Hindi and Swahili (system prompt in 
 
 ## 10. Conclusion
 
-A language model plus OpenSCAD can already turn a measured, written request into a correct lab part - when the model is a hosted frontier model, the request carries measured numbers and the print orientation, and every part is checked before it is printed. Whether people without CAD training can run this loop unaided is the next thing to test. Under our protocol, no open-weight model small enough for a typical student laptop was yet a usable design assistant: the code models write OpenSCAD as if it were another language and do not use error messages, and the reasoning models run out of tokens before they finish. The gap is specific enough to close - examples of correct OpenSCAD in the prompt, error messages translated into instructions, thinking budgets that fit a laptop, or small models fine-tuned on code like the designs released here - and the benchmark is cheap to rerun on new models, hardware and languages.
+A language model plus OpenSCAD can already turn a measured, written request into a correct lab part - when the model is a hosted frontier model, the request carries measured numbers and the print orientation, and every part is checked before it is printed. Whether people without CAD training can run this loop unaided is the next thing to test. Under our protocol, no open-weight model small enough for a typical student laptop was yet a usable design assistant: the code models write OpenSCAD as if it were another language and do not use error messages, and the reasoning models run out of tokens before they finish. The gap is specific enough to close - examples of correct OpenSCAD in the prompt, error messages translated into instructions, thinking budgets that fit a laptop, or small models fine-tuned on code. We tried the last ([§6.4](#64-fine-tuning-a-local-model-on-verified-synthetic-data)): fine-tuning a 7B model on 8,000 verified synthetic parts took it from 1 to 14 of 16 rendered and most of the way on geometry (mean score 0.01 to 0.32), though not yet to a pass - it still does not apply feedback - which points to training on the checker's own passing generations next. The benchmark is cheap to rerun on new models, hardware and languages. Dedicated inference hardware extends the reach to larger open models than a laptop can hold; where that hardware is a closed appliance, a lab's own model is fine-tuned on a supported base elsewhere and imported, not trained on the device (§9).
 
 ---
 

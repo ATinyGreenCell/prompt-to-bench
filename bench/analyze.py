@@ -512,6 +512,8 @@ def table_models(models_meta, present=None):
     for m in models_meta.values():
         if present is not None and m["id"] not in present:
             continue
+        if m.get("ours"):  # our fine-tune is a result, not one of the downloaded baselines
+            continue
         size = "hosted" if m.get("hosted") else f"{m['size_gb']:g} GB" if m.get("size_gb") else "-"
         where = "hosted API" if m.get("hosted") else RUNS_ON.get(m.get("runtime"), m.get("runtime"))
         out.append(f"| {m['label']} (`{m['id']}`) | {m['family']} | {params_text(m)} | {size} | {where} | "

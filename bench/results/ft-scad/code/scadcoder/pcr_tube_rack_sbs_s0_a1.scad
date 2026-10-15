@@ -1,0 +1,25 @@
+// PCR tube rack - a block with a microplate footprint and 96 vertical through-holes, to hold
+// 96 PCR tubes or small samples in a lab setting. Expports a solid with no holes (the material
+// would melt), for measurement of the full dimension or as a base for a print that fills the
+// rack. NOVEL general part.
+//
+
+tube  = 0.2;
+footprint_l = 127.76;
+footprint_w = 85.48;
+height    = 20;
+hole_d    = 6.2;
+grid_c    = 9.0;
+A1_x      = 14.38;
+A1_y      = 11.24;
+chamfer   = 5;
+
+$fn = 48;
+
+difference() {
+    cube([footprint_l, footprint_w, height]);
+    for (i = [0 : 7], j = [0 : 11])
+        translate([A1_x + j * grid_c - grid_c * 12 / 2, A1_y + i * grid_c - grid_c * 8 / 2, 0])
+            cylinder(h = height + 1, d = hole_d);
+    translate([-grid_c / 2, -grid_c / 2, 0]) rotate([0, 0, -45]) linear_extrude(grid_c) polygon([[0, 0], [chamfer, 0], [0, chamfer]]);
+}

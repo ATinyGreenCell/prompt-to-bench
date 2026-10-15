@@ -24,3 +24,4 @@ bench/results/_selftest/
 .claude/settings.local.json
 # Private redaction list for meta/build_log.py (it names what it hides, so never commit it)
 meta/redact.txt
+finetune/out/

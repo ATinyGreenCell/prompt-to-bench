@@ -1,0 +1,56 @@
+// Dimensions
+knob_diameter = 30;
+knob_height = 15;
+bore_diameter = 6.2;
+bore_depth = 12;
+groove_width = 2;
+groove_height = 1;
+pointer_width = 1.5;
+pointer_depth = 1;
+
+// Variables
+$fn = 64;
+
+// Main knob cylinder
+knob = cylinder(d = knob_diameter, h = knob_height);
+
+// D-shaped blind bore
+bore_circle = circle(r = bore_diameter / 2);
+cutout = translate([0, 0, -bore_depth]) rotate_extrude() difference() {
+    square([bore_diameter + 1, bore_diameter + 1], center = true);
+    bore_circle;
+};
+bore = cylinder(d = bore_diameter, h = bore_depth) - cutout;
+
+// Grip grooves
+groove_radius = groove_width / 2;
+grooves = union() for (i = [0:17]) {
+    rotate([0, 0, i * 360 / 18])
+        translate([knob_diameter / 2 + groove_radius, 0, 0])
+        linear_extrude(height = knob_height)
+            cylinder(d = groove_width, h = groove_height);
+};
+
+// Pointer groove
+pointer_angle = atan(4.7 / 3) * 180 / pi;
+pointer_start_x = (knob_diameter / 2 - pointer_width / 2) * cos(pointer_angle);
+pointer_start_y = (knob_diameter / 2 - pointer_width / 2) * sin(pointer_angle);
+pointer_end_x = (knob_diameter / 2 + pointer_width / 2) * cos(pointer_angle);
+pointer_end_y = (knob_diameter / 2 + pointer_width / 2) * sin(pointer_angle);
+pointer = translate([0, 0, knob_height - pointer_depth])
+    polygon(points = [
+        [pointer_start_x, pointer_start_y],
+        [pointer_end_x, pointer_end_y],
+        [knob_diameter / 2, knob_diameter / 2]
+    ]);
+
+// Final model
+result = union() {
+    knob;
+    bore;
+    grooves;
+    pointer;
+};
+
+// Center the model on the origin
+translate([-knob_diameter / 2, -knob_diameter / 2, 0]) result;

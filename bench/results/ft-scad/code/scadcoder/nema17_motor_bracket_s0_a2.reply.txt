@@ -1,0 +1,41 @@
+```openscad
+// L-shaped mounting bracket for a NEMA 17 stepper motor - print orientation: the base plate
+// lies on the bed. Base plate: x from -25 to 25, y from 0 to 45, z from 0 to 5, with two
+// 4.5 mm vertical through-holes (M4) at (x = -17, y = 30) and (x = 17, y = 30). Vertical
+// motor plate: x from -25 to 25, y from 0 to 5, z from 0 to 50, standing on the back edge of
+// the base. Through the motor plate (along Y) cut a 23 mm hole for the motor's centring boss
+// with its centre at x = 0, z = 28, and four 3.4 mm holes for M3 screws on a 31 mm square
+// pattern centred on the boss hole. Add two triangular gussets, 5 mm thick, flush with the left
+// and right edges (x = -25 to -20 and x = 20 to 25): each is a right triangle in the YZ plane
+// with legs 20 mm along +Y and 20 mm along +Z, its right-angle corner at y = 5, z = 5 (where
+// the plates meet). $fn=64.
+
+motor_d     = 23;
+screw_h     = 3.4;
+plate_t     = 50;
+base_t      = 5;
+hole_x      = -17;
+y_range     = [0, 45];
+motor_y     = 5;
+
+$fn = 48;
+
+gusset_l    = 20;
+gusset_h    = 5;
+
+difference() {
+    union() {
+        cube([50, y_range[1] + 1, base_t]);                                              // base plate
+        translate([0, -1.5, 0]) rotate([-90, 0, 0]) cylinder(h = plate_t + 2, d = motor_d);   // motor plate
+    }
+    for (x = [hole_x, -x])
+        translate([x, y_range[1] * 0.7, -1]) cylinder(h = base_t + 2, d = 4.5);           // vertical through-holes
+    translate([0, y_range[1] * 0.39, -1]) cylinder(h = plate_t + 2, d = motor_d);         // boss hole
+    for (y = [-31, 31])
+        translate([-1.5, y, -1]) rotate([-90, 0, 0]) cylinder(h = plate_t + 2, d = screw_h);
+    union() {
+        for (x = [-25, 25])
+            translate([x, motor_y, -1]) cube([gusset_l, 20, gusset_h]);                          // gussets
+    }
+}
+```

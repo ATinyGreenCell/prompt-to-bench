@@ -1,0 +1,27 @@
+// Snap-on tube clip for a lab stand rod, printed flat with a Z height of 10 mm.
+// Snaps onto a round rod (e.g. a 12.7 mm lab stand rod) and a tube (e.g. a 6 mm id
+// tube) next to each other. NOVEL general part.
+//
+
+rod_d   = 12.7;
+wall    = 3;
+tubing_d= 6;
+tubing_h= 3;
+bridge_w= 6;
+opening_w = 10;
+
+$fn = 48;
+
+ring_o  = rod_d + wall;
+ring_i  = rod_d - 0.5;                 // slightly smaller than the rod for a better grip
+tube_o  = tubing_d + 2 * wall;
+
+difference() {
+    union() {
+        cylinder(h = ring_o + 2 * wall, d = ring_o);              // ring: outer band around the rod
+        translate([0, 0, -ring_o - 2 * wall]) cylinder(h = ring_o + 2 * wall, d = ring_i);
+    }
+    translate([-opening_w / 2, -4.5, 0]) cube([opening_w, 9, ring_o + 2 * wall]);                 // snap opening: remove X < 0 and -5 < y < 5
+    translate([15 - 0.01, -3, 0]) cylinder(h = tubing_h, d = tube_o);                        // tube ring: band around the tube
+    translate([15 + bridge_w / 2, -3, 0]) cube([bridge_w, 6, ring_o + 2 * wall]);                   // bridge between the two rings
+}

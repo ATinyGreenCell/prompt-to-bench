@@ -82,6 +82,14 @@
   size_gb: 4.7
   licence: Apache-2.0
   coder: true
+- id: scadcoder
+  label: scadcoder (fine-tuned, ours)
+  family: Qwen2.5-Coder (fine-tuned)
+  params_b: 7.61
+  size_gb: 4.7
+  licence: Apache-2.0
+  coder: true
+  ours: true  # our fine-tune, not a downloaded baseline: in the results tables but not the §5.4 model list
 - id: lfm2.5:8b-a1b-q4_K_M
   label: LFM2.5 8B-A1B (MoE)
   family: LFM2.5

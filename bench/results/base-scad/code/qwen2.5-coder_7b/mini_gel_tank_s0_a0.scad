@@ -1,0 +1,70 @@
+// Dimensions in millimeters
+$fn = 64;
+
+outer_x = 120;
+outer_y = 70;
+outer_z = 40;
+wall_thickness = 3;
+floor_thickness = 3;
+platform_length = 60;
+platform_height = 10;
+buffer_chamber_depth = outer_z - floor_thickness - platform_height;
+hole_diameter = 2;
+
+// Calculate inner dimensions
+inner_x = outer_x - 2 * wall_thickness;
+inner_y = outer_y - 2 * wall_thickness;
+inner_floor_z = floor_thickness + wall_thickness;
+
+// Create the tank walls and floor
+tank_walls = difference() {
+    cube([outer_x, outer_y, outer_z], center=true);
+    translate([-wall_thickness / 2, -wall_thickness / 2, 0]) cube([outer_x + wall_thickness, outer_y + wall_thickness, outer_z]);
+}
+
+tank_floor = difference() {
+    cube([inner_x, inner_y, floor_thickness], center=true);
+    translate([-wall_thickness / 2, -wall_thickness / 2, 0]) cube([outer_x + wall_thickness, outer_y + wall_thickness, floor_thickness]);
+}
+
+// Create the platform
+platform = cube([platform_length, inner_y, platform_height], center=true);
+
+// Translate platform to correct position
+translated_platform = translate([inner_x / 2 - platform_length / 2, 0, buffer_chamber_depth]) platform;
+
+// Create buffer chambers
+buffer_chamber_1 = difference() {
+    cube([inner_x / 2, inner_y, buffer_chamber_depth], center=true);
+    translate([-wall_thickness / 2, -wall_thickness / 2, 0]) cube([outer_x + wall_thickness, outer_y + wall_thickness, buffer_chamber_depth]);
+}
+
+buffer_chamber_2 = difference() {
+    cube([inner_x / 2, inner_y, buffer_chamber_depth], center=true);
+    translate([inner_x / 2 - wall_thickness / 2, -wall_thickness / 2, 0]) cube([outer_x + wall_thickness, outer_y + wall_thickness, buffer_chamber_depth]);
+}
+
+// Translate buffer chambers to correct positions
+translated_buffer_chamber_1 = translate([-buffer_chamber_depth / 2, 0, 0]) buffer_chamber_1;
+translated_buffer_chamber_2 = translate([inner_x - buffer_chamber_depth / 2, 0, 0]) buffer_chamber_2;
+
+// Create holes for electrode wires
+hole_1 = cylinder(d=hole_diameter, h=buffer_chamber_depth + 1, center=true);
+translated_hole_1 = translate([-outer_x / 2 + wall_thickness / 2, -outer_y / 2 + wall_thickness / 2, buffer_chamber_depth]) hole_1;
+
+hole_2 = cylinder(d=hole_diameter, h=buffer_chamber_depth + 1, center=true);
+translated_hole_2 = translate([outer_x / 2 - wall_thickness / 2, -outer_y / 2 + wall_thickness / 2, buffer_chamber_depth]) hole_2;
+
+// Combine all parts
+result = union() {
+    tank_walls;
+    tank_floor;
+    translated_platform;
+    translated_buffer_chamber_1;
+    translated_buffer_chamber_2;
+    translated_hole_1;
+    translated_hole_2;
+};
+
+// Output the result
+result;

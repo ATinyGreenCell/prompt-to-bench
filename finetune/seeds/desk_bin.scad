@@ -1,0 +1,19 @@
+// Open-top storage bin / parts tray - a rectangular box open at the top, for small parts
+// or bench organisation. NOVEL general part.
+//
+// @desc open-top storage bin / parts tray
+// @prompt Design an open-top storage bin in OpenSCAD: {inner_l} by {inner_w} mm inside and {height} mm tall, with {wall} mm walls and a solid floor. Reply with a single complete OpenSCAD file.
+// @param inner_l inner length, mm      [30:200]
+// @param inner_w inner width, mm       [30:150]
+// @param height  height, mm            [15:120]
+// @param wall    wall thickness, mm    [1.6:4]
+
+inner_l = 80;
+inner_w = 60;
+height  = 40;
+wall    = 2.4;
+
+difference() {
+    cube([inner_l + 2 * wall, inner_w + 2 * wall, height]);
+    translate([wall, wall, wall]) cube([inner_l, inner_w, height]);     // hollow, open top
+}

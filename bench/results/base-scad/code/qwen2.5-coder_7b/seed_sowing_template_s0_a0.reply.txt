@@ -1,0 +1,43 @@
+```openscad
+// Dimensions
+dish_diameter = 90;
+template_diameter = 85;
+template_thickness = 2;
+hole_diameter = 3;
+hole_spacing = 9;
+notch_width = 10;
+notch_depth = 4;
+
+// Calculate positions
+half_template_radius = template_diameter / 2;
+half_hole_spacing = hole_spacing / 2;
+half_notch_width = notch_width / 2;
+
+// Create the main disc
+template_disc = cylinder(h = template_thickness, r = half_template_radius);
+
+// Create the through-holes
+holes = for (i = [0:6], j = [0:6])
+    translate([i * hole_spacing - half_template_radius + half_hole_spacing,
+              j * hole_spacing - half_template_radius + half_hole_spacing,
+              0]) sphere(r = hole_diameter / 2);
+
+// Create the notch
+notch = linear_extrude(height = template_thickness)
+    polygon(points = [[-half_notch_width, 0],
+                     [half_notch_width, 0],
+                     [half_notch_width, -notch_depth],
+                     [-half_notch_width, -notch_depth]]);
+
+// Combine the parts
+sowing_template = difference() {
+    union() {
+        template_disc;
+        holes;
+    }
+    notch;
+};
+
+// Center the model on the origin
+translate([-template_diameter / 2, -template_diameter / 2, 0]) sowing_template;
+```

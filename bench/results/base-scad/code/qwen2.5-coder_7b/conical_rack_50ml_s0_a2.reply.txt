@@ -1,0 +1,35 @@
+```openscad
+// Dimensions
+plate_width = 130; // mm
+plate_height = 90; // mm
+plate_thickness = 4; // mm
+hole_diameter = 30.5; // mm
+wall_length = plate_width; // mm
+wall_thickness = plate_height; // mm
+wall_height = 70; // mm
+
+// Create the flat plate
+plate = cube([plate_width, plate_height, plate_thickness]);
+
+// Create the through-holes
+holes = union() {
+    for (x = [0:2]) {
+        translate([x * (hole_diameter + 40) - plate_width / 2 + hole_diameter / 2, 0, 0])
+            cylinder(d = hole_diameter, h = wall_height + plate_thickness, center = true);
+    }
+    for (y = [0:1]) {
+        translate([0, y * (hole_diameter + 40) - plate_height / 2 + hole_diameter / 2, 0])
+            cylinder(d = hole_diameter, h = wall_height + plate_thickness, center = true);
+    }
+};
+
+// Create the solid walls
+wall1 = cube([wall_length, wall_thickness, wall_height]);
+wall2 = translate([plate_width - wall_thickness, 0, 0]) cube([wall_thickness, wall_height, wall_length]);
+
+// Combine all parts
+rack = plate + holes + wall1 + wall2;
+
+// Render the rack
+render(rack);
+```

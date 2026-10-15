@@ -1,0 +1,23 @@
+// Lab funnel - a straight spout with a conical mouth, hollow from inside, open at both ends.
+// A NOVEL part: not a spool, a funnel, or any library shape.
+//
+
+spout_l = 20;
+cone_z  = 50;
+spout_d = 10;
+cone_d  = 60;
+wall    = 1.6;
+
+$fn = 64;
+
+ibore = spout_d - 2 * wall;
+
+linear_extrude(cone_d + 2 * wall)
+  union() {
+    cylinder(h = spout_l, d = spout_d);
+    translate([0, 0, spout_l - 0.01]) cylinder(h = cone_z + 1, d = cone_d);
+  }
+difference() {
+  render();
+  translate([0, 0, -1]) cylinder(h = cone_z + 2, d = ibore);   // hollow out the bore
+}

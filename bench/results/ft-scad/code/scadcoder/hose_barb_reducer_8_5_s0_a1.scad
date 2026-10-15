@@ -1,0 +1,43 @@
+// Hose barb reducer - joins two tubes of different bore size by a flat-bore coupling with
+// barbs on each side. NOVEL general part (not a rehash of any one existing open source model).
+//
+
+t1   = 8;
+bore = 3;
+t2   = 5;
+
+$fn = 64;
+
+od1 = 7.5;
+od2 = 9.5;
+bar = 3;
+
+linear_expansion = 0.05;                 // mm per mm of outline over 20 mm
+
+difference() {
+    union() {
+        cylinder(h = t1, d = od1);
+        translate([0, 0, t1 - linear_expansion]) cylinder(h = t1 + 2 * linear_expansion, d = od1 + 2 * linear_expansion);
+        translate([0, 0, t1 - 1 + linear_expansion]) cylinder(h = 2, d = od1 + 4);   // shoulder
+    }
+    translate([-.01, -.01, 0]) cylinder(h = t1 + 1, d = bore + 2);                 // bore
+}
+
+difference() {
+    union() {
+        cylinder(h = t2, d = od2);
+        translate([0, 0, t2 - linear_expansion]) cylinder(h = t2 + 2 * linear_expansion, d = od2 + 2 * linear_expansion);
+        translate([0, 0, t2 - 1 + linear_expansion]) cylinder(h = 2, d = od2 + 4);   // shoulder
+    }
+    translate([-.01, -.01, 0]) cylinder(h = t2 + 1, d = bore + 2);                 // bore
+}
+
+cylinder(h = 5, d = 12);                 // collar
+
+difference() {
+    union() {
+        for (z = [t1, 36])
+            translate([0, 0, z]) cylinder(h = t2, d = od2);
+    }
+    translate([-.01, -.01, 0]) cylinder(h = t2 + 1, d = bore + 2);                 // bore
+}
