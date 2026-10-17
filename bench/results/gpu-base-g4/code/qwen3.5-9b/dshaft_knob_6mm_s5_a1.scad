@@ -1,0 +1,125 @@
+// Replacement Knob for Hotplate Stirrer (6mm D-shaft)
+// Units: mm
+// Orientation: Printed with D-flat side facing the hotplate (Z=0), building upward.
+
+// --- Dimensions ---
+$fn = 128; // High resolution for smooth curves and precise D-shape
+
+// Knob Body
+D_KNOB = 30;      // Outer diameter
+H_KNOB = 15;      // Total height
+R_KNOB = D_KNOB / 2;
+
+// Shaft Bore (D-shape)
+SHAFT_D = 6.2;    // Full diameter of the circle part
+SHAFT_H = 12;     // Depth of the bore from bottom
+SHAFT_FLAT = 4.7; // Distance from flat side to opposite arc (defines the D)
+
+// Grooves (Outside)
+N_GROOVES = 18;   // Number of vertical grooves
+D_GROOVE = 2;     // Diameter of the half-cylinder groove
+H_GROOVE = H_KNOB; // Full height
+
+// Pointer (Top)
+W_POINTER = 1.5;  // Width of the pointer groove
+D_POINTER = 1;    // Depth of the pointer groove
+
+// --- Main Construction ---
+
+difference() {
+    
+    // 1. Base Cylinder (Outer Body)
+    // Constructed as a D-shape cylinder.
+    // The profile is defined such that the flat side is at the bottom (Y = -SHAFT_FLAT/2 relative to center).
+    // We translate the extruded shape so the flat side hits Z=0.
+    
+    d_profile = [
+        // Bottom edge (Flat side)
+        [-SHAFT_D/2, -SHAFT_FLAT/2],
+        [SHAFT_D/2, -SHAFT_FLAT/2],
+        // Right arc
+        for (i = [0 : 1 : 360])
+            [
+                SHAFT_D/2 + (SHAFT_D/2)*cos(i),
+                (SHAFT_D/2)*sin(i) - SHAFT_FLAT/2
+            ],
+        // Close loop
+        [-SHAFT_D/2, -SHAFT_FLAT/2]
+    ];
+    
+    // Create the solid D-cylinder
+    translate([0, 0, -SHAFT_FLAT/2])
+    linear_extrude(height=H_KNOB, center=false, convexity=4)
+    polygon(points=d_profile);
+    
+    // 2. D-Shaped Blind Bore
+    // The bore must match the shaft. Since the knob sits on the flat side of the shaft,
+    // the bore's flat side must face DOWN (-Z direction).
+    // We create the same D-profile and extrude it upwards from Z=0.
+    
+    bore_profile = [
+        // Bottom edge (Flat side)
+        [-SHAFT_D/2, -SHAFT_FLAT/2],
+        [SHAFT_D/2, -SHAFT_FLAT/2],
+        // Right arc
+        for (i = [0 : 1 : 360])
+            [
+                SHAFT_D/2 + (SHAFT_D/2)*cos(i),
+                (SHAFT_D/2)*sin(i) - SHAFT_FLAT/2
+            ],
+        // Close loop
+        [-SHAFT_D/2, -SHAFT_FLAT/2]
+    ];
+    
+    // Extrude bore upwards from Z=0 to Z=SHAFT_H
+    // Translate so the flat side (y=-SHAFT_FLAT/2) is at Z=0.
+    translate([0, 0, -SHAFT_FLAT/2])
+    linear_extrude(height=SHAFT_H, center=false, convexity=4)
+    polygon(points=bore_profile);
+    
+    // 3. Vertical Grip Grooves (Outside)
+    // 18 evenly spaced grooves.
+    // Each is a 2mm diameter half-cylinder centered on the outer surface.
+    // To cut a semi-cylindrical groove, we subtract a cylinder of diameter D_GROOVE.
+    // We position the center of this cylinder on the surface of the knob.
+    // Since the knob is D-shaped, the "surface" varies in radius, but the center of the groove
+    // is at distance R_KNOB from the Z-axis.
+    
+    angle_step = 360 / N_GROOVES;
+    
+    for (i = [0 : N_GROOVES - 1]) {
+        angle = i * angle_step;
+        
+        // Position the groove cylinder
+        // Center is at (R_KNOB, 0) rotated by 'angle'
+        pos_x = R_KNOB * cos(angle);
+        pos_y = R_KNOB * sin(angle);
+        
+        // The groove is a cylinder of diameter D_GROOVE
+        // We subtract it to create the hole.
+        // To ensure it cuts cleanly into the D-shape without creating artifacts at the edges,
+        // we make the cutting cylinder slightly taller than the knob (extend 0.1mm).
+        translate([pos_x, pos_y, -0.1])
+        cylinder(h=H_KNOB + 0.2, d=D_GROOVE, $fn=$fn);
+    }
+    
+    // 4. Pointer Groove (Top)
+    // Cut a groove 1.5 mm wide and 1 mm deep from the center to the outer edge.
+    // It runs on the same side as the flat of the D.
+    // The flat of the D is at the bottom (negative Y in our local profile coords, but let's check global).
+    // In our construction, the flat side of the D is at Y = -SHAFT_FLAT/2 relative to the center of the D.
+    // So the "flat side" is the negative Y direction.
+    // The pointer groove should be on the negative Y side.
+    
+    // We create a rectangular prism to cut the groove.
+    // Width = W_POINTER, Depth = D_POINTER, Length = R_KNOB (from center to edge).
+    // Position: Centered on the negative Y axis.
+    // Z position: Top face is at Z = H_KNOB - SHAFT_FLAT/2.
+    // We cut downwards from the top.
+    
+    top_z = H_KNOB - SHAFT_FLAT/2;
+    
+    translate([0, -W_POINTER/2, top_z])
+    cube([W_POINTER, R_KNOB, D_POINTER]);
+    
+}

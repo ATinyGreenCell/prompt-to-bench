@@ -1,0 +1,135 @@
+```openscad
+// Hose-barb Reducer Design
+// Units: millimetres
+// Orientation: Standing upright along Z, resting on XY plane at z=0
+
+// --- Dimensions ---
+// Main bore diameter (constant through the part)
+$main_bore_d = 3.0;
+
+// Upper Section (z=0 to z=20): 8mm Tubing Barbs
+$upper_start_z = 0;
+$upper_end_z = 20;
+$upper_barb_count = 2;
+$upper_barb_height = 10;
+$upper_barb_bottom_od = 7.5;
+$upper_barb_top_od = 9.5;
+$upper_collar_od = 12.0;
+$upper_collar_height = 5.0; // From z=20 to z=25
+
+// Lower Section (z=25 to z=41): 5mm Tubing Barbs
+$lower_start_z = 25;
+$lower_end_z = 41;
+$lower_barb_count = 2;
+$lower_barb_height = 8;
+$lower_barb_bottom_od = 6.5;
+$lower_barb_top_od = 5.0;
+$lower_collar_od = 12.0; // Assuming same collar diameter as upper for structural integrity
+$lower_collar_height = 6.0; // From z=41 to z=47 (implied by length 41 + 6 = 47, or just defining the barb range)
+
+// --- Helper Functions ---
+
+// Function to create a single barb profile using linear_extrude
+// Parameters:
+//   z_start: Start Z of the barb
+//   z_end: End Z of the barb
+//   bottom_od: Outer diameter at z_start
+//   top_od: Outer diameter at z_end
+//   bore_d: Inner diameter of the bore
+function create_barb(z_start, z_end, bottom_od, top_od, bore_d) =
+    linear_extrude(height = z_end - z_start, center = true)
+    difference() {
+        // Outer shape: Sawtooth profile (Trapezoid up, then step down)
+        // We construct this by drawing the trapezoid and subtracting the "step" area if needed,
+        // but easier is to draw the full trapezoid and then subtract a cylinder for the step?
+        // No, the prompt says: "grows linearly... then steps straight back".
+        // This implies a shape that goes up, then drops vertically.
+        // We can model this as a large cylinder (top_od) minus a cylinder (bottom_od) at the bottom?
+        // No, it grows from bottom to top.
+        // Shape: Bottom OD -> Top OD (linear) -> Step back to Bottom OD?
+        // Re-reading: "outer diameter grows linearly from 7.5 mm at its bottom to 9.5 mm at its top, then steps straight back to 7.5 mm"
+        // This describes the profile of the barb itself.
+        // It looks like a trapezoid where the top is wider, but the side walls are slanted outwards,
+        // and then there is a vertical wall dropping down?
+        // Actually, usually barbs are: Base (small) -> Slant (large) -> Top (large).
+        // The prompt says: "grows... to top, then steps straight back".
+        // This implies the profile is: Start at 7.5, go up to 9.5, then immediately go down to 7.5?
+        // That would be a spike.
+        // Let's re-read carefully: "outer diameter grows linearly from 7.5 mm at its bottom to 9.5 mm at its top, then steps straight back to 7.5 mm"
+        // This phrasing is slightly ambiguous. Does it mean the *barb* has a top OD of 9.5, and the *connection* to the main body is 7.5?
+        // Or does it mean the profile goes 7.5 -> 9.5 -> 7.5 within the height?
+        // Given "stacked" barbs, they usually sit on top of each other.
+        // Interpretation: The barb is a frustum (7.5 to 9.5). The "step back" likely refers to the transition from the barb tip to the main body if they were separate, but here they are stacked.
+        // However, "steps straight back to 7.5 mm" suggests a vertical drop at the top of the barb?
+        // Let's assume the standard barb shape: A frustum expanding from the base to the tip.
+        // BUT the text says "steps straight back".
+        // Let's try to interpret "steps straight back to 7.5 mm" as the profile having a flat top of 9.5, and the "step" is the vertical face connecting the 9.5 top to the 7.5 base? No, that's a cone.
+        // Maybe it means: The barb is 10mm tall. At z=0 it is 7.5. At z=10 it is 9.5. Then at z=10 it steps back to 7.5? That would make it a spike with a flat top?
+        // Let's assume the user wants a shape that expands to 9.5 and then has a vertical wall dropping to 7.5?
+        // Actually, looking at "stacked", if the top is 9.5 and the bottom is 7.5, and they stack, the next one sits on the 9.5 part?
+        // Let's stick to the literal geometric description:
+        // 1. Linear growth from bottom_od to top_od.
+        // 2. Then a vertical step back to bottom_od.
+        // This creates a shape like a mushroom cap or a spike with a flat top edge?
+        // Let's model the profile as a polygon.
+        // Points: (bottom_od/2, 0), (top_od/2, height), (bottom_od/2, height).
+        // This creates a trapezoid. The "step back" might be the vertical line from (top_od/2, height) to (bottom_od/2, height).
+        // Yes, that forms a trapezoid.
+        
+        // Outer Polygon
+        polygon(points = [
+            [bottom_od/2, 0],
+            [top_od/2, z_end - z_start],
+            [bottom_od/2, z_end - z_start]
+        ]);
+        
+        // Inner Bore (Hole)
+        circle(r = bore_d/2);
+    });
+
+// Function to create the main body cylinder
+function create_body(z_start, z_end, od, id) =
+    cylinder(h = z_end - z_start, r1 = od/2, r2 = od/2, center = false);
+
+// --- Main Construction ---
+
+module hose_barb_reducer() {
+    // Base body (The 12mm collar section acts as the main body for the whole part)
+    // The prompt says:
+    // z=0-20: Barbs
+    // z=20-25: Collar (12mm)
+    // z=25-41: Barbs
+    // This implies the main body is 12mm OD throughout, but the barbs extend outwards.
+    
+    // 1. Main Body (12mm OD, 3mm ID)
+    // Total height needed:
+    // Upper barbs: 0-20
+    // Collar: 20-25
+    // Lower barbs: 25-41
+    // Total Z = 41.
+    // We will build the main body from z=0 to z=41.
+    
+    translate([0, 0, 0]) {
+        // Main Body Cylinder
+        // OD = 12mm, ID = 3mm
+        // Height = 41mm
+        difference() {
+            cylinder(h = 41, r = $upper_collar_od/2, center = false);
+            cylinder(h = 41, r = $main_bore_d/2, center = false);
+        }
+    }
+    
+    // 2. Upper Barbs (z=0 to z=20)
+    // Two barbs stacked.
+    // Barb 1: z=0 to z=10
+    // Barb 2: z=10 to z=20
+    // Note: The prompt says "From z=0 to z=20: two identical barbs... stacked".
+    // So Barb 1 is 0-10, Barb 2 is 10-20.
+    
+    for (i = [0, 1]) {
+        translate([0, 0, i * $upper_barb_height]) {
+            create_barb(
+                z_start = i * $upper_barb_height,
+                z_end = (i + 1) * $upper_barb_height,
+                bottom_od = $upper_barb_bottom_od,
+                top_od

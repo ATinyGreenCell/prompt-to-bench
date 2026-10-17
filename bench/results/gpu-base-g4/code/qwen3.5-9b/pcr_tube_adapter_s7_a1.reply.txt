@@ -1,0 +1,84 @@
+```openscad
+// Adapter Sleeve for 0.2mL PCR tube in 1.5mL rack
+// Print orientation: Upside down (Collar on bed)
+// Units: mm
+
+// Dimensions
+$fn = 128; // High resolution for smooth cylinders
+
+// Collar (Base)
+$collar_outer_d = 13;
+$collar_thickness = 1.5;
+$collar_inner_d = 10.8; // Matches sleeve OD to create a seamless transition
+
+// Sleeve Body
+$sleeve_outer_d = 10.8;
+$sleeve_total_height = 21.5;
+$sleeve_body_height = $sleeve_total_height - $collar_thickness; // Height above collar
+
+// Bore
+$bore_d = 6.2;
+$bore_radius = $bore_d / 2;
+
+// Tolerance for cutting operations (to ensure clean holes)
+$cut_tolerance = 0.05;
+
+// --- Main Body Construction ---
+
+// 1. Create the Collar (Base)
+// Cylinder centered at origin, lying flat on XY plane
+// Radius = collar_outer_d / 2
+// Height = collar_thickness
+$collar_radius = $collar_outer_d / 2;
+$collar = cylinder(
+    h = $collar_thickness,
+    r = $collar_radius,
+    center = [0, 0, $collar_thickness / 2]
+);
+
+// 2. Create the Sleeve Body
+// Cylinder rising from the top of the collar
+// Radius = sleeve_outer_d / 2
+// Height = sleeve_body_height
+// Position: Base at z = collar_thickness, Top at z = sleeve_total_height
+$sleeve_radius = $sleeve_outer_d / 2;
+$sleeve_body = cylinder(
+    h = $sleeve_body_height,
+    r = $sleeve_radius,
+    center = [0, 0, $collar_thickness + $sleeve_body_height / 2]
+);
+
+// 3. Create the Bore (Hole)
+// The hole runs through the full height (collar + sleeve)
+// Total height = sleeve_total_height
+// Position: Centered vertically from z=0 to z=sleeve_total_height
+$bore_height = $sleeve_total_height;
+$bore = cylinder(
+    h = $bore_height,
+    r = $bore_radius,
+    center = [0, 0, $bore_height / 2]
+);
+
+// --- Assembly ---
+
+// Start with the union of Collar and Sleeve Body
+main_part = union(
+    $collar,
+    $sleeve_body
+);
+
+// Subtract the Bore
+// We add a small tolerance to the cutting cylinder to ensure it cuts completely through
+// even if there are minor floating point errors at the interfaces.
+final_part = difference() {
+    main_part;
+    translate([0, 0, 0]) cylinder(
+        h = $bore_height + $cut_tolerance,
+        r = $bore_radius + $cut_tolerance,
+        center = [0, 0, $bore_height / 2]
+    );
+};
+
+// Render the final part
+final_part;
+```

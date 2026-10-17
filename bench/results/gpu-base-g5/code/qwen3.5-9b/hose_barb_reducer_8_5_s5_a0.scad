@@ -1,0 +1,152 @@
+// Hose-barb reducer: 8mm ID to 5mm ID
+// Orientation: Standing upright along Z, resting on XY plane at z=0.
+// Centered on origin in X and Y.
+
+$fn = 128; // High resolution for smooth curves and accurate hole sizes
+
+// --- Dimensions ---
+// Main bore
+$BoreID = 3.0;
+
+// Upper Section (z=0 to z=20): 8mm tubing connection
+$UpperStartZ = 0;
+$UpperEndZ = 20;
+$BarbCountUpper = 2;
+$BarbHeightUpper = 10;
+$BarbBaseODUpper = 7.5;
+$BarbTipODUpper = 9.5;
+$BarbStepODUpper = 7.5; // Diameter after the sawtooth tip
+
+// Collar Section (z=20 to z=25)
+$CollarStartZ = 20;
+$CollarEndZ = 25;
+$CollarOD = 12.0;
+
+// Lower Section (z=25 to z=41): 5mm tubing connection
+$LowerStartZ = 25;
+$LowerEndZ = 41;
+$BarbCountLower = 2;
+$BarbHeightLower = 8;
+$BarbBaseODLower = 6.5;
+$BarbTipODLower = 5.0;
+$BarbStepODLower = 6.5; // Diameter after the sawtooth tip
+
+// --- Helper Functions ---
+
+// Function to create a single sawtooth barb profile
+// z_start: bottom of the barb
+// z_end: top of the barb
+// base_od: diameter at z_start
+// tip_od: diameter at the peak of the sawtooth
+// step_od: diameter at the bottom of the next step (z_end)
+// count: number of barbs
+// angle_step: angular spacing in radians (2*PI / count)
+module create_sawtooth_barbs(z_start, z_end, base_od, tip_od, step_od, count, angle_step) {
+    // Calculate the angle for each barb
+    // We assume the first barb starts at angle 0 for simplicity, 
+    // but we will rotate the whole assembly or individual parts if needed.
+    // Here we generate them in a loop and union them.
+    
+    for (i = [0 : count-1]) {
+        $angle = i * angle_step;
+        
+        // Define the profile points for one barb
+        // We need to define the shape in a local coordinate system, then rotate.
+        // Profile:
+        // 1. Base cylinder from z_start to z_start + (z_end - z_start)/2
+        // 2. Linear growth to tip_od at z_start + (z_end - z_start)/2 + (z_end - z_start)/4
+        // 3. Linear shrink to step_od at z_start + (z_end - z_start)/2 + (z_end - z_start)/2
+        // 4. Step down to step_od for the rest of the height
+        
+        $h_total = z_end - z_start;
+        $h_half = $h_total / 2;
+        $h_quarter = $h_total / 4;
+        
+        // Points: (radius, z)
+        // Start at base_od
+        $p1 = [base_od/2, z_start];
+        // Midpoint of first half: start growing
+        $p2 = [base_od/2, z_start + $h_quarter];
+        // Peak of sawtooth: tip_od
+        $p3 = [tip_od/2, z_start + $h_quarter + $h_quarter]; // z_start + h_half
+        // End of sawtooth slope: step_od
+        $p4 = [step_od/2, z_start + $h_half + $h_quarter]; // z_start + 3/4 h_total
+        // Bottom of step: step_od
+        $p5 = [step_od/2, z_end];
+        
+        // Create the profile polygon
+        $profile = [
+            $p1, $p2, $p3, $p4, $p5,
+            // Close the loop for the top face of the step
+            $p5, $p4, $p3, $p2, $p1
+        ];
+        
+        // Extrude the profile
+        $rotated = rotate([0, 0, $angle]) {
+            difference() {
+                // Main body: Extrude the full height with the step diameter
+                // We create a cylinder that covers the step section and the base section
+                // But we need to cut out the sawtooth tip.
+                
+                // 1. The "Step" Cylinder (from z_start to z_end)
+                translate([0, 0, z_start]) {
+                    cylinder(h = $h_total, r = step_od/2 + 0.1, $fn = 32);
+                }
+                
+                // 2. The "Sawtooth Tip" Cylinder (the part to be removed)
+                // This cylinder sits on top of the step section.
+                // It goes from z_start + h_half to z_start + h_half + h_quarter
+                translate([0, 0, z_start + $h_half]) {
+                    cylinder(h = $h_quarter, r = tip_od/2 + 0.1, $fn = 32);
+                }
+                
+                // 3. The "Base" Cylinder (from z_start to z_start + h_half)
+                // This cylinder has the base_od radius.
+                // We need to subtract the volume between base_od and step_od in this region?
+                // No, the profile logic above was:
+                // Base (base_od) -> Grow -> Tip -> Shrink -> Step (step_od).
+                // So the object is:
+                // - A cylinder of radius step_od/2 from z_start to z_end.
+                // - PLUS a cylinder of radius (tip_od - step_od)/2 growing from z_start+h_half?
+                // Let's re-evaluate the geometry based on the prompt:
+                // "outer diameter grows linearly from 7.5 mm at its bottom to 9.5 mm at its top, then steps straight back to 7.5 mm"
+                // Wait, the prompt says "steps straight back to 7.5 mm". 
+                // My variable `step_od` is 7.5. `base_od` is 7.5.
+                // So the profile is: Base(7.5) -> Grow to 9.5 -> Shrink to 7.5.
+                // The "step" is just the return to the base diameter.
+                
+                // Correct Construction:
+                // 1. Base Cylinder: r = base_od/2, from z_start to z_end.
+                // 2. Add the "Bump": A cylinder that grows from base_od to tip_od and back to base_od.
+                //    Actually, it's easier to define the bump as a cylinder of radius (tip_od-base_od)/2 
+                //    sitting on top of the base cylinder, but with a specific height profile.
+                
+                // Let's try a different approach: Union of Base + Bump.
+                // Base: Cylinder r = base_od/2, h = $h_total.
+                // Bump: Cylinder r = (tip_od - base_od)/2, h = $h_quarter (the growing part) + $h_quarter (the shrinking part)?
+                // No, the bump is centered at the top half.
+                
+                // Let's stick to the subtraction method which is robust for "steps".
+                // Object = (Cylinder r=step_od/2, h=$h_total) 
+                //       UNION (Cylinder r=(tip_od-step_od)/2, h=$h_quarter, pos=...)
+                //       UNION (Cylinder r=(tip_od-step_od)/2, h=$h_quarter, pos=...)
+                // This is getting complicated. Let's use the polygon extrude method directly.
+                
+                // Re-defining points for the profile to be extruded:
+                // We want the shape to be:
+                // z_start to z_start + h_quarter: Radius = base_od/2
+                // z_start + h_quarter to z_start + h_half: Radius grows from base_od/2 to tip_od/2
+                // z_start + h_half to z_start + 3/4 h_total: Radius shrinks from tip_od/2 to step_od/2
+                // z_start + 3/4 h_total to z_end: Radius = step_od/2
+                
+                // Since base_od == step_od in this specific case (7.5), the first and last segments are flat.
+                // The middle is a triangle.
+                
+                // Let's create the profile points again carefully.
+                $r_start = base_od / 2;
+                $r_tip = tip_od / 2;
+                $r_step = step_od / 2;
+                
+                $pts = [
+                    [$r_start, z_start],
+                    [$r_start, z_start +

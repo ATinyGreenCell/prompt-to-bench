@@ -1,0 +1,80 @@
+```openscad
+$fn = 128;
+
+// --- Dimensions ---
+// Handle
+d_handle = 8;
+h_handle = 45;
+z_handle_start = 0;
+z_handle_end = 45;
+
+// Cone
+d_cone_bottom = 8;
+d_cone_top = 3;
+h_cone = 17; // 62 - 45
+z_cone_start = 45;
+z_cone_end = 62;
+
+// Tip (Sphere)
+d_tip = 3;
+z_tip_center = 62;
+
+// Grooves
+n_grooves = 4;
+w_groove = 2; // Width in Z
+d_groove = 1; // Depth
+z_grooves = [10, 15, 20, 25]; // Center Z positions
+
+// --- Main Body Construction ---
+// 1. Handle
+handle = cylinder(d = d_handle, h = h_handle, center = false);
+
+// 2. Cone (Frustum)
+cone = cylinder(d1 = d_cone_bottom, d2 = d_cone_top, h = h_cone, center = false);
+
+// 3. Tip (Sphere)
+tip = sphere(d = d_tip, center = [0, 0, z_tip_center]);
+
+// Union Body
+body = union(
+    handle,
+    cone,
+    tip
+);
+
+// --- Groove Logic ---
+// We create a "chisel" shape that is a cylinder with a flat face on the side to cut the groove.
+// The groove is a circumferential cut. We will place the cutters at the surface of the handle (X = d_handle/2).
+// Since the user specified specific Z centers, we assume the grooves are stacked vertically at the same angular position (e.g., at X=4, Y=0).
+// This creates a "ladder" of grooves which is effective for grip.
+
+// We will build the final part using difference().
+// We start with the body and subtract the grooves.
+
+// Define the groove cutter shape (a cylinder representing the void)
+// Radius = d_groove, Height = w_groove.
+// We add 0.1mm clearance to Z to ensure it cuts through any rounding or misalignment.
+
+final_part = difference() {
+    body;
+    
+    // Loop to create and subtract each groove
+    for (i = [0 : n_grooves - 1]) {
+        z_center = z_grooves[i];
+        
+        // Calculate the Z range for the groove with clearance
+        z_start = z_center - w_groove/2 - 0.1;
+        z_end = z_center + w_groove/2 + 0.1;
+        
+        // Create the cutter: a cylinder of radius d_groove and height (z_end - z_start)
+        // Position it at the surface of the handle: X = d_handle/2, Y = 0
+        cutter = translate([d_handle/2, 0, z_start]) 
+            * cylinder(d = d_groove, h = z_end - z_start, center = false);
+        
+        cutter; // Subtract this cutter from the body
+    }
+}
+
+// Output the final part
+final_part;
+```

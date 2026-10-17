@@ -1,0 +1,74 @@
+// Drying Rack for 10 Microscope Slides
+// Base: 90 x 45 x 20 mm
+// Slots: 10 parallel slots along X, 77mm long, 1.6mm wide, 10mm deep
+// Spacing: 3.5mm centre-to-centre in Y
+
+$fn = 128;
+
+// Base Dimensions
+base_length = 90;   // X
+base_width = 45;    // Y
+base_height = 20;   // Z
+
+// Slot Dimensions
+num_slots = 10;
+slot_length = 77;   // X (runs along length)
+slot_width = 1.6;   // Y
+slot_depth = 10;    // Z
+
+// Spacing
+slot_spacing = 3.5; // Centre-to-centre in Y
+
+// Calculation for Y positioning
+// Total width occupied by slots = num_slots * slot_width
+// Total gaps = num_slots - 1
+// We need the group to be centred on the base_width (45mm)
+// Let's calculate the offset from the center of the base to the center of the first slot
+// Center of base = 0
+// Center of slot group = 0
+// Distance from center of base to center of first slot:
+// (base_width - (num_slots * slot_width)) / 2 + (slot_width / 2)
+// Actually, simpler: The group of centers is symmetric around 0.
+// The distance between the center of slot 0 and slot 1 is slot_spacing.
+// The center of slot 0 is at: - (num_slots - 1) * slot_spacing / 2
+// The center of slot i is at: i * slot_spacing - (num_slots - 1) * slot_spacing / 2
+
+// X positioning: Centred on the block
+// The slots run along X. The block is 90mm, slots are 77mm.
+// We center the 77mm slot within the 90mm block.
+// Offset X = (90 - 77) / 2 = 6.5mm from the edge.
+// Since we model relative to center, the slot runs from -38.5 to +38.5.
+
+// Generate Slot Positions
+slot_positions = [];
+for (i = [0 : num_slots - 1]) {
+    y_pos = (i * slot_spacing) - ((num_slots - 1) * slot_spacing / 2);
+    slot_positions.push([y_pos]);
+}
+
+// Main Block
+difference() {
+    // 1. The Solid Base
+    cube([base_length, base_width, base_height], center = true);
+    
+    // 2. The Slots (Cutting shapes)
+    // We cut 10 slots. Each slot is a rectangular prism.
+    // Dimensions: length X, width Y, depth Z.
+    // We extend the cut slightly past the top face (Z=10) to ensure clean removal.
+    // The slot is open at the top, so we cut from Z=0 down to Z=-slot_depth.
+    // Wait, the block is 20mm tall. The slot is 10mm deep.
+    // The slot is "open at the top", meaning it goes from the top surface (Z=10) down to Z=0.
+    // So the cutting shape should be from Z=10 down to Z=0 (or slightly below 0 to be safe).
+    // Let's make the cutting shape extend 0.1mm below Z=0 to ensure no sharp edges remain.
+    
+    for (y = slot_positions) {
+        translate([0, y[0], 10]) {
+            // Slot dimensions:
+            // X: 77mm
+            // Y: 1.6mm
+            // Z: 10mm deep (from Z=10 down to Z=0)
+            // We add 0.1mm extension below Z=0 for clean cutting
+            cube([slot_length, slot_width, slot_depth + 0.1], center = [0, 0, -slot_depth/2]);
+        }
+    }
+}

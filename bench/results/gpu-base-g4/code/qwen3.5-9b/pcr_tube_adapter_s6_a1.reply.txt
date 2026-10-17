@@ -1,0 +1,63 @@
+```openscad
+// Adapter Sleeve for 0.2mL PCR tube in 1.5mL rack
+// Print orientation: Upside down (Collar on bed)
+// Units: mm
+
+// Dimensions
+$fn = 128; // High resolution for smooth cylinders
+
+// Collar (Base)
+$collar_outer_d = 13;
+$collar_thickness = 1.5;
+
+// Sleeve Body
+$sleeve_outer_d = 10.8;
+$sleeve_total_height = 21.5;
+
+// Bore
+$bore_diameter = 6.2;
+
+// Offset for cutting operations (Rule 5)
+$cut_offset = 0.1;
+
+// Calculate radii
+$r_collar_outer = $collar_outer_d / 2;
+$r_sleeve_outer = $sleeve_outer_d / 2;
+$r_bore = $bore_diameter / 2;
+
+// Build the part
+// Strategy: Create the full outer shape (Collar + Body) as a union,
+// then subtract a single long cylinder for the bore. This ensures perfect alignment
+// and a continuous hole through the entire height.
+
+difference() {
+    // 1. Create the full outer geometry
+    union() {
+        // Collar: Lies on XY plane from z=0 to z=1.5
+        cylinder(
+            h = $collar_thickness,
+            d = $collar_outer_d,
+            center = [0, 0, $collar_thickness / 2]
+        );
+        
+        // Sleeve Body: Rises from z=1.5 to z=21.5
+        // Height of body = 21.5 - 1.5 = 20.0
+        translate([0, 0, $collar_thickness]) {
+            cylinder(
+                h = $sleeve_total_height - $collar_thickness,
+                d = $sleeve_outer_d,
+                center = [0, 0, ($sleeve_total_height - $collar_thickness) / 2 + $collar_thickness]
+            );
+        }
+    }
+    
+    // 2. Subtract the bore
+    // The bore must run through the FULL height (0 to 21.5)
+    // We extend the cutting cylinder slightly past the top and bottom faces (Rule 5)
+    cylinder(
+        h = $sleeve_total_height + $cut_offset * 2,
+        d = $bore_diameter,
+        center = [0, 0, $sleeve_total_height / 2]
+    );
+}
+```

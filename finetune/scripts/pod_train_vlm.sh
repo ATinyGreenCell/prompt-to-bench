@@ -4,6 +4,8 @@
 #
 # Env knobs: EPOCHS (default 3), RANK (default 32), DROPOUT (default 0.1), MAXSEQ (default 4096),
 #            BATCH x ACCUM (default 2 x 4 = effective 8; on an 80 GB card 4 x 2 is the same batch, faster),
+#            LAST_TURN_ONLY=1 for multi-turn repair data (loss on the final assistant turn only), or
+#            MASK_EARLIER=1 (every-token loss as v1-v4, minus each non-final assistant turn),
 #            DATA (default train.jsonl), SMOKE=1 to run the 2-step validation only (do this FIRST, H23).
 #
 # One-time, after creating the pod (image runpod/pytorch:1.0.2-cu1281-torch280-ubuntu2404, CUDA floor 12.8):
@@ -21,13 +23,15 @@ pip install --break-system-packages -q "unsloth[cu121] @ git+https://github.com/
 python -c "import unsloth,torch;print('unsloth',unsloth.__version__,'torch',torch.__version__)"
 
 DATA="${DATA:-train.jsonl}"
+LTO=""; [ "${LAST_TURN_ONLY:-0}" = "1" ] && LTO="--last-turn-only"
+[ "${MASK_EARLIER:-0}" = "1" ] && LTO="--mask-earlier-assistant"
 echo "== data: $DATA ($(wc -l < "$DATA") examples) =="
 ls -la train_vlm.py "$DATA"
 
 if [ "${SMOKE:-0}" = "1" ]; then
   echo "== SMOKE: validate the path + read steady-state s/it before paying (H23) =="
   python -u train_vlm.py --smoke --data "$DATA" --rank "${RANK:-32}" --max-seq "${MAXSEQ:-4096}" \
-      --batch "${BATCH:-2}" --accum "${ACCUM:-4}"
+      --batch "${BATCH:-2}" --accum "${ACCUM:-4}" $LTO
   echo "== smoke done: require VISION_PRESERVED above + a sane s/it, then rerun with SMOKE=0 =="
   exit 0
 fi
@@ -35,7 +39,7 @@ fi
 echo "== full run (epochs=${EPOCHS:-3} rank=${RANK:-32} dropout=${DROPOUT:-0.1} max-seq=${MAXSEQ:-4096}) =="
 python -u train_vlm.py --data "$DATA" --epochs "${EPOCHS:-3}" --rank "${RANK:-32}" \
     --lora-dropout "${DROPOUT:-0.1}" --max-seq "${MAXSEQ:-4096}" --batch "${BATCH:-2}" --accum "${ACCUM:-4}" \
-    --drop-over-max --out out_vlm
+    $LTO --drop-over-max --out out_vlm
 
 echo "== DONE; merged artifacts =="
 ls -la out_vlm/merged16/*.safetensors 2>/dev/null || true

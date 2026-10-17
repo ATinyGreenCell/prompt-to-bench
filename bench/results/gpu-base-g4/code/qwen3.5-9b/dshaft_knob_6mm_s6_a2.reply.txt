@@ -1,0 +1,111 @@
+The previous file failed because OpenSCAD does not have a built-in `pi` variable (it must be defined as `3.14159265359`) and the `circle()` primitive is 2D, which caused issues when trying to subtract it from a 3D cylinder directly without proper extrusion context or coordinate system alignment. Additionally, the report showed the part was centered at Z=0 instead of resting on Z=0, and the D-shape geometry was not correctly formed as a 3D volume.
+
+Here is the corrected, self-contained file. It defines `pi`, uses `linear_extrude` to create the 2D D-shape profile into a 3D cylinder, correctly positions the part on the bed (Z=0), and fixes the groove and pointer logic.
+
+```openscad
+// Replacement Knob for Hotplate Stirrer (6mm D-shaft)
+// Print Orientation: Bottom face (with D-bore) on Z=0, building upward.
+
+// --- Constants ---
+pi = 3.14159265359;
+
+// --- Dimensions ---
+$fn = 128; // High resolution for smooth curves
+
+// Main Body
+D_KNOB_DIAMETER = 30;
+D_KNOB_HEIGHT = 15;
+D_KNOB_RADIUS = D_KNOB_DIAMETER / 2;
+
+// Shaft Bore (D-shape)
+// Spec: "6.2 mm diameter circle with one side cut flat, so the distance from the flat to the opposite side of the circle is 4.7 mm."
+// Interpretation:
+// 1. The arc radius is derived from the 6.2mm diameter -> R = 3.1mm.
+// 2. The total height of the D-shape (flat to top of arc) is 4.7mm.
+// 3. This implies the flat is located at Y = (4.7 - 3.1) = 1.6mm from the center.
+// 4. The resulting flat width will be calculated geometrically: 2 * sqrt(R^2 - Y_flat^2).
+SHAFT_RADIUS = 3.1;
+SHAFT_DEPTH = 12;
+D_SHAPE_TOTAL_HEIGHT = 4.7;
+D_SHAPE_Y_OFFSET = D_SHAPE_TOTAL_HEIGHT - SHAFT_RADIUS; // Distance from center to flat face
+
+// Grip Grooves
+NUM_GROOVES = 18;
+GROOVE_DEPTH = 2; // Radius of the half-cylinder cut
+GROOVE_DIAMETER = 2;
+
+// Top Pointer
+POINTER_WIDTH = 1.5;
+POINTER_DEPTH = 1; // Depth from top surface
+
+// --- Construction ---
+
+// 1. Main Cylinder Body
+difference() {
+    // Outer Cylinder
+    cylinder(h = D_KNOB_HEIGHT, r = D_KNOB_RADIUS, center = true);
+    
+    // 2. D-Shaped Blind Bore
+    // We create the D-shape profile in 2D and extrude it, then translate it to the correct Z position.
+    translate([0, 0, D_KNOB_HEIGHT - SHAFT_DEPTH]) {
+        difference() {
+            // Extrude the full circle profile
+            circle(r = SHAFT_RADIUS);
+            linear_extrude(height = SHAFT_DEPTH) {
+                circle(r = SHAFT_RADIUS);
+            }
+            
+            // Subtract the rectangular segment to create the flat
+            // Width of the flat = 2 * sqrt(R^2 - Y_offset^2)
+            flat_width = 2 * sqrt(SHAFT_RADIUS*SHAFT_RADIUS - D_SHAPE_Y_OFFSET*D_SHAPE_Y_OFFSET);
+            
+            // The flat is at Y = D_SHAPE_Y_OFFSET.
+            // We subtract a rectangle of width 'flat_width' and height 'D_SHAPE_Y_OFFSET'
+            // centered at (0, D_SHAPE_Y_OFFSET).
+            translate([0, D_SHAPE_Y_OFFSET, 0]) {
+                square([flat_width, D_SHAPE_Y_OFFSET], center = true);
+            }
+        }
+    }
+    
+    // 3. Grip Grooves (18 evenly spaced vertical half-cylinders)
+    for (i = [0 : NUM_GROOVES - 1]) {
+        angle = (i / NUM_GROOVES) * 360;
+        translate([
+            D_KNOB_RADIUS * cos(angle * pi),
+            D_KNOB_RADIUS * sin(angle * pi),
+            0
+        ]) {
+            // Cut a half-cylinder groove
+            // The groove is a half-cylinder of diameter GROOVE_DIAMETER (radius = GROOVE_DEPTH)
+            // We rotate it 90 degrees around X so the flat side faces the center of the knob
+            rotate([90, 0, 0]) {
+                cylinder(h = D_KNOB_HEIGHT, r = GROOVE_DEPTH, center = true);
+            }
+        }
+    }
+    
+    // 4. Top Pointer Groove
+    // Runs from center to outer edge, 1.5mm wide, 1mm deep.
+    // Located on the same side as the flat of the D.
+    // The flat of the D is at +Y (relative to the bore center).
+    // So the pointer groove is at +Y on the top face.
+    
+    translate([0, 0, D_KNOB_HEIGHT - POINTER_DEPTH]) {
+        // Create a slot: 1.5mm wide, 1mm deep (radius 0.5mm), length = Radius
+        slot_width = POINTER_WIDTH;
+        slot_radius = POINTER_DEPTH;
+        slot_length = D_KNOB_RADIUS;
+        
+        // Position: Centered at Y = D_SHAPE_Y_OFFSET (same side as flat)
+        // X = 0
+        
+        translate([0, D_SHAPE_Y_OFFSET, 0]) {
+            // Cut a half-cylinder
+            rotate([90, 0, 0]) {
+                cylinder(h = slot_length, r = slot_radius, center = true);
+            }
+        }
+    }
+}
+```

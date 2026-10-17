@@ -1,0 +1,86 @@
+The measurement report reveals a critical failure in the grid generation logic. The report states:
+`4 holes: 4 x circle d=3.00 [2 x 2 grid (X x Y), pitch X 54.00 / Y 54.00, grid centre (0.00, 0.00)]`
+
+**Discrepancies:**
+1.  **Hole Count:** The specification requires a **7 x 7 grid (49 holes)**, but the print only has **4 holes**.
+2.  **Grid Spacing:** The report shows a pitch of **54.00 mm**, but the specification requires **9 mm**.
+3.  **Grid Center:** The report shows the center at **(0.00, 0.00)**, but with a 54mm pitch and 2x2 layout, the holes are clustered near the origin instead of being spread across the 85mm diameter.
+
+**Root Cause:**
+In the previous code, the loop variable `r` was used directly in the `translate` function without multiplying it by the spacing.
+*   *Incorrect:* `y_pos = ($GRID_OFFSET * 2 * r) - $GRID_OFFSET` (This creates a step of ~18mm for r=1, but the logic was flawed in how the offset was applied relative to the loop index).
+*   *Correction:* The position must be calculated as `(index * spacing) - (total_span / 2)`.
+
+The corrected code below fixes the loop math to generate the full 7x7 grid with 9mm spacing, while keeping the notch and dimensions exactly as specified.
+
+```openscad
+$fn = 128;
+
+// --- Dimensions ---
+// Petri dish inner diameter reference
+$DISH_DIAMETER = 90;
+
+// Template base dimensions
+$TEMPLATE_DIAMETER = 85;
+$TEMPLATE_THICKNESS = 2;
+
+// Grid dimensions
+$GRID_ROWS = 7;
+$GRID_COLS = 7;
+$HOLE_DIAMETER = 3;
+$HOLE_SPACING = 9;
+
+// Notch dimensions (on +Y side)
+$NOTCH_WIDTH = 10;  // X dimension
+$NOTCH_DEPTH = 4;   // Y dimension (in from rim)
+
+// --- Calculations ---
+// Calculate grid offset to center the 7x7 grid
+// Total span = (N-1) * spacing. Offset = Total span / 2.
+$GRID_OFFSET = (($GRID_ROWS - 1) * $HOLE_SPACING) / 2;
+
+// Calculate notch position relative to center
+// Notch is centered on Y axis (X=0).
+// Y center is (Radius - Depth/2).
+$TEMPLATE_RADIUS = $TEMPLATE_DIAMETER / 2;
+$NOTCH_Y_CENTER = $TEMPLATE_RADIUS - ($NOTCH_DEPTH / 2);
+
+// --- Main Body ---
+difference() {
+    // 1. Create the main disc
+    translate([0, 0, 0])
+        cylinder(
+            h = $TEMPLATE_THICKNESS,
+            d = $TEMPLATE_DIAMETER,
+            $fn = 128
+        );
+
+    // 2. Cut the 7x7 grid of holes
+    for (r = [0 : $GRID_ROWS - 1]) {
+        for (c = [0 : $GRID_COLS - 1]) {
+            // Calculate position for this hole
+            // Formula: (index * spacing) - offset
+            x_pos = (c * $HOLE_SPACING) - $GRID_OFFSET;
+            y_pos = (r * $HOLE_SPACING) - $GRID_OFFSET;
+            
+            translate([x_pos, y_pos, 0])
+                cylinder(
+                    h = $TEMPLATE_THICKNESS + 0.1, // Extend slightly past bottom to ensure clean cut
+                    d = $HOLE_DIAMETER,
+                    $fn = 64
+                );
+        }
+    }
+
+    // 3. Cut the rectangular orientation notch on the +Y side
+    // The notch is centered on the Y axis (X=0)
+    // It extends from the rim inwards by $NOTCH_DEPTH
+    // We cut a rectangle that is slightly larger than the notch dimensions to ensure clean edges
+    translate([0, $NOTCH_Y_CENTER, 0])
+        cube([
+            $NOTCH_WIDTH + 0.1, // Extend slightly in X
+            $NOTCH_DEPTH + 0.1, // Extend slightly in Y
+            $TEMPLATE_THICKNESS + 0.1 // Extend slightly in Z
+        ]);
+}
+```

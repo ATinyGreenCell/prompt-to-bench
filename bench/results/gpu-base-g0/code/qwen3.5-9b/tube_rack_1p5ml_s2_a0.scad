@@ -1,0 +1,93 @@
+// Bench Rack for 1.5 mL Microcentrifuge Tubes
+// Designed for FDM printing. Rests on XY plane at Z=0.
+
+// --- Dimensions ---
+// Block dimensions
+$block_length = 106; // X
+$block_width  = 72;  // Y
+$block_height = 30;  // Z
+
+// Hole grid parameters
+$num_rows = 4;       // Rows along Y
+$num_cols = 6;       // Columns along X
+$hole_spacing_x = 16; // Centre-to-centre X
+$hole_spacing_y = 16; // Centre-to-centre Y
+
+// Hole parameters
+$hole_diameter = 11.2;
+$hole_depth    = 25; // Open at top, closed at bottom
+$floor_height  = 5;  // Solid floor thickness (30 - 25)
+
+// --- Configuration ---
+$fn = 64; // Smoothness for holes
+
+// --- Calculations ---
+// Calculate grid offsets to center the grid on the block
+// Total span X = (num_cols - 1) * spacing
+// Offset X = (Block Length - Total Span X) / 2
+$grid_span_x = ($num_cols - 1) * $hole_spacing_x;
+$offset_x = ($block_length - $grid_span_x) / 2;
+
+$grid_span_y = ($num_rows - 1) * $hole_spacing_y;
+$offset_y = ($block_width - $grid_span_y) / 2;
+
+// --- Main Block ---
+difference() {
+    // 1. Create the solid rectangular block
+    block = cube([
+        $block_length,
+        $block_width,
+        $block_height
+    ]);
+
+    // 2. Create holes
+    // Holes are cylinders with a flat bottom at Z = floor_height
+    // We subtract a cylinder that goes from Z=0 to Z=hole_depth
+    // To ensure clean cutting, we extend the cylinder slightly past the bottom face
+    $cut_extension = 0.1; 
+    
+    for (row = [0 : $num_rows - 1]) {
+        for (col = [0 : $num_cols - 1]) {
+            // Calculate position of current hole
+            $x_pos = $offset_x + col * $hole_spacing_x;
+            $y_pos = $offset_y + row * $hole_spacing_y;
+            
+            // Define the cutting cylinder
+            // Radius is half diameter
+            $r = $hole_diameter / 2;
+            
+            // Translate to hole center
+            // Rotate -90 around X to make cylinder axis point along Z (standard cylinder axis is Z, but we want to cut from top down)
+            // Actually, standard cylinder in OpenSCAD is along Z. 
+            // We want to remove material from Z=0 up to Z=hole_depth.
+            // So we place the cylinder base at Z=0 and height = hole_depth.
+            
+            hole = cylinder(
+                h = $hole_depth + $cut_extension,
+                r1 = $r,
+                r2 = $r,
+                center = false
+            );
+            
+            translate([
+                $x_pos,
+                $y_pos,
+                0
+            ]) {
+                difference() {
+                    // The part to be removed (slightly larger than hole to ensure clean cut)
+                    translate([0, 0, $cut_extension]) {
+                        hole;
+                    }
+                    // Optional: If we wanted to model the hole walls perfectly, 
+                    // we would just subtract the cylinder directly. 
+                    // The extension ensures the bottom face of the block is not coplanar with the cut.
+                }
+            }
+        }
+    }
+    
+    union() {
+        block;
+    }
+}

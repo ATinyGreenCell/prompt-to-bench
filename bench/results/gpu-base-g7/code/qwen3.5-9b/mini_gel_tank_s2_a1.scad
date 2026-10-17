@@ -1,0 +1,126 @@
+// Buffer Tank for Mini Horizontal Gel Electrophoresis
+// Units: millimetres
+
+// Outer Dimensions
+$outer_x = 120;
+$outer_y = 70;
+$outer_z = 40;
+
+// Wall and Floor Thickness
+$wall_thickness = 3;
+$floor_thickness = 3;
+
+// Platform Dimensions
+$platform_length = 60; // X dimension
+$platform_width = $outer_y - (2 * $wall_thickness); // Spans full inner width
+$platform_height = 10; // Height above inner floor
+$platform_top_z = $floor_thickness + $platform_height; // Absolute Z of top surface (should be 13)
+
+// Hole Dimensions
+$hole_diameter = 2;
+$hole_y = 0; // Specified position
+$hole_z = 30; // Absolute Z position
+$hole_extension = 0.5; // Extension past the face for clean cutting
+
+// Resolution for curved shapes
+$fn = 64;
+
+// Main Tank Body
+// Constructed as a hollow box with a floor
+difference() {
+    // Outer Box
+    cube([
+        $outer_x, 
+        $outer_y, 
+        $outer_z
+    ]);
+    
+    // Inner Void (Hollow space)
+    // The void starts at z = $floor_thickness
+    translate([
+        $wall_thickness, 
+        $wall_thickness, 
+        $floor_thickness
+    ]) {
+        cube([
+            $outer_x - (2 * $wall_thickness), 
+            $outer_y - (2 * $wall_thickness), 
+            $outer_z - $floor_thickness
+        ]);
+    }
+}
+
+// Raised Platform
+// Positioned in the middle of the tank, spanning full inner width
+// Base is at z = $floor_thickness (3), height is 10, so top is at 13.
+translate([
+    ($outer_x / 2) - ($platform_length / 2), 
+    $wall_thickness, // Aligned with inner wall start
+    $floor_thickness
+]) {
+    cube([
+        $platform_length, 
+        $platform_width, 
+        $platform_height
+    ]);
+}
+
+// Electrode Holes
+// Two holes, one at each end (X = 0 and X = $outer_x), 
+// along the Y axis at the specified Y and Z.
+// Orientation: Horizontal along X axis.
+// We use difference to cut these out of the existing solid.
+
+// Helper to create a horizontal hole
+module horizontal_hole(x_pos, y_pos, z_pos, length) {
+    translate([x_pos, y_pos, z_pos]) {
+        // Cylinder aligned with X axis
+        rotate([0, 90, 0]) {
+            cylinder(
+                h = length,
+                r = $hole_diameter / 2,
+                $fn = $fn
+            );
+        }
+    }
+}
+
+// Left End Hole
+// Must extend past the wall at x=0. 
+// Length = wall_thickness + (distance to hole center) + wall_thickness + extension
+// Actually, simpler: The hole needs to go from x = -extension to x = $outer_x + extension? 
+// No, the spec says "Through each end wall". 
+// Hole 1: At x=0. Needs to go from x = -$wall_thickness to x = $wall_thickness (to clear the wall).
+// But the tank is 120 wide. The hole is at the end.
+// Let's define the cut length to ensure it clears the wall at x=0 and extends slightly into the tank.
+// To be safe and clean, we cut a cylinder that spans from x = -$hole_extension to x = $outer_x + $hole_extension?
+// No, that would make the bounding box 122 again.
+// The cut must be contained within the tank's X bounds to keep the bounding box at 120.
+// So for the left hole at x=0: Cut from x = -$wall_thickness to x = $wall_thickness? 
+// Wait, the tank wall is at x=0 to x=3. The hole is "through the end wall".
+// So the hole starts at x = -extension (outside) and ends at x = $wall_thickness + extension (inside).
+// BUT, if we cut outside the tank, the bounding box grows.
+// The prompt says "Through each end wall". In 3D printing, we usually cut the volume we have.
+// If we cut a cylinder from x=-0.5 to x=3.5, the bounding box is still 0 to 120 because the tank is 0 to 120.
+// The cylinder at x=-0.5 is just "cutting air" which is fine, but the bounding box calculation in the report showed 122.
+// Why? Because the previous code used `h = 121` and centered it? No, it translated to 0 and 120.
+// If I translate to 0 and use h=121, it goes to 121.
+// To keep the bounding box at 120, the cut at x=0 must end at x=120? No.
+// The cut at x=0 must end at x = $wall_thickness + extension.
+// The cut at x=120 must start at x = $outer_x - $wall_thickness - extension.
+// Let's calculate the length for the left hole:
+// Start: x = -$hole_extension (to ensure clean cut through the wall face at 0)
+// End: x = $wall_thickness + $hole_extension (to ensure clean cut through the inner face)
+// Length = $wall_thickness + 2 * $hole_extension.
+// Wait, the hole is "along X". It goes through the wall.
+// The wall is 3mm thick. The hole is 2mm diameter.
+// To cut through the wall at x=0, the cylinder must span from x < 0 to x > 3.
+// To keep the bounding box at 120, the cylinder must not extend beyond x=0 or x=120 in the final union?
+// Actually, if I cut a cylinder from x=-0.5 to x=3.5, the bounding box of the *difference* operation might still be 0-120 if the tank is 0-120.
+// The previous error was likely `h = $outer_x + $hole_extension` which made the cylinder 121mm long.
+// Correct approach: Cut a cylinder that is long enough to pass through the wall, but positioned such that it doesn't expand the bounding box beyond 120.
+// Left Hole: Center at x=0. Length must cover x=-3 to x=3? No, just through the wall.
+// Let's make the cylinder length = $wall_thickness + 2 * $hole_extension.
+// Position: x = -$hole_extension.
+// This covers x = -0.5 to x = 2.5. This cuts through the wall (0 to 3).
+// Right Hole: Center

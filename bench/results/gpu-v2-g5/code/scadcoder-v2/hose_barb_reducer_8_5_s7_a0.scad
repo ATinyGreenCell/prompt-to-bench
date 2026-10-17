@@ -1,0 +1,52 @@
+// Hose-barb reducer - joins two silicone-tubing sizes with a through bore. The two barbs are
+// stacked (one above the other) on each port. NOVEL general part (a generic reducer, not any
+// one manufacturer's part).
+//
+
+tube1_d = 8;
+tube2_d = 5;
+bore    = 3;
+length1 = 20;
+length2 = 16;
+collar  = 12;
+
+$fn = 64;
+
+saw_teeth = 16;
+base_d    = 7.5;
+top_d     = 9.5;
+step_d    = 7.5;
+
+base_d2 = 6.5;
+top_d2  = 5.0;
+step_d2 = 6.5;
+
+difference() {
+    union() {
+        for (z = [0 : length1, length1 : length1 + length2]) {
+            if (z == length1) continue;
+            if (z < length1) {
+                h = 10;
+                d_min = base_d;
+                d_max = top_d;
+            } else {
+                h = 8;
+                d_min = base_d2;
+                d_max = top_d2;
+            }
+            for (t = [0 : saw_teeth]) {
+                d(t) = d_min + (d_max - d_min) * t / saw_teeth;
+                if (t == saw_teeth - 1) d(t) = step_d;
+                if (z < length1)
+                    rotate([0, 0, t * 360 / saw_teeth])
+                        translate([0, 0, z]) cylinder(h = h, d = d(t));
+                else
+                    rotate([0, 0, t * 360 / saw_teeth])
+                        translate([0, 0, z]) cylinder(h = h, d = d(t));
+            }
+        }
+        if (length1 + length2 > 0)
+            translate([0, 0, length1]) cylinder(h = 5, d = collar);
+    }
+    translate([0, 0, -1]) cylinder(h = length1 + length2 + 2, d = bore);
+}

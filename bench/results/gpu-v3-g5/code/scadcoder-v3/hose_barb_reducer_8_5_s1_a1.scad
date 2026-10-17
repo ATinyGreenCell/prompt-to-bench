@@ -1,0 +1,71 @@
+// Straight hose-barb reducer: 8 mm tubing to 5 mm tubing
+// Print orientation: upright along Z, resting on XY plane at z = 0
+
+$fn = 96;
+
+// ---- Dimensions (mm) ----
+collar_d      = 12;    // collar outer diameter
+bore_d        = 3;     // through-bore diameter
+barb_8_h      = 10;    // 8 mm barb height per stack
+barb_8_d_bot  = 7.5;   // 8 mm barb outer diameter at bottom
+barb_8_d_top  = 9.5;   // 8 mm barb outer diameter at top
+barb_5_h      = 8;     // 5 mm barb height per stack
+barb_5_d_bot  = 6.5;   // 5 mm barb outer diameter at bottom
+barb_5_d_top  = 5.0;   // 5 mm barb outer diameter at top
+eps           = 0.5;   // cutter overshoot past faces
+
+// ---- Stack offsets ----
+stack_8_gap   = 2;     // gap between the two 8 mm barbs
+stack_5_gap   = 2;     // gap between the two 5 mm barbs
+
+// ---- Part length ----
+total_z = 41;          // last feature top (barb 5, upper)
+
+// ---- Derived ----
+z0 = 0;
+z_barb8_top = z0 + barb_8_h;                    // first 8 mm barb top
+z_barb8_bot = z_barb8_top + stack_8_gap;        // second 8 mm barb bottom
+z_barb8_top2 = z_barb8_bot + barb_8_h;          // second 8 mm barb top
+z_collar_bot = z_barb8_top2 + stack_8_gap;      // collar bottom
+z_collar_top = z_collar_bot + 5;                // collar top (20..25)
+z_barb5_bot = z_collar_top + stack_5_gap;       // first 5 mm barb bottom
+z_barb5_top = z_barb5_bot + barb_5_h;           // first 5 mm barb top
+z_barb5_bot2 = z_barb5_top + stack_5_gap;       // second 5 mm barb bottom
+z_barb5_top2 = z_barb5_bot2 + barb_5_h;         // second 5 mm barb top
+
+// ---- Modules ----
+module sawtooth_barb(h, d_bot, d_top, z_min, z_max) {
+    // Barb with linear diameter growth, step back, repeated over [z_min, z_max]
+    for (z = [z_min, z_max])
+        translate([0, 0, z])
+            module barb() {
+                difference() {
+                    union() {
+                        cylinder(h = h, d1 = d_bot, d2 = d_top);
+                        translate([0, 0, z_max - eps])
+                            cylinder(h = eps, d1 = d_bot, d2 = d_bot);
+                    }
+                    translate([0, 0, z_min - eps])
+                        cylinder(h = h + 2 * eps, d = bore_d);
+                }
+            }
+}
+
+module collar(d, z_min, z_max) {
+    translate([0, 0, z_min])
+        cylinder(h = z_max - z_min + eps, d = d);
+}
+
+// ---- Assembly ----
+difference() {
+    union() {
+        sawtooth_barb(barb_8_h, barb_8_d_bot, barb_8_d_top, z0, z_barb8_top);
+        sawtooth_barb(barb_8_h, barb_8_d_bot, barb_8_d_top, z_barb8_bot, z_barb8_top2);
+        collar(collar_d, z_collar_bot, z_collar_top);
+        sawtooth_barb(barb_5_h, barb_5_d_bot, barb_5_d_top, z_barb5_bot, z_barb5_top);
+        sawtooth_barb(barb_5_h, barb_5_d_bot, barb_5_d_top, z_barb5_bot2, z_barb5_top2);
+    }
+    // Through-bore along full length
+    translate([0, 0, -eps])
+        cylinder(h = total_z + 2 * eps, d = bore_d);
+}

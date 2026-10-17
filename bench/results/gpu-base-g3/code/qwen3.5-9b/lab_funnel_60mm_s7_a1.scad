@@ -1,0 +1,93 @@
+// Lab Funnel Design
+// Units: millimetres
+// Orientation: Upright, wide opening at top, rests on XY plane at z=0
+
+// Dimensions
+$fn = 128; // High resolution for smooth curves and accurate hole sizes
+
+// Spout (Tube)
+spout_outer_diameter = 10;
+spout_inner_diameter = 6.8; // 10 - 2*1.6
+spout_length = 20;
+spout_wall_thickness = 1.6;
+
+// Cone (Funnel)
+cone_bottom_diameter = 10; // Matches spout outer diameter
+cone_top_diameter = 60;
+cone_bottom_z = 20; // Start of cone
+cone_top_z = 50;    // End of cone (rim)
+cone_wall_thickness = 1.6;
+
+// Derived Cone Dimensions
+cone_bottom_radius = cone_bottom_diameter / 2;
+cone_top_radius = cone_top_diameter / 2;
+cone_height = cone_top_z - cone_bottom_z;
+
+// Main Body Construction
+// We build the solid from the bottom up.
+// 1. The Spout: A hollow cylinder from z=0 to z=20.
+// 2. The Cone: A hollow frustum from z=20 to z=50.
+// To ensure the wall thickness is exact and the holes are round, we use difference()
+// to subtract the inner void from the outer solid.
+
+module lab_funnel() {
+    // Outer Solid
+    outer_solid = union(
+        // Spout Outer Cylinder
+        cylinder(
+            h = spout_length,
+            r = spout_outer_diameter / 2,
+            center = [0, 0, spout_length / 2]
+        ),
+        // Cone Outer Frustum
+        // Using linear_extrude with a triangle profile for the cone side
+        // Profile: Bottom radius at z=0 (relative to cone start), Top radius at z=cone_height
+        linear_extrude(height = cone_height, center = false) {
+            polygon(
+                points = [
+                    [-cone_bottom_radius, 0],
+                    [cone_bottom_radius, 0],
+                    [cone_top_radius, cone_height],
+                    [-cone_top_radius, cone_height]
+                ]
+            )
+        }
+    );
+
+    // Inner Void (to be subtracted)
+    // 1. Spout Inner Cylinder
+    inner_spout = cylinder(
+        h = spout_length,
+        r = spout_inner_diameter / 2,
+        center = [0, 0, spout_length / 2]
+    );
+
+    // 2. Cone Inner Frustum
+    // Inner bottom radius = (Outer bottom radius) - wall_thickness
+    inner_cone_bottom_radius = cone_bottom_radius - cone_wall_thickness;
+    // Inner top radius = (Outer top radius) - wall_thickness
+    inner_cone_top_radius = cone_top_radius - cone_wall_thickness;
+
+    inner_cone = linear_extrude(height = cone_height, center = false) {
+        polygon(
+            points = [
+                [-inner_cone_bottom_radius, 0],
+                [inner_cone_bottom_radius, 0],
+                [inner_cone_top_radius, cone_height],
+                [-inner_cone_top_radius, cone_height]
+            ]
+        )
+    };
+
+    // Combine inner voids
+    inner_void = union(inner_spout, inner_cone);
+
+    // Final Part: Outer Solid minus Inner Void
+    difference() {
+        translate([0, 0, 0]) outer_solid;
+        translate([0, 0, 0]) inner_void;
+    }
+}
+
+// Instantiate the part
+lab_funnel();

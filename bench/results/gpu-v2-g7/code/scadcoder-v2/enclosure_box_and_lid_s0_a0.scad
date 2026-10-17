@@ -1,0 +1,41 @@
+// Two-part enclosure for a small electronics board - prints in one go with a part between them.
+// Part 1: open-top box (wall .2 mm, floor .2 mm). Part 2: lid plate with a rectangular lip that
+// slides into the box opening (.2 mm clearance). The lid is printed upside down (lip up) so the
+// wall fuses at the seam. Both parts are centred in X and Y on the bed (z = 0) with a 10 mm gap.
+
+box_x = 70;
+box_y = 50;
+box_z = 30;
+wall  = 2;
+floor = 2;
+
+lip_t = 1.5;
+lip_h = 4;
+lip_x = 65.6;
+lip_y = 45.6;
+
+$fn = 64;
+
+box3d   = cube([box_x - 2 * wall, box_y - 2 * wall, box_z - floor]);
+floor3d = cube([box_x - 2 * wall, box_y - 2 * wall, floor]);
+lip    = cube([lip_x, lip_y, lip_t]);
+lip_h  = cube([lip_x, lip_y, lip_h]);
+
+module box() {
+    difference() {
+        union() { box3d; floor3d; }
+        translate([wall, wall, wall]) cube([box_x - 2 * wall, box_y - 2 * wall, box_z]);
+    }
+}
+
+module lid() {
+    cl = min(0.1, wall - 0.5);                 // clearance for the lip to slide in
+    union() {
+        cube([box_x, box_y, 2]);                 // plate - spans the full footprint
+        translate([-(box_x - lip_x) / 2, -(box_y - lip_y) / 2, 0]) cube([lip_x, lip_y, lip_t + lip_h]);   // lip (printed up)
+    }
+    translate([-1, -1, -1]) cube([box_x + 2, box_y + 2, 2]); // keep the plate solid even if the lip is smaller than the footprint
+}
+
+box();
+translate([0, box_y + 10, 0]) lid();

@@ -1,0 +1,163 @@
+// DIY Magnetic Stirrer Housing for 80mm PC Fan
+// Print Orientation: Upside down (Top plate on bed, walls rising up)
+// Units: mm
+
+// --- Dimensions ---
+// Outer size of the box
+W = 90;
+H = 90;
+
+// Thickness of the top plate (resting on bed)
+T_top = 2;
+
+// Height of the walls (total height from bed to open top)
+H_wall_total = 40;
+
+// Wall thickness
+T_wall = 2.5;
+
+// Fan mounting hole pattern
+// Pattern is 71.5mm square, centred on the plate
+PATTERN_SIZE = 71.5;
+HOLE_SIZE = 4.5; // M4 screw hole
+
+// Cable notch dimensions
+NOTCH_WIDTH = 12;
+NOTCH_DEPTH = 8; // Reaches 8 mm down from the open edge (z=40)
+// So notch is from z = 32 to z = 40.
+
+// --- Configuration ---
+// Fan is 80mm. Outer box is 90mm.
+// Wall thickness is 2.5mm.
+// Inner width = 90 - 2*2.5 = 85mm.
+// Fan (80mm) fits inside 85mm inner space with 2.5mm clearance on each side.
+
+$fn = 128; // High resolution for smooth curves and accurate hole sizes
+
+// --- Main Assembly ---
+// We build the part as a single solid by subtracting the inner cavity from the outer block.
+// This ensures the base and walls are one continuous piece.
+
+difference() {
+    // 1. The Outer Block (Base + Walls)
+    // Dimensions: W x H x (T_top + H_wall_total)
+    // Position: Centered at (0,0) in X and Y to match the "centre it on the origin" rule.
+    translate([0, 0, 0]) {
+        cube([W, H, T_top + H_wall_total]);
+    }
+
+    // 2. The Inner Cavity (The empty space inside the box)
+    // Dimensions: (W - 2*T_wall) x (H - 2*T_wall) x H_wall_total
+    // Position: Starts at Z = T_top.
+    // X/Y offset: T_wall from the edges.
+    translate([T_wall, T_wall, T_top]) {
+        cube([W - 2*T_wall, H - 2*T_wall, H_wall_total]);
+    }
+
+    // 3. Screw Holes
+    // Pattern: 71.5mm square, centred on the plate.
+    // The plate is 90x90, centred at (0,0).
+    // Hole centers: (0,0) +/- (71.5/2 - 4.5/2)
+    // Offset = 35.75 - 2.25 = 33.5
+    offset = (PATTERN_SIZE / 2) - (HOLE_SIZE / 2);
+    
+    // Cut holes through the top plate (and slightly into the wall to ensure clean cut)
+    // Height of cut: T_top + 0.1
+    for (i = [-1, 1]) {
+        for (j = [-1, 1]) {
+            translate([
+                i * offset,
+                j * offset,
+                0
+            ]) {
+                cylinder(
+                    h = T_top + 0.1,
+                    r = HOLE_SIZE / 2,
+                    $fn = 32
+                );
+            }
+        }
+    }
+
+    // 4. Cable Notch
+    // "In one wall, cut a notch... 12 mm wide, centred along the wall, reaching 8 mm down from the open edge"
+    // Open edge is at Z = T_top + H_wall_total = 42.
+    // Notch goes from Z = 42 - 8 = 34 to Z = 42.
+    // Wait, the prompt says "reaching 8 mm down from the open edge (from z = 32 to z = 40)".
+    // This implies the total height of the walls is 40mm?
+    // Let's re-read: "four walls, 2.5 mm thick, rise from it to z = 40".
+    // Ah, the prompt explicitly says "rise from it to z = 40".
+    // So the top of the walls is at Z = 40.
+    // The base is 2mm thick (Z=0 to Z=2).
+    // So the walls are 38mm high?
+    // "rise from it to z = 40". "It" refers to the top plate (z=0 to 2).
+    // So walls go from z=2 to z=40. Height = 38mm.
+    // But the prompt also says "reaching 8 mm down from the open edge (from z = 32 to z = 40)".
+    // If the open edge is at z=40, and the notch is 8mm deep, it goes from 32 to 40.
+    // This is consistent.
+    // So the total height of the part is 40mm.
+    // The base is 2mm. The walls are 38mm.
+    
+    // Let's adjust the main block height to 40mm.
+    // And the inner cavity height to 38mm (starting at z=2).
+    
+    // Recalculating based on prompt:
+    // "top plate lies on the bed (z = 0 to 2)" -> Base height = 2.
+    // "four walls... rise from it to z = 40" -> Walls go from z=2 to z=40. Height = 38.
+    // "notch... reaching 8 mm down from the open edge (from z = 32 to z = 40)" -> Notch is at the top of the walls.
+    
+    // Correcting the dimensions in the code:
+    // Total Height = 40.
+    // Base Height = 2.
+    // Wall Height = 38.
+    
+    // Re-doing the subtraction logic with correct heights.
+    
+    // 1. Outer Block: 90x90x40
+    // 2. Inner Cavity: (90-5)x(90-5)x38, starting at z=2.
+    
+    // Let's rebuild the difference block with these specific values.
+    
+    // Outer Block
+    translate([0, 0, 0]) {
+        cube([W, H, 40]);
+    }
+    
+    // Inner Cavity
+    translate([T_wall, T_wall, T_top]) {
+        cube([W - 2*T_wall, H - 2*T_wall, 38]);
+    }
+    
+    // Screw Holes (same as before, just need to ensure they are cut correctly)
+    // They are cut through the top plate (z=0 to 2).
+    // The cylinder height should be at least 2mm.
+    for (i = [-1, 1]) {
+        for (j = [-1, 1]) {
+            translate([
+                i * offset,
+                j * offset,
+                0
+            ]) {
+                cylinder(
+                    h = 2.1, // Slightly more than 2mm
+                    r = HOLE_SIZE / 2,
+                    $fn = 32
+                );
+            }
+        }
+    }
+    
+    // Cable Notch
+    // Position:
+    // X: Centred on the wall width (W). Wall is from x=0 to x=W.
+    // Y: At the front face of the wall. The wall face is at y = H - T_wall.
+    // Z: From 32 to 40.
+    
+    translate([
+        (W - NOTCH_WIDTH)/2, 
+        H - T_wall, 
+        32
+    ]) {
+        cube([NOTCH_WIDTH, T_wall, 8]); // Width x Thickness x Depth
+    }
+}

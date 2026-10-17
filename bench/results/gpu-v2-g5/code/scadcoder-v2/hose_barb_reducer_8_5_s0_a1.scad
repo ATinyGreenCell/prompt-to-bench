@@ -1,0 +1,42 @@
+// Hose-barb reducer - joins two silicone-tubing sizes with a through bore. NOVEL general part.
+//
+
+tube1   = 8;
+tube2   = 5;
+bore    = 3;
+barbs1  = 2;
+barbs2  = 2;
+H1      = 20;
+h1      = 10;
+d1_base = 7.5;
+d1_tip  = 9.5;
+collar  = 12;
+H2      = 16;
+h2      = 8;
+d2_base = 6.5;
+d2_tip  = 5;
+
+$fn = 64;
+
+saw(d_base, d_tip, h) {
+    linear_extrude(h) rotate_extrude() {
+        resize([d_base, d_base, 0], center = true) square(h);
+        translate([0, 0, h * 0.25]) resize([d_tip - d_base, d_tip - d_base, 0], center = true) square(h * 0.5);
+        translate([0, 0, h * 0.75]) resize([d_base, d_base, 0], center = true) square(h * 0.25);
+    }
+}
+
+barb(d_base, d_tip, h) {
+    saw(d_base, d_tip, h);
+    translate([0, 0, -1]) cylinder(h = h + 2, d = d_base);
+}
+
+difference() {
+    union() {
+        for (i = [0 : barbs1 - 1]) rotate([0, 0, i * 360 / barbs1]) translate([0, 0, H1 / 2 - h1 / 2]) barb(d1_base, d1_tip, h1);
+        translate([0, 0, H1 / 2 - h1 / 2]) cylinder(h = h1 + 1, d = d1_base);                 // centers the two barbs
+        for (i = [0 : barbs2 - 1]) rotate([0, 0, i * 360 / barbs2]) translate([0, 0, H1 + H2 / 2 - h2 / 2]) barb(d2_base, d2_tip, h2);
+        translate([0, 0, H1 + H2 / 2 - h2 / 2]) cylinder(h = h2 + 1, d = d2_base);
+    }
+    translate([0, 0, -1]) cylinder(h = H1 + H2 + 2, d = bore);
+}

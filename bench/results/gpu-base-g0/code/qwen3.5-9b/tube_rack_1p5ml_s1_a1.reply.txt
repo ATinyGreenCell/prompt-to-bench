@@ -1,0 +1,99 @@
+```openscad
+// Bench Rack for 1.5 mL Microcentrifuge Tubes
+// Designed for FDM 3D printing.
+// Orientation: Rests on XY plane at Z=0, builds upward (+Z).
+// Centred on origin in X and Y.
+
+// --- Dimensions (mm) ---
+// Block dimensions
+$block_length = 106;
+$block_width  = 72;
+$block_height = 30;
+
+// Hole grid configuration
+$num_rows = 4;   // Rows along Y
+$num_cols = 6;   // Columns along X
+$hole_cc_x = 16; // Centre-to-centre spacing X
+$hole_cc_y = 16; // Centre-to-centre spacing Y
+
+// Hole dimensions
+$hole_diameter = 11.2;
+$hole_depth    = 25; // Depth of the hole (open top, closed bottom)
+$floor_height  = 5;  // Solid floor thickness at bottom
+
+// --- Derived Variables ---
+// Calculate grid start positions to center the grid on the block
+// Total span X = (num_cols - 1) * spacing
+// Start X = (Block Length - Total Span X) / 2
+$total_span_x = ($num_cols - 1) * $hole_cc_x;
+$start_x = ($block_length - $total_span_x) / 2;
+
+$total_span_y = ($num_rows - 1) * $hole_cc_y;
+$start_y = ($block_width - $total_span_y) / 2;
+
+// --- Settings ---
+$fn = 64; // Smooth curves for holes
+
+// --- Main Block ---
+difference() {
+    // 1. Create the solid rectangular block
+    // Dimensions: Length (X), Width (Y), Height (Z)
+    block = cube([
+        $block_length,
+        $block_width,
+        $block_height
+    ]);
+
+    // 2. Create holes
+    // Holes are cylinders. 
+    // Top is open (at Z = block_height).
+    // Bottom is closed (at Z = block_height - hole_depth).
+    // We cut from the top down to the floor level.
+    
+    hole_floor_z = $block_height - $hole_depth;
+    
+    for (r = [0 : $num_rows - 1]) {
+        for (c = [0 : $num_cols - 1]) {
+            // Calculate current hole center coordinates
+            current_x = start_x + c * $hole_cc_x;
+            current_y = start_y + r * $hole_cc_y;
+            
+            // Cylinder parameters
+            // Radius
+            r_hole = $hole_diameter / 2;
+            // Height of the cut (from top surface down to floor)
+            h_cut = $hole_depth;
+            
+            // Translate to hole center
+            translate([current_x, current_y, $block_height]) {
+                cylinder(
+                    h = h_cut,
+                    r = r_hole,
+                    $fn = $fn
+                );
+            }
+        }
+    }
+    
+    // Union the block and all holes to ensure clean subtraction
+    union() {
+        block;
+        for (r = [0 : $num_rows - 1]) {
+            for (c = [0 : $num_cols - 1]) {
+                current_x = start_x + c * $hole_cc_x;
+                current_y = start_y + r * $hole_cc_y;
+                r_hole = $hole_diameter / 2;
+                h_cut = $hole_depth;
+                
+                translate([current_x, current_y, $block_height]) {
+                    cylinder(
+                        h = h_cut,
+                        r = r_hole,
+                        $fn = $fn
+                    );
+                }
+            }
+        }
+    }
+}
+```

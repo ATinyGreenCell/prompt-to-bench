@@ -1,0 +1,141 @@
+$fn = 128;
+
+// --- Dimensions ---
+// Main bore diameter (constant through the part)
+BORE_DIAMETER = 3.0;
+
+// Section 1: 8mm Tubing Barbs (z = 0 to 20)
+SECTION1_START_Z = 0;
+SECTION1_END_Z = 20;
+BARB1_HEIGHT = 10;
+BARB1_BOTTOM_OD = 7.5;
+BARB1_TOP_OD = 9.5;
+BARB1_STEP_OD = 7.5; // Diameter after the sawtooth peak
+
+// Section 2: Collar (z = 20 to 25)
+COLLAR_START_Z = 20;
+COLLAR_END_Z = 25;
+COLLAR_DIAMETER = 12.0;
+
+// Section 3: 5mm Tubing Barbs (z = 25 to 41)
+SECTION3_START_Z = 25;
+SECTION3_END_Z = 41;
+BARB2_HEIGHT = 8;
+BARB2_BOTTOM_OD = 6.5;
+BARB2_TOP_OD = 5.0;
+BARB2_STEP_OD = 6.5; // Diameter after the sawtooth peak
+
+// --- Helper Functions ---
+
+// Function to create a single barb profile with a sawtooth step
+// Returns a polygon path for linear_extrude
+function create_barb_profile(z_start, z_end, bottom_od, top_od, step_od) = 
+    let(
+        h = z_end - z_start,
+        mid_z = z_start + h/2,
+        // Calculate radii
+        r_bottom = bottom_od / 2,
+        r_top = top_od / 2,
+        r_step = step_od / 2,
+        // Calculate slope for linear growth
+        slope = (r_top - r_bottom) / h,
+        // Define points: Bottom, Mid (peak), Top, Step-down, Back to Bottom
+        p1 = [0, r_bottom],
+        p2 = [h/2, r_top],
+        p3 = [h, r_top],
+        p4 = [h, r_step],
+        p5 = [h, r_bottom]
+    )
+    [p1, p2, p3, p4, p5];
+
+// Function to create the main body profile (cylinder with central hole)
+function create_body_profile(z_start, z_end, od, id) = 
+    let(
+        h = z_end - z_start,
+        r_out = od / 2,
+        r_in = id / 2,
+        // Outer wall
+        p1 = [0, r_out],
+        p2 = [h, r_out],
+        // Inner wall (hole)
+        p3 = [h, r_in],
+        p4 = [0, r_in]
+    )
+    [p1, p2, p3, p4];
+
+// --- Main Construction ---
+
+difference() {
+    // 1. Create the Main Body (Outer Shell)
+    // We build the body in segments to handle the changing diameters
+    
+    // Segment 1: Barbs 1 (0 to 20)
+    // Since the profile changes at mid-height, we split this segment into two halves
+    // Lower half: 0 to 10 (Linear growth)
+    // Upper half: 10 to 20 (Linear growth then step)
+    
+    // Actually, the prompt says: "grows linearly from 7.5 at bottom to 9.5 at top, then steps straight back".
+    // This implies the growth happens over the full 10mm, reaching 9.5 at z=10, then stepping down at z=10?
+    // Or does it grow over the whole 10mm to 9.5, then step? 
+    // "grows linearly from 7.5 mm at its bottom to 9.5 mm at its top" -> At z=10, OD=9.5.
+    // "then steps straight back to 7.5 mm" -> At z=10, it steps to 7.5.
+    // So the profile is: 0->10 (7.5 to 9.5), 10->20 (9.5 to 7.5).
+    
+    // Let's refine the profile logic based on "stacked" barbs. Usually stacked means two barbs on top of each other.
+    // "From z = 0 to z = 20: two identical barbs ... stacked".
+    // This implies the total height 20 is composed of two barbs of 10mm each.
+    // Barb 1: z=0 to 10. Barb 2: z=10 to 20.
+    // Both have the same profile: Grow 7.5->9.5 over their height, then step back to 7.5 at the top.
+    
+    // Let's construct the outer shell by extruding the specific profiles for each 10mm segment.
+    
+    // Segment 1a: z=0 to 10 (Barb 1)
+    // Profile: 0->10 (7.5->9.5), 10->10 (9.5->7.5 step)
+    // Wait, if it steps at the top, the top face is 7.5.
+    // Let's define the profile points explicitly for z=0 to 10.
+    // z=0, r=3.75; z=10, r=4.75 (peak); z=10, r=3.75 (step).
+    // This creates a shape that is 7.5 wide at bottom, widens to 9.5 at z=10, then immediately becomes 7.5 at z=10.
+    
+    // To make this smooth in OpenSCAD, we can use a polygon with a vertical line at the step.
+    
+    // Helper to generate polygon for a segment
+    // We will manually define the points for the 3 sections to ensure accuracy.
+    
+    // Section 1: z=0 to 20
+    // Split into two 10mm parts.
+    
+    // Part 1.1: z=0 to 10
+    // Bottom: 7.5, Top: 9.5 (peak), Top-Step: 7.5
+    // Points: (0, 3.75), (10, 4.75), (10, 3.75)
+    p1_1 = [0, 3.75];
+    p1_2 = [10, 4.75];
+    p1_3 = [10, 3.75];
+    // Close loop for outer
+    p1_4 = [0, 3.75];
+    
+    // Part 1.2: z=10 to 20
+    // Bottom: 7.5, Top: 9.5 (peak), Top-Step: 7.5
+    // Points relative to z=10: (0, 3.75), (10, 4.75), (10, 3.75)
+    // Absolute z: 10 to 20
+    p1_5 = [0, 3.75];
+    p1_6 = [10, 4.75];
+    p1_7 = [10, 3.75];
+    p1_8 = [0, 3.75];
+    
+    // Section 2: z=20 to 25 (Collar)
+    // Constant OD 12.0
+    p2_1 = [0, 6.0];
+    p2_2 = [5, 6.0];
+    p2_3 = [5, 6.0]; // Step down? No, just a cylinder.
+    // Actually, the collar connects to the barbs. 
+    // Barb 1 ends at z=20 with OD 7.5. Collar starts at z=20 with OD 12.
+    // So at z=20, there is a step up from 7.5 to 12.
+    p2_4 = [0, 6.0];
+    
+    // Section 3: z=25 to 41 (Barbs 2)
+    // Two stacked barbs, 8mm each. Total 16mm.
+    // Barb 3: z=25 to 33. Barb 4: z=33 to 41.
+    // Profile: Grow 6.5->5.0 over height, then step back to 6.5.
+    
+    // Part 3.1: z=25 to 33
+    // Bottom: 6.5 (r=3.25), Top: 5.0 (r=2.5), Step: 6.5 (r=3.2

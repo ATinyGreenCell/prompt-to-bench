@@ -1,0 +1,103 @@
+// Buffer Tank for Mini Horizontal Gel Electrophoresis
+// Units: millimetres
+
+// Outer Dimensions
+$w_outer = 120; // X width
+$d_outer = 70;  // Y depth
+$h_outer = 40;  // Z height
+
+// Wall and Floor Thickness
+$w_thick = 3;   // Wall thickness
+$f_thick = 3;   // Floor thickness
+
+// Platform Dimensions
+$p_len = 60;    // Platform length (X)
+$p_width = $d_outer - 2*$w_thick; // Platform width (Y) - spans full inner width
+$p_height = 10; // Platform height above inner floor
+$p_z_base = $f_thick + $p_height; // Z position of platform top
+
+// Electrode Hole Dimensions
+$h_dia = 2;     // Hole diameter
+$h_y = 0;       // Hole Y position
+$h_z = 30;      // Hole Z position
+
+// Configuration
+$fn = 128;      // Resolution for curved shapes
+
+// Derived Dimensions
+$w_inner = $w_outer - 2*$w_thick;
+$d_inner = $d_outer - 2*$w_thick;
+$h_inner = $h_outer - $f_thick;
+
+module buffer_tank() {
+    // 1. Main Tank Body (Open Top)
+    // We build the solid block and then subtract the top opening.
+    // To ensure clean cuts, we extend the cut slightly.
+    
+    // Base block
+    translate([0, 0, 0])
+        cube([
+            $w_outer, 
+            $d_outer, 
+            $h_outer - $w_thick // Top wall is open, so height is floor + side walls
+        ]);
+    
+    // Cut out the top opening (Open Top)
+    // The opening is the inner dimensions. We extend Z slightly to ensure clean cut.
+    translate([0, 0, $h_outer - $w_thick + 0.1])
+        cube([
+            $w_inner, 
+            $d_inner, 
+            1 // Just a thin slice to define the plane
+        ]);
+    
+    // 2. Central Raised Platform
+    // Position: Centred in X, spans full inner Y, sits on inner floor.
+    // Inner floor Z = $f_thick.
+    // Platform top Z = $f_thick + $p_height = $p_z_base.
+    
+    translate([
+        ($w_outer - $p_len) / 2, // Centre in X
+        0,                        // Centre in Y (spans full width)
+        $f_thick                  // Sit on inner floor
+    ])
+        cube([
+            $p_len, 
+            $p_width, 
+            $p_height
+        ]);
+    
+    // 3. Electrode Holes
+    // Two holes: one at each end (X = +/- $w_inner/2), 
+    // along X axis, at Y = 0, Z = $h_z.
+    
+    $hole_z_start = $h_z - $h_dia/2;
+    $hole_z_end = $h_z + $h_dia/2;
+    
+    // Left Hole
+    translate([
+        -$w_inner/2 - 0.1, // Extend past face
+        $h_y, 
+        $hole_z_start
+    ])
+        cylinder(
+            h = $w_inner + 0.2, // Extend through tank
+            r = $h_dia/2,
+            $fn = $fn
+        );
+    
+    // Right Hole
+    translate([
+        $w_inner/2 + 0.1, // Extend past face
+        $h_y, 
+        $hole_z_start
+    ])
+        cylinder(
+            h = $w_inner + 0.2, // Extend through tank
+            r = $h_dia/2,
+            $fn = $fn
+        );
+}
+
+// Render the part
+buffer_tank();

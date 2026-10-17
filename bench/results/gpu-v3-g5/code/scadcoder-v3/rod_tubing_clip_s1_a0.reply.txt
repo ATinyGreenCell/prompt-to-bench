@@ -1,0 +1,47 @@
+```openscad
+// Snap-on clip: holds a piece of tubing next to a 12.7 mm lab stand rod
+// Printed flat: 2-D profile in XY, extruded 10 mm in +Z
+
+$fn = 128;
+
+// ---- Dimensions (mm) ----
+rod_d      = 12.7;              // rod ring inner diameter
+rod_wall   = 3;                 // rod ring wall thickness
+rod_od     = rod_d + 2*rod_wall; // rod ring outer diameter (18.7)
+bridge_w   = 6;                 // bridge width in X (x = 8 to 12)
+bridge_y   = 6;                 // bridge width in Y
+tub_d      = 6;                 // tubing ring inner diameter
+tub_wall   = 2;                 // tubing ring wall thickness
+tub_od     = tub_d + 2*tub_wall;   // tubing ring outer diameter (10)
+tub_x      = 15;                // tubing ring centre X
+clip_h     = 10;                // extrusion height (Z)
+
+// ---- Cutting openings ----
+rod_cut_w  = 10;                // opening width in Y (-5 < y < 5)
+tub_cut_w  = 4.5;               // opening width in Y (-2.25 < y < 2.25)
+eps        = 0.5;               // overshoot for clean cuts
+
+// ---- 2-D profile ----
+module clip_profile() {
+    difference() {
+        union() {
+            // Rod ring
+            circle(d = rod_od);
+            // Tubing ring
+            translate([tub_x, 0]) circle(d = tub_od);
+            // Solid bridge between the rings
+            translate([8, -bridge_y/2]) square([bridge_w, bridge_y]);
+        }
+        // Opening in the rod ring (on the -X side)
+        translate([-(rod_od/2 + eps), -rod_cut_w/2])
+            square([rod_od/2 + eps + 0.01, rod_cut_w]);
+        // Opening in the tubing ring (on the +X side)
+        translate([tub_x + tub_od/2 + eps, -tub_cut_w/2])
+            square([tub_od/2 + eps + 0.01, tub_cut_w]);
+    }
+}
+
+// ---- Part ----
+linear_extrude(height = clip_h)
+    clip_profile();
+```

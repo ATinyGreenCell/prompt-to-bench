@@ -1,0 +1,125 @@
+```openscad
+// Snap-on Clip for Lab Stand Rod and Tubing
+// Orientation: Flat on XY plane, building up in +Z.
+// Units: Millimetres.
+
+// --- Dimensions ---
+// Rod Ring
+$rod_id = 12.7;      // Inner diameter (mm)
+$rod_wall = 3.0;     // Wall thickness (mm)
+$rod_od = $rod_id + 2 * $rod_wall; // Outer diameter (mm)
+$rod_z = 10.0;       // Height of extrusion (mm)
+
+// Tubing Ring
+$tube_id = 6.0;      // Inner diameter (mm)
+$tube_wall = 2.0;    // Wall thickness (mm)
+$tube_od = $tube_id + 2 * $tube_wall; // Outer diameter (mm)
+$tube_x = 15.0;      // Center X position (mm)
+
+// Bridge
+$bridge_width = 6.0; // Width in Y (mm)
+$bridge_x_start = 8.0; // Start X (mm)
+$bridge_x_end = 12.0;  // End X (mm)
+
+// Cutouts (Openings)
+// Rod Ring Cutout: -X side, width 10mm, centered at y=0
+$rod_cut_width = 10.0;
+$rod_cut_y_half = $rod_cut_width / 2;
+
+// Tubing Ring Cutout: +X side, width 4.5mm, centered at y=0
+$tube_cut_width = 4.5;
+$tube_cut_y_half = $tube_cut_width / 2;
+
+// --- Geometry ---
+
+// We will build the part by creating a large bounding box and subtracting the voids.
+// This ensures a single solid object.
+
+difference() {
+    // 1. Main Bounding Box
+    // Extends far enough to cover all features + cutout extensions
+    $max_x = $tube_x + $tube_od/2 + 2;
+    $max_y = max($rod_od/2, $tube_od/2) + 2;
+    $max_z = $rod_z + 1;
+    
+    cube([ $max_x, $max_y, $max_z ]);
+
+    // 2. Rod Ring Void (The empty space inside the ring and the cutout)
+    // The ring is centered at (0,0).
+    // Void 1: Inner circle of the rod ring
+    cylinder(h = $rod_z + 1, d = $rod_id, center = [0,0,0]);
+    
+    // Void 2: The cutout on the -X side.
+    // Defined as x < 0, -5 < y < 5.
+    // We subtract a rectangle that covers this area.
+    translate([-5.01, -5.01, 0.01]) 
+        cube([5.01, 10.02, $rod_z + 1]);
+
+    // 3. Tubing Ring Void
+    // The ring is centered at ($tube_x, 0).
+    // Void 1: Inner circle of the tubing ring
+    translate([$tube_x, 0, 0]) 
+        cylinder(h = $rod_z + 1, d = $tube_id, center = [0,0,0]);
+    
+    // Void 2: The cutout on the +X side.
+    // Defined as x > $tube_x, -2.25 < y < 2.25.
+    translate([$tube_x + 0.01, -2.26, 0.01]) 
+        cube([4.51, 4.52, $rod_z + 1]);
+
+    // 4. Bridge Void
+    // The bridge is a solid block at x=8 to 12, y=-3 to 3.
+    // We must subtract the space *around* this block to leave the bridge.
+    // However, since we are subtracting voids from a big box, we need to subtract the 
+    // "negative" of the bridge.
+    // The bridge occupies: x in [8, 12], y in [-3, 3], z in [0, 10].
+    // To leave this solid, we do NOT subtract this region.
+    // Instead, we subtract the regions that are NOT the bridge but are inside the bounding box?
+    // No, that's complex.
+    
+    // Simpler approach: Construct the positive geometry by unioning the three parts.
+    // This is often more robust for complex shapes than subtracting voids from a box.
+}
+
+// Let's restart the logic with a Union of positive parts, which is cleaner.
+// We define the three parts as solids with their holes/cutouts already removed.
+
+union() {
+    // Part A: Rod Ring
+    // Centered at (0,0).
+    // Solid ring with inner hole and -X cutout.
+    difference() {
+        // Outer cylinder
+        cylinder(h = $rod_z, d = $rod_od, center = [0,0,0]);
+        
+        // Inner hole
+        cylinder(h = $rod_z + 0.1, d = $rod_id, center = [0,0,0]);
+        
+        // Cutout on -X side
+        translate([-5.01, -5.01, 0.01]) 
+            cube([5.01, 10.02, $rod_z + 0.1]);
+    }
+
+    // Part B: Tubing Ring
+    // Centered at ($tube_x, 0).
+    // Solid ring with inner hole and +X cutout.
+    translate([$tube_x, 0, 0]) {
+        difference() {
+            // Outer cylinder
+            cylinder(h = $rod_z, d = $tube_od, center = [0,0,0]);
+            
+            // Inner hole
+            cylinder(h = $rod_z + 0.1, d = $tube_id, center = [0,0,0]);
+            
+            // Cutout on +X side
+            translate([0.01, -2.26, 0.01]) 
+                cube([4.51, 4.52, $rod_z + 0.1]);
+        }
+    }
+
+    // Part C: Solid Bridge
+    // Joins x=8 to x=12, width 6mm in Y.
+    translate([$bridge_x_start, -($bridge_width/2), 0]) {
+        cube([$bridge_x_end - $bridge_x_start, $bridge_width, $rod_z]);
+    }
+}
+```

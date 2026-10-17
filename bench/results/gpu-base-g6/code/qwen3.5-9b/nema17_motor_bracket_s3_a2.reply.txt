@@ -1,0 +1,145 @@
+```openscad
+$fn = 128;
+
+// --- Base Plate Dimensions ---
+// X range: -25 to 25 (Width 50)
+// Y range: 0 to 45 (Length 45)
+// Z thickness: 5
+BASE_X_MIN = -25;
+BASE_X_MAX = 25;
+BASE_Y_MIN = 0;
+BASE_Y_MAX = 45;
+BASE_Z_THICK = 5;
+
+// Base Mounting Holes (M4)
+// Position: x = -17, y = 30 and x = 17, y = 30
+// Diameter: 4.5 mm
+BASE_HOLE_X1 = -17;
+BASE_HOLE_Y1 = 30;
+BASE_HOLE_X2 = 17;
+BASE_HOLE_Y2 = 30;
+BASE_HOLE_DIA = 4.5;
+
+// --- Vertical Motor Plate Dimensions ---
+// X range: -25 to 25 (Width 50)
+// Y range: 0 to 5 (Thickness 5)
+// Z height: 50
+// Stands on the back edge of the base (y=0 to y=5)
+MOTOR_X_MIN = -25;
+MOTOR_X_MAX = 25;
+MOTOR_Y_MIN = 0;
+MOTOR_Y_MAX = 5;
+MOTOR_Z_HEIGHT = 50;
+
+// Motor Boss Hole
+// Diameter: 23 mm
+// Centre: x = 0, z = 28 (along the plate)
+// Direction: Along Y axis
+MOTOR_BOSS_DIA = 23;
+MOTOR_BOSS_X = 0;
+MOTOR_BOSS_Z = 28;
+
+// Motor Screw Holes (M3)
+// Diameter: 3.4 mm
+// Pattern: 31 mm square, centred on boss hole (x=0, z=28)
+// 4 holes total
+MOTOR_SCREW_DIA = 3.4;
+MOTOR_SCREW_PATTERN_SIZE = 31;
+
+// --- Gusset Dimensions ---
+// Thickness: 5 mm (flush with plates)
+// Location: Left (x=-25 to -20) and Right (x=20 to 25)
+// Shape: Right triangle in YZ plane
+// Legs: 20 mm along +Y and 20 mm along +Z
+// Right-angle corner: y = 5, z = 5
+GUSSET_THICK = 5;
+GUSSET_Y_START = 5;
+GUSSET_Z_START = 5;
+GUSSET_LEG_LEN = 20;
+GUSSET_LEFT_X_MIN = -25;
+GUSSET_LEFT_X_MAX = -20;
+GUSSET_RIGHT_X_MIN = 20;
+GUSSET_RIGHT_X_MAX = 25;
+
+// --- Construction ---
+
+module base_plate() {
+    // Main block
+    translate([BASE_X_MIN, BASE_Y_MIN, 0])
+        cube([BASE_X_MAX - BASE_X_MIN, BASE_Y_MAX - BASE_Y_MIN, BASE_Z_THICK]);
+    
+    // Cut M4 holes
+    // Extend slightly past faces to ensure clean cut
+    translate([BASE_HOLE_X1, BASE_HOLE_Y1, -0.5])
+        cylinder(h = BASE_Z_THICK + 1, d = BASE_HOLE_DIA);
+    
+    translate([BASE_HOLE_X2, BASE_HOLE_Y2, -0.5])
+        cylinder(h = BASE_Z_THICK + 1, d = BASE_HOLE_DIA);
+}
+
+module motor_plate() {
+    // Main block
+    translate([MOTOR_X_MIN, MOTOR_Y_MIN, 0])
+        cube([MOTOR_X_MAX - MOTOR_X_MIN, MOTOR_Y_MAX - MOTOR_Y_MIN, MOTOR_Z_HEIGHT]);
+    
+    // Cut Boss Hole (Along Y)
+    // Cylinder axis is Y, so we rotate or use cylinder with specific orientation
+    // Cylinder default axis is Z. We need to rotate it 90 deg around X to align with Y.
+    translate([MOTOR_BOSS_X, 0, MOTOR_BOSS_Z])
+        rotate([90, 0, 0])
+            cylinder(h = MOTOR_Y_MAX - MOTOR_Y_MIN + 1, d = MOTOR_BOSS_DIA);
+    
+    // Cut Screw Holes (4 holes on 31mm square)
+    // Pattern centered at x=0, z=28
+    // Offsets: +/- 15.5 mm
+    screw_offset = MOTOR_SCREW_PATTERN_SIZE / 2;
+    
+    for (i = [-1, 1]) {
+        for (j = [-1, 1]) {
+            translate([
+                MOTOR_BOSS_X + (i * screw_offset),
+                0,
+                MOTOR_BOSS_Z + (j * screw_offset)
+            ])
+                cylinder(h = MOTOR_Y_MAX - MOTOR_Y_MIN + 1, d = MOTOR_SCREW_DIA);
+        }
+    }
+}
+
+module gusset() {
+    // Right triangle in YZ plane
+    // Right angle at (y=5, z=5)
+    // Legs extend +Y and +Z
+    // Thickness is X direction
+    
+    // We will use polygon with linear_extrude for the thickness.
+    // To extrude along X, we rotate the polygon 90 deg around Y so the extrusion axis (Z) aligns with X.
+    
+    // Left Gusset (X: -25 to -20)
+    translate([GUSSET_LEFT_X_MIN, GUSSET_Y_START, GUSSET_Z_START])
+        rotate([0, 90, 0])
+            linear_extrude(height = GUSSET_LEFT_X_MAX - GUSSET_LEFT_X_MIN, center = true)
+                polygon(points = [
+                    [0, 0],       // Corner (y=5, z=5)
+                    [GUSSET_LEG_LEN, 0], // End of Y leg (y=25, z=5)
+                    [0, GUSSET_LEG_LEN]  // End of Z leg (y=5, z=25)
+                ]);
+    
+    // Right Gusset (X: 20 to 25)
+    translate([GUSSET_RIGHT_X_MIN, GUSSET_Y_START, GUSSET_Z_START])
+        rotate([0, 90, 0])
+            linear_extrude(height = GUSSET_RIGHT_X_MAX - GUSSET_RIGHT_X_MIN, center = true)
+                polygon(points = [
+                    [0, 0],       // Corner (y=5, z=5)
+                    [GUSSET_LEG_LEN, 0], // End of Y leg (y=25, z=5)
+                    [0, GUSSET_LEG_LEN]  // End of Z leg (y=5, z=25)
+                ]);
+}
+
+// --- Final Assembly ---
+union() {
+    base_plate();
+    motor_plate();
+    gusset();
+}
+```

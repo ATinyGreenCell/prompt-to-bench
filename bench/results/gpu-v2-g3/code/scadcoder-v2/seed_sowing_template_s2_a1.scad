@@ -1,0 +1,23 @@
+// Petri dish sowing template - a flat disc with a regular grid of through-holes for seeding
+// or small fasteners, with an orientation notch in the rim. NOVEL general part.
+//
+
+dish_d = 90;
+t      = 2;
+holes  = [7, 7];
+hole_d = 3;
+pitch  = 9;
+notch  = [10, 4];
+
+$fn = 72;
+
+flange = dish_d - 2;
+
+difference() {
+    cylinder(h = t, d = flange);
+    translate([0, 0, -1])
+        for (i = [0 : holes[0] - 1], j = [0 : holes[1] - 1])
+            translate([i * pitch - pitch / 2, j * pitch - pitch / 2, 0])
+                cylinder(h = t + 2, d = hole_d);
+    translate([flange / 2, 0, -1]) cube([notch[0], notch[1], t + 2]);
+}

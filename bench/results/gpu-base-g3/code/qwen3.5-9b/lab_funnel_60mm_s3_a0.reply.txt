@@ -1,0 +1,91 @@
+```openscad
+// Lab Funnel Design
+// Units: millimetres
+// Orientation: Upright, wide opening at top, resting on XY plane at z=0.
+
+// Dimensions
+$fn = 128; // High resolution for smooth curves
+
+// Spout (Tube)
+spout_outer_diameter = 10;
+spout_inner_diameter = 6.8; // 10 - 2*1.6
+spout_length = 20;
+spout_wall_thickness = 1.6;
+
+// Cone (Funnel Body)
+cone_bottom_diameter = 10; // Matches spout outer diameter
+cone_top_diameter = 60;
+cone_bottom_height = 20;   // From z=0 to z=20
+cone_top_height = 50;      // From z=20 to z=50
+
+// Wall Thickness (applies to both sections)
+wall_thickness = 1.6;
+
+// Helper function to create a hollow cylinder (spout)
+module hollow_cylinder(outer_d, inner_d, height) {
+    difference() {
+        cylinder(h = height, d = outer_d, $fn = $fn);
+        cylinder(h = height, d = inner_d, $fn = $fn);
+    }
+}
+
+// Helper function to create a hollow cone
+module hollow_cone(bottom_d, top_d, height) {
+    difference() {
+        // Outer Cone
+        // Using linear_extrude with a triangle profile rotated 90 deg
+        // Profile: Triangle with base = bottom_d, height = height
+        // We need to offset the profile by wall_thickness to get the inner cone.
+        
+        // Calculate inner dimensions
+        inner_bottom_d = bottom_d - 2 * wall_thickness;
+        inner_top_d = top_d - 2 * wall_thickness;
+        
+        // Create outer cone
+        linear_extrude(height = height, center = true) {
+            rotate(90)
+            triangle([bottom_d/2, 0], [0, height], [-bottom_d/2, 0]);
+        }
+        
+        // Create inner cone (negative extrusion to cut out)
+        linear_extrude(height = height, center = true) {
+            rotate(90)
+            triangle([inner_bottom_d/2, 0], [0, height], [-inner_bottom_d/2, 0]);
+        }
+    }
+}
+
+// Main Assembly
+module lab_funnel() {
+    // The part rests on z=0.
+    // Spout runs from z=0 to z=20.
+    // Cone runs from z=20 to z=50.
+    
+    union() {
+        // 1. The Spout (Tube)
+        // Positioned at z=0 to z=20
+        translate([0, 0, 0]) {
+            hollow_cylinder(
+                outer_d = spout_outer_diameter,
+                inner_d = spout_inner_diameter,
+                height = spout_length
+            );
+        }
+        
+        // 2. The Cone
+        // Positioned at z=20 to z=50
+        // Bottom diameter matches spout outer diameter (10mm)
+        // Top diameter is 60mm
+        translate([0, 0, 20]) {
+            hollow_cone(
+                bottom_d = cone_bottom_diameter,
+                top_d = cone_top_diameter,
+                height = cone_top_height - cone_bottom_height
+            );
+        }
+    }
+}
+
+// Render the part
+lab_funnel();
+```

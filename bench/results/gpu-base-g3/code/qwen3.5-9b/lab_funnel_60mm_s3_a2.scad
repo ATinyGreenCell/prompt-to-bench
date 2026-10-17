@@ -1,0 +1,101 @@
+// Lab Funnel Design - Corrected
+// Units: millimetres
+// Orientation: Upright, wide opening at top, resting on XY plane at z=0.
+
+// Dimensions
+$fn = 128; // High resolution for smooth curves
+
+// Spout (Tube)
+spout_outer_diameter = 10;
+spout_inner_diameter = 6.8; // 10 - 2*1.6
+spout_length = 20;
+spout_wall_thickness = 1.6;
+
+// Cone (Funnel Body)
+cone_bottom_diameter = 10; // Matches spout outer diameter
+cone_top_diameter = 60;
+cone_total_height = 50;     // Total height from z=0 to z=50
+cone_wall_thickness = 1.6;
+
+// Helper function to create a hollow cylinder using rotate_extrude
+module hollow_cylinder(outer_d, inner_d, height) {
+    difference() {
+        // Outer shell
+        rotate_extrude(angle = 360, $fn = $fn) {
+            square([outer_d/2, height], center = true);
+        }
+        
+        // Inner hole
+        rotate_extrude(angle = 360, $fn = $fn) {
+            square([inner_d/2, height], center = true);
+        }
+    }
+}
+
+// Helper function to create a hollow cone using rotate_extrude
+// bottom_d: diameter at the bottom of the cone section
+// top_d: diameter at the top of the cone section
+// height: height of the cone section
+module hollow_cone(bottom_d, top_d, height) {
+    difference() {
+        // Outer Cone
+        // Profile: A rectangle representing the wall thickness, rotated around the Y axis.
+        // The rectangle is defined by x (radius) and y (height).
+        // We need to offset the profile by wall_thickness to create the inner void.
+        
+        // Calculate inner dimensions for the profile
+        inner_bottom_radius = (bottom_d / 2) - cone_wall_thickness;
+        inner_top_radius = (top_d / 2) - cone_wall_thickness;
+        
+        // Create Outer Cone
+        rotate_extrude(angle = 360, $fn = $fn) {
+            // Profile points: (x, y)
+            // Start at bottom radius, go up to top radius
+            polygon(points = [
+                [bottom_d/2, 0],
+                [top_d/2, height],
+                [-top_d/2, height],
+                [-bottom_d/2, 0]
+            ]);
+        }
+        
+        // Create Inner Cone (Cutout)
+        rotate_extrude(angle = 360, $fn = $fn) {
+            polygon(points = [
+                [inner_bottom_radius, 0],
+                [inner_top_radius, height],
+                [-inner_top_radius, height],
+                [-inner_bottom_radius, 0]
+            ]);
+        }
+    }
+}
+
+// Main Assembly
+module lab_funnel() {
+    union() {
+        // 1. The Spout (Tube)
+        // Positioned at z=0 to z=20
+        translate([0, 0, 0]) {
+            hollow_cylinder(
+                outer_d = spout_outer_diameter,
+                inner_d = spout_inner_diameter,
+                height = spout_length
+            );
+        }
+        
+        // 2. The Cone
+        // Positioned at z=20 to z=50
+        // Height of the cone section is 30mm (50 - 20)
+        translate([0, 0, 20]) {
+            hollow_cone(
+                bottom_d = cone_bottom_diameter,
+                top_d = cone_top_diameter,
+                height = cone_total_height - spout_length
+            );
+        }
+    }
+}
+
+// Render the part
+lab_funnel();

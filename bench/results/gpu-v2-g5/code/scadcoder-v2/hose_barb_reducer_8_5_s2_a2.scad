@@ -1,0 +1,46 @@
+// Hose-barb reducer - joins two silicone-tubing sizes with a through bore. The two barbs are
+// stacked (one above the other) on each port. NOVEL general part (a generic reducer, not any
+// one manufacturer's part).
+//
+
+tube1_d = 8;
+tube2_d = 5;
+bore    = 3;
+length1 = 20;
+length2 = 41 - 25;
+collar  = 12;
+
+$fn = 64;
+
+saw1_base = 7.5;
+saw1_top  = 9.5;
+saw2_base = 6.5;
+saw2_top  = 5.0;
+
+module sawtooth(h, d0, d1) {
+    l     = 10;                 // horizontal run of the tooth
+    $fn   = 48;
+    res   = [d0, d1];
+    profile = concat([d0, res[1] - d0, res[1], d1 - res[1], d1]);
+    difference() {
+        cylinder(h = h, d = d0);
+        translate([0, 0, h * 0.25]) rotate([0, 0, 90]) linear_extrude(l = l) polygon(profile);
+        translate([0, 0, h * 0.75]) rotate([0, 0, 90]) linear_extrude(l = l) polygon(profile);
+    }
+}
+
+union() {
+    if (length1 > 0)
+        cylinder(h = length1, d = saw1_base);
+    if (length2 > 0)
+        cylinder(h = length2, d = saw2_base);
+    translate([0, 0, length1 > 0 ? length1 : 0]) cylinder(h = 5, d = collar);
+    translate([0, 0, length2 < length1 ? length2 : length1 - 5]) cylinder(h = 5, d = collar);
+    if (length1 > 0)
+        for (z = [0, length1 / 2])
+            translate([0, 0, z]) sawtooth(h = 10, d0 = saw1_base, d1 = saw1_top);
+    if (length2 > 0)
+        for (z = [0, length2 / 2])
+            translate([0, 0, z]) sawtooth(h = 8, d0 = saw2_base, d1 = saw2_top);
+    translate([0, 0, -1]) cylinder(h = length1 + length2 + 2, d = bore);
+}

@@ -1,0 +1,129 @@
+// Snap-on Clip for Lab Stand Rod and Tubing
+// Orientation: Flat on XY plane, building up in +Z.
+// Units: Millimetres.
+
+// --- Dimensions ---
+// Rod Ring
+$rod_id = 12.7;      // Inner diameter of rod ring (mm)
+$rod_wall = 3.0;     // Wall thickness of rod ring (mm)
+$rod_od = $rod_id + 2 * $rod_wall; // Outer diameter (18.7 mm)
+$rod_center_x = 0;   // Center X of rod ring
+$rod_center_y = 0;   // Center Y of rod ring
+$rod_height = 10.0;  // Height of extrusion (mm)
+
+// Tubing Ring
+$tube_id = 6.0;      // Inner diameter of tubing ring (mm)
+$tube_wall = 2.0;    // Wall thickness of tubing ring (mm)
+$tube_od = $tube_id + 2 * $tube_wall; // Outer diameter (10.0 mm)
+$tube_center_x = 15; // Center X of tubing ring
+$tube_center_y = 0;  // Center Y of tubing ring
+
+// Bridge
+$bridge_width_x = 4.0; // Width in X (from 8 to 12)
+$bridge_width_y = 6.0; // Width in Y
+$bridge_z = $rod_height;
+
+// Cutouts (Openings)
+$rod_cut_width = 10.0; // Width of opening on -X side
+$rod_cut_half_y = $rod_cut_width / 2; // +/- 5 mm
+
+$tube_cut_width = 4.5; // Width of opening on +X side
+$tube_cut_half_y = $tube_cut_width / 2; // +/- 2.25 mm
+
+// --- Configuration ---
+$fn = 128; // High resolution for smooth curves
+
+// --- Main Body Construction ---
+
+difference() {
+    // 1. The Base Profile Extrusion
+    // We create the full rectangular block first, then cut the holes.
+    translate([0, 0, 0]) {
+        // Determine the bounding box of the profile to extrude
+        // Rod Ring: OD 18.7 -> X: -9.35 to 9.35, Y: -9.35 to 9.35
+        // Tubing Ring: OD 10.0 -> X: 13 to 17, Y: -5 to 5
+        // Bridge: X: 8 to 12, Y: -3 to 3
+        // Max extents: X: 17, Y: 9.35
+        $max_x = 17;
+        $max_y = $rod_od / 2;
+        
+        cube([
+            $max_x * 2, 
+            $max_y * 2, 
+            $rod_height
+        ]);
+    }
+    
+    // 2. Cut Rod Ring Hole (Inner)
+    // Cylinder centered at origin, radius = rod_id/2
+    translate([0, 0, 0]) {
+        cylinder(
+            h = $rod_height + 0.1, // Extend slightly past Z
+            r = $rod_id / 2,
+            $fn = $fn
+        );
+    }
+    
+    // 3. Cut Tubing Ring Hole (Inner)
+    // Cylinder centered at (15, 0), radius = tube_id/2
+    translate([tube_center_x, tube_center_y, 0]) {
+        cylinder(
+            h = $rod_height + 0.1,
+            r = $tube_id / 2,
+            $fn = $fn
+        );
+    }
+    
+    // 4. Cut Rod Ring Opening (Slot on -X side)
+    // Region: x < 0, -5 < y < 5
+    // We cut a rectangle extending from x = -infinity to x = 0
+    translate([-100, -rod_cut_half_y, 0]) {
+        cube([
+            100, // Extend far enough to left
+            rod_cut_width,
+            $rod_height + 0.1
+        ]);
+    }
+    
+    // 5. Cut Tubing Ring Opening (Slot on +X side)
+    // Region: x > 15, -2.25 < y < 2.25
+    // We cut a rectangle extending from x = 15 to x = +infinity
+    translate([tube_center_x, -tube_cut_half_y, 0]) {
+        cube([
+            100, // Extend far enough to right
+            tube_cut_width,
+            $rod_height + 0.1
+        ]);
+    }
+    
+    // 6. Cut Bridge Area (To ensure the bridge is solid and doesn't block holes)
+    // The prompt asks for a solid bridge between x=8 and x=12.
+    // Since we started with a full block, we need to remove the material 
+    // that would interfere with the rod hole (x < 8) and tubing hole (x > 12)
+    // within the bridge Y range.
+    
+    // Remove Rod Hole interference in bridge zone
+    // Rod hole is x < 6.35 (approx). Bridge starts at 8. 
+    // Actually, the rod hole is already cut by step 2. 
+    // We just need to make sure the bridge material exists between 8 and 12.
+    // The current block has material there. 
+    // However, we must ensure the bridge doesn't accidentally close the rod hole 
+    // if the rod hole cut wasn't perfect (it is).
+    // The main constraint is ensuring the bridge is solid.
+    // The current logic: Start with big block -> Cut Rod Hole -> Cut Tube Hole.
+    // This leaves a solid block between the holes.
+    // We just need to verify the bridge dimensions match the request.
+    // Request: Solid bridge 6mm wide (Y) between x=8 and x=12.
+    // Our block has material there. We don't need to cut anything extra 
+    // to create the bridge, as the subtraction of the circular holes 
+    // naturally leaves the rectangular space between them intact.
+    // We only need to ensure we don't cut the bridge away.
+    // Since we only cut cylinders and rectangles defined above, the bridge remains.
+    
+    // Optional: Explicitly define the bridge volume to verify it exists?
+    // No, the difference logic handles it. The block exists, holes are removed.
+    // The space between the two circles (x=0 to x=15) is solid except for the specific slots.
+    // The slot on the rod ring is x<0. The slot on the tube ring is x>15.
+    // The region x=8 to x=12 is untouched by the slots.
+    // So the bridge is naturally formed.
+}

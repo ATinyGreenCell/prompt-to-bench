@@ -1,0 +1,49 @@
+// Snap-on clip: holds a piece of tubing next to a 12.7 mm lab stand rod
+// Printed flat: 2-D profile in XY, extruded 10 mm in +Z
+
+$fn = 128;
+
+// ---------------- Parameters ----------------
+rod_d      = 12.7;              // rod ring inner diameter
+rod_wall   = 3;                 // rod ring wall thickness
+rod_r      = rod_d / 2 + rod_wall; // rod ring outer radius (18.7)
+
+tub_d      = 6;                 // tubing ring inner diameter
+tub_wall   = 2;                 // tubing ring wall thickness
+tub_r      = tub_d / 2 + tub_wall;   // tubing ring outer radius (5)
+
+bridge_w   = 6;                 // bridge width in X (from x = 8 to x = 12)
+bridge_y   = 6;                 // bridge width in Y
+
+open_rod   = 10;                // rod ring opening width in Y (-5 < y < 5)
+open_tub   = 4.5;               // tubing ring opening width in Y (-2.25 < y < 2.25)
+
+clip_h     = 10;                // extrusion height (Z)
+
+eps        = 0.5;               // overshoot for clean cuts
+
+// ---------------- Derived ----------------
+rod_od     = 2 * rod_r;         // rod ring outer diameter (18.7)
+tub_od     = 2 * tub_r;         // tubing ring outer diameter (6)
+
+// ---------------- Model ----------------
+difference() {
+    union() {
+        // Rod ring
+        cylinder(d = rod_od, r = rod_r, h = clip_h);
+        // Tubing ring
+        translate([15, 0, 0])
+            cylinder(d = tub_od, r = tub_r, h = clip_h);
+        // Solid bridge between the rings
+        translate([8, -bridge_y / 2, 0])
+            cube([bridge_w, bridge_y, clip_h]);
+    }
+
+    // Rod ring opening: remove everything with x < 0 and -5 < y < 5
+    translate([-(rod_r + eps), -open_rod / 2, -eps])
+        cube([rod_r + eps + 0.01, open_rod, clip_h + 2 * eps]);
+
+    // Tubing ring opening: remove x > 15 and -2.25 < y < 2.25
+    translate([15, -open_tub / 2, -eps])
+        cube([tub_r + eps + 0.01, open_tub, clip_h + 2 * eps]);
+}

@@ -1,0 +1,28 @@
+```openscad
+// Rack for 96 x 0.2 mL PCR tubes - microplate (ANSI/SLAS) footprint. NOVEL general part.
+//
+
+cols   = 12;
+rows   = 8;
+tube_d = 6.2;
+pitch  = 9.0;
+H      = 20;
+L      = 127.76;
+W      = 85.48;
+A1_x   = 14.38;
+A1_y   = 11.24;
+
+$fn = 48;
+
+leg    = 5;
+angle  = 45;
+
+difference() {
+    translate([-L / 2, -W / 2, 0]) cube([L, W, H]);
+    for (i = [0 : cols - 1], j = [0 : rows - 1])
+        translate([A1_x + i * pitch - tube_d / 2 - 1, A1_y + j * pitch - tube_d / 2 - 1, -1])
+            cylinder(h = H + 2, d = tube_d);
+    translate([-L / 2, -W / 2, 0])
+        rotate([0, 0, angle]) cube([leg, W, leg]);
+}
+```

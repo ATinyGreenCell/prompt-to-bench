@@ -1,0 +1,77 @@
+// Bench Rack for 1.5 mL Microcentrifuge Tubes
+// Designed for FDM printing. Rests on XY plane at Z=0.
+
+// --- Dimensions ---
+// Block dimensions
+$block_length = 106; // X
+$block_width = 72;   // Y
+$block_height = 30;  // Z
+
+// Grid configuration
+$grid_rows = 4;      // Rows along Y
+$grid_cols = 6;      // Columns along X
+$grid_spacing_x = 16; // Centre-to-centre X
+$grid_spacing_y = 16; // Centre-to-centre Y
+
+// Hole configuration
+$hole_diameter = 11.2;
+$hole_depth = 25;    // Depth of the hole (open top, closed bottom)
+$floor_thickness = 5; // Solid floor at bottom (30 - 25 = 5)
+
+// --- Settings ---
+$fn = 64; // Smooth curves for holes
+
+// --- Calculations ---
+// Calculate grid offsets to center the grid on the block
+// Total grid width = (cols - 1) * spacing
+// Offset = (BlockWidth - TotalGridWidth) / 2
+$grid_offset_x = ($block_length - ($grid_cols - 1) * $grid_spacing_x) / 2;
+$grid_offset_y = ($block_width - ($grid_rows - 1) * $grid_spacing_y) / 2;
+
+// --- Main Geometry ---
+difference() {
+    // 1. Create the solid rectangular block
+    // Dimensions: 106 x 72 x 30
+    // Position: Z=0 to Z=30
+    translate([0, 0, 0])
+        cube([
+            $block_length,
+            $block_width,
+            $block_height
+        ]);
+
+    // 2. Create holes using a loop
+    // We subtract truncated cylinders from the block.
+    // The cylinder starts at the top surface (Z=30) and goes down $hole_depth.
+    // It stops at Z = $block_height - $hole_depth (which is the floor).
+    
+    $cutter_radius = ($hole_diameter / 2) + 0.1; // Slightly larger for clean cut
+    $cutter_start_z = $block_height; // Start at top surface
+    $cutter_end_z = $block_height - $hole_depth; // End at the floor
+
+    for (r = [0 : $grid_rows - 1]) {
+        for (c = [0 : $grid_cols - 1]) {
+            // Calculate position of current hole center
+            $x_pos = $grid_offset_x + c * $grid_spacing_x;
+            $y_pos = $grid_offset_y + r * $grid_spacing_y;
+            
+            // Cylinder parameters
+            // Center the cylinder in X and Y at the calculated position.
+            // Z-center is the midpoint of the cut depth.
+            $z_center = ($cutter_start_z + $cutter_end_z) / 2;
+            $z_extent = ($cutter_start_z - $cutter_end_z) / 2;
+            
+            translate([
+                $x_pos,
+                $y_pos,
+                $z_center
+            ]) {
+                cylinder(
+                    h = $cutter_start_z - $cutter_end_z,
+                    r = $cutter_radius,
+                    center = [true, true, true]
+                );
+            }
+        }
+    }
+}

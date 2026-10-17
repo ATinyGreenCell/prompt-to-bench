@@ -1,0 +1,73 @@
+$fn = 128;
+
+// --- Dimensions ---
+// Petri dish diameter
+$DISH_DIAMETER = 90;
+// Template disc diameter
+$TEMPLATE_DIAMETER = 85;
+// Template thickness
+$TEMPLATE_THICKNESS = 2;
+// Hole grid size
+$GRID_ROWS = 7;
+$GRID_COLS = 7;
+// Hole diameter
+$HOLE_DIAMETER = 3;
+// Hole spacing (center-to-center)
+$HOLE_SPACING = 9;
+// Notch width (X dimension)
+$NOTCH_WIDTH = 10;
+// Notch depth (Y dimension, measured from rim inward)
+$NOTCH_DEPTH = 4;
+
+// --- Calculations ---
+// Calculate grid offset to center the grid on the disc
+$GRID_OFFSET = (($GRID_ROWS - 1) * $HOLE_SPACING) / 2;
+
+// Calculate rim depth for notch positioning
+$RIM_DEPTH = ($TEMPLATE_DIAMETER / 2) - $NOTCH_DEPTH;
+
+// --- Main Body ---
+difference() {
+    // Create the main disc
+    translate([0, 0, 0])
+        cylinder(
+            h = $TEMPLATE_THICKNESS,
+            d = $TEMPLATE_DIAMETER,
+            $fn = 64
+        );
+
+    // --- Cut Holes ---
+    for (r = [0 : $GRID_ROWS - 1]) {
+        for (c = [0 : $GRID_COLS - 1]) {
+            // Calculate position for current hole
+            x = (c - ($GRID_COLS - 1) / 2) * $HOLE_SPACING;
+            y = (r - ($GRID_ROWS - 1) / 2) * $HOLE_SPACING;
+            
+            // Cut hole extending slightly past the bottom face to ensure clean removal
+            translate([x, y, -0.05])
+                cylinder(
+                    h = $TEMPLATE_THICKNESS + 0.1,
+                    d = $HOLE_DIAMETER,
+                    $fn = 64
+                );
+        }
+    }
+
+    // --- Cut Orientation Notch ---
+    // The notch is on the +Y side, centered on the Y axis.
+    // It is 10mm wide in X and 4mm deep in Y (from the rim).
+    
+    // Define the notch block to subtract
+    // The notch starts at the rim and goes inward by $NOTCH_DEPTH
+    // Center Y is 0. Width is $NOTCH_WIDTH.
+    translate([
+        -($NOTCH_WIDTH / 2), 
+        0, 
+        0
+    ])
+        cube([
+            $NOTCH_WIDTH, 
+            $NOTCH_DEPTH, 
+            $TEMPLATE_THICKNESS + 0.1 // Extend past top/bottom
+        ]);
+}

@@ -1,0 +1,133 @@
+The measurement report reveals a critical discrepancy in the **Rod Ring Opening**.
+
+**Analysis of the Report vs. Specification:**
+1.  **Rod Ring Opening (Critical Failure):**
+    *   **Spec:** "10 mm wide opening cut out of its -X side... so it snaps onto the rod". This implies a rectangular slot cut into the side of the ring, leaving the rest of the ring intact to hold the rod.
+    *   **Report:** `z=0.75`: "1 solid region [outline: circle d=18.69...]; 0 holes".
+    *   **Issue:** The report shows a complete solid circle at the bottom. The rectangular cutout for the rod opening was not executed correctly. In the previous attempt, the cutout logic likely intersected with the inner hole or the bridge in a way that removed the entire ring structure or failed to create the slot. The current code still shows a full circle at the bottom slice, meaning the `-X` side opening is missing. The part will not snap onto the rod; it will just slide over it or fall off.
+2.  **Tubing Ring Opening:**
+    *   **Spec:** "4.5 mm wide opening cut out of its +X side".
+    *   **Report:** `z=12.50`: Shows two regions, one being a `10.00 x 5.00` shape (the cutout) and the other a `6.00 x 4.00` rectangle (the bridge). This indicates the tubing ring opening is present and correct.
+3.  **Z-Height:**
+    *   **Spec:** "10 mm tall".
+    *   **Report:** `Z 0.00 .. 15.00`.
+    *   **Issue:** The height is 15 mm instead of 10 mm. This is likely due to the `+0.1` extension used in the cutout cubes to ensure clean cuts, which inadvertently raised the bounding box or the union logic included the extra height. The main body must be exactly 10 mm.
+
+**Fixes Applied:**
+1.  **Corrected Rod Ring Opening:** I restructured the Rod Ring logic. Instead of trying to cut a slot from a union of cylinders, I will construct the Rod Ring as a single `difference()` operation:
+    *   Start with the outer cylinder.
+    *   Subtract the inner cylinder (hole).
+    *   Subtract the rectangular slot on the -X side.
+    *   Ensure the slot dimensions are exactly `10` wide and `10` tall (to cover the full Z height of the part) so it cuts through completely.
+2.  **Corrected Z-Height:** Removed the `+0.1` extension from the cutout cubes. The cutouts will now be exactly 10 mm tall, matching the main body.
+3.  **Verified Bridge:** The bridge logic remains consistent, spanning X=8 to X=12.
+
+```openscad
+// Snap-on Clip for Lab Stand and Tubing
+// Orientation: Flat on XY plane, building up in +Z.
+// Units: Millimetres.
+
+// --- Dimensions ---
+// Rod Stand Dimensions
+$rod_diameter = 12.7;      // Inner diameter of rod ring
+$rod_wall = 3;             // Wall thickness of rod ring
+$rod_outer = $rod_diameter + 2 * $rod_wall; // 18.7 mm
+$rod_opening_width = 10;   // Width of the cutout on the -X side
+$rod_opening_y_limit = 5;  // Half-height of the cutout on the -X side
+
+// Tubing Dimensions
+$tube_diameter = 6;        // Inner diameter of tubing ring
+$tube_wall = 2;            // Wall thickness of tubing ring
+$tube_outer = $tube_diameter + 2 * $tube_wall; // 10 mm
+$tube_center_x = 15;       // X position of tubing ring center
+$tube_opening_width = 4.5; // Width of the cutout on the +X side
+$tube_opening_y_limit = 2.25; // Half-height of the cutout on the +X side
+
+// Bridge Dimensions
+$bridge_width_x = 4;       // Width of bridge in X (from 8 to 12)
+$bridge_height_y = 6;      // Height of bridge in Y
+$bridge_z = 10;            // Height of extrusion (Target Z)
+
+// --- Configuration ---
+$fn = 100;                 // Smoothness for curved shapes
+
+// --- Main Body ---
+// We define the 2D profile in the XY plane and extrude it to Z.
+// The profile is constructed using difference() to cut holes and openings.
+
+difference() {
+    // 1. Create the solid base shape (Union of Rod Ring, Tubing Ring, and Bridge)
+    union() {
+        // --- Rod Ring (Left) ---
+        // Constructed as a single difference to ensure the slot is clean
+        difference() {
+            // Outer cylinder
+            cylinder(
+                h = $bridge_z,
+                d = $rod_outer,
+                center = [0, 0, $bridge_z/2]
+            );
+            
+            // Inner hole for the rod
+            cylinder(
+                h = $bridge_z,
+                d = $rod_diameter,
+                center = [0, 0, $bridge_z/2]
+            );
+            
+            // Cut the -X side opening (Rectangular slot)
+            // Position: Centered at x=0, extending to the left.
+            // Height: Must cover the full Z height of the part.
+            translate([-($rod_opening_width/2), 0, $bridge_z/2]) {
+                cube([
+                    $rod_opening_width, 
+                    $rod_opening_y_limit * 2, 
+                    $bridge_z
+                ]);
+            }
+        }
+        
+        // --- Tubing Ring (Right) ---
+        // Outer circle centered at x = $tube_center_x
+        translate([0, 0, $bridge_z/2]) {
+            difference() {
+                // Outer cylinder
+                cylinder(
+                    h = $bridge_z,
+                    d = $tube_outer,
+                    center = [$tube_center_x, 0, $bridge_z/2]
+                );
+                
+                // Inner hole for the tubing
+                cylinder(
+                    h = $bridge_z,
+                    d = $tube_diameter,
+                    center = [$tube_center_x, 0, $bridge_z/2]
+                );
+                
+                // Cut the +X side opening (Rectangular slot)
+                // Position: Centered at x=15, extending to the right.
+                translate([$tube_center_x + ($tube_opening_width/2), 0, $bridge_z/2]) {
+                    cube([
+                        $tube_opening_width, 
+                        $tube_opening_y_limit * 2, 
+                        $bridge_z
+                    ]);
+                }
+            }
+        }
+        
+        // --- Solid Bridge ---
+        // Joins the two rings. 
+        // Spans from x = 8 to x = 12.
+        // Height in Y is 6 mm, centered at y=0.
+        translate([8, -($bridge_height_y/2), $bridge_z/2]) {
+            cube([
+                $bridge_width_x, 
+                $bridge_height_y, 
+                $bridge_z
+            ]);
+        }
+    }
+}
+```

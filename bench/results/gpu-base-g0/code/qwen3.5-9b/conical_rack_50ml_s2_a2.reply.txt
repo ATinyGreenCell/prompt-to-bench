@@ -1,0 +1,107 @@
+The measurement report indicates a critical error in the **Y-dimension** of the bounding box.
+
+**Analysis of Errors:**
+1.  **Y Dimension:** The report shows `176.00` mm (from -45 to 131). The specification requires the plate to be **90 mm** wide.
+    *   *Cause:* In the previous code, the `translate` command for the walls used `WALL_Y_MIN` (-45) and `WALL_Y_MAX` (45) as the *starting* coordinates. However, the wall length was calculated as `WALL_Y_OUTER - WALL_Y_MIN` (which is 41 - (-45) = 86 mm).
+    *   This placed the left wall starting at Y=-45 and extending 86mm to the right (ending at Y=41).
+    *   It placed the right wall starting at Y=45 and extending 86mm to the left (ending at Y=-41).
+    *   The union of these two overlapping blocks created a single continuous block from Y=-45 to Y=131 (45 + 86), resulting in a total width of 176 mm.
+    *   The specification requires two separate walls, each **4 mm thick**, running along the edges.
+    *   Correct Logic:
+        *   Left Wall: Starts at Y = -45, extends 4 mm to Y = -41.
+        *   Right Wall: Starts at Y = 41, extends 4 mm to Y = 45.
+        *   Total Y span should be exactly 90 mm (-45 to +45).
+
+2.  **Volume:** The volume is still too high (~1.56 million mm³) because the walls are now huge blocks (130x86x70) instead of thin strips (130x4x70).
+
+**Fix:**
+*   Redefine the wall geometry to be exactly 4 mm thick.
+*   Left Wall: `translate([0, -45, 0]) cube([130, 4, 70])`.
+*   Right Wall: `translate([0, 41, 0]) cube([130, 4, 70])`.
+*   Ensure the hole cutting logic remains correct (it was correct in the previous step, just the walls were wrong).
+
+```openscad
+// Rack for six 50 mL conical (Falcon-type) tubes
+// Print orientation: Upside down. Flat plate on bed (Z=0).
+// After printing, flip over to stand on the two walls.
+
+// --- Dimensions ---
+// Plate dimensions
+W_PLATE_X = 130; // mm
+W_PLATE_Y = 90;  // mm
+H_PLATE = 4;     // mm
+
+// Hole specifications
+N_ROWS = 3;      // Rows along X
+N_COLS = 2;      // Cols along Y
+D_HOLE = 30.5;   // mm (Diameter)
+C_X = 40;        // mm (Centre-to-centre spacing X)
+C_Y = 40;        // mm (Centre-to-centre spacing Y)
+
+// Wall specifications
+H_WALL = 70;     // mm (Total height from bed)
+W_WALL_THICK = 4; // mm (Thickness of wall)
+
+// --- Derived Positions ---
+// Plate is centred on origin
+// Hole grid positions
+// Rows along X: 3 holes. Spacing 40mm. Centres at: -40, 0, +40
+HOLE_X_POS = [-40, 0, 40];
+
+// Cols along Y: 2 holes. Spacing 40mm.
+// Plate Y is 90mm. Half is 45mm.
+// We need to fit 2 holes with 40mm spacing symmetrically.
+// Distance between holes = 40mm.
+// Center of the pair = 0.
+// y1 = -20, y2 = +20.
+HOLE_Y_POS = [-20, 20];
+
+// Wall positions
+// Walls run along the long edges (X direction).
+// Plate Y is 90mm. Half is 45mm.
+// Wall thickness is 4mm.
+// Wall 1 (Left): Extends from Y = -45 to Y = -41
+// Wall 2 (Right): Extends from Y = +41 to Y = +45
+WALL_Y_START_LEFT = -45;
+WALL_Y_END_LEFT = -41;
+
+WALL_Y_START_RIGHT = 41;
+WALL_Y_END_RIGHT = 45;
+
+// --- Configuration ---
+$fn = 128; // High resolution for holes and walls
+
+module main() {
+    // Create the base plate
+    // We use difference() to cut holes from the plate
+    difference() {
+        // 1. The Plate
+        translate([0, 0, 0]) {
+            cube([W_PLATE_X, W_PLATE_Y, H_PLATE], center = false);
+        }
+        
+        // 2. The Holes
+        for (xi = [0:N_ROWS-1]) {
+            for (yi = [0:N_COLS-1]) {
+                translate([HOLE_X_POS[xi], HOLE_Y_POS[yi], 0]) {
+                    // Cut cylinder through the plate
+                    cylinder(h = H_PLATE + 0.1, d = D_HOLE, $fn = 128);
+                }
+            }
+        }
+    }
+    
+    // Add the walls
+    // Left Wall: 130mm long, 4mm thick (Y), 70mm high
+    translate([0, WALL_Y_START_LEFT, 0]) {
+        cube([W_PLATE_X, WALL_Y_END_LEFT - WALL_Y_START_LEFT, H_WALL], center = false);
+    }
+    
+    // Right Wall: 130mm long, 4mm thick (Y), 70mm high
+    translate([0, WALL_Y_START_RIGHT, 0]) {
+        cube([W_PLATE_X, WALL_Y_END_RIGHT - WALL_Y_START_RIGHT, H_WALL], center = false);
+    }
+}
+
+main();
+```

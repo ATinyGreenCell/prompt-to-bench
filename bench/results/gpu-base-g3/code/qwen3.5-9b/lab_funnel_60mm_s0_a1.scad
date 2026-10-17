@@ -1,0 +1,90 @@
+// Lab Funnel Design
+// Units: millimetres
+// Orientation: Upright, wide opening at top, rests on XY plane at z=0.
+
+// --- Dimensions ---
+// Spout (Tube)
+$spout_outer_diameter = 10;
+$spout_inner_diameter = 6.8; // 10 - 2*1.6
+$spout_length = 20;
+
+// Cone (Funnel)
+$cone_bottom_diameter = 10;  // Matches spout outer diameter
+$cone_top_diameter = 60;
+$cone_height = 30; // From z=20 to z=50
+
+// Wall Thickness
+$wall_thickness = 1.6;
+
+// --- Helper Variables ---
+$spout_outer_radius = $spout_outer_diameter / 2;
+$spout_inner_radius = $spout_inner_diameter / 2;
+$cone_bottom_radius = $cone_bottom_diameter / 2;
+$cone_top_radius = $cone_top_diameter / 2;
+
+// --- Geometry Construction ---
+
+// Set resolution for curved surfaces
+$fn = 64;
+
+// 1. The Spout (Cylinder)
+// Located from z=0 to z=20.
+// We create a hollow cylinder by subtracting an inner cylinder from an outer one.
+spout_outer = cylinder(
+    h = $spout_length,
+    r = $spout_outer_radius,
+    center = [0, 0, $spout_length/2]
+);
+
+spout_inner = cylinder(
+    h = $spout_length,
+    r = $spout_inner_radius,
+    center = [0, 0, $spout_length/2]
+);
+
+// 2. The Cone (Frustum)
+// Located from z=20 to z=50.
+// Base at z=20 (radius = cone_bottom_radius), Top at z=50 (radius = cone_top_radius).
+// We define the cone geometry relative to its own center for easier math, then translate.
+// Center of cone in Z is (20 + 50) / 2 = 35.
+cone_base = cylinder(
+    h = $cone_height,
+    r1 = $cone_bottom_radius,
+    r2 = $cone_top_radius,
+    center = [0, 0, 35]
+);
+
+cone_inner_base = cylinder(
+    h = $cone_height,
+    r1 = $cone_bottom_radius - $wall_thickness,
+    r2 = $cone_top_radius - $wall_thickness,
+    center = [0, 0, 35]
+);
+
+// --- Assembly ---
+
+// Start with the outer spout
+funnel_base = spout_outer;
+
+// Subtract the inner spout to make it hollow
+funnel_base = difference() {
+    funnel_base;
+    spout_inner;
+};
+
+// Add the outer cone
+funnel_base = union() {
+    funnel_base;
+    cone_base;
+};
+
+// Subtract the inner cone to make the funnel body hollow
+funnel_base = difference() {
+    funnel_base;
+    cone_inner_base;
+};
+
+// Final Output
+translate([0, 0, 0])
+    scale([1, 1, 1])
+    funnel_base;

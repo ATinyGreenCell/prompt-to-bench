@@ -1,0 +1,163 @@
+```openscad
+$fn = 128;
+
+// --- Dimensions ---
+// Handle
+d_handle = 8;
+h_handle = 45;
+z_handle_start = 0;
+z_handle_end = 45;
+
+// Cone
+d_cone_bottom = 8;
+d_cone_top = 3;
+z_cone_start = 45;
+z_cone_end = 62;
+
+// Tip
+d_tip = 3;
+z_tip_center = 62;
+
+// Grooves
+n_grooves = 4;
+w_groove = 2; // Width in Z
+d_groove = 1; // Depth
+z_groove_centers = [10, 15, 20, 25];
+
+// --- Main Body Construction ---
+// We build the solid body first, then subtract the grooves.
+// The body consists of the cylinder, the cone, and the sphere.
+
+difference() {
+    union() {
+        // 1. Cylindrical Handle
+        cylinder(
+            h = h_handle,
+            d = d_handle,
+            center = [0, 0, z_handle_start + h_handle/2]
+        );
+
+        // 2. Conical Section
+        // Using a cylinder with a slight taper approximation or linear_extrude with polygon
+        // For precision with OpenSCAD built-ins, we use a cylinder with a very small height 
+        // and rotate_extrude, or simply a cylinder with a specific diameter change? 
+        // Actually, standard cylinder has constant diameter. We need a cone.
+        // We can use a cylinder with a polygon profile or rotate_extrude.
+        // Let's use rotate_extrude for a perfect cone.
+        rotate_extrude() {
+            // Profile: line from (0, d_cone_bottom/2) to (h, d_cone_top/2)
+            // We need to offset the profile so the center of the cone is at z_cone_start
+            // The profile is in the XZ plane relative to the extrusion axis.
+            // Let's define the profile relative to the start of the cone.
+            // x goes from 0 to (z_cone_end - z_cone_start)
+            // radius goes from d_cone_bottom/2 to d_cone_top/2
+            
+            h_cone = z_cone_end - z_cone_start;
+            r_start = d_cone_bottom / 2;
+            r_end = d_cone_top / 2;
+            
+            // Linear extrude with a polygon profile
+            // The polygon points are (x, y). We extrude along Z.
+            // We need to shift the Z position of the extruded shape later.
+            polygon(
+                points = [
+                    [0, r_start],
+                    [h_cone, r_end]
+                ],
+                coords = CCW
+            );
+        }
+        translate([0, 0, z_cone_start]) {
+            // The rotate_extrude creates a shape centered at its own origin (0,0,0).
+            // We need to position it correctly. 
+            // The previous block created a cone from z=0 to z=h_cone.
+            // We translate it to start at z_cone_start.
+            // However, the previous block was inside a translate? No, it was standalone.
+            // Let's restructure to ensure correct positioning.
+        }
+    };
+    
+    // Re-doing the union with correct positioning logic for the cone
+    // It's safer to define the cone as a separate translated object.
+    
+    // Let's restart the union logic for clarity inside the difference
+}
+
+// Corrected Structure:
+difference() {
+    union() {
+        // 1. Handle Cylinder
+        translate([0, 0, z_handle_start + h_handle/2]) {
+            cylinder(h = h_handle, d = d_handle);
+        }
+
+        // 2. Cone
+        // Create a cone using rotate_extrude
+        // Profile: line from (0, r_start) to (h_cone, r_end)
+        h_cone = z_cone_end - z_cone_start;
+        r_start = d_cone_bottom / 2;
+        r_end = d_cone_top / 2;
+        
+        translate([0, 0, z_cone_start]) {
+            rotate_extrude() {
+                // We need to draw the profile in the XZ plane (which becomes the profile for rotation)
+                // Actually, rotate_extrude rotates around Z. The profile is in XY.
+                // To make a cone, we draw a line from (0, r_start) to (h_cone, r_end) in the XY plane?
+                // No, that makes a cylinder with varying radius if we use linear_extrude.
+                // rotate_extrude rotates a 2D profile around the Z axis.
+                // Profile: x from 0 to h_cone, y from r_start to r_end.
+                // This creates a cone.
+                linear_extrude(height = 1, center = true) {
+                    // This is getting complicated with mixed extrudes.
+                    // Simplest way for a cone in OpenSCAD:
+                    // Use a cylinder with a polygon profile? No.
+                    // Use rotate_extrude with a line segment.
+                    // Points: (0, r_start) and (h_cone, r_end).
+                    // Wait, rotate_extrude rotates around Z.
+                    // If I have a line from (0, r_start) to (h_cone, r_end) in the XY plane,
+                    // rotating it creates a cone.
+                    // But the length of the line is the height of the cone.
+                    // So x is the radius, y is the height? No.
+                    // Standard: x is radius, y is height.
+                    // Let's use polygon with points in XY plane.
+                    // Point 1: (0, r_start) -> Radius 0? No, we want radius r_start at z=0.
+                    // Point 2: (h_cone, r_end) -> Radius r_end at z=h_cone.
+                    // So x is the radius, y is the height?
+                    // If I rotate around Z, the x-coordinate becomes the radius.
+                    // So I need a line from (r_start, 0) to (r_end, h_cone)?
+                    // No, rotate_extrude rotates the profile around the Z axis.
+                    // The profile is in the XZ plane? No, XY plane.
+                    // If profile is in XY, rotating around Z creates a shape where X is radius and Y is height.
+                    // So points: (r_start, 0) and (r_end, h_cone).
+                    // This creates a cone.
+                    polygon(points = [[r_start, 0], [r_end, h_cone]]);
+                }
+            }
+        }
+
+        // 3. Tip Sphere
+        translate([0, 0, z_tip_center]) {
+            sphere(d = d_tip);
+        }
+    }
+
+    // --- Cut Grooves ---
+    // Grooves are cylindrical holes cut into the handle.
+    // They are centered at specific Z heights.
+    // Width in Z is w_groove.
+    // Depth is d_groove.
+    // Diameter of groove cutter = Handle Diameter - 2 * Depth
+    
+    d_cutter = d_handle - 2 * d_groove;
+    
+    for (z_c = z_groove_centers) {
+        translate([0, 0, z_c - w_groove/2]) {
+            cylinder(
+                h = w_groove,
+                d = d_cutter,
+                center = [0, 0, 0]
+            );
+        }
+    }
+}
+```

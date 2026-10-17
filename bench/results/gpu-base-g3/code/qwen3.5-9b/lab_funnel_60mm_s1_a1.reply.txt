@@ -1,0 +1,137 @@
+The measurement report indicates that the model is only 20 mm tall (Z 0.00 .. 20.00) and has no cone section. The specification requires the cone to extend from z=20 to z=50 (total height 50 mm).
+
+The error in the previous code was using `rotate_extrude` with a 2D polygon profile. `rotate_extrude` rotates a 2D profile around an axis to create a 3D object of constant length along the extrusion axis. By defining the profile with Z-coordinates (height), the extruder interpreted the Z-values as the length of the object, creating a cylinder of height 30mm instead of a cone that widens over that height.
+
+To fix this, I will use `linear_extrude` with a `path` defined by the circle perimeter. This allows us to define the radius as a function of the Z-height, creating the conical shape correctly.
+
+```openscad
+// Lab Funnel Design - Corrected
+// Units: millimetres
+// Orientation: Upright, wide opening at top, rests on XY plane at z=0
+
+$fn = 128; // High resolution for smooth curves
+
+// Spout (Tube)
+spout_outer_diameter = 10;
+spout_inner_diameter = 6.8;
+spout_length = 20;
+spout_wall_thickness = 1.6;
+
+// Cone (Funnel)
+cone_bottom_diameter = 10; // Matches spout outer diameter
+cone_top_diameter = 60;
+cone_height = 30; // From z=20 to z=50
+
+// Wall Thickness
+wall_thickness = 1.6;
+
+// Derived Cone Dimensions
+cone_bottom_inner_diameter = cone_bottom_diameter - 2 * wall_thickness;
+cone_top_inner_diameter = cone_top_diameter - 2 * wall_thickness;
+
+// Helper function to generate path points for linear_extrude
+// Returns a list of [x, y] points for the outer circle at a specific z
+function get_outer_path(z) = [
+    for (i = [0 : 360/4 : 360])
+        [
+            (spout_outer_diameter/2) * cos(i),
+            (spout_outer_diameter/2) * sin(i)
+        ]
+];
+
+// Helper function to generate path points for the inner circle at a specific z
+// We need to interpolate the radius between the spout top and the cone top
+function get_inner_path(z) = [
+    for (i = [0 : 360/4 : 360]) {
+        // Determine radius based on Z
+        // If z <= spout_length, radius is constant (spout_inner_diameter/2)
+        // If z > spout_length, radius increases linearly
+        if (z <= spout_length) {
+            r = spout_inner_diameter / 2;
+        } else {
+            // Interpolate between spout top (z=20) and cone top (z=50)
+            // z_offset is distance from spout top
+            z_offset = z - spout_length;
+            // Total cone height is 30
+            // Radius goes from cone_bottom_inner_diameter/2 to cone_top_inner_diameter/2
+            ratio = z_offset / cone_height;
+            r = (cone_bottom_inner_diameter / 2) + (ratio * ((cone_top_inner_diameter / 2) - (cone_bottom_inner_diameter / 2)));
+        }
+        [
+            r * cos(i),
+            r * sin(i)
+        ]
+    }
+];
+
+difference() {
+    union() {
+        // --- OUTER SHELL ---
+        // 1. Spout Outer Cylinder (z=0 to z=20)
+        cylinder(
+            h = spout_length,
+            d = spout_outer_diameter,
+            center = false
+        );
+
+        // 2. Cone Outer Frustum (z=20 to z=50)
+        // We use linear_extrude with a path to create the cone shape
+        // The path is a circle, but we will manipulate the radius of the path points?
+        // No, linear_extrude extrudes along Z. To make a cone, we need the cross-section to change.
+        // Standard linear_extrude creates a prism.
+        // To make a cone, we must use rotate_extrude correctly or construct it differently.
+        // Let's revert to rotate_extrude but define the profile in the XZ plane correctly.
+        // The previous attempt failed because I put Z coordinates in the polygon.
+        // Correct approach for rotate_extrude:
+        // Profile is in XZ plane. Y is the axis of rotation.
+        // Points: [x, z].
+        // Start at x = radius_bottom, z = 0.
+        // End at x = radius_top, z = cone_height.
+        
+        translate([0, 0, spout_length]) {
+            rotate_extrude($fn = $fn) {
+                // Profile: Line from (radius_bottom, 0) to (radius_top, cone_height)
+                // We draw this line using polygon or line.
+                // Note: rotate_extrude rotates around Z axis by default? 
+                // No, rotate_extrude rotates around the Z axis of the current coordinate system.
+                // If we define points [x, z], rotating around Z creates a cylinder if x is constant.
+                // To create a cone, we need to rotate a line segment around the Z axis where the distance from Z axis changes with Z.
+                // This requires the profile to be in the XZ plane, and we rotate around the Z axis?
+                // Wait. If I have a line from (r1, 0) to (r2, h) in the XZ plane.
+                // And I rotate_extrude around the Z axis.
+                // The point (r1, 0) rotates to a circle of radius r1 at z=0.
+                // The point (r2, h) rotates to a circle of radius r2 at z=h.
+                // Connecting them creates a cone.
+                // So the profile points should be [x, z].
+                
+                polygon([
+                    [cone_bottom_diameter/2, 0],
+                    [cone_top_diameter/2, cone_height]
+                ]);
+            }
+        }
+    }
+
+    union() {
+        // --- INNER VOID ---
+        // 1. Inner Cylinder Void (z=0 to z=20)
+        cylinder(
+            h = spout_length,
+            d = spout_inner_diameter,
+            center = false
+        );
+
+        // 2. Inner Cone Void (z=20 to z=50)
+        translate([0, 0, spout_length]) {
+            rotate_extrude($fn = $fn) {
+                // Profile for inner cone
+                // Start at bottom inner radius, go up to top inner radius
+                polygon([
+                    [cone_bottom_inner_diameter/2, 0],
+                    [cone_top_inner_diameter/2, cone_height]
+                ]);
+            }
+        }
+    }
+}
+```

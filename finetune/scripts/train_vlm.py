@@ -35,6 +35,12 @@ def main() -> None:
     ap.add_argument("--lr", type=float, default=2e-4)
     ap.add_argument("--batch", type=int, default=2, help="per-device batch (effective batch = batch x accum)")
     ap.add_argument("--accum", type=int, default=4, help="gradient accumulation steps")
+    ap.add_argument("--last-turn-only", action="store_true",
+                    help="loss on the final assistant turn only (multi-turn repair data: the flawed earlier "
+                         "turn is context, never a target). Default: loss on every token, as v1-v4 trained")
+    ap.add_argument("--mask-earlier-assistant", action="store_true",
+                    help="keep v1-v4's every-token loss but mask every assistant turn except the last (a no-op "
+                         "on single-turn data), so multi-turn repair data adds no flawed targets")
     ap.add_argument("--out", default="out_vlm")
     ap.add_argument("--drop-over-max", action="store_true", help="drop examples over --max-seq instead of aborting (for a hard model context cap)")
     ap.add_argument("--smoke", action="store_true")
@@ -99,6 +105,41 @@ def main() -> None:
     ds = Dataset.from_list(data)
     FastVisionModel.for_training(model)
     collator = UnslothVisionDataCollator(model, tok)
+    if a.last_turn_only:
+        base_collator = collator
+        inner = getattr(tok, "tokenizer", tok)
+        head = inner.encode("<|im_start|>assistant\n", add_special_tokens=False)
+
+        def collator(examples):  # mask every label up to the end of the LAST assistant header
+            b = base_collator(examples)
+            ids, lab = b["input_ids"], b["labels"]
+            n = len(head)
+            for r in range(ids.shape[0]):
+                row = ids[r].tolist()
+                last = max((i for i in range(len(row) - n + 1) if row[i:i + n] == head), default=None)
+                lab[r, : (last + n) if last is not None else len(row)] = -100
+            b["labels"] = lab
+            return b
+        print(f"LAST_TURN_ONLY: assistant header ids {head}", flush=True)
+    elif a.mask_earlier_assistant:
+        base_collator = collator
+        inner = getattr(tok, "tokenizer", tok)
+        head = inner.encode("<|im_start|>assistant\n", add_special_tokens=False)
+        im_end = inner.convert_tokens_to_ids("<|im_end|>")
+
+        def collator(examples):  # mask each non-final assistant turn, header through its <|im_end|>
+            b = base_collator(examples)
+            ids, lab = b["input_ids"], b["labels"]
+            n = len(head)
+            for r in range(ids.shape[0]):
+                row = ids[r].tolist()
+                starts = [i for i in range(len(row) - n + 1) if row[i:i + n] == head]
+                for st in starts[:-1]:
+                    end = next((j for j in range(st + n, len(row)) if row[j] == im_end), len(row) - 1)
+                    lab[r, st:end + 1] = -100
+            b["labels"] = lab
+            return b
+        print(f"MASK_EARLIER_ASSISTANT: header ids {head}, im_end {im_end}", flush=True)
     # DATA CHECK: prove the text-only vision collation yields a real, loss-bearing batch -- otherwise a
     # full run would "succeed" while training on garbage (the LENGTHS=1 bug showed this is a live risk).
     try:
@@ -112,6 +153,21 @@ def main() -> None:
         raise
     except Exception as e:  # noqa: BLE001
         print(f"DATA_CHECK: skipped ({type(e).__name__}: {str(e)[:120]})", flush=True)
+    if a.last_turn_only or a.mask_earlier_assistant:  # MASK CHECK on a multi-turn example, if any
+        idx = next((i for i, d in enumerate(data) if sum(m["role"] == "assistant" for m in d["messages"]) > 1), None)
+        if idx is not None:
+            b = collator([ds[idx]])
+            row, lab = b["input_ids"][0].tolist(), b["labels"][0]
+            inner = getattr(tok, "tokenizer", tok)
+            head = inner.encode("<|im_start|>assistant\n", add_special_tokens=False)
+            im_end = inner.convert_tokens_to_ids("<|im_end|>")
+            starts = [i for i in range(len(row) - len(head) + 1) if row[i:i + len(head)] == head]
+            spans = [(st, next((j for j in range(st + len(head), len(row)) if row[j] == im_end), len(row) - 1))
+                     for st in starts]
+            live = [int((lab[st + len(head):en + 1] != -100).sum()) for st, en in spans]
+            print(f"MASK_CHECK: assistant spans {len(spans)} unmasked per span {live}", flush=True)
+            if len(spans) < 2 or any(live[:-1]) or live[-1] == 0:
+                raise SystemExit("ABORT: multi-turn masking wrong (an earlier assistant turn trains, or the last does not)")
     cfg = SFTConfig(per_device_train_batch_size=a.batch, gradient_accumulation_steps=a.accum,
                     num_train_epochs=a.epochs, max_steps=(2 if a.smoke else -1),
                     learning_rate=a.lr, warmup_ratio=0.05, logging_steps=10, optim="adamw_8bit",

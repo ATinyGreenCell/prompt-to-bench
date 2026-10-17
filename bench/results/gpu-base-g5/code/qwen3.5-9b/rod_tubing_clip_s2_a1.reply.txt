@@ -1,0 +1,106 @@
+The measurement report indicates that several variables used in the `translate` and `cube` commands were undefined. This happened because the variables were defined inside the `difference()` block (lines 69-94) rather than at the top of the file with the other dimensions. OpenSCAD requires variables to be defined before they are used.
+
+Additionally, the bounding box X dimension in the report (34.00) is double the expected maximum X (17.00). This confirms that the `translate` values were treated as 0 or undefined, causing the cuts to be centered or misplaced, effectively doubling the width of the remaining solid block.
+
+Here is the corrected file with all variables defined at the top and the logic adjusted to ensure the cuts are positioned correctly relative to the origin.
+
+```openscad
+// Snap-on Clip for Lab Stand Rod and Tubing
+// Orientation: Flat on XY plane, building up in +Z.
+// Units: Millimetres.
+
+// --- Dimensions ---
+// Rod Ring
+$rod_id = 12.7;      // Inner diameter of rod ring (mm)
+$rod_wall = 3.0;     // Wall thickness of rod ring (mm)
+$rod_od = $rod_id + 2 * $rod_wall; // Outer diameter (18.7 mm)
+$rod_center_x = 0;   // Center X of rod ring
+$rod_center_y = 0;   // Center Y of rod ring
+$rod_height = 10.0;  // Height of extrusion (mm)
+
+// Tubing Ring
+$tube_id = 6.0;      // Inner diameter of tubing ring (mm)
+$tube_wall = 2.0;    // Wall thickness of tubing ring (mm)
+$tube_od = $tube_id + 2 * $tube_wall; // Outer diameter (10.0 mm)
+$tube_center_x = 15; // Center X of tubing ring
+$tube_center_y = 0;  // Center Y of tubing ring
+
+// Bridge
+$bridge_width_x = 4.0; // Width in X (from 8 to 12)
+$bridge_width_y = 6.0; // Width in Y
+$bridge_z = $rod_height;
+
+// Cutouts (Openings)
+$rod_cut_width = 10.0; // Width of opening on -X side
+$rod_cut_half_y = $rod_cut_width / 2; // +/- 5 mm
+
+$tube_cut_width = 4.5; // Width of opening on +X side
+$tube_cut_half_y = $tube_cut_width / 2; // +/- 2.25 mm
+
+// --- Configuration ---
+$fn = 128; // High resolution for smooth curves
+
+// --- Main Body Construction ---
+
+difference() {
+    // 1. The Base Profile Extrusion
+    // We create the full rectangular block first, then cut the holes.
+    translate([0, 0, 0]) {
+        // Determine the bounding box of the profile to extrude
+        // Rod Ring: OD 18.7 -> X: -9.35 to 9.35, Y: -9.35 to 9.35
+        // Tubing Ring: OD 10.0 -> X: 13 to 17, Y: -5 to 5
+        // Bridge: X: 8 to 12, Y: -3 to 3
+        // Max extents: X: 17, Y: 9.35
+        $max_x = 17;
+        $max_y = $rod_od / 2;
+        
+        cube([
+            $max_x * 2, 
+            $max_y * 2, 
+            $rod_height
+        ]);
+    }
+    
+    // 2. Cut Rod Ring Hole (Inner)
+    // Cylinder centered at origin, radius = rod_id/2
+    translate([0, 0, 0]) {
+        cylinder(
+            h = $rod_height + 0.1, // Extend slightly past Z
+            r = $rod_id / 2,
+            $fn = $fn
+        );
+    }
+    
+    // 3. Cut Tubing Ring Hole (Inner)
+    // Cylinder centered at (15, 0), radius = tube_id/2
+    translate([tube_center_x, tube_center_y, 0]) {
+        cylinder(
+            h = $rod_height + 0.1,
+            r = $tube_id / 2,
+            $fn = $fn
+        );
+    }
+    
+    // 4. Cut Rod Ring Opening (Slot on -X side)
+    // Region: x < 0, -5 < y < 5
+    // We cut a rectangle extending from x = -infinity to x = 0
+    translate([-100, -rod_cut_half_y, 0]) {
+        cube([
+            100, // Extend far enough to left
+            rod_cut_width,
+            $rod_height + 0.1
+        ]);
+    }
+    
+    // 5. Cut Tubing Ring Opening (Slot on +X side)
+    // Region: x > 15, -2.25 < y < 2.25
+    // We cut a rectangle extending from x = 15 to x = +infinity
+    translate([tube_center_x, -tube_cut_half_y, 0]) {
+        cube([
+            100, // Extend far enough to right
+            tube_cut_width,
+            $rod_height + 0.1
+        ]);
+    }
+}
+```

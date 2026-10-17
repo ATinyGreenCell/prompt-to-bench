@@ -1,0 +1,38 @@
+// Drying rack for 10 microscope slides, standing upright on their long edge
+// Print orientation: base block rests on XY plane, slots open at top (+Z)
+
+$fn = 64;
+
+// ---- Block dimensions ----
+block_x = 90;        // block length (X)
+block_y = 45;        // block width (Y)
+block_z = 20;        // block height (Z)
+
+// ---- Slot dimensions ----
+slot_len   = 77;     // slot length along X
+slot_w     = 1.6;    // slot width along Y
+slot_depth = 10;     // slot depth from top face (Z)
+
+// ---- Layout ----
+slot_count = 10;     // number of slots
+slot_pitch = 3.5;    // centre-to-centre spacing in Y
+overlap    = 0.01;   // small overlap so cutters pass through the top face
+
+// ---- Derived ----
+total_y     = block_y;                          // group of slots spans full width
+y_first     = -total_y / 2 + slot_pitch / 2;    // first slot centre (from below)
+y_last      =  total_y / 2 - slot_pitch / 2;    // last slot centre (from below)
+cut_extra   = overlap;                          // extension of cutters past top face
+
+// ---- Model ----
+difference() {
+    // Solid base block, centred in X and Y, sitting on z = 0
+    translate([-block_x / 2, -block_y / 2, 0])
+        cube([block_x, block_y, block_z]);
+
+    // 10 parallel slots, open at top, centred on block in X and Y
+    for (i = [0 : slot_count - 1])
+        translate([0, y_first + i * slot_pitch, block_z - cut_extra])
+            translate([-slot_len / 2, -slot_w / 2, -1])
+                cube([slot_len, slot_w, slot_depth + cut_extra]);
+}

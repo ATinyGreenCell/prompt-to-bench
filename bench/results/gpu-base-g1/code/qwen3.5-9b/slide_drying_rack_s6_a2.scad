@@ -1,0 +1,66 @@
+// Drying Rack for 10 Microscope Slides
+// Base: 90 x 45 x 20 mm
+// Slots: 10 parallel slots along X, 77mm long, 1.6mm wide, 10mm deep
+// Spacing: 3.5 mm centre-to-centre (Y)
+// Group centered on the block in X and Y.
+
+// Base Dimensions
+$base_length = 90;
+$base_width = 45;
+$base_height = 20;
+
+// Slide Dimensions (for verification)
+$slide_length = 75;
+$slide_width = 25;
+$slide_thickness = 1;
+
+// Slot Dimensions
+$num_slots = 10;
+$slot_length = 77;
+$slot_width = 1.6;
+$slot_depth = 10;
+$slot_spacing = 3.5; // Centre-to-centre in Y
+
+// Extrusion quality for curved corners
+$fn = 64;
+
+// Calculate slot positions
+// The group of slots must be centered on the block in Y.
+// The centers of the 10 slots are spaced by $slot_spacing.
+// The distance from the center of the group to the center of the first slot is:
+// offset = ( (num_slots - 1) * slot_spacing ) / 2
+$slot_center_offset = ( ($num_slots - 1) * $slot_spacing ) / 2;
+
+// Build the base block
+difference() {
+    // Main Block
+    cube([
+        $base_length, 
+        $base_width, 
+        $base_height
+    ]);
+
+    // Cut Slots
+    for (i = [0 : $num_slots - 1]) {
+        // Calculate Y position for this slot center
+        $y_pos = -($slot_center_offset) + (i * $slot_spacing);
+        
+        // Slot geometry: 
+        // Length along X: $slot_length
+        // Width along Y: $slot_width
+        // Depth along Z: $slot_depth
+        // Position: X centered (0), Y at $y_pos, Z at top of block ($base_height - $slot_depth)
+        
+        translate([
+            0, 
+            $y_pos, 
+            $base_height - $slot_depth
+        ]) {
+            cube([
+                $slot_length, 
+                $slot_width, 
+                $slot_depth
+            ]);
+        }
+    }
+}

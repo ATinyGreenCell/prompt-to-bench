@@ -1,0 +1,40 @@
+```openscad
+// Small lab funnel - printed upright, wide opening at top
+// Built as a single rotate_extrude of the wall cross-section,
+// so the funnel is open at both ends.
+
+$fn = 128;                 // smoothness of round surfaces
+
+// ---- Dimensions (mm) ----
+spout_od     = 10;         // spout outer diameter
+spout_h      = 20;         // spout height (z = 0 .. 20)
+rim_od       = 60;         // cone outer diameter at rim
+total_h      = 50;         // rim height (top of funnel)
+wall         = 1.6;        // wall thickness (normal to surface)
+
+// ---- Derived values ----
+ro_spout   = spout_od / 2;                 // 5.0  spout outer radius
+ri_spout   = ro_spout - wall;              // 3.4  spout bore radius (6.8 mm bore)
+ro_rim     = rim_od / 2;                   // 30.0 rim outer radius
+cone_h     = total_h - spout_h;            // 30.0 cone height
+slope      = (ro_rim - ro_spout) / cone_h; // radial growth per mm of height
+cone_ang   = atan(slope);                  // cone half-angle from vertical
+wall_h     = wall / cos(cone_ang);         // horizontal wall width in cone (keeps 1.6 mm normal thickness)
+ri_rim     = ro_rim - wall_h;              // inner radius at rim
+
+// Height where inner cone surface meets the spout bore
+z_join     = spout_h + (ri_spout - (ro_spout - wall_h)) / slope;
+
+// ---- Wall profile (r, z) revolved about Z ----
+profile = [
+    [ri_spout, 0],          // bore, bottom
+    [ro_spout, 0],          // outside, bottom
+    [ro_spout, spout_h],    // outside, top of spout
+    [ro_rim,   total_h],    // outside, rim
+    [ri_rim,   total_h],    // inside, rim
+    [ri_spout, z_join]      // inside, cone meets bore
+];
+
+rotate_extrude(convexity = 4)
+    polygon(profile);
+```

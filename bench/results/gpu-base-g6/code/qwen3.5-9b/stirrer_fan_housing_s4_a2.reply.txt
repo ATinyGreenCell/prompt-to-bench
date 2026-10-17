@@ -1,0 +1,93 @@
+```openscad
+// DIY Magnetic Stirrer Housing
+// Based on an 80mm PC case fan
+// Print orientation: Top plate on bed (Z=0), walls rise to Z=40
+
+// --- Dimensions ---
+// Outer size of the housing
+W = 90;
+H = 90;
+
+// Thickness of the top plate (resting on bed)
+T_top = 2;
+
+// Height of the walls
+H_wall = 40;
+
+// Wall thickness
+T_wall = 2.5;
+
+// Fan mounting hole pattern
+// The user specified a 71.5mm square pattern for M4 screws
+// This pattern is centered on the plate.
+P_size = 71.5;
+D_screw = 4.5;
+
+// Cable notch dimensions
+W_notch = 12;
+H_notch = 8; // Reaches 8mm down from the open edge (Z=32 to Z=40)
+
+// --- Configuration ---
+$fn = 100; // High resolution for smooth curves and accurate hole sizes
+
+// --- Main Construction ---
+
+// 1. Top Plate
+// Centered on origin, 90x90, 2mm thick
+top_plate = translate([0, 0, 0])
+  cube([W, H, T_top]);
+
+// 2. Walls
+// The walls rise from the top of the plate (Z=2) to Z=40.
+// Outer dimensions are 90x90.
+// We build the walls as a solid block and then cut the holes.
+// Wall block: 90x90x38 (from Z=2 to Z=40)
+walls_base = translate([0, 0, T_top])
+  cube([W, H, H_wall]);
+
+// 3. Screw Holes
+// Pattern: 71.5mm square centered on the plate.
+// Center of pattern is (0,0).
+// Hole centers are at +/- 35.75mm in X and Y.
+hole_positions = [
+  [-P_size/2, -P_size/2],
+  [-P_size/2, P_size/2],
+  [P_size/2, -P_size/2],
+  [P_size/2, P_size/2]
+];
+
+// Create the holes in the walls_base
+// Holes go from Z=2 (top of plate) to Z=40 (open top)
+// We add a small clearance to ensure clean cutting
+holes = for (p = hole_positions) {
+  translate(p)
+    cube([D_screw, D_screw, H_wall - T_top + 0.1]);
+};
+
+// 4. Cable Notch
+// Located in one wall. Let's place it on the front face (negative Y side).
+// The notch is 12mm wide, centered along the wall (Y axis).
+// It reaches 8mm down from the open edge (Z=40), so it spans Z=32 to Z=40.
+// Position X: Centered on the wall face (X=0).
+// Position Y: Centered on the wall face. The wall face is at Y = -H/2 + T_wall/2.
+Y_face = -H/2 + T_wall/2;
+notch_block = translate([0, Y_face, 32])
+  cube([W_notch, H, H_notch]);
+
+// --- Assembly ---
+
+// Start with the top plate
+part = top_plate;
+
+// Add the walls
+part = union(part, walls_base);
+
+// Subtract the screw holes
+part = difference(part, holes);
+
+// Subtract the cable notch
+part = difference(part, notch_block);
+
+// Final Output
+part;
+```

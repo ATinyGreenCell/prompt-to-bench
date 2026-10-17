@@ -1,0 +1,127 @@
+```openscad
+// DIY Magnetic Stirrer Housing for 80mm Fan
+// Print Orientation: Upside down (Top plate on bed, walls rising up)
+
+// --- Dimensions ---
+// Outer size of the box
+W = 90;
+H = 90;
+
+// Thickness of the top plate (resting on bed)
+T_plate = 2;
+
+// Height of the walls
+H_wall = 40;
+
+// Wall thickness
+T_wall = 2.5;
+
+// Fan mounting hole pattern
+// The pattern is 71.5mm square, centred on the plate
+// This implies the distance from center to hole center is 71.5 / 2 = 35.75
+P_dist = 71.5 / 2;
+D_hole = 4.5;
+
+// Cable notch dimensions
+W_notch = 12;
+H_notch = 8; // Reaches 8mm down from open edge (z=32 to z=40)
+
+// --- Configuration ---
+$fn = 128; // High resolution for clean holes and edges
+
+// --- Helper Functions ---
+
+// Create a rectangular hole through a solid
+// x, y: center of hole
+// w, h: width and height of hole
+// z_start, z_end: z range to cut
+module rect_hole(x, y, w, h, z_start, z_end) {
+    difference() {
+        translate([x, y, z_start]) 
+            cube([w, h, z_end - z_start]);
+    }
+}
+
+// Create a cylindrical hole
+// x, y: center
+// d: diameter
+// z_start, z_end: z range
+module cyl_hole(x, y, d, z_start, z_end) {
+    difference() {
+        translate([x, y, z_start]) 
+            cylinder(h = z_end - z_start, d = d, $fn = 64);
+    }
+}
+
+// --- Main Construction ---
+
+// 1. Build the solid block (Outer box minus inner void)
+// We build the solid volume first, then subtract the internal void and features.
+// Outer dimensions: W x H x (T_plate + H_wall)
+// Inner void dimensions: (W - 2*T_wall) x (H - 2*T_wall) x H_wall
+// Note: The top plate is solid, so the void starts at z = T_plate.
+
+outer_z = T_plate + H_wall;
+inner_w = W - 2 * T_wall;
+inner_h = H - 2 * T_wall;
+
+// Create the main solid block
+block = cube([W, H, outer_z]);
+
+// Create the internal void (the empty space inside the box)
+// This void starts at the top of the plate (z = T_plate) and goes up to the top of the walls.
+void = cube([inner_w, inner_h, H_wall], p = [T_wall, T_wall, T_plate]);
+
+// Create the cable notch
+// Located in one wall. Let's place it on the front wall (Y = T_wall + H_wall/2).
+// The notch goes from z = 32 to z = 40.
+// Center Y of the wall: T_wall + (H - 2*T_wall)/2 = T_wall + H/2 - T_wall = H/2
+// Wait, the wall is at Y = T_wall (back) and Y = H - T_wall (front).
+// Let's put the notch on the front wall (Y = H - T_wall).
+// Center of the wall in Y: (H - T_wall + T_wall) / 2 = H/2.
+// The notch is 12mm wide, centered on the wall.
+notch_x = 0;
+notch_y = H/2;
+notch_z_start = 32;
+notch_z_end = 40;
+
+notch = cube([W_notch, T_wall, H_notch], p = [notch_x, H - T_wall - W_notch/2, notch_z_start]);
+
+// Create the screw holes
+// Pattern: 71.5mm square centered on the plate.
+// Centers at: +/- P_dist in X and Y.
+// Z range: 0 to T_plate.
+hole_centers = [
+    [P_dist, P_dist],
+    [P_dist, -P_dist],
+    [-P_dist, P_dist],
+    [-P_dist, -P_dist]
+];
+
+// --- Assembly ---
+// Start with the solid block
+part = block;
+
+// Subtract the internal void
+part = difference() {
+    part;
+    void;
+}
+
+// Subtract the cable notch
+part = difference() {
+    part;
+    notch;
+}
+
+// Subtract the screw holes
+for (c = hole_centers) {
+    part = difference() {
+        part;
+        cyl_hole(c[0], c[1], D_hole, 0, T_plate);
+    };
+}
+
+// Final output
+part;
+```

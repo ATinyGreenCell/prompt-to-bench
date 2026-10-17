@@ -1,0 +1,113 @@
+// 96-Well PCR Tube Rack (0.2 mL)
+// Designed for FDM printing. Rests on XY plane at Z=0.
+// Dimensions based on ANSI/SLAS microplate footprint.
+
+// --- Dimensions ---
+// Overall block dimensions (mm)
+$block_length = 127.76; // X
+$block_width  = 85.48;  // Y
+$block_height = 20.0;   // Z
+
+// Hole specifications (mm)
+$hole_diameter = 6.2;
+$hole_spacing_x = 9.0; // Column spacing
+$hole_spacing_y = 9.0; // Row spacing
+$hole_count_x = 12;    // Columns
+$hole_count_y = 8;     // Rows
+
+// Grid positioning (mm from edges to first hole center)
+$offset_x = 14.38;
+$offset_y = 11.24;
+
+// Chamfer specifications (mm)
+$chamfer_leg = 5.0;
+$chamfer_angle = 45;
+
+// --- Configuration ---
+$fn = 100; // High resolution for chamfers and holes
+
+// --- Main Block ---
+difference() {
+    // 1. Create the main solid block
+    block = cube([
+        $block_length,
+        $block_width,
+        $block_height
+    ]);
+
+    // 2. Cut the 96 holes
+    // Calculate the starting position for the loop to match the specified offsets
+    // The grid is centred, so we iterate from the first hole (A1) to the last.
+    for (col = [0 : $hole_count_x - 1], row = [0 : $hole_count_y - 1]) {
+        // Calculate current hole center coordinates
+        // X increases along columns, Y increases along rows
+        current_x = $offset_x + (col * $hole_spacing_x);
+        current_y = $offset_y + (row * $hole_spacing_y);
+
+        // Create the hole cylinder
+        // Extend slightly past the top and bottom faces to ensure clean cut
+        hole_cyl = cylinder(
+            h = $block_height + 0.1,
+            d = $hole_diameter,
+            center = [current_x, current_y, $block_height / 2]
+        );
+
+        difference() {
+            block;
+            hole_cyl;
+        }
+    }
+
+    // 3. Cut the 45-degree chamfer at the A1 corner
+    // A1 is the bottom-left-front corner in standard plate orientation.
+    // Based on the prompt: "vertical edge at the A1 corner".
+    // We assume the corner at (0,0,0) relative to the block origin.
+    // We need to cut a wedge from the vertical edge at X=0, Y=0.
+    
+    // Correct approach for a 45 deg planar chamfer at the corner:
+    // Use a large cylinder whose axis is perpendicular to the cut plane.
+    // Cut plane normal: (1, 1, 0).
+    // Axis direction: (1, 1, 0).
+    // We need to position this cylinder so it cuts the corner.
+    
+    // Let's construct the cutter as a large cylinder rotated 45 deg around the Z axis, 
+    // then shifted to the corner.
+    
+    // 1. Create a cylinder along X axis.
+    // 2. Rotate -45 deg around Z. Now it points along (1,1,0).
+    // 3. Translate to position the flat face at the corner.
+    
+    chamfer_cutter = rotate([0, 0, -45]) translate([0, 0, 0]) cylinder(
+        h = 200, // Long enough to cover the block
+        d = 200, // Large diameter to cover the whole block width/length
+        center = [0, 0, 0]
+    );
+    
+    // Now we need to position this cutter so its flat face is at the corner (0,0,0)
+    // and it cuts into the block.
+    // The cylinder axis is now (1,1,0). The flat face is at one end.
+    // We want the flat face to be at the corner.
+    // Distance from center of cylinder to flat face = 100.
+    // We need to translate the cylinder so the flat face hits (0,0,0).
+    // The vector from center to flat face is (-100, -100, 0) in the rotated frame?
+    // Let's just translate the whole assembly.
+    // If the cylinder is centered at (0,0,0) and rotated -45 deg, its axis is (1,1,0).
+    // The "back" face (negative direction) is at -100 along the axis.
+    // We want the back face at (0,0,0).
+    // So we translate by +100 along the axis (1,1,0).
+    // Translation vector = 100 * (1/sqrt(2), 1/sqrt(2), 0) approx 70.71.
+    
+    chamfer_cutter = translate([70.71, 70.71, 0]) rotate([0, 0, -45]) cylinder(
+        h = 200,
+        d = 200,
+        center = [0, 0, 0]
+    );
+    
+    // This cutter will cut a 45 degree wedge from the corner.
+    // We must ensure it extends past the block boundaries.
+    
+    difference() {
+        block;
+        chamfer_cutter;
+    }
+}

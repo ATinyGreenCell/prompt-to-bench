@@ -1,0 +1,115 @@
+// Snap-on Clip for Lab Stand Rod and Tubing
+// Orientation: Flat on XY plane, building up in +Z.
+// Units: Millimetres.
+
+// --- Dimensions ---
+// Rod Stand
+$rod_diameter = 12.7;
+$rod_wall_thickness = 3;
+$rod_outer_diameter = $rod_diameter + 2 * $rod_wall_thickness; // 18.7
+$rod_ring_height = 10;
+
+// Tubing
+$tubing_inner_diameter = 6;
+$tubing_wall_thickness = 2;
+$tubing_outer_diameter = $tubing_inner_diameter + 2 * $tubing_wall_thickness; // 10
+$tubing_ring_height = 10;
+
+// Bridge
+$bridge_width_x = 4; // From x=8 to x=12
+$bridge_width_y = 6;
+$bridge_height = 10;
+
+// Cutout Dimensions
+$rod_cutout_width = 10;
+$rod_cutout_y_limit = $rod_cutout_width / 2; // 5
+
+$tubing_cutout_width = 4.5;
+$tubing_cutout_y_limit = $tubing_cutout_width / 2; // 2.25
+
+// Positioning
+$rod_center_x = 0;
+$rod_center_y = 0;
+
+$tubing_center_x = 15;
+$tubing_center_y = 0;
+
+// --- Generation ---
+$fn = 64;
+
+// 1. Rod Ring
+difference() {
+    // Outer Ring
+    translate([$rod_center_x, $rod_center_y, 0]) {
+        cylinder(
+            h = $rod_ring_height,
+            d = $rod_outer_diameter,
+            center = true
+        );
+    }
+    
+    // Inner Hole
+    translate([$rod_center_x, $rod_center_y, 0]) {
+        cylinder(
+            h = $rod_ring_height + 0.1, // Extend slightly past top/bottom
+            d = $rod_diameter,
+            center = true
+        );
+    }
+    
+    // Cutout on -X side
+    translate([$rod_center_x, $rod_center_y, 0]) {
+        // Cutout is a rectangle: x < 0, -5 < y < 5
+        // We create a shape that covers this area and extrude it up
+        // To ensure clean cut, we extend slightly in Z
+        difference() {
+            // The "knife" shape that removes the material
+            // We define a block that covers the cutout area
+            translate([-0.01, -($rod_cutout_y_limit + 0.01), 0]) {
+                cube([($rod_cutout_width + 0.02), ($rod_cutout_y_limit * 2 + 0.02), $rod_ring_height + 0.1]);
+            }
+        }
+    }
+}
+
+// 2. Tubing Ring
+difference() {
+    // Outer Ring
+    translate([$tubing_center_x, $tubing_center_y, 0]) {
+        cylinder(
+            h = $tubing_ring_height,
+            d = $tubing_outer_diameter,
+            center = true
+        );
+    }
+    
+    // Inner Hole
+    translate([$tubing_center_x, $tubing_center_y, 0]) {
+        cylinder(
+            h = $tubing_ring_height + 0.1,
+            d = $tubing_inner_diameter,
+            center = true
+        );
+    }
+    
+    // Cutout on +X side
+    translate([$tubing_center_x, $tubing_center_y, 0]) {
+        difference() {
+            // The "knife" shape
+            translate([0.01, -($tubing_cutout_y_limit + 0.01), 0]) {
+                cube([($tubing_cutout_width + 0.02), ($tubing_cutout_y_limit * 2 + 0.02), $tubing_ring_height + 0.1]);
+            }
+        }
+    }
+}
+
+// 3. Solid Bridge
+translate([($rod_center_x + $rod_outer_diameter / 2) + ($bridge_width_x / 2), 0, 0]) {
+    // Center of bridge is at x = 10 (midpoint of 8 and 12)
+    // Width in X is 4, Width in Y is 6
+    cube([
+        $bridge_width_x, 
+        $bridge_width_y, 
+        $bridge_height
+    ]);
+}

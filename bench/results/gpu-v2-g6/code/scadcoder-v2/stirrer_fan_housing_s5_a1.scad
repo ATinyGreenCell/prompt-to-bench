@@ -1,0 +1,29 @@
+// Fan cover - a simple open box (open top) that mounts over a round PC case fan to turn it into
+// a magnetic stirrer. The top plate is the stirring surface. This is the print orientation: the
+// top plate lies on the bed (z = 0) and the walls rise upward.
+//
+
+top     = 2;
+walls   = 2.5;
+open_z  = 40;
+outer_x = 90;
+outer_y = 90;
+screw   = 4.5;
+pattern = 71.5;
+cable_w = 12;
+
+$fn = 48;
+
+inner_x = outer_x - 2 * walls;
+inner_y = outer_y - 2 * walls;
+
+difference() {
+    cube([outer_x, outer_y, top + walls]);
+    translate([walls, walls, walls]) cube([inner_x, inner_y, open_z - walls + 0.01]);   // hollow, open top
+    for (i = [0 : 3])
+        rotate([0, 0, 90 * i])
+            translate([-(pattern / 2 - screw / 2), -(pattern / 2 - screw / 2), -1])
+                cylinder(h = top + 2, d = screw);                                      // screw holes
+    translate([outer_x / 2, outer_y / 2, open_z - 1])
+        cube([cable_w, outer_y + 2, 8]);                                               // cable notch (cuts through the top of one wall)
+}

@@ -1,0 +1,75 @@
+The measurement report reveals two critical issues compared to the specification:
+
+1.  **Z-Positioning**: The report states the bounding box is `Z -15.00 .. 15.00` and the lowest point is `z = -15.00`. The specification requires the part to rest on the bed at `z = 0`. The current code centers the block on the origin, placing the bottom 15mm below the bed.
+2.  **Hole Depth**: The report shows holes appearing at `z=22.50` and `z=28.50` (relative to the lowest point). Since the block is 30mm tall (from -15 to +15), these heights correspond to absolute Z positions of 7.5mm and 13.5mm. This means the holes are only 22.5mm deep (from the top surface at Z=15 down to Z=-7.5). The specification requires a **25mm deep** hole, which should extend from the top surface (Z=15) down to Z=-10.0, leaving a 5mm floor (from Z=-10 to Z=-15).
+
+**Fixes applied:**
+1.  Removed `center = true` from the main `cube()` call and added `translate([0, 0, BLOCK_HEIGHT_Z / 2])` to shift the block so its bottom face sits at Z=0.
+2.  Adjusted the `cylinder()` height and Z-position. The cylinder now has a height of `BLOCK_HEIGHT_Z - FLOOR_HEIGHT` (25mm) and is positioned so its top aligns with the block's top surface and its bottom aligns with the desired floor level.
+
+```openscad
+// Bench Rack for 1.5 mL Microcentrifuge Tubes
+// Dimensions based on user specifications
+
+// Block Dimensions
+BLOCK_LENGTH_X = 106; // mm
+BLOCK_WIDTH_Y = 72;   // mm
+BLOCK_HEIGHT_Z = 30;  // mm
+
+// Grid Configuration
+NUM_ROWS_Y = 4;       // Rows along Y
+NUM_COLS_X = 6;       // Columns along X
+GRID_SPACING_X = 16;  // mm centre-to-centre
+GRID_SPACING_Y = 16;  // mm centre-to-centre
+
+// Hole Dimensions
+HOLE_DIAMETER = 11.2; // mm
+HOLE_DEPTH = 25;      // mm (open top, closed bottom)
+FLOOR_HEIGHT = 5;     // mm (solid floor at bottom)
+
+// Tolerance for cutting operations (to ensure clean removal)
+CUT_TOLERANCE = 0.1;  // mm
+
+// Set global faceting for smooth curves
+$fn = 64;
+
+// Calculate grid offsets to center the grid on the block
+// Total span X = (NUM_COLS_X - 1) * GRID_SPACING_X
+// Offset X = (BLOCK_LENGTH_X - Total span X) / 2
+GRID_OFFSET_X = (BLOCK_LENGTH_X - (NUM_COLS_X - 1) * GRID_SPACING_X) / 2;
+
+// Total span Y = (NUM_ROWS_Y - 1) * GRID_SPACING_Y
+// Offset Y = (BLOCK_WIDTH_Y - Total span Y) / 2
+GRID_OFFSET_Y = (BLOCK_WIDTH_Y - (NUM_ROWS_Y - 1) * GRID_SPACING_Y) / 2;
+
+// Main Block
+difference() {
+    // Create the solid rectangular block
+    // Translate to ensure bottom is at Z=0
+    translate([0, 0, BLOCK_HEIGHT_Z / 2]) {
+        cube([BLOCK_LENGTH_X, BLOCK_WIDTH_Y, BLOCK_HEIGHT_Z]);
+        
+        // Create holes
+        // We use a loop to generate cylinders that cut through the block
+        for (r = [0 : NUM_ROWS_Y - 1]) {
+            for (c = [0 : NUM_COLS_X - 1]) {
+                // Calculate position of each hole center
+                pos_x = GRID_OFFSET_X + c * GRID_SPACING_X;
+                pos_y = GRID_OFFSET_Y + r * GRID_SPACING_Y;
+                
+                // Define the cutting cylinder
+                // Radius is half diameter
+                // Height is exactly the required hole depth (25mm)
+                // Z position: Top of cylinder at block top (BLOCK_HEIGHT_Z / 2)
+                // Bottom of cylinder at (BLOCK_HEIGHT_Z / 2) - HOLE_DEPTH
+                cylinder(
+                    h = HOLE_DEPTH,
+                    r = HOLE_DIAMETER / 2,
+                    center = [pos_x, pos_y, BLOCK_HEIGHT_Z / 2 - HOLE_DEPTH / 2],
+                    $fn = 64
+                );
+            }
+        }
+    }
+}
+```

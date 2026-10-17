@@ -1,0 +1,44 @@
+```openscad
+// L-shaped mounting bracket for a NEMA 17 stepper motor (e.g. syringe pump).
+// Base plate with two vertical through-holes; motor plate standing on its back edge with a
+// centring boss hole and a screw pattern; two triangular gussets flush with the edges.
+//
+
+base_x  = 25;
+base_y  = 45;
+base_z  = 5;
+screw_h = 4.5;
+screw_x = [-17, 17];
+screw_y = 30;
+
+motor_x = 25;
+motor_y = 5;
+motor_z = 50;
+boss_h  = 23;
+boss_x  = 0;
+boss_z  = 28;
+screw_s = 31;
+screw_m = 3.4;
+
+$fn = 48;
+
+gusset_t = 5;
+gusset_y = 20;
+gusset_z = 20;
+
+difference() {
+    union() {
+        translate([-base_x / 2, 0, 0]) cube([base_x, base_y, base_z]);
+        translate([-motor_x / 2, 0, 0]) cube([motor_x, motor_y, motor_z]);
+        for (x = [-base_x / 2, base_x / 2])
+            translate([x, 0, 0]) cube([gusset_t, gusset_y, gusset_z]);
+    }
+    for (x = screw_x)
+        translate([x, screw_y, -1]) cylinder(h = base_z + 2, d = screw_h);
+    translate([0, -1, boss_z - boss_h / 2]) rotate([0, 90, 0]) cylinder(h = motor_y + 2, d = boss_h);
+    for (i = [0, 1])
+        for (j = [0, 1])
+            translate([j * screw_s / 2, screw_y, i * screw_s / 2])
+                rotate([90, 0, 0]) cylinder(h = motor_y + 2, d = screw_m);
+}
+```

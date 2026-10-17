@@ -1,0 +1,23 @@
+// Funnel - a straight spout topped by a conical section, open at both ends for fluid flow.
+// NOVEL general part (a generic funnel, not any one labware item).
+//
+
+spout_d = 10;
+spout_l = 20;
+cone_d1 = 10;
+cone_d2 = 60;
+cone_h  = 30;
+wall    = 1.6;
+
+$fn = 64;
+
+ib = max(1.6, spout_d - 2 * wall);   // bore: keep at least 1.6 mm even if the spout gets very narrow
+
+difference() {
+    union() {
+        cylinder(h = spout_l, d = spout_d);
+        cylinder(h = cone_h, d1 = cone_d1, d2 = cone_d2);
+    }
+    translate([0, 0, -1]) cylinder(h = spout_l + 2, d = ib);   // bore through the spout
+    translate([0, 0, cone_h - 1]) cylinder(h = cone_h + 2, d1 = ib, d2 = cone_d2 - 2 * wall);  // conical bore, open at the rim
+}

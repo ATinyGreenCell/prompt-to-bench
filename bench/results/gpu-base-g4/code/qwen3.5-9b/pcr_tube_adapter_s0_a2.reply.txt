@@ -1,0 +1,59 @@
+```openscad
+// Adapter Sleeve for 0.2mL PCR Tube in 1.5mL Rack
+// Print Orientation: Upside down (Collar on bed)
+// Units: mm
+
+// --- Dimensions ---
+$fn = 128; // High resolution for smooth curves and accurate holes
+
+// Collar (Base)
+$collar_outer_diameter = 13.0;
+$collar_thickness = 1.5;
+
+// Sleeve Body
+$sleeve_outer_diameter = 10.8;
+$sleeve_total_height = 21.5;
+$sleeve_inner_diameter = 6.2;
+
+// --- Calculated Variables ---
+$collar_radius = $collar_outer_diameter / 2;
+$sleeve_outer_radius = $sleeve_outer_diameter / 2;
+$sleeve_inner_radius = $sleeve_inner_diameter / 2;
+$sleeve_body_height = $sleeve_total_height - $collar_thickness;
+
+// --- Main Part ---
+difference() {
+    // 1. Create the outer solid shape
+    union() {
+        // Collar (Lies on Z=0)
+        cylinder(
+            h = $collar_thickness,
+            r = $collar_radius,
+            center = [0, 0, $collar_thickness / 2]
+        );
+        
+        // Sleeve Body (Rises from top of collar)
+        cylinder(
+            h = $sleeve_body_height,
+            r = $sleeve_outer_radius,
+            center = [0, 0, $collar_thickness + $sleeve_body_height / 2]
+        );
+    }
+    
+    // 2. Cut the central bore through the full height
+    // Total height = collar thickness + sleeve body height
+    cylinder(
+        h = $sleeve_total_height,
+        r = $sleeve_inner_radius,
+        center = [0, 0, $sleeve_total_height / 2]
+    );
+    
+    // 3. Cut the collar outer rim to match the sleeve outer diameter
+    // This creates the step down from collar to sleeve
+    cylinder(
+        h = $collar_thickness + 0.1, // Extend slightly past collar top to ensure clean cut
+        r = ($sleeve_outer_diameter / 2) + 0.05, // Extend slightly past sleeve outer radius
+        center = [0, 0, $collar_thickness / 2]
+    );
+}
+```

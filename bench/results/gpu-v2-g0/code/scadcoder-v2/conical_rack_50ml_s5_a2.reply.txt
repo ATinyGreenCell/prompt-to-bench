@@ -1,0 +1,31 @@
+```openscad
+// Rack for six 50 mL conical (Falcon-type) tubes - printed upside down and flipped over.
+// A flat plate with six through-holes lies on the bed (z = 0 to 4); two solid walls run along
+// the two long edges and rise from the plate. After flipping, the rack stands on the walls and
+// the tubes pass through the holes.
+//
+
+plate_x = 130;
+plate_y = 90;
+plate_z = 4;
+wall_h  = 70;
+hole_d  = 30.5;
+row_p   = 40;
+col_p   = 40;
+
+$fn = 48;
+
+plate_t = 4;
+wall_t  = 4;
+
+difference() {
+    union() {
+        translate([-plate_x / 2, -plate_y / 2, 0]) cube([plate_x, plate_y, plate_z]);
+        for (y = [-plate_y / 2, plate_y / 2])
+            translate([-plate_x / 2, y, 0]) cube([plate_x, wall_t, wall_h]);
+    }
+    for (i = [0, 1], j = [0, 1, 2])
+        translate([col_p * j - row_p / 2, row_p * i - col_p / 2, -1])
+            cylinder(h = plate_z + 2, d = hole_d);
+}
+```

@@ -1,0 +1,117 @@
+The measurement report reveals a critical error in the geometry construction: **The bounding box dimensions are completely wrong.**
+
+**Analysis of Errors:**
+1.  **X Dimension:** The report shows `210.00` mm (from -40 to 170). The specification requires `130` mm.
+    *   *Cause:* The `hole()` module was defined to cut a cylinder with diameter `D_HOLE` (30.5mm) but was placed inside a `difference()` block containing a `cube([W_PLATE_X, ...])`. However, the cylinder was likely not centered correctly relative to the cube's local coordinate system, or the `translate` logic inside the loop combined with the `difference` logic created a massive bounding box that extended far beyond the plate.
+    *   *Correction:* The holes must be cut *from* the plate. The simplest and most robust way is to define the plate as a single solid, then use `difference()` with the plate and the holes. The holes should be cylinders centered at the calculated grid positions. The previous code attempted to cut holes by translating a cylinder into a difference block containing the plate, but the `translate` inside the `hole` module was likely adding to the global coordinates incorrectly or the `difference` logic was flawed (e.g., the cylinder was too large or positioned off-center relative to the plate's local frame).
+    *   *Specific Fix:* I will reconstruct the part as a `difference()` of the main Plate block and the Holes. The Plate block will be exactly 130x90x4. The holes will be cylinders of 30.5mm diameter centered at the calculated X/Y positions.
+
+2.  **Y Dimension:** The report shows `176.00` mm (from -45 to 131). The specification requires `90` mm.
+    *   *Cause:* Similar to the X error, the geometry extended far beyond the plate boundaries. The walls were likely placed incorrectly or the hole cutting logic expanded the bounding box.
+    *   *Correction:* Ensure the plate is strictly 130x90. The walls are 4mm thick and run along the long edges (Y = +/- 45). The total Y span should be 90mm.
+
+3.  **Z Dimension:** The report shows `70.00` mm. This matches the spec (`z=0` to `z=70`).
+
+4.  **Volume:** The reported volume is ~1.6 million mm³. A 130x90x4 plate is ~46,800 mm³. Even with walls, it should be under 100,000 mm³. The reported volume confirms the model is huge and incorrect.
+
+**Corrected Approach:**
+1.  Define the Plate as a single `cube([130, 90, 4])`.
+2.  Define the Holes as a list of cylinders at the correct centers.
+3.  Use `difference()` to subtract the holes from the plate.
+4.  Add the two walls (130x4x70) on the sides. Since the walls are outside the hole area (holes are at Y=±20, walls are at Y=±45), we can simply union the walls to the holed plate.
+5.  Ensure all coordinates are calculated relative to the center of the plate (0,0).
+
+```openscad
+// Rack for six 50 mL conical (Falcon-type) tubes
+// Print orientation: Upside down. Flat plate on bed (Z=0).
+// After printing, flip over to stand on the two walls.
+
+// --- Dimensions ---
+// Plate dimensions
+W_PLATE_X = 130; // mm
+W_PLATE_Y = 90;  // mm
+H_PLATE = 4;     // mm
+
+// Hole specifications
+N_ROWS = 3;      // Rows along X
+N_COLS = 2;      // Cols along Y
+D_HOLE = 30.5;   // mm (Diameter)
+C_X = 40;        // mm (Centre-to-centre spacing X)
+C_Y = 40;        // mm (Centre-to-centre spacing Y)
+
+// Wall specifications
+H_WALL = 70;     // mm (Total height from bed)
+W_WALL_THICK = 4; // mm (Thickness of wall)
+
+// --- Derived Positions ---
+// Plate is centred on origin
+// Hole grid positions
+// Rows along X: 3 holes. Spacing 40mm. Centres at: -40, 0, +40
+HOLE_X_POS = [-40, 0, 40];
+
+// Cols along Y: 2 holes. Spacing 40mm.
+// Plate Y is 90mm. Half is 45mm.
+// We need to fit 2 holes with 40mm spacing symmetrically.
+// Distance between holes = 40mm.
+// Center of the pair = 0.
+// y1 = -20, y2 = +20.
+HOLE_Y_POS = [-20, 20];
+
+// Wall positions
+// Walls run along the long edges (X direction).
+// Plate Y is 90mm. Half is 45mm.
+// Wall thickness is 4mm.
+// Wall 1 (Left): Extends from Y = -45 to Y = -41
+// Wall 2 (Right): Extends from Y = +41 to Y = +45
+WALL_Y_MIN = -45;
+WALL_Y_MAX = 45;
+WALL_Y_INNER = -41;
+WALL_Y_OUTER = 41;
+
+// --- Configuration ---
+$fn = 128; // High resolution for holes and walls
+
+module main() {
+    // Create the base plate
+    plate();
+    
+    // Create the holes by subtracting cylinders from the plate
+    // We use difference() here. The plate is the first object.
+    // The holes are cylinders centered at the calculated positions.
+    // We extend the cylinder height slightly past the plate to ensure clean cuts.
+    difference() {
+        // 1. The Plate
+        translate([0, 0, 0]) {
+            cube([W_PLATE_X, W_PLATE_Y, H_PLATE], center = false);
+        }
+        
+        // 2. The Holes
+        for (xi = [0:N_ROWS-1]) {
+            for (yi = [0:N_COLS-1]) {
+                translate([HOLE_X_POS[xi], HOLE_Y_POS[yi], 0]) {
+                    cylinder(h = H_PLATE + 0.1, d = D_HOLE, $fn = 128);
+                }
+            }
+        }
+    }
+    
+    // Add the walls
+    // Left Wall (from Y=-45 to -41)
+    translate([0, WALL_Y_MIN, 0]) {
+        cube([W_PLATE_X, WALL_Y_OUTER - WALL_Y_MIN, H_WALL], center = false);
+    }
+    
+    // Right Wall (from Y=+41 to +45)
+    translate([0, WALL_Y_MAX, 0]) {
+        cube([W_PLATE_X, WALL_Y_MAX - WALL_Y_INNER, H_WALL], center = false);
+    }
+}
+
+module plate() {
+    // This module is now just a helper to visualize the plate if needed,
+    // but the main logic is in the difference block above.
+    // We keep it simple to avoid confusion.
+}
+
+main();
+```

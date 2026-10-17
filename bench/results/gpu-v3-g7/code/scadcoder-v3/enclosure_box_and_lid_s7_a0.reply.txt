@@ -1,0 +1,62 @@
+```openscad
+// Two-part enclosure: open-top box + upside-down lid, printed side by side
+// Units: mm
+
+$fn = 64;
+
+// ---------- Box ----------
+box_x     = 70;    // box outer length (X)
+box_y     = 50;    // box outer width (Y)
+box_z     = 30;    // box outer height (Z)
+wall      = 2;     // box wall thickness
+floor_t   = 2;     // box floor thickness
+
+// ---------- Lid ----------
+lid_x     = 70;    // lid plate length (X)
+lid_y     = 50;    // lid plate width (Y)
+lid_t     = 2;     // lid plate thickness
+lip_x     = 65.6;  // lip outer length (X)
+lip_y     = 45.6;  // lip outer width (Y)
+lip_wall  = 1.5;   // lip wall thickness
+lip_h     = 4;     // lip height above plate
+
+// ---------- Layout ----------
+gap       = 10;    // gap between parts on the bed
+eps       = 0.5;   // cutter overshoot past faces
+
+// Centre the pair of parts on the origin in X
+total_x   = box_x + gap + lid_x;
+box_cx    = -total_x/2 + box_x/2;          // box centre X
+lid_cx    =  total_x/2 - lid_x/2;          // lid centre X (+X side)
+
+// ---------- Part 1: box ----------
+module box() {
+    difference() {
+        translate([-box_x/2, -box_y/2, 0])
+            cube([box_x, box_y, box_z]);
+        // inner cavity, open top
+        translate([-(box_x - 2*wall)/2, -(box_y - 2*wall)/2, floor_t])
+            cube([box_x - 2*wall, box_y - 2*wall, box_z - floor_t + eps]);
+    }
+}
+
+// ---------- Part 2: lid (printed upside down) ----------
+module lid() {
+    union() {
+        // plate on the bed
+        translate([-lid_x/2, -lid_y/2, 0])
+            cube([lid_x, lid_y, lid_t]);
+        // rectangular lip on top of plate
+        difference() {
+            translate([-lip_x/2, -lip_y/2, lid_t - 0.01])
+                cube([lip_x, lip_y, lip_h + 0.01]);
+            translate([-(lip_x - 2*lip_wall)/2, -(lip_y - 2*lip_wall)/2, lid_t - eps])
+                cube([lip_x - 2*lip_wall, lip_y - 2*lip_wall, lip_h + 2*eps]);
+        }
+    }
+}
+
+// ---------- Assembly on the bed ----------
+translate([box_cx, 0, 0]) box();
+translate([lid_cx, 0, 0]) lid();
+```

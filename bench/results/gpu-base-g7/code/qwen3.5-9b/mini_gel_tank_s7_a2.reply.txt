@@ -1,0 +1,113 @@
+```openscad
+// Buffer Tank for Mini Horizontal Gel Electrophoresis
+// Units: millimetres
+
+// Outer Dimensions
+$w_outer = 120; // X width
+$d_outer = 70;  // Y depth
+$h_outer = 40;  // Z height
+
+// Wall and Floor Thickness
+$w_thick = 3;   // Wall thickness
+$f_thick = 3;   // Floor thickness
+
+// Platform Dimensions
+$p_len = 60;    // Platform length (X)
+$p_width = $d_outer - 2*$w_thick; // Platform width (Y) - spans full inner width
+$p_height = 10; // Platform height above inner floor
+$p_z_base = $f_thick + $p_height; // Z position of platform top
+
+// Electrode Hole Dimensions
+$h_dia = 2;     // Hole diameter
+$h_y = 0;       // Hole Y position
+$h_z = 30;      // Hole Z position
+
+// Configuration
+$fn = 128;      // Resolution for curved shapes
+
+// Derived Dimensions
+$w_inner = $w_outer - 2*$w_thick;
+$d_inner = $d_outer - 2*$w_thick;
+$h_inner = $h_outer - $f_thick;
+
+// Calculate positions for holes
+// Holes are at the ends of the inner width, centered in Y and Z.
+// Inner width is $w_inner. Ends are at +/- $w_inner/2.
+// We need the cylinder to pass through the wall.
+// Wall is at +/- $w_outer/2.
+// Hole center is at +/- $w_inner/2.
+// Distance from hole center to outer face = ($w_outer/2) - ($w_inner/2) = $w_thick.
+// Cylinder length needs to extend past the outer face by a small margin.
+$h_len = $w_thick + 0.5; // Extend 0.5mm past the wall face
+
+module buffer_tank() {
+    // 1. Construct the solid body (Union of Tank and Platform)
+    // Tank: Full outer block
+    translate([0, 0, 0])
+        cube([
+            $w_outer, 
+            $d_outer, 
+            $h_outer
+        ]);
+    
+    // Platform: Added on top of the floor, centered in X, spanning full Y
+    // Floor is at Z=0 to Z=$f_thick. Platform sits on floor.
+    translate([
+        ($w_outer - $p_len) / 2, // Centre in X
+        0,                        // Centre in Y
+        $f_thick                  // Base on floor
+    ])
+        cube([
+            $p_len, 
+            $p_width, 
+            $p_height
+        ]);
+    
+    // 2. Cut the top opening (Open Top)
+    // The opening is the inner dimensions.
+    // It starts from the top of the side walls (Z = $h_outer - $w_thick)
+    // and goes down to the top of the platform (Z = $p_z_base).
+    // We extend the cut slightly past the top face to ensure a clean cut.
+    translate([0, 0, $h_outer - $w_thick + 0.1])
+        cube([
+            $w_inner, 
+            $d_inner, 
+            ($h_outer - $w_thick) - $p_z_base + 0.1 // Depth of cut
+        ]);
+    
+    // 3. Cut the electrode holes
+    // Two holes: one at each end (X = +/- $w_inner/2), 
+    // along X axis, at Y = 0, Z = $h_z.
+    // Cylinder axis is X.
+    
+    $hole_x_start = -$w_inner/2 - $h_len; // Start outside the tank
+    $hole_x_end = -$w_inner/2 + $h_len;   // End inside the tank (and past the wall)
+    
+    // Left Hole
+    translate([
+        $hole_x_start,
+        $h_y, 
+        $h_z
+    ])
+        cylinder(
+            h = $h_len * 2, // Length covers the full span needed
+            r = $h_dia/2,
+            $fn = $fn
+        );
+    
+    // Right Hole
+    translate([
+        -$hole_x_end, // Mirror the start position
+        $h_y, 
+        $h_z
+    ])
+        cylinder(
+            h = $h_len * 2,
+            r = $h_dia/2,
+            $fn = $fn
+        );
+}
+
+// Render the part
+buffer_tank();
+```

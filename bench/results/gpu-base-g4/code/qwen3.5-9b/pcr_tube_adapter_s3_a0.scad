@@ -1,0 +1,59 @@
+// Adapter Sleeve for 0.2 mL PCR tubes in 1.5 mL rack holes
+// Print orientation: Upside down (Collar on bed, Sleeve rising)
+// Units: mm
+
+// --- Dimensions ---
+$fn = 128; // High resolution for smooth cylinders
+
+// Collar (Base)
+$collar_diameter = 13.0;
+$collar_thickness = 1.5;
+
+// Sleeve Body
+$sleeve_outer_diameter = 10.8;
+$sleeve_total_height = 21.5;
+
+// Bore
+$bore_diameter = 6.2;
+
+// --- Calculated Heights ---
+// Total height is 21.5. Collar is 1.5 thick.
+// Sleeve body rises from top of collar (z=1.5) to z=21.5.
+$sleeve_body_height = $sleeve_total_height - $collar_thickness;
+
+// --- Main Body Construction ---
+// We build the solid by unioning the Collar and the Sleeve Body,
+// then subtracting the bore.
+
+difference() {
+    union() {
+        // 1. The Collar (Base)
+        // Lies on XY plane, centered at origin.
+        cylinder(
+            h = $collar_thickness,
+            d = $collar_diameter,
+            center = [0, 0, $collar_thickness / 2]
+        );
+
+        // 2. The Sleeve Body
+        // Starts at z = $collar_thickness, ends at z = $sleeve_total_height.
+        translate([0, 0, $collar_thickness]) {
+            cylinder(
+                h = $sleeve_body_height,
+                d = $sleeve_outer_diameter,
+                center = [0, 0, $sleeve_body_height / 2]
+            );
+        }
+    }
+
+    // 3. The Bore (Hole)
+    // Runs through the full height (0 to $sleeve_total_height).
+    // Extend slightly past the top and bottom faces to ensure clean cut.
+    translate([0, 0, -0.1]) {
+        cylinder(
+            h = $sleeve_total_height + 0.2,
+            d = $bore_diameter,
+            center = [0, 0, $sleeve_total_height / 2]
+        );
+    }
+}

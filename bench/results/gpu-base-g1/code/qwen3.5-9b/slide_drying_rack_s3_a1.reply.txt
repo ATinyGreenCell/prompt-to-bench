@@ -1,0 +1,69 @@
+```openscad
+// Drying Rack for 10 Microscope Slides
+// Base: 90 x 45 x 20 mm
+// Slots: 10 parallel slots along X, 77mm long, 1.6mm wide, 10mm deep
+// Spacing: 3.5mm centre-to-centre in Y
+
+$fn = 128;
+
+// Base Dimensions
+base_length = 90;
+base_width = 45;
+base_height = 20;
+
+// Slide Dimensions (for reference)
+slide_length = 75;
+slide_width = 25;
+slide_thickness = 1;
+
+// Slot Dimensions
+num_slots = 10;
+slot_length = 77;
+slot_width = 1.6;
+slot_depth = 10;
+slot_spacing = 3.5; // Centre-to-centre in Y
+
+// Build Base
+difference() {
+    // Main Block
+    cube([base_length, base_width, base_height], center = true);
+    
+    // Cut Slots
+    // We need to cut 10 slots.
+    // Each slot is a rectangular prism: length x width x depth.
+    // Orientation: Length along X, Width along Y, Depth along Z (cutting down).
+    // Position: Centered in X, Y positions calculated above.
+    // Z position: Top of block is at Z=10 (since height is 20 and centered at 0).
+    // Slot depth is 10mm, so it goes from Z=10 down to Z=0.
+    // To ensure clean cut, we extend slightly past the bottom face (Z=0).
+    
+    for (i = [0 : num_slots - 1]) {
+        // Calculate Y position for this slot
+        // Centers are spaced by slot_spacing.
+        // The sequence of centers relative to the group center (0) is:
+        // -(n-1)/2 * spacing, ..., +(n-1)/2 * spacing
+        y_offset = ((i - (num_slots - 1) / 2) * slot_spacing);
+        
+        // Define the cutting block
+        // Dimensions: [slot_length, slot_width, slot_depth + clearance]
+        // Clearance ensures the cut goes slightly past the bottom face.
+        cut_height = slot_depth + 0.5; 
+        
+        // Calculate Z position for the cutting block center
+        // Top of block is at Z = base_height / 2 = 10.
+        // We want the cutting block to extend from Z=10 down to Z=0.5 (slightly past 0).
+        // The center of the cutting block should be at: 10 - (cut_height / 2)
+        z_center = (base_height / 2) - (cut_height / 2);
+        
+        translate([
+            0, // X is centered
+            y_offset, // Y offset calculated above
+            z_center // Z center calculated above
+        ]) {
+            // Draw the cutting block centered at the origin relative to this translate
+            // Dimensions: length x width x height
+            cube([slot_length, slot_width, cut_height], center = true);
+        }
+    }
+}
+```

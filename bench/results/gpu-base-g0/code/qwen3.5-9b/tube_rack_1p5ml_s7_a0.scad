@@ -1,0 +1,81 @@
+// Bench Rack for 1.5 mL Microcentrifuge Tubes
+// Designed for FDM printing. Rests on XY plane at Z=0.
+
+// Block Dimensions
+$block_length = 106; // X
+$block_width = 72;   // Y
+$block_height = 30;  // Z
+
+// Grid Configuration
+$hole_count_x = 6;   // Holes along X
+$hole_count_y = 4;   // Holes along Y
+$hole_spacing_x = 16; // Centre-to-centre X
+$hole_spacing_y = 16; // Centre-to-centre Y
+
+// Hole Dimensions
+$hole_diameter = 11.2;
+$hole_depth = 25;    // Open at top, closed at bottom
+$floor_thickness = 5; // Solid floor at bottom (30 - 25 = 5)
+
+// Quality Settings
+$fn = 64;
+
+// --- Main Block ---
+block = cube([
+    $block_length,
+    $block_width,
+    $block_height
+], center = true);
+
+// --- Hole Generator ---
+// Calculate grid origin to center the grid on the block
+// Total span X = (count_x - 1) * spacing_x
+// Total span Y = (count_y - 1) * spacing_y
+// Origin X = -Total_span_X / 2
+// Origin Y = -Total_span_Y / 2
+
+$grid_origin_x = -(($hole_count_x - 1) * $hole_spacing_x) / 2;
+$grid_origin_y = -(($hole_count_y - 1) * $hole_spacing_y) / 2;
+
+// Create holes using difference
+// Holes are cylinders. To ensure clean cuts, we extend them slightly past the top face (Z=15 relative to center)
+// The block is centered at Z=0, so top is at Z=15.
+// Hole depth is 25mm. We cut from Z=15 down to Z=-10.
+// We add a small overhang (0.1mm) to ensure the cut goes through the top face completely.
+
+holes = union();
+for (i = [0 : $hole_count_x - 1]) {
+    for (j = [0 : $hole_count_y - 1]) {
+        // Calculate position of this hole
+        $x_pos = $grid_origin_x + i * $hole_spacing_x;
+        $y_pos = $grid_origin_y + j * $hole_spacing_y;
+        
+        // Cylinder parameters
+        // Center at ($x_pos, $y_pos, 15)
+        // Radius = diameter / 2
+        // Height = hole_depth + overhang (to cut through top face)
+        // Direction: -Z (downwards)
+        
+        $radius = $hole_diameter / 2;
+        $cut_height = $hole_depth + 0.5; // 0.5mm overhang
+        
+        h = cylinder(
+            h = $cut_height,
+            r = $radius,
+            center = [$x_pos, $y_pos, 15],
+            direction = [0, 0, -1]
+        );
+        
+        holes = union(holes, h);
+    }
+}
+
+// Final Assembly
+// Subtract holes from the block
+result = difference() {
+    block;
+    holes;
+}
+
+// Display result
+result;

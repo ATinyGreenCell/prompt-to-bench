@@ -172,7 +172,9 @@ to 16-bit safetensors. QLoRA 4-bit is NOT used (not recommended for Qwen3.5). Kn
 # pod:    rm -f merged16.zip; runpodctl send out_vlm/merged16
 # laptop: mkdir -p ~/printpaper/finetune/out-3ep && cd "$_" && runpodctl receive <code>
 ```
-Verify all 4 shards + the index are present, then terminate the pod (delete-pod; confirm list-pods empty).
+Start the receive only after the pod's send log says `Sending 'merged16.zip'` - the code is printed before the
+zip exists, and an early receive fails `room not ready` (H38). Verify all 4 shards + the index are present, then
+terminate the pod (delete-pod; confirm list-pods empty).
 
 ## B3. Make it box-importable + upload (laptop; H30)
 ```
@@ -190,3 +192,26 @@ reads. Sanity-check the HF API shows `pipeline_tag: image-text-to-text` and `tra
 - Bench: `OLLAMA_HOST=http://127.0.0.1:11435 run_bench.py --models tiiny/ATinyGreenCell/<name> --samples N` (reasoning off).
 
 Reference runs: v1 (1 ep) 15/16 render · 0 pass · mean 0.40; v2 (3 ep) 16/16 · 0 pass · mean 0.48 (max 0.92).
+
+## B5. GPU tier — bench a fine-tune without the box (H34)
+When the box is down, or to compare fine-tunes quickly at many samples, serve the merged weights on a rented GPU:
+```
+# pod (has the merged16 dir, or `hf download ATinyGreenCell/<name> --local-dir /workspace/<name>`):
+pip install --break-system-packages -U vllm
+vllm serve /workspace/<name> --served-model-name <name> --max-model-len 16384 --gpu-memory-utilization 0.90 \
+  --host 127.0.0.1 --port 8000 --limit-mm-per-prompt '{"image": 0, "video": 0}'
+# laptop: tunnel + Ollama-API front, then the unchanged harness
+ssh -N -L 18000:127.0.0.1:8000 -p <port> -i ~/.ssh/runpod_ft root@<pod-ip> &
+python bench/ollama_openai_shim.py --upstream http://127.0.0.1:18000 --port 11500 &
+OLLAMA_HOST=http://127.0.0.1:11500 python bench/run_bench.py --run gpu-<name>-g0 --models <name> \
+  --tasks <two task ids> --samples 8 --max-repairs 2      # 8 such processes in parallel; vLLM batches them
+python bench/finetune_table.py gpu-base gpu-v2 gpu-<name>  # in-family / held-out split (H31)
+```
+Same prompts, sampling, thinking-off and checker as the box runs; the numbers compare fine-tunes with each other,
+not with the box's own quantised build. An A40 serves a 9B model at ~33 tok/s per stream; 16 tasks x 8 samples
+takes ~20 min.
+
+## B6. Training-data hygiene (H31)
+Any new training prompt is gated against the 16 eval prompts before training:
+`finetune/rft/distill/gen_prompts_clean.py` (max token Jaccard 0.40, part types that are not eval tasks). Reference
+points: v2's data peaks at 0.22; same-style-different-part prompts sit at 0.25-0.40; paraphrases of a task 0.55+.

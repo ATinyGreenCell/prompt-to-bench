@@ -1,0 +1,112 @@
+The measurement report reveals several critical deviations from the specifications:
+
+1.  **Z-Position Error**: The part starts at `z = -37.50` instead of `z = 0`. This is because the `cylinder` used for the holes has `center = true`, which places its center at the origin of the translation, pushing the bottom of the cylinder down by half its height. The specification requires the plate to lie on the bed (`z=0`).
+2.  **Y-Dimension Error**: The bounding box Y size is `94.00` instead of `90.00`. This is caused by the side walls being placed at `y=0` and `y=90` with a thickness of `4mm`. This extends the part to `y=-2` and `y=94`. The walls should be flush with the edges of the `90mm` plate.
+3.  **Hole Position Error**: The report shows hole centers at `x=85` and `y=25/65`.
+    *   **X**: The holes should be centered on the 130mm plate. With 3 holes spaced 40mm apart, the positions should be 30, 65, 100 (centered at 65). The report shows 35, 65, 85 (centered at 70).
+    *   **Y**: The holes should be centered on the 90mm plate. With 2 holes spaced 40mm apart, the positions should be 25 and 65 (centered at 45). The report shows 25 and 65, which is actually correct for the Y spacing, but the X error shifts the perceived center.
+    *   *Correction Logic*: The previous calculation logic for X was flawed. For 3 items with spacing `S` centered in a width `W`:
+        *   Total span = `2 * S`.
+        *   Margin = `(W - 2*S) / 2`.
+        *   Positions = `Margin`, `Margin + S`, `Margin + 2*S`.
+        *   Here: `Margin = (130 - 80)/2 = 25`. Positions: `25, 65, 105`.
+        *   Wait, let's re-read the report. The report says `x=85`. My previous code calculated `130/2 - 20 - 20 = 30`. Why did the report say 85?
+        *   Ah, the report says `shape 50.50 x 30.50 ... centred (35.00, 65.00)`. This implies the hole is at 35.
+        *   Let's re-calculate manually:
+            *   Plate X: 0 to 130. Center 65.
+            *   3 holes, 40mm spacing.
+            *   If centered: Hole 1 at `65 - 40 = 25`. Hole 2 at `65`. Hole 3 at `65 + 40 = 105`.
+            *   Wait, if spacing is center-to-center, the distance between Hole 1 and Hole 2 is 40.
+            *   Positions: `25, 65, 105`.
+            *   The report shows `35`. This means the code I wrote previously (or the logic used) resulted in a shift.
+            *   Let's look at the previous code: `$hole_x_offset = 20`. `$plate_center_x = 65`.
+            *   Pos 1: `65 - 20 - 20 = 25`.
+            *   Pos 2: `65 - 20 = 45`.
+            *   Pos 3: `65 + 20 = 85`.
+            *   **Found the bug**: The loop logic in the previous attempt was:
+                *   `65 - 20 - 20` (25)
+                *   `65 - 20` (45)
+                *   `65 + 20` (85)
+            *   This creates a span of 60mm (25 to 85), not 80mm. The spacing between 25 and 45 is 20, not 40.
+            *   **Correct Logic**:
+                *   Spacing `S = 40`.
+                *   Total span `2*S = 80`.
+                *   Plate `W = 130`.
+                *   Offset from edge = `(130 - 80) / 2 = 25`.
+                *   Positions: `25`, `25 + 40 = 65`, `65 + 40 = 105`.
+                *   Center of this group: `(25+105)/2 = 65`. Correct.
+            *   **Y Logic**:
+                *   Spacing `S = 40`.
+                *   Plate `H = 90`.
+                *   Offset from edge = `(90 - 40) / 2 = 25`.
+                *   Positions: `25`, `25 + 40 = 65`.
+                *   Center: 45. Correct.
+
+4.  **Wall Thickness/Position**: The walls need to be `4mm` thick and flush with the `90mm` plate edges.
+    *   Plate Y: 0 to 90.
+    *   Wall 1: Y 0 to 4.
+    *   Wall 2: Y 86 to 90.
+    *   Previous code put them at 0 and 90 with thickness 4, extending to -2 and 94.
+
+**Plan for Fix:**
+1.  Remove `center = true` from the cylinder and set `h` to exactly `wall_height + 1` (to ensure it cuts through the top of the wall which is at Z=70). The cylinder will start at Z=0.
+2.  Recalculate X positions: `[25, 65, 105]`.
+3.  Recalculate Y positions: `[25, 65]`.
+4.  Recalculate Wall positions: `[0, 86]` (so they sit on 0..4 and 86..90).
+
+```openscad
+// Rack for six 50 mL conical (Falcon-type) tubes
+// Print orientation: Upside down. Flat plate on bed (Z=0).
+// After printing, flip over to stand on the two side walls.
+
+// --- Dimensions ---
+// Plate dimensions
+$plate_length = 130; // X
+$plate_width = 90;   // Y
+$plate_thickness = 4; // Z
+
+// Hole specifications
+$hole_count = 6;
+$hole_diameter = 30.5;
+$hole_spacing_x = 40; // Centre-to-centre along X
+$hole_spacing_y = 40; // Centre-to-centre along Y
+
+// Wall specifications
+$wall_length = 130;   // X
+$wall_thickness = 4;  // Y
+$wall_height = 70;    // Z (total height from bed)
+
+// --- Configuration ---
+$fn = 64; // Smooth curves for holes
+
+// --- Calculations ---
+// Plate center
+$plate_center_x = $plate_length / 2;
+$plate_center_y = $plate_width / 2;
+
+// Hole positions (3 rows along X, 2 rows along Y)
+// X positions: 3 holes, 40mm spacing. Total span = 80mm.
+// Plate width = 130mm. Margin = (130 - 80) / 2 = 25mm.
+// Positions: 25, 65, 105.
+$hole_x_positions = [25, 65, 105];
+
+// Y positions: 2 holes, 40mm spacing. Total span = 40mm.
+// Plate height = 90mm. Margin = (90 - 40) / 2 = 25mm.
+// Positions: 25, 65.
+$hole_y_positions = [25, 65];
+
+// Wall positions (along long edges, Y = 0 and Y = 90)
+// Walls are 4mm thick.
+// Wall 1: Y 0 to 4.
+// Wall 2: Y 86 to 90.
+$wall_y_positions = [0, $plate_width - $wall_thickness];
+
+// --- Main Module ---
+module tube_rack() {
+    union() {
+        // 1. The Base Plate
+        // Dimensions: 130 x 90 x 4
+        translate([0, 0, 0])
+            cube([$plate_length, $plate_width, $plate_thickness]);
+
+        // 2.

@@ -1,0 +1,149 @@
+// 96-Well PCR Tube Rack (0.2 mL)
+// Designed for FDM 3D printing.
+// Orientation: Rests on XY plane at Z=0, builds upward (+Z).
+// Centred on origin in X and Y.
+
+// --- Dimensions (mm) ---
+// Block Dimensions
+$block_length = 127.76; // X
+$block_width  = 85.48;  // Y
+$block_height = 20;     // Z
+
+// Hole Specifications
+$hole_count_x = 12;     // Columns along X
+$hole_count_y = 8;      // Rows along Y
+$hole_diameter = 6.2;   // mm
+$hole_spacing = 9.0;    // Centre-to-centre spacing
+
+// Grid Positioning (from edges)
+$offset_x = 14.38;      // Distance from left edge to first hole (A1)
+$offset_y = 11.24;      // Distance from back edge to first hole (A1)
+
+// Chamfer Specifications
+$chamfer_angle = 45;    // degrees
+$chamfer_leg = 5;       // mm
+
+// --- Configuration ---
+$fn = 128; // High resolution for smooth holes and chamfers
+
+// --- Calculations ---
+// Calculate total grid size to verify centering
+$total_grid_x = ($hole_count_x - 1) * $hole_spacing;
+$total_grid_y = ($hole_count_y - 1) * $hole_spacing;
+
+// Verify centering logic:
+// Block center = $block_length / 2
+// Grid center = $offset_x + $total_grid_x / 2
+// Expected: They should be equal.
+// $block_length / 2 = 63.88
+// $offset_x + $total_grid_x / 2 = 14.38 + (11 * 9.0)/2 = 14.38 + 49.5 = 63.88. (Matches)
+
+// --- Main Block ---
+difference() {
+    // 1. Create the main block
+    cube([
+        $block_length,
+        $block_width,
+        $block_height
+    ], center = false);
+
+    // 2. Cut the 96 holes
+    // We iterate through columns (x) and rows (y)
+    for (col = [0 : $hole_count_x - 1]) {
+        for (row = [0 : $hole_count_y - 1]) {
+            // Calculate position of current hole
+            // X position: offset_x + col * spacing
+            // Y position: offset_y + row * spacing
+            // Note: In OpenSCAD, Y increases upwards. 
+            // "Back edge" usually means the edge with lower Y if looking from front, 
+            // but standard plate orientation often has A1 at bottom-left.
+            // Given the prompt: "11.24 mm from the back edge". 
+            // Assuming standard coordinate system where Y=0 is the "back" (or bottom) edge relative to the block width.
+            
+            $pos_x = $offset_x + col * $hole_spacing;
+            $pos_y = $offset_y + row * $hole_spacing;
+
+            translate([
+                $pos_x,
+                $pos_y,
+                0
+            ]) {
+                cylinder(
+                    h = $block_height + 1, // Extend slightly past top/bottom for clean cut
+                    r = $hole_diameter / 2,
+                    $fn = $fn
+                );
+            }
+        }
+    }
+
+    // 3. Cut the Chamfer at the A1 corner
+    // A1 is at ($offset_x, $offset_y).
+    // We need to cut a 45-degree chamfer with 5mm legs on the vertical edge at this corner.
+    // The vertical edge is at X = $offset_x, Y = $offset_y.
+    // The chamfer removes material between the corner and the plane defined by the cut.
+    // Since it's a vertical edge, we cut a wedge.
+    
+    // Define the cutting plane for the chamfer.
+    // The cut starts at the corner ($offset_x, $offset_y) and goes inward.
+    // A 45 deg chamfer with leg 5mm means the cut plane passes through:
+    // Point 1: ($offset_x + 5, $offset_y)  (on the X face)
+    // Point 2: ($offset_x, $offset_y + 5)  (on the Y face)
+    // The cut removes the corner volume defined by these points and the corner itself.
+    
+    // We can model this by creating a plane that slices the block.
+    // The plane equation passing through ($offset_x+5, $offset_y, 0) and ($offset_x, $offset_y+5, 0)
+    // and extending vertically.
+    // Normal vector of the cut surface: (1, 1, 0) normalized -> (0.707, 0.707, 0)
+    // Distance from origin to plane?
+    // Let's use a simpler approach: Create a large wedge shape that intersects the block at the corner.
+    
+    // The wedge to subtract is defined by:
+    // X >= $offset_x
+    // Y >= $offset_y
+    // X + Y <= $offset_x + $chamfer_leg + $offset_y + $chamfer_leg (This is the diagonal line)
+    // Actually, the cut removes the region where X > $offset_x AND Y > $offset_y AND (X - $offset_x) + (Y - $offset_y) < $chamfer_leg * sqrt(2)?
+    // No, a 45 degree chamfer with leg L means the hypotenuse is at distance L*sqrt(2) from corner?
+    // No, "leg" usually means the distance along the axes.
+    // So the cut line connects ($offset_x + L, $offset_y) and ($offset_x, $offset_y + L).
+    // The region to remove is the triangle with vertices:
+    // ($offset_x, $offset_y), ($offset_x + L, $offset_y), ($offset_x, $offset_y + L).
+    
+    // To cut this with a plane in OpenSCAD:
+    // We define a plane that passes through ($offset_x + L, $offset_y, 0) and ($offset_x, $offset_y + L, 0).
+    // The normal vector pointing INTO the block (to be removed) is (-1, -1, 0).
+    // Wait, we want to remove the corner. The corner is at ($offset_x, $offset_y).
+    // The plane should separate the corner from the rest of the block.
+    // The plane passes through ($offset_x + L, $offset_y) and ($offset_x, $offset_y + L).
+    // The normal pointing towards the corner ($offset_x, $offset_y) is (-1, -1, 0).
+    // Equation: -1*(x - ($offset_x + L)) - 1*(y - $offset_y) = 0
+    // => -x + $offset_x + L - y + $offset_y = 0
+    // => x + y = $offset_x + $offset_y + L
+    
+    // We create a large plane (or two intersecting planes to form a wedge) to cut this.
+    // Since we are using difference(), we can create a "wedge" object that covers the corner area
+    // and subtract it.
+    
+    // Let's create a large box that represents the "cutout" volume.
+    // The cutout volume is bounded by:
+    // X >= $offset_x
+    // Y >= $offset_y
+    // X + Y <= $offset_x + $offset_y + $chamfer_leg
+    // And it extends through the whole height of the block.
+    
+    // We can approximate this with a large cylinder or box rotated, but a precise plane cut is better.
+    // OpenSCAD doesn't have a direct "cut by plane" primitive that works easily in difference without complex math or large intersecting shapes.
+    // Strategy: Create a large wedge shape (intersection of two half-spaces) and subtract it.
+    
+    // Define the two planes forming the 45 deg chamfer surface.
+    // Actually, a single plane cut is sufficient if we define the volume correctly.
+    // The volume to remove is the intersection of:
+    // 1. X >= $offset_x
+    // 2. Y >= $offset_y
+    // 3. X + Y <= $offset_x + $offset_y + $chamfer_leg
+    
+    // We can create a large box that satisfies 1 and 2, and then use a plane to cut it with 3?
+    // Easier: Create a large box [0, 200, 200, 200] and rotate/translate it to act as the cutter?
+    // No, let's use the `intersection` of three large shapes to define the cutter, then subtract.
+    
+    // Cutter Shape 1: X >=

@@ -1,0 +1,145 @@
+// Two-part enclosure for electronics board
+// Part 1: Box (left)
+// Part 2: Lid (right, printed upside down)
+// Prints together with a 10mm gap.
+
+$fn = 64;
+
+// --- Dimensions ---
+
+// Box Dimensions (Outer)
+BOX_X = 70;
+BOX_Y = 50;
+BOX_Z = 30;
+
+// Wall and Floor Thickness
+WALL_THICKNESS = 2;
+FLOOR_THICKNESS = 2;
+
+// Gap between parts
+PART_GAP = 10;
+
+// Lid Dimensions
+// Plate thickness
+LID_PLATE_THICKNESS = 2;
+// Lip thickness
+LIP_THICKNESS = 1.5;
+// Lip height (extends above plate)
+LIP_HEIGHT = 4;
+
+// Lip Outer Size
+LIP_X_OUTER = 65.6;
+LIP_Y_OUTER = 45.6;
+
+// Clearance
+CLEARANCE = 0.2;
+
+// --- Calculated Internal Dimensions ---
+
+// Box Internal Width (X)
+BOX_X_INNER = BOX_X - (WALL_THICKNESS * 2);
+// Box Internal Depth (Y)
+BOX_Y_INNER = BOX_Y - (WALL_THICKNESS * 2);
+// Box Internal Height (Z)
+BOX_Z_INNER = BOX_Z - FLOOR_THICKNESS;
+
+// Lip Inner Size (matches box opening)
+LIP_X_INNER = BOX_X_INNER + CLEARANCE * 2;
+LIP_Y_INNER = BOX_Y_INNER + CLEARANCE * 2;
+
+// Lip Inner Size (calculated from outer and thickness)
+// Check: 65.6 - 1.5*2 = 62.6. Box inner is 66.
+// The prompt says "outer size is 65.6... centred... slides into box opening with 0.2mm clearance".
+// Box inner X = 66. Lip inner X should be 65.6.
+// Let's verify the math based on the prompt's explicit numbers.
+// Box Outer X = 70, Wall = 2 -> Inner = 66.
+// Lip Outer X = 65.6, Lip Wall = 1.5 -> Inner = 62.6.
+// Difference = 3.4mm total clearance (1.7mm each side).
+// The prompt says "0.2 mm clearance on each side".
+// There is a contradiction in the prompt numbers vs the text description.
+// Text: "0.2 mm clearance".
+// Numbers: Box Inner (66) vs Lip Inner (62.6) -> 3.4mm gap.
+// OR Box Inner (66) vs Lip Outer (65.6) -> 0.4mm gap.
+// Given the explicit numbers usually override text in engineering specs, but the text "0.2mm clearance" is very specific.
+// However, 65.6 outer with 1.5 wall gives 62.6 inner. 66 - 62.6 = 3.4.
+// If the user meant 0.2mm clearance, the Lip Outer should be 65.6 (66 - 0.4).
+// If the user meant the numbers are exact, the clearance is ~1.7mm.
+// I will follow the explicit numbers provided for the geometry (65.6 outer, 1.5 wall) as they are precise measurements, 
+// but I will add a comment noting the discrepancy. The resulting fit will be loose (3.4mm total gap), which is fine for a lid.
+// Wait, re-reading: "whose outer size is 65.6 x 45.6 mm... slides into the box opening with 0.2 mm clearance on each side".
+// If clearance is 0.2mm each side, total gap is 0.4mm.
+// Box Inner = 66. Lip Inner must be 65.6.
+// Lip Outer = Lip Inner + 2*Wall = 65.6 + 3 = 68.6.
+// But prompt says Lip Outer is 65.6.
+// This implies the "0.2mm clearance" text might be a typo for "3.4mm" or the outer dimension is a typo.
+// Given "measured with calipers", the numbers 65.6 and 1.5 are likely the physical reality.
+// I will model exactly the numbers: Lip Outer 65.6, Wall 1.5. This results in a loose fit, which is safer than a stuck lid.
+
+// --- Positioning ---
+
+// Box Position: Centered on origin in X/Y, resting on Z=0.
+// X range: -35 to +35.
+// Y range: -25 to +25.
+// Z range: 0 to 30.
+
+// Lid Position: On the +X side of the box.
+// Gap = 10mm.
+// Box right face is at X = 35.
+// Lid left face should be at X = 35 + 10 = 45.
+// Lid Width (X) = 65.6.
+// Lid X range: 45 to 45 + 65.6 = 110.6.
+// Lid Center X = (45 + 110.6) / 2 = 77.8.
+// Lid Y range: Same as box (-25 to +25) to align with the opening.
+// Lid Z range: Since it's printed upside down (plate on bed), Z goes from 0 to 2 (plate) + 1.5 (lip) + 4 (lip height) = 7.5.
+// Wait, "printed upside down: a plate... lying on the bed".
+// So the plate is at Z=0. The lip sticks up.
+// Z range: 0 to 7.5.
+
+// --- Part 1: Box ---
+// Constructed by subtracting inner void from outer block.
+// Outer block: 70 x 50 x 30.
+// Inner void: (70-4) x (50-4) x (30-2) = 66 x 46 x 28.
+// Void starts at Z=2 (floor thickness).
+
+translate([-BOX_X/2, -BOX_Y/2, 0])
+difference() {
+    // Outer Shell
+    cube([BOX_X, BOX_Y, BOX_Z]);
+    
+    // Inner Void
+    translate([WALL_THICKNESS, WALL_THICKNESS, FLOOR_THICKNESS])
+    cube([BOX_X_INNER, BOX_Y_INNER, BOX_Z_INNER]);
+}
+
+// --- Part 2: Lid ---
+// Constructed as a plate with a lip.
+// Since it prints upside down, the "top" of the part (the lip) is actually the part furthest from the bed?
+// No, "printed upside down: a plate... lying on the bed".
+// Usually, a lid has the lip on the outside. If the plate is on the bed, the lip must be on top of the plate.
+// So the geometry is: Plate (Z=0 to 2) + Lip (Z=2 to 6.5).
+// The lip slides into the box.
+// The lip outer dimensions are 65.6 x 45.6.
+// The lip inner dimensions are 62.6 x 42.6 (calculated from 1.5mm walls).
+// The box opening is 66 x 46.
+// This is a very loose fit (3.4mm gap).
+
+translate([
+    -LIP_X_OUTER/2 + PART_GAP + BOX_X/2, // Center X calculation
+    -BOX_Y/2,                             // Center Y (aligned with box)
+    0                                     // Z=0 (plate on bed)
+])
+difference() {
+    // Main Body (Plate + Lip combined as one block for simplicity, then cut hole)
+    // Total height = Plate(2) + Lip(1.5 + 4) = 7.5
+    // Total width = Lip Outer X = 65.6
+    // Total depth = Lip Outer Y = 45.6
+    
+    cube([LIP_X_OUTER, LIP_Y_OUTER, LIP_PLATE_THICKNESS + LIP_THICKNESS + LIP_HEIGHT]);
+    
+    // Cut the hole for the electronics
+    // The hole goes through the plate and into the lip.
+    // Hole size = Lip Inner Size
+    // Hole position: Centered on the lip block.
+    translate([0, 0, 0])
+    cube([LIP_X_INNER, LIP_Y_INNER, LIP_PLATE_THICKNESS + LIP_THICKNESS + LIP_HEIGHT]);
+}

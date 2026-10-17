@@ -1,0 +1,32 @@
+// Snap-on clip - a flat (10 mm tall) part that snaps onto a round stand rod and holds a piece
+// of round tubing next to it, with a bridge joining the two rings. NOVEL general part.
+//
+
+rod_d  = 12.7;
+ring_w = 3;
+t      = 10;
+tube_d = 6;
+tube_w = 2;
+
+$fn = 96;
+
+ring_o = rod_d + 2 * ring_w;
+
+difference() {
+    union() {
+        ring(x = 0, y = 0, d = ring_o, w = ring_w);
+        ring(x = 15, y = 0, d = tube_d + 2 * tube_w, w = tube_w);
+        cube([12, 6, t]);
+    }
+    translate([-1, -5, -1]) cube([18.7, 10, 2]);                 // opening in the rod ring
+    translate([15, -2.25, -1]) cube([4.5, 4.5, 2]);               // opening in the tubing ring
+}
+
+// Ring: a circle with a rectangular cut out of its -X side (open ring).
+module ring(x, y, d, w) {
+    difference() {
+        cylinder(h = t, d = d);
+        translate([x - d / 2 - 1, -5, -1]) cube([d + 2, 10, 2]);
+    }
+    translate([x, y, 0]) rotate([0, 90, 0]) cylinder(h = w, d = d + 2);  // wall thickens the cut edge
+}

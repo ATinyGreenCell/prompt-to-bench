@@ -1,0 +1,148 @@
+```openscad
+// Replacement Knob for Hotplate Stirrer (6mm D-shaft)
+// Print Orientation: Bottom face (with D-bore) on Z=0, building upward.
+
+// --- Dimensions ---
+$fn = 128; // High resolution for smooth curves and accurate D-shape
+
+// Main Body
+D_KNOB_DIAMETER = 30;
+D_KNOB_HEIGHT = 15;
+D_KNOB_RADIUS = D_KNOB_DIAMETER / 2;
+
+// Shaft Bore (D-shape)
+D_SHAFT_DIAMETER = 6;
+D_SHAFT_DEPTH = 12;
+D_SHAFT_RADIUS = D_SHAFT_DIAMETER / 2;
+D_SHAFT_FLAT_WIDTH = 4.7; // Distance from flat to opposite side
+D_SHAFT_FLAT_OFFSET = (D_SHAFT_RADIUS - (D_SHAFT_FLAT_WIDTH / 2)); // Offset of flat from center
+
+// Grip Grooves
+N_GROOVES = 18;
+GROOVE_DEPTH = 1; // Depth of groove from surface
+GROOVE_WIDTH = 2; // Diameter of the half-cylinder groove
+GROOVE_RADIUS = GROOVE_WIDTH / 2;
+
+// Top Pointer
+POINTER_WIDTH = 1.5;
+POINTER_DEPTH = 1;
+
+// --- Construction ---
+
+difference() {
+    
+    // 1. Main Cylinder Body
+    // Positioned so bottom is at Z=0
+    translate([0, 0, D_KNOB_HEIGHT/2])
+        cylinder(h = D_KNOB_HEIGHT, r = D_KNOB_RADIUS, $fn = $fn);
+
+    // 2. D-Shaped Blind Bore
+    // Location: Bottom face (Z=0), going up to Z=D_SHAFT_DEPTH.
+    // Geometry: Circle of D_SHAFT_RADIUS, but one side is flat.
+    // We place the flat side along the -Y axis.
+    
+    // Calculate intersection X coordinate for the flat chord
+    d_shaft_flat_y = -D_SHAFT_FLAT_OFFSET;
+    d_shaft_flat_half_width = sqrt(D_SHAFT_RADIUS^2 - d_shaft_flat_y^2);
+    
+    // Create the D-shape profile using polygon
+    // Points: Bottom-Left, Bottom-Right, then arc points from BR to BL via Top.
+    
+    // Generate arc points
+    p_list = [
+        [-d_shaft_flat_half_width, d_shaft_flat_y], // Bottom Left
+        [d_shaft_flat_half_width, d_shaft_flat_y]   // Bottom Right
+    ];
+    
+    // Calculate angles for the arc
+    // Bottom Right angle
+    ang_br = atan2(d_shaft_flat_y, d_shaft_flat_half_width);
+    // Bottom Left angle
+    ang_bl = atan2(d_shaft_flat_y, -d_shaft_flat_half_width);
+    
+    // We need to sweep from ang_br to ang_bl going through PI/2 (top).
+    // Since ang_br is negative (4th quad) and ang_bl is negative (3rd quad),
+    // we sweep from ang_br up to PI/2, then to PI, then to ang_bl.
+    // Actually, simpler: sweep from ang_br to ang_bl + 2*PI? No.
+    // Let's just iterate angles from ang_br to ang_bl + 2*PI if needed, 
+    // but we know the path goes through PI/2.
+    // ang_br is approx -80 deg. ang_bl is approx -100 deg (or 260 deg).
+    // We want to go -80 -> 90 -> 180 -> 260.
+    // So we sweep from ang_br to ang_bl + 2*PI.
+    
+    start_ang = ang_br;
+    end_ang = ang_bl + 2 * 3.14159265359;
+    
+    for (i = [0 : 1 : 360]) {
+        ang_rad = start_ang + (i * (end_ang - start_ang) / 360);
+        px = D_SHAFT_RADIUS * cos(ang_rad);
+        py = D_SHAFT_RADIUS * sin(ang_rad);
+        p_list += [px, py];
+    }
+    
+    // Close the loop
+    p_list += p_list[0];
+    
+    // Extrude the D-shape profile along Z to cut the hole
+    // Extend slightly past the main body Z range for clean cutting
+    d_shaft_cut_z_start = -0.01;
+    d_shaft_cut_z_end = D_SHAFT_DEPTH + 0.01;
+    
+    translate([0, 0, d_shaft_cut_z_start])
+        linear_extrude(height = d_shaft_cut_z_end - d_shaft_cut_z_start, center = true)
+            polygon(points = p_list);
+
+    // 3. Grip Grooves
+    // 18 evenly spaced vertical grooves along the full height.
+    // Each groove is a 2 mm diameter half-cylinder centred on the outer surface.
+    // "Half-cylinder" implies a semi-cylindrical cut.
+    // We will create a cylinder of diameter GROOVE_WIDTH and height D_KNOB_HEIGHT,
+    // then cut it in half with a plane, or simply use a cylinder with radius GROOVE_RADIUS
+    // and position it such that it cuts into the surface.
+    // A "half-cylinder groove" usually means the cut is semi-circular in cross-section.
+    // We can achieve this by creating a cylinder of radius GROOVE_RADIUS and height D_KNOB_HEIGHT,
+    // positioned so its flat face is tangent to the knob surface?
+    // No, a groove is a void.
+    // If we place a cylinder of radius R_groove centered on the surface, it will cut a full cylinder hole.
+    // To get a half-cylinder groove (semi-circular cross section), we need to cut the cylinder in half.
+    // We can do this by intersecting the cylinder with a half-space, or by using a "negative" shape.
+    // Simplest way in difference: Create a cylinder of radius GROOVE_RADIUS, height D_KNOB_HEIGHT.
+    // Then cut it with a plane? No, that removes material from the cutter.
+    // We want the cutter to be a half-cylinder.
+    // Let's create a cylinder of radius GROOVE_RADIUS, then cut it with a plane at Z=0 (relative to groove)?
+    // No, the groove is vertical.
+    // Let's create a cylinder of radius GROOVE_RADIUS, height D_KNOB_HEIGHT.
+    // Then, we need to remove the "back" half of this cylinder.
+    // We can do this by intersecting the cylinder with a half-space defined by a plane.
+    // But we are in a difference block.
+    // Alternative: Create a cylinder of radius GROOVE_RADIUS, then use a plane to cut it?
+    // No, we need to subtract the shape.
+    // Let's create a cylinder of radius GROOVE_RADIUS, height D_KNOB_HEIGHT.
+    // Then, we need to cut it in half.
+    // We can create a "half-cylinder" shape by taking a cylinder and cutting it with a plane.
+    // But we can't use intersection inside difference easily for the cutter.
+    // Wait, we can create the cutter as a union of a cylinder and a plane? No.
+    // Let's try this: Create a cylinder of radius GROOVE_RADIUS.
+    // Then, we need to remove the part of the cylinder that is "behind" the surface.
+    // The surface is at radius D_KNOB_RADIUS.
+    // The groove is centered on the surface.
+    // So the groove extends from radius D_KNOB_RADIUS - GROOVE_RADIUS to D_KNOB_RADIUS + GROOVE_RADIUS?
+    // No, "centred on the outer surface".
+    // This means the flat face of the half-cylinder is tangent to the outer surface of the knob.
+    // So the groove goes INWARD from the surface.
+    // The shape to subtract is a half-cylinder of radius GROOVE_RADIUS, with its flat face at Z=0 (in local coords)
+    // and the curved part extending inward.
+    // Wait, the groove is vertical.
+    // So the flat face of the half-cylinder is a vertical plane tangent to the knob.
+    // The curved part extends inward.
+    // So we need to subtract a half-cylinder.
+    // How to make a half-cylinder in OpenSCAD?
+    // Create a cylinder, then cut it with a plane.
+    // We can do this by creating a cylinder and then intersecting it with a half-space.
+    // But we are in a difference block.
+    // We can create the half-cylinder by taking a cylinder and cutting it with a plane in a separate block?
+    // No, we can just create the cylinder and then cut it with a plane in the same block?
+    // No, difference only subtracts.
+    // We can create the half-cylinder by taking a cylinder and then using a plane to cut it?
+    // No, we need to subtract the half-cylinder.
+    // Let

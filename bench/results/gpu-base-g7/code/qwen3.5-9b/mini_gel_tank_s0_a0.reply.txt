@@ -1,0 +1,175 @@
+```openscad
+// Buffer Tank for Mini Horizontal Gel Electrophoresis
+// Dimensions in millimetres
+
+// Outer Dimensions
+$w_outer = 120; // Width (X)
+$d_outer = 70;  // Depth (Y)
+$h_outer = 40;  // Height (Z)
+
+// Wall and Floor Thickness
+$w_thick = 3;   // Wall thickness
+$f_thick = 3;   // Floor thickness
+
+// Platform Dimensions
+$p_len = 60;    // Platform length (X)
+$p_width = $d_outer - 2*$w_thick; // Platform width (Y) - spans full inner width
+$p_height = 10; // Platform height above inner floor
+
+// Hole Dimensions
+$h_dia = 2;     // Hole diameter
+$h_y = 0;       // Hole Y position
+$h_z = 30;      // Hole Z position
+
+// Configuration
+$fn = 128;      // Facets for smooth curves
+
+// Derived Dimensions
+$w_inner = $w_outer - 2*$w_thick;
+$d_inner = $d_outer - 2*$w_thick;
+$h_inner = $h_outer - $f_thick;
+
+// Main Tank Body
+// Constructed as a hollow box with a floor
+translate([0, 0, 0])
+difference() {
+    // Outer Box
+    cube([
+        $w_outer, 
+        $d_outer, 
+        $h_outer
+    ], center = false);
+    
+    // Inner Void (Hollow part)
+    translate([
+        $w_thick, 
+        $w_thick, 
+        $f_thick
+    ])
+    cube([
+        $w_inner, 
+        $d_inner, 
+        $h_inner
+    ], center = false);
+}
+
+// Raised Platform
+// Positioned in the middle of the tank, spanning full inner width
+translate([
+    ($w_outer - $p_len) / 2, // Center X
+    $w_thick,               // Start at inner wall Y
+    $f_thick + $p_height    // Top of floor + platform height
+])
+difference() {
+    // Platform Block
+    cube([
+        $p_len, 
+        $p_width, 
+        $p_height
+    ], center = false);
+    
+    // Cutout for the void below the platform (to maintain tank continuity)
+    // The platform sits on the floor, so we need to remove the space 
+    // between the platform and the floor, and the space around it inside the tank walls.
+    // Actually, since we built the tank as a solid with a void, we just need to 
+    // ensure the platform doesn't block the void. 
+    // The platform is a solid addition. The void is already defined in the tank.
+    // We must subtract the volume of the platform from the tank's void? 
+    // No, the platform is an addition to the solid tank.
+    // The tank void goes all the way up to h_inner.
+    // The platform occupies space from z = f_thick to z = f_thick + p_height.
+    // We need to subtract the platform volume from the tank's outer solid.
+    // Wait, the previous block was "Main Tank Body" which is a hollow box.
+    // Now we add the platform. The platform is solid.
+    // So we take the hollow box and subtract the platform volume? 
+    // No, the platform is part of the solid material.
+    // The hollow box has a void. The platform fills part of that void? 
+    // No, the platform is raised. It sits ON the floor.
+    // So the platform is solid material. The void is BELOW the platform? 
+    // No, the void is the buffer chamber. The platform divides the bottom.
+    // So the platform is solid. The void is the space around it.
+    // My previous "Main Tank Body" created a hollow box.
+    // The platform is an ADDITION to the solid walls/floor.
+    // So I should NOT subtract the platform from the hollow box.
+    // I should ADD the platform to the hollow box.
+    // BUT, the platform sits on the floor. The floor is part of the hollow box.
+    // The hollow box has a void starting at z = f_thick.
+    // The platform starts at z = f_thick + p_height? 
+    // "its top is 10 mm above the inner floor (at z = 13)"
+    // Inner floor is at z = f_thick = 3.
+    // So top is at z = 13.
+    // So the platform occupies z from 3 to 13.
+    // The void in the tank starts at z = 3.
+    // So the platform is INSIDE the void space?
+    // Yes. The platform is a solid block rising from the floor into the buffer space.
+    // So I need to subtract the platform volume from the tank's void?
+    // No, the tank body is the solid material. The void is empty space.
+    // If I create a hollow box, the material is the walls and floor.
+    // The platform is additional material.
+    // So I need to ADD the platform to the hollow box.
+    // However, the platform is inside the bounding box of the hollow box?
+    // The hollow box is 120x70x40.
+    // The platform is 60x(70-6)=60x64x10.
+    // It sits on the floor (z=3).
+    // So the platform is entirely within the volume of the hollow box?
+    // No, the hollow box is the solid material.
+    // The void is the empty space inside.
+    // The platform is solid material that fills part of the void.
+    // So I need to subtract the platform volume from the void?
+    // No, that's complex.
+    // Easier approach: Build the solid tank (walls + floor) as one piece, then add the platform.
+    // Or: Build the tank as a solid block, subtract the void, then subtract the platform?
+    // No, the platform is solid.
+    // Let's restart the logic for the platform.
+    // Tank = Solid Walls + Solid Floor + Solid Platform.
+    // Void = Space inside walls, minus the platform volume.
+    // So: Start with a big solid block.
+    // Subtract the void (the buffer chambers).
+    // The void is the space inside the walls, EXCEPT where the platform is.
+    // So Void = (Box inside walls) - (Platform volume).
+    // So Tank = Big Block - ((Box inside walls) - (Platform volume))
+    // Tank = Big Block - Box inside walls + Platform volume.
+    // This is equivalent to: (Big Block - Box inside walls) + Platform volume.
+    // Which is: Hollow Box + Platform.
+    // So my previous logic was correct: Add the platform to the hollow box.
+    // BUT, the platform must be subtracted from the void?
+    // No, the platform is solid. The void is empty.
+    // If I have a hollow box, the void is empty.
+    // If I add a platform, I am adding solid material.
+    // The platform sits on the floor.
+    // The floor is at z=3.
+    // The platform goes from z=3 to z=13.
+    // The void starts at z=3.
+    // So the platform is inside the void.
+    // If I just "add" the platform to the hollow box, the platform will be solid.
+    // The void will be the space around the platform.
+    // This is exactly what we want.
+    // So: Union of (Hollow Box) and (Platform).
+    // Wait, the platform is inside the bounding box of the hollow box.
+    // The hollow box is defined by outer dimensions.
+    // The platform is inside.
+    // So Union is correct.
+    
+    // Re-evaluating the "Hollow Box" definition.
+    // The hollow box is a solid with a hole.
+    // The platform is a solid block.
+    // We want the union of these two solids.
+    // The platform is 60x64x10.
+    // It is placed at z=3 (bottom) to z=13 (top).
+    // The hollow box has a void from z=3 to z=37 (40-3).
+    // So the platform is inside the void.
+    // Union will fill that part of the void.
+    // Correct.
+    
+    // However, there is a catch.
+    // The platform divides the bottom into two chambers.
+    // The chambers connect ABOVE the platform.
+    // The platform is 10mm high.
+    // The tank is 40mm high.
+    // So there is 30mm of space above the platform.
+    // The void is continuous above z=13.
+    // The void is separated below z=13 by the platform.
+    // This is correct.
+    
+    // One detail: The platform width.
+    // "spans the full inner width (Y) of the

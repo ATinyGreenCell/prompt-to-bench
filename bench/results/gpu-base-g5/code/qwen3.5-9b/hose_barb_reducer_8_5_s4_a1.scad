@@ -1,0 +1,106 @@
+// Hose-barb Reducer Design
+// Units: millimetres
+// Orientation: Standing upright along Z, resting on XY plane at z=0
+
+// --- Dimensions ---
+// Main bore diameter (constant through the part)
+$main_bore_d = 3.0;
+
+// Section 1: 8mm Tubing Barbs (z = 0 to 20)
+$z_start_1 = 0;
+$z_end_1 = 20;
+$barb_height_1 = 10;
+$barb_od_bottom_1 = 7.5;
+$barb_od_top_1 = 9.5;
+
+// Section 2: Collar (z = 20 to 25)
+$z_start_2 = 20;
+$z_end_2 = 25;
+$collar_od = 12.0;
+
+// Section 3: 5mm Tubing Barbs (z = 25 to 41)
+$z_start_3 = 25;
+$z_end_3 = 41;
+$barb_height_3 = 8;
+$barb_od_bottom_3 = 6.5;
+$barb_od_top_3 = 5.0;
+
+// --- Geometry Generation ---
+
+// Calculate total height
+$total_height = $z_end_3;
+
+// Define the profile points [x, y] where x is radius and y is height
+// We trace the outer envelope of the part.
+$points = [];
+
+// Helper values for radii
+$r_base = $main_bore_d / 2; // 1.5
+$r1_bot = $barb_od_bottom_1 / 2; // 3.75
+$r1_top = $barb_od_top_1 / 2; // 4.75
+$r_coll = $collar_od / 2; // 6.0
+$r3_bot = $barb_od_bottom_3 / 2; // 3.25
+$r3_top = $barb_od_top_3 / 2; // 2.5
+
+// 1. Base point
+$points.push([ $r_base, 0 ]);
+
+// 2. Section 1: Barbs (0 to 20)
+// Barb 1: z=0 to 10. OD: 7.5 -> 9.5 -> 7.5
+// Points: (3.75, 0) -> (4.75, 10) -> (3.75, 10)
+$points.push([ $r1_bot, 0 ]);
+$points.push([ $r1_top, $barb_height_1 ]);
+$points.push([ $r1_bot, $barb_height_1 ]);
+
+// Barb 2: z=10 to 20. OD: 7.5 -> 9.5 -> 7.5
+// Points: (3.75, 10) -> (4.75, 20) -> (3.75, 20)
+$points.push([ $r1_bot, $barb_height_1 ]);
+$points.push([ $r1_top, $barb_height_1 + $barb_height_1 ]);
+$points.push([ $r1_bot, $barb_height_1 + $barb_height_1 ]);
+
+// 3. Section 2: Collar (20 to 25)
+// Connect from Barb 2 top step (r=3.75) to Collar (r=6.0)
+// Then up the collar
+$points.push([ $r1_bot, $barb_height_1 + $barb_height_1 ]);
+$points.push([ $r_coll, $barb_height_1 + $barb_height_1 ]);
+$points.push([ $r_coll, $barb_height_1 + $barb_height_1 + ($z_end_2 - $z_start_2) ]);
+
+// 4. Section 3: Barbs (25 to 41)
+// Connect from Collar top (r=6.0) to Barb 1 bottom (r=3.25)
+// Barb 1: z=25 to 33. OD: 6.5 -> 5.0 -> 6.5
+// Points: (3.25, 25) -> (2.5, 33) -> (3.25, 33)
+$points.push([ $r_coll, $barb_height_1 + $barb_height_1 + ($z_end_2 - $z_start_2) ]);
+$points.push([ $r3_bot, $barb_height_1 + $barb_height_1 + ($z_end_2 - $z_start_2) ]);
+$points.push([ $r3_bot, $barb_height_1 + $barb_height_1 + ($z_end_2 - $z_start_2) ]); // Start of Barb 1
+$points.push([ $r3_top, $barb_height_1 + $barb_height_1 + ($z_end_2 - $z_start_2) + $barb_height_3 ]);
+$points.push([ $r3_bot, $barb_height_1 + $barb_height_1 + ($z_end_2 - $z_start_2) + $barb_height_3 ]);
+
+// Barb 2: z=33 to 41. OD: 6.5 -> 5.0 -> 6.5
+// Points: (3.25, 33) -> (2.5, 41) -> (3.25, 41)
+$points.push([ $r3_bot, $barb_height_1 + $barb_height_1 + ($z_end_2 - $z_start_2) + $barb_height_3 ]);
+$points.push([ $r3_top, $barb_height_1 + $barb_height_1 + ($z_end_2 - $z_start_2) + $barb_height_3 + $barb_height_3 ]);
+$points.push([ $r3_bot, $barb_height_1 + $barb_height_1 + ($z_end_2 - $z_start_2) + $barb_height_3 + $barb_height_3 ]);
+
+// Close the loop at the top and back to start
+$points.push([ $r3_bot, $barb_height_1 + $barb_height_1 + ($z_end_2 - $z_start_2) + $barb_height_3 + $barb_height_3 ]);
+$points.push([ $r_base, 0 ]);
+
+// Create the profile polygon
+$profile = polygon(points = $points);
+
+// --- Main Assembly ---
+
+difference() {
+    // Create the outer shell
+    linear_extrude(height = $total_height, center = false) {
+        $profile;
+    }
+    
+    // Subtract the central bore (cylinder)
+    // The bore runs straight through the full length
+    cylinder(
+        h = $total_height,
+        d = $main_bore_d,
+        center = true
+    );
+}

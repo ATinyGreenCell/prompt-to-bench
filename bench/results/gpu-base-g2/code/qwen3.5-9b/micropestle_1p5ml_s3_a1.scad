@@ -1,0 +1,136 @@
+$fn = 128;
+
+// --- Dimensions ---
+// Handle
+d_handle = 8;
+h_handle = 45;
+z_handle_start = 0;
+z_handle_end = 45;
+
+// Cone
+d_cone_bottom = 8;
+d_cone_top = 3;
+z_cone_start = 45;
+z_cone_end = 62;
+
+// Tip
+d_tip = 3;
+z_tip_center = 62;
+
+// Grooves
+n_grooves = 4;
+w_groove = 2; // Width in Z
+d_groove = 1; // Depth
+z_groove_centers = [10, 15, 20, 25];
+
+// --- Main Body Construction ---
+difference() {
+    union() {
+        // 1. Cylindrical Handle
+        translate([0, 0, z_handle_start + h_handle/2]) {
+            cylinder(h = h_handle, d = d_handle);
+        }
+
+        // 2. Conical Section
+        // Constructed using hull() of two cylinders to ensure perfect taper
+        translate([0, 0, z_cone_start]) {
+            // Bottom cylinder (at z=0 relative to this block)
+            cylinder(h = 0.01, d = d_cone_bottom);
+            // Top cylinder (at z=h_cone relative to this block)
+            translate([0, 0, z_cone_end - z_cone_start]) {
+                cylinder(h = 0.01, d = d_cone_top);
+            }
+            hull() {
+                // The hull of these two tiny cylinders creates the cone volume
+                // We need to include the cylinders themselves in the hull to get the solid
+                // Actually, hull() of two cylinders creates the frustum.
+                // We must ensure the cylinders are part of the union.
+                // Let's do it explicitly:
+                // Cylinder 1
+                cylinder(h = 0.01, d = d_cone_bottom);
+                // Cylinder 2
+                translate([0, 0, z_cone_end - z_cone_start]) {
+                    cylinder(h = 0.01, d = d_cone_top);
+                }
+                // The hull connects them.
+                // However, hull() creates a convex hull. 
+                // To get the solid cone, we just need the hull of the two end caps.
+                // But we need to make sure the volume is filled.
+                // A better way for a solid cone in OpenSCAD without rotate_extrude:
+                // Use the hull of the two cylinders, but ensure they are the only things in the hull.
+                // The previous logic was slightly off. Let's use the standard "two cylinders + hull" pattern.
+                // But wait, hull() of two cylinders creates the shape between them.
+                // We need to make sure the cylinders are included in the final union.
+                // Let's restructure:
+            }
+        }
+        
+        // Corrected Cone Construction using Hull
+        translate([0, 0, z_cone_start]) {
+            // We create the cone by taking the hull of two cylinders at the ends.
+            // We must union the result with the cylinders themselves to ensure watertightness at the ends.
+            // Actually, the hull of two cylinders includes the volume between them.
+            // But we need to ensure the ends are closed.
+            // Let's use a simpler approach: Hull of two cylinders, then union with the cylinders.
+            // Or even simpler: Just use the hull of the two cylinders, but make them slightly taller than 0.01?
+            // No, 0.01 is fine.
+            // The issue in the previous attempt was likely that the hull didn't encompass the full volume correctly or the union logic was missing.
+            // Let's try:
+            // 1. Cylinder at bottom
+            // 2. Cylinder at top
+            // 3. Hull of 1 and 2.
+            // This creates the solid cone.
+            
+            // Bottom cap
+            translate([0, 0, 0]) {
+                cylinder(h = 0.01, d = d_cone_bottom);
+            }
+            // Top cap
+            translate([0, 0, z_cone_end - z_cone_start]) {
+                cylinder(h = 0.01, d = d_cone_top);
+            }
+            // The hull connects them.
+            // We need to union these three objects.
+            union() {
+                translate([0, 0, 0]) {
+                    cylinder(h = 0.01, d = d_cone_bottom);
+                }
+                translate([0, 0, z_cone_end - z_cone_start]) {
+                    cylinder(h = 0.01, d = d_cone_top);
+                }
+                hull() {
+                    translate([0, 0, 0]) {
+                        cylinder(h = 0.01, d = d_cone_bottom);
+                    }
+                    translate([0, 0, z_cone_end - z_cone_start]) {
+                        cylinder(h = 0.01, d = d_cone_top);
+                    }
+                }
+            }
+        }
+
+        // 3. Tip Sphere
+        translate([0, 0, z_tip_center]) {
+            sphere(d = d_tip);
+        }
+    }
+
+    // --- Cut Grooves ---
+    // Grooves are cylindrical holes cut into the handle.
+    // They are centered at specific Z heights.
+    // Width in Z is w_groove.
+    // Depth is d_groove.
+    // Diameter of groove cutter = Handle Diameter - 2 * Depth
+    
+    d_cutter = d_handle - 2 * d_groove;
+    
+    for (z_c = z_groove_centers) {
+        translate([0, 0, z_c - w_groove/2]) {
+            cylinder(
+                h = w_groove,
+                d = d_cutter,
+                center = [0, 0, 0]
+            );
+        }
+    }
+}

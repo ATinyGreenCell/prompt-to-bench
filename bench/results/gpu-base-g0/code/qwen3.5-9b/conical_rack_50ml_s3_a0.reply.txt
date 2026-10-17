@@ -1,0 +1,105 @@
+```openscad
+// Rack for six 50 mL conical (Falcon-type) tubes
+// Print orientation: Upside down. Flat plate on bed (Z=0), walls rise up.
+// After printing, flip over so walls stand on the bed and tubes hang down.
+
+// --- Dimensions ---
+// Plate dimensions
+$plate_length = 130; // X dimension
+$plate_width = 90;   // Y dimension
+$plate_thickness = 4; // Z thickness
+
+// Hole specifications
+$hole_diameter = 30.5;
+$hole_count = 6;
+$hole_rows = 2;
+$hole_cols = 3;
+$hole_spacing_x = 40; // Centre-to-centre along X
+$hole_spacing_y = 40; // Centre-to-centre along Y
+
+// Wall specifications
+$wall_length = 130;   // X dimension (matches plate length)
+$wall_thickness = 4;  // Y dimension (matches plate thickness)
+$wall_height = 70;    // Z height from top of plate
+
+// --- Derived Variables ---
+// Calculate hole positions relative to plate centre (0,0)
+// Since there are 2 rows and 3 cols, and spacing is 40mm:
+// X positions: -40, 0, 40
+// Y positions: -40, 0, 40
+$hole_x_positions = [-40, 0, 40];
+$hole_y_positions = [-40, 0, 40];
+
+// Global resolution for curved surfaces
+$fn = 64;
+
+// --- Main Module ---
+module tube_rack() {
+    // 1. Create the base plate
+    // Dimensions: X=$plate_length, Y=$plate_width, Z=$plate_thickness
+    plate = cube([
+        $plate_length,
+        $plate_width,
+        $plate_thickness
+    ]);
+
+    // 2. Create the two side walls
+    // Each wall is 130mm long (X), 4mm thick (Y), and rises 70mm from the top of the plate.
+    // Since the plate is 90mm wide and walls are 4mm thick, we place them at the edges.
+    // Wall 1 (Left): X from 0 to 130, Y from -46 to -42 (approx edge)
+    // Wall 2 (Right): X from 0 to 130, Y from 42 to 46 (approx edge)
+    // Actually, simpler to define them relative to the plate edges.
+    // Plate Y range: -45 to +45.
+    // Wall thickness is 4mm.
+    // Left Wall Y range: -45 to -41.
+    // Right Wall Y range: 41 to 45.
+    
+    wall_left = translate([0, -45, $plate_thickness]) 
+                cube([$wall_length, $wall_thickness, $wall_height]);
+    
+    wall_right = translate([0, 45, $plate_thickness]) 
+                 cube([$wall_length, $wall_thickness, $wall_height]);
+
+    // 3. Create the holes
+    // We need to subtract cylinders from the union of plate and walls.
+    // Hole positions are centred on the plate (0,0).
+    // Z position for cutting: starts from top of plate ($plate_thickness) down to infinity (or just enough to clear walls).
+    
+    holes = union();
+    for (xi = [0:$hole_cols-1]) {
+        for (yi = [0:$hole_rows-1]) {
+            x_pos = $hole_x_positions[xi];
+            y_pos = $hole_y_positions[yi];
+            
+            // Cylinder parameters
+            // Radius = Diameter / 2
+            // Height needs to be slightly larger than wall height to ensure clean cut
+            cut_height = $wall_height + 5; 
+            
+            hole_cyl = cylinder(
+                h = cut_height,
+                r = $hole_diameter / 2,
+                center = [x_pos, y_pos, $plate_thickness]
+            );
+            
+            holes = union(holes, hole_cyl);
+        }
+    }
+
+    // 4. Combine everything
+    // Union the plate and walls first
+    base_structure = union(plate, wall_left, wall_right);
+    
+    // Subtract the holes
+    final_part = difference() {
+        base_structure;
+        holes;
+    };
+
+    // Output the final part
+    final_part;
+}
+
+// Generate the part
+tube_rack();
+```

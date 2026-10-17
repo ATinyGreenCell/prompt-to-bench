@@ -1,0 +1,81 @@
+```openscad
+// Rack for six 50 mL conical (Falcon-type) tubes
+// Print orientation: Upside down. Flat plate on bed (Z=0).
+// After printing, flip over to stand on the two side walls.
+
+// --- Dimensions ---
+// Plate dimensions
+$plate_length = 130; // X
+$plate_width = 90;   // Y
+$plate_thickness = 4; // Z
+
+// Hole specifications
+$hole_diameter = 30.5;
+$hole_spacing_x = 40; // Centre-to-centre along X
+$hole_spacing_y = 40; // Centre-to-centre along Y
+
+// Wall specifications
+$wall_length = 130;   // X
+$wall_thickness = 4;  // Y
+$wall_height = 70;    // Z (total height from bed)
+
+// --- Configuration ---
+$fn = 64; // Smooth curves for holes
+
+// --- Calculations ---
+// Hole positions (3 rows along X, 2 rows along Y)
+// X positions: 3 holes, 40mm spacing. Total span = 80mm.
+// Plate width = 130mm. Margin = (130 - 80) / 2 = 25mm.
+// Positions: 25, 65, 105.
+$hole_x_positions = [25, 65, 105];
+
+// Y positions: 2 holes, 40mm spacing. Total span = 40mm.
+// Plate height = 90mm. Margin = (90 - 40) / 2 = 25mm.
+// Positions: 25, 65.
+$hole_y_positions = [25, 65];
+
+// Wall positions (along long edges, Y = 0 and Y = 90)
+// Walls are 4mm thick.
+// Wall 1: Y 0 to 4.
+// Wall 2: Y 86 to 90.
+$wall_y_positions = [0, $plate_width - $wall_thickness];
+
+// --- Main Module ---
+module tube_rack() {
+    union() {
+        // 1. The Base Plate
+        // Dimensions: 130 x 90 x 4
+        translate([0, 0, 0])
+            cube([$plate_length, $plate_width, $plate_thickness]);
+
+        // 2. The Side Walls
+        // They rise from the plate (Z=0) to Z=70.
+        // They are 4mm thick in Y, 130mm long in X.
+        // Position 1: Y = 0 (Left edge)
+        // Position 2: Y = 86 (Right edge, 90-4)
+        for (y_pos = $wall_y_positions) {
+            translate([0, y_pos, 0])
+                cube([$wall_length, $wall_thickness, $wall_height]);
+        }
+
+        // 3. The Through-Holes
+        // We subtract cylinders from the union of plate and walls.
+        // Cylinder height must be > wall_height to ensure clean cut through the top.
+        $cut_height = $wall_height + 2; 
+        
+        for (x_pos = $hole_x_positions) {
+            for (y_pos = $hole_y_positions) {
+                translate([x_pos, y_pos, 0])
+                    cylinder(
+                        h = $cut_height,
+                        d = $hole_diameter,
+                        center = false // Starts at Z=0, goes up
+                    );
+            }
+        }
+    }
+}
+
+// Generate the part
+tube_rack();
+```

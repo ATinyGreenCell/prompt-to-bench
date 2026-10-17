@@ -1,0 +1,176 @@
+```openscad
+// 96-Well PCR Tube Rack (0.2 mL)
+// Designed for FDM 3D printing.
+// Orientation: Rests on XY plane at Z=0, builds upward.
+// Centred on origin in X and Y.
+
+// --- Dimensions (mm) ---
+// Block dimensions
+$block_length = 127.76; // X
+$block_width  = 85.48;  // Y
+$block_height = 20;     // Z
+
+// Hole specifications
+$hole_diameter = 6.2;
+$hole_count    = 96;
+$rows = 8;
+$cols = 12;
+$spacing = 9.0; // Centre-to-centre spacing
+
+// Grid positioning (A1 corner offset from block edge)
+$offset_x = 14.38;
+$offset_y = 11.24;
+
+// Chamfer specifications (Orientation mark at A1 corner)
+$chamfer_leg = 5;
+
+// Quality settings
+$fn = 64;
+
+// --- Calculations ---
+// Calculate total grid size to ensure centering
+$total_grid_x = ($cols - 1) * $spacing;
+$total_grid_y = ($rows - 1) * $spacing;
+
+// Calculate block center
+$block_center_x = $block_length / 2;
+$block_center_y = $block_width / 2;
+
+// Calculate grid center based on A1 offset
+// Grid center X = Offset X + (Total Grid X / 2)
+$grid_center_x = $offset_x + ($total_grid_x / 2);
+// Grid center Y = Offset Y + (Total Grid Y / 2)
+$grid_center_y = $offset_y + ($total_grid_y / 2);
+
+// Calculate translation to move grid center to block center
+$grid_offset_x = $block_center_x - $grid_center_x;
+$grid_offset_y = $block_center_y - $grid_center_y;
+
+// --- Main Block ---
+difference() {
+    // 1. Main Block
+    cube([
+        $block_length,
+        $block_width,
+        $block_height
+    ], center = true);
+
+    // 2. Holes
+    // We subtract cylinders. To ensure clean cuts, we extend slightly past the faces.
+    $hole_extension = 0.5; 
+    
+    for (r = [0 : $rows - 1], c = [0 : $cols - 1]) {
+        // Calculate hole position relative to grid center
+        $hole_x = $grid_center_x + (c * $spacing) + $grid_offset_x;
+        $hole_y = $grid_center_y + (r * $spacing) + $grid_offset_y;
+        
+        translate([
+            $hole_x,
+            $hole_y,
+            -$block_height/2 - $hole_extension
+        ]) {
+            cylinder(
+                h = $block_height + ($hole_extension * 2),
+                d = $hole_diameter,
+                $fn = $fn
+            );
+        }
+    }
+
+    // 3. Chamfer at A1 corner
+    // A1 is the top-left-front corner in standard plate notation (Row 1, Col 1).
+    // In our coordinate system (centered):
+    // X increases to the right. Y increases towards the back (positive Y).
+    // A1 is at min X, min Y relative to the grid.
+    // We need to chamfer the vertical edge at (min X, min Y).
+    
+    // Define the corner point in local block coordinates (uncentered)
+    // Min X = -Length/2 + Offset_X
+    // Min Y = -Width/2 + Offset_Y
+    $corner_x = -$block_length/2 + $offset_x;
+    $corner_y = -$block_width/2 + $offset_y;
+    
+    // The chamfer is on the vertical edge. We cut a wedge.
+    // To cut a 45 deg chamfer with leg $chamfer_leg on the vertical edge:
+    // We define a shape that represents the material to be removed.
+    // The removed shape is a prism with a triangular base on the XY plane.
+    // The triangle vertices (relative to corner) are:
+    // (0,0), ($chamfer_leg, 0), (0, $chamfer_leg).
+    // This creates a slanted face connecting ($chamfer_leg, 0) and (0, $chamfer_leg).
+    
+    // We create a large polygon that covers the height of the block and subtracts it.
+    // The polygon points define the cross-section of the wedge to be removed.
+    // We extrude this polygon along Z from -block_height/2 to block_height/2.
+    
+    // Vertices of the triangle to remove (in local corner coordinates):
+    // P1: (0, 0) -> Corner
+    // P2: ($chamfer_leg, 0) -> Along X axis
+    // P3: (0, $chamfer_leg) -> Along Y axis
+    // Note: The slanted face is between P2 and P3.
+    
+    // We need to translate this to the global coordinate system.
+    // The triangle sits in the corner defined by $corner_x and $corner_y.
+    // The vertices in global coordinates:
+    // V1: ($corner_x, $corner_y)
+    // V2: ($corner_x + $chamfer_leg, $corner_y)
+    // V3: ($corner_x, $corner_y + $chamfer_leg)
+    
+    // We will use linear_extrude to create the wedge shape.
+    // The polygon must be closed.
+    // Points: V1, V2, V3, V1 (at top Z), V3, V2, V1 (at bottom Z)?
+    // No, linear_extrude creates a prism. We just need the 2D profile.
+    // Profile: V1, V2, V3, V1.
+    // Then translate along Z to cover the full height.
+    
+    // However, linear_extrude extrudes along Z. If we define the polygon in XY,
+    // it creates a vertical wall. That is exactly what we want for a chamfer.
+    // The "cut" is the volume of this prism.
+    
+    // Let's construct the polygon points for the profile.
+    // We need to ensure the normal is correct for subtraction.
+    // We are subtracting, so the shape must be solid.
+    
+    // Profile points (XY plane):
+    // ($corner_x, $corner_y)
+    // ($corner_x + $chamfer_leg, $corner_y)
+    // ($corner_x, $corner_y + $chamfer_leg)
+    // ($corner_x, $corner_y)
+    
+    // Extrude height: $block_height
+    // Position: Centered in Z? No, the block is centered.
+    // We need to subtract from -block_height/2 to block_height/2.
+    // So we translate the extruded shape by [0, 0, 0] if the extrusion is centered?
+    // linear_extrude default is centered.
+    
+    // Let's build the shape to subtract.
+    // We use a large cube to contain the chamfer logic if needed, but a simple extrusion works.
+    
+    // Define the polygon
+    $p1 = [$corner_x, $corner_y];
+    $p2 = [$corner_x + $chamfer_leg, $corner_y];
+    $p3 = [$corner_x, $corner_y + $chamfer_leg];
+    
+    // Create the wedge shape
+    // We use linear_extrude with the polygon.
+    // The polygon must be a list of points.
+    // We need to make sure the polygon is closed.
+    
+    $chamfer_shape = polygon([
+        $p1,
+        $p2,
+        $p3,
+        $p1
+    ]);
+    
+    // Extrude the shape along Z
+    // The block is from -block_height/2 to block_height/2.
+    // linear_extrude with height=$block_height creates a shape from -h/2 to h/2.
+    // This matches the block perfectly.
+    
+    translate([0, 0, 0]) {
+        linear_extrude(height = $block_height, center = true) {
+            $chamfer_shape;
+        }
+    }
+}
+```

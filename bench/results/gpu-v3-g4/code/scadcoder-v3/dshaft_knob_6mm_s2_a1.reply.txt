@@ -1,0 +1,63 @@
+```openscad
+// Replacement knob for a hotplate stirrer with a 6 mm D-shaft
+// Print orientation: side facing the hotplate down on the bed (z = 0)
+
+$fn = 96;
+
+// ---- Knob body ----
+knob_d      = 30;    // knob outer diameter
+knob_h      = 15;    // knob height
+
+// ---- D-shaped blind bore (from bottom face) ----
+bore_d      = 6.2;   // bore circle diameter
+bore_flat   = 4.7;   // distance from flat to opposite side of circle
+bore_depth  = 12;    // bore depth up into knob
+
+// ---- Grip grooves ----
+groove_n    = 18;    // number of grooves
+groove_d    = 2;     // groove diameter (half-cylinder centred on outer surface)
+
+// ---- Pointer groove (from top face) ----
+pointer_w   = 1.5;   // pointer groove width
+pointer_d   = 1;     // pointer groove depth
+
+// ---- Misc ----
+eps         = 0.5;   // overshoot for clean boolean cuts
+
+// Derived
+bore_r      = bore_d / 2;
+flat_x      = bore_flat - bore_r;   // flat position from bore centre (1.8 mm)
+
+module d_bore_2d() {
+    intersection() {
+        circle(r = bore_r, $fn = 96);
+        // keep everything from the far side of the circle up to the flat
+        translate([-bore_r - 1, -bore_r - 1])
+            square([flat_x + bore_r + 1, bore_d + 2]);
+    }
+}
+
+difference() {
+    // Main body
+    cylinder(d = knob_d, h = knob_h);
+
+    // D-shaped blind bore from bottom
+    translate([0, 0, -eps])
+        linear_extrude(height = bore_depth + eps)
+            d_bore_2d();
+
+    // Vertical grip grooves around the outside, full height
+    for (i = [0 : groove_n - 1])
+        rotate([0, 0, i * 360 / groove_n])
+            translate([knob_d / 2, 0, -eps])
+                cylinder(d = groove_d, h = knob_h + 2 * eps, $fn = 48);
+
+    // Pointer groove on top face, from centre to outer edge
+    translate([0, 0, knob_h - eps])
+        intersection() {
+            cylinder(d = knob_d + 2 * eps, h = eps + 1);   // top slice
+            translate([-pointer_w / 2, -knob_d / 2])
+                square([pointer_w, knob_d + pointer_d + 1]);   // groove
+        }
+}
+```

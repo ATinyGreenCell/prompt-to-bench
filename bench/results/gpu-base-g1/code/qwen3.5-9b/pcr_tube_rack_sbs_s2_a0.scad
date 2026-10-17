@@ -1,0 +1,167 @@
+// 96-Well PCR Tube Rack (ANSI/SLAS Footprint)
+// Designed for FDM 3D printing.
+// Orientation: Rests on XY plane at Z=0, builds upward.
+// Centred on origin in X and Y.
+
+// --- Dimensions (mm) ---
+// Block Dimensions
+$block_length = 127.76;
+$block_width  = 85.48;
+$block_height = 20;
+
+// Hole Specifications
+$hole_diameter = 6.2;
+$hole_spacing_x = 9.0;
+$hole_spacing_y = 9.0;
+$hole_count_x = 12;
+$hole_count_y = 8;
+
+// Grid Positioning (Distance from edge to first hole centre)
+$offset_x = 14.38;
+$offset_y = 11.24;
+
+// Chamfer Specifications (Orientation Mark at A1 corner)
+$chamfer_angle = 45;
+$chamfer_leg = 5;
+
+// --- Configuration ---
+$fn = 100; // High resolution for smooth holes and chamfers
+
+// --- Calculations ---
+// Calculate total grid size based on spacing and count
+$total_grid_x = ($hole_spacing_x * ($hole_count_x - 1));
+$total_grid_y = ($hole_spacing_y * ($hole_count_y - 1));
+
+// Calculate block dimensions required to centre the grid
+// Block Length = Offset + Grid + Offset
+$calc_length = $offset_x + $total_grid_x + $offset_x;
+$calc_width  = $offset_y + $total_grid_y + $offset_y;
+
+// Verify against user provided block dimensions (they should match closely)
+// User provided: 127.76 x 85.48
+// Calculated:    127.76 x 85.48
+// The user dimensions are consistent with the offsets provided.
+
+// --- Main Block ---
+difference() {
+    // 1. Create the main block
+    // We use the user's exact dimensions.
+    block = cube([
+        $block_length,
+        $block_width,
+        $block_height
+    ]);
+    
+    // 2. Cut the 96 holes
+    // Loop through columns (X) and rows (Y)
+    for (col = [0 : $hole_count_x - 1]) {
+        for (row = [0 : $hole_count_y - 1]) {
+            // Calculate position of current hole centre
+            // X position: offset + col * spacing
+            pos_x = $offset_x + (col * $hole_spacing_x);
+            // Y position: offset + row * spacing
+            pos_y = $offset_y + (row * $hole_spacing_y);
+            
+            // Create hole cylinder
+            // Extend slightly past the block height to ensure clean cut
+            hole = cylinder(
+                h = $block_height + 0.1,
+                r = $hole_diameter / 2,
+                center = [pos_x, pos_y, $block_height / 2]
+            );
+            
+            difference() {
+                block;
+                hole;
+            }
+        }
+    }
+    
+    // 3. Cut the Chamfer at the A1 corner
+    // A1 is the first hole (col=0, row=0).
+    // Corner coordinates relative to block origin (bottom-left-back):
+    // X = $offset_x
+    // Y = $offset_y
+    // Z = 0 (bottom edge)
+    
+    // We need to cut a 45-degree chamfer with leg length 5mm.
+    // Since the angle is 45 degrees, the cut in X and Y will be equal to the leg length.
+    // We cut from the bottom edge (Z=0) upwards and inwards.
+    
+    // Define the cutting plane or shape.
+    // A chamfer on a corner can be modeled by cutting a wedge or using a plane.
+    // Simplest robust method for a 45 deg chamfer on a vertical edge:
+    // Create a plane that passes through the bottom edge and cuts the corner.
+    
+    // The corner is at ($offset_x, $offset_y, 0).
+    // The cut goes from ($offset_x + $chamfer_leg, $offset_y, 0) to ($offset_x, $offset_y + $chamfer_leg, 0)
+    // and slopes up to ($offset_x, $offset_y, $chamfer_leg).
+    
+    // We can create a polygon extrusion or use a plane.
+    // Let's use a plane defined by 3 points to cut the block.
+    // Point 1: ($offset_x + $chamfer_leg, $offset_y, 0)
+    // Point 2: ($offset_x, $offset_y + $chamfer_leg, 0)
+    // Point 3: ($offset_x, $offset_y, $chamfer_leg)
+    
+    // To cut with a plane in OpenSCAD, we can use a large cylinder/sphere or a polygon extrusion 
+    // that represents the "knife".
+    
+    // Method: Extrude a triangle (the cross section of the chamfer tool) along the Z axis? No.
+    // Method: Create a plane polygon and use it to cut.
+    
+    // Define the 3 points of the chamfer cut surface
+    p1 = [$offset_x + $chamfer_leg, $offset_y, 0];
+    p2 = [$offset_x, $offset_y + $chamfer_leg, 0];
+    p3 = [$offset_x, $offset_y, $chamfer_leg];
+    
+    // Create a large plane polygon that covers the cut area and extends far enough to cut through
+    // We need to define a polygon in the XY plane? No, the cut is on the side.
+    // Let's create a "knife" shape: A long thin prism with a triangular cross section.
+    // The cross section is the triangle formed by p1, p2, p3.
+    // We extrude this triangle along the Z-axis? No, the chamfer is on the vertical edge.
+    // The "knife" needs to be oriented such that its cutting edge is the line p1-p2.
+    
+    // Actually, simpler approach:
+    // Create a plane polygon in 3D space? OpenSCAD doesn't have a direct "cut with plane" primitive 
+    // other than using a large object.
+    // Let's create a large cylinder/sphere that approximates the plane, or use a polygon extrusion.
+    
+    // Best approach for a specific chamfer:
+    // Create a polygon in the XZ plane (rotated) or just define the vertices of a large cutting block.
+    // Let's define a cutting block that is a wedge.
+    
+    // The wedge should have:
+    // - A flat face on the bottom (Z=0) from x=$offset_x to x=$offset_x+$chamfer_leg, y=$offset_y to y=$offset_y+$chamfer_leg? No.
+    // - The cut surface is the plane passing through p1, p2, p3.
+    
+    // Let's construct the "knife" as a large cylinder with a specific orientation? No.
+    // Let's use a polygon extrusion.
+    // We want to cut the corner. The material to remove is the tetrahedron-like shape at the corner.
+    // We can define a large plane polygon and use it in a difference.
+    
+    // Define a large polygon in the plane of the cut.
+    // Normal vector of the plane:
+    // Vector A (p2-p1) = [-$chamfer_leg, $chamfer_leg, 0]
+    // Vector B (p3-p1) = [-$chamfer_leg, 0, $chamfer_leg]
+    // Cross product A x B = ($chamfer_leg*$chamfer_leg, $chamfer_leg*$chamfer_leg, $chamfer_leg^2)
+    // Normal = [1, 1, 1] (normalized).
+    
+    // We can create a large cylinder with axis [1,1,1] and radius large enough to cover the block?
+    // No, a cylinder cuts a round hole.
+    
+    // Let's use a polygon extrusion to create the "knife" shape.
+    // The knife shape is a prism with a triangular cross section perpendicular to the cut plane?
+    // No, the knife is a flat plane.
+    
+    // Trick: Create a large sphere or cylinder that is rotated to align with the plane [1,1,1].
+    // But a sphere cuts a round hole.
+    
+    // Correct geometric construction for a planar cut:
+    // Create a large cylinder with a very small radius? No.
+    // Create a large cube, then rotate it?
+    
+    // Let's try the polygon extrusion method directly on the block.
+    // We define a polygon in the XY plane? No.
+    // We define a polygon in a plane, then rotate it?
+    
+    // Alternative: Define the vertices of a large "wedge" that covers the corner.

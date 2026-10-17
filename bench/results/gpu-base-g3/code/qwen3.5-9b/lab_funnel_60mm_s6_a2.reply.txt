@@ -1,0 +1,133 @@
+The previous attempt failed because `polygon` with `coords` and `rotate_extrude` with `linear_extrude` inside it is not the correct way to generate a cone in OpenSCAD. The `rotate_extrude` function rotates a 2D profile around an axis to create a 3D object. To make a cone, the profile must be a line segment in the XZ plane (or XY if rotated differently, but standard is XZ for height).
+
+The correct approach is to use `rotate_extrude` with a `polygon` that defines the radius at the bottom and the radius at the top, but the points must be defined in the XZ plane relative to the rotation axis. However, `rotate_extrude` expects the profile to be in the XY plane by default? No, `rotate_extrude` rotates the profile around the Z axis. The profile is defined in the XZ plane? No, the profile is defined in the XY plane?
+
+Let's re-verify OpenSCAD `rotate_extrude`:
+`rotate_extrude(angle=360) { ... }`
+The code inside is treated as a 2D profile. This profile is rotated around the Z axis.
+If I define a line from `(0, r_bottom)` to `(height, r_top)` in the XY plane, rotating it around Z creates a shape that looks like a cone but the "height" is actually the radius in the XY plane? No.
+If I define a line from `(0, r_bottom)` to `(height, r_top)` in the XY plane, and rotate around Z, the point `(height, r_top)` will trace a circle of radius `r_top` at a distance `height` from the origin? No, the rotation is around the Z axis. The Z coordinate is constant for the profile.
+So if the profile is in the XY plane, the resulting object will have a constant Z height equal to the max Y or X? No.
+
+Correct logic for `rotate_extrude`:
+The profile is in the XZ plane? No.
+The profile is in the XY plane. The extrusion happens along the Z axis? No, that's `linear_extrude`.
+`rotate_extrude` rotates the profile around the Z axis. The profile is in the XZ plane? No.
+The profile is in the XY plane. The rotation creates the 3D shape. The Z coordinate of the resulting shape corresponds to the Y coordinate of the profile? No.
+
+Let's look at the documentation or standard examples.
+Standard example: `rotate_extrude(angle=360) { circle(r=1); }` -> Cylinder.
+Here the circle is in the XY plane. Rotating it around Z creates a cylinder along Z.
+So the profile is in the XY plane. The resulting object extends along Z? No, the circle is in the XY plane, so rotating it around Z keeps it in the XY plane? No, rotating a 2D shape in the XY plane around the Z axis creates a 3D shape where the Z dimension is determined by the "thickness" of the shape? No.
+
+Wait, `rotate_extrude` rotates the profile around the Z axis. The profile is a 2D shape. The resulting object is a solid of revolution.
+If the profile is a line from `(0,0)` to `(1,1)` in the XY plane, rotating it around Z creates a cone?
+Point `(0,0)` stays at origin. Point `(1,1)` rotates to form a circle of radius 1 at Z=1?
+Yes! The Y coordinate of the profile becomes the Z coordinate of the extruded object? No.
+The Y coordinate of the profile becomes the radius? No.
+Let's trace:
+Profile point `(x, y)`.
+Rotate around Z axis.
+The resulting point is `(x*cos(theta) - y*sin(theta), x*sin(theta) + y*cos(theta), y)`.
+So the Z coordinate of the resulting object is the Y coordinate of the profile.
+The radius of the resulting object at height Z is the X coordinate of the profile at that Y.
+So to make a cone from `z=0` to `z=height`:
+We need the profile to go from `y=0` to `y=height`.
+At `y=0`, radius `x=0`.
+At `y=height`, radius `x=radius_top`.
+So the profile is a line from `(0,0)` to `(radius_top, height)`.
+This creates a cone with height `height` and top radius `radius_top`.
+
+So for the hollow cone:
+Outer profile: Line from `(0,0)` to `($cone_top_diameter/2, $cone_height)`.
+Inner profile: Line from `(0,0)` to `(($cone_top_diameter - 2*$wall_thickness)/2, $cone_height)`.
+Wait, the cone is attached to the spout. The spout is at `z=0` to `z=20`. The cone is at `z=20` to `z=50`.
+So the cone's local `z=0` corresponds to the global `z=20`.
+The cone's local `z=height` corresponds to the global `z=50`.
+The bottom of the cone (at global z=20) has diameter 10.
+The top of the cone (at global z=50) has diameter 60.
+So in the local profile:
+At `y=0` (local z=0), radius = 5.
+At `y=30` (local z=30), radius = 30.
+So the outer profile is a line from `(5, 0)` to `(30, 30)`.
+The inner profile is a line from `(5 - 1.6, 0)` to `(30 - 1.6, 30)`?
+Inner diameter at bottom = 10 - 2*1.6 = 6.8. Radius = 3.4.
+Inner diameter at top = 60 - 2*1.6 = 56.8. Radius = 28.4.
+So inner profile is from `(3.4, 0)` to `(28.4, 30)`.
+
+The `rotate_extrude` will create the cone. Then we need to translate it by `z=20`.
+
+```openscad
+// Lab Funnel Design
+// Units: millimetres
+// Orientation: Upright, wide opening at top, rests on XY plane at z=0.
+
+// --- Dimensions ---
+// Spout (Tube)
+$spout_outer_diameter = 10;
+$spout_inner_diameter = 6.8; // 10 - 2*1.6
+$spout_length = 20;
+
+// Cone (Funnel Body)
+$cone_bottom_diameter = 10; // Matches spout outer diameter
+$cone_top_diameter = 60;
+$cone_height = 30; // From z=20 to z=50
+
+// Wall Thickness
+$wall_thickness = 1.6;
+
+// Resolution for smooth curves
+$fn = 128;
+
+// --- Helper Functions ---
+
+// Creates a hollow cylinder (tube)
+module hollow_cylinder(outer_d, inner_d, height) {
+    difference() {
+        cylinder(h = height, d = outer_d, $fn = $fn);
+        cylinder(h = height, d = inner_d, $fn = $fn);
+    }
+}
+
+// Creates a hollow cone (frustum)
+// bottom_d: diameter at the smaller end (attached to spout)
+// top_d: diameter at the larger end (rim)
+// height: vertical height of the cone
+module hollow_cone(bottom_d, top_d, height) {
+    difference() {
+        // Outer Cone
+        rotate_extrude(angle = 360) {
+            // Profile in XY plane:
+            // X = radius, Y = height (which becomes Z in the extruded object)
+            // Start at (radius_bottom, 0), end at (radius_top, height)
+            polygon(points = [
+                [bottom_d/2, 0],
+                [top_d/2, height]
+            ]);
+        }
+        
+        // Inner Cone (Hole)
+        rotate_extrude(angle = 360) {
+            inner_bottom = bottom_d - $wall_thickness * 2;
+            inner_top = top_d - $wall_thickness * 2;
+            
+            polygon(points = [
+                [inner_bottom/2, 0],
+                [inner_top/2, height]
+            ]);
+        }
+    }
+}
+
+// --- Main Assembly ---
+// The funnel rests on the XY plane at z=0.
+// The spout runs from z=0 to z=20.
+// The cone sits on top of the spout, from z=20 to z=50.
+
+translate([0, 0, 0]) {
+    // 1. Build the Spout (Tube)
+    hollow_cylinder(outer_d = $spout_outer_diameter, 
+                    inner_d = $spout_inner_diameter, 
+                    height = $spout_length);
+
+    // 2. Build the Cone (Funnel Body)

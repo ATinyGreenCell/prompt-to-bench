@@ -1,0 +1,79 @@
+```openscad
+// Lab Funnel Design
+// Units: millimetres
+// Orientation: Upright, wide opening at top, rests on XY plane at z=0.
+
+// --- Dimensions ---
+// Spout (Tube)
+$spout_outer_diameter = 10;
+$spout_inner_diameter = 6.8; // 10 - 2*1.6
+$spout_length = 20;
+
+// Cone (Funnel)
+$cone_bottom_diameter = 10; // Matches spout outer diameter
+$cone_top_diameter = 60;
+$cone_height = 30; // From z=20 to z=50
+
+// Wall Thickness
+$wall_thickness = 1.6;
+
+// Resolution for curved surfaces
+$fn = 64;
+
+// --- Helper Functions ---
+// Creates a hollow cylinder (tube)
+module hollow_cylinder(outer_d, inner_d, h) {
+    difference() {
+        cylinder(h = h, d = outer_d, $fn = $fn);
+        cylinder(h = h, d = inner_d, $fn = $fn);
+    }
+}
+
+// Creates a hollow cone (frustum)
+// bottom_d: diameter at the smaller end (z=0 relative to cone)
+// top_d: diameter at the larger end (z=height relative to cone)
+module hollow_cone(bottom_d, top_d, h) {
+    difference() {
+        // Outer Cone
+        linear_extrude(height = h, center = true, convexity = 3) {
+            polygon(points = [
+                [-top_d/2, 0], [top_d/2, 0], [top_d/2, h], [-top_d/2, h]
+            ]);
+        }
+        
+        // Inner Cone (Hole)
+        linear_extrude(height = h, center = true, convexity = 3) {
+            polygon(points = [
+                [-bottom_d/2, 0], [bottom_d/2, 0], [bottom_d/2, h], [-bottom_d/2, h]
+            ]);
+        }
+    }
+}
+
+// --- Main Assembly ---
+// The funnel rests on the XY plane at z=0.
+// The spout runs from z=0 to z=20.
+// The cone runs from z=20 to z=50.
+
+translate([0, 0, 0]) {
+    // 1. Build the Spout (Tube)
+    // Outer diameter 10mm, Inner 6.8mm, Height 20mm
+    hollow_cylinder(
+        outer_d = $spout_outer_diameter,
+        inner_d = $spout_inner_diameter,
+        h = $spout_length
+    );
+
+    // 2. Build the Cone (Funnel)
+    // Positioned starting at z = $spout_length
+    // Bottom diameter (at z=20) = 10mm
+    // Top diameter (at z=50) = 60mm
+    translate([0, 0, $spout_length]) {
+        hollow_cone(
+            bottom_d = $cone_bottom_diameter,
+            top_d = $cone_top_diameter,
+            h = $cone_height
+        );
+    }
+}
+```

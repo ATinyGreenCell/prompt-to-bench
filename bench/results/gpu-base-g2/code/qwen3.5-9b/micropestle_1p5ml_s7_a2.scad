@@ -1,0 +1,96 @@
+$fn = 128;
+
+// --- Dimensions ---
+// Handle
+d_handle = 8;
+h_handle = 45;
+z_handle_start = 0;
+z_handle_end = 45;
+
+// Cone
+d_cone_bottom = 8;
+d_cone_top = 3;
+z_cone_start = 45;
+z_cone_end = 62;
+
+// Tip
+d_tip = 3;
+z_tip_center = 62;
+
+// Grooves
+n_grooves = 4;
+w_groove = 2; // Width in Z
+d_groove = 1; // Depth
+z_groove_centers = [10, 15, 20, 25];
+
+// --- Main Body Construction ---
+// We build the body as a union of the handle, cone, and tip.
+// The cone starts at z=45 with diameter 8, matching the handle perfectly.
+
+body = union(
+    // 1. Cylindrical Handle
+    cylinder(
+        h = h_handle,
+        r = d_handle / 2,
+        center = [0, 0, z_handle_start + h_handle/2]
+    ),
+    
+    // 2. Conical Section
+    // Using linear_extrude with a polygon to create the cone taper
+    linear_extrude(
+        path = [
+            d_cone_bottom / 2, 0,          // Bottom radius at z_start
+            d_cone_top / 2, z_cone_end - z_cone_start // Top radius at z_end
+        ],
+        center = [0, 0, z_cone_start + (z_cone_end - z_cone_start)/2],
+        convexity = 3
+    ),
+    
+    // 3. Spherical Tip
+    sphere(
+        r = d_tip / 2,
+        center = [0, 0, z_tip_center]
+    )
+);
+
+// --- Groove Cutting ---
+// We subtract the grooves from the handle section.
+// The grooves are interpreted as circumferential rings (grooves around the handle)
+// located at specific Z heights.
+// "2 mm wide (in Z)" means the ring is 2mm tall.
+// "1 mm deep" means it cuts 1mm into the radius.
+// To cut a groove of depth D on a cylinder of radius R, we subtract a cylinder of radius (R-D).
+
+grooves = union();
+for (z_c = z_groove_centers) {
+    // Calculate Z bounds for this groove
+    z_min = z_c - w_groove / 2;
+    z_max = z_c + w_groove / 2;
+    
+    // Add buffer to ensure we cut through the entire handle thickness
+    z_min_buf = z_min - 0.5;
+    z_max_buf = z_max + 0.5;
+    
+    // The cutting shape is a cylinder along the Z-axis.
+    // Radius = Handle Radius - Groove Depth
+    r_cut = (d_handle / 2) - d_groove;
+    
+    // Create the cutting cylinder
+    cut_cyl = cylinder(
+        h = w_groove,
+        r = r_cut,
+        center = [0, 0, z_c]
+    );
+    
+    // Add buffer to the Z extent to ensure clean cut
+    cut_cyl = translate([0, 0, -0.5]) * cut_cyl;
+    
+    // Add to union
+    grooves = union(grooves, cut_cyl);
+}
+
+// Final Part: Body minus Grooves
+final_part = difference() {
+    body;
+    grooves;
+}

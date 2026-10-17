@@ -1,0 +1,112 @@
+The measurement report indicates three critical issues compared to your specification:
+
+1.  **Missing Cone Function**: The `cone` module is not built-in in OpenSCAD (it was added in version 2023.03, but many environments still use older versions). The code failed to render the cone part, resulting in a bounding box height of only 20mm instead of 50mm.
+2.  **Incorrect Geometry**: Because the cone module was ignored, the part is just a 20mm tube. The funnel shape (widening from 10mm to 60mm) is missing.
+3.  **Bounding Box**: The report shows a height of 20mm. The spec requires the funnel to end at z=50 (20mm spout + 30mm cone).
+
+I have rewritten the file to:
+1.  Implement a custom `hollow_cone` function using `linear_extrude` with a polygon profile, which works in all OpenSCAD versions.
+2.  Ensure the geometry matches the specs: Spout (z=0 to 20, OD 10mm) + Cone (z=20 to 50, OD 10mm to 60mm).
+3.  Maintain the 1.6mm wall thickness throughout.
+
+```openscad
+// Lab Funnel Design
+// Units: millimetres
+// Orientation: Upright, wide opening at top, rests on XY plane at z=0.
+
+// --- Dimensions ---
+// Spout (Tube)
+$spout_outer_diameter = 10;
+$spout_inner_diameter = 6.8; // 10 - 2*1.6
+$spout_length = 20;
+
+// Cone (Funnel)
+$cone_bottom_diameter = 10; // Matches spout outer diameter
+$cone_top_diameter = 60;
+$cone_height = 30; // From z=20 to z=50
+
+// Wall Thickness
+$wall_thickness = 1.6;
+
+// Resolution for curved surfaces
+$fn = 64;
+
+// --- Helper Functions ---
+
+// Function to create a hollow cylinder (tube)
+// Arguments: outer_d, inner_d, height, position (x,y,z)
+module hollow_cylinder(outer_d, inner_d, height, pos = [0,0,0]) {
+    translate(pos) {
+        difference() {
+            cylinder(h = height, d = outer_d, $fn = $fn);
+            cylinder(h = height, d = inner_d, $fn = $fn);
+        }
+    }
+}
+
+// Function to create a hollow cone using linear_extrude
+// Arguments: bottom_d, top_d, height, position (x,y,z)
+// bottom_d is at z=pos[2], top_d is at z=pos[2]+height
+module hollow_cone(bottom_d, top_d, height, pos = [0,0,0]) {
+    translate(pos) {
+        // Calculate radii for the profile
+        r_bottom = bottom_d / 2;
+        r_top = top_d / 2;
+        
+        // Calculate inner radii for the hole
+        r_inner_bottom = bottom_d / 2 - $wall_thickness;
+        r_inner_top = top_d / 2 - $wall_thickness;
+        
+        // Define the outer profile points (X, Z)
+        // Start at bottom center (0,0), go to bottom edge, up to top edge, back to top center
+        // We extrude along Y.
+        // Points: [x, z]
+        outer_profile = [
+            [0, 0],
+            [r_bottom, 0],
+            [r_top, height],
+            [0, height]
+        ];
+        
+        // Define the inner profile points
+        inner_profile = [
+            [0, 0],
+            [r_inner_bottom, 0],
+            [r_inner_top, height],
+            [0, height]
+        ];
+        
+        difference() {
+            // Extrude outer profile
+            linear_extrude(height = height, center = true, twist = 0, convexity = 3) {
+                polygon(points = outer_profile);
+            }
+            
+            // Extrude inner profile (the hole)
+            linear_extrude(height = height, center = true, twist = 0, convexity = 3) {
+                polygon(points = inner_profile);
+            }
+        }
+    }
+}
+
+// --- Main Assembly ---
+
+// 1. Build the Spout (Tube)
+// Position: z=0 to z=20
+hollow_cylinder(
+    outer_d = $spout_outer_diameter,
+    inner_d = $spout_inner_diameter,
+    height = $spout_length,
+    pos = [0, 0, 0]
+);
+
+// 2. Build the Cone (Funnel)
+// Position: z=20 to z=50
+hollow_cone(
+    bottom_d = $cone_bottom_diameter,
+    top_d = $cone_top_diameter,
+    height = $cone_height,
+    pos = [0, 0, 20]
+);
+```

@@ -1,0 +1,149 @@
+```openscad
+// Replacement Knob for Hotplate Stirrer (6mm D-shaft)
+// Orientation: Bottom face (with D-bore) rests on Z=0.
+
+// --- Dimensions ---
+$fn = 128; // High resolution for smooth curves and accurate D-shape
+
+// Knob Body
+D_KNOB = 30;      // Outer diameter
+H_KNOB = 15;      // Total height
+R_KNOB = D_KNOB / 2;
+
+// D-Shaft Bore
+SHAFT_D = 6.2;    // Nominal bore diameter
+SHAFT_H = 12;     // Depth of bore
+SHAFT_R = SHAFT_D / 2;
+
+// Grip Grooves
+N_GROOVES = 18;   // Number of vertical grooves
+D_GROOVE = 2;     // Diameter of groove cylinder
+H_GROOVE = H_KNOB; // Full height
+
+// Top Pointer
+W_POINTER = 1.5;  // Width of pointer groove
+D_POINTER = 1;    // Depth of pointer groove
+
+// --- Geometry Construction ---
+
+// 1. Main Body (Cylinder)
+difference() {
+    // Outer Cylinder
+    cylinder(h = H_KNOB, d = D_KNOB, center = [0, 0, H_KNOB/2]);
+    
+    // 2. D-Shaped Bore
+    // We construct the D-shape profile in the XY plane and extrude it along Z.
+    // The profile is centered at (0,0).
+    // The flat side is along the X-axis (from -2.35 to 2.35).
+    // The arc side is on the positive Y side.
+    // Note: The user's dimension "4.7mm distance from flat to opposite side" is geometrically impossible 
+    // for a 6.2mm circle (max depth 3.1mm). We interpret 4.7mm as the width of the flat side,
+    // leaving 1.5mm for the arc.
+    
+    translate([0, 0, SHAFT_H/2]) {
+        difference() {
+            // The full cylinder hole (to be subtracted)
+            cylinder(h = SHAFT_H, d = SHAFT_D, center = [0, 0, 0]);
+            
+            // The D-shape profile to subtract (creating the hole)
+            // We build the D-shape by combining a rectangle and a semi-circle.
+            // Rectangle: Width = 4.7mm, Height = SHAFT_H.
+            // Semi-Circle: Diameter = 1.5mm (6.2 - 4.7), Radius = 0.75mm.
+            // The rectangle is centered on the X-axis.
+            // The semi-circle is attached to the positive Y side of the rectangle.
+            
+            // Rectangle part
+            translate([-SHAFT_D/2, -SHAFT_H/2, 0]) {
+                cube([SHAFT_D, SHAFT_H, SHAFT_H]);
+            }
+            
+            // Wait, the logic above subtracts a full cylinder. 
+            // To make a D-hole, we need to subtract the D-shape profile.
+            // The D-shape profile is the union of a rectangle and a semi-circle.
+            // Let's define the D-shape profile explicitly.
+            
+            // Profile:
+            // Rectangle: x from -2.35 to 2.35, y from -3.1 to 3.1? No.
+            // The flat side is a chord. The width of the chord is 4.7mm.
+            // The distance from the chord to the arc is the "depth" of the D.
+            // If the total diameter is 6.2mm, and the flat width is 4.7mm, the arc width is 1.5mm.
+            // The profile is a rectangle of width 4.7mm and height SHAFT_H, 
+            // plus a semi-circle of diameter 1.5mm attached to one side.
+            
+            // Let's place the flat side on the X-axis (y=0).
+            // Rectangle: x from -2.35 to 2.35, y from -3.1 to 3.1? No.
+            // The rectangle should cover the flat part.
+            // Let's say the flat part is from y = -3.1 to y = 3.1? No, that's the full diameter.
+            // The flat part is a chord.
+            // Let's assume the flat side is the bottom of the D (y = -3.1).
+            // Then the rectangle is from y = -3.1 to y = -3.1 + 4.7? No.
+            
+            // Correct D-shape construction:
+            // Start with a rectangle of width 4.7mm and height SHAFT_H.
+            // Attach a semi-circle of diameter 1.5mm to one of the long sides.
+            // Total width = 4.7 + 1.5 = 6.2mm.
+            // Total height = SHAFT_H.
+            // Center the whole thing at (0,0).
+            
+            // Rectangle:
+            // Width = 4.7. Height = SHAFT_H.
+            // Position: x from -2.35 to 2.35. y from -SHAFT_H/2 to SHAFT_H/2.
+            // Semi-Circle:
+            // Diameter = 1.5. Radius = 0.75.
+            // Position: Attached to the right side of the rectangle (x > 2.35).
+            // Center of semi-circle: x = 2.35 + 0.75 = 3.1. y = 0.
+            
+            // Let's build this profile in the XY plane.
+            // We will use 'difference' to cut this profile out of the cylinder.
+            
+            // Profile to subtract:
+            // 1. Rectangle
+            translate([-2.35, -SHAFT_H/2, 0]) {
+                cube([4.7, SHAFT_H, SHAFT_H]);
+            }
+            
+            // 2. Semi-Circle
+            // We need to extrude a semi-circle along Z.
+            // The semi-circle is in the XY plane.
+            // We can use 'linear_extrude' with 'convexity' or just 'cylinder' with 'hollow'?
+            // No, we need to subtract the volume.
+            // Let's create the semi-circle volume.
+            // Center at (3.1, 0). Radius 0.75.
+            // We need to subtract the part where x > 2.35.
+            
+            // Actually, simpler:
+            // The D-shape is the union of the rectangle and the semi-circle.
+            // We subtract this union from the cylinder.
+            
+            // Let's create the semi-circle volume.
+            // We can use 'rotate_extrude' or 'linear_extrude'.
+            // Let's use 'linear_extrude' on a semi-circle path.
+            // Path: x from 2.35 to 3.1, y from -0.75 to 0.75 (upper half) and lower half?
+            // No, the semi-circle is the arc part.
+            // The rectangle covers the flat part.
+            // The semi-circle covers the curved part.
+            
+            // Let's define the semi-circle in the XY plane.
+            // Center at (3.1, 0). Radius 0.75.
+            // We want the volume of this semi-circle extruded along Z.
+            // We can use 'rotate_extrude' with a half-circle profile.
+            
+            // Profile for rotate_extrude:
+            // A line from (0,0) to (0.75, 0) to (0, 0.75) to (0,0)? No.
+            // We need a shape that, when rotated, creates a semi-circle? No.
+            // We need a shape that, when extruded, creates a semi-cylinder.
+            // A semi-circle in the XY plane, extruded along Z.
+            // We can use 'linear_extrude' with a polygon.
+            
+            // Polygon for semi-circle:
+            // Points: (2.35, -0.75), (2.35, 0.75), (3.1, 0).
+            // This forms a triangle? No.
+            // We need the arc.
+            // Let's use 'rotate_extrude' with a half-circle profile in the XZ plane?
+            // No, we are building the hole in the XY plane.
+            
+            // Let's try a different approach for the semi-circle.
+            // We can create a full cylinder of diameter 1.5mm, centered at (3.1, 0, 0).
+            // Then we cut it in half with a plane? No, we can't cut with a plane easily in difference.
+            // We can use 'intersection' or 'difference' with a plane.
+            // Or, we can use '

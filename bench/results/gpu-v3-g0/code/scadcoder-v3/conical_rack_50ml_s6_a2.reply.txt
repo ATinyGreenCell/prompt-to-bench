@@ -1,0 +1,46 @@
+```openscad
+// Rack for six 50 mL conical (Falcon-type) tubes
+// Printed upside down: plate on bed, walls rising from plate edges.
+// Flipped over after printing: rack stands on walls, tubes pass through holes.
+
+// ---------------- Parameters ----------------
+plate_x      = 130;    // plate length along X (mm)
+plate_y      = 90;     // plate width along Y (mm)
+plate_t      = 4;      // plate thickness along Z (mm)
+
+hole_count   = 6;      // number of tube holes (2 rows x 3 cols)
+hole_d       = 30.5;   // tube hole diameter (mm)
+hole_pitch   = 40;     // centre-to-centre spacing, both directions (mm)
+
+wall_t       = 4;      // wall thickness along Y (mm)
+wall_top_z   = 70;     // total height of walls above plate (z = plate_t + 70)
+
+eps          = 0.5;    // cutter overshoot past faces (mm)
+$fn          = 96;     // circle resolution
+
+// ---------------- Derived ----------------
+rows         = hole_count / 2;                 // 2 rows along Y
+cols         = hole_count / rows;              // 3 cols along X
+plate_h      = plate_t + wall_top_z;           // overall plate height (74)
+
+// ---------------- Model ----------------
+difference() {
+    union() {
+        // Flat plate on the bed
+        translate([-plate_x / 2, -plate_y / 2, 0])
+            cube([plate_x, plate_y, plate_t]);
+
+        // Two solid walls along the long edges, rising from plate to z = 70
+        for (edge = [-1, 1])
+            translate([-plate_x / 2, edge * (plate_y / 2 - wall_t / 2), plate_t])
+                cube([plate_x, wall_t, wall_top_z]);
+    }
+
+    // Tube holes: 2 rows (along Y) of 3 (along X), centred on plate
+    for (i = [0 : cols - 1], j = [0 : rows - 1])
+        translate([(i - (cols - 1) / 2) * hole_pitch,
+                   (j - (rows - 1) / 2) * hole_pitch,
+                   -eps])
+            cylinder(d = hole_d, h = plate_h + 2 * eps);
+}
+```

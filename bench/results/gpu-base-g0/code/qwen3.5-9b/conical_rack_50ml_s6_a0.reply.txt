@@ -1,0 +1,103 @@
+```openscad
+// Rack for six 50 mL conical (Falcon-type) tubes
+// Print orientation: Upside down. Flat plate on bed (Z=0).
+// After printing, flip over to stand on the two side walls.
+
+// --- Dimensions ---
+// Plate dimensions
+$plate_length = 130; // X
+$plate_width = 90;   // Y
+$plate_thickness = 4; // Z
+
+// Hole specifications
+$hole_count = 6;
+$hole_diameter = 30.5;
+$hole_spacing_x = 40; // Centre-to-centre along X
+$hole_spacing_y = 40; // Centre-to-centre along Y
+
+// Wall specifications
+$wall_length = 130;   // X
+$wall_thickness = 4;  // Y
+$wall_height = 70;    // Z (total height from bed)
+
+// --- Configuration ---
+$fn = 64; // Smooth curves for holes
+
+// --- Calculations ---
+// Plate center
+$plate_center_x = $plate_length / 2;
+$plate_center_y = $plate_width / 2;
+
+// Hole positions (3 rows along X, 2 rows along Y)
+// X positions: -65, -20, 20, 65 (Wait, 3 holes means 3 positions)
+// Let's re-verify spacing: "3 (along X), 40 mm centre-to-centre"
+// If there are 3 holes and spacing is 40mm, the total span is 80mm.
+// Centered on 130mm plate:
+// Positions: (130/2) - 40 = 30, 130/2 = 65, 130/2 + 40 = 105? 
+// No, standard centering for 3 items with spacing S:
+// Item 1: Center - S
+// Item 2: Center
+// Item 3: Center + S
+// Total width = 2*S = 80. Plate = 130. Margin = (130-80)/2 = 25.
+// So X positions: 25, 65, 105.
+// Let's calculate offsets explicitly.
+$hole_x_offset = $hole_spacing_x / 2; // 20
+$hole_x_positions = [
+    $plate_center_x - $hole_x_offset - $hole_x_offset, // 130/2 - 20 - 20 = 30
+    $plate_center_x - $hole_x_offset,                  // 130/2 - 20 = 65
+    $plate_center_x + $hole_x_offset                    // 130/2 + 20 = 105
+];
+
+// Y positions: 2 rows, 40mm spacing.
+// Total height = 40. Plate = 90. Margin = (90-40)/2 = 25.
+// Y positions: 25, 65.
+$hole_y_offset = $hole_spacing_y / 2; // 20
+$hole_y_positions = [
+    $plate_center_y - $hole_y_offset, // 45 - 20 = 25
+    $plate_center_y + $hole_y_offset  // 45 + 20 = 65
+];
+
+// Wall positions (along long edges, Y = 0 and Y = 90)
+$wall_y_positions = [0, $plate_width];
+
+// --- Main Module ---
+module tube_rack() {
+    union() {
+        // 1. The Base Plate
+        // Dimensions: 130 x 90 x 4
+        translate([0, 0, 0])
+            cube([$plate_length, $plate_width, $plate_thickness]);
+
+        // 2. The Side Walls
+        // They rise from the plate (Z=0) to Z=70.
+        // They are 4mm thick in Y, 130mm long in X.
+        // Position 1: Y = 0 (Left edge)
+        // Position 2: Y = 90 (Right edge)
+        for (y_pos = $wall_y_positions) {
+            translate([0, y_pos, 0])
+                cube([$wall_length, $wall_thickness, $wall_height]);
+        }
+
+        // 3. The Through-Holes
+        // We subtract cylinders from the union of plate and walls.
+        // Since the walls are part of the union, subtracting a cylinder 
+        // that covers the full height will punch through everything.
+        // Cylinder height must be > wall_height to ensure clean cut.
+        $cut_height = $wall_height + 5; 
+        
+        for (x_pos = $hole_x_positions) {
+            for (y_pos = $hole_y_positions) {
+                translate([x_pos, y_pos, 0])
+                    cylinder(
+                        h = $cut_height,
+                        d = $hole_diameter,
+                        center = true
+                    );
+            }
+        }
+    }
+}
+
+// Generate the part
+tube_rack();
+```

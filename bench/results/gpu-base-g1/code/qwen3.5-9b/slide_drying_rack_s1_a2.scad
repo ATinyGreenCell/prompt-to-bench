@@ -1,0 +1,51 @@
+// Drying Rack for 10 Microscope Slides
+// Base: 90 x 45 x 20 mm (Resting on Z=0)
+// Slots: 10 parallel slots along X, 77mm long, 1.6mm wide, 10mm deep
+// Spacing: 3.5mm centre-to-centre in Y
+
+$fn = 128;
+
+// Base Dimensions
+base_length = 90;   // X
+base_width = 45;    // Y
+base_height = 20;   // Z
+
+// Slot Dimensions
+num_slots = 10;
+slot_length = 77;   // X (runs along length)
+slot_width = 1.6;   // Y
+slot_depth = 10;    // Z
+
+// Spacing
+slot_spacing = 3.5; // Centre-to-centre in Y
+
+// Main Block
+difference() {
+    // 1. The Solid Base
+    // Shifted up by base_height/2 so it rests on Z=0
+    translate([0, 0, base_height / 2]) {
+        cube([base_length, base_width, base_height]);
+    }
+    
+    // 2. The Slots (Cutting shapes)
+    // The slots are open at the top. The top surface is now at Z = base_height (20).
+    // The slots go from Z=20 down to Z=10 (10mm deep).
+    // We extend the cutting shape slightly below Z=10 (to Z=9.9) to ensure clean removal.
+    
+    // Calculate the Y offset for the first slot to center the group on the block width
+    // The group of centers must be centered at Y=0.
+    first_slot_y = -((num_slots - 1) * slot_spacing) / 2;
+    
+    for (i = [0 : num_slots - 1]) {
+        y_pos = first_slot_y + (i * slot_spacing);
+        
+        translate([0, y_pos, base_height]) {
+            // Slot dimensions:
+            // X: 77mm
+            // Y: 1.6mm
+            // Z: 10mm deep (from Z=20 down to Z=10)
+            // We add 0.1mm extension below Z=10 for clean cutting
+            cube([slot_length, slot_width, slot_depth + 0.1], center = [0, 0, -slot_depth/2]);
+        }
+    }
+}

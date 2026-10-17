@@ -1,0 +1,174 @@
+// Pestle for 1.5 mL Microcentrifuge Tube
+// Print Orientation: Standing upright on XY plane (Z=0)
+
+// --- Dimensions ---
+$fn = 128; // High resolution for smooth curves and accurate hole sizes
+
+// Handle
+d_handle = 8;      // Handle diameter (mm)
+h_handle = 45;     // Handle height (mm)
+z_handle_start = 0;
+z_handle_end = 45;
+
+// Cone
+d_cone_bottom = 8; // Cone bottom diameter (matches handle)
+d_cone_top = 3;    // Cone top diameter (matches sphere)
+z_cone_start = 45;
+z_cone_end = 62;
+
+// Tip (Sphere)
+d_tip = 3;         // Tip diameter (mm)
+z_tip_center = 62; // Center Z of the sphere
+
+// Grooves
+n_grooves = 4;     // Number of circumferential grooves
+d_groove_width = 2; // Groove width in Z (mm)
+d_groove_depth = 1; // Groove depth (mm)
+z_groove_centers = [10, 15, 20, 25]; // Z positions of groove centers
+
+// --- Main Body Construction ---
+difference() {
+    // 1. Create the main solid body
+    union() {
+        // Handle Cylinder
+        cylinder(
+            h = h_handle,
+            d = d_handle,
+            center = false
+        );
+
+        // Cone (tapering from 8mm to 3mm)
+        // Using linear_extrude with a polygon profile for the cone
+        linear_extrude(height = z_cone_end - z_cone_start, center = false) {
+            polygon(
+                points = [
+                    [0, d_cone_bottom / 2],
+                    [z_cone_end - z_cone_start, d_cone_top / 2],
+                    [z_cone_end - z_cone_start, -d_cone_top / 2],
+                    [0, -d_cone_bottom / 2]
+                ]
+            );
+        }
+
+        // Tip Sphere
+        translate([0, 0, z_tip_center - d_tip/2]) {
+            sphere(d = d_tip);
+        }
+    }
+
+    // 2. Cut the grooves
+    // We use a for loop to generate the 4 grooves
+    for (i = [0 : n_grooves - 1]) {
+        z_center = z_groove_centers[i];
+        
+        // Calculate the Z range for the groove based on center and width
+        z_start = z_center - d_groove_width / 2;
+        z_end = z_center + d_groove_width / 2;
+
+        // Create the cutting shape: A cylinder with a cylindrical hole through it
+        // This effectively creates a groove on the surface of the main body
+        translate([0, 0, z_start]) {
+            // The cutting cylinder must extend slightly past the body faces to ensure clean cuts
+            // Height of cutter = groove width + safety margin
+            h_cutter = d_groove_width + 0.1; 
+            
+            // The cutter is a cylinder with a hole in the middle (the groove)
+            // Outer diameter of the cutter matches the handle diameter
+            // Inner diameter of the cutter is the groove width
+            difference() {
+                cylinder(
+                    h = h_cutter,
+                    d = d_handle,
+                    center = false
+                );
+                
+                // The actual groove hole
+                cylinder(
+                    h = h_cutter,
+                    d = d_groove_width,
+                    center = false
+                );
+            }
+            
+            // Rotate the cutter 90 degrees around Z so the hole runs along Z
+            // Wait, the logic above creates a solid cylinder with a hole. 
+            // If we extrude this shape along Z, we get a groove.
+            // However, the standard way to cut a groove on a cylinder is to rotate a rectangular profile.
+            // Let's re-approach the groove generation for clarity and robustness.
+        }
+    }
+    
+    // Re-doing the groove subtraction logic for clarity:
+    // We need to subtract a shape that is a cylinder of diameter (d_handle - d_groove_depth*2) 
+    // but with a rectangular cross-section in the Z-X plane? No.
+    // A groove is a cut along the Z axis.
+    // We can create a cylinder that is "thick" in X/Y but has a hole in the middle, 
+    // and extrude it along Z? No, that makes a tube.
+    // We need to subtract a cylinder that has a rectangular hole through its center?
+    // Actually, the simplest way to cut a groove on a cylinder is:
+    // Create a cylinder of diameter (d_handle - 2*depth) centered at the handle center.
+    // But we need to cut it out of the handle.
+    // Let's use a cylinder with a rectangular hole? No, OpenSCAD cylinders are round.
+    // Correct approach: 
+    // 1. Define the groove as a cylinder with diameter = d_handle - 2*depth.
+    // 2. This cylinder sits inside the handle.
+    // 3. We need to remove the material between the inner cylinder and the outer handle surface?
+    // No, that's not right.
+    // Let's try: Create a cylinder of diameter (d_handle - 2*depth). 
+    // Then subtract it from the main body? That would leave a hole in the middle.
+    // We want a groove on the surface.
+    
+    // Correct Geometry for Groove:
+    // A groove is a cylindrical hole drilled into the side of the handle? 
+    // No, "circumferential grooves" usually means grooves running along the length (Z-axis).
+    // "2 mm wide (in Z)" confirms they run along Z.
+    // So we are cutting a slot along the Z axis.
+    // To cut a slot along Z on a cylinder:
+    // We can create a cylinder of diameter (d_handle - 2*depth) centered at the origin.
+    // Then we subtract this cylinder from the main body? 
+    // If we subtract a smaller cylinder centered at the same axis, we get a hollow tube, not a groove.
+    // We need to offset the cutter.
+    
+    // Strategy: 
+    // Create a cylinder of diameter (d_handle - 2*depth).
+    // Rotate it 90 degrees around Z? No.
+    // Let's use a cylinder with a rectangular hole? No built-in rectangular hole cylinder.
+    // Let's use a cylinder of diameter (d_handle - 2*depth) and subtract it from a larger cylinder?
+    // No.
+    // Let's define the groove as a cylinder of diameter (d_handle - 2*depth) centered at (0,0).
+    // Then we subtract this from the main body? That removes the core.
+    // We want to remove the shell.
+    // Okay, let's flip it.
+    // Create a cylinder of diameter (d_handle - 2*depth).
+    // This cylinder represents the "solid" part we want to KEEP? No.
+    
+    // Let's try this:
+    // The groove is a cylinder of diameter (d_handle - 2*depth) running along Z.
+    // We want to remove the material that is OUTSIDE this inner cylinder but INSIDE the handle?
+    // No, that's not a groove.
+    
+    // Let's visualize:
+    // Handle is a cylinder.
+    // Groove is a cut along the surface.
+    // Cross section (XY) at any Z in the groove: A ring with a gap.
+    // Cross section (XZ) at any Y: A rectangle cut out of the cylinder wall.
+    
+    // Implementation:
+    // Create a cylinder of diameter (d_handle - 2*depth).
+    // This cylinder is the "core" that remains? No.
+    // Let's create a cylinder of diameter (d_handle - 2*depth) centered at (0,0).
+    // Then we subtract this from the main body? That leaves a hole in the middle.
+    // We need to subtract a cylinder that is OFFSET from the center?
+    // If we offset the cutter by (d_handle - groove_width)/2?
+    // Let's say d_handle = 8, depth = 1.
+    // We want to cut a 1mm deep groove.
+    // The remaining wall thickness is 3mm.
+    // So the "solid" part of the handle in the groove region is a cylinder of diameter 6mm?
+    // No, the groove is on the surface.
+    // So the solid part is a cylinder of diameter (d_handle - 2*depth) = 6mm.
+    // If we subtract a cylinder of diameter 6mm from the handle, we get a hole in the middle.
+    // We want a groove on the side.
+    
+    // Correct approach using difference:
+    // 1. Create the main handle.
+    // 2. Create a

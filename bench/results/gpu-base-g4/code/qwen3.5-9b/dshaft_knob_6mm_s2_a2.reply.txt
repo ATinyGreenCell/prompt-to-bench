@@ -1,0 +1,104 @@
+```openscad
+// Replacement Knob for Hotplate Stirrer (6mm D-shaft)
+// Units: mm
+// Orientation: Bottom face (Z=0) on the bed, building upward (+Z).
+// The flat of the D-shape is oriented towards the -X direction.
+// The pointer groove is on the same radial line as the flat.
+
+$fn = 128; // High resolution for smooth curves and precise D-shape
+
+// --- Dimensions ---
+// Outer Cylinder
+D_OUTER = 30;
+H_TOTAL = 15;
+
+// Shaft Bore (D-shape)
+D_SHAFT_CIRCLE = 6.2;
+D_SHAFT_FLAT = 4.7; // Distance from flat to opposite arc
+H_BORE = 12;
+
+// Grip Grooves
+N_GROOVES = 18;
+D_GROOVE = 2; // Diameter of the half-cylinder groove
+H_GROOVE = H_TOTAL; // Full height
+
+// Top Pointer Groove
+W_POINTER = 1.5;
+D_POINTER = 1; // Depth
+
+// --- Calculations ---
+// Radius of the outer cylinder
+R_OUTER = D_OUTER / 2;
+
+// Geometry of the D-shape bore
+// The D-shape is defined by a circle of diameter D_SHAFT_CIRCLE.
+// The flat face is at a distance D_SHAFT_FLAT from the opposite arc.
+// Radius of the shaft circle
+R_SHAFT = D_SHAFT_CIRCLE / 2;
+// Distance from the center of the circle to the flat face
+DIST_CENTER_TO_FLAT = R_SHAFT - (D_SHAFT_FLAT / 2);
+// Width of the flat face (chord length)
+W_FLAT = 2 * sqrt(R_SHAFT*R_SHAFT - DIST_CENTER_TO_FLAT*DIST_CENTER_TO_FLAT);
+
+// --- Main Body ---
+// Create the cylinder. Centered at origin, resting on Z=0.
+difference() {
+    // 1. Main Cylinder Body
+    cylinder(
+        h = H_TOTAL,
+        r = R_OUTER,
+        center = [0, 0, H_TOTAL/2]
+    );
+
+    // 2. D-Shaped Blind Bore
+    // We subtract a D-shaped prism.
+    // The D-shape is a circle with a flat cut on the -X side.
+    // We construct this by rotating a profile or using a union of shapes.
+    // Profile in XZ plane (rotated 90 deg around Y) is not needed, we extrude along Z.
+    // Let's create the D-shape cross-section in the XY plane, then extrude it.
+    // Actually, since the bore is vertical, we need to subtract a shape that is the D-shape extruded along Z.
+    // The D-shape is the union of:
+    // a) A rectangle from x = -DIST_CENTER_TO_FLAT to x = 0, y from -R_SHAFT to R_SHAFT.
+    // b) A semi-circle from x = 0 to x = R_SHAFT, centered at (0,0).
+    // Wait, the circle is centered at (0,0). The flat is at x = -DIST_CENTER_TO_FLAT.
+    // The D-shape is the part of the circle where x >= -DIST_CENTER_TO_FLAT.
+    // So we can create this by:
+    // 1. A rectangle from x = -DIST_CENTER_TO_FLAT to x = 0, y from -R_SHAFT to R_SHAFT.
+    // 2. A semi-circle from x = 0 to x = R_SHAFT, centered at (0,0).
+    // But the semi-circle is not a standard shape.
+    // Let's use rotate_extrude to create the D-shape volume.
+    // Profile: A line from (-DIST_CENTER_TO_FLAT, -R_SHAFT) to (-DIST_CENTER_TO_FLAT, R_SHAFT) to (R_SHAFT, R_SHAFT) to (R_SHAFT, -R_SHAFT) to (0,0) to (-DIST_CENTER_TO_FLAT, 0)? No.
+    // Let's define the D-shape as a union of a rectangle and a circle segment.
+    // Rectangle: x from -DIST_CENTER_TO_FLAT to 0, y from -R_SHAFT to R_SHAFT.
+    // Circle Segment: x from 0 to R_SHAFT, y from -sqrt(R_SHAFT^2 - x^2) to sqrt(R_SHAFT^2 - x^2).
+    // This is hard to do with simple primitives.
+    // Alternative: Create a full circle, then cut the flat.
+    // But we need to subtract it from the main body.
+    // Let's create the D-shape as a union of two parts:
+    // 1. A rectangle of width W_FLAT and height 2*R_SHAFT, centered at (0,0).
+    // 2. A semi-circle of radius R_SHAFT, centered at (DIST_CENTER_TO_FLAT, 0).
+    // Wait, if the flat is on the -X side, the center of the circle is at (DIST_CENTER_TO_FLAT, 0).
+    // The rectangle is from x = -DIST_CENTER_TO_FLAT to x = 0? No.
+    // The flat is at x = -DIST_CENTER_TO_FLAT. The center of the circle is at x = 0.
+    // The D-shape is the union of:
+    // 1. A rectangle from x = -DIST_CENTER_TO_FLAT to x = 0, y from -R_SHAFT to R_SHAFT.
+    // 2. A semi-circle from x = 0 to x = R_SHAFT, centered at (0,0).
+    // But the semi-circle is not a standard shape.
+    // Let's use rotate_extrude to create the D-shape volume.
+    // Profile: A line from (-DIST_CENTER_TO_FLAT, -R_SHAFT) to (-DIST_CENTER_TO_FLAT, R_SHAFT) to (R_SHAFT, R_SHAFT) to (R_SHAFT, -R_SHAFT) to (0,0) to (-DIST_CENTER_TO_FLAT, 0)? No.
+    // Let's define the D-shape as a union of a rectangle and a circle segment.
+    // Rectangle: x from -DIST_CENTER_TO_FLAT to 0, y from -R_SHAFT to R_SHAFT.
+    // Circle Segment: x from 0 to R_SHAFT, y from -sqrt(R_SHAFT^2 - x^2) to sqrt(R_SHAFT^2 - x^2).
+    // This is hard to do with simple primitives.
+    // Alternative: Create a full circle, then cut the flat.
+    // But we need to subtract it from the main body.
+    // Let's create the D-shape as a union of two parts:
+    // 1. A rectangle of width W_FLAT and height 2*R_SHAFT, centered at (0,0).
+    // 2. A semi-circle of radius R_SHAFT, centered at (DIST_CENTER_TO_FLAT, 0).
+    // Wait, if the flat is on the -X side, the center of the circle is at (DIST_CENTER_TO_FLAT, 0).
+    // The rectangle is from x = -DIST_CENTER_TO_FLAT to x = 0? No.
+    // The flat is at x = -DIST_CENTER_TO_FLAT. The center of the circle is at x = 0.
+    // The D-shape is the union of:
+    // 1. A rectangle from x = -DIST_CENTER_TO_FLAT to x = 0, y from -R_SHAFT to R_SHAFT.
+    // 2. A semi-circle from x = 0 to x = R_SHAFT, centered at (0,0).
+    // But the

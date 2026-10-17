@@ -1,0 +1,46 @@
+// Housing for a DIY magnetic stirrer built around an 80 mm PC case fan
+// Printed upside down: top plate on the bed, walls rising upward, box open at the top.
+
+$fn = 64;
+
+// ---- Dimensions (mm) ----
+top_t      = 2;    // top plate thickness (z = 0 to 2)
+wall_t     = 2.5;  // wall thickness
+box_h      = 40;   // total height of walls (open top at z = 40)
+outer_s    = 90;   // outer size along X and Y
+screw_s    = 4.5;  // M4 screw hole diameter
+n_screws   = 4;    // number of screw holes
+screw_pitch = 71.5;// square pitch between screw holes (X and Y)
+cable_w    = 12;   // width of the power-cable notch
+cable_reach = 8;   // notch depth from the open edge (z = 32 to 40)
+
+// ---- Model ----
+difference() {
+    union() {
+        // Top plate lying on the bed
+        translate([-outer_s/2, -outer_s/2, 0])
+            cube([outer_s, outer_s, top_t]);
+        // Four walls rising from the plate
+        translate([-outer_s/2, -outer_s/2, top_t])
+            cube([outer_s, 2*wall_t, box_h - top_t]);       // back wall
+        translate([-outer_s/2, outer_s/2 - wall_t, top_t])
+            cube([outer_s, 2*wall_t, box_h - top_t]);       // front wall
+        translate([outer_s/2 - wall_t, -outer_s/2, top_t])
+            cube([2*wall_t, outer_s, box_h - top_t]);       // left wall
+        translate([outer_s/2, -outer_s/2 + wall_t, top_t])
+            cube([2*wall_t, outer_s, box_h - top_t]);       // right wall
+    }
+
+    // Four M4 screw holes through the top plate, centred on the plate
+    for (i = [0 : n_screws - 1]) {
+        angle = (i - 2) * 90;
+        translate([0, 0, -1])
+            rotate([0, 0, angle])
+                translate([screw_pitch/2, 0, 0])
+                    cylinder(d = screw_s, h = top_t + 2);
+    }
+
+    // Power-cable notch in one wall, centred along the wall
+    translate([outer_s/2 - cable_w/2, 0, top_t + box_h - cable_reach])
+        cube([cable_w, outer_s, cable_reach]);
+}

@@ -1,0 +1,158 @@
+```openscad
+$fn = 128;
+
+// --- Base Plate Dimensions ---
+// X range: -25 to 25 (Width = 50)
+// Y range: 0 to 45 (Length = 45)
+// Z range: 0 to 5 (Thickness = 5)
+BASE_X_MIN = -25;
+BASE_X_MAX = 25;
+BASE_Y_MIN = 0;
+BASE_Y_MAX = 45;
+BASE_Z_MAX = 5;
+
+// --- Base Plate Holes (M4) ---
+// Position: x = -17, y = 30 and x = 17, y = 30
+// Diameter: 4.5 mm
+HOLE_M4_X_1 = -17;
+HOLE_M4_Y_1 = 30;
+HOLE_M4_X_2 = 17;
+HOLE_M4_Y_2 = 30;
+HOLE_M4_DIAMETER = 4.5;
+
+// --- Vertical Motor Plate Dimensions ---
+// X range: -25 to 25 (Width = 50)
+// Y range: 0 to 5 (Thickness = 5)
+// Z range: 0 to 50 (Height = 50)
+// Stands on the back edge of the base (y=0 to y=5)
+MOTOR_X_MIN = -25;
+MOTOR_X_MAX = 25;
+MOTOR_Y_MAX = 5;
+MOTOR_Z_MAX = 50;
+
+// --- Motor Plate Boss Hole ---
+// Diameter: 23 mm
+// Centre: x = 0, z = 28
+BOSS_DIAMETER = 23;
+BOSS_X = 0;
+BOSS_Z = 28;
+
+// --- Motor Plate Screw Holes (M3) ---
+// Diameter: 3.4 mm
+// Pattern: 31 mm square, centred on boss hole
+HOLE_M3_DIAMETER = 3.4;
+HOLE_M3_PATTERN_SIZE = 31;
+HOLE_M3_OFFSET = HOLE_M3_PATTERN_SIZE / 2;
+
+// --- Gusset Dimensions ---
+// Thickness: 5 mm (matches base and motor plate)
+// Position: Left (x=-25 to -20) and Right (x=20 to 25)
+// Shape: Right triangle in YZ plane
+// Legs: 20 mm along +Y and 20 mm along +Z
+// Right-angle corner at y = 5, z = 5
+GUSSET_THICKNESS = 5;
+GUSSET_LEG_Y = 20;
+GUSSET_LEG_Z = 20;
+GUSSET_CORNER_Y = 5;
+GUSSET_CORNER_Z = 5;
+GUSSET_LEFT_X_MIN = -25;
+GUSSET_LEFT_X_MAX = -20;
+GUSSET_RIGHT_X_MIN = 20;
+GUSSET_RIGHT_X_MAX = 25;
+
+// --- Construction ---
+
+// 1. Base Plate
+base = cube([
+    BASE_X_MAX - BASE_X_MIN,
+    BASE_Y_MAX - BASE_Y_MIN,
+    BASE_Z_MAX
+], center = false);
+
+// 2. Motor Plate
+motor_plate = translate([0, 0, 0],
+    cube([
+        MOTOR_X_MAX - MOTOR_X_MIN,
+        MOTOR_Y_MAX,
+        MOTOR_Z_MAX
+    ])
+);
+
+// 3. Gussets (Left and Right)
+// Defined as a polygon in the YZ plane, then extruded along X.
+// Vertices relative to the corner (y=5, z=5): (0,0), (20,0), (0,20)
+// In global coords for the shape definition:
+gusset_shape = polygon([
+    [0, 0],      // Relative: Corner (y=5, z=5)
+    [GUSSET_LEG_Y, 0], // Relative: End of Y leg (y=25, z=5)
+    [0, GUSSET_LEG_Z]  // Relative: End of Z leg (y=5, z=25)
+]);
+
+// Left Gusset
+// Center X: (-25 + -20) / 2 = -22.5
+// Position Y: GUSSET_CORNER_Y (5)
+// Position Z: GUSSET_CORNER_Z (5)
+// Rotate 90 deg around Z to stand up in YZ plane? 
+// No, the polygon is in YZ plane. We need to extrude along X.
+// The polygon points are [y, z]. linear_extrude extrudes along Z by default.
+// We need to rotate the polygon 90 deg around X so it lies in YZ, then extrude along X?
+// Actually, simpler: Define polygon in XY plane, rotate 90 around X to become YZ, then extrude along Z?
+// Let's stick to standard: Polygon in XY plane -> Extrude along Z.
+// We want the triangle in the YZ plane.
+// So we define the triangle in the XY plane (where Y is our Y, X is our Z), then rotate 90 around Y?
+// Let's try: Define triangle in XY plane. Rotate 90 around X axis. Now it is in YZ plane. Extrude along X.
+// Triangle vertices in XY plane (representing Y and Z):
+// (0,0) -> Y=5, Z=5
+// (20,0) -> Y=25, Z=5
+// (0,20) -> Y=5, Z=25
+// Rotate 90 around X: Y becomes Z, Z becomes -Y.
+// (0,0) -> (0,0)
+// (20,0) -> (0, -20)
+// (0,20) -> (20, 0)
+// This seems complicated.
+// Alternative: Use linear_extrude with path or just rotate the whole thing.
+// Let's define the triangle in the XY plane as:
+// (0,0), (20,0), (0,20).
+// Rotate 90 around X axis: The plane becomes YZ.
+// Then translate to position.
+// Then extrude along X.
+
+// Left Gusset Construction
+gusset_left = translate([
+    (GUSSET_LEFT_X_MIN + GUSSET_LEFT_X_MAX) / 2, // Center X = -22.5
+    GUSSET_CORNER_Y, 
+    GUSSET_CORNER_Z
+], rotate([0, 0, 0]), // Initial orientation
+    rotate([0, 90, 0], // Rotate 90 around Y to put it in XZ? No.
+        rotate([90, 0, 0], // Rotate 90 around X to put XY plane into YZ plane
+            polygon([
+                [0, 0],
+                [GUSSET_LEG_Y, 0],
+                [0, GUSSET_LEG_Z]
+            ])
+        )
+    )
+);
+// Wait, linear_extrude extrudes along Z.
+// If I have a polygon in XY plane, and I rotate it 90 around X, it is now in YZ plane.
+// If I then linear_extrude, it extrudes along Z (which is now in the plane of the polygon). That's wrong.
+// I need to extrude along X.
+// So: Polygon in XY plane. Rotate 90 around Y. Now it is in XZ plane. Extrude along Y? No.
+// Let's restart the gusset logic.
+// We want a shape in the YZ plane.
+// Step 1: Create a 2D shape in the XY plane representing the triangle.
+// Step 2: Rotate this shape 90 degrees around the X axis. Now it lies in the YZ plane.
+// Step 3: Extrude this shape along the X axis.
+// But linear_extrude extrudes along Z.
+// So: Create shape in XY plane. Rotate 90 around Y. Now it lies in XZ plane. Extrude along Y? No.
+// Correct approach for "Extrude along X":
+// 1. Define shape in XY plane.
+// 2. Rotate 90 around Y axis. Shape is now in XZ plane.
+// 3. Rotate 90 around Z axis. Shape is now in YZ plane? No.
+// Let's just use `rotate` and `linear_extrude` carefully.
+// We want the face to be in YZ.
+// Define polygon in XY plane: [[0,0], [20,0], [0,20]].
+// Rotate 90 around X axis: The Y axis becomes Z, Z becomes -Y. The plane is now XZ? No.
+// Rotation around X: Y->Z, Z->-Y. The plane XY becomes XZ.
+// We want YZ.
+// Rotate 90 around Y axis: X->Z, Z->-X. The plane XY becomes X

@@ -1,0 +1,115 @@
+The measurement report confirms that the holes are now being cut correctly through the top plate (visible at z=1.00 and z=2.00). The volume and bounding box match the specifications.
+
+However, there is a critical issue with the **Cable Notch**:
+1.  **Specification:** "In **one wall**, cut a notch... reaching 8 mm down from the open edge".
+2.  **Current Model:** The notch is cut using a `cube` that extends from `z=32` to `z=40`. In the `difference()` operation, this cube removes material from the entire volume it occupies. Since the notch is located at the front wall (Y ≈ -42.5), the cube extends infinitely in the X and Z directions relative to the wall's thickness.
+3.  **Result:** The notch has been cut all the way through the **entire front wall** (from the top edge down to z=32), creating a large rectangular opening in the wall, not just a notch. The report shows "0 holes" at z=38 because the entire cross-section at that height is missing material in that wall, so it doesn't register as a "hole" within a solid region in the same way, but visually it is a massive breach in the wall structure, not a small notch.
+
+**Fix:**
+To create a true "notch" (a cutout that stops at the wall thickness) rather than cutting through the whole wall, I must use `intersection()` to limit the cut to the specific volume of the wall itself. I will define the wall volume and intersect the notch shape with it.
+
+```openscad
+// DIY Magnetic Stirrer Housing for 80mm PC Fan
+// Print Orientation: Upside down. Top plate on bed (Z=0). Walls rise to Z=40.
+
+// --- Dimensions ---
+// Outer dimensions of the housing
+W_OUT = 90;
+H_OUT = 90;
+D_OUT = 90; // Depth (Z height of walls)
+
+// Wall thickness
+W_THICK = 2.5;
+
+// Top plate thickness
+TOP_THICK = 2;
+
+// Total height of the box (top of walls)
+BOX_HEIGHT = 40;
+
+// Fan mounting hole pattern
+// 71.5 mm square pattern centred on the plate
+HOLE_PITCH = 71.5;
+// Hole diameter for M4 screws
+HOLE_DIAM = 4.5;
+
+// Cable notch dimensions
+NOTCH_WIDTH = 12;
+NOTCH_DEPTH = 8; // Reaches 8mm down from open edge (Z=32 to Z=40)
+
+// --- Configuration ---
+$fn = 100; // High resolution for smooth curves and precise holes
+
+// --- Main Body Construction ---
+difference() {
+    union() {
+        // --- 1. The Top Plate ---
+        // Lies on the bed, Z=0 to Z=TOP_THICK
+        translate([0, 0, 0])
+            cube([W_OUT, H_OUT, TOP_THICK]);
+
+        // --- 2. The Walls ---
+        // Rise from Z=TOP_THICK to Z=BOX_HEIGHT
+        // We construct the outer shell and subtract the inner void to create walls
+        translate([0, 0, TOP_THICK])
+            cube([W_OUT, H_OUT, BOX_HEIGHT - TOP_THICK]);
+        
+        // Create the inner void for the walls
+        // Inner dimensions: Outer - 2*Thickness
+        W_IN = W_OUT - (2 * W_THICK);
+        H_IN = H_OUT - (2 * W_THICK);
+        
+        translate([W_THICK, W_THICK, TOP_THICK])
+            cube([W_IN, H_IN, BOX_HEIGHT - TOP_THICK]);
+    }
+    
+    // --- 3. Cutouts ---
+    
+    // A. Fan Mounting Holes
+    // 4 holes on a 71.5mm square pattern, centred on the plate.
+    // Pattern corners at +/- 35.75mm.
+    // Hole centers: (35.75, 35.75), (-35.75, 35.75), (-35.75, -35.75), (35.75, -35.75)
+    
+    // Define hole positions explicitly to avoid scope issues
+    hole_positions = [
+        [HOLE_PITCH/2, HOLE_PITCH/2],
+        [-HOLE_PITCH/2, HOLE_PITCH/2],
+        [-HOLE_PITCH/2, -HOLE_PITCH/2],
+        [HOLE_PITCH/2, -HOLE_PITCH/2]
+    ];
+    
+    for (p = hole_positions) {
+        translate(p)
+            cylinder(h = TOP_THICK + 0.1, r = HOLE_DIAM/2); // +0.1 to ensure clean cut through the plate
+    }
+
+    // B. Cable Notch
+    // In one wall, cut a notch.
+    // 12 mm wide, centred along the wall.
+    // Reaching 8 mm down from the open edge (Z=32 to Z=40).
+    // We place this in the front wall (Y = -H_OUT/2 + W_THICK).
+    
+    // To ensure the notch only cuts the wall thickness and doesn't punch through the entire wall,
+    // we use intersection() to limit the cut shape to the volume of the wall.
+    
+    // 1. Define the volume of the front wall where the notch should be
+    // Y range: From inner edge (-H_OUT/2 + W_THICK) to outer edge (-H_OUT/2)
+    // X range: Full width of the wall (W_OUT)
+    // Z range: From Z=32 to Z=40
+    wall_front_y_min = -H_OUT/2 + W_THICK;
+    wall_front_y_max = -H_OUT/2;
+    
+    // Create the wall volume shape for intersection
+    wall_volume = cube([W_OUT, W_THICK, NOTCH_DEPTH], center=[0, wall_front_y_min + W_THICK/2, 36]);
+    
+    // Create the notch shape (12mm wide, centered on X)
+    notch_shape = cube([NOTCH_WIDTH, W_THICK, NOTCH_DEPTH], center=[0, wall_front_y_min + W_THICK/2, 36]);
+    
+    // Cut the intersection of the wall volume and the notch shape
+    // This ensures we only remove material where the wall exists
+    intersection() {
+        wall_volume;
+        notch_shape;
+    }
+}
+```

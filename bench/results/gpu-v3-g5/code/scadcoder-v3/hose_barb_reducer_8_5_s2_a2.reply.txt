@@ -1,0 +1,52 @@
+```openscad
+// Straight hose-barb reducer: 8 mm tubing to 5 mm tubing
+// Print orientation: upright along Z, resting on XY plane at z = 0
+
+$fn = 96;
+
+// ---- Dimensions (mm) ----
+collar_d      = 12;    // collar outer diameter
+bore_d        = 3;     // through-bore diameter
+barb_8_bottom = 7.5;   // 8 mm barb outer diameter at bottom
+barb_8_top    = 9.5;   // 8 mm barb outer diameter at top
+barb_8_h      = 10;    // 8 mm barb height
+barb_5_bottom = 6.5;   // 5 mm barb outer diameter at bottom
+barb_5_top    = 5.0;   // 5 mm barb outer diameter at top
+barb_5_h      = 8;     // 5 mm barb height
+overlap       = 0.5;   // vertical overlap between stacked barbs
+
+// ---- Build heights ----
+h_collar = collar_d;               // collar runs from z = 20 to z = 25 (diameter used as height)
+h_total  = 41;                     // overall top of part
+
+// ---- Modules ----
+module through_bore(d) {
+    translate([0, 0, -1]) cylinder(d = d, h = h_total + 2);
+}
+
+module sawtooth_barb(d_min, d_max, height) {
+    d0 = d_min;
+    d1 = d_max;
+    h0 = -overlap;
+    h1 = height - overlap;
+    // outer profile
+    polygon(points = [[0, h0], [d0, h0], [d0, h1], [d1, h1], [d1, height]]);
+    // bore
+    translate([0, 0, -1]) cylinder(d = bore_d, h = height + overlap + 2);
+}
+
+// ---- Part ----
+difference() {
+    union() {
+        // 8 mm tubing barbs
+        for (z = [0 : 20])
+            translate([0, 0, z]) sawtooth_barb(barb_8_bottom, barb_8_top, barb_8_h);
+        // collar
+        translate([0, 0, 20]) cylinder(d = collar_d, h = h_collar);
+        // 5 mm tubing barbs
+        for (z = [25 : 41])
+            translate([0, 0, z]) sawtooth_barb(barb_5_bottom, barb_5_top, barb_5_h);
+    }
+    through_bore(bore_d);
+}
+```

@@ -1,0 +1,85 @@
+// Straight hose-barb reducer: 8 mm tubing to 5 mm tubing
+// Print orientation: upright along Z, resting on XY plane at z = 0
+
+$fn = 96;
+
+// ---------------- Dimensions (mm) ----------------
+// Collar
+collar_d      = 12;    // collar outer diameter
+collar_h      = 5;     // collar height (z = 20 to 25)
+
+// 8 mm barbs (lower section)
+n_barbs_8     = 2;     // number of stacked barbs
+barb_h_8      = 10;    // height of each 8 mm barb
+barb_od_min_8 = 7.5;   // outer diameter at bottom of each barb
+barb_od_max_8 = 9.5;   // outer diameter at top of each barb
+
+// 5 mm barbs (upper section)
+n_barbs_5     = 2;     // number of stacked barbs
+barb_h_5      = 8;     // height of each 5 mm barb
+barb_od_min_5 = 6.5;   // outer diameter at bottom of each barb
+barb_od_max_5 = 5.0;   // outer diameter at top of each barb
+
+// Bore
+bore_d        = 3;     // through-bore diameter
+
+// ---------------- Derived values ----------------
+total_h       = 41;    // overall height
+pitch_8       = barb_h_8;   // stack pitch of 8 mm barbs
+pitch_5       = barb_h_5;   // stack pitch of 5 mm barbs
+
+// ---------------- Model ----------------
+difference() {
+    union() {
+        // Lower section: z = 0 to 20
+        for (i = [0 : n_barbs_8 - 1])
+            translate([0, 0, i * pitch_8])
+                module_8_barb();
+
+        // Collar: z = 20 to 25
+        translate([0, 0, 20])
+            cylinder(d = collar_d, h = collar_h);
+
+        // Upper section: z = 25 to 41
+        for (i = [0 : n_barbs_5 - 1])
+            translate([0, 0, 25 + i * pitch_5])
+                module_5_barb();
+    }
+
+    // Through-bore, full length
+    translate([0, 0, -1])
+        cylinder(d = bore_d, h = total_h + 2);
+}
+
+// ---------------- Submodules ----------------
+module module_8_barb() {
+    // 8 mm barb: OD grows linearly from barb_od_min_8 to barb_od_max_8,
+    // then steps straight back to barb_od_min_8.
+    sample_d = barb_od_min_8 + (barb_od_max_8 - barb_od_min_8) / 2;
+    translate([0, 0, -1])
+        module_with_bore(d_min = barb_od_min_8, d_max = sample_d, h = barb_h_8);
+    translate([0, 0, barb_h_8 - 1])
+        module_with_bore(d_min = sample_d, d_max = barb_od_max_8, h = 2);
+    translate([0, 0, barb_h_8])
+        cylinder(d = barb_od_min_8, h = 1);
+}
+
+module module_5_barb() {
+    // 5 mm barb: OD shrinks linearly from barb_od_min_5 to barb_od_max_5,
+    // then steps straight back out to barb_od_min_5.
+    sample_d = barb_od_min_5 + (barb_od_max_5 - barb_od_min_5) / 2;
+    translate([0, 0, -1])
+        module_with_bore(d_min = barb_od_min_5, d_max = sample_d, h = barb_h_5);
+    translate([0, 0, barb_h_5 - 1])
+        module_with_bore(d_min = sample_d, d_max = barb_od_max_5, h = 2);
+    translate([0, 0, barb_h_5])
+        cylinder(d = barb_od_min_5, h = 1);
+}
+
+module module_with_bore(d_min, d_max, h) {
+    // OD grows linearly from d_min to d_max over height h, no coplanar cuts.
+    translate([0, 0, -0.01])
+        cylinder(d1 = d_min, d2 = d_max, h = h + 0.01);
+    translate([0, 0, h])
+        cylinder(d = d_min, h = 0.02);
+}

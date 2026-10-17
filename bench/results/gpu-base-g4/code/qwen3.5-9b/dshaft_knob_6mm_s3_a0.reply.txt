@@ -1,0 +1,145 @@
+```openscad
+// Replacement Knob for Hotplate Stirrer (6mm D-shaft)
+// Designed for FDM printing. Orientation: Bottom face on Z=0.
+
+// --- Dimensions ---
+$fn = 128; // High resolution for smooth curves and accurate D-shape
+
+// Shaft & Knob Size
+shaft_diameter = 6.0;      // Target shaft diameter
+knob_diameter = 30.0;      // Outer diameter of knob
+knob_height = 15.0;        // Total height of knob
+bore_depth = 12.0;         // Depth of the D-shaped bore
+
+// D-Shaft Bore Geometry
+bore_circle_d = 6.2;       // Diameter of the circular part of the bore
+bore_flat_dist = 4.7;      // Distance from flat side to opposite arc (defines the cut)
+
+// Grip Grooves (Side)
+num_grooves = 18;          // Number of vertical grooves
+groove_diameter = 2.0;     // Diameter of the half-cylinder groove
+groove_depth = 1.5;        // Depth of the groove (radius of half-cylinder)
+
+// Pointer Groove (Top)
+pointer_width = 1.5;       // Width of the pointer groove
+pointer_depth = 1.0;       // Depth of the pointer groove
+
+// --- Calculations ---
+// Calculate the radius of the flat side of the D-bore
+// Distance from center to flat = (Circle Radius) - (Flat Distance)
+bore_circle_radius = bore_circle_d / 2;
+bore_flat_radius = bore_circle_radius - (bore_flat_dist / 2);
+
+// Calculate the angle of the flat side relative to the vertical axis
+// The flat is perpendicular to the radius connecting center to the flat face.
+// We define the flat face normal vector later based on this angle.
+// Let's define the "flat" side as facing towards -X for simplicity in calculation,
+// then we will rotate the whole assembly if needed, but the prompt implies a specific orientation.
+// "From that bottom face... a D-shaped blind bore... one side cut flat".
+// We will align the flat side to face -X (negative X axis) for the initial model.
+
+// --- Main Body ---
+// Cylinder: Diameter = knob_diameter, Height = knob_height
+// Centered at origin, resting on Z=0.
+// Since it's centered on origin, bottom is at Z = -knob_height/2.
+// We will translate it up by knob_height/2 so bottom is at Z=0.
+main_body = translate([0, 0, knob_height/2]) 
+    cylinder(h = knob_height, d = knob_diameter, center = false);
+
+// --- D-Shaped Bore ---
+// We need to subtract a cylinder with a flat side.
+// A D-shape can be modeled as a circle with a rectangular cut, or by rotating a profile.
+// Easier approach: Create a cylinder with the circular bore, then subtract a rectangular prism 
+// that cuts the flat side.
+// The flat side is at distance 'bore_flat_radius' from the center.
+// The cut goes from the center of the knob down to 'bore_depth'.
+
+// 1. Circular Bore Cylinder
+// Radius = bore_circle_radius, Height = bore_depth
+// Centered at origin (so it goes from Z=-bore_depth/2 to +bore_depth/2).
+// We need to shift it up so it starts at Z=0 and goes to Z=bore_depth.
+circular_bore = translate([0, 0, bore_depth/2]) 
+    cylinder(h = bore_depth, d = bore_circle_d, center = false);
+
+// 2. Flat Side Cut
+// This is a rectangular prism.
+// Width = bore_flat_dist (the chord length of the flat side)
+// Height = bore_depth
+// Depth (Z) = bore_depth
+// Position: The flat side is at X = -bore_flat_radius.
+// The cut extends from X = -bore_flat_radius to X = 0 (center).
+// Y extent: From -bore_circle_radius to +bore_circle_radius.
+flat_cut = translate([-bore_flat_radius, -bore_circle_radius, bore_depth/2]) 
+    cube([bore_flat_dist, bore_circle_d * 2, bore_depth]);
+
+// Combine bore parts for subtraction
+bore_assembly = union(circular_bore, flat_cut);
+
+// --- Side Grip Grooves ---
+// 18 evenly spaced vertical half-cylinders.
+// Centred on outer surface.
+// Orientation: Vertical (Z-axis).
+// We need to calculate the angle for each groove.
+// Total angle = 360 degrees. Step = 360 / 18 = 20 degrees.
+// We will place them around the cylinder.
+
+groove_list = [];
+for (i = [0 : num_grooves - 1]) {
+    angle = i * (360 / num_grooves);
+    // Position on the surface of the knob
+    // Radius = knob_diameter / 2
+    // Z position: Center of the groove height. Groove goes full height.
+    // We model the groove as a half-cylinder cut from the outside in.
+    // To cut a half-cylinder, we can use a cylinder with radius = groove_depth, 
+    // but we need to ensure it only cuts the outer half.
+    // Actually, a half-cylinder cut is best done by rotating a cylinder 180 degrees 
+    // and placing it such that the flat face is tangent to the knob surface.
+    
+    // Let's define the cutting shape:
+    // A cylinder of diameter = groove_diameter, height = knob_height.
+    // We rotate it 180 degrees around its own axis? No.
+    // A half-cylinder cut is a cylinder where we only take the outer half.
+    // In OpenSCAD, we can create a cylinder and then use difference with a plane? 
+    // No, simpler: Create a cylinder, rotate it 90 deg around X, then rotate around Z?
+    // Standard trick: A half cylinder cut is a cylinder rotated 180 degrees around the Z axis? No.
+    // It is a cylinder where the flat face is on the inside.
+    // Let's create a cylinder of diameter = groove_diameter.
+    // Then rotate it 180 degrees around the X axis? No.
+    // Let's just use a cylinder and rotate it so the flat face is tangent to the main body.
+    // Actually, the easiest way to cut a half-cylinder groove is to create a cylinder 
+    // of the groove diameter, and then rotate it 180 degrees around the Z-axis? No.
+    // Let's use the `hull` or just a cylinder and a plane?
+    // Correct approach for a half-cylinder groove:
+    // Create a cylinder of diameter = groove_diameter.
+    // Rotate it 180 degrees around the X axis? No.
+    // Let's define the groove as a cylinder of diameter = groove_diameter.
+    // Then we need to remove the inner half.
+    // Alternative: Create a cylinder of diameter = groove_diameter.
+    // Then rotate it 180 degrees around the Z axis? No.
+    // Let's try this: Create a cylinder of diameter = groove_diameter.
+    // Then rotate it 90 degrees around the X axis? No.
+    // Let's use the fact that a half cylinder is a cylinder rotated 180 degrees around the axis perpendicular to the cut face?
+    // No, let's just use a cylinder and a plane intersection? No, that's complex.
+    // Simplest: Create a cylinder of diameter = groove_diameter.
+    // Then rotate it 180 degrees around the Z axis? No.
+    // Let's use the `difference` with a plane? No.
+    // Let's use the `hull` of two points? No.
+    // Let's use the `rotate` of a cylinder.
+    // If we rotate a cylinder 180 degrees around the Z axis, it's the same.
+    // If we rotate a cylinder 90 degrees around the X axis, the flat face is vertical.
+    // We want the flat face to be radial (pointing inwards).
+    // So we rotate the cylinder 90 degrees around the X axis, then rotate around Z to point the flat face inwards.
+    // Wait, if we rotate a cylinder 90 degrees around X, the flat face is in the YZ plane.
+    // Then we rotate around Z to align the flat face with the radius.
+    // Yes.
+    
+    // Cutting shape parameters:
+    // Cylinder diameter = groove_diameter
+    // Height = knob_height
+    // Position: On the surface of the knob.
+    // Orientation: Flat face pointing towards the center of the knob.
+    
+    // Let's construct the cutting shape:
+    // 1. Cylinder of diameter = groove_diameter, height = knob_height.
+    // 2. Rotate 90 deg around X axis. Now the flat face is in the YZ plane.
+    // 3. Rotate around Z axis by (angle + 

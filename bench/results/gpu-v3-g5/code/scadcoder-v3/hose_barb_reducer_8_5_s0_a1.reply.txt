@@ -1,0 +1,70 @@
+```openscad
+// Straight hose-barb reducer: 8 mm tubing to 5 mm tubing
+// Print orientation: upright along Z, resting on XY plane at z = 0
+
+$fn = 96;
+
+// ---------------- Dimensions (mm) ----------------
+// Collar
+collar_d      = 12;    // collar outer diameter
+collar_h      = 5;     // collar height (z = 20 to 25)
+
+// 8 mm barbs (lower section)
+n_barbs_8     = 2;     // number of stacked barbs
+barb_h_8      = 10;    // barb height
+barb_od_min_8 = 7.5;   // outer diameter at bottom of barb
+barb_od_max_8 = 9.5;   // outer diameter at top of barb
+
+// 5 mm barbs (upper section)
+n_barbs_5     = 2;     // number of stacked barbs
+barb_h_5      = 8;     // barb height
+barb_od_min_5 = 6.5;   // outer diameter at bottom of barb
+barb_od_max_5 = 5.0;   // outer diameter at top of barb
+
+// Bore
+bore_d        = 3;     // through-bore diameter
+
+// ---------------- Derived ----------------
+total_h       = 41;    // overall height
+step_8        = (barb_od_max_8 - barb_od_min_8) / 2;   // sawtooth rise
+step_5        = (barb_od_max_5 - barb_od_min_5) / 2;   // sawtooth fall
+
+// ---------------- Model ----------------
+difference() {
+    union() {
+        // Lower section: collar + 8 mm barbs
+        cylinder(d = collar_d, h = collar_h);
+        for (i = [0 : n_barbs_8 - 1])
+            translate([0, 0, 20 + i * barb_h_8])
+                module_barb_8();
+
+        // Upper section: 5 mm barbs
+        for (i = [0 : n_barbs_5 - 1])
+            translate([0, 0, 36 + i * barb_h_5])
+                module_barb_5();
+    }
+
+    // Through-bore, full length
+    translate([0, 0, -1])
+        cylinder(d = bore_d, h = total_h + 2);
+}
+
+// ---------------- Submodules ----------------
+module module_barb_8() {
+    // 8 mm barb: sawtooth outer profile, 7.5 -> 9.5 -> 7.5 mm OD
+    for (z = [0 : barb_h_8])
+        if (z < barb_h_8 / 2)
+            cylinder(d = barb_od_min_8 + 2 * step_8, h = 1);
+        else
+            cylinder(d = barb_od_min_8, h = 1);
+}
+
+module module_barb_5() {
+    // 5 mm barb: sawtooth outer profile, 6.5 -> 5.0 -> 6.5 mm OD
+    for (z = [0 : barb_h_5])
+        if (z < barb_h_5 / 2)
+            cylinder(d = barb_od_min_5 + 2 * step_5, h = 1);
+        else
+            cylinder(d = barb_od_min_5, h = 1);
+}
+```

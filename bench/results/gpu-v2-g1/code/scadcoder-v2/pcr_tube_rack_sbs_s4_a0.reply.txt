@@ -1,0 +1,29 @@
+```openscad
+// 96 PCR tube (0.2 mL) rack - a block with a regular grid of vertical through-holes for the
+// standard microplate (ANSI/SLAS) footprint, with a 45-degree chamfer off one vertical edge as
+// an orientation mark. NOVEL general part.
+//
+
+cols   = 12;
+rows   = 8;
+tube_d = 6.2;
+pitch  = 9.0;
+H      = 20;
+L      = 127.76;
+W      = 85.48;
+x0     = 14.38;
+y0     = 11.24;
+
+$fn = 48;
+
+leg    = 5;
+facet  = 45;
+
+difference() {
+    translate([-L / 2, -W / 2, 0]) cube([L, W, H]);
+    for (i = [0 : cols - 1], j = [0 : rows - 1])
+        translate([x0 + i * pitch, y0 + j * pitch, -1]) cylinder(h = H + 2, d = tube_d);
+    translate([-L / 2, -W / 2, 0])
+        rotate([0, 0, facet]) cube([leg, W, leg]);
+}
+```

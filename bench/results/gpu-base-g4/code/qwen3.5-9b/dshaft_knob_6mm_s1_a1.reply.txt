@@ -1,0 +1,151 @@
+```openscad
+// Replacement Knob for Hotplate Stirrer (6mm D-shaft)
+// Print Orientation: Bottom face (with D-bore) on Z=0, building upward.
+
+// --- Dimensions ---
+$fn = 128; // High resolution for smooth curves and accurate D-shape
+
+// Main Body
+D_KNOB_DIAMETER = 30;
+D_KNOB_HEIGHT = 15;
+D_KNOB_RADIUS = D_KNOB_DIAMETER / 2;
+
+// Shaft Bore (D-shape)
+D_SHAFT_DIAMETER = 6;
+D_SHAFT_DEPTH = 12;
+D_SHAFT_RADIUS = D_SHAFT_DIAMETER / 2;
+D_SHAFT_FLAT_WIDTH = 4.7; // Distance from flat to opposite side
+D_SHAFT_FLAT_OFFSET = (D_SHAFT_RADIUS - (D_SHAFT_FLAT_WIDTH / 2)); // Offset of flat from center
+
+// Grip Grooves
+N_GROOVES = 18;
+GROOVE_DEPTH = 1; // Depth of groove from surface
+GROOVE_WIDTH = 2; // Diameter of the half-cylinder groove
+GROOVE_RADIUS = GROOVE_WIDTH / 2;
+
+// Top Pointer
+POINTER_WIDTH = 1.5;
+POINTER_DEPTH = 1;
+
+// --- Construction ---
+
+difference() {
+    
+    // 1. Main Cylinder Body
+    // Positioned so bottom is at Z=0
+    translate([0, 0, D_KNOB_HEIGHT/2])
+        cylinder(h = D_KNOB_HEIGHT, r = D_KNOB_RADIUS, $fn = $fn);
+
+    // 2. D-Shaped Blind Bore
+    // Location: Bottom face (Z=0), going up to Z=D_SHAFT_DEPTH.
+    // Geometry: Circle of D_SHAFT_RADIUS, but one side is flat.
+    // We place the flat side along the -Y axis.
+    
+    // Calculate intersection X coordinate for the flat chord
+    d_shaft_flat_y = -D_SHAFT_FLAT_OFFSET;
+    d_shaft_flat_half_width = sqrt(D_SHAFT_RADIUS^2 - d_shaft_flat_y^2);
+    
+    // Create the D-shape profile using polygon
+    // Points: Bottom-Left, Bottom-Right, Top-Center
+    // We extrude this along Z to create the hole.
+    // To ensure clean cutting, we extend slightly past the main body Z range.
+    d_shaft_cut_z_start = -0.01;
+    d_shaft_cut_z_end = D_SHAFT_DEPTH + 0.01;
+    
+    // Define the D-shape profile
+    // We use a polygon with 3 points to form the D-shape (flat bottom, curved top)
+    // Note: The flat side is at Y = d_shaft_flat_y. The top is at Y = D_SHAFT_RADIUS.
+    // The flat width is 2 * d_shaft_flat_half_width.
+    
+    // We construct the D-shape by combining a rectangle and a semi-circle? 
+    // No, a single polygon is easier.
+    // Points:
+    // 1. (-d_shaft_flat_half_width, d_shaft_flat_y)
+    // 2. (d_shaft_flat_half_width, d_shaft_flat_y)
+    // 3. (0, D_SHAFT_RADIUS)
+    // This forms a triangle-like shape but with a curved top if we use circle? 
+    // No, linear_extrude with polygon creates straight lines.
+    // We need the curved top.
+    // Strategy: Extrude a rectangle, then union with a semi-circle? 
+    // Or better: Use a polygon that approximates the curve? No, we need exact.
+    // Best Strategy: Create a D-shape by taking a circle and cutting a rectangle?
+    // Actually, let's build the D-shape profile as a union of a rectangle and a semi-circle, 
+    // then extrude that union.
+    
+    // Profile Part 1: Rectangle (the flat part)
+    // Width = 2 * d_shaft_flat_half_width, Height = (D_SHAFT_RADIUS - d_shaft_flat_y)
+    // Centered at X=0, Y=d_shaft_flat_y
+    rect_h = D_SHAFT_RADIUS - d_shaft_flat_y;
+    rect_w = 2 * d_shaft_flat_half_width;
+    
+    // Profile Part 2: Semi-Circle (the curved part)
+    // Radius = D_SHAFT_RADIUS
+    // Centered at X=0, Y=D_SHAFT_RADIUS
+    // We only want the top half relative to the center? 
+    // No, the D-shape is the intersection of a circle and a half-plane.
+    // Let's build the D-shape profile as a union of:
+    // 1. A rectangle from Y=d_shaft_flat_y to Y=D_SHAFT_RADIUS, width=rect_w.
+    // 2. A semi-circle of radius D_SHAFT_RADIUS centered at (0, D_SHAFT_RADIUS), 
+    //    but we only need the part above Y=d_shaft_flat_y? 
+    //    Actually, the circle center is at (0,0). The flat is at Y=-1.6.
+    //    The top of the circle is at Y=3.1.
+    //    The rectangle goes from Y=-1.6 to Y=3.1.
+    //    The semi-circle goes from Y=3.1 down to Y=-1.6? No.
+    //    The circle equation is X^2 + Y^2 = R^2.
+    //    The flat is at Y = -1.6.
+    //    The shape is bounded by Y = -1.6 (bottom) and the circle arc (top/sides).
+    //    So the profile is:
+    //    - Bottom edge: Line from (-w, -1.6) to (w, -1.6).
+    //    - Side/Top edges: Arc from (w, -1.6) to (-w, -1.6) passing through (0, 3.1).
+    
+    // Let's create this profile using a polygon with many points for the arc.
+    // Center of circle: (0,0).
+    // Start angle: atan2(-1.6, w) -> This is in the 4th quadrant.
+    // End angle: atan2(-1.6, -w) -> This is in the 3rd quadrant.
+    // We sweep from Start to End counter-clockwise (increasing angle).
+    
+    // Calculate angles
+    start_angle = atan2(d_shaft_flat_y, -d_shaft_flat_half_width);
+    end_angle = atan2(d_shaft_flat_y, d_shaft_flat_half_width);
+    
+    // We need to sweep from start_angle to end_angle + 2*pi? 
+    // No, we want the arc that goes through (0, R).
+    // (0, R) is at angle PI/2 (90 deg).
+    // start_angle is roughly -80 deg. end_angle is roughly +80 deg.
+    // So we sweep from start_angle to end_angle.
+    
+    // Generate points for the arc
+    arc_points = [];
+    for (i = [0 : 1 : 360]) {
+        ang_rad = i * (3.14159265 / 180);
+        // We only want points on the arc between start and end
+        // But linear_extrude polygon needs a closed loop.
+        // Let's generate the full arc from start to end.
+    }
+    
+    // Simpler approach for the D-shape profile:
+    // Create a polygon with:
+    // 1. Bottom-left corner
+    // 2. Bottom-right corner
+    // 3. Points along the arc from bottom-right to bottom-left (counter-clockwise)
+    
+    // Let's generate the arc points
+    p_list = [
+        [-d_shaft_flat_half_width, d_shaft_flat_y], // Bottom Left
+        [d_shaft_flat_half_width, d_shaft_flat_y]   // Bottom Right
+    ];
+    
+    // Add arc points
+    for (i = [0 : 1 : 360]) {
+        ang_rad = i * (3.14159265 / 180);
+        // We want the arc from the bottom-right point to the bottom-left point via the top.
+        // Bottom-right angle: atan2(d_shaft_flat_y, d_shaft_flat_half_width)
+        // Bottom-left angle: atan2(d_shaft_flat_y, -d_shaft_flat_half_width)
+        // Since d_shaft_flat_y is negative, these are in 4th and 3rd quadrants.
+        // We want to go from 4th -> 1st -> 2nd -> 3rd.
+        
+        // Let's calculate the specific angles
+        ang_br = atan2(d_shaft_flat_y, d_shaft_flat_half_width);
+        ang_bl = atan2(d_shaft_flat_y, -d_shaft_flat_half_width);
+        
+        // We need to sweep from ang_br to ang_bl going through PI/2.

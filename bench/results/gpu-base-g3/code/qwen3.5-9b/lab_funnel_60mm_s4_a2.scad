@@ -1,0 +1,89 @@
+// Lab Funnel Design - Corrected
+// Units: millimetres
+// Orientation: Upright, wide opening at top, rests on XY plane at z=0.
+
+$fn = 128; // High resolution for smooth curves
+
+// --- Dimensions ---
+// Spout (Tube)
+spout_outer_diameter = 10;
+spout_inner_diameter = 6.8; // 10 - 2*1.6
+spout_length = 20;
+
+// Cone (Funnel)
+cone_bottom_outer_diameter = 10; // Matches spout outer diameter at z=20
+cone_top_outer_diameter = 60;
+cone_height = 30; // From z=20 to z=50
+
+// Wall Thickness
+wall_thickness = 1.6;
+
+// --- Calculation of Inner Cone Dimensions ---
+// The inner cone starts at z=20 with diameter = spout_inner_diameter
+// It ends at z=50 with diameter = cone_top_outer_diameter - 2*wall_thickness
+cone_bottom_inner_diameter = spout_inner_diameter;
+cone_top_inner_diameter = cone_top_outer_diameter - (2 * wall_thickness);
+
+// --- Helper Modules ---
+
+// Creates a solid cylinder
+module solid_cylinder(d, h, center_z) {
+    translate([0, 0, center_z]) cylinder(d = d, h = h, $fn = $fn);
+}
+
+// Creates a solid cone (base at bottom, tip at top)
+// base_d: diameter at the bottom of the cone
+// top_d: diameter at the top of the cone
+// height: height of the cone
+// center_z: Z coordinate of the center of the base
+module solid_cone(base_d, top_d, height, center_z) {
+    translate([0, 0, center_z]) {
+        // Linear extrusion of a triangle
+        linear_extrude(height = height, center = true, convexity = 3) {
+            polygon(points = [
+                [-base_d/2, 0],
+                [base_d/2, 0],
+                [0, height]
+            ]);
+        }
+    }
+}
+
+// --- Main Assembly ---
+
+// 1. Create the Outer Shell
+outer_shell = union(
+    // Spout Cylinder (z=0 to z=20)
+    solid_cylinder(d = spout_outer_diameter, h = spout_length, center_z = spout_length/2),
+    
+    // Cone (z=20 to z=50)
+    // Base at z=20, Top at z=50. Center of base is at z=20.
+    solid_cone(
+        base_d = cone_bottom_outer_diameter,
+        top_d = cone_top_outer_diameter,
+        height = cone_height,
+        center_z = spout_length // z=20
+    )
+);
+
+// 2. Create the Inner Void
+inner_void = union(
+    // Spout Bore Cylinder (z=0 to z=20)
+    solid_cylinder(d = spout_inner_diameter, h = spout_length, center_z = spout_length/2),
+    
+    // Inner Cone (z=20 to z=50)
+    // Base at z=20 (diameter = spout_inner_diameter)
+    // Top at z=50 (diameter = cone_top_inner_diameter)
+    solid_cone(
+        base_d = cone_bottom_inner_diameter,
+        top_d = cone_top_inner_diameter,
+        height = cone_height,
+        center_z = spout_length // z=20
+    )
+);
+
+// 3. Final Part: Outer Shell minus Inner Void
+difference() {
+    outer_shell;
+    inner_void;
+}

@@ -1,0 +1,99 @@
+The previous report shows significant improvements (no warnings, correct total height of 40mm, 4 holes present). However, there are still discrepancies between the report and the user's specific geometric specifications:
+
+1.  **Hole Depth**: The report shows holes at `z=1.00` (correct) but the slice at `z=2.00` shows a "rectangle 85.00 x 85.00" hole. This indicates the holes are not going all the way through the 2mm top plate. The user specified "Drill... holes... through the top plate". The cutter needs to extend slightly past Z=2.
+2.  **Notch Visibility**: The horizontal slices do not show the cable notch. While the notch is on the side wall, the report's slice logic might be missing it if the cut isn't deep enough or if the geometry is slightly off. The spec says the notch reaches 8mm down from the open edge (Z=40), so it should span Z=32 to Z=40. The previous code used `TOTAL_HEIGHT - NOTCH_DEPTH - 0.1` which is `40 - 8 - 0.1 = 31.9`. This is correct. However, the report doesn't explicitly list it, which is suspicious for a 12mm wide cut. I will ensure the notch cutter is robust.
+3.  **Internal Void**: The report shows a rectangular hole at Z=2.10, 21.00, and 38.00. This corresponds to the internal void of the box (90 - 2*2.5 = 85mm). This is correct.
+
+**Primary Fix**: Ensure the screw holes extend slightly past the top plate surface (Z=2) to guarantee they are "through" the plate as requested. I will change the hole Z-end from `TOP_THICK + 0.1` to `TOP_THICK + 0.5` to be safe, or simply ensure the logic is robust. The previous code used `TOP_THICK + 0.1`. If the hole is exactly 2mm deep, a 0.1mm extension might be insufficient if the intersection logic is strict, but usually 0.1 is enough. Let's look closer at the report: `z=2.00` shows the rectangle. This means at exactly Z=2, the hole is not there. The hole starts at Z=-0.1 and ends at Z=2.1. So at Z=2.0, it should be there. Why does the report say "1 hole: 1 x rectangle"?
+Ah, the report says `z=2.00: ... 1 hole: 1 x rectangle`. This is the *internal void* hole (the box cavity). The screw holes are circles. The report at `z=1.00` correctly lists "4 holes: 4 x circle". The fact that `z=2.00` lists a rectangle implies the screw holes might be closing up or the slice resolution is catching the edge.
+Actually, looking at the Z values: `z=1.00` has circles. `z=2.00` has a rectangle. This suggests the screw holes are not present at Z=2.00. If the hole ends at 2.1, it should be there.
+Wait, the report says `z=2.00: 1 hole: 1 x rectangle`. It does *not* list the 4 circles. This implies the circles are gone. If the hole ends at 2.1, it should be there.
+Perhaps the `TOP_THICK + 0.1` is not enough? Or maybe the `difference` logic is behaving oddly.
+Let's increase the hole extension to `TOP_THICK + 0.5` to be absolutely sure they are through.
+
+Also, I will double-check the notch. The notch is 12mm wide. The wall is 2.5mm thick. The notch should be visible in slices between Z=32 and Z=40. The report doesn't show slices in that range explicitly (it jumps from 21.00 to 38.00). But at 38.00, it shows the rectangle. If the notch is there, the rectangle should be interrupted or the area should be different. The area is 875.0 mm2. 90*90 - 85*85 = 8100 - 7225 = 875. This matches the void. If the notch were there, the area would be smaller (or the shape different). This suggests the notch might not be cutting through the wall correctly or is too small to register in the area calculation if it's just a cutout on the face? No, it's a cutout *through* the wall.
+The notch is 12mm wide. The wall is 2.5mm thick. The notch goes from X = 45-6 to 45+6 = 39 to 51. The wall is from X=42.5 to 47.5. The notch definitely cuts the wall.
+Why isn't it showing?
+Maybe the `notch_z_start` calculation `TOTAL_HEIGHT - NOTCH_DEPTH - 0.1` resulted in `31.9`. The notch goes from 31.9 to 40.1.
+The report slice at 38.00 shows the full rectangle. This is very strange.
+Let's re-read the notch spec: "reaching 8 mm down from the open edge (from z = 32 to z = 40)".
+My code: `notch_z_start = TOTAL_HEIGHT - NOTCH_DEPTH - 0.1` = 40 - 8 - 0.1 = 31.9.
+This seems correct.
+Is it possible the notch is being cut but the slice algorithm misses it because it's on the edge?
+Or maybe the `cube` for the notch is not intersecting correctly?
+Let's try to make the notch cutter slightly larger in Z to ensure it penetrates the wall fully and extends past the top.
+
+One more thing: The report says `z=2.00` has a rectangle. If the screw holes are there, they should be listed. The fact they are not listed suggests they are not there. I will increase the hole depth extension.
+
+Revised Plan:
+1.  Increase hole Z-end to `TOP_THICK + 0.5`.
+2.  Increase notch Z-end to `TOTAL_HEIGHT + 0.5` and Z-start to `TOTAL_HEIGHT - NOTCH_DEPTH - 0.5` to ensure full penetration.
+3.  Keep all other dimensions exact.
+
+```openscad
+// DIY Magnetic Stirrer Housing
+// Based on an 80mm PC case fan
+// Print orientation: Upside down (Top plate on bed, walls rising up)
+
+$fn = 128; // High resolution for clean holes and edges
+
+// --- Dimensions ---
+// Outer size of the box
+W_OUT = 90;
+H_OUT = 90;
+D_OUT = 90;
+
+// Wall thickness
+W_THICK = 2.5;
+
+// Top plate thickness
+TOP_THICK = 2;
+
+// Total height of the part (Top of walls)
+TOTAL_HEIGHT = 40;
+
+// Wall height (from top plate surface to open top)
+WALL_HEIGHT = TOTAL_HEIGHT - TOP_THICK;
+
+// Fan mounting hole pattern
+// 4 holes on a square pattern, centred on the plate
+// Distance between hole centers
+PATTERN_SIZE = 71.5;
+// Hole diameter for M4 screws
+HOLE_DIA = 4.5;
+
+// Cable notch dimensions
+NOTCH_WIDTH = 12;
+NOTCH_DEPTH = 8; // Reaches 8mm down from the open edge (z = 32 to z = 40)
+
+// --- Calculated Positions ---
+// Center of the top plate
+X_CENTER = W_OUT / 2;
+Y_CENTER = H_OUT / 2;
+
+// Screw hole positions (relative to center)
+// Pattern is 71.5mm square. Half is 35.75mm.
+HOLE_OFFSET = PATTERN_SIZE / 2;
+
+// Notch position (in the front wall, Y = Y_CENTER - W_THICK/2)
+NOTCH_Y_POS = Y_CENTER - (W_THICK / 2);
+NOTCH_X_POS = X_CENTER; // Centred along the wall
+
+// --- Main Construction ---
+
+module main_housing() {
+    difference() {
+        // 1. The main solid block
+        // X: 0 to W_OUT
+        // Y: 0 to H_OUT
+        // Z: 0 to TOTAL_HEIGHT
+        cube([W_OUT, H_OUT, TOTAL_HEIGHT], center = false);
+        
+        // 2. Cut the internal void (the open box part)
+        // The void starts at Z = TOP_THICK and goes up to Z = TOTAL_HEIGHT
+        // The void is inset by wall thickness on all sides
+        void_x = W_OUT - (2 * W_THICK);
+        void_y = H_OUT - (2 * W_THICK);
+        void_z = WALL_HEIGHT;
+        
+        translate([W_THICK, W_THICK,

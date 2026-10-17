@@ -1,0 +1,63 @@
+```openscad
+// Hose-barb reducer - joins two silicone-tubing sizes with a through bore. The two barbs are
+// stacked (one above the other) on each port. NOVEL general part (a generic reducer, not any
+// one manufacturer's part).
+//
+
+tube1_d = 8;
+tube2_d = 5;
+bore    = 3;
+length1 = 20;
+length2 = 16;
+collar  = 12;
+
+$fn = 64;
+
+saw_teeth = 16;
+base_d    = min(tube1_d, tube2_d) + 2;
+
+// Build a sawtooth profile: a sequence of upward-slanting then horizontal segments.
+function sawtooth(d0, d1, h) =
+    for (i = [0 : saw_teeth - 1])
+        translate([0, 0, i * h / saw_teeth])
+            circle(d = d0 + (d1 - d0) * (i + 0.5) / saw_teeth);
+
+difference() {
+    union() {
+        if (length1 > 0)
+            cylinder(h = length1, d = base_d);
+        if (length2 > 0)
+            translate([0, 0, length1]) cylinder(h = length2, d = base_d);
+        translate([0, 0, length1 + length2]) cylinder(h = collar, d = collar);
+    }
+    translate([0, 0, -1]) cylinder(h = length1 + 2, d = base_d);                       // lower barbs
+    translate([0, 0, length1 + length2 - 1]) cylinder(h = length2 + 2, d = base_d);    // upper barbs
+    translate([0, 0, -0.01]) cylinder(h = length1 + length2 + 0.02, d = bore);         // through bore
+}
+
+// Lower port: two stacked barbs for the 8 mm tubing
+if (length1 > 0) {
+    d_up = min(tube1_d, tube2_d) + 2 + (tube1_d - min(tube1_d, tube2_d) + 2) * 0.7;   // 9.5 mm
+    d_down = min(tube1_d, tube2_d) + 2;                                                // 7.5 mm
+    for (z = [0, length1 / 2])
+        translate([0, 0, z])
+            cylinder(h = length1 / 2 + 0.01, d = d_up);
+    for (z = [0, length1 / 2])
+        translate([0, 0, z])
+            cylinder(h = length1 / 2 + 0.01, d = d_down);
+}
+
+// Upper port: two stacked barbs for the 5 mm tubing
+if (length2 > 0) {
+    d_up = min(tube1_d, tube2_d) + 2 + (tube2_d - min(tube1_d, tube2_d) + 2) * 0.7;   // 5.0 mm
+    d_down = min(tube1_d, tube2_d) + 2;                                                // 6.5 mm
+    translate([0, 0, length1])
+        for (z = [0, length2 / 2])
+            translate([0, 0, z])
+                cylinder(h = length2 / 2 + 0.01, d = d_up);
+    translate([0, 0, length1])
+        for (z = [0, length2 / 2])
+            translate([0, 0, z])
+                cylinder(h = length2 / 2 + 0.01, d = d_down);
+}
+```

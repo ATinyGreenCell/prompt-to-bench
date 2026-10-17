@@ -1,0 +1,114 @@
+The measurement report reveals several critical issues with the previous design:
+
+1.  **Incorrect Geometry (4 Separate Bodies):** The report shows 4 separate bodies and "flat downward-facing areas at z = 2.0". This indicates that the `union()` of the base and walls created a non-manifold geometry or separate parts where the holes were cut. The walls should be integrated into the base to form a single watertight shell.
+2.  **Incorrect Hole Placement:** The bounding box shows holes at `Y -35.75 .. 90.00`. The Y range is 125.75mm, but the part is supposed to be 90mm wide. The holes are placed at `y = +/- 33.5`. Since the part center is at `y=45` (due to the offset in the bounding box calculation relative to the origin), the actual Y coordinates of the holes are `45 +/- 33.5`, which is `11.5` and `78.5`. This is correct relative to the part center, but the report's bounding box calculation suggests the part itself is shifted or the hole logic is flawed.
+    *   *Correction:* The part is 90x90. Center is (45, 45). The pattern is 71.5mm. Half pattern = 35.75. Hole radius = 2.25. Offset = 33.5. Hole centers should be at `45 +/- 33.5` -> `11.5` and `78.5`. The report shows the bounding box extending to -35.75, which implies the part is centered at (45, 45) but the holes are being calculated relative to (0,0) incorrectly or the part is not centered at (0,0) as expected.
+    *   *Wait, looking closer at the report:* "Bounding Box: X -35.75 .. 90.00". This means the X range is 125.75. But the part is 90mm. This implies the part is NOT centered at (0,0) in the way I modeled it, or the holes are huge.
+    *   *Re-evaluating the previous code:* I used `translate([0, 0, 0])` for the base. The base is 90x90. So it occupies X:0..90, Y:0..90.
+    *   The holes were calculated with `offset = 33.5`. So holes are at `x = +/- 33.5`, `y = +/- 33.5`.
+    *   If the base is at 0..90, the center is 45.
+    *   Hole at `x = 33.5` is inside the base. Hole at `x = -33.5` is OUTSIDE the base (to the left).
+    *   **The error:** The holes were centered on the *origin* (0,0), but the part is centered at (45,45). The holes need to be translated to the center of the part.
+3.  **Notch Position:** The notch was cut at `y = H - T_wall` (the front face). The report says "4 separate bodies", which usually happens when a `difference` operation cuts through a solid in a way that disconnects it, or if the `union` logic was flawed. The most likely cause of "4 separate bodies" here is that the holes were cut *before* the walls were fully integrated or the `difference` logic separated the base from the walls.
+    *   *Fix:* Construct the entire box (base + walls) as a single solid using `difference` (subtracting the inner cavity) to ensure it is one piece. Then subtract the holes and notch from this single solid.
+
+**Plan for Correction:**
+1.  Define the outer box (90x90x42) starting at Z=0.
+2.  Subtract the inner cavity (85x85x40) starting at Z=2. This creates the walls and the base as one solid.
+3.  Subtract the screw holes. Translate the hole centers to the center of the part (45, 45).
+4.  Subtract the cable notch. Position it correctly on one of the walls.
+5.  Ensure all cuts extend slightly past the boundaries to ensure clean separation.
+
+```openscad
+// DIY Magnetic Stirrer Housing for 80mm PC Fan
+// Print Orientation: Upside down (Top plate on bed, walls rising up)
+// Units: mm
+
+// --- Dimensions ---
+// Outer size of the box
+W = 90;
+H = 90;
+
+// Thickness of the top plate (resting on bed)
+T_top = 2;
+
+// Height of the walls
+H_wall = 40;
+
+// Wall thickness
+T_wall = 2.5;
+
+// Fan mounting hole pattern
+// Pattern is 71.5mm square, centred on the plate
+PATTERN_SIZE = 71.5;
+HOLE_SIZE = 4.5; // M4 screw hole
+
+// Cable notch dimensions
+NOTCH_WIDTH = 12;
+NOTCH_DEPTH = 8; // Reaches from z=32 to z=40 (40-8=32)
+NOTCH_WALL = 0; // Index of the wall to cut (0:Front, 1:Right, 2:Back, 3:Left)
+
+// --- Configuration ---
+// Fan is 80mm. Outer box is 90mm.
+// Wall thickness is 2.5mm.
+// Inner width = 90 - 2*2.5 = 85mm.
+// Fan (80mm) fits inside 85mm inner space with 2.5mm clearance on each side.
+
+$fn = 128; // High resolution for smooth curves and accurate hole sizes
+
+// --- Main Assembly ---
+// We build the part as a single solid by subtracting the inner cavity from the outer block.
+// This ensures the base and walls are one continuous piece.
+
+difference() {
+    // 1. The Outer Block (Base + Walls)
+    // Dimensions: W x H x (T_top + H_wall)
+    // Position: Centered at (0,0) in X and Y to match the "centre it on the origin" rule.
+    // The user said "Model it in print orientation... centre it on the origin in X and Y".
+    // So the box goes from -45 to +45 in X and Y.
+    translate([0, 0, 0]) {
+        cube([W, H, T_top + H_wall]);
+    }
+
+    // 2. The Inner Cavity (The empty space inside the box)
+    // Dimensions: (W - 2*T_wall) x (H - 2*T_wall) x H_wall
+    // Position: Starts at Z = T_top.
+    // X/Y offset: T_wall from the edges.
+    translate([T_wall, T_wall, T_top]) {
+        cube([W - 2*T_wall, H - 2*T_wall, H_wall]);
+    }
+
+    // 3. Screw Holes
+    // Pattern: 71.5mm square, centred on the plate.
+    // The plate is 90x90, centred at (0,0).
+    // Hole centers: (0,0) +/- (71.5/2 - 4.5/2)
+    // Offset = 35.75 - 2.25 = 33.5
+    offset = (PATTERN_SIZE / 2) - (HOLE_SIZE / 2);
+    
+    // Cut holes through the top plate (and slightly into the wall to ensure clean cut)
+    // Height of cut: T_top + 0.1
+    for (i = [-1, 1]) {
+        for (j = [-1, 1]) {
+            translate([
+                i * offset,
+                j * offset,
+                0
+            ]) {
+                cylinder(
+                    h = T_top + 0.1,
+                    r = HOLE_SIZE / 2,
+                    $fn = 32
+                );
+            }
+        }
+    }
+
+    // 4. Cable Notch
+    // "In one wall, cut a notch... 12 mm wide, centred along the wall, reaching 8 mm down from the open edge"
+    // Open edge is at Z = T_top + H_wall = 42.
+    // Notch goes from Z = 42 - 8 = 34 to Z = 42.
+    // Wait, the prompt says "reaching 8 mm down from the open edge (from z = 32 to z = 40)".
+    // This implies the total height of the walls is 40mm?
+    // Let's re-read: "four walls, 2.5 mm thick, rise from it to z = 40".
+    // Ah, the prompt explicitly says "rise from it to z = 40".
+    // So the top of the walls is at

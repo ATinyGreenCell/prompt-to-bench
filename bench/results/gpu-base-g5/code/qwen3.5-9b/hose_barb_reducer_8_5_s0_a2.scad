@@ -1,0 +1,162 @@
+$fn = 128;
+
+// --- Dimensions ---
+// Main bore diameter (constant through the part)
+$BoreDiameter = 3.0;
+
+// Section 1: 8mm Tubing Interface (Z=0 to Z=20)
+$Z_Start_Section1 = 0;
+$Z_End_Section1 = 20;
+$Barb_Height_Section1 = 10;
+$Barb_OD_Bottom_Section1 = 7.5;
+$Barb_OD_Top_Section1 = 9.5;
+$Barb_OD_Step_Section1 = 7.5; // Diameter after the sawtooth step
+$Collar_Diameter_Section1 = 12.0;
+
+// Section 2: 5mm Tubing Interface (Z=25 to Z=41)
+$Z_Start_Section2 = 25;
+$Z_End_Section2 = 41;
+$Barb_Height_Section2 = 8;
+$Barb_OD_Bottom_Section2 = 6.5;
+$Barb_OD_Top_Section2 = 5.0;
+$Barb_OD_Step_Section2 = 6.5; // Diameter after the sawtooth step
+
+// --- Main Construction ---
+// We will build the part by creating a union of all solid components
+// and then subtracting the bore.
+
+difference() {
+    union() {
+        // 1. Main Body (Collar + Bore Wall)
+        // Profile: Bore radius at bottom, Collar radius at top, then back to Bore radius at end.
+        // Since we are using linear_extrude with a polygon, we define the 2D profile in the XZ plane.
+        // Points: (x, z)
+        // (Bore_R, 0) -> (Collar_R, 0) -> (Collar_R, Z_End) -> (Bore_R, Z_End)
+        
+        bore_r = $BoreDiameter / 2;
+        collar_r = $Collar_Diameter_Section1 / 2;
+        total_height = $Z_End_Section2 - $Z_Start_Section1;
+        
+        body_profile = [
+            [bore_r, 0],
+            [collar_r, 0],
+            [collar_r, total_height],
+            [bore_r, total_height]
+        ];
+        
+        body = linear_extrude(height = total_height, center = false)
+            polygon(points = body_profile);
+        
+        // 2. Section 1 Barbs (8mm tubing)
+        // Two stacked barbs from Z=0 to Z=20.
+        // Barb 1: Z=0 to 10
+        // Barb 2: Z=10 to 20
+        
+        // Profile for a single barb segment (sawtooth)
+        // Bottom OD -> Top OD -> Step OD -> End OD
+        // We need to define the profile relative to the start Z of the barb.
+        
+        // Barb 1 Profile (Z=0 to 10)
+        // Points: (r_bottom, 0) -> (r_top, 10) -> (r_step, 10) -> (r_step, 20)
+        // Wait, the barb is only 10mm tall, but it needs to connect to the next section?
+        // The prompt says "From z = 0 to z = 20: two identical barbs... stacked".
+        // This implies the first barb occupies Z=0 to 10, and the second Z=10 to 20.
+        // The "step back" happens at the top of the barb (Z=10 for barb 1, Z=20 for barb 2).
+        // The profile must extend to the top of the section (Z=20) to merge with the collar.
+        
+        r_b1 = $Barb_OD_Bottom_Section1 / 2;
+        r_t1 = $Barb_OD_Top_Section1 / 2;
+        r_s1 = $Barb_OD_Step_Section1 / 2;
+        
+        // Barb 1 Profile (Z=0 to 10)
+        // (r_b1, 0) -> (r_t1, 10) -> (r_s1, 10) -> (r_s1, 20)
+        barb1_profile = [
+            [r_b1, 0],
+            [r_t1, 10],
+            [r_s1, 10],
+            [r_s1, 20]
+        ];
+        
+        // Barb 2 Profile (Z=10 to 20)
+        // (r_b1, 10) -> (r_t1, 20) -> (r_s1, 20) -> (r_s1, 20) -> (r_s1, 20)
+        // Actually, the profile starts at Z=10.
+        // (r_b1, 10) -> (r_t1, 20) -> (r_s1, 20) -> (r_s1, 20)
+        // The last point is just to close the loop or extend to the collar level.
+        // The collar starts at Z=20 with radius collar_r.
+        // The barb step radius r_s1 is 3.75mm. The collar radius is 6mm.
+        // So the profile should go from (r_s1, 20) to (collar_r, 20) to merge?
+        // No, the union will handle the merge if the radii overlap or touch.
+        // Let's just define the barb shape up to Z=20.
+        
+        barb2_profile = [
+            [r_b1, 10],
+            [r_t1, 20],
+            [r_s1, 20],
+            [r_s1, 20] // Extend to Z=20 to match the collar start
+        ];
+        
+        // Extrude barbs
+        barb1 = linear_extrude(height = 20, center = false)
+            polygon(points = barb1_profile);
+        
+        barb2 = linear_extrude(height = 20, center = false)
+            polygon(points = barb2_profile);
+        
+        // 3. Section 2 Barbs (5mm tubing)
+        // From Z=25 to Z=41.
+        // Barb 3: Z=25 to 33
+        // Barb 4: Z=33 to 41
+        
+        r_b2 = $Barb_OD_Bottom_Section2 / 2;
+        r_t2 = $Barb_OD_Top_Section2 / 2;
+        r_s2 = $Barb_OD_Step_Section2 / 2;
+        
+        // Barb 3 Profile (Z=25 to 33)
+        // (r_b2, 25) -> (r_t2, 33) -> (r_s2, 33) -> (r_s2, 41)
+        barb3_profile = [
+            [r_b2, 25],
+            [r_t2, 33],
+            [r_s2, 33],
+            [r_s2, 41]
+        ];
+        
+        // Barb 4 Profile (Z=33 to 41)
+        // (r_b2, 33) -> (r_t2, 41) -> (r_s2, 41) -> (r_s2, 41)
+        barb4_profile = [
+            [r_b2, 33],
+            [r_t2, 41],
+            [r_s2, 41],
+            [r_s2, 41]
+        ];
+        
+        barb3 = linear_extrude(height = 41, center = false)
+            polygon(points = barb3_profile);
+        
+        barb4 = linear_extrude(height = 41, center = false)
+            polygon(points = barb4_profile);
+            
+    }
+    
+    // 4. Cut the Bore
+    // The bore runs straight through the full length (Z=0 to Z=41)
+    // Diameter = 3mm -> Radius = 1.5mm
+    bore_radius = $BoreDiameter / 2;
+    bore_height = $Z_End_Section2 - $Z_Start_Section1;
+    
+    bore = cylinder(
+        h = bore_height,
+        r = bore_radius,
+        center = [0, 0, bore_height/2]
+    );
+    
+    difference() {
+        union() {
+            body;
+            barb1;
+            barb2;
+            barb3;
+            barb4;
+        }
+        translate([0, 0, 0]) bore;
+    }
+}

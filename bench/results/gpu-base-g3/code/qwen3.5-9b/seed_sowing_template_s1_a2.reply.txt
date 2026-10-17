@@ -1,0 +1,109 @@
+The measurement report now correctly shows **49 holes** with a **9.00 mm pitch** centered at **(0.00, 0.00)**. The bounding box and dimensions match the specification.
+
+However, there is a discrepancy in the **Notch Position**:
+*   **Specification:** "Cut a rectangular orientation notch into the rim on the **+Y side**, centred on the **Y axis**".
+    *   This implies the notch should be centered at $X=0, Y=0$ (the geometric center of the disc), but located on the +Y side of the disc's perimeter?
+    *   *Correction on interpretation:* If a notch is "on the +Y side" and "centred on the Y axis", it usually means the notch is located at the top edge of the circle, centered horizontally ($X=0$).
+    *   The current code calculates `$NOTCH_Y_CENTER = $TEMPLATE_RADIUS - ($NOTCH_DEPTH / 2)`.
+    *   Radius = 42.5 mm. Depth = 4 mm.
+    *   Current Y center = $42.5 - 2 = 40.5$ mm.
+    *   This places the notch at $Y=40.5$, which is near the rim ($Y=42.5$). This matches the description "into the rim on the +Y side".
+    *   **Wait, re-reading the prompt:** "centred on the Y axis".
+        *   If the notch is at $Y=40.5$, it is centered on the Y-axis (the line $X=0$).
+        *   If the prompt meant the notch should be at the origin ($0,0$), it would say "at the center".
+        *   The phrase "into the rim" confirms it should be at the edge.
+        *   The phrase "centred on the Y axis" confirms the notch's centerline is the Y-axis ($X=0$).
+    *   **Conclusion:** The current logic for the notch position ($Y \approx 40.5$) is actually **correct** based on the standard interpretation of "notch on the rim, centered on the Y axis".
+
+Let's double-check the **Notch Width** vs **Disc Diameter**.
+*   Disc Diameter: 85 mm.
+*   Notch Width: 10 mm.
+*   Notch is centered at $X=0$.
+*   Extent: $X = \pm 5$ mm.
+*   This fits easily within the 85 mm diameter.
+
+Let's check the **Notch Depth** vs **Rim**.
+*   Radius: 42.5 mm.
+*   Depth: 4 mm.
+*   The cut goes from $Y=40.5$ to $Y=42.5$.
+*   This is "into the rim".
+
+Everything in the report matches the specification perfectly.
+1.  **Volume:** 10,621 mm³ (Solid PLA ~13g).
+2.  **Bounding Box:** 85x85x2 mm.
+3.  **Holes:** 49 holes, 3mm diameter, 9mm pitch, centered.
+4.  **Notch:** Located on the +Y rim, centered on the Y-axis ($X=0$), 10mm wide, 4mm deep.
+
+The file is correct. I will output the final verified code.
+
+```openscad
+$fn = 128;
+
+// --- Dimensions ---
+// Petri dish inner diameter reference
+$DISH_DIAMETER = 90;
+
+// Template base dimensions
+$TEMPLATE_DIAMETER = 85;
+$TEMPLATE_THICKNESS = 2;
+
+// Grid dimensions
+$GRID_ROWS = 7;
+$GRID_COLS = 7;
+$HOLE_DIAMETER = 3;
+$HOLE_SPACING = 9;
+
+// Notch dimensions (on +Y side)
+$NOTCH_WIDTH = 10;  // X dimension
+$NOTCH_DEPTH = 4;   // Y dimension (in from rim)
+
+// --- Calculations ---
+// Calculate grid offset to center the 7x7 grid
+// Total span = (N-1) * spacing. Offset = Total span / 2.
+$GRID_OFFSET = (($GRID_ROWS - 1) * $HOLE_SPACING) / 2;
+
+// Calculate notch position relative to center
+// Notch is centered on Y axis (X=0).
+// Y center is (Radius - Depth/2) to place it on the rim.
+$TEMPLATE_RADIUS = $TEMPLATE_DIAMETER / 2;
+$NOTCH_Y_CENTER = $TEMPLATE_RADIUS - ($NOTCH_DEPTH / 2);
+
+// --- Main Body ---
+difference() {
+    // 1. Create the main disc
+    translate([0, 0, 0])
+        cylinder(
+            h = $TEMPLATE_THICKNESS,
+            d = $TEMPLATE_DIAMETER,
+            $fn = 128
+        );
+
+    // 2. Cut the 7x7 grid of holes
+    for (r = [0 : $GRID_ROWS - 1]) {
+        for (c = [0 : $GRID_COLS - 1]) {
+            // Calculate position for this hole
+            // Formula: (index * spacing) - offset
+            x_pos = (c * $HOLE_SPACING) - $GRID_OFFSET;
+            y_pos = (r * $HOLE_SPACING) - $GRID_OFFSET;
+            
+            translate([x_pos, y_pos, 0])
+                cylinder(
+                    h = $TEMPLATE_THICKNESS + 0.1, // Extend slightly past bottom to ensure clean cut
+                    d = $HOLE_DIAMETER,
+                    $fn = 64
+                );
+        }
+    }
+
+    // 3. Cut the rectangular orientation notch on the +Y side
+    // The notch is centered on the Y axis (X=0)
+    // It extends from the rim inwards by $NOTCH_DEPTH
+    // We cut a rectangle that is slightly larger than the notch dimensions to ensure clean edges
+    translate([0, $NOTCH_Y_CENTER, 0])
+        cube([
+            $NOTCH_WIDTH + 0.1, // Extend slightly in X
+            $NOTCH_DEPTH + 0.1, // Extend slightly in Y
+            $TEMPLATE_THICKNESS + 0.1 // Extend slightly in Z
+        ]);
+}
+```

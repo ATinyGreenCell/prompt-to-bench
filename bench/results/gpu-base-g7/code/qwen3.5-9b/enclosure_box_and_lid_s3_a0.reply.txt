@@ -1,0 +1,214 @@
+```openscad
+// Two-part enclosure for small electronics board
+// Part 1: Box (left)
+// Part 2: Lid (right, printed upside down)
+// Prints together with a 10 mm gap.
+
+$fn = 128;
+
+// --- Dimensions ---
+
+// Box Dimensions (Outer)
+BOX_X = 70;
+BOX_Y = 50;
+BOX_Z = 30;
+
+// Wall and Floor Thickness
+WALL_THICK = 2;
+FLOOR_THICK = 2;
+
+// Gap between parts
+PART_GAP = 10;
+
+// Lid Dimensions
+// Plate thickness
+LID_PLATE_THICK = 2;
+// Lip dimensions
+LIP_WALL_THICK = 1.5;
+LIP_HEIGHT = 4;
+// Lip outer size (matches box opening + clearance)
+LIP_X_OUT = 65.6;
+LIP_Y_OUT = 45.6;
+
+// Clearance calculation check
+// Box Inner X = 70 - 2*2 = 66
+// Box Inner Y = 50 - 2*2 = 46
+// Lip Outer X = 65.6 -> Clearance X = (66 - 65.6)/2 = 0.2
+// Lip Outer Y = 45.6 -> Clearance Y = (46 - 45.6)/2 = 0.2
+// Matches requirements.
+
+// --- Helper Functions ---
+
+// Create the Box (Part 1)
+// Oriented: Rests on XY, builds +Z. Centred on origin.
+module create_box() {
+    // Calculate inner dimensions
+    inner_x = BOX_X - 2*WALL_THICK;
+    inner_y = BOX_Y - 2*WALL_THICK;
+    inner_z = BOX_Z - FLOOR_THICK; // Open top
+
+    // Build box using difference to ensure clean walls
+    difference() {
+        // Outer block
+        cube([BOX_X, BOX_Y, BOX_Z], center = true);
+        
+        // Cut out the inside (open top)
+        translate([
+            -inner_x/2, 
+            -inner_y/2, 
+            0 // Floor is at z=0 relative to this block, but we need to cut from bottom up
+        ]) {
+            // The hole goes from z=0 to z=inner_z
+            // We add a tiny offset to ensure the cut is slightly deeper than the wall thickness
+            // to avoid coplanar faces if we were doing boolean math differently, 
+            // but here we just cut the volume.
+            cube([inner_x, inner_y, inner_z + 0.1], center = true);
+        }
+    }
+}
+
+// Create the Lid (Part 2)
+// Oriented: Printed upside down. 
+// This means the plate lies on the bed (XY), and the lip extends UPWARDS (+Z) 
+// so that when flipped, the lip goes down into the box.
+// However, the prompt says "printed upside down: a plate... lying on the bed, with a rectangular lip on top of it".
+// If it is printed upside down, the "top" of the printed object is the bottom of the final assembly.
+// Let's interpret: The physical part has a plate and a lip. 
+// When placed on the bed for printing, the plate is down. The lip is UP.
+// When flipped (upside down), the lip is DOWN into the box.
+// So we model the part with Plate at Z=0 and Lip extending +Z.
+
+module create_lid() {
+    // Plate dimensions
+    plate_x = BOX_X;
+    plate_y = BOX_Y;
+    plate_z = LID_PLATE_THICK;
+
+    // Lip dimensions (Outer)
+    lip_x_out = LIP_X_OUT;
+    lip_y_out = LIP_Y_OUT;
+    lip_z = LIP_HEIGHT;
+    lip_w = LIP_WALL_THICK;
+
+    // Lip Inner dimensions (to match the cutout)
+    lip_x_in = lip_x_out - 2*lip_w;
+    lip_y_in = lip_y_out - 2*lip_w;
+
+    difference() {
+        // 1. The main plate
+        cube([plate_x, plate_y, plate_z], center = true);
+
+        // 2. The Lip (cut out from the plate volume)
+        // The lip is a rectangular channel cut into the plate.
+        // It has a bottom (the plate surface) and two side walls.
+        // Since we are using difference, we subtract the volume of the "lip channel".
+        
+        // The channel volume extends from the top of the plate (z = plate_z) 
+        // up to the top of the lip (z = plate_z + lip_z).
+        
+        translate([
+            -lip_x_out/2, 
+            -lip_y_out/2, 
+            plate_z // Start cutting from the top surface of the plate
+        ]) {
+            // The shape to subtract is the empty space of the lip.
+            // Width: lip_x_in
+            // Depth: lip_y_in
+            // Height: lip_z
+            // Walls: lip_w
+            // We extend slightly past the top to ensure clean cut
+            cube([lip_x_in, lip_y_in, lip_z + 0.1], center = true);
+            
+            // Wait, the above cube creates a hole with no walls. 
+            // We need to subtract the "walls" of the lip too? 
+            // No, in difference, we subtract the void. 
+            // The void is defined by the inner box.
+            // But we also need to subtract the material of the lip walls themselves?
+            // Actually, simpler approach:
+            // Subtract the inner void (the hole).
+            // Subtract the two side walls of the lip (the material that forms the lip).
+            
+            // Let's refine:
+            // We want to remove the material that constitutes the lip structure.
+            // The lip structure consists of:
+            // 1. The bottom of the lip (part of the plate, already handled by the hole cut? No.)
+            //    If we cut a hole [lip_x_in, lip_y_in, lip_z] starting at plate_z, 
+            //    we remove the bottom of the lip.
+            // 2. The side walls of the lip.
+            
+            // Let's try a different construction for the lip subtraction:
+            // Define the bounding box of the lip feature and subtract the inner void.
+            
+            // Bounding box of the lip feature (including walls)
+            // X: lip_x_out, Y: lip_y_out, Z: lip_z
+            // Position: Centered on plate
+            
+            // We need to subtract the "Lip Feature" volume EXCEPT the "Inner Void".
+            // Actually, standard way:
+            // Subtract the Inner Void (hole).
+            // Subtract the Side Walls.
+            
+            // Inner Void
+            translate([
+                -lip_x_in/2, 
+                -lip_y_in/2, 
+                plate_z
+            ]) {
+                cube([lip_x_in, lip_y_in, lip_z + 0.1], center = true);
+            }
+            
+            // Side Walls (Left and Right relative to X)
+            // Wall 1 (Left)
+            translate([
+                -lip_x_out/2 - lip_w/2, 
+                -lip_y_out/2, 
+                plate_z
+            ]) {
+                cube([lip_w, lip_y_out, lip_z + 0.1], center = true);
+            }
+            // Wall 2 (Right)
+            translate([
+                lip_x_out/2 - lip_w/2, 
+                -lip_y_out/2, 
+                plate_z
+            ]) {
+                cube([lip_w, lip_y_out, lip_z + 0.1], center = true);
+            }
+            
+            // Side Walls (Front and Back relative to Y)
+            // Wall 3 (Front)
+            translate([
+                -lip_x_out/2, 
+                -lip_y_out/2 - lip_w/2, 
+                plate_z
+            ]) {
+                cube([lip_x_out, lip_w, lip_z + 0.1], center = true);
+            }
+            // Wall 4 (Back)
+            translate([
+                -lip_x_out/2, 
+                lip_y_out/2 - lip_w/2, 
+                plate_z
+            ]) {
+                cube([lip_x_out, lip_w, lip_z + 0.1], center = true);
+            }
+        }
+    }
+}
+
+// --- Assembly ---
+
+// Positioning:
+// Box is centered at origin.
+// Lid is placed on the +X side with a 10mm gap.
+// Box center X = 0. Box right edge = 35.
+// Gap = 10.
+// Lid left edge should be at 35 + 10 = 45.
+// Lid center X = 45 + (LID_X_OUT / 2) = 45 + 32.8 = 77.8.
+
+translate([0, 0, 0]) {
+    create_box();
+}
+
+translate([
+    BOX_X/2 + PART_GAP + L

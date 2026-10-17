@@ -1,0 +1,92 @@
+$fn = 128;
+
+// --- Dimensions ---
+// Petri dish inner diameter reference
+$DISH_DIAMETER = 90;
+
+// Template base dimensions
+$TEMPLATE_DIAMETER = 85;
+$TEMPLATE_THICKNESS = 2;
+
+// Grid dimensions
+$GRID_ROWS = 7;
+$GRID_COLS = 7;
+$HOLE_DIAMETER = 3;
+$HOLE_SPACING = 9;
+
+// Notch dimensions
+$NOTCH_WIDTH = 10;
+$NOTCH_DEPTH = 4;
+
+// --- Variables ---
+// Calculate grid offset to center the 7x7 grid
+$GRID_OFFSET = (($GRID_ROWS - 1) * $HOLE_SPACING) / 2;
+
+// Main body: Flat disc
+difference() {
+    // Create the solid disc
+    union() {
+        cylinder(
+            h = $TEMPLATE_THICKNESS,
+            d = $TEMPLATE_DIAMETER,
+            center = true
+        );
+    }
+    
+    // Cut the 7x7 grid of holes
+    for (y = [0 : $GRID_ROWS - 1]) {
+        for (x = [0 : $GRID_COLS - 1]) {
+            translate([
+                $GRID_OFFSET - ($HOLE_SPACING * x),
+                $GRID_OFFSET - ($HOLE_SPACING * y),
+                -$TEMPLATE_THICKNESS - 0.1 // Extend slightly below to ensure clean cut
+            ]) {
+                cylinder(
+                    h = $TEMPLATE_THICKNESS + 1,
+                    d = $HOLE_DIAMETER,
+                    center = true
+                );
+            }
+        }
+    }
+    
+    // Cut the orientation notch on the +Y side
+    // The notch is centered on the Y axis of the disc.
+    // We need to calculate the position relative to the disc center.
+    // Disc radius = 85 / 2 = 42.5 mm.
+    // Notch is 10mm wide, centered on Y axis.
+    // Notch depth is 4mm measured IN from the rim.
+    
+    $RIM_RADIUS = $TEMPLATE_DIAMETER / 2;
+    $NOTCH_X_START = -$NOTCH_WIDTH / 2;
+    $NOTCH_X_END = $NOTCH_WIDTH / 2;
+    $NOTCH_Y_START = $RIM_RADIUS - $NOTCH_DEPTH;
+    $NOTCH_Y_END = $RIM_RADIUS + $NOTCH_DEPTH;
+    
+    // Extrude the notch shape downwards to cut through the disc
+    translate([
+        $NOTCH_X_START,
+        $NOTCH_Y_START,
+        -$TEMPLATE_THICKNESS - 0.1
+    ]) {
+        // Create a rectangular prism for the notch cut
+        // Width = NOTCH_WIDTH
+        // Height (Y) = NOTCH_DEPTH * 2 (since it's centered on Y axis and goes both ways? 
+        // Wait, prompt says "centred on the Y axis". Usually this means the notch is symmetric around Y=0.
+        // So it goes from Y = -NOTCH_DEPTH/2 to +NOTCH_DEPTH/2 relative to center?
+        // Re-reading: "rectangular orientation notch... centred on the Y axis".
+        // This implies the notch is symmetric around Y=0.
+        // "10 mm wide (X)" -> X range: -5 to +5.
+        // "4 mm deep (Y, measured in from the rim)" -> This phrasing is slightly ambiguous.
+        // Does "deep" mean the total width of the notch along Y is 4mm? Or does it mean it cuts 4mm into the material?
+        // Given "centred on the Y axis", it likely means the notch spans 4mm total along Y, centered at 0.
+        // So Y range: -2 to +2.
+        // Let's assume the notch is a slot: 10mm wide (X), 4mm tall (Y), cut into the rim.
+        
+        cube([
+            $NOTCH_WIDTH,
+            $NOTCH_DEPTH,
+            $TEMPLATE_THICKNESS + 1
+        ]);
+    }
+}

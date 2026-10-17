@@ -1,0 +1,140 @@
+```openscad
+// Buffer Tank for Mini Horizontal Gel Electrophoresis
+// Units: millimetres
+
+// Outer Dimensions
+$w_outer = 120; // X width
+$d_outer = 70;  // Y depth
+$h_outer = 40;  // Z height
+
+// Wall and Floor Thickness
+$wall_thick = 3;
+$floor_thick = 3;
+
+// Platform Dimensions
+$plat_len = 60;   // Length in X
+$plat_width = $d_outer; // Spans full inner width
+$plat_height = 10; // Height above inner floor
+
+// Hole Dimensions
+$hole_dia = 2;
+$hole_y = 0;
+$hole_z = 30;
+
+// Configuration
+$fn = 64;
+
+// Derived Dimensions
+$inner_w = $w_outer - 2*$wall_thick;
+$inner_d = $d_outer - 2*$wall_thick;
+$inner_h = $h_outer - $floor_thick;
+$plat_z_top = $floor_thick + $plat_height;
+
+// Main Tank Body
+difference() {
+    // 1. Create the outer box
+    translate([0, 0, 0])
+    cube([$w_outer, $d_outer, $h_outer], center=false);
+
+    // 2. Cut the top opening (open-top tank)
+    translate([0, 0, $h_outer - 0.01])
+    cube([$w_outer, $d_outer, 1], center=false);
+
+    // 3. Cut the inner cavity (floor + walls)
+    // We subtract a block that represents the empty space inside the tank
+    translate([0, 0, 0])
+    difference() {
+        // The block to subtract is the "void" inside the tank
+        // It has the inner width, inner depth, and height up to the top of the walls
+        // But we need to be careful with the platform cutout later.
+        // Instead, let's build the solid tank and subtract the void.
+        
+        // Void block: Inner dimensions, height = outer height - floor thickness
+        translate([$wall_thick, $wall_thick, $floor_thick])
+        cube([$inner_w, $inner_d, $inner_h], center=false);
+        
+        // Add a tiny buffer to ensure clean cuts
+        translate([$wall_thick, $wall_thick, $floor_thick])
+        cube([$inner_w + 0.01, $inner_d + 0.01, $inner_h + 0.01], center=false);
+    }
+    
+    // 4. Cut the Platform Void
+    // The platform is solid, so we cut a hole in the tank where the platform is.
+    // Platform position:
+    // X: Centered, length $plat_len
+    // Y: Spans full inner width ($inner_d)
+    // Z: From floor ($floor_thick) to $plat_z_top
+    
+    translate([
+        ($w_outer - $plat_len)/2, 
+        $wall_thick, // Start at inner wall Y
+        $floor_thick
+    ])
+    difference() {
+        // Cut the volume of the platform
+        cube([$plat_len, $inner_d, $plat_height], center=false);
+        
+        // Buffer for clean cut
+        cube([$plat_len + 0.01, $inner_d + 0.01, $plat_height + 0.01], center=false);
+    }
+}
+
+// Electrode Holes
+// Drill 2mm diameter holes through the end walls at y=0, z=30 along X axis.
+// Since the tank is open top, we just need to cut through the wall thickness.
+// The wall is at X = +/- ($w_outer/2 - $wall_thick/2).
+// Actually, the hole goes through the end wall.
+// End wall X position: +/- ($w_outer/2 - $wall_thick/2)
+// Wait, the hole is horizontal along X.
+// So we drill a cylinder along the X axis.
+// Center of hole: x = +/- ($w_outer/2 - $wall_thick/2), y = $hole_y, z = $hole_z.
+// Radius = $hole_dia / 2.
+// Length = $wall_thick (to go through the wall).
+
+difference() {
+    // We need to cut these holes from the existing tank.
+    // Since we are inside a difference() block above, we can add another difference()
+    // or simply use difference() again on the whole assembly.
+    // Let's restart the main difference to include the holes cleanly.
+}
+
+// Re-structure to ensure holes are cut from the final solid
+difference() {
+    // 1. Base Tank (re-calculated for clarity in this block)
+    translate([0, 0, 0])
+    cube([$w_outer, $d_outer, $h_outer], center=false);
+    
+    // 2. Top Opening
+    translate([0, 0, $h_outer - 0.01])
+    cube([$w_outer, $d_outer, 1], center=false);
+    
+    // 3. Inner Cavity
+    translate([$wall_thick, $wall_thick, $floor_thick])
+    cube([$inner_w, $inner_d, $inner_h], center=false);
+    
+    // 4. Platform Void
+    translate([
+        ($w_outer - $plat_len)/2, 
+        $wall_thick, 
+        $floor_thick
+    ])
+    cube([$plat_len, $inner_d, $plat_height], center=false);
+    
+    // 5. Electrode Holes
+    // Left Hole
+    translate([
+        -$w_outer/2 + $wall_thick/2, // Center of left wall
+        $hole_y,
+        $hole_z
+    ])
+    cylinder(h=$wall_thick, r=$hole_dia/2, $fn=$fn);
+    
+    // Right Hole
+    translate([
+        $w_outer/2 - $wall_thick/2, // Center of right wall
+        $hole_y,
+        $hole_z
+    ])
+    cylinder(h=$wall_thick, r=$hole_dia/2, $fn=$fn);
+}
+```

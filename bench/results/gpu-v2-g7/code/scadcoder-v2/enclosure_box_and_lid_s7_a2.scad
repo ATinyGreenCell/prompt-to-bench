@@ -1,0 +1,40 @@
+// Two-part enclosure for a small electronics board - prints in one go with a part between them.
+// Part 1: open-top box (wall 2 mm, floor 2 mm). Part 2: lid plate with a rectangular lip that
+// slides into the box opening (0.2 mm clearance). The lid is printed upside down (lip up) so the
+// wall fuses at the seam. Both parts are centred in X and Y on the bed (z = 0) with a 10 mm gap.
+
+box_x = 70;
+box_y = 50;
+box_z = 30;
+wall  = 2;
+floor = 2;
+
+lip_t = 1.5;
+lip_h = 4;
+lip_x = 65.6;
+lip_y = 45.6;
+
+$fn = 64;
+
+box3d   = cube([box_x - 2 * wall, box_y - 2 * wall, box_z - floor]);
+floor3d = cube([box_x - 2 * wall, box_y - 2 * wall, floor]);
+lip    = cube([lip_x, lip_y, lip_t]);
+lip_d  = cube([lip_x, lip_y, lip_h]);
+
+module open_top_box(x, y, z, w, f) {
+    difference() {
+        union() { box3d; translate([wall, wall, 0]) cube([x - 2 * wall, y - 2 * wall, f]); }
+        translate([wall, wall, f]) cube([x - 2 * wall, y - 2 * wall, z - f + 1]);   // hollow, open top
+    }
+}
+
+module lid_plate(x, y, t, h) {
+    cl = min(x - 2 * wall, y - 2 * wall);                 // inner clear size
+    difference() {
+        union() { cube([x, y, t]); translate([(x - cl) / 2, (y - cl) / 2, 0]) cube([cl, cl, h]); }
+        translate([(x - cl) / 2 - 1, (y - cl) / 2 - 1, t]) cube([cl + 2, cl + 2, h + 1]);   // pocket, open upward
+    }
+}
+
+open_top_box(box_x, box_y, box_z, box_x - 2 * wall, box_y - 2 * wall);
+translate([box_x / 2 + 5, 0, 0]) lid_plate(lip_x, lip_y, lip_t, lip_h);

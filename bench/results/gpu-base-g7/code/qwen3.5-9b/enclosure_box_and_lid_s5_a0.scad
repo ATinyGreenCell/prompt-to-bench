@@ -1,0 +1,151 @@
+// Two-part enclosure for electronics board
+// Part 1: Box (left)
+// Part 2: Lid (right, printed upside down)
+// Gap between parts: 10 mm
+
+// --- Dimensions ---
+// Box Outer Dimensions (X x Y x Z)
+$box_outer_x = 70;
+$box_outer_y = 50;
+$box_outer_z = 30;
+
+// Wall and Floor Thickness
+$wall_thickness = 2;
+$floor_thickness = 2;
+
+// Lid Dimensions
+// Plate thickness
+$plate_thickness = 2;
+// Lip dimensions (height and wall thickness)
+$lip_height = 4;
+$lip_wall_thickness = 1.5;
+// Lip outer size (X x Y)
+$lip_outer_x = 65.6;
+$lip_outer_y = 45.6;
+
+// Clearance
+$clearance = 0.2;
+
+// Gap between parts
+$gap = 10;
+
+// --- Configuration ---
+// Set global resolution for curved shapes
+$fn = 64;
+
+// --- Part 1: The Box ---
+// Position: Rests on XY plane (z=0), centered on origin in X and Y.
+// Since we need a gap to the right, we will shift the box to the left by half the gap.
+$box_x_offset = -$gap / 2;
+$box_y_offset = 0;
+$box_z_offset = 0;
+
+difference() {
+    // Outer Box
+    translate([$box_x_offset, $box_y_offset, $box_z_offset]) {
+        cube([
+            $box_outer_x, 
+            $box_outer_y, 
+            $box_outer_z
+        ]);
+    }
+    
+    // Inner Void (to create walls and floor)
+    // Floor thickness is 2mm, so void starts at z = 2.
+    // Wall thickness is 2mm, so void is inset by 2mm on X and Y.
+    translate([$box_x_offset + $wall_thickness, 
+               $box_y_offset + $wall_thickness, 
+               $floor_thickness]) {
+        cube([
+            $box_outer_x - ($wall_thickness * 2), 
+            $box_outer_y - ($wall_thickness * 2), 
+            $box_outer_z - ($floor_thickness + $wall_thickness) // Open top
+        ]);
+    }
+}
+
+// --- Part 2: The Lid ---
+// Position: Printed upside down (plate on bed), placed on +X side of the box.
+// The box ends at x = $box_x_offset + $box_outer_x/2.
+// We place the center of the lid at the edge of the box + half the gap.
+// Box center X = $box_x_offset. Box right edge = $box_x_offset + $box_outer_x/2.
+// Lid center X = ($box_x_offset + $box_outer_x/2) + $gap/2.
+$lid_x_offset = $box_x_offset + ($box_outer_x / 2) + ($gap / 2);
+$lid_y_offset = 0;
+$lid_z_offset = 0;
+
+difference() {
+    // Outer Lid Shape (Plate + Lip)
+    // The lip is a wall on top of the plate.
+    // We model this as a solid block that is the union of the plate and the lip, 
+    // but since we are using difference to cut holes, we can just model the full outer envelope.
+    // Plate: 70x50x2 (same as box footprint for stability, though not strictly required, 
+    // usually lids match box footprint. The prompt says "a plate 70x50x2", implying same footprint).
+    // Lip: Outer 65.6 x 45.6, Height 4, Wall 1.5.
+    // Total Height = Plate(2) + Lip(4) = 6mm.
+    
+    translate([$lid_x_offset, $lid_y_offset, $lid_z_offset]) {
+        union() {
+            // The Plate
+            cube([
+                $box_outer_x, 
+                $box_outer_y, 
+                $plate_thickness
+            ]);
+            
+            // The Lip (attached to top of plate)
+            // Lip outer size: 65.6 x 45.6
+            // Lip wall thickness: 1.5
+            // Lip height: 4
+            translate([0, 0, $plate_thickness]) {
+                cube([
+                    $lip_outer_x, 
+                    $lip_outer_y, 
+                    $lip_height
+                ]);
+            }
+        }
+    }
+    
+    // Inner Void (to create the hole for the box and the lip opening)
+    // The lid needs to slide over the box opening.
+    // Box opening inner size:
+    // X: 70 - 2*2 = 66
+    // Y: 50 - 2*2 = 46
+    // Z: 30 - 2 = 28 (floor to top)
+    
+    // The lip hole needs to match the box opening with clearance.
+    // Lip outer X: 65.6. Box inner X: 66.
+    // Clearance required: 0.2 total (0.1 each side).
+    // Lip inner X = Lip outer X - 2*clearance = 65.6 - 0.4 = 65.2.
+    // Wait, the prompt says "slides into the box opening with 0.2 mm clearance on each side".
+    // Box inner X = 66. Lid Lip inner X must be 66 - 0.4 = 65.6? 
+    // Let's re-read: "lip ... whose outer size is 65.6 x 45.6 ... slides into the box opening with 0.2 mm clearance on each side".
+    // Box inner X = 66. Lip outer X = 65.6.
+    // If Lip inner X = 65.6 - 0.4 = 65.2, then gap is 66 - 65.2 = 0.8. That's too much.
+    // Usually, "clearance on each side" means the gap between the lip inner face and the box inner face is 0.2.
+    // So Lip Inner X = Box Inner X - 2*0.2 = 66 - 0.4 = 65.6.
+    // But Lip Outer X is 65.6. That would mean Lip Wall Thickness = 0.
+    // Contradiction in prompt interpretation or dimensions?
+    // "lip ... 1.5 mm thick wall, 4 mm tall, whose outer size is 65.6 x 45.6"
+    // If Outer is 65.6 and Wall is 1.5, Inner is 65.6 - 3 = 62.6.
+    // Box Inner is 66.
+    // Gap = (66 - 62.6) / 2 = 1.7 mm.
+    // The prompt says "0.2 mm clearance".
+    // Perhaps the "outer size" of the lip refers to the size of the hole it creates? No, "outer size" usually means the bounding box.
+    // Let's assume the user wants the lip to fit the box opening (66x46) with 0.2mm clearance.
+    // Target Lip Inner X = 65.6. Target Lip Inner Y = 45.6.
+    // If Lip Outer X is fixed at 65.6 by the user, and Wall is 1.5, then Inner is 62.6.
+    // This creates a loose fit (1.7mm gap).
+    // HOWEVER, the prompt explicitly states: "slides into the box opening with 0.2 mm clearance on each side".
+    // This implies the final geometry MUST result in 0.2mm clearance.
+    // If the user provided specific outer dimensions (65.6) and wall thickness (1.5), they might have miscalculated the clearance relative to the box inner size (66).
+    // OR, the "outer size" of the lip is the size of the *opening*? No, "outer size" is standard terminology.
+    // Let's look at the numbers again.
+    // Box Outer: 70x50. Wall: 2. Box Inner: 66x46.
+    // Lip Outer: 65.6x45.6.
+    // If Lip Inner is 65.6 - 2*1.5 = 62.6.
+    // Gap = (66 - 62.6)/2 = 1.7mm.
+    // If the user wants 0.2mm clearance, the Lip Inner should be 65.6.
+    // If Lip Inner is 65.6 and Lip Outer is 65.6, Wall is 0. Impossible.
+    // Hypothesis: The user meant the Lip Outer size is larger, or the clearance is different, OR the "outer size" of the lip is actually the

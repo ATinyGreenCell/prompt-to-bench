@@ -1,0 +1,72 @@
+// Drying Rack for Microscope Slides
+// Base: 90 x 45 x 20 mm
+// Slots: 10 parallel slots for 75x25mm slides
+// Orientation: Rests on XY plane at Z=0, builds upward.
+
+// Base Dimensions
+$base_length = 90;   // X
+$base_width = 45;    // Y
+$base_height = 20;   // Z
+
+// Slide Dimensions (for reference)
+$slide_length = 75;  // X
+$slide_width = 25;   // Y
+$slide_thickness = 1; // Z
+
+// Slot Dimensions
+$num_slots = 10;
+$slot_length = 77;   // X (slightly longer than slide to allow insertion)
+$slot_width = 1.6;   // Y
+$slot_depth = 10;    // Z (depth of cut from top)
+
+// Spacing
+$slot_spacing = 3.5; // Centre-to-centre distance in Y
+
+// Global settings for smooth curves
+$fn = 64;
+
+// Calculate position of the first slot center in Y
+// The group of slots is centred on the block in Y.
+// Total width occupied by slots and gaps = num_slots * slot_width + (num_slots - 1) * slot_spacing
+// However, we are given centre-to-centre spacing.
+// Let's calculate the offset from the block center to the first slot center.
+// The centers are at: -Y_offset, -Y_offset + slot_spacing, ..., +Y_offset
+// The distance from center to the last slot center is (num_slots - 1) * slot_spacing / 2
+$y_offset_from_center = (($num_slots - 1) * $slot_spacing) / 2;
+
+// Generate the base block
+difference() {
+    // Main Block
+    cube([
+        $base_length, 
+        $base_width, 
+        $base_height
+    ]);
+
+    // Cut Slots
+    // We iterate through each slot. 
+    // Slot centers in Y range from -y_offset_from_center to +y_offset_from_center
+    for (i = [0 : $num_slots - 1]) {
+        // Calculate Y position for this slot
+        $current_y = -($y_offset_from_center) + (i * $slot_spacing);
+        
+        // Define the slot geometry
+        // The slot is a rectangular prism cut from the top face.
+        // It runs along X (length $slot_length), is wide in Y ($slot_width), 
+        // and deep in Z ($slot_depth).
+        // Position: Z starts at ($base_height - $slot_depth) and goes up to $base_height.
+        
+        translate([
+            0,              // X center (slots are centred on block in X)
+            $current_y,     // Y position
+            $base_height - $slot_depth // Z start position
+        ]) {
+            // Extend slightly past the faces to ensure clean cut
+            cube([
+                $slot_length + 0.1, 
+                $slot_width + 0.1, 
+                $slot_depth + 0.1
+            ]);
+        }
+    }
+}

@@ -1,0 +1,31 @@
+{
+ "started": "2026-10-17T15:43:45",
+ "args": {
+  "run": "gpu-v2-g7",
+  "models": [
+   "scadcoder-v2"
+  ],
+  "tasks": [
+   "enclosure_box_and_lid",
+   "mini_gel_tank"
+  ],
+  "samples": 8,
+  "max_repairs": 2,
+  "feedback": "report",
+  "temperature": 0.2,
+  "prompts": null,
+  "lang": "en",
+  "system": "bench/prompts/system.md",
+  "render_timeout": 120,
+  "seed_base": 1000,
+  "num_predict": 2048,
+  "think": false,
+  "num_ctx": 8192
+ },
+ "git_commit": "c05cecbadc4ddbc05ed7cb639bab0fec3a6a2b5c",
+ "host": "enamel",
+ "cpu": "x86_64",
+ "python": "3.14.4",
+ "openscad": "OpenSCAD version 2026.10.01",
+ "ollama": "0.0.0-openai-shim"
+}

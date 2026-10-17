@@ -1,0 +1,60 @@
+```openscad
+// Drying Rack for 10 Microscope Slides
+// Base: 90mm (X) x 45mm (Y) x 20mm (Z)
+// Slots: 10 parallel slots along X, 77mm long, 1.6mm wide, 10mm deep
+// Spacing: 3.5mm centre-to-centre (Y), group centred on block
+
+$fn = 128;
+
+// Base Dimensions
+base_length_X = 90;
+base_width_Y = 45;
+base_height_Z = 20;
+
+// Slide Dimensions (for reference)
+slide_length = 75;
+slide_width = 25;
+slide_thickness = 1;
+
+// Slot Dimensions
+slot_length_X = 77;
+slot_width_Y = 1.6;
+slot_depth_Z = 10;
+
+// Layout Dimensions
+slot_spacing_Y = 3.5; // Centre-to-centre
+num_slots = 10;
+
+// Calculate Y position of the first slot centre
+// Total width of slots = num_slots * slot_width_Y
+// Total width of gaps = (num_slots - 1) * slot_spacing_Y
+// Total occupied width = num_slots * slot_width_Y + (num_slots - 1) * slot_spacing_Y
+// Remaining width = base_width_Y - Total occupied width
+// Offset from edge = Remaining width / 2
+// First slot Y = Offset + (slot_width_Y / 2) + (slot_spacing_Y / 2)
+// Actually, simpler: The group is centred.
+// Distance from centre to first slot centre = (num_slots - 1) * slot_spacing_Y / 2
+offset_Y_first = ((num_slots - 1) * slot_spacing_Y) / 2;
+
+// Generate the base block
+difference() {
+    // Main Block
+    cube([base_length_X, base_width_Y, base_height_Z]);
+    
+    // Cut Slots
+    for (i = [0 : num_slots - 1]) {
+        // Calculate Y position for this slot
+        y_pos = offset_Y_first + (i * slot_spacing_Y);
+        
+        // Slot geometry:
+        // Length along X: slot_length_X
+        // Width along Y: slot_width_Y
+        // Depth along Z: slot_depth_Z
+        // Position: X is centred (0), Y is y_pos, Z starts at base_height_Z - slot_depth_Z
+        
+        translate([0, y_pos, base_height_Z - slot_depth_Z]) {
+            cube([slot_length_X, slot_width_Y, slot_depth_Z]);
+        }
+    }
+}
+```

@@ -1,0 +1,43 @@
+The measurement report reveals a critical issue with the **Chamfer (Orientation Mark)**.
+
+**Analysis of the Error:**
+1.  **Specification:** "Cut a 45-degree chamfer with 5 mm legs off the vertical edge at the A1 corner".
+2.  **Report Observation:** At `z=0.32`, the report lists "1 x rectangle 6.63 x 0.02 [centre (16.72, 13.58)]".
+    *   The `0.02` height indicates that the chamfer cut is only happening at the very bottom of the block (likely due to the `hull` of tiny cubes being interpreted as a flat sheet or failing to extrude the wedge volume correctly).
+    *   The `6.63` width suggests the cut is not forming the intended triangular face but rather a small rectangular notch or a failed operation.
+    *   The chamfer should be visible along the entire height of the block (0 to 20 mm), creating a slanted face.
+3.  **Root Cause:** The previous attempt used `hull()` on small cubes to define a tetrahedron. In OpenSCAD, `hull()` creates a convex hull of the *volumes* passed to it. If the volumes are tiny cubes, the hull might not behave as expected for a sharp corner cut, or the logic of subtracting the "corner" volume was flawed because the `hull` of the three cut points and the corner point creates a tetrahedron, but the way it was constructed (using dummy cubes) likely resulted in a flat shape or an incorrect volume that didn't extend up the Z-axis properly.
+
+**Correction Strategy:**
+To create a valid 45-degree chamfer on a vertical corner in OpenSCAD:
+1.  Define the three points where the cut plane intersects the three axes meeting at the corner:
+    *   $P_x$: ($offset_x + leg$, $offset_y$, 0)
+    *   $P_y$: ($offset_x$, $offset_y + leg$, 0)
+    *   $P_z$: ($offset_x$, $offset_y$, $leg$)
+2.  The volume to remove is the tetrahedron formed by the corner vertex ($offset_x$, $offset_y$, 0) and these three points.
+3.  Instead of trying to build the tetrahedron with `hull` on dummy cubes, we can define the cut plane explicitly using a large polygon that represents the "missing" corner, or more robustly, define the tetrahedron vertices directly.
+4.  **Robust Method:** Create a polygon with the 3 cut points ($P_x, P_y, P_z$) and extrude it? No, that makes a plate.
+5.  **Best Method for Tetrahedron:** Use `hull()` on the 4 vertices:
+    *   $V_1$: ($offset_x$, $offset_y$, 0) [The Corner]
+    *   $V_2$: ($offset_x + leg$, $offset_y$, 0)
+    *   $V_3$: ($offset_x$, $offset_y + leg$, 0)
+    *   $V_4$: ($offset_x$, $offset_y$, $leg$)
+    *   We can achieve this by translating a standard tetrahedron shape or by using `hull` on 4 translated unit cubes. The previous code failed likely because the `hull` of 3 points + origin didn't capture the volume correctly or the `cube` size was too small relative to the logic.
+    *   Let's try a different approach that is guaranteed to work: **Construct the cut plane using a polygon in the plane of the cut and subtract the volume "below" it?** No, OpenSCAD doesn't have a direct "cut by plane" primitive other than difference with a solid.
+    *   **Reliable Tetrahedron Construction:**
+        We can construct the tetrahedron by taking the `hull` of 4 points. To make `hull` work reliably with points, we use `cube([0.01, 0.01, 0.01])` at each vertex.
+        Wait, the previous code *did* use `hull` with cubes. Why did it fail?
+        Ah, the previous code had a syntax error or logic error in the loop/structure.
+        Let's re-verify the geometry.
+        The cut removes the region where $x < x_0 + leg$, $y < y_0 + leg$, $z < leg$ AND $(x-x_0) + (y-y_0) + z < leg$? No, for a 45 deg chamfer on the corner, the plane equation is $(x-x_0) + (y-y_0) + (z-z_0) = leg$?
+        If the leg is 5mm on all three faces, the plane passes through $(x_0+5, y_0, 0)$, $(x_0, y_0+5, 0)$, and $(x_0, y_0, 5)$.
+        The equation of the plane passing through these three points is $X + Y + Z = x_0 + y_0 + 5$ (relative to corner).
+        The volume to remove is the set of points where $X < x_0+5$, $Y < y_0+5$, $Z < 5$ AND $X+Y+Z < x_0+y_0+5$.
+        This is exactly the tetrahedron with vertices $(x_0, y_0, 0)$, $(x_0+5, y_0, 0)$, $(x_0, y_0+5, 0)$, $(x_0, y_0, 5)$.
+        
+        The `hull` of these 4 points is the correct shape.
+        Why did the previous code fail?
+        In the previous code:
+        ```openscad
+        translate([$chamfer_leg, 0, 0]) cube([0.01, 0.01, 0.01]);
+        ```

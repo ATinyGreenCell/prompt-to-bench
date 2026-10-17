@@ -1,0 +1,135 @@
+// Snap-on Clip for Lab Stand Rod and Tubing
+// Orientation: Flat on XY plane, building up in +Z.
+// Units: Millimetres.
+
+// --- Dimensions ---
+// Rod Stand Dimensions
+$rod_diameter = 12.7;
+$rod_wall_thickness = 3;
+$rod_outer_diameter = $rod_diameter + 2 * $rod_wall_thickness; // 18.7
+$rod_ring_height = 10;
+
+// Tubing Dimensions
+$tubing_diameter = 6;
+$tubing_wall_thickness = 2;
+$tubing_outer_diameter = $tubing_diameter + 2 * $tubing_wall_thickness; // 8
+$tubing_ring_height = 10;
+
+// Positioning
+$rod_center_x = 0;
+$rod_center_y = 0;
+$tubing_center_x = 15;
+$tubing_center_y = 0;
+
+// Bridge Dimensions
+$bridge_width_x = 4; // From x=8 to x=12
+$bridge_width_y = 6;
+$bridge_height = 10;
+
+// Cutout Dimensions
+$rod_cutout_width = 10;
+$rod_cutout_height = 10; // -5 to 5
+// FIX: The cutout must start at x=0 (center) and go to x=10.
+// Previous logic started at -4.35, leaving a solid wall.
+$rod_cutout_start_x = 0; 
+
+$tubing_cutout_width = 4.5;
+$tubing_cutout_height = 4.5; // -2.25 to 2.25
+// Tubing cutout is on +X side relative to its center (15,0).
+// So it starts at x=15 and goes to x=19.5.
+$tubing_cutout_start_x = 15; 
+
+// --- Configuration ---
+$fn = 128; // High resolution for smooth curves
+
+module rod_ring() {
+    // Main Ring
+    difference() {
+        // Extrude the full outer circle
+        translate([0, 0, 0])
+            cylinder(h = $rod_ring_height, d = $rod_outer_diameter, $fn = $fn);
+        
+        // Inner Hole
+        translate([0, 0, 0.01])
+            cylinder(h = $rod_ring_height + 0.02, d = $rod_diameter, $fn = $fn);
+        
+        // Cutout on -X side (relative to global origin, this is the left side of the ring)
+        // Specification: "everything with x < 0 and -5 < y < 5 is removed"
+        // This means the cutout starts at x=0 and extends 10mm to the left (negative X).
+        // Wait, re-reading spec: "10 mm wide opening cut out of its -X side".
+        // If the ring is centered at 0, the -X side is the left side.
+        // The region to remove is x < 0.
+        // So the cutout box should cover x from -10 to 0.
+        
+        // Let's re-evaluate the geometry based on "x < 0".
+        // If I remove x < 0, the remaining part is x >= 0.
+        // The cutout box needs to cover the range [-10, 0] in X.
+        // Center of box in X = -5. Width = 10.
+        // Y range: -5 to 5. Center = 0. Height = 10.
+        
+        translate([
+            -$rod_cutout_width / 2, // -5
+            -$rod_cutout_height / 2 - 0.01, // -5.01
+            0.01
+        ])
+            cube([
+                $rod_cutout_width + 0.02, // 10.02
+                $rod_cutout_height + 0.02, // 10.02
+                $rod_ring_height + 0.02
+            ]);
+    }
+}
+
+module tubing_ring() {
+    // Main Ring
+    difference() {
+        // Extrude the full outer circle
+        translate([0, 0, 0])
+            cylinder(h = $tubing_ring_height, d = $tubing_outer_diameter, $fn = $fn);
+        
+        // Inner Hole
+        translate([0, 0, 0.01])
+            cylinder(h = $tubing_ring_height + 0.02, d = $tubing_diameter, $fn = $fn);
+        
+        // Cutout on +X side
+        // Specification: "x > 15 and -2.25 < y < 2.25"
+        // This means the cutout starts at x=15 and extends 4.5mm to the right.
+        // Box X range: [15, 19.5]. Center = 17.25.
+        // Box Y range: [-2.25, 2.25]. Center = 0.
+        
+        translate([
+            $tubing_cutout_start_x - ($tubing_cutout_width / 2), // 15 - 2.25 = 12.75
+            -$tubing_cutout_height / 2 - 0.01, // -2.25 - 0.01
+            0.01
+        ])
+            cube([
+                $tubing_cutout_width + 0.02, // 4.52
+                $tubing_cutout_height + 0.02, // 4.52
+                $tubing_ring_height + 0.02
+            ]);
+    }
+}
+
+module bridge() {
+    // Solid bridge between x=8 and x=12
+    // Width in Y is 6mm.
+    // Height is 10mm.
+    translate([8, -3, 0])
+        cube([4, 6, 10]);
+}
+
+// --- Main Assembly ---
+difference() {
+    union() {
+        // 1. Rod Ring
+        translate([$rod_center_x, $rod_center_y, 0])
+            rod_ring();
+        
+        // 2. Tubing Ring
+        translate([$tubing_center_x, $tubing_center_y, 0])
+            tubing_ring();
+        
+        // 3. Bridge
+        bridge();
+    }
+}

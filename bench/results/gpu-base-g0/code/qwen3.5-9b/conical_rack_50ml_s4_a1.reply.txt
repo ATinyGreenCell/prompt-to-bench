@@ -1,0 +1,104 @@
+The measurement report reveals several critical issues with the previous design:
+
+1.  **Incorrect Bounding Box & Orientation**: The report shows a bounding box of `X -35.25 .. 130.00` and `Y -45.00 .. 90.00`. This indicates the part is not centered on the origin (X range is 165.25mm, not 130mm). The user specified the plate should be 130mm x 90mm centered on the origin.
+2.  **Z-Axis Offset**: The lowest point is at `z = -2.05`. The user specified the plate lies on the bed at `z = 0`. The negative Z value suggests the hole cutting logic created geometry below the intended base plane, or the wall heights were calculated relative to a non-zero base.
+3.  **Wall Geometry**: The report lists two large solid regions (`165.25 x 90.00 x 70.00`) which likely represent the walls extending incorrectly or the plate being merged in a way that creates a massive bounding box. The walls should be thin strips (4mm thick) along the edges, not filling the whole plate width.
+4.  **Hole Geometry**: The report mentions "70.50 x 30.50 x 0.05" bodies. This looks like a remnant of the hole cutting process that wasn't fully subtracted or is floating, contributing to the "5 separate bodies" count. The holes should be clean through-holes.
+
+**Root Cause Analysis**:
+The previous code used `translate([0, 0, 0])` for the plate but then tried to cut holes. If the hole cylinder was defined with `center=true` but the subtraction logic or the wall placement was slightly off, it could cause issues. However, the primary issue is likely the **Wall Placement**.
+In the previous code:
+`translate([0, -$plate_width/2, 0])` places the wall at Y = -45.
+`translate([0, $plate_width/2, 0])` places the wall at Y = +45.
+The plate is 90mm wide (-45 to +45).
+The walls are 4mm thick.
+If the walls are placed *outside* the plate edges (which they are, effectively, if the plate is the base), they should be fine.
+However, the report shows a huge block `165.25 x 90.00 x 70.00`. This suggests the walls might be overlapping the plate in a way that creates a single large volume, or the coordinate system is shifted.
+Wait, the report says `X -35.25 .. 130.00`. The total width is 165.25. The plate is 130. If the plate is centered, it goes from -65 to +65.
+If the walls are 130mm long and placed at the edges, they should align with the plate.
+The issue `X -35.25 .. 130.00` implies the center is at `(130 - 35.25)/2 = 47.375`. This is not 0.
+This happens if the `cube` for the plate is not centered correctly or if the walls are offset.
+Actually, looking at the previous code: `cube([130, 90, 4], center = false)` at `[0,0,0]` creates a plate from X=0 to 130, Y=0 to 90.
+**This is the error.** The user asked for the plate to be "centred on the plate" (meaning the whole assembly centered on the origin). The previous code placed the plate at X=0..130, Y=0..90.
+To center a 130x90 plate on the origin, it must go from X=-65 to +65 and Y=-45 to +45.
+The previous code used `center=false` and `translate([0,0,0])`. It should have been `center=true` or `translate([-65, -45, 0])`.
+
+Also, the hole cutting logic:
+`cylinder(..., center=true)` inside `difference()` with a `cube` that is slightly smaller.
+If the plate is at Z=0..4, the hole cylinder should be at Z=0..4.
+The previous code used `h = $plate_thickness + 0.1`. This is fine.
+But if the plate coordinates were wrong (0..130), the holes were at relative positions based on the *intended* center, but the plate was at 0..130.
+The hole positions were calculated as `[-20, -20]` etc. relative to the *center*.
+If the plate is at 0..130, the center is 65.
+The code `translate(p)` where `p` is relative to the origin (0,0) would place holes at X=-20, 0, 20.
+But the plate is at X=0..130. So the holes would be cut into the "air" on the left side (X<0) and the right side (X>130).
+This explains the weird bounding box and the fact that the holes didn't cut the plate properly (or cut it in a weird way).
+
+**Correction Plan**:
+1.  Define the plate geometry centered at the origin: `translate([-65, -45, 0])` or use `center=true`.
+2.  Ensure hole positions are calculated relative to the origin (which is now the plate center).
+3.  Ensure walls are placed at the correct Y coordinates relative to the centered plate.
+4.  Ensure all Z coordinates start at 0.
+
+Let's re-verify the wall placement.
+Plate Y range: -45 to +45.
+Wall thickness: 4mm.
+Wall length: 130mm.
+Wall position: Along the long edges.
+So Wall 1 Y center = -45. Wall 2 Y center = +45.
+Wait, if the plate edge is at Y=45, and the wall is 4mm thick, does it sit *on* the edge or *extend* from it?
+"Two solid walls run along the two long edges of the plate... flush with the plate's long edge".
+Usually, this means the wall is attached to the side of the plate.
+If the plate is 90mm wide (Y=-45 to 45), the edge is at Y=45.
+The wall should be at Y=45 to Y=49 (or Y=41 to 45).
+The user said "rises from the plate".
+If the wall is 4mm thick and "flush with the plate's long edge", it likely means the inner face of the wall is coplanar with the plate edge.
+So Wall 1: Y from 45 to 49. Wall 2: Y from -45 to -49.
+Or, if the wall is part of the plate structure, maybe it's Y from 41 to 45?
+"Flush with the plate's long edge" usually implies the boundary.
+Let's assume the wall sits *outside* the plate footprint to act as a stand.
+So Wall 1: Y = 45 to 49. Wall 2: Y = -45 to -49.
+Length: 130mm (X from -65 to +65).
+Height: 70mm (Z from 0 to 70).
+
+Let's refine the hole positions.
+3 holes along X, 2 rows along Y.
+Spacing 40mm.
+Centered on plate (Origin).
+X positions: -20, 0, +20.
+Y positions: -20, +20.
+Total 6 holes.
+
+Let's write the corrected code.
+
+```openscad
+// Rack for six 50 mL conical (Falcon-type) tubes
+// Print orientation: Upside down (walls up, holes in plate).
+// After printing, flip over to stand on walls.
+
+// --- Dimensions ---
+// Plate dimensions (Centered on Origin)
+$plate_length = 130; // X
+$plate_width = 90;   // Y
+$plate_thickness = 4; // Z
+
+// Hole specifications
+$hole_diameter = 30.5;
+$hole_count_x = 3;
+$hole_count_y = 2;
+$hole_spacing_x = 40; // Centre-to-centre
+$hole_spacing_y = 40; // Centre-to-centre
+
+// Wall specifications
+$wall_length = 130;   // X
+$wall_thickness = 4;  // Y
+$wall_height = 70;    // Z (total height from bed)
+
+// --- Configuration ---
+$fn = 64; // Smooth curves for holes
+
+// --- Main Module ---
+module tube_rack() {
+    union() {
+        // 1. The Base Plate
+        // Lies on Z=0 to

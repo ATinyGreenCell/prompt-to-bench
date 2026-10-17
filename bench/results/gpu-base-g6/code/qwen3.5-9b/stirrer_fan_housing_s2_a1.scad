@@ -1,0 +1,98 @@
+// DIY Magnetic Stirrer Housing for 80mm Fan
+// Print Orientation: Upside down (Top plate on bed, walls rising up)
+
+// --- Dimensions ---
+// Outer size of the box
+W = 90;
+H = 90;
+
+// Thickness of the top plate (resting on bed)
+T_plate = 2;
+
+// Height of the walls
+H_wall = 40;
+
+// Wall thickness
+T_wall = 2.5;
+
+// Fan mounting hole pattern
+// The pattern is 71.5mm square, centred on the plate
+// This implies the distance from center to hole center is 71.5 / 2 = 35.75
+P_dist = 71.5 / 2;
+D_hole = 4.5;
+
+// Cable notch dimensions
+W_notch = 12;
+H_notch = 8; // Reaches 8mm down from open edge (z=32 to z=40)
+
+// --- Configuration ---
+$fn = 128; // High resolution for clean holes and edges
+
+// --- Main Construction ---
+
+// 1. Build the solid block (Outer box)
+// Dimensions: W x H x (T_plate + H_wall)
+outer_z = T_plate + H_wall;
+block = cube([W, H, outer_z]);
+
+// 2. Create the internal void (the empty space inside the box)
+// This void starts at the top of the plate (z = T_plate) and goes up to the top of the walls.
+// Width and height of the void are reduced by 2 * T_wall on each side.
+void_w = W - 2 * T_wall;
+void_h = H - 2 * T_wall;
+void = cube([void_w, void_h, H_wall], p = [T_wall, T_wall, T_plate]);
+
+// 3. Create the cable notch
+// Located in one wall. Let's place it on the front wall (Y = H - T_wall).
+// The notch goes from z = 32 to z = 40.
+// Center Y of the wall: H/2.
+// The notch is 12mm wide, centered on the wall.
+notch_x = 0;
+notch_y = H/2;
+notch_z_start = 32;
+notch_z_end = 40;
+
+// Calculate position for the notch to be centered on the front wall face
+// Front wall is at Y = H - T_wall.
+// The notch width is W_notch.
+notch_y_pos = (H - T_wall) - (W_notch / 2);
+
+notch = cube([W_notch, T_wall, H_notch], p = [notch_x, notch_y_pos, notch_z_start]);
+
+// 4. Create the screw holes
+// Pattern: 71.5mm square centered on the plate.
+// Centers at: +/- P_dist in X and Y.
+// Z range: 0 to T_plate.
+hole_centers = [
+    [P_dist, P_dist],
+    [P_dist, -P_dist],
+    [-P_dist, P_dist],
+    [-P_dist, -P_dist]
+];
+
+// --- Assembly ---
+// Start with the solid block
+part = block;
+
+// Subtract the internal void
+part = difference() {
+    part;
+    void;
+}
+
+// Subtract the cable notch
+part = difference() {
+    part;
+    notch;
+}
+
+// Subtract the screw holes
+for (c = hole_centers) {
+    part = difference() {
+        part;
+        cylinder(h = T_plate, d = D_hole, $fn = 64, p = [c[0], c[1], 0]);
+    };
+}
+
+// Final output
+part;

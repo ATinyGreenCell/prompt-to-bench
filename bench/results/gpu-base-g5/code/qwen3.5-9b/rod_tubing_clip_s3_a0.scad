@@ -1,0 +1,122 @@
+// Snap-on Clip for Lab Stand Rod and Tubing
+// Orientation: Flat on XY plane, building up in +Z.
+// Units: Millimetres.
+
+// --- Dimensions ---
+// Rod Stand Dimensions
+$rod_diameter = 12.7;
+$rod_wall_thickness = 3;
+$rod_outer_diameter = $rod_diameter + 2 * $rod_wall_thickness; // 18.7
+$rod_ring_height = 10;
+
+// Tubing Dimensions
+$tubing_diameter = 6;
+$tubing_wall_thickness = 2;
+$tubing_outer_diameter = $tubing_diameter + 2 * $tubing_wall_thickness; // 8
+$tubing_ring_height = 10;
+
+// Positioning
+$rod_center_x = 0;
+$rod_center_y = 0;
+$tubing_center_x = 15;
+$tubing_center_y = 0;
+
+// Bridge Dimensions
+$bridge_width_x = 4; // From x=8 to x=12
+$bridge_width_y = 6;
+$bridge_height = 10;
+
+// Cutout Dimensions
+$rod_cutout_width = 10;
+$rod_cutout_height = 10; // -5 to 5
+$rod_cutout_offset_x = -($rod_outer_diameter / 2) + ($rod_cutout_width / 2); // Start of cutout relative to center
+
+$tubing_cutout_width = 4.5;
+$tubing_cutout_height = 4.5; // -2.25 to 2.25
+$tubing_cutout_offset_x = ($tubing_outer_diameter / 2) - ($tubing_cutout_width / 2); // End of cutout relative to center
+
+// --- Configuration ---
+$fn = 128; // High resolution for smooth curves
+
+module rod_ring() {
+    // Main Ring
+    difference() {
+        // Extrude the full outer circle
+        translate([0, 0, 0])
+            cylinder(h = $rod_ring_height, d = $rod_outer_diameter, $fn = $fn);
+        
+        // Inner Hole
+        translate([0, 0, 0.01])
+            cylinder(h = $rod_ring_height + 0.02, d = $rod_diameter, $fn = $fn);
+        
+        // Cutout on -X side
+        // We need to cut a rectangular slot from the outer edge inwards.
+        // The cutout is defined as x < 0 and -5 < y < 5 relative to the ring center.
+        // However, the ring is a torus-like shape. We cut a box that intersects the ring.
+        // The box should extend slightly past the outer face to ensure clean cut.
+        
+        translate([
+            -$rod_outer_diameter / 2 + 0.01, // Start just inside the outer edge
+            -$rod_cutout_height / 2 - 0.01,  // Start just below y = -5
+            0.01
+        ])
+            cube([
+                $rod_cutout_width + 0.02, // Width + clearance
+                $rod_cutout_height + 0.02, // Height + clearance
+                $rod_ring_height + 0.02
+            ]);
+    }
+}
+
+module tubing_ring() {
+    // Main Ring
+    difference() {
+        // Extrude the full outer circle
+        translate([0, 0, 0])
+            cylinder(h = $tubing_ring_height, d = $tubing_outer_diameter, $fn = $fn);
+        
+        // Inner Hole
+        translate([0, 0, 0.01])
+            cylinder(h = $tubing_ring_height + 0.02, d = $tubing_diameter, $fn = $fn);
+        
+        // Cutout on +X side
+        // Defined as x > 15 and -2.25 < y < 2.25 relative to global origin.
+        // Relative to tubing center (15, 0), this is x_local > 0 and -2.25 < y < 2.25.
+        // We cut a box starting from the outer edge inwards.
+        
+        translate([
+            $tubing_outer_diameter / 2 - 0.01, // Start just inside the outer edge
+            -$tubing_cutout_height / 2 - 0.01, // Start just below y = -2.25
+            0.01
+        ])
+            cube([
+                $tubing_cutout_width + 0.02, // Width + clearance
+                $tubing_cutout_height + 0.02, // Height + clearance
+                $tubing_ring_height + 0.02
+            ]);
+    }
+}
+
+module bridge() {
+    // Solid bridge between x=8 and x=12
+    // Width in Y is 6mm.
+    // Height is 10mm.
+    translate([8, -3, 0])
+        cube([4, 6, 10]);
+}
+
+// --- Main Assembly ---
+difference() {
+    union() {
+        // 1. Rod Ring
+        translate([$rod_center_x, $rod_center_y, 0])
+            rod_ring();
+        
+        // 2. Tubing Ring
+        translate([$tubing_center_x, $tubing_center_y, 0])
+            tubing_ring();
+        
+        // 3. Bridge
+        bridge();
+    }
+}

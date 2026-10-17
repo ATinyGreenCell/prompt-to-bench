@@ -1,0 +1,86 @@
+// DIY Magnetic Stirrer Housing
+// Based on an 80mm PC case fan
+// Print orientation: Upside down (Top plate on bed, walls rising up)
+// Centred on Origin (X=0, Y=0)
+
+// --- Dimensions ---
+// Outer dimensions
+W_OUT = 90;
+H_OUT = 90;
+// Thicknesses
+T_TOP = 2;
+T_WALL = 2.5;
+// Height of walls (total height from bed to open top)
+H_WALL = 40;
+// Hole pattern for M4 screws
+PATTERN_SIZE = 71.5;
+D_HOLE = 4.5;
+// Cable notch
+NOTCH_W = 12;
+NOTCH_H = 8; // Depth from open edge (z = 40 - 8 = 32)
+
+// --- Configuration ---
+$fn = 128; // High resolution for smooth curves and precise holes
+
+// --- Construction ---
+// We build the solid volume first, then subtract voids, holes, and notches.
+// The entire assembly is translated to be centered on the origin.
+
+difference() {
+    // 1. Main Solid Block
+    // Represents the material of the top plate and the 4 walls.
+    // Dimensions: W_OUT x H_OUT x H_WALL
+    translate([-W_OUT/2, -H_OUT/2, 0])
+        cube([W_OUT, H_OUT, H_WALL], center = false);
+    
+    // 2. Internal Void
+    // The empty space inside the box.
+    // Width = 90 - 2*2.5 = 85
+    // Height = 90 - 2*2.5 = 85
+    // Depth = 40 (from z=0 to z=40)
+    translate([-W_OUT/2, -H_OUT/2, 0])
+        cube([W_OUT - 2*T_WALL, H_OUT - 2*T_WALL, H_WALL], center = false);
+    
+    // 3. Screw Holes
+    // 4 holes on a 71.5mm square pattern centered on the plate (which is centered on origin).
+    // Pattern center is (0,0).
+    // Offsets: +/- 71.5/2 = +/- 35.75
+    // Z position: Through the top plate (z=0 to z=2).
+    // Extend slightly past z=2 to ensure clean cut.
+    translate([-W_OUT/2, -H_OUT/2, 0]) {
+        for (i = [-1, 1]) {
+            for (j = [-1, 1]) {
+                translate([
+                    i * (PATTERN_SIZE / 2),
+                    j * (PATTERN_SIZE / 2),
+                    0
+                ]) 
+                    cylinder(
+                        h = T_TOP + 0.1, // Extend slightly past top plate
+                        d = D_HOLE,
+                        center = false
+                    );
+            }
+        }
+    }
+    
+    // 4. Cable Notch
+    // Located in one wall. Let's pick the wall at the negative Y side (front).
+    // Wall Y position (center of the wall thickness):
+    // Bottom of part is -45. Top of wall is -45 + 2.5 = -42.5.
+    // Center of wall = -45 + 1.25 = -43.75.
+    // Notch is centered along this wall (X=0).
+    // Notch cuts INTO the wall from the open top (z=40) downwards.
+    
+    // Calculate the Y coordinate of the center of the front wall
+    y_wall_center = -H_OUT/2 + T_WALL/2;
+    
+    // Notch geometry relative to the part's local coordinates:
+    // X: Centered at 0, width NOTCH_W
+    // Y: Centered at y_wall_center, width NOTCH_W (cuts through the wall thickness)
+    // Z: From (40 - NOTCH_H) to 40
+    
+    translate([-W_OUT/2, -H_OUT/2, 0])
+        translate([0, y_wall_center, 40 - NOTCH_H])
+            cube([NOTCH_W, T_WALL, NOTCH_H], center = false);
+}

@@ -1,0 +1,31 @@
+// Buffer tank for a mini horizontal gel-electrophoresis box. Open-top rectangular tank with a
+// solid raised platform in the middle that divides the bottom into two buffer chambers. Each end
+// wall has a horizontal 2 mm hole for an electrode wire. NOVEL general part.
+//
+
+L     = 120;
+W     = 70;
+H     = 40;
+wall  = 3;
+floor = 3;
+plat_X = 60;
+plat_z = 10;
+
+$fn = 64;
+
+inner_H = H - wall;
+inner_W = W - 2 * wall;
+inner_L = L - 2 * wall;
+
+difference() {
+    cube([L, W, H]);
+    translate([wall, wall, wall]) cube([inner_L, inner_W, inner_H - plat_z]);   // bottom, open at top
+    translate([wall, wall, H - wall]) cube([L, W, wall]);                        // top edge ring
+    translate([0, wall, H - wall]) cube([L, wall, wall]);                        // front wall
+    translate([0, W - wall, H - wall]) cube([L, wall, wall]);                    // back wall
+    translate([wall, 0, H - wall]) cube([wall, W, wall]);                        // left wall
+    translate([L - wall, 0, H - wall]) cube([wall, W, wall]);                    // right wall
+    translate([plat_X / 2 - 1, wall, plat_z]) rotate([0, 90, 0]) cube([plat_X, W, plat_z]);  // central platform (horizontal)
+    for (x = [-L / 2, L / 2])
+        translate([x, 0, -1]) rotate([-90, 0, 0]) cylinder(h = H + 2, d = 2);   // electrode holes
+}

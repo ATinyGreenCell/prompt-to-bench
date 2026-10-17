@@ -1,0 +1,80 @@
+$fn = 128;
+
+// --- Dimensions ---
+// Petri dish inner diameter reference
+DISH_DIAMETER = 90;
+
+// Template main body
+TEMPLATE_DIAMETER = 85;
+TEMPLATE_THICKNESS = 2;
+
+// Grid configuration
+GRID_ROWS = 7;
+GRID_COLS = 7;
+HOLE_DIAMETER = 3;
+HOLE_SPACING = 9; // Centre-to-centre
+
+// Orientation notch (on +Y side)
+NOTCH_WIDTH = 10;  // X dimension
+NOTCH_DEPTH = 4;   // Y dimension (in from rim)
+
+// --- Calculations ---
+// Calculate grid offset to center the grid on the disc
+GRID_OFFSET = (GRID_SPACING * (GRID_ROWS - 1)) / 2;
+// Note: GRID_SPACING is derived from HOLE_SPACING variable above
+
+// --- Main Body ---
+// Create the flat disc
+difference() {
+    // Outer disc
+    cylinder(
+        h = TEMPLATE_THICKNESS,
+        r = TEMPLATE_DIAMETER / 2,
+        center = true
+    );
+    
+    // Cut the 7x7 grid of holes
+    for (r = [0 : GRID_ROWS - 1]) {
+        for (c = [0 : GRID_COLS - 1]) {
+            // Calculate position for this hole
+            x_pos = (c - (GRID_COLS - 1) / 2) * HOLE_SPACING;
+            y_pos = (r - (GRID_ROWS - 1) / 2) * HOLE_SPACING;
+            
+            // Cut hole (extend slightly past surface to ensure clean cut)
+            translate([x_pos, y_pos, -0.1]) {
+                cylinder(
+                    h = TEMPLATE_THICKNESS + 0.1,
+                    r = HOLE_DIAMETER / 2
+                );
+            }
+        }
+    }
+    
+    // Cut the orientation notch on the +Y side
+    // Notch is centered on Y axis, so its center Y is 0.
+    // It extends from -NOTCH_WIDTH/2 to +NOTCH_WIDTH/2 in X.
+    // It cuts into the disc from the rim inward.
+    // Rim Y coordinate = TEMPLATE_DIAMETER/2.
+    // Notch starts at (TEMPLATE_DIAMETER/2 - NOTCH_DEPTH) and goes to (TEMPLATE_DIAMETER/2).
+    
+    translate([0, 0, -0.1]) {
+        // The notch is a rectangular prism cut into the side
+        // We define the volume to remove.
+        // X range: -NOTCH_WIDTH/2 to +NOTCH_WIDTH/2
+        // Y range: (TEMPLATE_DIAMETER/2 - NOTCH_DEPTH) to (TEMPLATE_DIAMETER/2)
+        // Z range: 0 to TEMPLATE_THICKNESS
+        
+        // To make the cut clean, we extend the cutter slightly past the top and bottom faces
+        translate([
+            -NOTCH_WIDTH/2, 
+            TEMPLATE_DIAMETER/2 - NOTCH_DEPTH, 
+            -0.1
+        ]) {
+            cube([
+                NOTCH_WIDTH, 
+                NOTCH_DEPTH, 
+                TEMPLATE_THICKNESS + 0.1
+            ]);
+        }
+    }
+}

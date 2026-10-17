@@ -1,0 +1,142 @@
+```openscad
+// Lab Funnel Design
+// Units: millimetres
+// Orientation: Upright, wide opening at top, rests on XY plane at z=0.
+
+// Dimensions
+$fn = 128; // High resolution for smooth curves
+
+// Spout (Tube)
+spout_outer_diameter = 10;
+spout_inner_diameter = 6.8; // 10 - 2*1.6
+spout_length = 20;
+spout_wall_thickness = 1.6;
+
+// Cone (Funnel)
+cone_bottom_diameter = 10; // Matches spout outer diameter
+cone_top_diameter = 60;
+cone_height = 30; // From z=20 to z=50
+
+// Wall Thickness (consistent)
+wall_thickness = 1.6;
+
+// Helper function to create a hollow cylinder segment
+// center: [x, y, z]
+// outer_d: outer diameter
+// inner_d: inner diameter
+// height: height of segment
+// direction: 1 for +Z, -1 for -Z
+module hollow_cylinder(center, outer_d, inner_d, height, direction) {
+    translate(center) {
+        difference() {
+            // Outer shell
+            cylinder(h = height, d = outer_d, $fn = $fn);
+            // Inner void
+            cylinder(h = height, d = inner_d, $fn = $fn);
+        }
+    }
+}
+
+// Helper function to create a hollow cone segment
+// center: [x, y, z]
+// bottom_d: outer diameter at bottom of cone
+// top_d: outer diameter at top of cone
+// height: height of cone
+// direction: 1 for +Z, -1 for -Z
+module hollow_cone(center, bottom_d, top_d, height, direction) {
+    translate(center) {
+        difference() {
+            // Outer shell
+            linear_extrude(height = height, center = true, convexity = 3) {
+                // Outer profile: triangle pointing up if direction=1, down if direction=-1
+                // We define the profile relative to the center of the cone base
+                if (direction == 1) {
+                    // Pointing up: base at bottom, tip at top
+                    polygon(points = [
+                        [-bottom_d/2, 0],
+                        [bottom_d/2, 0],
+                        [0, height]
+                    ]);
+                } else {
+                    // Pointing down: base at top, tip at bottom
+                    polygon(points = [
+                        [-top_d/2, 0],
+                        [top_d/2, 0],
+                        [0, -height]
+                    ]);
+                }
+            }
+            
+            // Inner void (inverted cone)
+            // Calculate inner diameters at the specific ends of this cone segment
+            // The cone tapers linearly.
+            // Let's define the inner profile similarly.
+            // We need the inner diameter at the "bottom" of this segment and "top" of this segment.
+            
+            // If direction = 1 (growing +Z):
+            // Bottom is at z=0 (relative), Top is at z=height.
+            // Outer diameters: bottom_d, top_d.
+            // Inner diameters: bottom_d - 2*wall, top_d - 2*wall.
+            
+            // If direction = -1 (growing -Z):
+            // Bottom is at z=0 (relative), Top is at z=-height.
+            // Outer diameters: top_d (at z=0), bottom_d (at z=-height).
+            // Inner diameters: top_d - 2*wall, bottom_d - 2*wall.
+            
+            // Let's normalize the logic:
+            // We always extrude a polygon from y=0 to y=height (or -height).
+            // We calculate the inner diameters corresponding to the outer diameters at those heights.
+            
+            inner_bottom_d = bottom_d - 2 * wall_thickness;
+            inner_top_d = top_d - 2 * wall_thickness;
+            
+            if (direction == 1) {
+                // Pointing up
+                linear_extrude(height = height, center = true, convexity = 3) {
+                    polygon(points = [
+                        [-inner_bottom_d/2, 0],
+                        [inner_bottom_d/2, 0],
+                        [0, height]
+                    ]);
+                }
+            } else {
+                // Pointing down
+                linear_extrude(height = height, center = true, convexity = 3) {
+                    polygon(points = [
+                        [-inner_top_d/2, 0],
+                        [inner_top_d/2, 0],
+                        [0, -height]
+                    ]);
+                }
+            }
+        }
+    }
+}
+
+// --- Assembly ---
+
+// 1. Spout (Cylinder)
+// Located at z = 0 to z = 20.
+// Center at z = 10.
+hollow_cylinder(
+    center = [0, 0, spout_length/2],
+    outer_d = spout_outer_diameter,
+    inner_d = spout_inner_diameter,
+    height = spout_length,
+    direction = 1
+);
+
+// 2. Cone (Funnel)
+// Located at z = 20 to z = 50.
+// Bottom diameter (at z=20) = 10.
+// Top diameter (at z=50) = 60.
+// Center at z = 35.
+// Direction = 1 (pointing up).
+hollow_cone(
+    center = [0, 0, cone_height + spout_length/2],
+    bottom_d = cone_bottom_diameter,
+    top_d = cone_top_diameter,
+    height = cone_height,
+    direction = 1
+);
+```

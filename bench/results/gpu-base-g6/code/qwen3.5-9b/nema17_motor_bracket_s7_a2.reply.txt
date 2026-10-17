@@ -1,0 +1,133 @@
+```openscad
+$fn = 128;
+
+// --- Base Plate Dimensions ---
+// X range: -25 to 25 (Width 50)
+// Y range: 0 to 45 (Depth 45)
+// Z range: 0 to 5 (Thickness 5)
+BASE_X_MIN = -25;
+BASE_X_MAX = 25;
+BASE_Y_MIN = 0;
+BASE_Y_MAX = 45;
+BASE_Z_MAX = 5;
+
+// Base Mounting Holes (M4)
+// Position: x = -17, y = 30 and x = 17, y = 30
+// Diameter: 4.5 mm
+BASE_HOLE_X1 = -17;
+BASE_HOLE_Y1 = 30;
+BASE_HOLE_X2 = 17;
+BASE_HOLE_Y2 = 30;
+BASE_HOLE_DIAM = 4.5;
+
+// --- Vertical Motor Plate Dimensions ---
+// X range: -25 to 25 (Width 50)
+// Y range: 0 to 5 (Depth 5)
+// Z range: 0 to 50 (Height 50)
+// Stands on the back edge of the base (y=0 to y=5)
+MOTOR_X_MIN = -25;
+MOTOR_X_MAX = 25;
+MOTOR_Y_MAX = 5;
+MOTOR_Z_MAX = 50;
+
+// Motor Boss Hole
+// Diameter: 23 mm
+// Centre: x = 0, z = 28 (along Y axis)
+MOTOR_BOSS_DIAM = 23;
+MOTOR_BOSS_X = 0;
+MOTOR_BOSS_Z = 28;
+
+// Motor Screw Holes (M3)
+// Diameter: 3.4 mm
+// Pattern: 31 mm square, centred on boss hole
+MOTOR_SCREW_DIAM = 3.4;
+MOTOR_SCREW_SPACING = 31;
+
+// --- Gusset Dimensions ---
+// Thickness: 5 mm (flush with base)
+// Location: Left (x=-25 to -20) and Right (x=20 to 25)
+// Shape: Right triangle in YZ plane
+// Legs: 20 mm along +Y and 20 mm along +Z
+// Right-angle corner at y = 5, z = 5
+GUSSET_THICK = 5;
+GUSSET_Y_LEG = 20;
+GUSSET_Z_LEG = 20;
+GUSSET_CORNER_Y = 5;
+GUSSET_CORNER_Z = 5;
+
+// --- Construction ---
+
+// 1. Base Plate
+base_plate = translate([0, 0, 0])
+    cube([BASE_X_MAX - BASE_X_MIN, BASE_Y_MAX - BASE_Y_MIN, BASE_Z_MAX]);
+
+// 2. Vertical Motor Plate
+motor_plate = translate([0, 0, 0])
+    cube([MOTOR_X_MAX - MOTOR_X_MIN, MOTOR_Y_MAX - 0, MOTOR_Z_MAX]);
+
+// 3. Gussets (Right Triangles)
+// Left Gusset (x = -25 to -20)
+gusset_left = translate([-25, 0, 0])
+    linear_extrude(height = GUSSET_THICK, center = true)
+    polygon([
+        [0, 0],       // Corner (y=5, z=5) relative to corner
+        [GUSSET_Y_LEG, 0], // Top of Y leg
+        [GUSSET_Y_LEG, GUSSET_Z_LEG], // Outer tip
+        [0, GUSSET_Z_LEG]  // Top of Z leg
+    ]);
+
+// Right Gusset (x = 20 to 25)
+gusset_right = translate([20, 0, 0])
+    linear_extrude(height = GUSSET_THICK, center = true)
+    polygon([
+        [0, 0],
+        [GUSSET_Y_LEG, 0],
+        [GUSSET_Y_LEG, GUSSET_Z_LEG],
+        [0, GUSSET_Z_LEG]
+    ]);
+
+// 4. Holes (Difference operations)
+
+// Base Mounting Holes
+base_hole_1 = translate([BASE_HOLE_X1, BASE_HOLE_Y1, 0])
+    cylinder(h = BASE_Z_MAX + 1, r = BASE_HOLE_DIAM / 2);
+
+base_hole_2 = translate([BASE_HOLE_X2, BASE_HOLE_Y2, 0])
+    cylinder(h = BASE_Z_MAX + 1, r = BASE_HOLE_DIAM / 2);
+
+// Motor Boss Hole (Through Y)
+motor_boss_hole = translate([MOTOR_BOSS_X, 0, MOTOR_BOSS_Z])
+    cylinder(h = MOTOR_Y_MAX + 1, r = MOTOR_BOSS_DIAM / 2);
+
+// Motor Screw Holes (4 on 31mm square)
+// Pattern: +/- 15.5mm in X and Z
+screw_holes = [
+    translate([-MOTOR_SCREW_SPACING/2, 0, MOTOR_BOSS_Z - MOTOR_SCREW_SPACING/2])
+        cylinder(h = MOTOR_Y_MAX + 1, r = MOTOR_SCREW_DIAM / 2),
+    translate([MOTOR_SCREW_SPACING/2, 0, MOTOR_BOSS_Z - MOTOR_SCREW_SPACING/2])
+        cylinder(h = MOTOR_Y_MAX + 1, r = MOTOR_SCREW_DIAM / 2),
+    translate([-MOTOR_SCREW_SPACING/2, 0, MOTOR_BOSS_Z + MOTOR_SCREW_SPACING/2])
+        cylinder(h = MOTOR_Y_MAX + 1, r = MOTOR_SCREW_DIAM / 2),
+    translate([MOTOR_SCREW_SPACING/2, 0, MOTOR_BOSS_Z + MOTOR_SCREW_SPACING/2])
+        cylinder(h = MOTOR_Y_MAX + 1, r = MOTOR_SCREW_DIAM / 2)
+];
+
+// Combine all parts
+difference() {
+    union() {
+        base_plate;
+        motor_plate;
+        gusset_left;
+        gusset_right;
+    }
+    
+    union() {
+        base_hole_1;
+        base_hole_2;
+        motor_boss_hole;
+        for (h = screw_holes) {
+            h;
+        }
+    }
+}
+```

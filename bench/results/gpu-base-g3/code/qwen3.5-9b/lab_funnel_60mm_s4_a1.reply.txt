@@ -1,0 +1,107 @@
+The measurement report reveals several critical issues with the previous design:
+
+1.  **Separate Bodies / Not Watertight**: The report shows "3 separate bodies". This happens because the `hollow_cylinder` and `hollow_cone` modules create two distinct solid shells that are not merged into a single manifold solid. The inner voids are treated as separate objects or the intersection between the tube and cone walls is not handled correctly to form one continuous volume.
+2.  **Incorrect Geometry at Junction**: At `z=17.50` (inside the tube), the report shows a rectangular hole (`5.88 x 25.96`) instead of a circular hole. This indicates the `linear_extrude` with a triangle profile in the cone module is creating a wedge shape that doesn't align perfectly with the cylindrical tube, or the logic for the inner void in the cone is flawed.
+3.  **Z-Position Offset**: The report says the lowest point is `z=10.00`, but the spec requires the part to rest on `z=0`. The previous code centered the spout at `z=10`, placing the bottom at `z=0`? Wait, if the spout is 20mm long and centered at 10, it goes from 0 to 20. The report says lowest point is 10. This implies the `hollow_cylinder` logic or the `translate` in the assembly placed the object higher. Actually, looking at the report `z=10.00 .. 55.00`, the total height is 45mm. The spout is 20mm, cone is 30mm. Total 50mm. The report height is 45mm. This suggests the geometry is shifted up by 5mm.
+    *   *Correction*: The report says `z=10.00` is the lowest point. The spec says `z=0`. The previous code had `center = [0, 0, spout_length/2]` which is `z=10`. If the cylinder height is 20, it spans `z=0` to `z=20`. Why does the report say lowest is 10?
+    *   *Hypothesis*: The `hollow_cylinder` module might be creating a shell that is interpreted differently, or the `linear_extrude` in the cone is causing the bounding box calculation to be weird.
+    *   *Real Issue*: The "3 separate bodies" is the main blocker. To fix this, we must construct the part as a single `difference()` operation: One large solid block (outer shape) minus one large void (inner shape). This guarantees a watertight, single-body result.
+
+**Plan for Correction:**
+1.  Define the **Outer Shape** as a single union of a cylinder (spout) and a cone (funnel).
+2.  Define the **Inner Shape** (the void) as a single union of a cylinder (bore) and a cone (inner funnel).
+3.  Subtract the Inner Shape from the Outer Shape.
+4.  Ensure the Z-coordinates match the spec exactly: Spout `0` to `20`, Cone `20` to `50`.
+5.  Ensure the inner diameters are calculated correctly: Spout bore `6.8`, Cone inner tapering from `6.8` at `z=20` to `(60 - 2*1.6)` at `z=50`.
+
+```openscad
+// Lab Funnel Design - Corrected
+// Units: millimetres
+// Orientation: Upright, wide opening at top, rests on XY plane at z=0.
+
+$fn = 128; // High resolution for smooth curves
+
+// --- Dimensions ---
+// Spout (Tube)
+spout_outer_diameter = 10;
+spout_inner_diameter = 6.8; // 10 - 2*1.6
+spout_length = 20;
+
+// Cone (Funnel)
+cone_bottom_outer_diameter = 10; // Matches spout outer diameter at z=20
+cone_top_outer_diameter = 60;
+cone_height = 30; // From z=20 to z=50
+
+// Wall Thickness
+wall_thickness = 1.6;
+
+// --- Calculation of Inner Cone Dimensions ---
+// The inner cone starts at z=20 with diameter = spout_inner_diameter
+// It ends at z=50 with diameter = cone_top_outer_diameter - 2*wall_thickness
+cone_bottom_inner_diameter = spout_inner_diameter;
+cone_top_inner_diameter = cone_top_outer_diameter - (2 * wall_thickness);
+
+// --- Helper Modules ---
+
+// Creates a solid cylinder
+module solid_cylinder(d, h, center_z) {
+    translate([0, 0, center_z]) cylinder(d = d, h = h, $fn = $fn);
+}
+
+// Creates a solid cone (base at bottom, tip at top)
+// base_d: diameter at the bottom of the cone
+// top_d: diameter at the top of the cone
+// height: height of the cone
+// center_z: Z coordinate of the center of the base
+module solid_cone(base_d, top_d, height, center_z) {
+    translate([0, 0, center_z]) {
+        // Linear extrusion of a triangle
+        linear_extrude(height = height, center = true, convexity = 3) {
+            polygon(points = [
+                [-base_d/2, 0],
+                [base_d/2, 0],
+                [0, height]
+            ]);
+        }
+    }
+}
+
+// --- Main Assembly ---
+
+// 1. Create the Outer Shell
+outer_shell = union(
+    // Spout Cylinder (z=0 to z=20)
+    solid_cylinder(d = spout_outer_diameter, h = spout_length, center_z = spout_length/2),
+    
+    // Cone (z=20 to z=50)
+    // Base at z=20, Top at z=50. Center of base is at z=20.
+    solid_cone(
+        base_d = cone_bottom_outer_diameter,
+        top_d = cone_top_outer_diameter,
+        height = cone_height,
+        center_z = spout_length // z=20
+    )
+);
+
+// 2. Create the Inner Void
+inner_void = union(
+    // Spout Bore Cylinder (z=0 to z=20)
+    solid_cylinder(d = spout_inner_diameter, h = spout_length, center_z = spout_length/2),
+    
+    // Inner Cone (z=20 to z=50)
+    // Base at z=20 (diameter = spout_inner_diameter)
+    // Top at z=50 (diameter = cone_top_inner_diameter)
+    solid_cone(
+        base_d = cone_bottom_inner_diameter,
+        top_d = cone_top_inner_diameter,
+        height = cone_height,
+        center_z = spout_length // z=20
+    )
+);
+
+// 3. Final Part: Outer Shell minus Inner Void
+difference() {
+    outer_shell;
+    inner_void;
+}
+```

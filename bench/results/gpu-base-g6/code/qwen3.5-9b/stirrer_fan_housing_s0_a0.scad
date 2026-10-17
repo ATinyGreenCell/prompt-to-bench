@@ -1,0 +1,128 @@
+// DIY Magnetic Stirrer Housing
+// Based on an 80mm PC case fan
+// Print orientation: Upside down (Top plate on bed, walls rising up)
+
+// --- Dimensions ---
+// Outer dimensions
+W_OUT = 90;
+H_OUT = 90;
+// Thicknesses
+T_TOP = 2;
+T_WALL = 2.5;
+// Height of walls (total height from bed to open top)
+H_WALL = 40;
+// Hole pattern for M4 screws
+PATTERN_SIZE = 71.5;
+D_HOLE = 4.5;
+// Cable notch
+NOTCH_W = 12;
+NOTCH_H = 8; // Depth from open edge (z = 40 - 8 = 32)
+
+// --- Configuration ---
+$fn = 128; // High resolution for smooth curves and precise holes
+
+// --- Helper: Create the solid box with holes ---
+// We build the main block first, then subtract holes and notches.
+
+// 1. Main Block
+// Outer dimensions minus wall thickness on the sides where walls exist.
+// Since it's an open box, the "inner" void is defined by the wall thickness.
+// The block represents the material of the top plate and the walls.
+// X range: -W_OUT/2 to +W_OUT/2
+// Y range: -H_OUT/2 to +H_OUT/2
+// Z range: 0 to H_WALL
+
+// Calculate inner void dimensions for the main block subtraction logic
+// Actually, it's easier to build the solid walls directly or subtract from a large block.
+// Let's build the solid "L" shaped profile extruded, then subtract holes.
+
+// Profile for extrusion (X, Y, Z)
+// We want a solid block of size W_OUT x H_OUT x H_WALL, but with the top open?
+// No, the prompt says: "four walls... rise from it to z = 40, where the box is open".
+// This implies the top plate is solid, and the walls go up. The top is open.
+// So the volume is: Top Plate (90x90x2) + 4 Walls (90x2.5x38) roughly.
+// Let's construct the solid volume by unioning the top plate and the walls, 
+// or simpler: Create a bounding box (90x90x40) and subtract the internal void.
+
+// Internal void dimensions:
+// The walls are 2.5mm thick.
+// Void X = 90 - 2.5 - 2.5 = 85
+// Void Y = 90 - 2.5 - 2.5 = 85
+// Void Z = 0 to 40 (since top is open)
+
+// However, we need to be careful with the "open top". 
+// If we subtract a box from 0 to 40, we get the walls.
+// But we also need the top plate.
+// Let's define the solid as:
+// A block 90x90x40 MINUS a box 85x85x40 (the empty space inside).
+// This creates the 4 walls and the top plate correctly.
+
+// 2. Screw Holes
+// 4 holes on a 71.5mm square pattern centered on the plate.
+// Center of pattern is (0,0).
+// Hole centers: +/- 35.75 mm.
+// Z position: Through the top plate (z=0 to z=2).
+// To cut through, we extend slightly past z=2.
+
+// 3. Cable Notch
+// In one wall. Let's pick the front wall (facing +Y or -Y? Usually front is +Y or -Y).
+// Let's assume the wall facing +Y is the one with the notch, centered along that wall.
+// Wall location: Y = -H_OUT/2 + T_WALL/2 = -45 + 1.25 = -43.75 (approx).
+// Notch width: 12mm.
+// Notch depth: 8mm from the open edge (z=40). So from z=32 to z=40.
+// X position: Centered on the wall (X=0).
+
+// --- Construction ---
+
+// Define the main housing body
+difference() {
+    // Start with the full bounding box
+    cube([W_OUT, H_OUT, H_WALL], center = false);
+    
+    // Subtract the internal void
+    // The void is the empty space inside the walls.
+    // Width = 90 - 2*2.5 = 85
+    // Height = 90 - 2*2.5 = 85
+    // Depth = 40 (from z=0 to z=40)
+    translate([0, 0, 0]) 
+        cube([W_OUT - 2*T_WALL, H_OUT - 2*T_WALL, H_WALL], center = false);
+    
+    // --- Screw Holes ---
+    // Pattern size 71.5, centered.
+    // Offsets: +/- 71.5/2 = +/- 35.75
+    for (i = [-1, 1]) {
+        for (j = [-1, 1]) {
+            translate([
+                i * (PATTERN_SIZE / 2),
+                j * (PATTERN_SIZE / 2),
+                0
+            ]) 
+                cylinder(
+                    h = T_TOP + 0.1, // Extend slightly past top plate
+                    d = D_HOLE,
+                    center = false
+                );
+        }
+    }
+    
+    // --- Cable Notch ---
+    // Located in the wall at Y = -H_OUT/2 + T_WALL/2
+    // Centered in X.
+    // Depth from top (z=40) is NOTCH_H.
+    
+    // Calculate wall Y position
+    y_wall = -H_OUT/2 + T_WALL/2;
+    
+    // Notch geometry:
+    // X: -NOTCH_W/2 to +NOTCH_W/2
+    // Y: y_wall - NOTCH_W/2 to y_wall + NOTCH_W/2 (Wait, notch is IN the wall, so it cuts INTO the wall volume)
+    // The wall exists from Y = y_wall - T_WALL/2 to y_wall + T_WALL/2?
+    // No, the wall is the strip at Y = y_wall with thickness T_WALL.
+    // So the wall occupies Y from (y_wall - T_WALL/2) to (y_wall + T_WALL/2).
+    // The notch cuts through this strip.
+    // So the notch Y range is: y_wall - NOTCH_W/2 to y_wall + NOTCH_W/2.
+    // Z range: 40 - NOTCH_H to 40.
+    
+    translate([0, y_wall - NOTCH_W/2, 40 - NOTCH_H])
+        cube([NOTCH_W, T_WALL, NOTCH_H], center = false);
+}

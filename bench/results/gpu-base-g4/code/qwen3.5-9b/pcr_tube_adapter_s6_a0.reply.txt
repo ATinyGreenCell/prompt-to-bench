@@ -1,0 +1,123 @@
+```openscad
+// Adapter Sleeve for 0.2mL PCR tube in 1.5mL rack
+// Print orientation: Upside down (Collar on bed)
+// Units: mm
+
+// Dimensions
+$fn = 128; // High resolution for smooth cylinders
+
+// Collar (Base)
+$collar_outer_d = 13;
+$collar_thickness = 1.5;
+
+// Sleeve Body
+$sleeve_outer_d = 10.8;
+$sleeve_total_height = 21.5;
+
+// Bore
+$bore_diameter = 6.2;
+
+// Offset for cutting operations (Rule 5)
+$cut_offset = 0.1;
+
+// Calculate radii
+$r_collar_outer = $collar_outer_d / 2;
+$r_collar_inner = $collar_outer_d / 2 - $cut_offset; // Slightly smaller to ensure clean cut
+
+$r_sleeve_outer = $sleeve_outer_d / 2;
+$r_sleeve_inner = $bore_diameter / 2;
+
+// Build the part
+// 1. Create the Collar (Base)
+// Lies on XY plane from z=0 to z=1.5
+difference() {
+    // Outer shape of collar
+    cylinder(
+        h = $collar_thickness,
+        d = $collar_outer_d,
+        center = [0, 0, $collar_thickness / 2]
+    );
+    
+    // Inner hole for the bore (extends through the collar)
+    cylinder(
+        h = $collar_thickness + $cut_offset, // Extend slightly past top face
+        d = $bore_diameter,
+        center = [0, 0, $collar_thickness / 2]
+    );
+}
+
+// 2. Create the Sleeve Body
+// Rises from z=1.5 to z=21.5 (Total height 21.5, but collar takes 1.5, so body height is 20.0)
+// However, the prompt says "rises from the collar to z = 21.5". 
+// If collar is 0 to 1.5, the body starts at 1.5 and ends at 21.5. Height = 20.0.
+// The bore must run through the FULL height (0 to 21.5).
+
+difference() {
+    // Outer shape of sleeve body
+    translate([0, 0, $collar_thickness]) {
+        cylinder(
+            h = $sleeve_total_height - $collar_thickness,
+            d = $sleeve_outer_d,
+            center = [0, 0, ($sleeve_total_height - $collar_thickness) / 2 + $collar_thickness]
+        );
+    }
+    
+    // Inner hole for the bore (extends through the entire sleeve body)
+    translate([0, 0, $collar_thickness]) {
+        cylinder(
+            h = $sleeve_total_height - $collar_thickness,
+            d = $bore_diameter,
+            center = [0, 0, ($sleeve_total_height - $collar_thickness) / 2 + $collar_thickness]
+        );
+    }
+}
+
+// 3. Combine Collar and Body with a single Bore through everything
+// To ensure the bore is perfectly aligned and continuous, we will union the two solids
+// and then subtract a single long cylinder for the bore.
+
+union() {
+    // Collar
+    cylinder(
+        h = $collar_thickness,
+        d = $collar_outer_d,
+        center = [0, 0, $collar_thickness / 2]
+    );
+    
+    // Sleeve Body
+    translate([0, 0, $collar_thickness]) {
+        cylinder(
+            h = $sleeve_total_height - $collar_thickness,
+            d = $sleeve_outer_d,
+            center = [0, 0, ($sleeve_total_height - $collar_thickness) / 2 + $collar_thickness]
+        );
+    }
+}
+
+// Subtract the full length bore
+difference() {
+    // Re-create the union for the subtraction context
+    union() {
+        cylinder(
+            h = $collar_thickness,
+            d = $collar_outer_d,
+            center = [0, 0, $collar_thickness / 2]
+        );
+        
+        translate([0, 0, $collar_thickness]) {
+            cylinder(
+                h = $sleeve_total_height - $collar_thickness,
+                d = $sleeve_outer_d,
+                center = [0, 0, ($sleeve_total_height - $collar_thickness) / 2 + $collar_thickness]
+            );
+        }
+    }
+    
+    // Long bore cylinder
+    cylinder(
+        h = $sleeve_total_height,
+        d = $bore_diameter,
+        center = [0, 0, $sleeve_total_height / 2]
+    );
+}
+```

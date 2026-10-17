@@ -1,0 +1,90 @@
+The measurement report reveals several critical issues compared to the specifications:
+
+1.  **Z-Position (Bed Contact):** The part is centered on the origin ($Z=0$), but the bed is at $Z=-0.75$. The specification requires the part to rest on the bed ($Z=0$). The entire model needs to be translated up by $0.75$ mm.
+2.  **Tooth Height/Thickness:** The report shows the spine is $2.25$ mm thick and teeth are $1.5$ mm thick. The specification requires a uniform $1.5$ mm thickness. The `difference()` operation for the spine cut was too aggressive, removing the bottom of the spine. The cut must be limited to the top surface only.
+3.  **X-Bounding Box:** The report shows the box extends to $X=66.75$ (size $101.75$). The spine is $70$ mm long. This indicates the teeth are not centered correctly or the cut logic created an artifact. The calculation for centering the teeth row on the spine needs to be precise.
+4.  **Overhangs:** The report mentions downward-facing areas. Since the teeth hang in the $-Y$ direction and the part is printed flat, the "overhang" warning likely refers to the cutout logic or the orientation of the cut. By fixing the thickness and ensuring the cut is strictly on the top face, this will resolve.
+
+**Fixes applied:**
+*   Added `translate([0, 0, 0.75])` to shift the whole assembly up so the bottom is at $Z=0$.
+*   Changed the spine cut logic to use `translate([0, 0, 0.75])` (relative to the spine block) and limit the cut height to exactly $1.5$ mm (the tooth length) instead of cutting through the whole thickness. This ensures the spine remains $1.5$ mm thick.
+*   Verified the X-centering calculation: Spine is $70$ mm. Total tooth width is $50$ mm. Total gap width is $15$ mm. Total row width is $65$ mm. Offset = $(70 - 65) / 2 = 2.5$ mm. The loop starts at $2.5$ mm, adds $6.5$ mm ($5+1.5$) for each step.
+    *   Tooth 0: $2.5$ to $7.5$
+    *   Tooth 1: $9.0$ to $14.0$
+    *   ...
+    *   Tooth 9: $47.5$ to $52.5$
+    *   Max X = $52.5$. Min X = $-35$ (centered). Total span = $87.5$? Wait.
+    *   Let's re-calculate the span.
+    *   Spine: $-35$ to $+35$.
+    *   Row Center: $0$.
+    *   Row Width: $10 \times 5 + 9 \times 1.5 = 50 + 13.5 = 63.5$ mm.
+    *   Offset from center to edge of row: $63.5 / 2 = 31.75$ mm.
+    *   So the row spans $-31.75$ to $+31.75$.
+    *   Spine spans $-35$ to $+35$.
+    *   The row fits inside the spine width-wise.
+    *   The previous code had `total_gap_width = ($num_teeth - 1) * $gap_size` which is $9 \times 1.5 = 13.5$.
+    *   `total_teeth_width` = $50$.
+    *   `tooth_row_width` = $63.5$.
+    *   `x_offset` = $(70 - 63.5) / 2 = 3.25$.
+    *   First tooth center: $3.25 + 2.5 = 5.75$. Width $5$. Range $3.25$ to $8.25$.
+    *   Last tooth center: $3.25 + 9 \times 6.5 + 2.5 = 3.25 + 58.5 + 2.5 = 64.25$. Range $59.25$ to $64.25$.
+    *   Wait, the loop logic in the previous code: `$current_x = $x_offset + ($tooth_width + $gap_size) * i`.
+    *   If $i=0$, $x = 3.25$. Tooth is $3.25$ to $8.25$.
+    *   If $i=9$, $x = 3.25 + 6.5 \times 9 = 3.25 + 58.5 = 61.75$. Tooth is $61.75$ to $66.75$.
+    *   Ah, the previous code calculated the *start* of the tooth.
+    *   Start of last tooth: $61.75$. End: $66.75$.
+    *   Spine end: $35$.
+    *   The teeth are way off the spine in the previous code because the spine was centered at 0 ($-35$ to $35$) but the teeth started at $3.25$ and went to $66.75$.
+    *   The issue is the definition of "centred on the spine".
+    *   Spine X range: $[-35, 35]$.
+    *   Teeth Row X range: $[Start, End]$.
+    *   Center of Row = $(Start + End) / 2 = 0$.
+    *   $Start = - (RowWidth / 2)$. $End = + (RowWidth / 2)$.
+    *   $RowWidth = 63.5$.
+    *   $Start = -31.75$. $End = 31.75$.
+    *   The loop should generate positions such that the first tooth starts at $-31.75$.
+    *   Tooth width = $5$. Gap = $1.5$. Pitch = $6.5$.
+    *   Tooth 0 start: $-31.75$.
+    *   Tooth $i$ start: $-31.75 + i \times 6.5$.
+    *   Let's check the last tooth ($i=9$): $-31.75 + 58.5 = 26.75$. End = $31.75$. Correct.
+    *   The previous code's `x_offset` was calculated as $(70 - 63.5)/2 = 3.25$. This is the distance from the *center* of the spine to the *start* of the first tooth? No.
+    *   If the row is centered, the start is at $-31.75$. The center is $0$.
+    *   The previous code assumed the row started at $x\_offset$ (positive). This implies the row was shifted right.
+    *   Correction: Calculate the start position of the first tooth as $-(RowWidth / 2)$.
+
+Let's rewrite the logic cleanly.
+
+```openscad
+// 10-well Agarose Gel Comb
+// Designed for FDM printing, lying flat on the XY plane (Z=0).
+// Dimensions in millimetres.
+
+// --- Dimensions ---
+// Spine (Back Bar)
+$spine_length = 70;   // X dimension
+$spine_width = 12;    // Y dimension
+$plate_thickness = 1.5; // Z dimension
+
+// Teeth
+$num_teeth = 10;
+$tooth_width = 5.0;   // X dimension
+$tooth_length = 12;   // Y dimension (extends from spine edge)
+$gap_size = 1.5;      // Gap between teeth
+
+// --- Calculations ---
+// Total width of the teeth row
+$total_teeth_width = $num_teeth * $tooth_width;
+// Total width of the gaps
+$total_gap_width = ($num_teeth - 1) * $gap_size;
+// Total width of the tooth row including gaps
+$tooth_row_width = $total_teeth_width + $total_gap_width;
+
+// Centering offset in X: The row must be centered on the spine.
+// Spine spans [-35, 35]. Row must span [-RowWidth/2, +RowWidth/2].
+$tooth_row_start_x = -($tooth_row_width / 2);
+
+// Position of the spine edge from which teeth hang (-Y direction)
+// Spine is 12mm wide. Teeth hang from the bottom edge (Y = -6).
+$spine_bottom_y = -$spine_width / 2;
+$tooth_start_y = $spine_bottom_y;
+$

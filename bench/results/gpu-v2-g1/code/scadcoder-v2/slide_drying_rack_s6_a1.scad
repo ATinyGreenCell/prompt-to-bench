@@ -1,0 +1,26 @@
+// Drying rack for microscope slides - a solid base block with a row of parallel slots cut into
+// the top face, so slides standing on their long edge slide in and rest on the bottom. NOVEL
+// general part (a generic "slide rack" could be 150 mm long instead of 90).
+//
+
+base_L = 90;
+base_W = 45;
+base_H = 20;
+slot_n = 10;
+slot_l = 77;
+slot_w = 1.6;
+slot_d = 10;
+pitch  = 3.5;
+
+$fn = 48;
+
+slot_p = base_W - pitch * (slot_n - 1);          // keep a wall at each end in Y
+wall_y = min(slot_w, 2);                         // a little material above the slots in Y
+wall_z = base_H - slot_d;                        // floor the slots 10 mm above the bottom
+
+difference() {
+    translate([-base_L / 2, -base_W / 2, 0]) cube([base_L, base_W, base_H]);
+    for (i = [0 : slot_n - 1])
+        translate([0, -base_W / 2 + wall_y + i * pitch, slot_d])
+            cube([slot_l, slot_w, base_H - slot_d + 1]);   // cut through the full height minus the floor
+}

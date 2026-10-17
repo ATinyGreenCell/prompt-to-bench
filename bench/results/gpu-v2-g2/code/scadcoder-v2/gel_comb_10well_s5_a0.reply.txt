@@ -1,0 +1,31 @@
+```openscad
+// Agarose gel comb - a flat plate with a back bar and a row of rectangular teeth for casting
+// horizontal gels. NOVEL general part, SLS/FFF friendly.
+//
+
+teeth  = 10;
+barL   = 70;
+barW   = 12;
+t      = 1.5;
+toothW = 5.0;
+toothL = 12;
+gap    = 1.5;
+
+$fn = 48;
+
+teethX = toothW + gap;
+fullX  = barL + 2 * toothX;                 // spine + overhanging teeth on both sides
+halfX  = barL / 2;
+
+difference() {
+    union() {
+        translate([-barL / 2, -barW / 2, 0]) cube([barL, barW, t]);                 // spine
+        for (i = [0 : teeth - 1])
+            translate([halfX - teethX * (i + 0.5), -barW / 2 - toothL - 0.01, 0])
+                cube([teethX, toothL, t]);                                        // teeth
+    }
+    for (i = [0 : teeth - 1])
+        translate([halfX - teethX * (i + 0.5), -barW / 2 - toothL - 1, 0])
+            cube([teethX, toothL + 2, t + 1]);                                    // cut the tooth roots
+}
+```

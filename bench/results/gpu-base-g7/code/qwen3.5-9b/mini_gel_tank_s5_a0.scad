@@ -1,0 +1,106 @@
+// Buffer Tank for Mini Horizontal Gel Electrophoresis
+// Units: millimetres
+
+// Outer Dimensions
+$outer_x = 120;
+$outer_y = 70;
+$outer_z = 40;
+
+// Wall and Floor Thickness
+$wall_thick = 3;
+$floor_thick = 3;
+
+// Platform Dimensions
+$platform_x = 60;
+$platform_y = $outer_y; // Spans full inner width
+$platform_height = 10;  // Height above inner floor
+$platform_z_top = $outer_z - $wall_thick - $floor_thick + $platform_height; // 40 - 3 - 3 + 10 = 44
+
+// Hole Dimensions
+$hole_diameter = 2;
+$hole_y = 0;
+$hole_z = 30;
+
+// Configuration
+$fn = 128; // High resolution for smooth curves and accurate hole sizing
+
+// Derived Dimensions
+$inner_x = $outer_x - 2 * $wall_thick; // 114
+$inner_y = $outer_y - 2 * $wall_thick; // 64
+$inner_z = $outer_z - $wall_thick;     // 37 (Top of floor/walls)
+
+// Calculate Platform Z position relative to tank bottom (z=0)
+// Tank bottom is at z=0. Inner floor top is at z=$floor_thick.
+// Platform top is at z = $floor_thick + $platform_height = 3 + 10 = 13.
+$platform_z_top = $floor_thick + $platform_height;
+
+// Start building the tank
+difference() {
+    // 1. Create the main outer block
+    cube([
+        $outer_x, 
+        $outer_y, 
+        $outer_z
+    ]);
+
+    // 2. Cut out the inner volume (walls and floor)
+    // We subtract a block that is the size of the inner cavity
+    translate([
+        $wall_thick, 
+        $wall_thick, 
+        0
+    ]) {
+        cube([
+            $inner_x, 
+            $inner_y, 
+            $inner_z
+        ]);
+    }
+
+    // 3. Cut out the platform from the bottom chamber
+    // The platform sits on the floor (z=0) and goes up to $platform_z_top
+    // It spans the full width ($inner_y) and is centered in X
+    translate([
+        ($outer_x - $platform_x) / 2, 
+        $wall_thick, // Start from inner wall
+        0
+    ]) {
+        cube([
+            $platform_x, 
+            $inner_y, 
+            $platform_z_top
+        ]);
+    }
+
+    // 4. Drill holes for electrodes
+    // Position: y = 0 (center of tank width), z = 30
+    // The hole goes through the wall along the X axis.
+    // We need to drill from the outside face (x = $outer_x/2) to the inside.
+    // Since we are in a difference block, we place cylinders at the hole location.
+    
+    // Left Hole (at x = -outer_x/2)
+    translate([
+        -$outer_x / 2, 
+        $hole_y, 
+        $hole_z
+    ]) {
+        cylinder(
+            h = $outer_x, // Long enough to go through the whole tank
+            r = $hole_diameter / 2,
+            $fn = $fn
+        );
+    }
+
+    // Right Hole (at x = +outer_x/2)
+    translate([
+        $outer_x / 2, 
+        $hole_y, 
+        $hole_z
+    ]) {
+        cylinder(
+            h = $outer_x,
+            r = $hole_diameter / 2,
+            $fn = $fn
+        );
+    }
+}

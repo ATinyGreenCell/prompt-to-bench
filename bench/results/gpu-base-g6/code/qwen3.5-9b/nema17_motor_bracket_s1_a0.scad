@@ -1,0 +1,154 @@
+// NEMA 17 Stepper Motor L-Bracket
+// Print orientation: Base plate on XY plane (Z=0), building upward.
+// Centred on X, aligned to Y=0 at the back.
+
+// Base Plate Dimensions
+$base_width_x = 50;   // x from -25 to 25
+$base_length_y = 45;  // y from 0 to 45
+$base_height_z = 5;   // z from 0 to 5
+
+// Base Mounting Holes (M4)
+$base_hole_dia = 4.5;
+$base_hole_x1 = -17;
+$base_hole_y1 = 30;
+$base_hole_x2 = 17;
+$base_hole_y2 = 30;
+
+// Vertical Motor Plate Dimensions
+$plate_width_x = 50;  // x from -25 to 25
+$plate_thickness_y = 5; // y from 0 to 5
+$plate_height_z = 50;  // z from 0 to 50
+
+// Motor Boss Hole
+$boss_hole_dia = 23;
+$boss_hole_x = 0;
+$boss_hole_z = 28;
+
+// Motor Screw Holes (M3)
+$screw_hole_dia = 3.4;
+$screw_pattern_size = 31; // 31mm square pattern
+$screw_hole_count = 4;
+
+// Gusset Dimensions
+$gusset_thickness = 5; // Matches base height
+$gusset_leg_y = 20;    // Along +Y
+$gusset_leg_z = 20;    // Along +Z
+$gusset_start_x_left = -25;
+$gusset_start_x_right = 20;
+$gusset_right_angle_y = 5;
+$gusset_right_angle_z = 5;
+
+// Global settings for quality
+$fn = 64;
+
+// --- Helper: Create a block with holes ---
+module block_with_holes(x, y, z, w, h, d, hx, hy, dz) {
+    // Main block
+    cube([w, h, d], p = [x, y, z]);
+    
+    // Holes (extend slightly past faces)
+    difference() {
+        // We need to cut holes through the block. 
+        // Since the block is defined by a cube, we subtract cylinders.
+        // To ensure clean cuts, we extend the cylinder slightly beyond the block boundaries.
+        // However, since we are using difference() on the main cube, 
+        // we just need to position the cylinders correctly.
+        // The rule says "extend 0.01-1 mm past the faces it cuts".
+        // Since the cylinder is infinite in Z (if we don't limit it), it will cut through.
+        // We must ensure the cylinder is large enough to cover the thickness.
+        
+        // Actually, the standard way in OpenSCAD for through-holes in a difference block:
+        // Just place the cylinder. It will cut through the cube.
+        // To be safe with the "extend" rule for coplanar faces, we can make the cylinder 
+        // slightly taller than the block thickness if we were intersecting, 
+        // but here we are subtracting from a cube. The cylinder extends infinitely.
+        // The only issue is if the cylinder face is exactly coplanar with the block face.
+        // We can offset the cylinder slightly or just rely on the infinite nature.
+        // Let's add a tiny offset to the cylinder radius or just ensure it's clean.
+        // A simple trick: make the cylinder slightly larger in Z than the block? 
+        // No, cylinders are infinite.
+        // The rule likely implies if we were doing intersection. 
+        // For difference, just ensure the cylinder is centered correctly.
+        // Let's add a small offset to the cylinder's Z extent by using a cylinder with height?
+        // No, cylinder() creates a cylinder of given height.
+        // Let's use cylinder with height = d + 1mm to ensure it breaks any potential coplanarity issues 
+        // if the slicer behaves oddly, though mathematically infinite is better.
+        // Actually, let's just use the standard cylinder() which is infinite in Z? 
+        // No, cylinder() in OpenSCAD has a height parameter.
+        // So we must make the cylinder taller than the block to ensure it cuts through completely 
+        // without leaving a thin rim if the height matches exactly.
+        
+        translate([hx, hy, z]) 
+            cylinder(h = d + 1, d = d, $fn = 64);
+    }
+}
+
+// --- Main Construction ---
+
+// 1. Base Plate
+translate([0, 0, 0])
+    cube([$base_width_x, $base_length_y, $base_height_z]);
+
+// 2. Base Mounting Holes
+// Hole 1
+translate([$base_hole_x1, $base_hole_y1, 0])
+    cylinder(h = $base_height_z + 1, d = $base_hole_dia, $fn = 64);
+
+// Hole 2
+translate([$base_hole_x2, $base_hole_y2, 0])
+    cylinder(h = $base_height_z + 1, d = $base_hole_dia, $fn = 64);
+
+// 3. Vertical Motor Plate
+// Positioned at y = 0, standing on the back edge of the base.
+// x range: -25 to 25 (width 50)
+// y range: 0 to 5 (thickness 5)
+// z range: 0 to 50 (height 50)
+translate([0, 0, 0])
+    cube([$plate_width_x, $plate_thickness_y, $plate_height_z]);
+
+// 4. Motor Boss Hole
+// Centre at x=0, z=28. Through the plate (along Y).
+// Plate is 5mm thick in Y.
+translate([$boss_hole_x, 0, $boss_hole_z])
+    cylinder(h = $plate_thickness_y + 1, d = $boss_hole_dia, $fn = 64);
+
+// 5. Motor Screw Holes
+// 31mm square pattern centred on the boss hole.
+// Boss hole is at x=0, z=28.
+// Pattern size 31mm means distance from center to hole center is 31/2 = 15.5mm.
+// Holes at: x = +/- 15.5, z = +/- 15.5 relative to boss center.
+// Absolute coords: x = +/- 15.5, z = 28 +/- 15.5.
+// z1 = 28 - 15.5 = 12.5
+// z2 = 28 + 15.5 = 43.5
+// All holes are at y = 0 (center of plate thickness) to cut through.
+
+$screw_x_offset = $screw_pattern_size / 2;
+$screw_z_offset = $screw_pattern_size / 2;
+
+for (i = [0:3]) {
+    if (i == 0) { tx = -$screw_x_offset; tz = -$screw_z_offset; }
+    else if (i == 1) { tx = $screw_x_offset; tz = -$screw_z_offset; }
+    else if (i == 2) { tx = -$screw_x_offset; tz = $screw_z_offset; }
+    else { tx = $screw_x_offset; tz = $screw_z_offset; }
+    
+    translate([tx, 0, $boss_hole_z + tz])
+        cylinder(h = $plate_thickness_y + 1, d = $screw_hole_dia, $fn = 64);
+}
+
+// 6. Triangular Gussets
+// Right triangle in YZ plane.
+// Legs: 20mm along +Y, 20mm along +Z.
+// Right angle corner at y=5, z=5.
+// This means the triangle occupies:
+// Y: from 5 to 25 (5 + 20)
+// Z: from 5 to 25 (5 + 20)
+// Thickness: 5mm along X.
+
+// Gusset Left (x = -25 to -20)
+// Right angle at (-25, 5, 5)
+// Extends to x = -20.
+translate([$gusset_start_x_left, $gusset_right_angle_y, $gusset_right_angle_z])
+    // Right triangle: 
+    // Point 1: (0,0,0) relative to translate -> (-25, 5, 5)
+    // Point 2: (0, 20, 0) relative -> (-25, 25, 5)
+    // Point 3: (5, 0, 0) relative -> (-20, 5, 5)

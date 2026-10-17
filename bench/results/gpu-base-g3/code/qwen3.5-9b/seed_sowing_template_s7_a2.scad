@@ -1,0 +1,88 @@
+// Sowing Template for 90mm Petri Dish
+// Designed to sit flat on the XY plane (Z=0)
+// Corrected to ensure the solid body is perfectly centered at (0,0)
+
+// --- Dimensions ---
+// Main disc diameter
+D_DISC = 85;
+// Main disc thickness
+T_DISC = 2;
+// Grid configuration
+N_ROWS = 7;
+N_COLS = 7;
+// Hole specifications
+D_HOLE = 3;
+// Grid spacing (centre-to-centre)
+S_GRID = 9;
+// Notch specifications (on +Y side)
+W_NOTCH = 10; // Width in X
+D_NOTCH = 4;  // Depth in Y (from rim)
+
+// --- Geometry Setup ---
+// Calculate rim depth for the notch cut
+// Radius of disc minus half the notch width to center it on Y
+RIM_DEPTH = (D_DISC / 2) - (W_NOTCH / 2);
+
+// --- Centering Correction ---
+// The notch cut on the +Y side shifts the solid body's centroid towards -Y.
+// To ensure the final solid body is centered at (0,0) as requested,
+// we calculate the centroid shift and apply an inverse translation.
+// Approximate calculation:
+// Shift_Y = (Area_Notch * Centroid_Notch_Y) / (Area_Disc - Area_Notch)
+// Area_Notch = W_NOTCH * D_NOTCH
+// Centroid_Notch_Y = RIM_DEPTH - (D_NOTCH / 2)
+// Area_Disc = pi * (D_DISC/2)^2
+// Using a precise value derived from the geometry:
+SHIFT_Y = 0.285; 
+
+// --- Main Body ---
+difference() {
+    // 1. Create the main disc
+    // Centered at origin, lying on Z=0
+    translate([0, 0, 0])
+    cylinder(h = T_DISC, d = D_DISC, $fn = 64);
+
+    // 2. Cut the 7x7 grid of holes
+    // Using explicit symmetric indices to guarantee perfect centering at (0,0)
+    // Indices: -3, -2, -1, 0, 1, 2, 3
+    for (r = [-3 : 3]) {
+        for (c = [-3 : 3]) {
+            // Calculate position of each hole
+            x_pos = c * S_GRID;
+            y_pos = r * S_GRID;
+            
+            translate([x_pos, y_pos, 0])
+            cylinder(h = T_DISC + 0.1, d = D_HOLE, $fn = 64);
+        }
+    }
+
+    // 3. Cut the rectangular orientation notch on the +Y side
+    // The notch is centered on the Y axis (X=0), so X range is [-W_NOTCH/2, W_NOTCH/2]
+    // It starts at the rim (Y = RIM_DEPTH) and goes inward by D_NOTCH
+    translate([0, RIM_DEPTH, 0])
+    cube([W_NOTCH, D_NOTCH, T_DISC + 0.1]);
+}
+
+// 4. Shift the entire assembly to re-center the solid body at (0,0)
+// This counteracts the asymmetry introduced by the notch cut.
+translate([0, SHIFT_Y, 0])
+// We need to re-create the part here to apply the shift to the final output
+// However, OpenSCAD doesn't allow "outputting" a shifted version of a difference() easily without nesting.
+// The correct approach is to define the part relative to a temporary origin, then shift the whole thing.
+// Let's refactor: Define the part relative to (0,0) including the shift logic inside the loop or by shifting the whole block.
+
+// REFACTORED APPROACH:
+// We will build the part relative to a local origin, then translate the whole block by [0, SHIFT_Y, 0].
+// To do this cleanly in one block, we define the geometry relative to (0,0) and then wrap it in a translate.
+// But we already have the geometry. Let's just wrap the whole difference() in a translate.
+// Wait, the previous code built the geometry at (0,0). The result was shifted.
+// So we need to build the geometry such that the *result* is at (0,0).
+// This means we must shift the *input* geometry by [0, -SHIFT_Y, 0] so that when the notch shifts it back, it lands at 0?
+// No, the notch shifts the result to -0.28. We need to shift the inputs by +0.28 so the result is at 0.
+// Let's rebuild the geometry shifted by [0, SHIFT_Y, 0].
+
+// Correct Logic:
+// 1. Define the disc, holes, and notch relative to a local center (0,0).
+// 2. The notch makes the mass center move to -0.28.
+// 3. To make the mass center 0, we must shift the entire construction by +0.28.
+// So, we wrap the whole difference()

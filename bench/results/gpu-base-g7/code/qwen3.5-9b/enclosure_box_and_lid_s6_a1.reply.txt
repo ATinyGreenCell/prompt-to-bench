@@ -1,0 +1,45 @@
+The measurement report reveals several critical deviations from the specifications:
+
+1.  **Lid Positioning Error**: The report shows the lid's bounding box center at X=90.20 (relative to the box center at 35.00). The gap is calculated as `90.20 - 35.00 - (65.90/2) = 10.05` mm. The specification requires a **10 mm gap**. The previous code used `translate([box_outer_x / 2 + gap, ...])`, which places the *center* of the lid at the correct spot, but the subtraction logic for the hole in the lid was flawed, causing the geometry to shift or the bounding box calculation to be misleading in the report. More importantly, the report shows the lid is not centered correctly relative to the box's opening.
+2.  **Lid Hole Dimensions**: The report shows a hole of `65.90 x 45.90` at the lid level.
+    *   Spec: Lip outer `65.6 x 45.6`. Clearance `0.2` each side.
+    *   Expected Inner Hole: `(65.6 - 0.4) x (45.6 - 0.4) = 65.2 x 45.2`.
+    *   Actual: `65.9 x 45.9`. This is too large. The subtraction logic in the previous code was incorrect.
+3.  **Lip Height**: The report shows the lid body height up to Z=27.90.
+    *   Plate thickness: 2 mm.
+    *   Lip height: 4 mm.
+    *   Expected Top: 2 + 4 = 6 mm.
+    *   The report shows the lid extending much higher (up to ~28mm total height for the second body? No, the second body is `65.90 x 45.90 x 27.90`). Wait, the report says "body sizes... 65.90 x 45.90 x 27.90". This implies the lid is 27.90 mm tall? That's impossible given the specs (2mm plate + 4mm lip).
+    *   *Correction on interpretation*: The report lists two bodies.
+        *   Body 1: `115.00 x 50.00 x 30.00`. This is the Box (70 wide) + Gap (10) + Lid (65.9 wide) + some overlap? No.
+        *   Let's re-read the bounding box: X 0.00 .. 115.00.
+        *   Box is 70 wide. Centered at 0 -> X: -35 to 35.
+        *   Lid is placed at `35 + 10 = 45`.
+        *   If Lid is ~66 wide, it goes from 45 to 111.
+        *   Total X span: 0 to 111. Report says 115.
+        *   The "2 separate bodies" note suggests the union/difference didn't merge them as expected or the bounding box calculation includes the cut-out space if not watertight (but it says watertight).
+        *   Actually, the most glaring issue is the **Lid Height**. The report says the second body is `65.90 x 45.90 x 27.90`. This is physically impossible for a 2mm plate + 4mm lip. The previous code likely had a logic error where the "lip" block was defined incorrectly, perhaps extending all the way to the top of the box or the subtraction logic created a weird shape.
+        *   Wait, looking at the previous code: `translate([0, 0, $plate_thickness]) cube([... $lip_thickness + $lip_height ...])`. That should be 2 + 1.5 + 4 = 7.5mm high.
+        *   Why does the report say 27.90? Ah, the report says "body sizes... 65.90 x 45.90 x 27.90". This might be the *bounding box* of the second body if the subtraction created a hollow shell that OpenSCAD interprets strangely, OR the previous code actually produced a tall object.
+        *   Let's look at the "Horizontal Slices".
+            *   z=1.00: Shows a hole `45.20 x 40.40`. This is wrong. Y dimension should be ~45.2.
+            *   z=16.00: Shows a hole `65.90 x 45.90`. This confirms the hole is too big.
+            *   z=28.50: Shows a hole `65.90 x 45.90`.
+        *   The previous code's subtraction logic: `translate([...]) cube([...])`. The coordinates were calculated as `($lip_outer_x - ($lip_outer_x - $clearance*2)) / 2`.
+            *   $lip_outer_x = 65.6$.
+            *   Inner X = 65.2.
+            *   Offset = (65.6 - 65.2)/2 = 0.2.
+            *   This part is correct.
+            *   Why is the hole 65.9?
+            *   Maybe the variable `$lip_outer_x` was overwritten or the math `65.6 - 0.4` resulted in something else? No.
+            *   Let's look at the Z-height again. The report says the second body is 27.90 mm tall. The box is 30mm tall. The lid is supposed to be 6mm tall.
+            *   Hypothesis: The previous code's `difference` block for the lid was structured such that the "Lip" block was huge, or the "Plate" was huge, and the subtraction left a weird shape.
+            *   Actually, look at the previous code's Lid section:
+                ```openscad
+                translate([0, 0, $plate_thickness])
+                union() {
+                    cube([ $lip_outer_x, $lip_outer_y, $lip_thickness + $lip_height ]);
+                    // Hole
+                    translate([ ... ]) cube([ ... ]);
+                }
+                ```

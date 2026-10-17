@@ -1,0 +1,129 @@
+// Configuration and Dimensions
+// All dimensions in millimetres (mm)
+
+// Box Dimensions (Outer)
+$box_outer_x = 70;
+$box_outer_y = 50;
+$box_outer_z = 30;
+
+// Wall and Floor Thickness
+$wall_thickness = 2;
+$floor_thickness = 2;
+
+// Lid Dimensions
+$plate_thickness = 2;
+$lip_thickness = 1.5;
+$lip_height = 4;
+
+// Lip Outer Size (to fit inside box opening)
+$lip_outer_x = 65.6;
+$lip_outer_y = 45.6;
+
+// Clearance
+$clearance = 0.2;
+
+// Gap between parts for printing together
+$gap = 10;
+
+// Resolution for curved shapes
+$fn = 64;
+
+// --- Part 1: The Box ---
+// Position: Centred on origin in X, Y. Z starts at 0.
+// Outer box is 70x50x30.
+// Inner cavity calculation:
+// Inner X = 70 - 2*2 = 66
+// Inner Y = 50 - 2*2 = 46
+// Inner Z = 30 - 2 (floor) = 28 (open top)
+
+translate([0, 0, 0])
+difference() {
+    // Outer Shell
+    cube([
+        $box_outer_x, 
+        $box_outer_y, 
+        $box_outer_z
+    ]);
+    
+    // Cut out the interior
+    // We extend the cut slightly past the faces to ensure clean separation
+    translate([
+        $wall_thickness + 0.05, 
+        $wall_thickness + 0.05, 
+        $floor_thickness + 0.05
+    ])
+    cube([
+        $box_outer_x - 2*$wall_thickness - 0.1, 
+        $box_outer_y - 2*$wall_thickness - 0.1, 
+        $box_outer_z - $floor_thickness - 0.1
+    ]);
+}
+
+// --- Part 2: The Lid ---
+// Position: On the +X side of the box, with a 10mm gap.
+// Box ends at X = 35. Lid starts at X = 35 + 10 = 45.
+// Lid is printed upside down (plate on bed).
+// Plate size: 70 x 50 x 2.
+// Lip: Outer 65.6 x 45.6, Inner (to fit box) = 65.2 x 45.2.
+// Lip thickness 1.5, height 4.
+
+translate([
+    $box_outer_x / 2 + $gap, 
+    0, 
+    0
+])
+difference() {
+    // 1. The Base Plate (70 x 50 x 2)
+    cube([
+        $box_outer_x, 
+        $box_outer_y, 
+        $plate_thickness
+    ]);
+    
+    // 2. The Lip Structure (Hollowed out to slide in)
+    // The lip sits ON TOP of the plate (Z = 2 to Z = 6).
+    // Outer dimensions of lip: 65.6 x 45.6
+    // Inner dimensions of lip (hole): 65.2 x 45.2 (0.2mm clearance each side)
+    // Thickness of lip wall: 1.5mm
+    
+    // We create a solid block for the lip and subtract the hole.
+    // Lip block position: Z = 2 (top of plate)
+    translate([0, 0, $plate_thickness])
+    union() {
+        // Solid block representing the lip material
+        cube([
+            $lip_outer_x, 
+            $lip_outer_y, 
+            $lip_thickness + $lip_height
+        ]);
+        
+        // Hole through the lip
+        // Calculate inner dimensions
+        $lip_inner_x = $lip_outer_x - $clearance * 2;
+        $lip_inner_y = $lip_outer_y - $clearance * 2;
+        
+        translate([
+            ($lip_outer_x - $lip_inner_x) / 2, 
+            ($lip_outer_y - $lip_inner_y) / 2, 
+            $plate_thickness + $lip_thickness + 0.05 // Extend past bottom
+        ])
+        cube([
+            $lip_inner_x, 
+            $lip_inner_y, 
+            $lip_thickness + $lip_height + 0.05
+        ]);
+    }
+    
+    // 3. Cut the hole through the base plate so the lip can slide in
+    // Hole dimensions match the inner lip dimensions
+    translate([
+        ($lip_outer_x - $lip_inner_x) / 2,
+        ($lip_outer_y - $lip_inner_y) / 2,
+        0
+    ])
+    cube([
+        $lip_inner_x, 
+        $lip_inner_y, 
+        $plate_thickness + 0.05 // Extend past top of plate
+    ]);
+}

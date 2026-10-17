@@ -1,0 +1,151 @@
+$fn = 128;
+
+// --- Dimensions ---
+// Handle
+d_handle = 8;
+h_handle = 45;
+z_handle_start = 0;
+z_handle_end = 45;
+
+// Cone
+d_cone_bottom = 8;
+d_cone_top = 3;
+z_cone_start = 45;
+z_cone_end = 62;
+
+// Tip
+d_tip = 3;
+z_tip_center = 62;
+
+// Grooves
+n_grooves = 4;
+w_groove = 2; // Width in Z
+d_groove = 1; // Depth
+z_groove_centers = [10, 15, 20, 25];
+
+// --- Main Body Construction ---
+// We build the body as a union of the handle, cone, and tip.
+// To ensure a smooth transition between the cylinder and cone, we use a small overlap 
+// or simply union them. Since the cone starts at z=45 with diameter 8, it matches the handle perfectly.
+
+body = union(
+    // 1. Cylindrical Handle
+    cylinder(
+        h = h_handle,
+        r = d_handle / 2,
+        center = [0, 0, z_handle_start + h_handle/2]
+    ),
+    
+    // 2. Conical Section
+    // Using linear_extrude with a polygon to create the cone taper
+    // The polygon defines the cross-section in the XZ plane, rotated around Z
+    linear_extrude(
+        path = [
+            d_cone_bottom / 2, 0,          // Bottom radius at z_start
+            d_cone_top / 2, z_cone_end - z_cone_start // Top radius at z_end
+        ],
+        center = [0, 0, z_cone_start + (z_cone_end - z_cone_start)/2],
+        convexity = 3
+    ),
+    
+    // 3. Spherical Tip
+    sphere(
+        r = d_tip / 2,
+        center = [0, 0, z_tip_center]
+    )
+);
+
+// --- Groove Cutting ---
+// We subtract the grooves from the handle section.
+// The grooves are centered at specific Z coordinates.
+// We extend the cut slightly past the handle boundaries to ensure clean cuts.
+
+grooves = union();
+for (z_c = z_groove_centers) {
+    // Create a rectangular prism for the groove
+    // Width in Z is w_groove, centered at z_c
+    // Depth is d_groove
+    // Width in X/Y is d_handle + buffer (to cut through the whole handle)
+    
+    // Calculate Z bounds for this groove
+    z_min = z_c - w_groove / 2;
+    z_max = z_c + w_groove / 2;
+    
+    // Add buffer to ensure we cut through the entire handle thickness
+    z_min_buf = z_min - 0.5;
+    z_max_buf = z_max + 0.5;
+    
+    // The groove is a cylinder with a square cross-section (or rounded, but square is fine for FDM)
+    // We define it as a cylinder along Z axis, then rotate it 90 deg to cut into the handle?
+    // No, simpler: The handle is a cylinder along Z. The groove is a cylinder along Z with a smaller radius?
+    // No, the prompt says "circumferential grooves". This usually means a slot cut into the side.
+    // However, "2 mm wide (in Z)" implies the groove runs along the Z-axis? 
+    // Re-reading: "cut four circumferential grooves... each 2 mm wide (in Z)".
+    // This phrasing is slightly ambiguous. 
+    // Interpretation A: Grooves run along the Z-axis (longitudinal slots). Width in Z would be the length of the slot.
+    // Interpretation B: Grooves are rings around the handle. "Wide in Z" would mean the height of the ring.
+    // Given "circumferential" usually means "around the circumference" (like a ring), but "wide in Z" suggests height.
+    // BUT, if they are rings, they wouldn't be "cut into the handle" in a way that requires specific Z centers unless they are stacked rings.
+    // Let's look at "centred at z = 10, 15, 20 and 25". These are distinct Z locations.
+    // If they were rings, they would be at those Zs.
+    // If they were longitudinal slots, they would be at those Zs? That doesn't make sense for a slot length.
+    // Most likely interpretation for a pestle grip: Longitudinal slots (running along the handle) are rare for grip.
+    // Transverse grooves (rings) are common.
+    // HOWEVER, "2 mm wide (in Z)" strongly implies the dimension along the Z-axis is 2mm.
+    // If it's a ring, the "width in Z" is the thickness of the ring.
+    // If it's a slot running along X or Y, the "width in Z" is the length of the slot.
+    // Let's assume the user wants 4 distinct rings (grooves) around the handle at those Z heights.
+    // "Circumferential" = going around the circle.
+    // "2 mm wide (in Z)" = The ring is 2mm tall.
+    // "1 mm deep" = The ring cuts 1mm into the radius.
+    // "Centred at z = ..." = The ring is located at that Z height.
+    
+    // Let's proceed with this interpretation: 4 rings.
+    
+    // Create a cylinder representing the ring material to be removed.
+    // It is a cylinder along the Z-axis? No, a ring is a cylinder along the Z-axis with a hole?
+    // No, a ring cut into a cylinder is a cylinder along the Z-axis that is smaller in radius?
+    // No, a ring cut into a cylinder (like a groove) is a cylinder along the Z-axis with radius = (HandleRadius - Depth).
+    // Wait, if I subtract a cylinder of radius (R - Depth) from the main cylinder, I get a solid core, not a groove.
+    // To get a groove (a hole), I need to subtract a cylinder of radius (R - Depth) centered at the same axis?
+    // No.
+    // Main object: Cylinder R=4.
+    // Groove: A cylinder of radius (4 - 1) = 3? If I subtract that, I am left with a solid core of radius 3.
+    // That creates a hollow tube, not a groove on the surface.
+    
+    // Correct logic for a surface groove:
+    // The groove is a cylinder of radius (R - Depth) centered at the same axis? No.
+    // Imagine the handle. We want to remove material from the surface.
+    // The removed shape is a cylinder of radius (R - Depth) centered at the axis? 
+    // If I have a cylinder R=4. I subtract a cylinder R=3. The result is a cylinder R=3. The outer surface is gone.
+    // That is not a groove. That is a smaller handle.
+    
+    // To make a groove on the surface:
+    // The removed shape must be a cylinder of radius (R - Depth) centered at the axis? 
+    // Wait. If I have a cylinder R=4. I want to cut a groove of depth 1.
+    // The remaining material at the edge is R=3.
+    // So the "hole" I am cutting out is a cylinder of radius 3?
+    // If I subtract a cylinder of radius 3 from a cylinder of radius 4, I get a cylinder of radius 3.
+    // The "groove" is the space between R=3 and R=4.
+    // Yes! So the cutting shape is a cylinder of radius (d_handle/2 - d_groove).
+    // BUT, this cylinder must be limited in Z to the groove width.
+    
+    // So, the cutting shape is a cylinder:
+    // Radius = (d_handle / 2) - d_groove
+    // Height = w_groove
+    // Center Z = z_c
+    
+    // Let's verify:
+    // Handle R=4. Groove Depth=1. Cut R=3.
+    // Subtract Cylinder(R=3, H=2) from Cylinder(R=4, H=45).
+    // Result: A cylinder R=4 with a cylindrical hole of R=3 and H=2.
+    // This creates a groove of depth 1 and width 2. Correct.
+    
+    cut_cyl = cylinder(
+        h = w_groove,
+        r = (d_handle / 2) - d_groove,
+        center = [0, 0, z_c]
+    );
+    
+    // Add a small buffer to the Z extent to ensure clean cut
+    cut_cyl = translate([0, 0, -0.1]) * cut_cyl;
