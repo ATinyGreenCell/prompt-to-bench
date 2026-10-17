@@ -1,0 +1,40 @@
+```openscad
+// Funnel - printed upright, open top and bottom
+// Units: mm
+
+// ---- Spout ----
+spout_od     = 10;    // spout outer diameter
+spout_id     = spout_od - 2 * 1.6;  // spout bore (6.8)
+spout_len    = 20;    // spout length (z = 0 to 20)
+
+// ---- Cone ----
+cone_d0      = 10;    // cone outer diameter at z = 20
+cone_d1      = 60;    // cone outer diameter at rim (z = 50)
+cone_h       = 30;    // cone height (z = 20 to 50)
+
+// ---- Misc ----
+eps          = 0.5;   // cutter overshoot past faces
+wall         = 1.6;   // wall thickness
+
+$fn = 96;
+
+// Cone top diameter + 2*wall (open rim, no lip)
+cone_d1_ext = cone_d1 + 2 * wall;
+
+difference() {
+    union() {
+        // Spout
+        cylinder(h = spout_len, d = spout_od);
+        // Cone
+        translate([0, 0, spout_len])
+            linear_extrude(cone_h)
+                circle(d = cone_d0);
+        translate([0, 0, spout_len])
+            linear_extrude(cone_h)
+                circle(d = cone_d1_ext);
+    }
+    // Through-bore: spout bore extended into the cone
+    translate([0, 0, -eps])
+        cylinder(h = spout_len + cone_h + 2 * eps, d = spout_id);
+}
+```

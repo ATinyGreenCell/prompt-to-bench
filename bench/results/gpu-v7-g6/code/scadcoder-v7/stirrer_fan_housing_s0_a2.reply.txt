@@ -1,0 +1,53 @@
+```openscad
+// Magnetic stirrer housing for 80 mm PC case fan
+// Print orientation: top plate on bed (z = 0), walls rise to z = 40
+
+// ---------- Parameters ----------
+top_thickness      = 2;     // top plate thickness
+wall_thickness     = 2.5;   // wall thickness
+open_height        = 38;    // height of open box (z = wall_top - wall_thickness)
+outer_size         = 90;    // outer X and Y size of box
+hole_count         = 4;     // number of mounting holes
+hole_size          = 4.5;   // mounting hole diameter
+hole_pitch         = 71.5;  // square pitch of mounting holes
+notch_width        = 12;    // cable notch width
+notch_depth        = 8;     // notch depth from open edge
+eps                = 0.5;   // cutter overshoot past faces
+
+$fn = 96;
+
+// ---------- Derived ----------
+wall_top_z = top_thickness + wall_thickness + open_height;  // z = 40
+notch_start_z = wall_top_z - notch_depth;                   // z = 32
+
+// ---------- Model ----------
+difference() {
+    // Main body: top plate + four walls, open at top
+    union() {
+        // Top plate
+        translate([-outer_size/2, -outer_size/2, 0])
+            cube([outer_size, outer_size, top_thickness]);
+
+        // Walls
+        for (sx = [-1, 1], sy = [-1, 1]) {
+            x0 = sx < 0 ? -outer_size/2 : outer_size/2 - wall_thickness;
+            x1 = sx < 0 ? -outer_size/2 + wall_thickness : outer_size/2;
+            y0 = sy < 0 ? -outer_size/2 : outer_size/2 - wall_thickness;
+            y1 = sy < 0 ? -outer_size/2 + wall_thickness : outer_size/2;
+            translate([x0, y0, top_thickness])
+                cube([wall_thickness, wall_thickness, open_height]);
+        }
+    }
+
+    // Screw holes through top plate
+    for (i = [0 : hole_count - 1]) {
+        a = (i - (hole_count - 1)/2) * hole_pitch;
+        translate([a, a, -eps])
+            cylinder(d = hole_size, h = top_thickness + 2*eps);
+    }
+
+    // Cable notch in one wall (along +X wall, centred along Y)
+    translate([outer_size/2 - wall_thickness, -notch_width/2, notch_start_z])
+        cube([wall_thickness + eps, notch_width, notch_depth + eps]);
+}
+```

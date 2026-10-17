@@ -1,0 +1,42 @@
+// Funnel - printed upright, open top and bottom
+// Units: mm
+
+$fn = 96;
+
+// ---- Spout ----
+spout_d      = 10;     // spout outer diameter
+spout_bore   = 6.8;    // spout bore (through)
+spout_len    = 20;     // spout length (z = 0 to 20)
+
+// ---- Cone ----
+cone_d0      = 10;     // cone outer diameter at z = 20
+cone_d1      = 60;     // cone outer diameter at rim (z = 50)
+cone_h       = 30;     // cone height (z = 20 to 50)
+
+// ---- Wall ----
+wall         = 1.6;    // wall thickness everywhere
+
+// ---- Derived ----
+cone_d0_in   = cone_d0 - 2 * wall;   // cone inner diameter at z = 20
+cone_d1_in   = cone_d1 - 2 * wall;   // cone inner diameter at rim
+eps          = 0.5;                  // cutter overshoot past faces
+
+difference() {
+    union() {
+        // Spout
+        cylinder(d = spout_d, h = spout_len);
+        // Cone
+        translate([0, 0, spout_len])
+            linear_extrude(cone_h)
+                circle(d = cone_d0);
+        translate([0, 0, spout_len + cone_h])
+            linear_extrude(-cone_h)
+                circle(d = cone_d1);
+    }
+    // Through-bore: spout bore up to z = 20, then cone bore (open top)
+    translate([0, 0, -eps])
+        cylinder(d = spout_bore, h = spout_len + 2 * eps);
+    translate([0, 0, spout_len - eps])
+        linear_extrude(cone_h + 2 * eps)
+            circle(d = cone_d0_in);
+}

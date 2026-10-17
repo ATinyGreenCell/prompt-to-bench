@@ -1,0 +1,44 @@
+// Mini horizontal gel-electrophoresis buffer tank
+// Print orientation: tank rests on XY plane at z = 0, open top at z = 40
+
+// ---------- Parameters ----------
+outer_x   = 120;   // outer length (X)
+outer_y   = 70;    // outer width (Y)
+outer_z   = 40;    // outer height (Z)
+wall      = 3;     // wall thickness
+floor     = 3;     // floor thickness
+plat_top  = 13;    // top of raised platform above inner floor (z = 13)
+plat_len  = 60;    // platform length in X, centred
+hole_d    = 2;     // electrode hole diameter
+hole_z    = 30;    // hole centre height (Z)
+hole_y    = 0;     // hole centre Y position
+
+eps       = 0.5;   // cutter overshoot past faces
+$fn       = 96;    // curve resolution
+
+// ---------- Derived ----------
+inner_x   = outer_x - 2*wall;   // 114
+inner_y   = outer_y - 2*wall;   // 64
+inner_z   = outer_z - floor;    // 37 (inner floor at z = 3)
+plat_h    = plat_top + floor;   // 16 (platform top at z = 16)
+
+// ---------- Model ----------
+difference() {
+    // Main tank body, open top
+    translate([-outer_x/2, -outer_y/2, 0])
+        cube([outer_x, outer_y, outer_z]);
+
+    // Open top (cut through the top face)
+    translate([-outer_x/2, -outer_y/2, outer_z - eps])
+        cube([outer_x, outer_y, eps]);
+
+    // Raised platform for gel tray
+    translate([-outer_x/2 + wall, -outer_y/2, floor])
+        cube([plat_len, outer_y - 2*wall, plat_h]);
+
+    // Horizontal electrode holes through each end wall along X
+    for (s = [-1, 1])
+        translate([s > 0 ? outer_x/2 - wall : -outer_x/2, hole_y, hole_z])
+            rotate([0, 90, 0])
+                cylinder(d = hole_d, h = outer_z - floor + 2*eps, center = true);
+}

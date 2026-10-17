@@ -1,0 +1,47 @@
+// Tubing clip for 12.7 mm (1/2 inch) lab stand rod
+// Print orientation: flat on bed, extruded along Z (height = 10 mm)
+
+// ---------------- Parameters ----------------
+ring_d        = 12.7;   // rod ring inner diameter
+ring_w        = 3;      // rod ring wall thickness
+ring_o        = ring_d + 2 * ring_w;  // rod ring outer diameter (18.7)
+
+opening_w     = 10;     // rod ring opening width (X cut)
+opening_h     = 5;      // rod ring opening height (Y extent)
+
+tubing_d      = 6;      // tubing ring inner diameter
+tubing_w      = 2;      // tubing ring wall thickness
+tubing_o      = tubing_d + 2 * tubing_w;  // tubing ring outer diameter (10)
+
+tubing_x      = 15;     // tubing ring centre X
+tubing_open_w = 4.5;    // tubing opening width (X cut)
+tubing_open_h = 2.25;   // tubing opening height (Y extent)
+
+bridge_w      = 6;      // bridge width (Y)
+bridge_x1     = 8;      // bridge start X
+bridge_x2     = 12;     // bridge end X
+
+eps           = 0.5;    // cutter overshoot past faces
+$fn           = 96;     // circle resolution
+
+// ---------------- Model ----------------
+difference() {
+    union() {
+        // Rod ring
+        cylinder(d = ring_o, h = 10);
+        // Tubing ring
+        translate([tubing_x, 0, 0])
+            cylinder(d = tubing_o, h = 10);
+        // Solid bridge between the rings
+        translate([bridge_x1, -bridge_w / 2, 0])
+            cube([bridge_x2 - bridge_x1, bridge_w, 10]);
+    }
+
+    // Rod ring opening: x < 0, -5 < y < 5
+    translate([-ring_o / 2 - eps, -opening_h / 2, -eps])
+        cube([opening_w + 2 * eps, opening_h, 10 + 2 * eps]);
+
+    // Tubing opening: x > 15, -2.25 < y < 2.25
+    translate([tubing_x + tubing_open_w / 2 - eps, -tubing_open_h / 2, -eps])
+        cube([tubing_open_w + 2 * eps, tubing_open_h, 10 + 2 * eps]);
+}

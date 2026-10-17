@@ -1,0 +1,35 @@
+```openscad
+// 10-well agarose gel comb (printed lying flat)
+// Units: mm
+
+$fn = 64;
+
+// --- Spine (back bar) ---
+spine_len   = 70;   // spine length along X
+spine_wid   = 12;   // spine width along Y
+spine_thk   = 1.5;  // plate thickness along Z
+
+// --- Teeth ---
+tooth_count = 10;   // number of wells
+tooth_w     = 5.0;  // tooth width along X
+tooth_l     = 12;   // tooth length along Y (into the gel)
+gaps        = 1.5;  // centre-to-centre spacing of teeth (X)
+
+// --- Derived ---
+pitch      = tooth_w + gaps;  // centre-to-centre tooth spacing
+overhang   = tooth_l - spine_thk; // tooth extension above the plate top face
+eps        = 0.5;               // cutter overshoot past faces
+
+// X position of the first tooth so the row is centred on the spine
+first_x = -(tooth_count - 1) * pitch / 2;
+
+difference() {
+    // Base plate: spine + teeth
+    translate([-spine_len / 2, -spine_wid / 2, 0])
+        cube([spine_len, spine_wid, spine_thk]);
+
+    for (i = [0 : tooth_count - 1])
+        translate([first_x + i * pitch, -spine_wid / 2 - overhang, 0])
+            cube([tooth_w, tooth_l, spine_thk + overhang + eps]);
+}
+```

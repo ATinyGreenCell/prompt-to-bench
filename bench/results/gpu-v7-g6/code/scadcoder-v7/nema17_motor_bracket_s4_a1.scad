@@ -1,0 +1,75 @@
+// L-shaped mounting bracket for NEMA 17 stepper motor (syringe pump)
+// Print orientation: base plate on bed, vertical motor plate builds up +Z
+
+// ---------- Parameters ----------
+base_x0      = -25;   // base plate x start
+base_x1      = 25;    // base plate x end
+base_y0      = 0;     // base plate y start
+base_y1      = 45;    // base plate y end
+base_z       = 5;     // base plate thickness
+
+motor_plate_x0 = -25;  // motor plate x start
+motor_plate_x1 = 25;   // motor plate x end
+motor_plate_y  = 5;    // motor plate thickness (y)
+motor_plate_z0 = 0;    // motor plate z start
+motor_plate_z1 = 50;   // motor plate z end
+
+boss_d       = 23;     // motor centring boss hole diameter
+boss_x       = 0;      // boss hole centre x
+boss_z       = 28;     // boss hole centre z
+screw_d      = 3.4;    // M3 screw holes diameter
+screw_n      = 4;      // number of screw holes
+screw_pitch  = 31;     // square pattern side length
+screw_x0     = -15.5;  // first screw x (square pattern start)
+screw_y0     = 15.5;   // first screw y (square pattern start)
+
+gusset_t     = 5;      // gusset thickness (x)
+gusset_leg   = 20;     // gusset right-angle leg length (y and z)
+gusset_x0    = -25;    // gusset x start (left edge)
+gusset_x1    = -20;    // gusset x end (left gusset)
+gusset_x1_r  = 20;     // right gusset x start
+gusset_x1_e  = 25;     // right gusset x end
+
+eps          = 0.5;    // cutter overshoot past faces
+$fn          = 96;     // curve resolution
+
+// ---------- Model ----------
+union() {
+    // Base plate with M4 through-holes
+    difference() {
+        translate([base_x0, base_y0, 0])
+            cube([base_x1 - base_x0, base_y1 - base_y0, base_z]);
+        for (sx = [-17, 17], sy = [30])
+            translate([sx, sy, -eps])
+                cylinder(d = 4.5, h = base_z + 2 * eps);
+    }
+
+    // Vertical motor plate with boss hole and M3 screw holes
+    difference() {
+        translate([motor_plate_x0, 0, motor_plate_z0])
+            cube([motor_plate_x1 - motor_plate_x0, motor_plate_y, motor_plate_z1 - motor_plate_z0]);
+        // Boss hole along Y
+        translate([boss_x, -eps, boss_z])
+            rotate([90, 0, 0])
+                cylinder(d = boss_d, h = motor_plate_y + 2 * eps);
+        // Screw holes on square pattern, centred on boss hole
+        for (i = [0 : screw_n - 1]) {
+            a = screw_pitch / 2;
+            x = screw_x0 + a * (i % 2 - 0.5);
+            y = screw_y0 + a * (i / 2 - 0.5);
+            translate([x, y, 0])
+                cylinder(d = screw_d, h = motor_plate_y + 2 * eps);
+        }
+    }
+
+    // Gussets, flush with left and right edges
+    for (gx = [gusset_x0, gusset_x1_r]) {
+        translate([gx, gusset_x1 - gx, 0])
+            linear_extrude(height = gusset_t)
+                polygon([
+                    [gusset_leg, gusset_leg],   // right-angle corner at y=5, z=5
+                    [gusset_leg, 0],
+                    [0, gusset_leg]
+                ]);
+    }
+}

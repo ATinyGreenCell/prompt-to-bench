@@ -1,0 +1,36 @@
+// 10-well agarose gel comb, printed lying flat
+// Units: mm. Plate thickness (Z) = 1.5 mm.
+
+// ---------- Parameters ----------
+plate_t      = 1.5;     // plate thickness (Z)
+spine_len    = 70;      // spine length (X)
+spine_wid    = 12;      // spine width (Y)
+tooth_count  = 10;      // number of teeth
+tooth_w      = 5.0;     // tooth width (X)
+tooth_l      = 12;      // tooth length (Y)
+tooth_gap    = 1.5;     // gap between teeth (X)
+eps          = 0.5;     // cutter overshoot past faces
+
+$fn = 64;
+
+// ---------- Derived ----------
+row_start = -(spine_len - tooth_count * tooth_w - (tooth_count - 1) * tooth_gap) / 2;
+pitch     = tooth_w + tooth_gap;
+
+// ---------- Model ----------
+difference() {
+    // Base plate: spine + teeth
+    translate([0, -tooth_l - eps, 0])
+        linear_extrude(height = plate_t)
+            polygon([
+                [0, 0],
+                [spine_len, 0],
+                [spine_len, spine_wid],
+                [0, spine_wid]
+            ]);
+
+    for (i = [0 : tooth_count - 1])
+        translate([row_start + i * pitch, -tooth_l - eps, 0])
+            linear_extrude(height = plate_t + 2 * eps)
+                rectangle([tooth_w, tooth_l]);
+}

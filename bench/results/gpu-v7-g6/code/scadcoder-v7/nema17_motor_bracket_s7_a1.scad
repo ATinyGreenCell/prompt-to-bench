@@ -1,0 +1,72 @@
+// L-shaped mounting bracket for NEMA 17 stepper motor (syringe pump)
+// Print orientation: base plate on bed, vertical motor plate builds up +Z
+
+// ---------------- Parameters ----------------
+base_x0      = -25;   // base plate x start
+base_x1      = 25;    // base plate x end
+base_y0      = 0;     // base plate y start
+base_y1      = 45;    // base plate y end
+base_z       = 5;     // base plate thickness
+
+motor_x0     = -25;   // motor plate x start
+motor_x1     = 25;    // motor plate x end
+motor_y      = 5;     // motor plate thickness (y end)
+motor_z      = 50;    // motor plate height (z end)
+
+boss_d       = 23;    // motor centring boss hole diameter
+boss_x       = 0;     // boss hole centre x
+boss_z       = 28;    // boss hole centre z
+
+screw_d      = 3.4;   // M3 screw hole diameter
+screw_n      = 4;     // number of screw holes
+screw_pitch  = 31;    // square pattern side length
+
+gusset_t     = 5;     // gusset thickness (x direction)
+gusset_leg   = 20;    // right triangle legs along +Y and +Z
+gusset_x0    = -25;   // left gusset x start
+gusset_x1    = -20;   // left gusset x end
+gusset_x2    = 20;    // right gusset x start
+gusset_x3    = 25;    // right gusset x end
+
+eps          = 0.5;   // cutter overshoot past faces
+
+$fn = 96;
+
+// ---------------- Model ----------------
+union() {
+    // Base plate with M4 through-holes
+    difference() {
+        translate([base_x0, base_y0, 0])
+            cube([base_x1 - base_x0, base_y1 - base_y0, base_z]);
+        for (sx = [-17, 17])
+            translate([sx, base_y1 - 15, -eps])
+                cylinder(d = 4.5, h = base_z + 2 * eps);
+    }
+
+    // Vertical motor plate with boss hole and M3 screw holes
+    difference() {
+        translate([motor_x0, 0, 0])
+            cube([motor_x1 - motor_x0, motor_y, motor_z]);
+        translate([boss_x, -eps, boss_z])
+            rotate([0, 90, 0])
+                cylinder(d = boss_d, h = motor_y + 2 * eps);
+        for (i = [0 : screw_n - 1]) {
+            a = screw_pitch / 2;
+            x = a * cos(45 + i * 90);
+            z = a * sin(45 + i * 90);
+            translate([x, -eps, z])
+                cylinder(d = screw_d, h = motor_y + 2 * eps, $fn = 64);
+        }
+    }
+
+    // Gussets, flush with left and right edges
+    for (sx = [gusset_x0, gusset_x2])
+        translate([sx, 0, 0])
+            difference() {
+                translate([0, 0, 0])
+                    cube([gusset_t, gusset_leg, gusset_leg]);
+                // round the acute corner at y = gusset_leg, z = gusset_leg
+                translate([gusset_t, gusset_leg, gusset_leg])
+                    cylinder(r = 1, h = 1 + eps);
+            }
+}

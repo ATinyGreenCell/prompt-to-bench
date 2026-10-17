@@ -1,0 +1,59 @@
+```openscad
+// Hose-barb reducer: joins 8 mm ID silicone tubing to 5 mm ID silicone tubing
+// Print orientation: standing upright along +Z, resting on z = 0
+
+// ---------------- Parameters ----------------
+reducer_length   = 41;   // total length of part (z = 0 to z = 41)
+bore             = 3;    // through-bore diameter
+barb_8_start_d   = 7.5;  // outer diameter of 8 mm tubing barbs at bottom
+barb_8_top_d     = 9.5;  // outer diameter of 8 mm tubing barbs at top
+barb_8_height    = 10;   // height of each 8 mm tubing barb
+barb_8_step_d    = 7.5;  // diameter after the sawtooth step back
+barb_5_start_d   = 6.5;  // outer diameter of 5 mm tubing barbs at bottom
+barb_5_top_d     = 5.0;  // outer diameter of 5 mm tubing barbs at top
+barb_5_height    = 8;    // height of each 5 mm tubing barb
+barb_5_step_d    = 6.5;  // diameter after the sawtooth step back out
+collar_d         = 12;   // diameter of the cylindrical collar
+collar_h         = 5;    // height of the collar (z = 20 to z = 25)
+eps              = 0.5;  // overshoot for clean boolean cuts
+
+$fn = 96;
+
+// ---------------- Modules ----------------
+module sawtooth_barb(d_start, d_top, h, step_d) {
+    // Barb with sawtooth profile: grows linearly, then steps back
+    // Print orientation: pointy end up (+Z)
+    difference() {
+        union() {
+            cylinder(h = h, d1 = d_start, d2 = d_top);
+            translate([0, 0, d_top / 2])
+                cylinder(h = eps, d = step_d);
+        }
+        translate([0, 0, -eps])
+            cylinder(h = h + 2 * eps, d = d_start);
+    }
+}
+
+// ---------------- Part ----------------
+difference() {
+    union() {
+        // 8 mm tubing barbs (z = 0 to 20)
+        for (i = [0, 1])
+            translate([0, 0, i * barb_8_height])
+                sawtooth_barb(barb_8_start_d, barb_8_top_d, barb_8_height, barb_8_step_d);
+
+        // Collar (z = 20 to 25)
+        translate([0, 0, 20])
+            cylinder(h = collar_h, d = collar_d);
+
+        // 5 mm tubing barbs (z = 25 to 41)
+        for (i = [0, 1])
+            translate([0, 0, 25 + i * barb_5_height])
+                sawtooth_barb(barb_5_start_d, barb_5_top_d, barb_5_height, barb_5_step_d);
+    }
+
+    // Through-bore
+    translate([0, 0, -eps])
+        cylinder(h = reducer_length + 2 * eps, d = bore);
+}
+```

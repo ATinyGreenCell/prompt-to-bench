@@ -1,0 +1,59 @@
+```openscad
+// Two-part enclosure for a small electronics board (e.g. Arduino-based temperature logger)
+// Print orientation: both parts lie on the bed (z = 0), side by side, with a 10 mm gap.
+// Units: mm.
+
+// ---------------- Parameters ----------------
+box_x      = 70;    // box outer length (X)
+box_y      = 50;    // box outer width (Y)
+box_z      = 30;    // box outer height (Z)
+wall       = 2;     // box wall thickness
+floor      = 2;     // box floor thickness
+lip_t      = 1.5;   // lid lip wall thickness
+lip_h      = 4;     // lid lip height (from top of plate)
+lip_outer_x = 65.6; // outer size of lip in X
+lip_outer_y = 45.6; // outer size of lip in Y
+clearance  = 0.2;   // clearance between lip outer size and box opening
+gap        = 10;    // gap between box and lid
+eps        = 0.5;   // cutter overshoot past faces
+
+$fn = 64;
+
+// Derived: box opening (inside dimensions)
+opening_x = box_x - 2 * wall;   // 66
+opening_y = box_y - 2 * wall;   // 46
+
+// Derived: lip outer size with clearance (should match given values)
+lip_outer_x_c = opening_x - clearance * 2; // 65.6
+lip_outer_y_c = opening_y - clearance * 2; // 45.6
+
+// ---------------- Modules ----------------
+module box() {
+    difference() {
+        translate([-box_x / 2, -box_y / 2, 0])
+            cube([box_x, box_y, box_z]);
+        // open top: cut out the top floor (leaves floor = 2 mm)
+        translate([-opening_x / 2, -opening_y / 2, box_z - floor])
+            cube([opening_x, opening_y, floor + eps]);
+    }
+}
+
+module lid() {
+    // Plate lying on the bed
+    plate_t = 2;
+    union() {
+        translate([-box_x / 2, -box_y / 2, 0])
+            cube([box_x, box_y, plate_t]);
+        // Lip: centred on plate, 1.5 mm thick wall, 4 mm tall
+        translate([-lip_outer_x_c / 2, -lip_outer_y_c / 2, plate_t])
+            cube([lip_outer_x_c, lip_outer_y_c, lip_h + eps]);
+    }
+}
+
+// ---------------- Assembly ----------------
+union() {
+    box();
+    translate([gap, 0, 0])
+        lid();
+}
+```

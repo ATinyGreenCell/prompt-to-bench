@@ -1,0 +1,56 @@
+// Tubing clip for 12.7 mm (1/2 inch) lab stand rod
+// Print orientation: flat, extruded along Z (z = 0 to 10)
+
+// ---------- Parameters ----------
+extrusion_height = 10;      // Z height of the part (mm)
+eps              = 0.5;     // cutter overshoot past faces (mm)
+
+// Rod ring
+stand_d  = 12.7;            // stand rod inner diameter (mm)
+stand_w  = 3;               // stand ring wall thickness (mm)
+stand_o  = stand_d + 2 * stand_w;  // stand ring outer diameter (mm)
+stand_r  = stand_o / 2;     // stand ring outer radius (mm)
+stand_x0 = 0;               // stand ring centre X (mm)
+stand_y0 = 0;               // stand ring centre Y (mm)
+stand_open_w = 10;          // stand ring opening width (mm)
+stand_open_h = 5;           // stand ring opening height (Y extent) (mm)
+
+// Tubing ring
+tube_d  = 6;                // tubing inner diameter (mm)
+tube_w  = 2;                // tubing ring wall thickness (mm)
+tube_o  = tube_d + 2 * tube_w;      // tubing ring outer diameter (mm)
+tube_r  = tube_o / 2;       // tubing ring outer radius (mm)
+tube_x0 = 15;               // tubing ring centre X (mm)
+tube_y0 = 0;                // tubing ring centre Y (mm)
+tube_open_w = 4.5;          // tubing ring opening width (mm)
+tube_open_h = tube_open_w / 2;      // tubing ring opening height (Y extent) (mm)
+
+// Bridge
+bridge_w = 6;               // bridge width in Y (mm)
+bridge_x1 = 8;              // bridge start X (mm)
+bridge_x2 = 12;             // bridge end X (mm)
+
+// ---------- Model ----------
+difference() {
+    union() {
+        // Rod ring
+        translate([stand_x0, stand_y0, 0])
+            cylinder(h = extrusion_height, r = stand_r);
+
+        // Tubing ring
+        translate([tube_x0, tube_y0, 0])
+            cylinder(h = extrusion_height, r = tube_r);
+
+        // Solid bridge between the rings
+        translate([bridge_x1, -bridge_w / 2, 0])
+            cube([bridge_x2 - bridge_x1, bridge_w, extrusion_height]);
+    }
+
+    // Cut the -X side of the rod ring (opening)
+    translate([stand_x0 - stand_open_w / 2, -stand_open_h / 2, -eps])
+        cube([stand_open_w, stand_open_h, extrusion_height + 2 * eps]);
+
+    // Cut the +X side of the tubing ring (opening)
+    translate([tube_x0, -tube_open_h / 2, -eps])
+        cube([tube_open_w, tube_open_h, extrusion_height + 2 * eps]);
+}
