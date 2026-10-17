@@ -1,0 +1,50 @@
+// Replacement knob for a hotplate stirrer with a 6 mm D-shaft
+// Print orientation: the side that faces the hotplate is down on the bed (z = 0)
+
+// ---------------- Parameters ----------------
+knob_d        = 30;    // knob outer diameter (mm)
+knob_h        = 15;    // knob height (mm)
+
+bore_d        = 6.2;   // D-bore diameter (mm)
+bore_depth    = 12;    // D-bore depth from bottom face (mm)
+bore_flat     = 4.7;   // distance from D-bore flat to opposite side (mm)
+
+groove_count  = 18;    // number of vertical grip grooves
+groove_d      = 2;     // groove diameter (mm)
+
+pointer_w     = 1.5;   // pointer groove width (mm)
+pointer_d     = 1;     // pointer groove depth (mm)
+
+eps           = 0.5;   // overcut for clean boolean differences (mm)
+$fn           = 96;    // curve resolution
+
+// Derived
+bore_r = bore_d / 2;
+// chord length of the D-bore flat (sagitta = bore_r - bore_flat/2)
+bore_chord = 2 * sqrt(bore_r^2 - (bore_r - bore_flat / 2)^2);
+
+// ---------------- Model ----------------
+difference() {
+    // Main body
+    cylinder(d = knob_d, h = knob_h);
+
+    // D-shaped blind bore from the bottom face
+    translate([0, 0, -eps])
+        linear_extrude(height = bore_depth + eps)
+            union() {
+                circle(r = bore_r);
+                translate([0, -bore_chord / 2])
+                    square([bore_chord, bore_flat]);
+            }
+
+    // Vertical grip grooves along the full height, centred on the outer surface
+    for (i = [0 : groove_count - 1])
+        rotate([0, 0, i * 360 / groove_count])
+            translate([knob_d / 2, 0, 0])
+                cylinder(d = groove_d, h = knob_h + 2 * eps, center = true);
+
+    // Pointer groove on the top face, running from centre to the outer edge
+    // on the same side as the flat of the D-bore
+    translate([0, -bore_chord / 2 - eps, knob_h])
+        cube([knob_d / 2 + eps, bore_chord / 2 + 2 * eps, pointer_d]);
+}

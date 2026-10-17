@@ -1,0 +1,37 @@
+// 10-well comb for casting agarose gels, printed lying flat
+// Units: mm
+
+// ---- Spine (back bar) ----
+spine_len   = 70;    // spine length along X
+spine_wid   = 12;    // spine width along Y
+plate_thk   = 1.5;   // plate thickness along Z
+
+// ---- Teeth ----
+tooth_count = 10;    // number of teeth
+tooth_w     = 5.0;   // tooth width along X
+tooth_l     = 12;    // tooth length along Y (hangs in -Y)
+tooth_pitch = 1.5;   // centre-to-centre spacing along X
+
+// ---- Misc ----
+eps = 0.5;           // overcut for clean differences
+$fn = 64;
+
+// Derived
+gaps = tooth_count - 1;              // number of gaps
+row_w = tooth_w * tooth_count + tooth_pitch * gaps;  // row width in X
+
+difference() {
+    // Plate: spine + teeth
+    union() {
+        translate([-spine_len/2, -spine_wid/2, 0])
+            cube([spine_len, spine_wid, plate_thk]);
+        for (i = [0 : tooth_count - 1])
+            translate([(row_w - tooth_w)/2 + i * tooth_pitch, -spine_wid/2 - tooth_l, 0])
+                cube([tooth_w, tooth_l, plate_thk]);
+    }
+
+    // Wells: cut into plate from +Z, through the teeth
+    for (i = [0 : tooth_count - 1])
+        translate([(row_w - tooth_w)/2 + i * tooth_pitch, -spine_wid/2 - tooth_l - eps, eps])
+            cube([tooth_w, tooth_l, plate_thk + 2 * eps]);
+}

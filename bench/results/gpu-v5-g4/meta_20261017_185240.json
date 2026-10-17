@@ -1,0 +1,31 @@
+{
+ "started": "2026-10-17T18:52:40",
+ "args": {
+  "run": "gpu-v5-g4",
+  "models": [
+   "scadcoder-v5"
+  ],
+  "tasks": [
+   "dshaft_knob_6mm",
+   "pcr_tube_adapter"
+  ],
+  "samples": 8,
+  "max_repairs": 2,
+  "feedback": "report",
+  "temperature": 0.2,
+  "prompts": null,
+  "lang": "en",
+  "system": "bench/prompts/system.md",
+  "render_timeout": 120,
+  "seed_base": 1000,
+  "num_predict": 2048,
+  "think": false,
+  "num_ctx": 8192
+ },
+ "git_commit": "30b440b539f2e59405acfad509b9dcb260659893",
+ "host": "enamel",
+ "cpu": "x86_64",
+ "python": "3.14.4",
+ "openscad": "OpenSCAD version 2026.10.01",
+ "ollama": "0.0.0-openai-shim"
+}

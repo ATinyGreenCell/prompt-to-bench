@@ -1,0 +1,80 @@
+// Straight hose-barb reducer: 8 mm tubing -> 5 mm tubing
+// Print orientation: standing upright along +Z, centred on origin in X/Y
+
+$fn = 64;
+
+// ---- Dimensions (mm) ----
+reducer_length   = 41;   // total length of the part
+bore_d           = 3;    // through-bore diameter
+wall_d           = 2;    // wall thickness of the bore (1.5 mm each side)
+
+barb_8_count     = 2;    // number of 8 mm barbs, stacked
+barb_8_height    = 10;   // height of each 8 mm barb
+barb_8_bottom_d  = 7.5;  // outer diameter of 8 mm barb at its bottom
+barb_8_top_d     = 9.5;  // outer diameter of 8 mm barb at its top
+
+barb_5_count     = 2;    // number of 5 mm barbs, stacked
+barb_5_height    = 8;    // height of each 5 mm barb
+barb_5_bottom_d  = 6.5;  // outer diameter of 5 mm barb at its bottom
+barb_5_top_d     = 5.0;  // outer diameter of 5 mm barb at its top
+
+collar_d         = 12;   // outer diameter of the collar
+collar_start_z   = 20;   // z where the collar begins
+collar_end_z     = 25;   // z where the collar ends
+
+eps              = 0.5;  // overshoot for clean boolean cuts
+
+// ---- Derived ----
+barb_8_z0 = 0;
+barb_8_z1 = barb_8_height;
+barb_5_z0 = collar_end_z;
+barb_5_z1 = barb_5_height + collar_end_z;
+
+// ---- Model ----
+difference() {
+    union() {
+        // 8 mm barbs
+        for (i = [0 : barb_8_count - 1]) {
+            translate([0, 0, barb_8_z0 + i * barb_8_height])
+                linear_extrude(height = wall_d + eps)
+                    polygon([
+                        [0, barb_8_bottom_d],
+                        [wall_d + eps, barb_8_bottom_d],
+                        [wall_d + eps,
+                         min(barb_8_top_d,
+                              barb_8_bottom_d + (barb_8_top_d - barb_8_bottom_d) *
+                                              (eps + wall_d) / (barb_8_height + eps))],
+                        [0,
+                         min(barb_8_top_d,
+                              barb_8_bottom_d + (barb_8_top_d - barb_8_bottom_d) *
+                                              (eps + wall_d) / (barb_8_height + eps))]
+                    ]);
+        }
+
+        // collar
+        translate([0, 0, collar_start_z])
+            cylinder(d = collar_d, h = collar_end_z - collar_start_z);
+
+        // 5 mm barbs
+        for (i = [0 : barb_5_count - 1]) {
+            translate([0, 0, barb_5_z0 + i * barb_5_height])
+                linear_extrude(height = wall_d + eps)
+                    polygon([
+                        [0, barb_5_bottom_d],
+                        [wall_d + eps, barb_5_bottom_d],
+                        [wall_d + eps,
+                         max(barb_5_top_d,
+                              barb_5_bottom_d - (barb_5_bottom_d - barb_5_top_d) *
+                                              (eps + wall_d) / (barb_5_height + eps))],
+                        [0,
+                         max(barb_5_top_d,
+                              barb_5_bottom_d - (barb_5_bottom_d - barb_5_top_d) *
+                                              (eps + wall_d) / (barb_5_height + eps))]
+                    ]);
+        }
+    }
+
+    // through-bore
+    translate([0, 0, -eps])
+        cylinder(d = bore_d, h = reducer_length + 2 * eps);
+}

@@ -1,0 +1,49 @@
+// Rack for six 50 mL conical (Falcon-type) tubes
+// Printed upside down, then flipped over. In print orientation:
+//   - Flat plate on the bed (z = 0 to 4)
+//   - Two solid walls along the long edges, rising to z = 70
+//   - Six through-holes, 30.5 mm in diameter, in 2 rows of 3
+// After flipping, the rack stands on the two walls and the tubes
+// pass through the holes.
+
+// ---------------- Parameters ----------------
+plate_x      = 130;   // plate length along X (mm)
+plate_y      = 90;    // plate width along Y (mm)
+plate_t      = 4;     // plate thickness (mm)
+
+hole_d       = 30.5;  // through-hole diameter (mm)
+hole_nx      = 3;     // number of holes along X
+hole_ny      = 2;     // number of holes along Y
+hole_pitch   = 40;    // centre-to-centre hole spacing, both directions (mm)
+
+wall_t       = 4;     // wall thickness along Y (mm)
+wall_h       = 70;    // wall height from plate top (mm)
+
+eps          = 0.5;   // cutter overshoot past faces (mm)
+$fn          = 96;    // circle resolution
+
+// Derived
+wall_top_z   = plate_t + wall_h;   // top of walls (74 mm)
+row0_y       = -hole_pitch * (hole_ny - 1) / 2;  // -20
+row1_y       = hole_pitch * (hole_ny - 1) / 2;   // 20
+
+// ---------------- Model ----------------
+union() {
+    // Plate
+    translate([-plate_x / 2, -plate_y / 2, 0])
+        cube([plate_x, plate_y, plate_t]);
+
+    // Walls, flush with the plate's long edges
+    for (s = [-1, 1])
+        translate([s > 0 ? plate_x / 2 - wall_t : -plate_x / 2,
+                   -plate_y / 2, 0])
+            cube([wall_t, plate_y + eps, wall_top_z]);
+
+    // Through-holes
+    for (i = [0 : hole_nx - 1])
+        for (j = [0 : hole_ny - 1])
+            translate([(i - (hole_nx - 1) / 2) * hole_pitch,
+                       (j - (hole_ny - 1) / 2) * hole_pitch,
+                       -eps])
+                cylinder(d = hole_d, h = plate_t + 2 * eps);
+}

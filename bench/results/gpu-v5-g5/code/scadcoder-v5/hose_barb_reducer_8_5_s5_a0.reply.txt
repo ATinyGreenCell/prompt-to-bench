@@ -1,0 +1,72 @@
+```openscad
+// Hose-barb reducer: joins 8 mm ID silicone tubing to 5 mm ID silicone tubing
+// Print orientation: standing upright along +Z, base on XY plane
+
+// ---------------- Parameters ----------------
+reducer_d        = 12;   // central bore diameter (through full length)
+barb_8_outer_bot = 7.5;  // 8 mm tubing barb outer diameter at bottom
+barb_8_outer_top = 9.5;  // 8 mm tubing barb outer diameter at top
+barb_8_height    = 10;   // 8 mm tubing barb height
+barb_8_start_z   = 0;    // 8 mm tubing barb stack start height
+
+barb_5_outer_bot = 6.5;  // 5 mm tubing barb outer diameter at bottom
+barb_5_outer_top = 5.0;  // 5 mm tubing barb outer diameter at top
+barb_5_height    = 8;    // 5 mm tubing barb height
+barb_5_start_z   = 25;   // 5 mm tubing barb stack start height
+
+collar_d         = 12;   // cylindrical collar diameter (z = 20 to 25)
+eps              = 0.5;  // overshoot for clean boolean cuts
+
+$fn = 96;
+
+// ---------------- Modules ----------------
+module barb_8(z0) {
+    // Sawtooth profile: grow 7.5 -> 9.5, step back to 7.5
+    difference() {
+        union() {
+            for (h = [0 : barb_8_height / 2])
+                cylinder(d = barb_8_outer_bot + h * (barb_8_outer_top - barb_8_outer_bot) / (barb_8_height / 2), h = barb_8_height / 2);
+            // top flat, same diameter as top of cone
+            cylinder(d = barb_8_outer_top, h = 0.01);
+        }
+        translate([0, 0, z0 + eps])
+            cylinder(d = reducer_d, h = barb_8_height + 2 * eps);
+    }
+}
+
+module barb_5(z0) {
+    // Inverted sawtooth: shrink 6.5 -> 5.0, step back out to 6.5
+    difference() {
+        union() {
+            for (h = [0 : barb_5_height / 2])
+                cylinder(d = barb_5_outer_bot - h * (barb_5_outer_bot - barb_5_outer_top) / (barb_5_height / 2), h = barb_5_height / 2);
+            // top flat, same diameter as top of cone
+            cylinder(d = barb_5_outer_top, h = 0.01);
+        }
+        translate([0, 0, z0 + eps])
+            cylinder(d = reducer_d, h = barb_5_height + 2 * eps);
+    }
+}
+
+module collar(z0) {
+    translate([0, 0, z0])
+        cylinder(d = collar_d, h = 5 + eps);
+}
+
+// ---------------- Assembly ----------------
+union() {
+    // 8 mm tubing barbs
+    barb_8(barb_8_start_z);
+    translate([0, 0, barb_8_start_z + barb_8_height])
+        barb_8(barb_8_start_z);
+
+    // Collar
+    collar(barb_8_start_z + barb_8_height);
+
+    // 5 mm tubing barbs
+    translate([0, 0, barb_5_start_z])
+        barb_5(barb_5_start_z);
+    translate([0, 0, barb_5_start_z + barb_5_height])
+        barb_5(barb_5_start_z);
+}
+```

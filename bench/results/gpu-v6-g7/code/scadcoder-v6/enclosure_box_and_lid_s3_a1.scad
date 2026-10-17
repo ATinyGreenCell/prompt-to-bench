@@ -1,0 +1,49 @@
+// Two-part enclosure for a small electronics board (e.g. Arduino-based temperature logger)
+// Print orientation: box stands on the bed, lid lies flat on the bed upside down.
+// The two parts are placed side by side with a 10 mm gap so they print together.
+
+$fn = 64;
+
+// ---------------- Dimensions (mm) ----------------
+box_x      = 70;    // box outer length (X)
+box_y      = 50;    // box outer width (Y)
+box_z      = 30;    // box outer height (Z)
+wall       = 2;     // box wall thickness
+floor      = 2;     // box floor thickness (separate from walls for clarity)
+
+lip_t      = 1.5;   // lid wall thickness
+lip_h      = 4;     // lid wall height (sticks up above the plate)
+lip_x      = 65.6;  // lid wall outer length (X)
+lip_y      = 45.6;  // lid wall outer width (Y)
+clearance  = 0.2;   // gap between lid wall and box opening on each side
+
+plate_t    = 2;     // lid plate thickness (sits on the bed)
+gap        = 10;    // gap between box and lid on the bed
+
+eps        = 0.5;   // overshoot for clean boolean cuts
+
+// ---------------- Model ----------------
+union() {
+    // Part 1: Box (open top)
+    translate([-box_x/2, -box_y/2, 0])
+        difference() {
+            cube([box_x, box_y, box_z]);
+            // open the top: cut from above the top face down by eps
+            translate([-box_x/2 - eps, -box_y/2 - eps, box_z - eps])
+                cube([box_x + 2*eps, box_y + 2*eps, eps]);
+        }
+
+    // Part 2: Lid (printed upside down)
+    translate([box_x/2 + gap, -box_y/2, 0])
+        difference() {
+            // base plate lying on the bed
+            translate([-lip_x/2, -lip_y/2, 0])
+                cube([lip_x, lip_y, plate_t]);
+            // rectangular lip on top of the plate, centred on it
+            translate([-lip_x/2, -lip_y/2, plate_t])
+                cube([lip_x, lip_y, lip_h]);
+            // pocket the lid slides into: 0.2 mm clearance on each side
+            translate([-box_x/2 + clearance, -box_y/2 + clearance, plate_t + lip_h - eps])
+                cube([box_x - 2*clearance, box_y - 2*clearance, eps + lip_h - plate_t]);
+        }
+}

@@ -1,0 +1,50 @@
+// Tubing/stand rod snap-on clip
+// Print orientation: flat on bed, z = 0 up to z = height
+
+// ---------- Parameters ----------
+height      = 10;     // extrusion height (Z)
+rod_d       = 12.7;   // stand rod diameter
+rod_wall    = 3;      // rod ring wall thickness
+rod_open    = 10;     // rod ring opening width (Y)
+rod_open_x  = -0.01;  // rod ring opening centre (X), left of ring
+
+tub_d       = 6;      // tubing inner diameter
+tub_wall    = 2;      // tubing ring wall thickness
+tub_x       = 15;     // tubing ring centre X
+tub_open    = 4.5;    // tubing ring opening width (Y)
+tub_open_x  = 15;     // tubing ring opening centre (X)
+
+bridge_w    = 6;      // solid bridge width (Y)
+bridge_x0   = 8;      // solid bridge start X
+bridge_x1   = 12;     // solid bridge end X
+
+eps         = 0.5;    // cutter overshoot past faces
+$fn         = 96;     // curve resolution
+
+// ---------- Derived ----------
+rod_d_out   = rod_d + 2 * rod_wall;
+tub_d_out   = tub_d + 2 * tub_wall;
+
+// ---------- Model ----------
+difference() {
+    union() {
+        // Rod ring
+        cylinder(d = rod_d_out, h = height);
+
+        // Tubing ring
+        translate([tub_x, 0, 0])
+            cylinder(d = tub_d_out, h = height);
+
+        // Solid bridge
+        translate([bridge_x0, -bridge_w / 2, 0])
+            cube([bridge_x1 - bridge_x0, bridge_w, height]);
+    }
+
+    // Cut out: rod ring opening on -X side
+    translate([rod_open_x, -rod_open / 2, -eps])
+        cube([rod_open_x - bridge_x0, rod_open, height + 2 * eps]);
+
+    // Cut out: tubing ring opening on +X side
+    translate([tub_open_x, -tub_open / 2, -eps])
+        cube([tub_open_x - bridge_x1, tub_open, height + 2 * eps]);
+}

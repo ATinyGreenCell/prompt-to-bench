@@ -1,0 +1,62 @@
+```openscad
+// Hose-barb reducer: joins 8 mm ID silicone tubing to 5 mm ID silicone tubing
+// Print orientation: standing upright along +Z, resting on z = 0
+// Units: mm. Rotational symmetry about Z axis.
+
+$fn = 64;
+
+// ---- 8 mm tubing side (z = 0 .. 20) ----
+barb_height_8     = 10;   // height of each 8 mm barb
+barb_start_d_8    = 7.5;  // outer diameter at bottom of barb
+barb_top_d_8      = 9.5;  // outer diameter at top of barb
+barb_count_8      = 2;    // number of stacked 8 mm barbs
+barb_overlap_8    = 0.5;  // overlap between stacked barbs for a clean union
+bore_d            = 3;    // through-bore diameter
+
+// ---- Collar (z = 20 .. 25) ----
+collar_d          = 12;   // collar outer diameter
+collar_t          = 5;    // collar thickness (z = 20 to 25)
+
+// ---- 5 mm tubing side (z = 25 .. 41) ----
+barb_height_5     = 8;    // height of each 5 mm barb
+barb_start_d_5    = 6.5;  // outer diameter at bottom of barb
+barb_top_d_5      = 5.0;  // outer diameter at top of barb
+barb_count_5      = 2;    // number of stacked 5 mm barbs
+barb_overlap_5    = 0.5;  // overlap between stacked barbs
+end_z             = 41;   // top of part (25 + 2*8 + overlap)
+
+// ---- Helpers ----
+module barb(d0, d1, h) {
+    // d0 = bottom diameter, d1 = top diameter (may be larger or smaller)
+    // Creates a sawtooth profile: cone up to the top, then a flat step back
+    // to the bottom diameter over the last 1 mm of the barb.
+    hull() {
+        for (z = [0 : h - 1])
+            translate([0, 0, z])
+                cylinder(d = d0 + (d1 - d0) * z / h, h = 1);
+        // Top flat segment, extended past the last cone point so the hull fuses
+        translate([0, 0, h - 1])
+            cylinder(d = d0 + (d1 - d0) * (h - 1) / h, h = 1 + 0.01);
+    }
+}
+
+union() {
+    // 8 mm tubing barbs
+    for (i = [0 : barb_count_8 - 1])
+        translate([0, 0, i * (barb_height_8 + barb_overlap_8)])
+            barb(barb_start_d_8, barb_top_d_8, barb_height_8);
+
+    // Through-bore
+    translate([0, 0, -1])
+        cylinder(d = bore_d, h = end_z + 2);
+
+    // Collar
+    translate([0, 0, 20])
+        cylinder(d = collar_d, h = collar_t);
+
+    // 5 mm tubing barbs
+    for (i = [0 : barb_count_5 - 1])
+        translate([0, 0, 25 + i * (barb_height_5 + barb_overlap_5)])
+            barb(barb_start_d_5, barb_top_d_5, barb_height_5);
+}
+```

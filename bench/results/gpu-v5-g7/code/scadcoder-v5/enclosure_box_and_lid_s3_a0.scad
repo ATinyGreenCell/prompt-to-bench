@@ -1,0 +1,49 @@
+// Two-part enclosure for a small electronics board (e.g. Arduino-based temperature logger)
+// Print orientation: both parts rest on the XY plane at z = 0, side by side on the bed.
+// The lid is printed upside down: a flat plate with a rectangular lip that slides into the
+// box opening with 0.2 mm clearance on each side.
+//
+
+// ---------------- Parameters ----------------
+box_x      = 70;    // box outer length (X)
+box_y      = 50;    // box outer width (Y)
+box_h      = 30;    // box outer height (Z)
+wall       = 2;     // box wall thickness
+floor      = 2;     // box floor thickness
+lip_t      = 1.5;   // lip wall thickness
+lip_h      = 4;     // lip height above plate
+lip_x      = 65.6;  // lip outer length (X)
+lip_y      = 45.6;  // lip outer width (Y)
+clearance  = 0.2;   // clearance between lip outer size and box opening
+gap        = 10;    // gap between box and lid on the bed
+eps        = 0.5;   // cutter overshoot past faces
+
+$fn = 64;
+
+// Derived: box opening size = outer - 2*wall
+opening_x = box_x - 2 * wall;   // 66
+opening_y = box_y - 2 * wall;   // 46
+// Lip check: outer 65.6 x 45.6 -> 0.2 mm clearance on each side inside the opening
+
+// ---------------- Model ----------------
+union() {
+    // Part 1: Box (open top)
+    difference() {
+        cube([box_x, box_y, box_h]);
+        // Cut open top: shape extends past the top face
+        translate([wall, wall, floor])
+            cube([opening_x, opening_y, box_h - floor + eps]);
+    }
+
+    // Part 2: Lid (printed upside down)
+    // Plate lying on the bed, with a rectangular lip on top of it
+    union() {
+        // Base plate
+        translate([-box_x / 2, -box_y / 2, 0])
+            cube([box_x, box_y, 2]);   // 2 mm plate
+
+        // Lip centred on the plate
+        translate([-lip_x / 2, -lip_y / 2, box_y / 2 + gap])
+            cube([lip_x, lip_y, lip_h + wall]);
+    }
+}

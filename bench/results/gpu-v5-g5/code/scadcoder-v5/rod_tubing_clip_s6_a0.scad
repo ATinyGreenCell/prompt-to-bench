@@ -1,0 +1,55 @@
+// Tubing/stand rod snap-on clip
+// Print orientation: flat on bed, z = 0 up to z = height
+
+// ---------------- Parameters ----------------
+height      = 10;     // extrusion height (Z)
+rod_d       = 12.7;   // stand rod diameter
+rod_wall    = 3;      // rod ring wall thickness
+rod_open_w  = 10;     // opening width on -X side of rod ring
+tub_d       = 6;      // tubing inner diameter
+tub_wall    = 2;      // tubing ring wall thickness
+tub_x       = 15;     // tubing ring centre X
+tub_open_w  = 4.5;    // opening width on +X side of tubing ring
+bridge_x0   = 8;      // bridge start X
+bridge_x1   = 12;     // bridge end X
+bridge_y    = 6;      // bridge width (Y)
+eps         = 0.5;    // cutter overshoot past faces
+
+$fn = 96;
+
+// ---------------- Derived ----------------
+rod_d_out   = rod_d + 2 * rod_wall;
+tub_d_out   = tub_d + 2 * tub_wall;
+tub_r_open  = tub_open_w / 2;
+
+// ---------------- Modules ----------------
+module rod_ring() {
+    difference() {
+        cylinder(d = rod_d_out, h = height);
+        // opening: x < 0 and -5 < y < 5
+        translate([-height - eps, -5, -eps])
+            cube([height + 2 * eps, 10, height + 2 * eps]);
+    }
+}
+
+module tub_ring() {
+    difference() {
+        translate([tub_x, 0, 0])
+            cylinder(d = tub_d_out, h = height);
+        // opening: x > 15 and -2.25 < y < 2.25
+        translate([tub_x + tub_open_w / 2 - eps, -tub_r_open, -eps])
+            cube([height + 2 * eps, tub_open_w, height + 2 * eps]);
+    }
+}
+
+module bridge() {
+    translate([bridge_x0, -bridge_y / 2, 0])
+        cube([bridge_x1 - bridge_x0, bridge_y, height]);
+}
+
+// ---------------- Assembly ----------------
+union() {
+    rod_ring();
+    tub_ring();
+    bridge();
+}

@@ -1,0 +1,35 @@
+// Magnetic stirrer housing (PC fan cover) - print orientation: upside down
+// Top plate on bed, walls rise to open top.
+
+$fn = 64;
+
+// ---- Dimensions (mm) ----
+plate_t      = 2;     // top plate thickness
+wall_t       = 2.5;   // wall thickness
+box_h        = 40;    // total height (plate + walls)
+outer_x      = 90;    // outer size X
+outer_y      = 90;    // outer size Y
+hole_d       = 4.5;   // M4 screw holes
+hole_p       = 71.5;  // screw hole pattern size (square)
+notch_w      = 12;    // cable notch width
+notch_bottom = 8;     // notch depth from open edge (z = 32 to 40)
+eps          = 0.5;   // cutter overshoot
+
+// ---- Model ----
+difference() {
+    union() {
+        // Top plate
+        translate([-outer_x/2, -outer_y/2, 0])
+            cube([outer_x, outer_y, plate_t]);
+        // Walls (open top)
+        translate([-outer_x/2, -outer_y/2, 0])
+            cube([outer_x, outer_y, box_h - plate_t]);
+    }
+    // Screw holes
+    for (sx = [-hole_p/2, hole_p/2], sy = [-hole_p/2, hole_p/2])
+        translate([sx, sy, -eps])
+            cylinder(d = hole_d, h = plate_t + 2*eps);
+    // Cable notch in one wall
+    translate([-outer_x/2, -notch_w/2, box_h - plate_t - notch_bottom])
+        cube([outer_x - 2*(-outer_x/2), notch_w, notch_bottom + eps]);
+}

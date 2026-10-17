@@ -1,0 +1,56 @@
+```openscad
+// Straight hose-barb reducer: 8 mm tubing -> 5 mm tubing
+// Print orientation: standing upright along +Z, centred on origin in X/Y
+
+$fn = 64;
+
+// ---- Dimensions (mm) ----
+reducer_id     = 8;    // 8 mm tubing inner diameter (bore)
+reducer_od     = 5;    // 5 mm tubing inner diameter (bore)
+barb_h_8       = 10;   // height of each 8 mm barb
+barb_od_8_bot  = 7.5;  // outer diameter of 8 mm barb at bottom
+barb_od_8_top  = 9.5;  // outer diameter of 8 mm barb at top
+barb_h_5       = 8;    // height of each 5 mm barb
+barb_od_5_bot  = 6.5;  // outer diameter of 5 mm barb at bottom
+barb_od_5_top  = 5.0;  // outer diameter of 5 mm barb at top
+collar_h       = 5;    // height of cylindrical collar (z = 20 to 25)
+barb_start_z   = 25;   // z where 5 mm barbs begin
+overlap        = 0.5;  // overlap between stacked barbs for a clean union
+
+// ---- Derived ----
+reducer_len    = 41;   // overall length (z = 0 to 41)
+eps            = 0.5;  // cutter overshoot past faces
+
+// ---- Model ----
+union() {
+    // Bore through full length
+    translate([0, 0, -eps])
+        cylinder(h = reducer_len + 2 * eps, d = reducer_id);
+
+    // 8 mm barbs: z = 0 to 20
+    for (i = [0 : 1])
+        translate([0, 0, i * barb_h_8 - overlap])
+            linear_extrude(height = barb_h_8 + overlap)
+                polygon([
+                    [-barb_od_8_bot / 2, 0],
+                    [ barb_od_8_bot / 2, 0],
+                    [ (barb_od_8_top - barb_od_8_bot) / 2, barb_h_8],
+                    [ -(barb_od_8_top - barb_od_8_bot) / 2, barb_h_8]
+                ]);
+
+    // Collar: z = 20 to 25
+    translate([0, 0, 20])
+        cylinder(h = collar_h, d = 12);
+
+    // 5 mm barbs: z = 25 to 33
+    for (i = [0 : 1])
+        translate([0, 0, barb_start_z + i * barb_h_5 - overlap])
+            linear_extrude(height = barb_h_5 + overlap)
+                polygon([
+                    [-barb_od_5_bot / 2, 0],
+                    [ barb_od_5_bot / 2, 0],
+                    [ (barb_od_5_top - barb_od_5_bot) / 2, barb_h_5],
+                    [ -(barb_od_5_top - barb_od_5_bot) / 2, barb_h_5]
+                ]);
+}
+```

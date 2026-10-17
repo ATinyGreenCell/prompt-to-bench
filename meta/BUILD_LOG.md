@@ -15019,3 +15019,186 @@ The §6.4 text and Table 8 (base, v2, v3, v4) are in. I'll rewrite the Abstract 
 
 </details>
 
+Pushed. Checking that v7 is now serving and benching on the A40.
+
+<details><summary>2 tool call(s)</summary>
+
+- `Bash` Check v7 serving and bench progress — `tail -4 [scratch] cd ~/printpaper && .venv/bin/python -I bench/sample_stats.py gpu-v7 2>/dev/null | tail -1; date +%T`
+- `Bash` Wait for v7 to be served — `until grep -qE "serving|\[v7\] .*FAILED" [scratch] do sleep 10; done; tail -1 [scratch]`
+
+</details>
+
+v7 is benching (started 17:57). Waiting for its result.
+
+<details><summary>6 tool call(s)</summary>
+
+- `Bash` Wait for v7 bench result — `until grep -qE "BENCH DONE v7|\[v7\] .*FAILED" [scratch] do sleep 15; done; tail -12 [scratch]`
+- `Monitor` description=chains v7/v5/v6 (re-armed): trained, received, uploaded, ben, timeout_ms=1800000, command=cd [scratch] && tail -n 0 -F chainlog_v7.txt chainlog_v5.txt
+- `Bash` Interim v7 GPU bench stats — `.venv/bin/python -I bench/sample_stats.py gpu-v7 2>/dev/null | tail -18; date +%T`
+- `Bash` Wait for v7 final result — `until grep -qE "BENCH DONE v7|\[v7\] .*FAILED" [scratch] do sleep 15; done; tail -13 [scratch]`
+- `Bash` Check v7 and v5 progress — `.venv/bin/python -I bench/sample_stats.py gpu-v7 2>/dev/null | tail -1; tail -3 [scratch] ssh -i ~/.ssh/runpod_ft -p 18178 -o StrictHostKeyC …`
+- `Bash` Stop the v5 chain (still waiting on training) — `P="chain_ship.sh v""5"; pgrep -f "$P" | head -3; for pid in $(pgrep -f "$P"); do kill $pid; done; sleep 1; pgrep -f "$P" | wc -l; tail -2 [s …`
+
+</details>
+
+v7 is done and the v5 chain is stopped. Launching the v1 bench on the A40, then relaunching v5's chain to wait for it.
+
+<details><summary>1 tool call(s)</summary>
+
+- `Bash` Launch v1 bench and relaunch v5 chain — `S=[scratch] cat > $S/chain_v1.sh <<'EOF' …`
+
+</details>
+
+v7 is final. Here's the table so far:
+
+<details><summary>4 tool call(s)</summary>
+
+- `Bash` Print comparison table including v7 — `.venv/bin/python -I bench/finetune_table.py gpu-base gpu-v2 gpu-v3 gpu-v4 gpu-v7`
+- `Bash` Commit v7 results and push — `git add bench/results/gpu-v7-g* && git diff --cached --name-only | xargs -d '\n' grep -l -E "hf_[A-Za-z0-9]{20,}|sk-ant-[A-Za-z0-9_-]{12,}|[ …`
+- `Monitor` description=chains v1/v5/v6: received, TERMINATE, uploaded, serving, ben, timeout_ms=1800000, command=cd [scratch] && touch chainlog_v1.txt && tail -n 0 -F chainl
+- `Bash` Check v6 training and v1 chain status — `ssh -i ~/.ssh/runpod_ft -p 18333 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=20 -o LogLevel=ERROR [email]  …`
+
+</details>
+
+v6 is at step 2,131 of 3,951 (~37 minutes left), and v1 is downloading on the A40. While waiting, pulling today's RunPod spend for the final report.
+
+<details><summary>3 tool call(s)</summary>
+
+- `mcp__plugin_runpod_runpod__list-billing`
+- `Bash` Wait for v1 bench to complete — `until grep -qE "BENCH DONE v1|\[v1\] .*FAILED" [scratch] do sleep 15; done; tail -3 [scratch] cd ~/printpaper && .venv/bin/python -I bench/f …`
+- `Bash` Check v1 bench and v5 chain progress — `tail -3 [scratch] cd ~/printpaper && .venv/bin/python -I bench/sample_stats.py gpu-v1 2>/dev/null | tail -1; tail -3 [scratch] date +%T`
+
+</details>
+
+v1 is halfway (64 of 128), 1 task so far. v5 finishes training in about 10 minutes.
+
+<details><summary>4 tool call(s)</summary>
+
+- `Bash` Wait for v1 final; compare epoch effects — `until grep -qE "BENCH DONE v1|\[v1\] .*FAILED" [scratch] do sleep 15; done; cd ~/printpaper && .venv/bin/python -I bench/finetune_table.py g …`
+- `Monitor` description=chains v5/v6: trained, received, TERMINATE, uploaded, servin, timeout_ms=1800000, command=cd [scratch] && tail -n +1 -F chainlog_v5.txt chainlog_v6.tx
+- `Bash` Commit v1 results and push — `git add bench/results/gpu-v1-g* && git commit -q -m "Results: v1 (v2's data, one epoch, rank 16) on the GPU tier - PCR-tube adapter 8/8, not …`
+- `Bash` Wait for v5 to be received on the laptop — `until grep -qE "\[v5\] (received|.*FAILED|.*INCOMPLETE|.*NO SEND)" [scratch] do sleep 15; done; cat [scratch] | cut -c1-300`
+
+</details>
+
+v5 trained (loss 0.070) and is safely on the laptop (4 shards), so H100 #1 is finished. Terminating it. I created it in this session.
+
+<details><summary>4 tool call(s)</summary>
+
+- `mcp__plugin_runpod_runpod__get-pod`
+- `mcp__plugin_runpod_runpod__delete-pod`
+- `mcp__plugin_runpod_runpod__list-pods`
+- `Bash` Wait for v5 to be served on the A40 — `until grep -qE "\[v5\] (serving|.*FAILED)" [scratch] do sleep 15; done; tail -3 [scratch] | cut -c1-200`
+
+</details>
+
+v5 has been benching since 18:52. Meanwhile I'm writing a generator for Table 8's rows straight from the result files, so no numbers are transcribed by hand.
+
+<details><summary>1 tool call(s)</summary>
+
+- `Bash` Generate Table 8 rows from result files — `cat > [scratch] <<'EOF' …`
+
+</details>
+
+The generator works; the v5 and v6 rows fill in once their benches complete. Checking on v6.
+
+<details><summary>1 tool call(s)</summary>
+
+- `Bash` Check v6 training and v5 bench progress — `tail -3 [scratch] | cut -c1-250; ssh -i ~/.ssh/runpod_ft -p 18333 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTime …`
+
+</details>
+
+v6 is at step 3,833 of 3,951, finishing around 19:00. v5's bench has just started. Re-arming the event monitor.
+
+<details><summary>2 tool call(s)</summary>
+
+- `Monitor` description=chains v5/v6: received, TERMINATE, uploaded, serving, bench , timeout_ms=1800000, command=cd [scratch] && tail -n 0 -F chainlog_v5.txt chainlog_v6.txt
+- `Bash` Wait for v6 to be received on the laptop — `until grep -qE "TERMINATE 87.120.211.204|\[v6\] .*(FAILED|INCOMPLETE|NO SEND)" [scratch] do sleep 15; done; tail -4 [scratch] | cut -c1-260`
+
+</details>
+
+v6 trained (loss 0.071) and is safely on the laptop, so H100 #2 is finished too. Terminating it (created in this session).
+
+<details><summary>3 tool call(s)</summary>
+
+- `mcp__plugin_runpod_runpod__get-pod`
+- `mcp__plugin_runpod_runpod__delete-pod`
+- `mcp__plugin_runpod_runpod__list-pods`
+
+</details>
+
+Both H100s are terminated. list-pods shows only the A40, benching v5 at 100% GPU. v6 benches there next, and then the A40 gets terminated.
+
+<details><summary>9 tool call(s)</summary>
+
+- `Bash` Interim v5 GPU bench stats — `.venv/bin/python -I bench/sample_stats.py gpu-v5 2>/dev/null | tail -18; date +%T`
+- `Bash` Wait for v5 final results — `until grep -qE "BENCH DONE v5|\[v5\] .*FAILED" [scratch] do sleep 15; done; cd ~/printpaper && .venv/bin/python -I bench/sample_stats.py gpu …`
+- `Bash` Check v5 bench progress — `.venv/bin/python -I bench/sample_stats.py gpu-v5 | tail -1; tail -2 [scratch] | cut -c1-120; date +%T`
+- `Bash` Get final v5 results — `until grep -qE "BENCH DONE v5|\[v5\] .*FAILED" [scratch] do sleep 10; done; cd ~/printpaper && .venv/bin/python -I bench/sample_stats.py gpu …`
+- `Bash` Sanity-check a v5 slide-rack pass — `.venv/bin/python -I - <<'EOF' …`
+- `Bash` Measure feedback use across models — `.venv/bin/python -I - <<'EOF' …`
+- `Bash` Check v6 bench progress — `.venv/bin/python -I bench/sample_stats.py gpu-v6 2>/dev/null | tail -1; tail -1 [scratch] | cut -c1-100; date +%T`
+- `Bash` Draft final findings paragraphs for section 6.4 — `cat > [scratch] <<'EOF' …`
+- `Bash` Fix self-link; wait for v6 serving — `cd [scratch] && sed -i "s/This is the laptop 7B's byte-identical-repair pattern again (\[§6.4\](#64-fine-tuning-a-local-model-on-verified-sy …`
+
+</details>
+
+v6 has been benching since 19:15 and should finish around 19:38. Meanwhile I'm preparing the single README edit (table rows, findings, Abstract, Conclusion), so it applies in one go when v6 lands.
+
+<details><summary>6 tool call(s)</summary>
+
+- `Bash` Write the README update script — `cat > [scratch] <<'EOF' …`
+- `Bash` Wait for v6 bench final results — `until grep -qE "BENCH DONE v6|\[v6\] .*FAILED" [scratch] do sleep 15; done; cd ~/printpaper && .venv/bin/python -I bench/sample_stats.py gpu …`
+- `Bash` Interim v6 bench stats — `.venv/bin/python -I bench/sample_stats.py gpu-v6 | tail -18; date +%T`
+- `Bash` Get v6 final and the full Table 8 — `until grep -qE "BENCH DONE v6|\[v6\] .*FAILED" [scratch] do sleep 10; done; cd ~/printpaper && .venv/bin/python -I bench/sample_stats.py gpu …`
+- `Bash` Build v8 dataset (v6 + report repairs) — `.venv/bin/python -I - <<'EOF' …`
+- `mcp__plugin_runpod_runpod__get-capacity`
+
+</details>
+
+Capacity read: H100 SXM in stock (Low) at $3.99/hr. Creating the v8 pod: v6's data plus report repairs, about 1h40m of training.
+
+<details><summary>5 tool call(s)</summary>
+
+- `mcp__plugin_runpod_runpod__create-pod`
+- `mcp__plugin_runpod_runpod__get-pod`
+- `mcp__plugin_runpod_runpod__delete-pod`
+- `mcp__plugin_runpod_runpod__list-pods`
+- `Bash` Write and launch the v8 train-ship-bench chain — `cat > [scratch] <<'EOF' …`
+
+</details>
+
+The v8 chain is running. Now the final paper update: all eight rows of Table 8, the v5/v6/v7/v1 findings, and the feedback-deafness result.
+
+<details><summary>1 tool call(s)</summary>
+
+- `Bash` Apply final Table 8 and findings to README — `V6='**More kinds of held-out parts widened what transferred within the first half:** v6, which added 700 distilled examples from 14 further  …`
+
+</details>
+
+Table 8 is in. Proofreading the findings paragraph against the numbers.
+
+<details><summary>2 tool call(s)</summary>
+
+- `Bash` Read the findings paragraph for review — `grep -n "^What the table shows" README.md | cut -c1-40; sed -n '/^What the table shows/p' README.md | fold -w 250 -s`
+- `Bash` Apply proofreading fixes to findings — `python3 - <<'EOF' …`
+
+</details>
+
+Now the Abstract and Conclusion, each getting one sentence on the box-model line.
+
+<details><summary>2 tool call(s)</summary>
+
+- `Edit` ~/printpaper/README.md
+- `Edit` ~/printpaper/README.md
+
+</details>
+
+Committing the paper update with the v5 and v6 results, after a secret scan.
+
+<details><summary>1 tool call(s)</summary>
+
+- `Bash` Commit final Table 8 and findings; push — `.venv/bin/python meta/build_log.py >/dev/null 2>&1; git add README.md .gitignore meta/BUILD_LOG.md bench/results/gpu-v5-g* bench/results/gpu …`
+
+</details>
+

@@ -1,0 +1,73 @@
+// Straight hose-barb reducer: 8 mm tubing (bottom) -> 5 mm tubing (top)
+// Print orientation: standing upright along +Z, centred on origin in X/Y
+// Units: mm
+
+$fn = 96;
+
+// ---------------- Dimensions ----------------
+// Tubing
+t8_id    = 8;    // 8 mm tubing inner diameter
+t5_id    = 5;    // 5 mm tubing inner diameter
+
+// Barb parameters
+t8_h     = 10;   // 8 mm barb height
+t8_od    = 9.5;  // 8 mm barb outer diameter at top
+t8_od_b  = 7.5;  // 8 mm barb outer diameter at bottom
+t8_n     = 2;    // number of 8 mm barbs
+
+t5_h     = 8;    // 5 mm barb height
+t5_od    = 5.0;  // 5 mm barb outer diameter at top
+t5_od_b  = 6.5;  // 5 mm barb outer diameter at bottom
+t5_n     = 2;    // number of 5 mm barbs
+
+// Bore
+bore_d   = 3;    // through-bore diameter
+
+// Collar
+collar_d = 12;   // collar outer diameter
+collar_h = 5;    // collar height (z = 20 to z = 25)
+
+// Derived
+t8_bottom_z = 0;
+t8_top_z    = t8_bottom_z + t8_h;
+t5_bottom_z = t8_top_z + collar_h;
+t5_top_z    = t5_bottom_z + t5_h;
+eps         = 0.5; // overshoot for clean cuts
+
+// ---------------- Model ----------------
+difference() {
+    union() {
+        // 8 mm barbs (sawtooth profile)
+        for (i = [0 : t8_n - 1])
+            translate([0, 0, t8_bottom_z])
+                rotate([0, 0, 0])
+                    linear_extrude(height = t8_h)
+                        polygon(points = [
+                            [0, t8_od_b],
+                            [t8_h, t8_od_b],
+                            [t8_h, t8_od],
+                            [0, t8_od]
+                        ]);
+
+        // Collar
+        translate([0, 0, t8_top_z])
+            cylinder(d = collar_d, h = collar_h);
+
+        // 5 mm barbs (sawtooth profile)
+        for (i = [0 : t5_n - 1])
+            translate([0, 0, t5_bottom_z])
+                rotate([0, 0, 0])
+                    linear_extrude(height = t5_h)
+                        polygon(points = [
+                            [0, t5_od_b],
+                            [t5_h, t5_od_b],
+                            [t5_h, t5_od],
+                            [0, t5_od]
+                        ]);
+    }
+
+    // Through bore
+    translate([0, 0, t8_bottom_z - eps])
+        rotate([0, 0, 0])
+            cylinder(d = bore_d, h = t5_top_z + 2 * eps);
+}

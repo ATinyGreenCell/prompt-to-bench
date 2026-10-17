@@ -1,0 +1,49 @@
+// Two-part enclosure for a small electronics board (e.g. Arduino-based temperature logger)
+// Print orientation: both parts rest on the bed (z = 0), side by side, 10 mm apart in X.
+// The box is open-topped; the lid is a plate with a lip that slides into the box opening.
+// Units: mm
+
+// ---------------- Parameters ----------------
+box_x      = 70;    // box outer length (X)
+box_y      = 50;    // box outer width (Y)
+box_h      = 30;    // box outer height (Z)
+wall       = 2;     // box wall thickness
+floor      = 2;     // box floor thickness
+lip_t      = 1.5;   // lid lip thickness
+lip_h      = 4;     // lid lip height (extends above the plate)
+lip_x      = 65.6;  // lip outer length (X)
+lip_y      = 45.6;  // lip outer width (Y)
+clearance  = 0.2;   // clearance between lip outer size and box opening, per side
+gap        = 10;    // gap between box and lid on the bed
+eps        = 0.5;   // cutter overshoot past faces
+
+$fn = 64;
+
+// Derived: box opening size (inner X/Y), must match lip size minus clearance
+opening_x = lip_x - 2 * clearance;  // 65.2
+opening_y = lip_y - 2 * clearance;  // 45.2
+
+// ---------------- Model ----------------
+difference() {
+    union() {
+        // Part 1: box (open top)
+        translate([-box_x / 2, -box_y / 2, 0])
+            cube([box_x, box_y, box_h - floor]);   // floor included in height
+
+        // Part 2: lid (plate with a centred lip on its +Z side)
+        translate([-box_x / 2 + gap, -box_y / 2, 0])
+            cube([box_x / 2 - gap, box_y, lip_h + floor]);   // plate under the lip
+
+        // The lip is a block that sits on top of the plate and overhangs it on X and Y.
+        // It is centred on the plate. Its top and side faces are cut back by eps so no
+        // faces are exactly coplanar with the plate or the box opening.
+        translate([-box_x / 2 + gap + (box_x - lip_x) / 2,
+                   -box_y / 2 + (box_y - lip_y) / 2,
+                   floor])
+            cube([lip_x, lip_y, lip_t + eps]);
+    }
+
+    // Cut the box opening from the top face of the box (through the walls and floor)
+    translate([-box_x / 2, -box_y / 2, box_h - eps])
+        cube([opening_x, opening_y, 2 * eps]);
+}

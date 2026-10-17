@@ -1,0 +1,25 @@
+// PCR tube adapter sleeve - prints upside down
+// Units: mm
+
+$fn = 96;
+
+// --- Dimensions ---
+collar_d      = 13;    // collar outer diameter (on bed)
+collar_h      = 1.5;   // collar thickness (z = 0 to 1.5)
+sleeve_od     = 10.8;  // sleeve outer diameter
+sleeve_top_z  = 21.5;  // top of sleeve body (absolute z)
+bore_d        = 6.2;   // through-bore diameter
+eps           = 0.5;   // cutter overshoot past faces
+
+difference() {
+    union() {
+        // Collar
+        cylinder(d = collar_d, h = collar_h);
+        // Sleeve body (from collar top up to z = 21.5)
+        translate([0, 0, collar_h])
+            cylinder(d = sleeve_od, h = sleeve_top_z - collar_h);
+    }
+    // Through-bore
+    translate([0, 0, -eps])
+        cylinder(d = bore_d, h = sleeve_top_z + 2 * eps);
+}

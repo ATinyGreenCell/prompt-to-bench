@@ -1,0 +1,44 @@
+// Magnetic stirrer housing (print orientation: upside down)
+// Units: mm
+
+$fn = 64;
+
+// --- Dimensions ---
+top_thickness = 2;      // top plate thickness (z = 0 to 2)
+wall_thickness = 2.5;   // wall thickness (z = 2 to 40)
+box_height = 40;        // total height of box (open edge at z = 40)
+outer_size = 90;        // outer size in X and Y
+hole_pitch = 71.5;      // square pattern pitch for M4 screw holes
+hole_d = 4.5;           // M4 screw hole diameter
+notch_width = 12;       // cable notch width
+notch_depth = 8;        // cable notch depth from open edge (z = 32 to 40)
+eps = 0.5;              // cutter overshoot past faces
+
+// --- Model ---
+difference() {
+    // Main body: top plate + four walls, open top
+    union() {
+        // Top plate
+        translate([-outer_size/2, -outer_size/2, 0])
+            cube([outer_size, outer_size, top_thickness]);
+        // Walls (rise from z = top_thickness to z = box_height)
+        for (x = [-1, 1], y = [-1, 1])
+            translate([x > 0 ? outer_size/2 - wall_thickness : -outer_size/2,
+                       y > 0 ? outer_size/2 - wall_thickness : -outer_size/2,
+                       top_thickness])
+                cube([wall_thickness, outer_size - 2*(y > 0 ? wall_thickness : 0),
+                      box_height - top_thickness]);
+    }
+
+    // Screw holes through top plate
+    for (i = [0, 1, 2, 3]) {
+        angle = 90 * i;
+        translate([0, 0, -eps])
+            rotate([0, 0, angle])
+                cylinder(d = hole_d, h = top_thickness + 2*eps);
+    }
+
+    // Cable notch in one wall (centred along the wall, open edge at z = box_height)
+    translate([-outer_size/2 - eps, -notch_width/2, box_height - notch_depth])
+        cube([outer_size/2 + eps, notch_width, notch_depth + eps]);
+}

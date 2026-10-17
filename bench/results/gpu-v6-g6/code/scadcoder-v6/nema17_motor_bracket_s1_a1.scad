@@ -1,0 +1,67 @@
+// L-shaped mounting bracket for NEMA 17 stepper motor (e.g. syringe pump)
+// Print orientation: base plate on bed, motor plate building up in +Z
+
+// ---------- Parameters ----------
+base_x      = 25;    // base plate half-length in X
+base_y      = 45;    // base plate length in Y
+base_z      = 5;     // base plate thickness
+
+hole_m4_x   = 17;    // M4 hole offset from centre in X (both holes)
+hole_m4_y   = 30;    // M4 hole position in Y
+hole_m4_d   = 4.5;   // M4 hole diameter
+
+plate_z     = 50;    // motor plate height in Z
+plate_y     = 5;     // motor plate thickness in Y
+
+boss_d      = 23;    // motor boss hole diameter
+boss_x      = 0;     // boss hole X position
+boss_z      = 28;    // boss hole Z position
+
+screw_d     = 3.4;   // M3 screw hole diameter
+screw_n     = 4;     // number of screw holes
+screw_p     = 31;    // square pattern side length for screw holes
+
+gusset_t    = 5;     // gusset thickness in X
+gusset_leg  = 20;    // gusset leg length in Y and Z
+gusset_x0   = -25;   // left gusset start X
+gusset_x1   = 25;    // right gusset start X
+
+eps         = 0.5;   // cutter overshoot past faces
+$fn         = 96;    // curve resolution
+
+// ---------- Model ----------
+difference() {
+    union() {
+        // Base plate
+        translate([-base_x, 0, 0])
+            cube([2*base_x, base_y, base_z]);
+
+        // Motor plate (on back edge of base)
+        translate([-base_x, 0, 0])
+            cube([2*base_x, plate_y, plate_z]);
+
+        // Gussets: right triangle in YZ plane, flush with outer edges
+        for (sx = [gusset_x0, gusset_x1])
+            translate([sx, 0, 0])
+                cube([gusset_t, gusset_leg, gusset_leg]);
+    }
+
+    // M4 through-holes
+    for (sx = [-hole_m4_x, hole_m4_x])
+        translate([sx, hole_m4_y, -eps])
+            cylinder(d = hole_m4_d, h = base_z + plate_z + 2*eps);
+
+    // Motor boss hole (along Y)
+    translate([boss_x, 0, boss_z])
+        rotate([90, 0, 0])
+            cylinder(d = boss_d, h = plate_y + 2*eps, center = true);
+
+    // M3 screw holes on square pattern centred on boss hole
+    for (i = [0 : screw_n - 1]) {
+        a = screw_p / 2;
+        translate([boss_x, 0, boss_z])
+            rotate([0, 0, i * 90])
+                translate([a, a, 0])
+                    cylinder(d = screw_d, h = plate_y + 2*eps, center = true);
+    }
+}

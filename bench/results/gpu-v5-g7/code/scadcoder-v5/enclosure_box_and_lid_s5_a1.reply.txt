@@ -1,0 +1,53 @@
+```openscad
+// Two-part enclosure for a small electronics board (e.g. Arduino-based temperature logger)
+// Print orientation: both parts rest on the bed (z = 0), side by side, 10 mm apart in X.
+// The box is open-topped; the lid is a plate with a lip that slides into the box opening.
+
+// ---------------- Parameters ----------------
+box_x      = 70;    // box outer length (X)
+box_y      = 50;    // box outer width (Y)
+box_h      = 30;    // box outer height (Z)
+wall       = 2;     // box wall thickness
+floor      = 2;     // box floor thickness
+lip_t      = 1.5;   // lid lip thickness
+lip_h      = 4;     // lid lip height (extends above the plate)
+lip_x      = 65.6;  // lid lip outer length (X)
+lip_y      = 45.6;  // lid lip outer width (Y)
+clearance  = 0.2;   // clearance between lip inner size and box opening
+gap        = 10;    // horizontal gap between the two parts
+eps        = 0.5;   // cutter overshoot past faces
+
+$fn = 64;
+
+// Derived: lid plate thickness = lip_t + lip_h = 5.5 mm
+lid_t = lip_t + lip_h;
+
+// Lip inner size (with clearance on each side)
+lip_x_i = lip_x - 2 * clearance;   // 65.2
+lip_y_i = lip_y - 2 * clearance;   // 45.2
+
+// Box opening size (inner, above floor and walls)
+open_x = box_x - 2 * wall;         // 66
+open_y = box_y - 2 * wall;         // 46
+
+// ---------------- Model ----------------
+difference() {
+    union() {
+        // Part 1: box
+        translate([-box_x / 2, -box_y / 2, 0])
+            cube([box_x, box_y, box_h - floor]);   // floor included in height
+
+        // Part 2: lid (printed upside down)
+        translate([box_x / 2 + gap, -box_y / 2, 0])
+            cube([lip_x, lip_y, lid_t]);            // plate + lip, centred in X/Y
+    }
+
+    // Cut the lip recess into the lid plate, leaving the lip standing above it
+    translate([box_x / 2 + gap - lip_x / 2, -box_y / 2 - lip_y / 2, lip_t])
+        cube([lip_x_i, lip_y_i, lid_t - 0.01]);
+
+    // Cut the box opening from the top of the box (through the walls and floor)
+    translate([-box_x / 2 - open_x / 2, -box_y / 2 - open_y / 2, -eps])
+        cube([open_x, open_y, box_h + 2 * eps]);
+}
+```

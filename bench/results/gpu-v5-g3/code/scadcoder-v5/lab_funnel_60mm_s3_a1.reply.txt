@@ -1,0 +1,32 @@
+```openscad
+// Funnel with spout - printed upright, wide opening at top
+// Units: mm. Wall thickness 1.6 mm throughout.
+
+$fn = 64;
+
+// ---- Dimensions ----
+spout_od      = 10;    // spout outer diameter
+spout_id      = spout_od - 2 * 1.6;  // spout bore (6.8 mm)
+spout_len     = 20;    // spout length (z = 0 to 20)
+cone_top_d    = 60;    // cone rim outer diameter (z = 50)
+cone_bottom_d = 10;    // cone base outer diameter (z = 20)
+cone_h        = cone_top_d - cone_bottom_d;  // cone height (40 mm)
+eps           = 0.5;   // cutter overshoot past faces
+
+// ---- Model ----
+union() {
+    // Spout: tube from z = 0 to 20
+    difference() {
+        cylinder(d = spout_od, h = spout_len);
+        translate([0, 0, -eps])
+            cylinder(d = spout_id, h = spout_len + 2 * eps);
+    }
+
+    // Cone: widens from 10 mm (z = 20) to 60 mm (z = 50)
+    difference() {
+        cylinder(d = cone_top_d, h = cone_h, $fn = 64);
+        translate([0, 0, spout_len - 0.01])
+            cylinder(d = cone_bottom_d, h = cone_h + 0.01, $fn = 64);
+    }
+}
+```

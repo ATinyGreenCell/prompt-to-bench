@@ -1,0 +1,52 @@
+// Straight hose-barb reducer: 8 mm tubing -> 5 mm tubing
+// Print orientation: standing upright along +Z, centred on origin in X/Y
+
+$fn = 64;
+
+// ---- Dimensions (mm) ----
+reducer_id     = 8;    // 8 mm tubing inner diameter (bore)
+reducer_od     = 5;    // 5 mm tubing inner diameter (bore)
+barb_h_8       = 10;   // height of each 8 mm barb
+barb_od_8      = 9.5;  // outer diameter of 8 mm barb at top
+barb_od_8_bot  = 7.5;  // outer diameter of 8 mm barb at bottom
+barb_h_5       = 8;    // height of each 5 mm barb
+barb_od_5      = 6.5;  // outer diameter of 5 mm barb at bottom
+barb_od_5_top  = 5.0;  // outer diameter of 5 mm barb at top
+collar_h       = 5;    // height of cylindrical collar (z = 20 to 25)
+barb_h_total   = barb_h_8 + collar_h + barb_h_5; // 23 mm overall
+eps            = 0.5;  // overshoot for clean boolean cuts
+
+// ---- Model ----
+difference() {
+    union() {
+        // 8 mm barbs: z = 0 to 20 (two stacked, identical)
+        for (s = [-1, 1])
+            translate([0, 0, s * barb_h_8 / 2])
+                linear_extrude(height = barb_od_8 - barb_od_8_bot)
+                    polygon([
+                        [0, barb_od_8_bot / 2],
+                        [0, -barb_od_8_bot / 2],
+                        [barb_h_8, -barb_od_8 / 2],
+                        [barb_h_8, barb_od_8 / 2]
+                    ]);
+
+        // Collar: z = 20 to 25
+        translate([0, 0, barb_h_8])
+            cylinder(h = collar_h, d = 12);
+
+        // 5 mm barbs: z = 25 to 41 (two stacked, identical)
+        for (s = [-1, 1])
+            translate([0, 0, s * barb_h_5 / 2 + barb_h_8 + collar_h])
+                linear_extrude(height = barb_od_5 - barb_od_5_top)
+                    polygon([
+                        [0, barb_od_5_top / 2],
+                        [0, -barb_od_5_top / 2],
+                        [barb_h_5, -barb_od_5 / 2],
+                        [barb_h_5, barb_od_5 / 2]
+                    ]);
+    }
+
+    // Straight bore through full length
+    translate([0, 0, -eps])
+        cylinder(h = barb_h_total + 2 * eps, d = reducer_id);
+}

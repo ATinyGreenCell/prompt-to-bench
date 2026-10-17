@@ -1,0 +1,42 @@
+```openscad
+// DIY magnetic stirrer housing - print orientation (upside down)
+// Units: mm
+
+// ---------- Parameters ----------
+top_thickness      = 2;     // top plate thickness (z = 0 to 2)
+wall_thickness     = 2.5;   // wall thickness
+box_height         = 40;    // total height of box (open at top)
+outer_size         = 90;    // outer X and Y size of box
+screw_hole_d       = 4.5;   // M4 screw hole diameter
+screw_hole_pitch   = 71.5;  // square pattern diagonal (centre to centre)
+cable_notch_w      = 12;    // cable notch width
+cable_notch_depth  = 8;     // cable notch depth from open edge (z = 32 to z = 40)
+eps                = 0.5;   // cutter overshoot past faces
+
+$fn = 64;
+
+// ---------- Model ----------
+difference() {
+    union() {
+        // Top plate (lies on bed)
+        translate([-outer_size/2, -outer_size/2, 0])
+            cube([outer_size, outer_size, top_thickness]);
+
+        // Four walls rising from plate to open top
+        for (x = [-outer_size/2, outer_size/2])
+            for (y = [-outer_size/2, outer_size/2])
+                translate([x - wall_thickness/2, y - wall_thickness/2, top_thickness])
+                    cube([wall_thickness, wall_thickness, box_height - top_thickness]);
+    }
+
+    // Four M4 screw holes through top plate, centred square pattern
+    for (sx = [-1, 1], sy = [-1, 1])
+        translate([sx * screw_hole_pitch/2, sy * screw_hole_pitch/2, -eps])
+            cylinder(d = screw_hole_d, h = top_thickness + 2*eps);
+
+    // Cable notch in one wall: 12 mm wide, centred along wall,
+    // reaching 8 mm down from open edge (z = 32 to z = 40)
+    translate([-outer_size/2 + wall_thickness/2, 0, box_height - cable_notch_depth])
+        cube([cable_notch_w, outer_size/2 - wall_thickness/2 - eps, cable_notch_depth + eps]);
+}
+```
