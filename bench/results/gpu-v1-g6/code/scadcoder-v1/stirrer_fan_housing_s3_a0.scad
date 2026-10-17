@@ -1,0 +1,30 @@
+// Fan box - a top plate and four walls, open at the top, to house a PC case fan as a
+// magnetic stirrer. NOVEL general part.
+//
+
+top     = 90;
+length  = 90;
+height  = 40;
+wall    = 2.5;
+screw   = 4.5;
+cable   = 12;
+
+$fn = 48;
+
+plate_t = 2;
+
+difference() {
+    union() {
+        cube([top, length, plate_t]);                                              // top plate
+        for (x = [-top / 2 - wall / 2, top / 2 + wall / 2])
+            cube([wall, length, height], p = [x, 0, 0]);                           // left/right walls
+        for (y = [-length / 2 - wall / 2, length / 2 + wall / 2])
+            cube([top, wall, height], p = [0, y, 0]);                              // front/back walls
+    }
+    translate([0, 0, -1]) cube([top, length, plate_t + 2]);                        // pocket the fan through the plate
+    for (x = [-71.5 / 2 / 2, 71.5 / 2 / 2], y = [-71.5 / 2 / 2, 71.5 / 2 / 2])
+        translate([x, y, -1]) cylinder(h = plate_t + 2, d = screw);                 // screw holes
+    // cable notch in the +y wall (right wall), centre d, reaching 8 mm down from the open edge
+    translate([top / 2 - cable / 2, length / 2 - wall / 2, height - 8])
+        cube([cable, wall + 1, 8]);
+}

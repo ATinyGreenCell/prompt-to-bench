@@ -1,0 +1,20 @@
+```openscad
+// Pestle for a microcentrifuge tube - a cylindrical handle with grip grooves, a tapered cone,
+// and a rounded tip. NOVEL general part.
+//
+
+handle_d = 8;
+cone     = 8;
+tip      = 3;
+grooves  = [10, 15, 20, 25];
+
+$fn = 64;
+
+union() {
+    cylinder(h = 45, d = handle_d);
+    translate([0, 0, 45]) cylinder(h = 17, d1 = cone, d2 = tip);
+    translate([0, 0, 62]) sphere(d = tip);
+    for (z = grooves)
+        translate([0, 0, z]) cylinder(h = 2, d = handle_d + 2);   // groove: wider cylinder removed through the wall
+}
+```

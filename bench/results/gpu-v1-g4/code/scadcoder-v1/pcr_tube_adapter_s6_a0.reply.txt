@@ -1,0 +1,23 @@
+```openscad
+// Adapter sleeve - a collar with a tube sleeve above it, boring through, to adapt a smaller tube
+// (e.g. 0.2 mL PCR) to a rack hole for a larger tube (e.g. 1.5 mL). NOVEL general part.
+//
+
+collar_d   = 13;
+collar_h   = 1.5;
+sleeve_d   = 10.8;
+sleeve_h   = 21.5;
+bore_d     = 6.2;
+
+$fn = 72;
+
+t = min(bore_d, wall(sleeve_d, bore_d), wall(collar_d, bore_d));        // keep a wall in the narrower section
+
+difference() {
+    union() {
+        cylinder(h = collar_h, d = collar_d);                 // collar (contact surface)
+        cylinder(h = sleeve_h, d = sleeve_d);                 // sleeve body
+    }
+    translate([0, 0, -1]) cylinder(h = sleeve_h + 2, d = bore_d);         // through-bore
+}
+```

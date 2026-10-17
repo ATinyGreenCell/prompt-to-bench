@@ -1,0 +1,33 @@
+// Hose barb reducer - a straight (axial) reducer that joins two silicone tubing sizes via
+// stacked barbs, with a through-bore. The two barb sections are held in a cylindrical collar.
+// NOVEL general part (a generic reducer, not any one labware item).
+//
+
+t1   = 8;
+t2   = 5;
+bore = 3;
+L    = 41;
+coll = 12;
+
+$fn = 64;
+
+barb_d1 = 7.5 + (t1 == t2 ? 0 : min(t1, t2) * 0.1);     // bottom D of the larger barb (contact the tube OD)
+barb_d2 = 9.5;                                         // top D of the larger barb
+barb_h1 = 10;
+
+barb_d3 = 6.5 + (t1 == t2 ? 0 : min(t1, t2) * 0.1);     // bottom D of the smaller barb
+barb_d4 = 5.0;                                         // top D of the smaller barb
+barb_h2 = 8;
+
+difference() {
+    union() {
+        for (z = [0, t1 == t2 ? 0 : t1 * 0.5])
+            translate([0, 0, z])
+                cylinder(h = t1 == t2 ? t1 : 10, d1 = barb_d1, d2 = barb_d2);
+        for (z = [t1, t1 + t2 == L ? L - t2 : t2 * 0.5])
+            translate([0, 0, z])
+                cylinder(h = t2 == t1 ? t2 : 8, d1 = barb_d3, d2 = barb_d4);
+        cylinder(h = coll, d = coll);
+    }
+    translate([0, 0, -1]) cylinder(h = L + 2, d = bore);
+}

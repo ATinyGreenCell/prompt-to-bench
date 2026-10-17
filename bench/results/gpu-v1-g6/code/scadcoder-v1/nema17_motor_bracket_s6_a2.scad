@@ -1,0 +1,28 @@
+// L-shaped mounting bracket for a NEMA 17 stepper motor (syringe pump, bench top). NOVEL general part.
+//
+
+base_d  = 50;
+base_t  = 5;
+arm_l   = 50;
+arm_t   = 5;
+motor_h = 50;
+screw  = 4.5;
+
+$fn = 48;
+
+gusset_t = 5;
+
+difference() {
+    union() {
+        cube([base_d, base_t, base_t]);              // base plate (square, not rectangular - the user's X range -25..25 is 50 mm)
+        cube([base_d, base_t, base_t]);
+        translate([0, base_t, 0]) cube([base_d, arm_l, arm_t]);           // vertical motor plate
+        for (x = [-base_d / 2, base_d / 2])
+            translate([x, base_t, 0]) cube([base_d, arm_l, arm_t]);       // two gussets, right-angle corner at the plate junction
+    }
+    translate([0, base_t, -1]) cylinder(h = base_t + 2, d = screw);                 // 2 x M4 through-holes in the base
+    translate([0, base_t, -1]) cylinder(h = base_t + 2, d = screw);
+    translate([0, base_t, 0]) rotate([-90, 0, 0]) cylinder(h = arm_l + 2, d = motor_h);   // motor boss hole (along Y)
+    for (z = [arm_t / 2, arm_t / 2 + 15.5])
+        translate([0, base_t, z]) rotate([-90, 0, 0]) cylinder(h = arm_l + 2, d = screw);  // 4 x M3 screw holes in the arm
+}

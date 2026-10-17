@@ -1,0 +1,31 @@
+```openscad
+// 96-well PCR tube rack - a solid block with a regular square grid of vertical through-holes, for
+// standing 0.2 mL (200 uL) PCR tubes. NOVEL part: a generic rack, not any one lab's specification.
+//
+
+cols   = 12;
+rows   = 8;
+tube_d = 6.2;
+pitch  = 9.0;
+H      = 20;
+L      = 127.76;
+W      = 85.48;
+chamf  = 5;
+
+$fn = 48;
+
+size_d = tube_d + 2 * pitch;                 // grid pitch centred in the hole
+L_d    = size_d * cols - 2 * pitch;          // diagonal size of the 12 x 8 grid (centre to centre)
+W_d    = size_d * rows - 2 * pitch;
+margin = min(pitch / 2, (L - L_d) / 2, (W - W_d) / 2);
+
+difference() {
+    translate([-L / 2, -W / 2, 0]) cube([L, W, H]);
+    for (i = [0 : cols - 1])
+        for (j = [0 : rows - 1])
+            translate([-(size_d / 2) + i * pitch, -(size_d / 2) + j * pitch, -1])
+                cylinder(h = H + 2, d = tube_d);
+    translate([-(L / 2 - margin), -(W / 2 - margin), 0])
+        cube([chamf, chamf, H]);              // orientation chamfer at the A1 corner
+}
+```

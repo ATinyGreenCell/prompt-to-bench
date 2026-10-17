@@ -1,0 +1,26 @@
+```openscad
+// Open-top rectangular buffer tank for a mini horizontal gel-electrophoresis box. NOVEL general part.
+//
+
+inner_l = 120;
+inner_w = 70;
+height  = 40;
+wall    = 3;
+platform_t = 3;
+channel_h = 10;
+electrode_d = 2;
+
+$fn = 48;
+
+inner_h = height - wall;
+p       = min(platform_t, inner_h - channel_h);          // keep the channel above the platform
+
+difference() {
+    cube([inner_l + 2 * wall, inner_w, height]);
+    translate([wall, wall, 0]) cube([inner_l, inner_w, height - channel_h]);   // floor + back wall below the channel
+    translate([wall, wall, height - wall]) cube([inner_l, inner_w, wall]);            // top wall (open top)
+    translate([-1, inner_w / 2 - 1.5, channel_h]) cube([inner_l + 2, 3, p]);                 // central platform (spans width, reduced Y to clear the wall it passes through)
+    for (y = [-inner_w / 2, inner_w / 2])
+        translate([0, y, -1]) rotate([-90, 0, 0]) cylinder(h = height + 2, d = electrode_d);   // electrode holes, horizontal along X, at the two Y ends
+}
+```

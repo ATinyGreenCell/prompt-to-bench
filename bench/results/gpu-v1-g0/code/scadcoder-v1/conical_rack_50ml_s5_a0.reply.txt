@@ -1,0 +1,28 @@
+```openscad
+// Tube rack - a flat plate with a regular grid of tube holes and two solid side walls.
+// The two walls rest on a surface and the tubes pass through the holes. The short ends are
+// open. NOVEL general part (a generic tube rack, not any one labware item).
+//
+
+cols   = 6;
+pitch_x = 40;
+pitch_y = 40;
+layer  = 4;
+h      = 70;
+d      = 30.5;
+
+$fn = 48;
+
+plate_w = cols * pitch_x + 2 * (pitch_x / 2);   // centre-to-centre grid, one tube radius clear of the edge
+plate_t = layer;
+
+difference() {
+    translate([-plate_w / 2, -plate_t / 2, 0]) cube([plate_w, plate_t, layer]);
+    for (i = [-cols / 2 : 1 : cols / 2 - 1])
+        for (j = [-1 : 1])
+            translate([i * pitch_x, j * pitch_y, -1]) cylinder(h = layer + 2, d = d);
+}
+
+for (wall = [-1, 1])
+    translate([wall * (plate_w / 2 - 2), -plate_t / 2, 0]) cube([plate_w / 2 - 1, plate_t, h]);
+```

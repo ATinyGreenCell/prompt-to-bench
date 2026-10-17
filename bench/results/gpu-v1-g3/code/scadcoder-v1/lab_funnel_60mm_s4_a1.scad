@@ -1,0 +1,24 @@
+// Funnel - a spout (tube) with a conical section widening to a rim, hollow through. NOVEL general part.
+//
+
+spout_d  = 10;
+spout_l  = 20;
+cone_h   = 30;
+rim_d    = 60;
+wall     = 1.6;
+
+$fn = 64;
+
+ib = max(1.6, spout_d - 2 * wall);   // keep a bore even if the wall comes out too thin
+
+translate([0, 0, 0])
+difference() {
+    union() {
+        cylinder(h = spout_l, d = spout_d);                 // spout (tube)
+        cylinder(h = cone_h, d1 = spout_d, d2 = rim_d);     // cone: spout end up to the rim
+    }
+    translate([0, 0, -1])
+        cylinder(h = spout_l + 2, d = ib);                 // bore through the spout
+    translate([0, 0, spout_l - 1])
+        cylinder(h = cone_h + 2, d1 = ib, d2 = rim_d - 2 * wall);   // bore through the cone (open outlet)
+}

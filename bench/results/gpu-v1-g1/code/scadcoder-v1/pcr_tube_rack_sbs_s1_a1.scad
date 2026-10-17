@@ -1,0 +1,34 @@
+// PCR tube rack - a rectangular block with a regular grid of vertical through-holes for 96 x
+// 0.2 mL (micro) tubes, in the standard microplate (ANSI/SLAS) footprint. NOVEL part -
+// designed here, not copied from an existing part.
+//
+
+cols   = 12;
+rows   = 8;
+tube_d = 6.2;
+pitch  = 9.0;
+H      = 20;
+L      = 127.76;
+W      = 85.48;
+chamf  = 5;
+
+$fn = 48;
+
+p  = max(pitch, tube_d + 2);                 // keep a wall between neighbouring holes
+L2 = (cols - 1) * p + tube_d + 2;
+W2 = (rows - 1) * p + tube_d + 2;
+d  = min(tube_d, min(L2 - 2 * chamf, W2 - 2 * chamf));   // shrink the hole diameter so the
+                                                        // chamfer does not eliminate the first hole
+
+translate([-(L - L2) / 2, -(W - W2) / 2, 0])
+difference() {
+    cube([L, W, H]);
+    for (i = [0 : cols - 1], j = [0 : rows - 1])
+        translate([L2 / 2 + i * p, W2 / 2 + j * p, -1]) cylinder(h = H + 2, d = d);
+    // chamfer the vertical edge at the A1 (lower-left, back) corner: remove material below the
+    // plane x + z = chamf, for x > 0, z > 0 (a 45 deg chamfer with legs = chamf)
+    translate([0, 0, 0]) difference() {
+        cube([chamf + 1, W, H]);
+        translate([chamf, 0, 0]) cube([chamf + 1, W, H - chamf]);     // remove the lower half
+    }
+}

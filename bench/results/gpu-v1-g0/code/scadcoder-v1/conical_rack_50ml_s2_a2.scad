@@ -1,0 +1,27 @@
+// Tube rack - a flat plate with a regular grid of tube holes and two solid walls along the
+// long edges. Printed upside down and flipped over, it stands on the two walls with the
+// tubes passing through the holes. NOVEL general part.
+//
+
+cols   = 6;
+rows   = 2;
+tube_d = 30.5;
+pitch_x = 40;
+pitch_y = 40;
+plate_h = 4;
+wall_h = 70;
+
+$fn = 48;
+
+edge = tube_d + 4;
+
+difference() {
+    translate([-X, -Y, 0]) cube([X, Y, plate_h]);
+    for (i = [0 : cols - 1], j = [0 : rows - 1])
+        translate([-(tube_d / 2), j * pitch_y - Y / 2, 0]) rotate([-90, 0, 0]) cylinder(h = plate_h + 1, d = tube_d);
+    for (i = [0 : cols - 1])
+        translate([-(edge / 2), -Y / 2, 0]) cube([edge, Y, wall_h]);
+}
+
+X = cols * pitch_x + 2 * (tube_d / 2 + edge / 2);
+Y = rows * pitch_y + 2 * (tube_d / 2 + edge / 2);

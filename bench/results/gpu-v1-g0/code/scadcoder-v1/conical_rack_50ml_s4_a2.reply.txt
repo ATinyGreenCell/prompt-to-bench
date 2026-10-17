@@ -1,0 +1,32 @@
+```openscad
+// Tube rack - a flat plate with a regular grid of tube holes and two solid walls along the
+// long edges. Printed upside down and flipped over, it stands on the two walls with the
+// tubes passing through the holes. NOVEL general part.
+//
+
+cols   = 6;
+pitch_x = 40;
+pitch_y = 40;
+L      = 130;
+W      = 90;
+t      = 4;
+h      = 70;
+d      = 30.5;
+
+$fn = 48;
+
+plate_t = 4;
+
+difference() {
+    union() {
+        translate([-L / 2, -W / 2, 0]) cube([L, W, plate_t]);                                          // plate
+        for (x = [-L / 2 + pitch_x / 2, L / 2 - pitch_x / 2])
+            translate([x, -W / 2, 0]) cube([pitch_x, W, plate_t]);                                     // edge walls
+    }
+    for (i = [0 : cols - 1], j = [0 : 1])
+        translate([ -L / 2 + pitch_x / 2 + i * pitch_x,
+                    -W / 2 + pitch_y / 2 + j * pitch_y,
+                    -1 ])
+            cylinder(h = plate_t + 2, d = d);
+}
+```

@@ -1,0 +1,35 @@
+// Hose barb reducer - a straight reduction spool with a through bore that carries two stacked
+// barbs for one tubing size into two stacked barbs for a smaller size, with a collar near the
+// transition. NOVEL general part (a generic reducer, not any one labware item).
+//
+
+t1   = 8;
+t2   = 5;
+bore = 3;
+L    = 41;
+g    = 1.5;
+
+$fn = 64;
+
+barb_d1 = 7.5 + 2 * g;
+barb_d2 = 6.5;
+
+module barb(h, d) {
+    d_t = d + 2 * g;
+    difference() {
+        union() {
+            cylinder(h = h, d = d_t);
+            translate([0, 0, d_t - 1]) cylinder(h = 1, d = d + 2);   // shoulder
+        }
+        translate([0, 0, -1]) cylinder(h = h + 2, d = bore);
+    }
+}
+
+difference() {
+    union() {
+        for (z = [0, 10]) translate([0, 0, z]) barb(h = 10, d = barb_d1);      // upper size
+        translate([0, 0, 20]) cylinder(h = 5, d = 12);                         // collar
+        for (z = [25, 33]) translate([0, 0, z]) barb(h = 8, d = barb_d2);      // lower size
+    }
+    translate([0, 0, -1]) cylinder(h = L + 2, d = bore);
+}

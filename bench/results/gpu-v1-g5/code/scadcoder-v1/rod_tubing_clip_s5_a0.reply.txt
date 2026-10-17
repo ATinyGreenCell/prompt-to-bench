@@ -1,0 +1,37 @@
+```openscad
+// Stand-off clip - a ring that snaps onto a round stand rod, with a separate ring for a
+// piece of tubing, joined by a bridge. Printed flat (an extruded 2-D profile): the two rings
+// do not touch the bed until they are placed over the rod they are meant to hold.
+//
+// NOVEL general part.
+//
+
+stand_d  = 12.7;
+tube_d   = 6;
+bridge_w = 6;
+height   = 10;
+
+$fn = 72;
+
+ring_d = stand_d + 2 * 3;          // wall
+open   = 10;
+g      = stand_d + 0.5;           // clearance for the rod
+
+ring_t = tube_d + 2 * 2;           // wall
+open_t = 4.5;
+g_t    = tube_d + 0.5;
+
+difference() {
+    union() {
+        circle(d = ring_d);
+        circle(d = ring_t);
+        rectangle([bridge_w, 2 * 6]);
+    }
+    translate([0, 0, -1]) circle(d = g);
+    translate([15, 0, -1]) circle(d = g_t);
+    translate([-open / 2, -open / 2, -1]) rectangle([open, open]);          // -X opening in the stand ring
+    translate([15 + open_t / 2, -open_t / 2, -1]) rectangle([open_t, open_t * 2]);   // +X opening in the tube ring
+}
+
+linear_extrude(height) shape();
+```

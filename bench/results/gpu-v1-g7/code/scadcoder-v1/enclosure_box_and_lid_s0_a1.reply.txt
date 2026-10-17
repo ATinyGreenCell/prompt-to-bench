@@ -1,0 +1,27 @@
+```openscad
+// Two-part box enclosure for a small electronics board (e.g. an Arduino-based temperature logger),
+// printed as one piece with a part between them. NOVEL general part.
+//
+
+box_x   = 70;
+box_y   = 50;
+box_z   = 30;
+wall    = 2;
+floor   = 2;
+
+lip_t   = 1.5;
+lip_h   = 4;
+clearance = 0.2;
+
+$fn = 48;
+
+part_size_x = box_x + 10;
+part_size_y = box_y + 10;
+part_size_z = max(box_z, floor + lip_h + lip_t);      // tall enough for the box and the lip
+
+difference() {
+    cube([part_size_x, part_size_y, part_size_z]);
+    for (p = [box_x + 5, box_y + 5])
+        translate(p) cube([box_x - 2 * wall, box_y - 2 * wall, box_z + 1]);   // hollow the box side
+}
+```

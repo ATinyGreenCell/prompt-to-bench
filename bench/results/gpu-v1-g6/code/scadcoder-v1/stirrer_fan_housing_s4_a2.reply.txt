@@ -1,0 +1,30 @@
+```openscad
+// Magnetic stirrer housing - an open box (a plate with four walls) that covers a PC case fan
+// to turn it into a stir plate. The top plate is the stirring surface. NOVEL general part.
+//
+
+top    = 90;
+length = 90;
+height = 40;
+wall   = 2.5;
+screw  = 4.5;
+
+$fn = 48;
+
+plate_t = 2;
+
+difference() {
+    union() {
+        cube([top, length, plate_t]);                                              // top plate
+        for (x = [-top / 2 - wall, top / 2 - wall])
+            cube([wall, length, height], p = [x, 0, 0]);                           // left walls
+        for (y = [-length / 2 - wall, length / 2 - wall])
+            cube([top, wall, height], p = [0, y, 0]);                              // right walls
+    }
+    translate([0, 0, -1]) cube([top, length, plate_t + 2]);                        // clear the top surface
+    for (x = [-71.5 / 2, 71.5 / 2], y = [-71.5 / 2, 71.5 / 2])
+        translate([x, y, -1]) cylinder(h = plate_t + 2, d = screw);                 // screw holes
+    // one cable notch in one wall: 12 mm wide, centred along the wall, 8 mm deep from the open edge
+    translate([-top / 2 - wall, 0, height - 8]) cube([wall + 12, length, 8]);
+}
+```

@@ -1,0 +1,47 @@
+// Two-part enclosure for a small electronics board, printed as one piece with a part between them.
+// NOVEL general part - a box with an open top and a separate lid plate with a lip that drops into the
+// opening. The two parts are laid side by side on the bed with a small gap so they build in one print.
+// (The lip does not go all the way through - it is a finger that seats in the opening, not a
+// complete cover.)
+//
+
+box_x   = 70;
+box_y   = 50;
+box_z   = 30;
+wall    = 2;
+floor   = 2;
+
+lip_t   = 1.5;
+lip_h   = 4;
+clearance = 0.2;
+
+$fn = 48;
+
+gap = 10;
+
+module box() {
+    difference() {
+        cube([box_x, box_y, box_z + floor]);
+        translate([wall, wall, floor]) cube([box_x - 2 * wall, box_y - 2 * wall, box_z + 1]);
+    }
+}
+
+module lid() {
+    plate_h = 2;
+    union() {
+        cube([box_x, box_y, plate_h]);                                              // plate
+        translate([-(lip_h / 2 - clearance), -wall, 0])                           // lip, centred in X
+            cube([lip_t, box_y + 2 * wall, lip_h]);
+    }
+}
+
+box_x_l = box_x + gap;
+size    = [box_x_l, box_y, max(box_z + floor, plate_h + lip_h)];
+
+difference() {
+    cube(size);
+    translate([0, 0, 1]) union() {
+        box();
+        translate([box_x_l - gap, 0, 0]) rotate([0, 90, 0]) lid();                 // lid upside down, lip facing +Y
+    }
+}

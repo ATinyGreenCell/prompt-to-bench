@@ -1,0 +1,29 @@
+// Agarose gel comb - a flat plate with a back bar and a row of rectangular teeth, for casting
+// horizontal gels. NOVEL general part.
+//
+
+cols   = 10;
+teeth_d = 5.0;
+teeth_l = 12;
+pitch  = 1.5;
+base_t = 1.5;
+back_w = 12;
+
+$fn = 48;
+
+P = max(pitch, teeth_d + 1.5);                 // keep a material wall between teeth
+L = 70;                                        // spine length (X)
+w = back_w;                                    // spine width (Y)
+t = base_t;                                    // plate thickness (Z)
+
+overhang = min(1.5, P / 2 - 0.5);              // the tooth tip projects past the spine edge
+
+difference() {
+    union() {
+        cube([L, w, t]);                       // spine (back bar)
+        for (i = [0 : cols - 1])
+            translate([-(teeth_d / 2) + i * P, 0, 0]) cube([teeth_d, teeth_l, t + overhang]);   // teeth
+    }
+    for (i = [0 : cols - 1])
+        translate([-(teeth_d / 2) + i * P, 0, -1]) cube([teeth_d, teeth_l + 2, 1]);           // pocket for each tooth
+}

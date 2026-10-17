@@ -1,0 +1,41 @@
+```openscad
+// Stand-off clip - a ring that snaps onto a round stand rod, with a separate ring for a
+// piece of tubing, joined by a bridge. Printed flat (an extruded 2-D profile): the two rings
+// do not touch the bed until they are assembled onto a stand, so no flat spots are needed.
+// NOVEL general part.
+//
+
+stand_d  = 12.7;
+tube_d   = 6;
+bridge_w = 6;
+height   = 10;
+
+$fn = 48;
+
+ring_d = stand_d + 2 * 3;          // outer diameter of the stand ring
+open   = 10;                       // opening in the stand ring (-X side)
+g      = stand_d + 0.5;            // approach the stand with a clearance gap
+
+open_t = 4.5;                      // opening in the tubing ring (+X side)
+
+difference() {
+    union() {
+        ring(stand_d + 2 * 3, open, height);                 // stand ring
+        ring(tube_d, open_t, height, t = 2, centre_x = 15);   // tubing ring
+        translate([8, 0, 0]) cube([bridge_w, 6, height]);      // bridge
+    }
+    translate([0, -5.1, -1]) rotate([-90, 0, 0]) cylinder(h = height + 2, d = g);   // stand rod
+    translate([15, -2.25 - 1, -1]) rotate([-90, 0, 0]) cylinder(h = height + 2, d = open_t + 2); // tubing opening
+}
+
+// Ring with a radial opening, for a round rod of diameter d. Outer diameter od, wall t,
+// height h, opening cut out of the -X side. Centre x, y (the opening axis is the X axis).
+module ring(d, open, h, t = 3, centre_x = 0) {
+    od = d + 2 * t;
+    difference() {
+        cylinder(h = h, d = od);
+        translate([centre_x - open / 2, -od / 2 - 1, 0]) rotate([-90, 0, 0]) translate([0, 0, -1])
+            cylinder(h = h + 2, d = open + 2);
+    }
+}
+```

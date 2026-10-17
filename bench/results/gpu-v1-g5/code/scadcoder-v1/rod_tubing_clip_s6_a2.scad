@@ -1,0 +1,27 @@
+// Stand rod and tubing clip - a part that snaps onto a round stand rod (e.g. a bench mat
+// stand or shelf pole) and holds a piece of round tubing next to it. NOVEL general part.
+//
+
+stand_d  = 12.7;
+tubing_d = 6;
+height   = 10;
+
+$fn = 72;
+
+ring_d = stand_d + 2 * 3;          // outer diameter of the stand ring
+open   = 10;                       // opening in the stand ring, so it snaps onto the rod
+
+bridge_w = 6;
+t        = min(2, height - 1);      // keep a wall above the lowest slot
+
+difference() {
+    union() {
+        cylinder(h = height, d = ring_d);                 // stand ring (outer)
+        cylinder(h = height - 0.01, d = stand_d + 2 * 3 - open);   // stand ring (inner)
+        translate([15, 0, 0]) cylinder(h = height, d = tubing_d + 2 * 2);                 // tubing ring (outer)
+        translate([15, 0, 0]) cylinder(h = height - 0.01, d = tubing_d + 2 * 2 - 4.5);   // tubing ring (inner)
+        translate([-bridge_w / 2, -t / 2, 0]) cube([bridge_w, t, height]);                 // bridge
+    }
+    translate([0, -open / 2 - 1, 0]) rotate([-90, 0, 0]) cube([open + 2, t + 2, height]);           // stand ring opening
+    translate([15, -4.5 / 2 - 1, 0]) rotate([-90, 0, 0]) cube([4.5 + 2, t + 2, height]);           // tubing ring opening
+}

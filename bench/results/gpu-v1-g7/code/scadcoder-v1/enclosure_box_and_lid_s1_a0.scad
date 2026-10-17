@@ -1,0 +1,45 @@
+// Two-part enclosure for a small electronics board, printed as one piece with a part between them.
+// NOVEL general part - a box with an open top and a separate lid plate with a lip, the two resting
+// on the bed with a flat part between them so they fuse during printing. The lip drops into the
+// box opening with clearance, for a snap-fit assembly after print.
+//
+
+box_x   = 70;
+box_y   = 50;
+box_z   = 30;
+wall    = 2;
+floor   = 2;
+lip_t   = 1.5;
+lip_h   = 4;
+clearance = 0.2;
+
+$fn = 48;
+
+gap = 10;
+
+part1 = box_x + 2 * wall;
+part2 = box_x + 2 * wall + gap;
+
+module box() {
+    difference() {
+        cube([box_x, box_y, box_z + floor]);
+        translate([wall, wall, floor]) cube([box_x - 2 * wall, box_y - 2 * wall, box_z + 1]);
+    }
+}
+
+module lid() {
+    cl = max(0.1, clearance);
+    plate_h = 2;
+    union() {
+        cube([box_x + 2 * wall, box_y, plate_h]);                                              // plate
+        translate([wall + cl, wall + cl, 0]) cube([box_x - 2 * wall - 2 * cl, box_y - 2 * cl, lip_t + lip_h]);   // lip
+    }
+}
+
+part1_size = [box_x + 2 * wall, box_y, box_z + floor];
+part2_size = [box_x + 2 * wall + gap, box_y, max(plate_h, lip_t + lip_h)];
+
+difference() {
+    cube([part1_size[0] + part2_size[0], box_y, max(part1_size[2], part2_size[2])]);
+    translate([part1_size[0], 0, -1]) cube([part1_size[0] + 2, box_y, max(part1_size[2], part2_size[2])]);   // gap
+}

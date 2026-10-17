@@ -1,0 +1,26 @@
+```openscad
+// Slide drying rack - a solid base block with a row of parallel slots standing up on their long
+// edge, for drying 10 x 75 mm microscope slides. NOVEL general part.
+//
+
+slides = 10;
+base_l = 90;
+base_w = 45;
+base_h = 20;
+slot_l = 77;
+slot_w = 1.6;
+slot_d = 10;
+pitch   = 3.5;
+
+$fn = 48;
+
+slot_x = (base_l - 2 * slot_l) / 2;
+pitch_y = slot_w + pitch;
+start_y = (base_w - slides * pitch_y) / 2;
+
+difference() {
+    translate([0, 0, 0]) cube([base_l, base_w, base_h]);
+    for (i = [0 : slides - 1])
+        translate([slot_x, start_y + i * pitch_y, 0]) cube([slot_l, slot_w, base_h - slot_d]);
+}
+```

@@ -1,0 +1,35 @@
+```openscad
+// PCR tube rack - a rectangular block with a regular square grid of vertical through-holes, for
+// standing 96 x 0.2 mL (micro) tubes. NOVEL part: a generic rack for round tubes of up to 5.9 mm
+// diameter. (The ANSI/SLAS microplate footprint is the same as for a 96-well plate, but the wells
+// are round and shallower - a different part.)
+//
+
+cols   = 12;
+rows   = 8;
+tube_d = 6.2;
+pitch  = 9.0;
+H      = 20;
+L      = 127.76;
+W      = 85.48;
+chamf  = 5;
+
+$fn = 48;
+
+size_d = tube_d + 2;                 // hole diameter + wall (the walls are thin - this is a tube stand, not a reservoir)
+pitch_x = min(pitch, L - 2 * size_d / 2);
+pitch_y = min(pitch, W - 2 * size_d / 2);
+
+difference() {
+    translate([-L / 2, -W / 2, 0]) cube([L, W, H]);
+    for (i = [0 : cols - 1])
+        for (j = [0 : rows - 1])
+            translate([-(pitch_x / 2 + i * pitch_x), -(pitch_y / 2 + j * pitch_y), -1])
+                cylinder(h = H + 2, d = size_d);
+    // orientation chamfer: remove 45 deg (leg = min(chamf, tube_d + 2)) from the A1 vertical edge
+    leg = min(chamf, size_d);
+    translate([-L / 2 - 1, -W / 2 - 1, 0]) cube([L + 2, W + 2, chamf]);      // base
+    translate([-L / 2 - 1, -W / 2 - 1, H - chamf]) cube([L + 2, chamf * 2, chamf]);           // long wall
+    translate([-L / 2 - 1, -W / 2 - 1, H - chamf]) rotate([0, 90, 0]) cube([chamf * 2, H + 2, chamf]);   // end wall
+}
+```
