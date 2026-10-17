@@ -1,0 +1,40 @@
+// DIY magnetic stirrer housing for 80 mm PC fan
+// Print orientation: top plate (stirring surface) on bed, open side up
+
+$fn = 64;
+
+// --- Main dimensions ---
+outer_x      = 90;    // outer size X
+outer_y      = 90;    // outer size Y
+height       = 40;    // total height (top plate + walls)
+plate_t      = 2;     // top plate thickness (on bed, z=0..2)
+wall_t       = 2.5;   // wall thickness
+
+// --- Fan mounting holes ---
+hole_d       = 4.5;   // M4 clearance hole diameter
+hole_pitch   = 71.5;  // square pattern spacing (centre to centre)
+
+// --- Cable notch ---
+notch_w      = 12;    // notch width (along wall)
+notch_depth  = 8;     // notch depth down from open edge (z=32..40)
+
+eps = 0.5;            // cutting overlap
+
+difference() {
+    // Outer solid box
+    translate([-outer_x/2, -outer_y/2, 0])
+        cube([outer_x, outer_y, height]);
+
+    // Inner cavity (open at top)
+    translate([-(outer_x/2 - wall_t), -(outer_y/2 - wall_t), plate_t])
+        cube([outer_x - 2*wall_t, outer_y - 2*wall_t, height - plate_t + eps]);
+
+    // Four M4 mounting holes through the top plate
+    for (sx = [-1, 1], sy = [-1, 1])
+        translate([sx*hole_pitch/2, sy*hole_pitch/2, -eps])
+            cylinder(d = hole_d, h = plate_t + 2*eps);
+
+    // Cable notch in the -Y wall, centred along X
+    translate([-notch_w/2, -outer_y/2 - eps, height - notch_depth])
+        cube([notch_w, wall_t + 2*eps, notch_depth + eps]);
+}

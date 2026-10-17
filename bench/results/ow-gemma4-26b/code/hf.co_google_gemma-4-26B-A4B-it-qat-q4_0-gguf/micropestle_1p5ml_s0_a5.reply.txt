@@ -1,0 +1,82 @@
+```openscad
+// Pestle for 1.5 mL Microcentrifuge Tube
+// Final Corrected Version
+// Fixed: 
+// 1. "NOT watertight" error: This was caused by the subtraction of the "ring" 
+//    leaving a zero-thickness boundary at the inner radius of the groove.
+//    The fix is to ensure the inner cylinder of the subtraction is significantly 
+//    smaller than the handle's core to prevent any mathematical "grazing" of surfaces.
+// 2. "1 separate body" -> Now 1 single watertight solid.
+// 3. "Empty slices" -> Corrected groove logic to ensure a single manifold.
+
+// --- Dimensions (mm) ---
+handle_diameter = 8;          // Diameter of the cylindrical handle
+handle_height = 45;           // Height of the handle section
+cone_base_diameter = 8;       // Diameter at the start of the taper (z=45)
+cone_tip_diameter = 3;        // Diameter at the end of the taper (z=62)
+cone_height = 62 - 45;        // Vertical height of the conical section
+tip_diameter = 3;             // Diameter of the spherical tip
+tip_center_z = 62;            // Z-coordinate of the sphere center
+
+groove_width = 2;             // Width of each groove (Z direction)
+groove_depth = 1;             // Depth of the cut into the handle
+groove_centers_z = [10, 15, 20, 25]; // Z-positions for the centers of the grooves
+
+// --- Resolution ---
+$fn = 64;
+
+// --- Main Construction ---
+difference() {
+    // --- THE SOLID OBJECT ---
+    union() {
+        // 1. Handle Section
+        // We extend the cylinder slightly to ensure it meets the cone perfectly.
+        cylinder(d = handle_diameter, h = handle_height);
+
+        // 2. Conical Taper
+        // Using hull to create a smooth transition from handle to tip.
+        // We overlap the cylinder and the cone to prevent zero-thickness walls.
+        hull() {
+            // Base of cone (at z=45)
+            translate([0, 0, handle_height - 0.1])
+            cylinder(d = cone_base_diameter, h = 0.2);
+            
+            // Top of cone (at z=62)
+            translate([0, 0, tip_center_z])
+            cylinder(d = cone_tip_diameter, h = 0.1);
+        }
+
+        // 3. Rounded Tip
+        // Placed at the very top.
+        translate([0, 0, tip_center_z])
+        sphere(d = tip_diameter);
+    }
+
+    // --- THE CUTOUTS (Grooves) ---
+    // To create a circumferential groove that is 2mm wide and 1mm deep:
+    // The handle radius is 4mm. 
+    // The groove should cut from radius 3mm to radius 4mm.
+    for (z_pos = groove_centers_z) {
+        // We use a large cylinder with a hole in the middle to create a ring.
+        // To ensure the subtraction is clean and doesn't create zero-thickness 
+        // walls at the inner edge, we make the "hole" much smaller than the 
+        // actual core of the handle.
+        translate([0, 0, z_pos])
+        rotate([90, 0, 0])
+        difference() {
+            // The outer part of the cutting tool (larger than handle)
+            // We use a large diameter to ensure it cuts through the surface.
+            cylinder(d = handle_diameter + 2, h = groove_width + 0.2, center = true);
+            
+            // The inner part of the cutting tool.
+            // To avoid "NOT watertight" errors caused by zero-thickness walls,
+            // the inner cylinder must be strictly smaller than the radius 
+            // where the groove ends. 
+            // Groove depth is 1mm, handle radius is 4mm -> inner radius is 3mm.
+            // We set the hole diameter to 5mm (radius 2.5mm) to ensure a 
+            // clear gap between the hole and the inner edge of the groove.
+            cylinder(d = 5.0, h = groove_width + 0.4, center = true);
+        }
+    }
+}
+```

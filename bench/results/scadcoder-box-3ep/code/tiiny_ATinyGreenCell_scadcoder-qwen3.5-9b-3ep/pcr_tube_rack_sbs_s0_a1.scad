@@ -1,0 +1,30 @@
+// Rack for 96 PCR tubes (0.2 mL) - microplate footprint (ANSI/SLAS). NOVEL general part.
+//
+
+cols   = 12;
+rows   = 8;
+tube_d = 6.2;
+pitch  = 9.0;
+block_z = 20;
+A1_off_x = 14.38;
+A1_off_y = 11.24;
+chamfer = 5;
+
+$fn = 48;
+
+size_x = A1_off_x + (cols - 1) * pitch + tube_d;
+size_y = A1_off_y + (rows - 1) * pitch + tube_d;
+size_z = block_z;
+
+difference() {
+    translate([-size_x / 2, -size_y / 2, 0]) cube([size_x, size_y, size_z]);
+    for (i = [0 : cols - 1], j = [0 : rows - 1])
+        translate([A1_off_x + i * pitch, A1_off_y + j * pitch, -1])
+            cylinder(h = size_z + 2, d = tube_d);
+    // orientation chamfer: 45 degrees with 5 mm legs off the vertical edge at the A1 corner
+    translate([0, 0, size_z])
+        difference() {
+            cube([chamfer, size_y, chamfer]);
+            translate([0, 0, -chamfer]) cube([chamfer + 2 * chamfer / tan(45), size_y, chamfer + 2 * chamfer / tan(45)]);
+        }
+}

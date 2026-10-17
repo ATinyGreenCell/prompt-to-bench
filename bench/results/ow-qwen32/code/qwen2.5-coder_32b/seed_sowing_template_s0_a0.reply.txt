@@ -1,0 +1,38 @@
+```openscad
+// Dimensions in millimetres
+dish_diameter = 90; // Diameter of the Petri dish
+template_diameter = 85; // Diameter of the sowing template
+template_thickness = 2; // Thickness of the sowing template
+hole_diameter = 3; // Diameter of the through-holes
+hole_spacing = 9; // Centre-to-centre spacing of the holes
+grid_size = 7; // Number of holes in each direction
+notch_width = 10; // Width of the orientation notch
+notch_depth = 4; // Depth of the orientation notch
+
+$fn = 64; // Number of facets for curved shapes
+
+// Create the base of the sowing template
+base = cylinder(h = template_thickness, d = template_diameter, $fn = 64, center = true);
+
+// Create the grid of holes
+holes = union() {
+    for (x = [-3*hole_spacing:hole_spacing:3*hole_spacing], y = [-3*hole_spacing:hole_spacing:3*hole_spacing]) {
+        translate([x, y, template_thickness/2])
+        cylinder(h = template_thickness + 1, d = hole_diameter, $fn = 64, center = true);
+    }
+};
+
+// Create the orientation notch
+notch = translate([0, template_diameter/2 - notch_depth/2, template_thickness/2])
+        cube(size = [notch_width, notch_depth, template_thickness + 1], center = true);
+
+// Combine and subtract the holes and notch from the base
+sowing_template = difference() {
+    base;
+    holes;
+    notch;
+};
+
+// Render the sowing template
+sowing_template;
+```

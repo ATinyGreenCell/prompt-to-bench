@@ -1,0 +1,41 @@
+```openscad
+// OpenSCAD file - a reservoir tank for a horizontal gel electrophoresis box. NOVEL part
+// (an open-top rectangular tank with a raised central platform that splits the bottom into two
+// buffer chambers that connect above the platform, with horizontal electrode holes through the
+// end walls). Deliberately not one of the 16 benchmark tasks - a general lab part.
+//
+
+tank_L = 120;
+tank_W = 70;
+tank_H = 40;
+wall   = 3;
+floor  = 3;
+platform_L = 60;
+platform_h = 10;
+electrode_d = 2;
+
+$fn = 48;
+
+inner_w = tank_W - 2 * wall;
+inner_h = tank_H - floor;
+
+difference() {
+    cube([tank_L, tank_W, tank_H]);
+
+    // end walls (open at the top)
+    translate([0, wall, 0]) cube([wall, tank_W, tank_H - floor]);
+    translate([tank_L - wall, wall, 0]) cube([wall, tank_W, tank_H - floor]);
+
+    // central raised platform, spanning the full width, centred in X
+    translate([0, 0, tank_H - floor - platform_h])
+        cube([platform_L, tank_W, platform_h]);
+
+    // horizontal electrode hole in each end wall: along X, centred in Y, at z = 30
+    for (x = [0, tank_L - wall])
+        translate([x, wall, 0])
+            difference() {
+                cube([wall, tank_W, tank_H - floor]);
+                translate([0, wall - electrode_d / 2, 30]) cube([wall, tank_W, electrode_d]);
+            }
+}
+```

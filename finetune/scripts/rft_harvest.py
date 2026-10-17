@@ -45,53 +45,95 @@ def main() -> None:
     a = ap.parse_args()
 
     prompts = kept = cand_total = cand_match = 0
-    out = []
+    bad_lines = empty_cand = ref_fail = dupes = 0
+    out, seen = [], set()      # dedup byte-identical kept examples (same user + same answer)
+
+    def keep(user: str, assistant: str, score: float) -> bool:
+        nonlocal dupes
+        k = (user, assistant)
+        if k in seen:
+            dupes += 1
+            return False
+        seen.add(k)
+        out.append({"messages": [
+            {"role": "system", "content": SYSTEM},
+            {"role": "user", "content": user},
+            {"role": "assistant", "content": assistant}], "score": round(score, 3)})
+        return True
+
     for ln in a.gen.open():
         ln = ln.strip()
         if not ln:
             continue
-        r = json.loads(ln)
+        try:
+            r = json.loads(ln)
+        except json.JSONDecodeError:
+            bad_lines += 1            # a truncated/garbled generation line never aborts the harvest
+            continue
+        if not isinstance(r, dict) or "ref_scad" not in r:
+            bad_lines += 1
+            continue
         prompts += 1
         ref = measure(r["ref_scad"], a.timeout)      # render the reference once
         if not ref.get("ok"):
+            ref_fail += 1                            # a broken reference can't score anything; skip it loudly in the tally
             continue
         user = user_turn(r["prompt"])
 
         if "turns" in r:                              # multi-turn repair trajectory
-            final = r["turns"][-1]["scad"]
+            turns = r["turns"]
+            if not turns or not (turns[-1].get("scad") or "").strip():
+                empty_cand += 1
+                continue
             cand_total += 1
-            ok, score, _ = matches(final, ref_measure=ref, timeout=a.timeout)
+            ok, score, _ = matches(turns[-1]["scad"], ref_measure=ref, timeout=a.timeout)
             if score >= a.min_score:
                 cand_match += 1
                 msgs = [{"role": "system", "content": SYSTEM}, {"role": "user", "content": user}]
-                for i, t in enumerate(r["turns"]):
-                    msgs.append({"role": "assistant", "content": FENCE.format(t["scad"].strip())})
-                    if i < len(r["turns"]) - 1:
-                        msgs.append({"role": "user", "content": t.get("feedback", "").strip()})
-                out.append({"messages": msgs, "score": round(score, 3)})
-                kept += 1
+                for i, t in enumerate(turns):
+                    msgs.append({"role": "assistant", "content": FENCE.format((t.get("scad") or "").strip())})
+                    if i < len(turns) - 1:
+                        msgs.append({"role": "user", "content": (t.get("feedback") or "").strip()})
+                key = "\x00".join(m["content"] for m in msgs)
+                if key in seen:
+                    dupes += 1
+                else:
+                    seen.add(key)
+                    out.append({"messages": msgs, "score": round(score, 3)})
+                    kept += 1
             continue
 
         matched = 0                                   # single-turn: keep up to --per-prompt matches
         for scad in r.get("candidates", []):
+            if not (scad or "").strip():
+                empty_cand += 1                       # empty generation: don't waste a render on it
+                continue
             cand_total += 1
             ok, score, _ = matches(scad, ref_measure=ref, timeout=a.timeout)
             if score >= a.min_score:
                 cand_match += 1
-                out.append({"messages": [
-                    {"role": "system", "content": SYSTEM},
-                    {"role": "user", "content": user},
-                    {"role": "assistant", "content": FENCE.format(scad.strip())}], "score": round(score, 3)})
-                kept += 1
-                matched += 1
-                if matched >= a.per_prompt:
-                    break
+                if keep(user, FENCE.format(scad.strip()), score):
+                    kept += 1
+                    matched += 1
+                    if matched >= a.per_prompt:
+                        break
 
     with a.o.open("w") as fh:
         for row in out:
             fh.write(json.dumps(row) + "\n")
     prompts_hit = len({o["messages"][1]["content"] for o in out})
     rate = f" ({100 * cand_match / cand_total:.0f}% of candidates)" if cand_total else ""
+    skips = []
+    if bad_lines:
+        skips.append(f"{bad_lines} malformed lines")
+    if ref_fail:
+        skips.append(f"{ref_fail} refs did not render")
+    if empty_cand:
+        skips.append(f"{empty_cand} empty candidates")
+    if dupes:
+        skips.append(f"{dupes} duplicate matches dropped")
+    if skips:
+        print("skipped: " + ", ".join(skips))
     print(f"prompts {prompts} | candidates {cand_total} matched {cand_match}{rate}")
     print(f"kept {kept} training examples from {prompts_hit} distinct prompts -> {a.o}")
 

@@ -1,0 +1,45 @@
+```openscad
+// Dimensions in millimetres
+block_length = 106;  // X dimension of the block
+block_width = 72;    // Y dimension of the block
+block_height = 30;   // Z dimension of the block
+hole_diameter = 11.2; // Diameter of each hole
+hole_depth = 25;     // Depth of each hole
+hole_spacing = 16;   // Centre-to-centre spacing of holes
+num_holes_x = 6;     // Number of holes along X
+num_holes_y = 4;     // Number of holes along Y
+floor_thickness = 5; // Thickness of the solid floor at the bottom of the holes
+
+$fn = 64; // Number of facets for curved shapes
+
+// Create the base block
+base_block = cube(size = [block_length, block_width, block_height]);
+
+// Create a single hole
+hole = cylinder(h = hole_depth + 0.1, d = hole_diameter, $fn = $fn);
+
+// Calculate the offset to center the hole grid
+grid_offset_x = (block_length - (num_holes_x - 1) * hole_spacing) / 2;
+grid_offset_y = (block_width - (num_holes_y - 1) * hole_spacing) / 2;
+
+// Create the grid of holes
+holes = union() {
+    for (x = [0:num_holes_x-1]) {
+        for (y = [0:num_holes_y-1]) {
+            translate([grid_offset_x + x * hole_spacing, grid_offset_y + y * hole_spacing, 0.01])
+                hole;
+        }
+    }
+};
+
+// Create the solid floor at the bottom of the holes
+floor = translate([0, 0, block_height - floor_thickness])
+        cube(size = [block_length, block_width, floor_thickness]);
+
+// Combine the base block, holes, and floor
+difference() {
+    base_block;
+    holes;
+    floor;
+}
+```

@@ -1,0 +1,26 @@
+```openscad
+// Replacement knob for a hotplate stirrer - a cylindrical knob with a D-shaped blind bore
+// to fit a D-shaft, external grip grooves, and a top pointer groove. NOVEL general part.
+//
+
+bottom_d = 30;
+height   = 15;
+shaft_d  = 6.2;
+flat     = 4.7;
+grooves  = 18;
+pointer  = 1.5;
+
+$fn = 64;
+
+difference() {
+    cylinder(h = height, d = bottom_d);
+    translate([0, 0, 0])
+        cylinder(h = height * 0.8 + 1, d = shaft_d, $fn = 16);     // D-bore: circle + flat
+    for (i = [0 : grooves - 1])
+        rotate([0, 90, 0]) translate([bottom_d / 2, 0, 0]) cylinder(h = height, d = 2, $fn = 16);  // grip grooves
+    translate([0, 0, height * 0.9]) difference() {
+        circle(d = bottom_d);
+        rotate([-90, 0, 0]) translate([0, -1, 0]) rectangle(w = pointer, h = bottom_d);   // pointer groove
+    }
+}
+```

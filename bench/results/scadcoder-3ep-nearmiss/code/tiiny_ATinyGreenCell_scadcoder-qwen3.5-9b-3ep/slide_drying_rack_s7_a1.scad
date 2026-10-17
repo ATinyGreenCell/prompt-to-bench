@@ -1,0 +1,28 @@
+// Drying rack for microscope slides - a solid block with a row of parallel slots open at the
+// top, so slides standing on their long edge drop in and are supported below. NOVEL general part.
+//
+
+slides   = 10;
+slide_l  = 75;
+slide_w  = 25;
+slide_t  = 1;
+base_l   = 90;
+base_w   = 45;
+base_h   = 20;
+slot_l   = 77;
+slot_w   = 1.6;
+slot_d   = 10;
+slot_gap = 3.5;
+
+$fn = 48;
+
+slot_s = slot_w + slot_gap;          // step in Y between neighbouring slots
+total_w = slides * slot_s;
+center_y = base_w / 2 - total_w / 2;
+
+difference() {
+    translate([base_l / 2, center_y, 0]) cube([base_l, base_w, base_h]);
+    for (i = [0 : slides - 1])
+        translate([base_l / 2, i * slot_s, 0])
+            cube([slot_l, slot_s, base_h - slot_d]);
+}

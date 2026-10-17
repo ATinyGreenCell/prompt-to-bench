@@ -1,0 +1,30 @@
+```openscad
+// Fan box - a box open at the top, to cover a round fan and provide a stirring surface. NOVEL
+// part: a cable notch in one wall helps route the fan's power cord.
+//
+
+top     = 2;
+walls   = 2.5;
+open_z  = 40;
+inner   = 80;
+outer   = 90;
+screw   = 4.5;
+screw_p = 71.5;
+notch_w = 12;
+notch_d = 8;
+
+$fn = 48;
+
+size = outer;
+
+difference() {
+    cube([size, size, open_z + walls]);
+    translate([size / 2, size / 2, walls]) cylinder(h = open_z + 1, d = inner);   // inner space
+    for (x = [-size / 2, size / 2])
+        for (y = [-size / 2, size / 2])
+            translate([x, y, -1]) cylinder(h = open_z + 2, d = screw);               // screw holes
+    translate([size / 2, size / 2, open_z + walls]) cylinder(h = open_z + 2, d = screw_p);  // fan centre
+    d = size - 2 * walls;
+    translate([0, size / 2, open_z + walls]) cube([d, notch_w, notch_d]);           // cable notch
+}
+```

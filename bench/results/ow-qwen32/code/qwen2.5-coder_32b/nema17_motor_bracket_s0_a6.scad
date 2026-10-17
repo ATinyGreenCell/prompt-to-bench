@@ -1,0 +1,66 @@
+// Dimensions
+base_x_length = 50;  // Base plate length in X direction
+base_y_length = 45;  // Base plate length in Y direction
+base_z_length = 5;   // Base plate thickness
+motor_plate_y_length = 5;  // Motor plate length in Y direction
+motor_plate_z_length = 50; // Motor plate height
+hole_diameter = 4.5; // Diameter of vertical through-holes
+motor_hole_diameter = 23; // Diameter of motor centring boss hole
+screw_hole_diameter = 3.4; // Diameter of M3 screw holes
+screw_hole_distance = 31; // Distance between centers of screw holes
+gusset_thickness = 5; // Thickness of triangular gussets
+gusset_y_length = 20; // Length of gussets in Y direction
+gusset_z_length = 20; // Length of gussets in Z direction
+
+$fn = 64;
+
+// Base plate
+base_plate = cube(size = [base_x_length, base_y_length, base_z_length], center = true);
+
+// Vertical through-holes
+holes = union() {
+    translate([base_x_length/2 - 17, base_y_length/2 - 15, base_z_length/2])
+        cylinder(h = base_z_length + 1, d = hole_diameter, center = true);
+    translate([-base_x_length/2 + 17, base_y_length/2 - 15, base_z_length/2])
+        cylinder(h = base_z_length + 1, d = hole_diameter, center = true);
+};
+
+// Motor plate
+motor_plate = translate([0, base_y_length, 0])
+    cube(size = [base_x_length, motor_plate_y_length, motor_plate_z_length], center = true);
+
+// Motor centring boss hole
+motor_hole = translate([0, base_y_length, base_z_length + 28])
+    cylinder(h = motor_plate_z_length + 1, d = motor_hole_diameter, center = true);
+
+// M3 screw holes
+screw_holes = union() {
+    for (x = [-screw_hole_distance/2, screw_hole_distance/2]) {
+        for (y = [-screw_hole_distance/2, screw_hole_distance/2]) {
+            translate([x, base_y_length, base_z_length + 28 + y])
+                cylinder(h = motor_plate_z_length + 1, d = screw_hole_diameter, center = true);
+        }
+    }
+};
+
+// Gussets
+gussets = union() {
+    translate([-base_x_length/2 + 2.5, base_y_length/2 - 5, base_z_length/2])
+        linear_extrude(height = gusset_thickness)
+            polygon(points = [[0, 0], [0, gusset_y_length], [gusset_z_length, 0]]);
+    translate([base_x_length/2 - 2.5, base_y_length/2 - 5, base_z_length/2])
+        linear_extrude(height = gusset_thickness)
+            polygon(points = [[0, 0], [0, gusset_y_length], [gusset_z_length, 0]]);
+};
+
+// Final assembly
+difference() {
+    union() {
+        base_plate;
+        motor_plate;
+        gussets;
+    }
+    holes;
+    motor_hole;
+    screw_holes;
+}

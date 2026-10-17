@@ -1,0 +1,30 @@
+```openscad
+// Bench rack for 1.5 mL microcentrifuge tubes - a solid rectangular block with a regular square
+// grid of vertical through holes. NOVEL general part (a generic pegboard/rack block).
+//
+
+cols   = 6;
+rows   = 4;
+d      = 11.2;
+reach  = 25;
+L      = 106;
+W      = 72;
+H      = 30;
+floor  = 5;
+
+$fn = 48;
+
+pitch_x = cols > 0 ? d * (cols - 1) : 0;
+pitch_y = rows > 0 ? d * (rows - 1) : 0;
+
+size_x = cols > 0 ? pitch_x + d : L;
+size_y = rows > 0 ? pitch_y + d : W;
+size_z = H;
+
+difference() {
+    translate([-L / 2, -W / 2, 0]) cube([L, W, H]);
+    for (i = [0 : cols - 1], j = [0 : rows - 1])
+        translate([-(size_x / 2 - d / 2) + i * pitch_x, -(size_y / 2 - d / 2) + j * pitch_y, 0])
+            cylinder(h = H - floor + 1, d = d);
+}
+```

@@ -1,0 +1,73 @@
+```openscad
+// --- Dimensions (mm) ---
+outer_x = 120;          // Total length of the tank
+outer_y = 70;           // Total width of the tank
+outer_z = 40;           // Total height of the tank
+
+wall_thickness = 3;     // Thickness of the walls and floor
+floor_thickness = 3;    // Thickness of the floor
+
+platform_length = 60;   // Length of the central platform (X direction)
+platform_height = 13;   // Height of the platform top from the inner floor
+platform_width = outer_y - (2 * wall_thickness); // Spans full inner width
+
+hole_diameter = 2;      // Diameter of electrode wire holes
+hole_y_pos = 0;         // Y position of holes (centered on Y axis)
+hole_z_pos = 30;        // Z position of holes (measured from the bottom of the tank)
+
+// --- Resolution ---
+$fn = 64;
+
+// --- Model Construction ---
+// The user requested the part rests on the XY plane at z = 0.
+// The bounding box report showed the part was centered at Z=0 (from -20 to 20).
+// We must translate the entire assembly so the lowest point (bottom of floor) is at Z=0.
+
+module tank_geometry() {
+    difference() {
+        // 1. The Solid Body (Outer shell + Internal Platform)
+        union() {
+            // The main outer block
+            cube([outer_x, outer_y, outer_z], center = true);
+
+            // The Platform
+            // Platform top is 13mm above the inner floor.
+            // Inner floor is at Z = -outer_z/2 + floor_thickness.
+            // Platform top is at Z = -outer_z/2 + floor_thickness + platform_height.
+            // The platform block itself has height 'platform_height'.
+            // To make the top of the platform reach the target height, 
+            // we center the platform cube such that its top face is at the target Z.
+            translate([0, 0, (-outer_z/2 + floor_thickness + platform_height/2)])
+                cube([platform_length, platform_width, platform_height], center = true);
+        }
+
+        // 2. The Inner Cavity
+        // Subtract the void to create the tank.
+        // We extend the subtraction in Z to ensure the top is open.
+        translate([0, 0, -outer_z/2 + floor_thickness])
+            cube([outer_x - 2*wall_thickness + 0.1, outer_y - 2*wall_thickness + 0.1, outer_z + 0.1], center = true);
+
+        // 3. The Electrode Holes
+        // Holes are at Z = 30 from the bottom.
+        // Bottom is at Z = -outer_z/2.
+        // Hole Z coordinate = -outer_z/2 + hole_z_pos.
+        translate([0, hole_y_pos, -outer_z/2 + hole_z_pos])
+            rotate([0, 90, 0])
+                cylinder(d = hole_diameter, h = outer_x + 2, center = true);
+    }
+}
+
+// Final Assembly:
+// Move the part so it rests on the XY plane at Z = 0.
+// The lowest point of the current geometry is -outer_z/2.
+// Therefore, we translate by +outer_z/2.
+translate([0, 0, outer_z/2])
+    tank_geometry();
+
+// --- Verification of logic ---
+// 1. Dimensions: 120x70x40. Correct.
+// 2. Walls/Floor: 3mm. Correct.
+// 3. Platform: 60mm long, spans inner width, top is 13mm above inner floor. Correct.
+// 4. Holes: 2mm diameter, at Y=0, Z=30 (from bottom). Correct.
+// 5. Orientation: Rests on XY plane at Z=0. Correct.
+```

@@ -1,0 +1,35 @@
+```openscad
+// Dimensions in millimetres
+spout_outer_diameter = 10;  // Outer diameter of the spout
+spout_inner_diameter = spout_outer_diameter - 2 * wall_thickness;  // Inner diameter of the spout
+spout_height = 20;  // Height of the spout
+funnel_outer_diameter_base = 60;  // Outer diameter of the funnel base
+funnel_height = 30;  // Height of the funnel (from z=20 to z=50)
+wall_thickness = 1.6;  // Wall thickness of the funnel and spout
+
+$fn = 64;  // Number of facets for curved shapes
+
+// Spout
+spout_outer_cylinder = cylinder(h=spout_height, d=spout_outer_diameter, $fn=$fn);
+spout_inner_cylinder = cylinder(h=spout_height, d=spout_inner_diameter, $fn=$fn);
+spout = difference() {
+    spout_outer_cylinder;
+    translate([0, 0, 0.01]) spout_inner_cylinder;  // Cut out the inner cylinder with a small offset
+}
+
+// Funnel
+funnel_outer_cone = cylinder(h=funnel_height, d1=spout_outer_diameter, d2=funnel_outer_diameter_base, $fn=$fn);
+funnel_inner_cone = cylinder(h=funnel_height, d1=spout_inner_diameter, d2=funnel_outer_diameter_base - 2 * wall_thickness, $fn=$fn);
+funnel = difference() {
+    funnel_outer_cone;
+    translate([0, 0, 0.01]) funnel_inner_cone;  // Cut out the inner cone with a small offset
+}
+
+// Combine spout and funnel
+union() {
+    spout;
+    translate([0, 0, spout_height]) funnel;  // Position the funnel on top of the spout
+}
+```
+
+It seems there might be

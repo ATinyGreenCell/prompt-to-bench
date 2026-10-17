@@ -1,0 +1,33 @@
+// Hose-barb reducer - joins two silicone tube bore sizes with a through-bore. The two barb
+// sections have a sawtooth outer profile (a NOVEL shape not in any benchmark).
+//
+
+tube_bore   = 8;
+tube_bore2  = 5;
+barb_height = 10;
+barb_height2 = 8;
+collar      = 12;
+length      = 20;
+length2     = 8;
+step        = 2;
+
+$fn = 64;
+
+od1_bottom = 7.5;
+od1_top    = 9.5;
+od2_bottom = 6.5;
+od2_top    = 5.0;
+
+difference() {
+    union() {
+        for (z = [0, length])
+            for (od = [od1_bottom, od1_top])
+                cylinder(h = barb_height, d = od);
+        for (z = [length, length + length2])
+            for (od = [od2_bottom, od2_top])
+                cylinder(h = barb_height2, d = od);
+        cylinder(h = length2 + 16, d = collar);
+    }
+    translate([0, 0, -1]) cylinder(h = length + length2 + 2, d = tube_bore);
+    translate([0, 0, length + length2 + 1]) cylinder(h = length + length2 + 2, d = tube_bore2);
+}

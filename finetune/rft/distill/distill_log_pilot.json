@@ -1,0 +1,246 @@
+{
+ "started": "2026-10-16T09:51:14",
+ "finished": "2026-10-16T09:53:03",
+ "model": "claude-opus-5-5",
+ "system_sha": "1141a060cb0d",
+ "seed": 20261016,
+ "n_prompts": 12,
+ "claude_calls": 12,
+ "max_claude_calls": 12,
+ "kept": 12,
+ "dropped": 0,
+ "yield": 1.0,
+ "vol_min": 20.0,
+ "tri_min": 12,
+ "out": "/home/seb/printpaper/finetune/rft/distill/pilot.jsonl",
+ "records": [
+  {
+   "id": "tube_rack_00",
+   "family": "tube_rack",
+   "call_index": 1,
+   "call_ok": true,
+   "wall_s": 9.8,
+   "gen_tokens": 585,
+   "extract": "fenced",
+   "code_lines": 35,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 307316.0467659159,
+    "bodies": 1,
+    "triangles": 15372,
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "vial_holder_01",
+   "family": "vial_holder",
+   "call_index": 2,
+   "call_ok": true,
+   "wall_s": 7.0,
+   "gen_tokens": 612,
+   "extract": "fenced",
+   "code_lines": 32,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 167981.23346206962,
+    "bodies": 1,
+    "triangles": 3084,
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "adapter_sleeve_02",
+   "family": "adapter_sleeve",
+   "call_index": 3,
+   "call_ok": true,
+   "wall_s": 5.0,
+   "gen_tokens": 377,
+   "extract": "fenced",
+   "code_lines": 24,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 1150.5090588825176,
+    "bodies": 1,
+    "triangles": 1152,
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "l_bracket_03",
+   "family": "l_bracket",
+   "call_index": 4,
+   "call_ok": true,
+   "wall_s": 9.8,
+   "gen_tokens": 771,
+   "extract": "fenced",
+   "code_lines": 49,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 22025.597091415722,
+    "bodies": 1,
+    "triangles": 1064,
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "funnel_04",
+   "family": "funnel",
+   "call_index": 5,
+   "call_ok": true,
+   "wall_s": 13.1,
+   "gen_tokens": 1243,
+   "extract": "fenced",
+   "code_lines": 34,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 5747.979538216085,
+    "bodies": 1,
+    "triangles": 1536,
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "rod_clip_05",
+   "family": "rod_clip",
+   "call_index": 6,
+   "call_ok": true,
+   "wall_s": 6.9,
+   "gen_tokens": 340,
+   "extract": "fenced",
+   "code_lines": 21,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 846.431668946761,
+    "bodies": 1,
+    "triangles": 852,
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "push_cap_06",
+   "family": "push_cap",
+   "call_index": 7,
+   "call_ok": true,
+   "wall_s": 12.1,
+   "gen_tokens": 604,
+   "extract": "fenced",
+   "code_lines": 29,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 1071.4385828336083,
+    "bodies": 1,
+    "triangles": 1612,
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "rod_stand_07",
+   "family": "rod_stand",
+   "call_index": 8,
+   "call_ok": true,
+   "wall_s": 6.3,
+   "gen_tokens": 533,
+   "extract": "fenced",
+   "code_lines": 39,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 27608.577674765256,
+    "bodies": 1,
+    "triangles": 1592,
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "gel_comb_08",
+   "family": "gel_comb",
+   "call_index": 9,
+   "call_ok": true,
+   "wall_s": 10.4,
+   "gen_tokens": 708,
+   "extract": "fenced",
+   "code_lines": 31,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 2200.0,
+    "bodies": 1,
+    "triangles": 140,
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "drill_jig_09",
+   "family": "drill_jig",
+   "call_index": 10,
+   "call_ok": true,
+   "wall_s": 8.6,
+   "gen_tokens": 804,
+   "extract": "fenced",
+   "code_lines": 37,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 9047.228370002884,
+    "bodies": 1,
+    "triangles": 3148,
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "enclosure_lid_10",
+   "family": "enclosure_lid",
+   "call_index": 11,
+   "call_ok": true,
+   "wall_s": 9.8,
+   "gen_tokens": 1068,
+   "extract": "fenced",
+   "code_lines": 59,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 35553.022720138586,
+    "bodies": 2,
+    "triangles": 72,
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "dshaft_knob_11",
+   "family": "dshaft_knob",
+   "call_index": 12,
+   "call_ok": true,
+   "wall_s": 7.6,
+   "gen_tokens": 787,
+   "extract": "fenced",
+   "code_lines": 47,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 6617.8106518053055,
+    "bodies": 1,
+    "triangles": 3152,
+    "reason": null
+   },
+   "kept": true
+  }
+ ]
+}

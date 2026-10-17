@@ -1,0 +1,40 @@
+```openscad
+// Rack for six 50 mL conical tubes - modelled in print orientation (upside down)
+$fn = 96;
+
+// ---- Plate ----
+plate_x = 130;      // plate length (X)
+plate_y = 90;       // plate width (Y)
+plate_t = 4;        // plate thickness (Z)
+
+// ---- Holes ----
+hole_d   = 30.5;    // tube through-hole diameter
+hole_nx  = 3;       // holes along X
+hole_ny  = 2;       // holes along Y (rows)
+hole_pitch = 40;    // centre-to-centre spacing, both directions
+
+// ---- Walls ----
+wall_len = 130;     // wall length (X)
+wall_t   = 4;       // wall thickness (Y)
+wall_top = 70;      // wall top height (Z)
+
+eps = 0.5;          // cut overlap
+
+difference() {
+    union() {
+        // plate
+        translate([-plate_x/2, -plate_y/2, 0])
+            cube([plate_x, plate_y, plate_t]);
+        // two long-edge walls, flush with plate edges
+        for (s = [-1, 1])
+            translate([-wall_len/2, (s > 0) ? plate_y/2 - wall_t : -plate_y/2, 0])
+                cube([wall_len, wall_t, wall_top]);
+    }
+    // tube holes, centred grid
+    for (i = [0 : hole_nx - 1], j = [0 : hole_ny - 1])
+        translate([(i - (hole_nx - 1)/2) * hole_pitch,
+                   (j - (hole_ny - 1)/2) * hole_pitch,
+                   -eps])
+            cylinder(d = hole_d, h = plate_t + 2*eps);
+}
+```

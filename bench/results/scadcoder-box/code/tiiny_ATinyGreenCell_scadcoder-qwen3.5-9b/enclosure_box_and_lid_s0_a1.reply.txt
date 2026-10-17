@@ -1,0 +1,29 @@
+```openscad
+// Two-part box with a press-fit lid - an enclosure for a small electronics board. NOVEL general part.
+//
+
+box_d  = 70;
+box_y  = 50;
+box_h  = 30;
+wall   = 2;
+floor  = 2;
+
+lip_d  = 65.6;
+lip_y  = 45.6;
+lip_h  = 4;
+clear  = 0.2;
+
+$fn = 48;
+
+ol     = box_d + 2 * wall + 2 * floor;
+oy     = box_y + 2 * wall;
+ol_h   = box_h - floor;
+
+difference() {
+    cube([ol, oy, ol_h]);                 // box body, open top
+    translate([0, 0, ol_h - floor]) cube([ol, oy, floor]);          // solid floor
+    for (x = [-1, 1])
+        translate([x * (ol / 2 - lip_d / 2 - clear), 0, ol_h - floor])
+            cube([lip_d + 2 * clear, lip_y + 2 * clear, lip_h]);    // two lips, open downward
+}
+```

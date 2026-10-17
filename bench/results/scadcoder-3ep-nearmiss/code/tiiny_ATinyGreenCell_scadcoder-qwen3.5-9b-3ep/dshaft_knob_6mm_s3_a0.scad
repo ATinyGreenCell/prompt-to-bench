@@ -1,0 +1,35 @@
+// Replacement knob for a hotplate stirrer - a cylinder with a D-shaped blind bore and a
+// pointer groove, and with a ring of grip grooves on the outside. NOVEL general part.
+//
+
+bottom_d = 30;
+height   = 15;
+shaft_d  = 6.2;
+flat     = 4.7;
+grooves  = 18;
+pointer  = 1.5;
+
+$fn = 96;
+
+fd() {
+    cylinder(h = height, d = bottom_d);
+    difference() {
+        cylinder(h = height, d = bottom_d);
+        translate([0, 0, 0])
+            cylinder(h = height - 12, d = shaft_d, $fn = 96);                 // round part of the bore
+        translate([0, -1.35, 0])                                              // centre the D bore in the same way as the grip grooves (see below)
+            cylinder(h = height - 12, d = shaft_d + flat, $fn = 48);          // flat part of the bore
+    }
+    for (i = [0 : grooves - 1])
+        rotate([0, 0, i * 360 / grooves])
+            translate([bottom_d / 2, 0, 0])
+                cylinder(h = height, d = 2, $fn = 16);                        // grip grooves
+    translate([0, 0, height - 1])
+        difference() {
+            circle(d = bottom_d);
+            circle(d = bottom_d - 2 * pointer);
+        }
+        translate([0, -bottom_d / 2, 0])
+            rotate([-90, 0, 0])
+                linear_extrude(height - 1) rectangle(w = pointer, h = bottom_d);   // pointer groove
+}

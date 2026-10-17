@@ -1,0 +1,2303 @@
+{
+ "started": "2026-10-16T11:53:32",
+ "finished": "2026-10-16T12:02:20",
+ "tag": "shard1",
+ "shard": 1,
+ "num_shards": 5,
+ "model": "claude-opus-5-5",
+ "prompts": 67,
+ "claude_calls": 67,
+ "max_claude_calls": 80,
+ "kept": 67,
+ "dropped": 0,
+ "drop_reasons": {
+  "render": 0,
+  "degenerate": 0,
+  "bbox": 0,
+  "no_code": 0,
+  "call": 0
+ },
+ "yield": 1.0,
+ "bbox_tol": 0.15,
+ "out": "/home/seb/printpaper/finetune/rft/distill/shard1.jsonl",
+ "records": [
+  {
+   "id": "vial_holder_001",
+   "family": "vial_holder",
+   "bbox_expected": [
+    170.0,
+    30.0,
+    22.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 5.8,
+   "gen_tokens": 376,
+   "extract": "fenced",
+   "code_lines": 26,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 92208.49182233,
+    "bodies": 1,
+    "triangles": 3084,
+    "bbox": [
+     170.0,
+     30.0,
+     22.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "push_cap_006",
+   "family": "push_cap",
+   "bbox_expected": [
+    20.8,
+    20.8,
+    10.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 5.4,
+   "gen_tokens": 469,
+   "extract": "fenced",
+   "code_lines": 32,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 1550.9321276218998,
+    "bodies": 1,
+    "triangles": 1820,
+    "bbox": [
+     20.693159103393555,
+     20.693159103393555,
+     10.0
+    ],
+    "bbox_err": [
+     0.005,
+     0.005,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "dshaft_knob_011",
+   "family": "dshaft_knob",
+   "bbox_expected": [
+    28.0,
+    28.0,
+    14.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 9.3,
+   "gen_tokens": 801,
+   "extract": "fenced",
+   "code_lines": 41,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 8015.1697563843,
+    "bodies": 1,
+    "triangles": 2064,
+    "bbox": [
+     27.92392349243164,
+     27.92392349243164,
+     14.0
+    ],
+    "bbox_err": [
+     0.003,
+     0.003,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "adapter_sleeve_016",
+   "family": "adapter_sleeve",
+   "bbox_expected": [
+    15.0,
+    15.0,
+    18.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 5.7,
+   "gen_tokens": 427,
+   "extract": "fenced",
+   "code_lines": 25,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 1084.6455433281044,
+    "bodies": 1,
+    "triangles": 1152,
+    "bbox": [
+     15.0,
+     15.0,
+     18.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "rod_stand_021",
+   "family": "rod_stand",
+   "bbox_expected": [
+    60.0,
+    60.0,
+    30.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 6.3,
+   "gen_tokens": 540,
+   "extract": "fenced",
+   "code_lines": 35,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 30353.467237957346,
+    "bodies": 1,
+    "triangles": 1624,
+    "bbox": [
+     60.0,
+     60.0,
+     30.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "stopper_026",
+   "family": "stopper",
+   "bbox_expected": [
+    23.0,
+    23.0,
+    22.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 4.5,
+   "gen_tokens": 206,
+   "extract": "fenced",
+   "code_lines": 11,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 7294.4658413056195,
+    "bodies": 1,
+    "triangles": 508,
+    "bbox": [
+     23.0,
+     23.0,
+     22.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "l_bracket_031",
+   "family": "l_bracket",
+   "bbox_expected": [
+    44.0,
+    50.0,
+    50.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 10.2,
+   "gen_tokens": 659,
+   "extract": "fenced",
+   "code_lines": 42,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 24020.88484781001,
+    "bodies": 1,
+    "triangles": 1066,
+    "bbox": [
+     44.0,
+     50.0,
+     50.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "gel_comb_036",
+   "family": "gel_comb",
+   "bbox_expected": [
+    90.0,
+    18.0,
+    2.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 7.5,
+   "gen_tokens": 750,
+   "extract": "fenced",
+   "code_lines": 34,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 2400.0,
+    "bodies": 1,
+    "triangles": 204,
+    "bbox": [
+     90.0,
+     18.0,
+     2.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "tube_coupler_041",
+   "family": "tube_coupler",
+   "bbox_expected": [
+    20.0,
+    20.0,
+    14.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 5.9,
+   "gen_tokens": 476,
+   "extract": "fenced",
+   "code_lines": 26,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 3731.694174741886,
+    "bodies": 1,
+    "triangles": 1992,
+    "bbox": [
+     20.0,
+     20.0,
+     14.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "funnel_046",
+   "family": "funnel",
+   "bbox_expected": [
+    55.0,
+    55.0,
+    60.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 12.1,
+   "gen_tokens": 1208,
+   "extract": "fenced",
+   "code_lines": 35,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 7066.928361876392,
+    "bodies": 1,
+    "triangles": 1536,
+    "bbox": [
+     55.0,
+     55.0,
+     60.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "drill_jig_051",
+   "family": "drill_jig",
+   "bbox_expected": [
+    58.0,
+    58.0,
+    5.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 6.3,
+   "gen_tokens": 654,
+   "extract": "fenced",
+   "code_lines": 40,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 15636.304460469895,
+    "bodies": 1,
+    "triangles": 4188,
+    "bbox": [
+     58.0,
+     58.0,
+     5.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "tube_rack_056",
+   "family": "tube_rack",
+   "bbox_expected": [
+    74.0,
+    60.0,
+    30.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 8.5,
+   "gen_tokens": 607,
+   "extract": "fenced",
+   "code_lines": 35,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 104710.39690218009,
+    "bodies": 1,
+    "triangles": 4620,
+    "bbox": [
+     74.0,
+     60.0,
+     30.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "rod_clip_061",
+   "family": "rod_clip",
+   "bbox_expected": [
+    16.0,
+    16.0,
+    15.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 5.2,
+   "gen_tokens": 397,
+   "extract": "fenced",
+   "code_lines": 22,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 1909.1546749765896,
+    "bodies": 1,
+    "triangles": 852,
+    "bbox": [
+     15.491895198822021,
+     16.0,
+     15.0
+    ],
+    "bbox_err": [
+     0.032,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "enclosure_lid_066",
+   "family": "enclosure_lid",
+   "bbox_expected": [
+    120.0,
+    40.0,
+    25.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 10.1,
+   "gen_tokens": 1158,
+   "extract": "fenced",
+   "code_lines": 56,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 20433.199618530274,
+    "bodies": 2,
+    "triangles": 72,
+    "bbox": [
+     120.0,
+     40.0,
+     25.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "vial_holder_071",
+   "family": "vial_holder",
+   "bbox_expected": [
+    116.0,
+    26.0,
+    30.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 5.8,
+   "gen_tokens": 443,
+   "extract": "fenced",
+   "code_lines": 29,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 74638.83823187185,
+    "bodies": 1,
+    "triangles": 2316,
+    "bbox": [
+     116.0,
+     26.0,
+     30.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "push_cap_076",
+   "family": "push_cap",
+   "bbox_expected": [
+    16.2,
+    16.2,
+    10.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 7.1,
+   "gen_tokens": 588,
+   "extract": "fenced",
+   "code_lines": 29,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 846.6728505231507,
+    "bodies": 1,
+    "triangles": 1612,
+    "bbox": [
+     16.073503494262695,
+     16.200000762939453,
+     10.0
+    ],
+    "bbox_err": [
+     0.008,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "dshaft_knob_081",
+   "family": "dshaft_knob",
+   "bbox_expected": [
+    30.0,
+    30.0,
+    14.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 7.6,
+   "gen_tokens": 767,
+   "extract": "fenced",
+   "code_lines": 47,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 9146.723748932965,
+    "bodies": 1,
+    "triangles": 2480,
+    "bbox": [
+     29.932470321655273,
+     29.932470321655273,
+     14.0
+    ],
+    "bbox_err": [
+     0.002,
+     0.002,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "adapter_sleeve_086",
+   "family": "adapter_sleeve",
+   "bbox_expected": [
+    18.0,
+    18.0,
+    26.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 4.0,
+   "gen_tokens": 392,
+   "extract": "fenced",
+   "code_lines": 23,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 2667.270452125445,
+    "bodies": 1,
+    "triangles": 1152,
+    "bbox": [
+     18.0,
+     18.0,
+     26.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "rod_stand_091",
+   "family": "rod_stand",
+   "bbox_expected": [
+    60.0,
+    60.0,
+    30.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 6.6,
+   "gen_tokens": 588,
+   "extract": "fenced",
+   "code_lines": 42,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 25651.54301252672,
+    "bodies": 1,
+    "triangles": 1616,
+    "bbox": [
+     60.0,
+     60.0,
+     30.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "stopper_096",
+   "family": "stopper",
+   "bbox_expected": [
+    34.0,
+    34.0,
+    22.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 3.9,
+   "gen_tokens": 238,
+   "extract": "fenced",
+   "code_lines": 18,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 16650.035714219615,
+    "bodies": 1,
+    "triangles": 508,
+    "bbox": [
+     34.0,
+     34.0,
+     22.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "l_bracket_101",
+   "family": "l_bracket",
+   "bbox_expected": [
+    56.0,
+    45.0,
+    35.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 6.5,
+   "gen_tokens": 689,
+   "extract": "fenced",
+   "code_lines": 47,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 16769.93956059788,
+    "bodies": 1,
+    "triangles": 1068,
+    "bbox": [
+     56.0,
+     45.0,
+     35.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "gel_comb_106",
+   "family": "gel_comb",
+   "bbox_expected": [
+    84.0,
+    20.0,
+    1.5
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 8.1,
+   "gen_tokens": 703,
+   "extract": "fenced",
+   "code_lines": 32,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 2016.0,
+    "bodies": 1,
+    "triangles": 236,
+    "bbox": [
+     84.0,
+     20.0,
+     1.5
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "tube_coupler_111",
+   "family": "tube_coupler",
+   "bbox_expected": [
+    20.0,
+    20.0,
+    22.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 5.8,
+   "gen_tokens": 490,
+   "extract": "fenced",
+   "code_lines": 27,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 6142.715119733981,
+    "bodies": 1,
+    "triangles": 1992,
+    "bbox": [
+     20.0,
+     20.0,
+     22.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "funnel_116",
+   "family": "funnel",
+   "bbox_expected": [
+    60.0,
+    60.0,
+    57.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 12.3,
+   "gen_tokens": 1218,
+   "extract": "fenced",
+   "code_lines": 35,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 8410.017079046776,
+    "bodies": 1,
+    "triangles": 1536,
+    "bbox": [
+     60.0,
+     60.0,
+     57.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "drill_jig_121",
+   "family": "drill_jig",
+   "bbox_expected": [
+    88.0,
+    74.0,
+    3.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 7.5,
+   "gen_tokens": 759,
+   "extract": "fenced",
+   "code_lines": 38,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 18603.2283276617,
+    "bodies": 1,
+    "triangles": 5228,
+    "bbox": [
+     88.0,
+     74.0,
+     3.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "tube_rack_126",
+   "family": "tube_rack",
+   "bbox_expected": [
+    70.0,
+    40.0,
+    35.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 8.3,
+   "gen_tokens": 654,
+   "extract": "fenced",
+   "code_lines": 40,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 81708.65552293858,
+    "bodies": 1,
+    "triangles": 6924,
+    "bbox": [
+     70.0,
+     40.0,
+     35.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "rod_clip_131",
+   "family": "rod_clip",
+   "bbox_expected": [
+    28.0,
+    28.0,
+    10.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 5.3,
+   "gen_tokens": 423,
+   "extract": "fenced",
+   "code_lines": 27,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 2492.546116614895,
+    "bodies": 1,
+    "triangles": 852,
+    "bbox": [
+     26.54801654815674,
+     28.0,
+     10.0
+    ],
+    "bbox_err": [
+     0.052,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "enclosure_lid_136",
+   "family": "enclosure_lid",
+   "bbox_expected": [
+    170.0,
+    55.0,
+    30.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 10.1,
+   "gen_tokens": 1144,
+   "extract": "fenced",
+   "code_lines": 61,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 34798.3992042065,
+    "bodies": 2,
+    "triangles": 72,
+    "bbox": [
+     170.0,
+     55.0,
+     30.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "vial_holder_141",
+   "family": "vial_holder",
+   "bbox_expected": [
+    168.0,
+    28.0,
+    30.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 6.1,
+   "gen_tokens": 503,
+   "extract": "fenced",
+   "code_lines": 33,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 113354.0164199028,
+    "bodies": 1,
+    "triangles": 3084,
+    "bbox": [
+     168.0,
+     28.0,
+     30.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "push_cap_146",
+   "family": "push_cap",
+   "bbox_expected": [
+    18.8,
+    18.8,
+    8.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 6.1,
+   "gen_tokens": 438,
+   "extract": "fenced",
+   "code_lines": 26,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 1350.0785378839971,
+    "bodies": 1,
+    "triangles": 1468,
+    "bbox": [
+     18.684612274169922,
+     18.684612274169922,
+     8.0
+    ],
+    "bbox_err": [
+     0.006,
+     0.006,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "dshaft_knob_151",
+   "family": "dshaft_knob",
+   "bbox_expected": [
+    28.0,
+    28.0,
+    12.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 9.5,
+   "gen_tokens": 814,
+   "extract": "fenced",
+   "code_lines": 49,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 6771.6261470113795,
+    "bodies": 1,
+    "triangles": 2888,
+    "bbox": [
+     27.920473098754883,
+     27.920473098754883,
+     12.0
+    ],
+    "bbox_err": [
+     0.003,
+     0.003,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "adapter_sleeve_156",
+   "family": "adapter_sleeve",
+   "bbox_expected": [
+    15.0,
+    15.0,
+    20.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 5.2,
+   "gen_tokens": 441,
+   "extract": "fenced",
+   "code_lines": 26,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 1351.0978287343362,
+    "bodies": 1,
+    "triangles": 1152,
+    "bbox": [
+     15.0,
+     15.0,
+     20.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "rod_stand_161",
+   "family": "rod_stand",
+   "bbox_expected": [
+    60.0,
+    60.0,
+    21.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 8.2,
+   "gen_tokens": 541,
+   "extract": "fenced",
+   "code_lines": 34,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 26528.79349410649,
+    "bodies": 1,
+    "triangles": 1640,
+    "bbox": [
+     60.0,
+     60.0,
+     21.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "stopper_166",
+   "family": "stopper",
+   "bbox_expected": [
+    21.0,
+    21.0,
+    22.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 5.7,
+   "gen_tokens": 310,
+   "extract": "fenced",
+   "code_lines": 20,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 5325.47822153711,
+    "bodies": 1,
+    "triangles": 1024,
+    "bbox": [
+     21.0,
+     21.0,
+     22.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "l_bracket_171",
+   "family": "l_bracket",
+   "bbox_expected": [
+    40.0,
+    50.0,
+    40.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 8.1,
+   "gen_tokens": 565,
+   "extract": "fenced",
+   "code_lines": 43,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 13505.939572659961,
+    "bodies": 1,
+    "triangles": 1064,
+    "bbox": [
+     40.0,
+     50.0,
+     40.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "gel_comb_176",
+   "family": "gel_comb",
+   "bbox_expected": [
+    94.0,
+    22.0,
+    2.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 8.8,
+   "gen_tokens": 720,
+   "extract": "fenced",
+   "code_lines": 33,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 3072.0,
+    "bodies": 1,
+    "triangles": 236,
+    "bbox": [
+     94.0,
+     22.0,
+     2.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "tube_coupler_181",
+   "family": "tube_coupler",
+   "bbox_expected": [
+    20.0,
+    20.0,
+    16.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 7.0,
+   "gen_tokens": 381,
+   "extract": "fenced",
+   "code_lines": 26,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 4287.9981542176765,
+    "bodies": 1,
+    "triangles": 1832,
+    "bbox": [
+     20.0,
+     20.0,
+     16.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "funnel_186",
+   "family": "funnel",
+   "bbox_expected": [
+    45.0,
+    45.0,
+    55.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 13.5,
+   "gen_tokens": 1229,
+   "extract": "fenced",
+   "code_lines": 34,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 5045.586091833737,
+    "bodies": 1,
+    "triangles": 1536,
+    "bbox": [
+     45.0,
+     45.0,
+     55.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "drill_jig_191",
+   "family": "drill_jig",
+   "bbox_expected": [
+    72.0,
+    54.0,
+    6.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 6.2,
+   "gen_tokens": 663,
+   "extract": "fenced",
+   "code_lines": 38,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 22131.7583922354,
+    "bodies": 1,
+    "triangles": 6268,
+    "bbox": [
+     72.0,
+     54.0,
+     6.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "tube_rack_196",
+   "family": "tube_rack",
+   "bbox_expected": [
+    68.0,
+    78.0,
+    25.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 7.9,
+   "gen_tokens": 495,
+   "extract": "fenced",
+   "code_lines": 34,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 113610.39291758726,
+    "bodies": 1,
+    "triangles": 7692,
+    "bbox": [
+     68.0,
+     78.0,
+     25.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "rod_clip_201",
+   "family": "rod_clip",
+   "bbox_expected": [
+    15.0,
+    15.0,
+    10.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 18.4,
+   "gen_tokens": 408,
+   "extract": "fenced",
+   "code_lines": 24,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 818.7845267270268,
+    "bodies": 1,
+    "triangles": 860,
+    "bbox": [
+     14.327200412750244,
+     15.0,
+     10.0
+    ],
+    "bbox_err": [
+     0.045,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "enclosure_lid_206",
+   "family": "enclosure_lid",
+   "bbox_expected": [
+    190.0,
+    55.0,
+    25.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 10.5,
+   "gen_tokens": 1137,
+   "extract": "fenced",
+   "code_lines": 59,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 39438.00002574921,
+    "bodies": 2,
+    "triangles": 72,
+    "bbox": [
+     190.0,
+     55.0,
+     25.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "vial_holder_211",
+   "family": "vial_holder",
+   "bbox_expected": [
+    74.0,
+    28.0,
+    22.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 5.5,
+   "gen_tokens": 456,
+   "extract": "fenced",
+   "code_lines": 31,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 35111.81062614927,
+    "bodies": 1,
+    "triangles": 1164,
+    "bbox": [
+     74.0,
+     28.0,
+     22.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "push_cap_216",
+   "family": "push_cap",
+   "bbox_expected": [
+    25.6,
+    25.6,
+    10.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 6.8,
+   "gen_tokens": 440,
+   "extract": "fenced",
+   "code_lines": 26,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 2628.300976968726,
+    "bodies": 1,
+    "triangles": 1820,
+    "bbox": [
+     25.513669967651367,
+     25.513669967651367,
+     10.0
+    ],
+    "bbox_err": [
+     0.003,
+     0.003,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "dshaft_knob_221",
+   "family": "dshaft_knob",
+   "bbox_expected": [
+    28.0,
+    28.0,
+    12.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 8.4,
+   "gen_tokens": 821,
+   "extract": "fenced",
+   "code_lines": 48,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 6807.711212543548,
+    "bodies": 1,
+    "triangles": 2360,
+    "bbox": [
+     27.920473098754883,
+     28.0,
+     12.0
+    ],
+    "bbox_err": [
+     0.003,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "adapter_sleeve_226",
+   "family": "adapter_sleeve",
+   "bbox_expected": [
+    16.0,
+    16.0,
+    21.5
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 4.3,
+   "gen_tokens": 407,
+   "extract": "fenced",
+   "code_lines": 26,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 1695.8142342472195,
+    "bodies": 1,
+    "triangles": 1152,
+    "bbox": [
+     16.0,
+     16.0,
+     21.5
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "rod_stand_231",
+   "family": "rod_stand",
+   "bbox_expected": [
+    90.0,
+    90.0,
+    28.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 6.5,
+   "gen_tokens": 535,
+   "extract": "fenced",
+   "code_lines": 34,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 66042.26020043802,
+    "bodies": 1,
+    "triangles": 1496,
+    "bbox": [
+     90.0,
+     90.0,
+     28.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "stopper_236",
+   "family": "stopper",
+   "bbox_expected": [
+    18.0,
+    18.0,
+    25.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 4.9,
+   "gen_tokens": 367,
+   "extract": "fenced",
+   "code_lines": 20,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 4874.055574147486,
+    "bodies": 1,
+    "triangles": 1024,
+    "bbox": [
+     18.0,
+     18.0,
+     25.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "l_bracket_241",
+   "family": "l_bracket",
+   "bbox_expected": [
+    36.0,
+    40.0,
+    40.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 7.0,
+   "gen_tokens": 821,
+   "extract": "fenced",
+   "code_lines": 50,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 13025.597073493504,
+    "bodies": 1,
+    "triangles": 1072,
+    "bbox": [
+     36.0,
+     40.0,
+     40.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "gel_comb_246",
+   "family": "gel_comb",
+   "bbox_expected": [
+    70.0,
+    16.0,
+    2.5
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 9.6,
+   "gen_tokens": 708,
+   "extract": "fenced",
+   "code_lines": 34,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 2200.0,
+    "bodies": 1,
+    "triangles": 172,
+    "bbox": [
+     70.0,
+     16.0,
+     2.5
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "tube_coupler_251",
+   "family": "tube_coupler",
+   "bbox_expected": [
+    20.0,
+    20.0,
+    18.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 5.2,
+   "gen_tokens": 415,
+   "extract": "fenced",
+   "code_lines": 28,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 5092.835079143878,
+    "bodies": 1,
+    "triangles": 1976,
+    "bbox": [
+     20.0,
+     20.0,
+     18.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "funnel_256",
+   "family": "funnel",
+   "bbox_expected": [
+    60.0,
+    60.0,
+    60.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 14.2,
+   "gen_tokens": 1466,
+   "extract": "fenced",
+   "code_lines": 35,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 12038.483283981026,
+    "bodies": 1,
+    "triangles": 1536,
+    "bbox": [
+     60.0,
+     60.0,
+     60.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "drill_jig_261",
+   "family": "drill_jig",
+   "bbox_expected": [
+    72.0,
+    42.0,
+    6.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 7.4,
+   "gen_tokens": 762,
+   "extract": "fenced",
+   "code_lines": 41,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 14855.274894197784,
+    "bodies": 1,
+    "triangles": 4708,
+    "bbox": [
+     72.0,
+     42.0,
+     6.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "tube_rack_266",
+   "family": "tube_rack",
+   "bbox_expected": [
+    76.0,
+    76.0,
+    28.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 11.1,
+   "gen_tokens": 666,
+   "extract": "fenced",
+   "code_lines": 40,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 132845.9791649944,
+    "bodies": 1,
+    "triangles": 9612,
+    "bbox": [
+     76.0,
+     76.0,
+     28.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "rod_clip_271",
+   "family": "rod_clip",
+   "bbox_expected": [
+    17.7,
+    17.7,
+    10.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 5.7,
+   "gen_tokens": 381,
+   "extract": "fenced",
+   "code_lines": 23,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 1011.2443750831247,
+    "bodies": 1,
+    "triangles": 876,
+    "bbox": [
+     16.976133346557617,
+     17.700000762939453,
+     10.0
+    ],
+    "bbox_err": [
+     0.041,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "enclosure_lid_276",
+   "family": "enclosure_lid",
+   "bbox_expected": [
+    170.0,
+    60.0,
+    30.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 11.1,
+   "gen_tokens": 1233,
+   "extract": "fenced",
+   "code_lines": 72,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 42049.49997425079,
+    "bodies": 2,
+    "triangles": 72,
+    "bbox": [
+     170.0,
+     60.0,
+     30.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "vial_holder_281",
+   "family": "vial_holder",
+   "bbox_expected": [
+    186.0,
+    32.0,
+    30.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 6.5,
+   "gen_tokens": 412,
+   "extract": "fenced",
+   "code_lines": 29,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 141815.47561740846,
+    "bodies": 1,
+    "triangles": 3084,
+    "bbox": [
+     186.0,
+     32.0,
+     30.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "push_cap_286",
+   "family": "push_cap",
+   "bbox_expected": [
+    30.0,
+    30.0,
+    12.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 5.4,
+   "gen_tokens": 471,
+   "extract": "fenced",
+   "code_lines": 29,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 3023.5152181289764,
+    "bodies": 1,
+    "triangles": 1468,
+    "bbox": [
+     29.932470321655273,
+     29.932470321655273,
+     12.0
+    ],
+    "bbox_err": [
+     0.002,
+     0.002,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "dshaft_knob_291",
+   "family": "dshaft_knob",
+   "bbox_expected": [
+    30.0,
+    30.0,
+    12.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 8.1,
+   "gen_tokens": 833,
+   "extract": "fenced",
+   "code_lines": 49,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 7922.089740493403,
+    "bodies": 1,
+    "triangles": 2560,
+    "bbox": [
+     29.92527961730957,
+     29.92527961730957,
+     12.0
+    ],
+    "bbox_err": [
+     0.002,
+     0.002,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "adapter_sleeve_296",
+   "family": "adapter_sleeve",
+   "bbox_expected": [
+    15.0,
+    15.0,
+    24.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 5.6,
+   "gen_tokens": 431,
+   "extract": "fenced",
+   "code_lines": 26,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 1665.8176851825938,
+    "bodies": 1,
+    "triangles": 1152,
+    "bbox": [
+     15.0,
+     15.0,
+     24.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "rod_stand_301",
+   "family": "rod_stand",
+   "bbox_expected": [
+    100.0,
+    100.0,
+    23.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 8.8,
+   "gen_tokens": 708,
+   "extract": "fenced",
+   "code_lines": 42,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 68278.31059097422,
+    "bodies": 1,
+    "triangles": 1608,
+    "bbox": [
+     100.0,
+     100.0,
+     23.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "stopper_306",
+   "family": "stopper",
+   "bbox_expected": [
+    19.0,
+    19.0,
+    16.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 5.6,
+   "gen_tokens": 378,
+   "extract": "fenced",
+   "code_lines": 21,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 3655.345467458906,
+    "bodies": 1,
+    "triangles": 1024,
+    "bbox": [
+     19.0,
+     19.0,
+     16.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "l_bracket_311",
+   "family": "l_bracket",
+   "bbox_expected": [
+    50.0,
+    50.0,
+    50.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 6.9,
+   "gen_tokens": 808,
+   "extract": "fenced",
+   "code_lines": 51,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 18820.477696343616,
+    "bodies": 1,
+    "triangles": 1066,
+    "bbox": [
+     50.0,
+     50.0,
+     50.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "gel_comb_316",
+   "family": "gel_comb",
+   "bbox_expected": [
+    94.0,
+    28.0,
+    2.5
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 6.6,
+   "gen_tokens": 669,
+   "extract": "fenced",
+   "code_lines": 30,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 5060.0,
+    "bodies": 1,
+    "triangles": 236,
+    "bbox": [
+     94.0,
+     28.0,
+     2.5
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "tube_coupler_321",
+   "family": "tube_coupler",
+   "bbox_expected": [
+    16.0,
+    16.0,
+    16.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 5.6,
+   "gen_tokens": 416,
+   "extract": "fenced",
+   "code_lines": 28,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 2558.9776606248365,
+    "bodies": 1,
+    "triangles": 1848,
+    "bbox": [
+     16.0,
+     16.0,
+     16.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "funnel_326",
+   "family": "funnel",
+   "bbox_expected": [
+    70.0,
+    70.0,
+    50.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 11.3,
+   "gen_tokens": 1149,
+   "extract": "fenced",
+   "code_lines": 34,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 6203.385751735713,
+    "bodies": 1,
+    "triangles": 1536,
+    "bbox": [
+     70.0,
+     70.0,
+     50.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "drill_jig_331",
+   "family": "drill_jig",
+   "bbox_expected": [
+    54.0,
+    84.0,
+    3.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 11.7,
+   "gen_tokens": 906,
+   "extract": "fenced",
+   "code_lines": 47,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 13146.424522364803,
+    "bodies": 1,
+    "triangles": 3928,
+    "bbox": [
+     54.0,
+     84.0,
+     3.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  }
+ ]
+}

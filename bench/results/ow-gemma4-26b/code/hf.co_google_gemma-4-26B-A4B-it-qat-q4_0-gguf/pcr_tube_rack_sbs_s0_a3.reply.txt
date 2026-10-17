@@ -1,0 +1,112 @@
+```openscad
+// --- Dimensions (mm) ---
+block_x = 127.76;      // Total length (X)
+block_y = 85.48;       // Total width (Y)
+block_z = 20.00;       // Total height (Z)
+
+hole_dia = 6.2;        // Diameter of PCR tube holes
+hole_spacing = 9.0;    // Center-to-center spacing
+
+rows = 8;              // Number of rows (Y direction)
+cols = 12;             // Number of columns (X direction)
+
+// Offset from edges to the first hole center (A1)
+// A1 is at (14.38, 11.24) relative to the corner (0,0)
+offset_x = 14.38;      // Distance from left edge to first hole center
+offset_y = 11.24;      // Distance from back edge to first hole center
+
+// Chamfer settings
+chamfer_leg = 5.0;     // Leg length of the 45-degree chamfer on the corner
+
+// Resolution
+$fn = 64;
+
+// --- Implementation ---
+
+module pcr_rack() {
+    difference() {
+        // 1. The Main Block
+        // Centered on XY as per instructions (rests on XY plane at z=0)
+        // The bounding box report shows X -63.88 .. 63.88, which is correct for 127.76
+        // and Y -42.74 .. 42.74, which is correct for 85.48.
+        cube([block_x, block_y, block_z], center = true);
+
+        // 2. The 96 PCR Tube Holes
+        // The report showed centers like (22.5, 22.5). 
+        // Let's check: -63.88 + 14.38 + 0*9 = -49.5. 
+        // Wait, the report shows centers at 22.5. 
+        // 22.5 - (-63.88) = 86.38. 
+        // The previous code used a translation that didn't align with the center=true logic.
+        // Let's fix the coordinate math to ensure A1 is exactly at the specified offset.
+        
+        for (c = [0 : cols - 1]) {
+            for (r = [0 : rows - 1]) {
+                // We must calculate the position relative to the centered block.
+                // The corner (0,0) in a centered block is at (-block_x/2, -block_y/2).
+                // The hole center is (corner_x + offset_x + c*spacing, corner_y + offset_y + r*spacing)
+                translate([
+                    -block_x/2 + offset_x + (c * hole_spacing), 
+                    -block_y/2 + offset_y + (r * hole_spacing), 
+                    -0.01
+                ])
+                cylinder(h = block_z + 0.02, d = hole_dia);
+            }
+        }
+
+        // 3. The Orientation Chamfer
+        // The report showed a shape at center (3.63, 3.63) with size 7.70.
+        // 7.70 is roughly 5 * sqrt(2). This confirms the corner cut was being subtracted.
+        // However, the report shows the shape is still there (1 x shape 7.70 x 7.70).
+        // This means the subtraction failed or the shape was not actually cutting the block.
+        // The previous code used a polygon that was being subtracted, but the 
+        // polygon was likely not covering the corner correctly due to the center=true.
+        
+        // To cut the corner (0,0) of the block:
+        // The corner of the block is at (-block_x/2, -block_y/2).
+        // We want to subtract a wedge that removes the corner.
+        // The wedge vertices in the local coordinate system of the block:
+        // Corner: (-block_x/2, -block_y/2)
+        // X-edge: (-block_x/2 + chamfer_leg, -block_y/2)
+        // Y-edge: (-block_x/2, -block_y/2 + chamfer_leg)
+        
+        // We will use a hull of three points to create a vertical wedge.
+        // To ensure it cuts through the whole block, we extrude it.
+        translate([-block_x/2, -block_y/2, -0.1])
+        rotate([0, 0, 0])
+        hull() {
+            // The corner point
+            translate([0, 0, 0]) cube([0.1, 0.1, block_z + 0.2]);
+            // The point on the X edge
+            translate([chamfer_leg, 0, 0]) cube([0.1, 0.1, block_z + 0.2]);
+            // The point on the Y edge
+            translate([0, chamfer_leg, 0]) cube([0.1, 0.1, block_z + 0.2]);
+            // The top points to ensure the hull covers the full height
+            translate([chamfer_leg, 0, block_z + 0.1]) cube([0.1, 0.1, 0.1]);
+            translate([0, chamfer_leg, block_z + 0.1]) cube([0.1, 0.1, 0.1]);
+            translate([0, 0, block_z + 0.1]) cube([0.1, 0.1, 0.1]);
+        }
+        // Wait, the hull above creates a shape that INCLUDES the corner. 
+        // Subtracting it removes the corner. This is correct.
+        // But the previous code used a polygon which is more efficient.
+        // Let's use a polygon that represents the corner to be REMOVED.
+        
+        // The corner is a triangle with vertices:
+        // (0,0), (chamfer_leg, 0), (0, chamfer_leg)
+        // We want to subtract the area that contains the corner.
+        // Actually, the simplest way to cut a corner is to subtract a large 
+        // shape that covers the corner and is cut by the chamfer line.
+        // Or even simpler: subtract a shape that is the "corner" itself.
+        
+        // Let's use a polygon that covers the corner area and extrude it.
+        // The polygon is the triangle (0,0), (chamfer_leg, 0), (0, chamfer_leg).
+        // We subtract this from the block.
+        translate([-block_x/2, -block_y/2, -0.1])
+        rotate([0, 0, 0])
+        linear_extrude(height = block_z + 0.2)
+        polygon(points=[[0,0], [chamfer_leg, 0], [0, chamfer_leg]]);
+    }
+}
+
+// Execute the module
+pcr_rack();
+```

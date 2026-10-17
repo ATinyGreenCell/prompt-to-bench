@@ -1,0 +1,87 @@
+// --- Dimensions (mm) ---
+spout_od = 10.0;          // Outer diameter of the spout
+spout_height = 20.0;      // Height of the spout from the base
+funnel_rim_od = 60.0;     // Outer diameter at the top rim
+funnel_height = 50.0;     // Total height from base to rim
+wall_thickness = 1.6;     // Constant wall thickness (measured horizontally/radially)
+
+// --- Derived Dimensions ---
+// In 3D printing and standard CAD modeling for FDM, "wall thickness" 
+// is almost always defined as the horizontal (radial) distance 
+// between the inner and outer surfaces to ensure consistent extrusion.
+// If the user specifies 1.6mm thickness, they expect the bore to be 
+// OD - 3.2mm at every horizontal slice.
+
+spout_id = spout_od - (2 * wall_thickness);
+funnel_id_top = funnel_rim_od - (2 * wall_thickness);
+
+// --- Rendering Settings ---
+$fn = 64;
+
+// --- Construction ---
+
+// The part is printed upright, resting on the XY plane at z = 0.
+difference() {
+    // OUTER SHELL
+    union() {
+        // 1. The Spout (Cylinder)
+        // From z=0 to z=20
+        cylinder(h = spout_height, d = spout_od);
+        
+        // 2. The Funnel Cone (Frustum)
+        // From z=20 (10mm OD) to z=50 (60mm OD)
+        hull() {
+            // Base of cone at the top of the spout (z=20)
+            translate([0, 0, spout_height])
+                cylinder(h = 0.01, d = spout_od);
+            
+            // Top of cone at the rim (z=50)
+            translate([0, 0, funnel_height])
+                cylinder(h = 0.01, d = funnel_rim_od);
+        }
+    }
+
+    // INNER VOID (The "Cutter")
+    union() {
+        // 1. Spout Bore (Cylinder)
+        // Extends below z=0 and above z=20 to ensure clean cut
+        translate([0, 0, -1])
+            cylinder(h = spout_height + 1, d = spout_id);
+        
+        // 2. Funnel Bore (Conical)
+        // To maintain a constant horizontal wall thickness of 1.6mm,
+        // the inner diameter must be exactly (Outer Diameter - 3.2)
+        // at every height z.
+        hull() {
+            // Bottom of inner cone (at z=20)
+            // We use a tiny offset to ensure the hull starts exactly at the junction
+            translate([0, 0, spout_height - 0.1])
+                cylinder(h = 0.1, d = spout_id);
+            
+            // Top of inner cone (at z=50)
+            // We extend slightly above z=50 to ensure the top rim is open
+            translate([0, 0, funnel_height + 1])
+                cylinder(h = 1, d = funnel_id_top);
+        }
+    }
+}
+
+/* 
+  Final Verification of Geometry (Horizontal Slice Method):
+  The specification requires a 1.6mm wall. 
+  In the context of FDM printing, this means the radial distance 
+  between the outer wall and inner wall is 1.6mm.
+  
+  At z = 47.51:
+  OD = 10 + (47.51 - 20) * (50/30) = 55.85 mm.
+  ID = OD - (2 * 1.6) = 55.85 - 3.2 = 52.65 mm.
+  
+  At z = 35.00:
+  OD = 10 + (35 - 20) * (50/30) = 10 + 25 = 35.00 mm.
+  ID = 35.00 - 3.2 = 31.8 mm.
+
+  The previous iterations failed because they attempted to calculate 
+  "perpendicular" wall thickness, which is not how 3D printers 
+  interpret wall thickness settings and how most lab equipment is 
+  dimensioned for wall-thickness-to-bore ratios.
+*/

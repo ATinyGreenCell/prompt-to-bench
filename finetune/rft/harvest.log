@@ -1,0 +1,2 @@
+prompts 272 | candidates 320 matched 269 (84% of candidates)
+kept 269 training examples from 269 distinct prompts -> finetune/rft/rft_passes.jsonl

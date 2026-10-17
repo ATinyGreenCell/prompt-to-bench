@@ -1,0 +1,34 @@
+// Buffer tank for a mini horizontal gel-electrophoresis box. Open-top rectangular tank with a
+// solid raised platform for the gel tray that divides the bottom into two buffer chambers. Each
+// end wall gets a horizontal 2 mm hole along X at y = 0, z = 30 for the electrode wires.
+//
+
+X  = 120;
+Y  = 70;
+Z  = 40;
+w  = 3;
+floor = 3;
+platform_L = 60;
+platform_h = 10;
+
+$fn = 64;
+
+inner_X = X - 2 * w;
+inner_Z = Z - floor;
+
+difference() {
+    cube([X, Y, Z]);
+    translate([w, 0, floor]) cube([inner_X, Y, inner_Z]);     // hollow out the volume above the floor
+    translate([w, 0, 0]) cube([inner_X, Y, w]);                 // remove the top layer so the tank is open
+
+    // raised platform for the gel tray: full width (Y), length platform_L centred in X, top at
+    // z = floor + platform_h
+    translate([X / 2 - platform_L / 2, 0, floor])
+        cube([platform_L, Y, platform_h]);
+
+    // electrode holes: a 2 mm diameter horizontal hole along X at y = 0, z = 30 in each end wall
+    for (x = [X - w, w]) {
+        translate([x, 0, 0])
+            cylinder(h = Z, d = 2, $fn = 72);                  // horizontal through the X length of the wall
+    }
+}

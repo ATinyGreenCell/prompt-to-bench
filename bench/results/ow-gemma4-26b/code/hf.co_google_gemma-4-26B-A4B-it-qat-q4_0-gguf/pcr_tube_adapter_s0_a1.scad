@@ -1,0 +1,32 @@
+// --- Dimensions (mm) ---
+collar_diameter = 13.0;      // Diameter of the base collar
+collar_thickness = 1.5;      // Height of the base collar
+sleeve_outer_diameter = 10.8; // Diameter of the main sleeve body
+sleeve_height_total = 21.5;  // Total height from Z=0 to top of sleeve
+bore_diameter = 6.2;         // Diameter of the central hole
+
+// --- Resolution ---
+$fn = 64;
+
+// --- Implementation ---
+
+// The part is built by taking the union of the collar and sleeve,
+// and then subtracting the central bore.
+difference() {
+    // 1. The Solid Body (Union of Collar and Sleeve)
+    union() {
+        // The Base Collar (z = 0 to 1.5)
+        cylinder(d = collar_diameter, h = collar_thickness);
+
+        // The Sleeve Body (rises from top of collar to z = 21.5)
+        // Height of this cylinder is (21.5 - 1.5) = 20.0
+        translate([0, 0, collar_thickness])
+            cylinder(d = sleeve_outer_diameter, h = sleeve_height_total - collar_thickness);
+    }
+
+    // 2. The Central Bore (Subtraction)
+    // We extend the cylinder by 1mm above and below the part 
+    // to ensure a clean cut through the faces.
+    translate([0, 0, -1.0])
+        cylinder(d = bore_diameter, h = sleeve_height_total + 2.0);
+}

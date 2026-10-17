@@ -1,0 +1,76 @@
+```openscad
+// --- Parameters (Dimensions in mm) ---
+knob_diameter = 30;          // Total diameter of the knob
+knob_height = 15;            // Total height of the knob
+shaft_hole_diameter = 6.2;   // Diameter of the D-bore
+shaft_bore_depth = 12;       // Depth of the D-bore
+shaft_flat_width = 4.7;      // Distance from flat to opposite side of circle
+num_grip_grooves = 18;       // Number of vertical grip grooves
+grip_groove_diameter = 2;    // Diameter of the half-cylinder grooves
+pointer_width = 1.5;         // Width of the pointer groove
+pointer_depth = 1;           // Depth of the pointer groove
+
+// --- Internal Constants ---
+$fn = 64;
+
+// --- Main Model ---
+// The knob is printed with the bottom face on the XY plane (z=0)
+difference() {
+    // 1. The main body of the knob
+    cylinder(h = knob_height, d = knob_diameter, center = false);
+
+    // 2. The D-shaped blind bore
+    // The distance from center to the flat is (6.2 - 4.7) / 2 = 0.75? No.
+    // "distance from the flat to the opposite side is 4.7".
+    // Diameter is 6.2. So the distance from center to flat is 4.7 - (6.2/2) = 4.7 - 3.1 = 1.6.
+    // Wait, if the distance from flat to opposite side is 4.7, and radius is 3.1,
+    // then the flat is 3.1 - 4.7 = -1.6 from the center.
+    // Distance from center to flat = 1.6mm.
+    
+    translate([0, 0, -0.01])
+    union() {
+        // The circular part of the bore
+        cylinder(h = shaft_bore_depth + 0.01, d = shaft_hole_diameter);
+        
+        // The flat part: we subtract a large cube to create the flat edge
+        // We use a union here to define the "D" shape, but since we are in a 
+        // difference() block, we actually want to subtract the "non-D" part.
+        // Let's rethink: We subtract a cylinder, and then we subtract a 
+        // shape that removes the excess to make it a D.
+    }
+    
+    // Correct D-bore subtraction:
+    // First, subtract the cylinder
+    translate([0, 0, -0.01])
+        cylinder(h = shaft_bore_depth + 0.02, d = shaft_hole_diameter);
+    
+    // Second, subtract the part that makes it a "D"
+    // The flat is at y = -1.6 (since 4.7 is the distance from flat to opposite side)
+    // Wait, if the diameter is 6.2, the opposite side is at y = 3.1.
+    // If the distance from flat to opposite side is 4.7, then the flat is at 3.1 - 4.7 = -1.6.
+    // So we subtract everything where y < -1.6.
+    translate([-shaft_hole_diameter, -shaft_hole_diameter, -0.01])
+        cube([shaft_hole_diameter * 2, 1.6, shaft_bore_depth + 0.02]);
+
+    // 3. Vertical Grip Grooves
+    // 18 grooves, 2mm diameter half-cylinders on the outer surface
+    for (i = [0 : num_grip_grooves - 1]) {
+        rotate([0, 0, i * (360 / num_grip_grooves)])
+        translate([knob_diameter / 2, 0, 0])
+        rotate([0, 90, 0])
+        cylinder(h = knob_height + 2, d = grip_groove_diameter, center = true);
+    }
+
+    // 4. Pointer Groove
+    // 1.5mm wide, 1mm deep, from center to edge, on the same side as the flat.
+    // The flat is at y = -1.6. The "side of the flat" is the negative Y direction.
+    // We'll align the groove along the Y axis.
+    // To make it 1.5mm wide and 1mm deep, we use a cylinder with diameter 1.5
+    // and rotate it. To get 1mm depth, we position it so the top is at Z = 14.
+    // Since the diameter is 1.5, the radius is 0.75. To get 1mm depth, 
+    // we use a cylinder with diameter 2mm and rotate it, or just use a cube.
+    // Let's use a cube for a clean rectangular slot.
+    translate([-pointer_width/2, -knob_diameter/2, knob_height - pointer_depth + 0.01])
+        cube([pointer_width, knob_diameter, pointer_depth + 0.1]);
+}
+```

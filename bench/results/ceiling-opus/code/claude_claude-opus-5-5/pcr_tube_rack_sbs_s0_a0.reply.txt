@@ -1,0 +1,48 @@
+```openscad
+// 96-well PCR tube rack (0.2 mL tubes), ANSI/SLAS microplate footprint
+// Print orientation: flat on the bed, holes vertical (+Z)
+
+// ---------------- Parameters ----------------
+L          = 127.76;  // block length along X (mm)
+W          = 85.48;   // block width along Y (mm)
+H          = 20;      // block height along Z (mm)
+
+hole_d     = 6.2;     // through-hole diameter for 0.2 mL PCR tubes
+pitch      = 9.0;     // centre-to-centre spacing (mm)
+n_cols     = 12;      // columns along X (1..12)
+n_rows     = 8;       // rows along Y (A..H)
+
+a1_from_left = 14.38; // A1 centre distance from left edge (X)
+a1_from_back = 11.24; // A1 centre distance from back edge (Y)
+
+chamfer    = 5;       // 45-degree corner chamfer leg length at A1 corner
+eps        = 0.5;     // cutter overshoot past cut faces
+
+$fn = 64;
+
+// Derived: A1 position (block centred on origin; back edge is +Y, left edge is -X)
+a1_x = -L/2 + a1_from_left;
+a1_y =  W/2 - a1_from_back;
+
+// ---------------- Model ----------------
+difference() {
+    // Main block
+    translate([-L/2, -W/2, 0])
+        cube([L, W, H]);
+
+    // 96 vertical through-holes
+    for (c = [0 : n_cols - 1])
+        for (r = [0 : n_rows - 1])
+            translate([a1_x + c * pitch, a1_y - r * pitch, -eps])
+                cylinder(d = hole_d, h = H + 2 * eps);
+
+    // 45-degree orientation chamfer on the vertical edge at the A1 corner (back-left)
+    translate([0, 0, -eps])
+        linear_extrude(height = H + 2 * eps)
+            polygon([
+                [-L/2 + chamfer + eps, W/2 + eps],
+                [-L/2 - eps,           W/2 + eps],
+                [-L/2 - eps,           W/2 - chamfer - eps]
+            ]);
+}
+```

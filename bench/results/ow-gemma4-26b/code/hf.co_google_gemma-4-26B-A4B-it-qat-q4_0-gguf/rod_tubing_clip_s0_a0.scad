@@ -1,0 +1,145 @@
+// --- Parameters (Dimensions in mm) ---
+
+// Rod Ring (Inner diameter 12.7mm, Wall 3mm)
+rod_inner_dia = 12.7;
+rod_wall = 3.0;
+rod_outer_dia = rod_inner_dia + (2 * rod_wall);
+
+// Rod Ring Cutout (10mm wide, 10mm tall, centered on -X side)
+rod_cutout_width = 10.0;
+rod_cutout_height = 10.0;
+rod_cutout_x_limit = -5.0; // Half of width
+
+// Tubing Ring (Inner diameter 6mm, Wall 2mm)
+tube_inner_dia = 6.0;
+tube_wall = 2.0;
+tube_outer_dia = tube_inner_dia + (2 * tube_wall);
+tube_offset_x = 15.0;
+
+// Tubing Ring Cutout (4.5mm wide, centered on +X side)
+tube_cutout_width = 4.5;
+tube_cutout_height = 4.5;
+tube_cutout_x_limit = 2.25; // Half of width
+
+// Bridge (6mm wide in Y, between x=8 and x=12)
+bridge_x_start = 8.0;
+bridge_x_end = 12.0;
+bridge_y_width = 6.0;
+
+// Extrusion Height
+extrusion_z = 10.0;
+
+// Resolution
+$fn = 64;
+
+// --- Modeling ---
+
+// We use a 2D profile approach as requested: 
+// Define the 2D shape first, then extrude it to Z.
+
+difference() {
+    // 1. The Main Body (The two rings and the bridge)
+    union() {
+        // Rod Ring Profile
+        difference() {
+            circle(d = rod_outer_dia);
+            circle(d = rod_inner_dia);
+        }
+        
+        // Tubing Ring Profile
+        translate([tube_offset_x, 0])
+        difference() {
+            circle(d = tube_outer_dia);
+            circle(d = tube_inner_dia);
+        }
+        
+        // Bridge Profile
+        // The bridge is a rectangle connecting the two rings.
+        // It is 6mm wide in Y, so Y goes from -3 to 3.
+        hull() {
+            // Start of bridge (near rod ring)
+            translate([rod_outer_dia/2, 0]) 
+                square([0.01, bridge_y_width], center = true);
+            // End of bridge (near tube ring)
+            translate([tube_offset_x - tube_outer_dia/2, 0]) 
+                square([0.01, bridge_y_width], center = true);
+            
+            // To ensure it fills the gap between the circles correctly:
+            translate([bridge_x_start, 0]) square([bridge_x_end - bridge_x_start, bridge_y_width], center = true);
+        }
+        // Refined Bridge: A simple rectangle is safer for the "solid bridge" requirement
+        translate([(bridge_x_start + bridge_x_end)/2, 0])
+            square([bridge_x_end - bridge_x_start, bridge_y_width], center = true);
+    }
+
+    // 2. Subtract the Rod Cutout (The snap-on gap)
+    // Everything with x < 0 and -5 < y < 5 is removed.
+    // We extend the cutout slightly to ensure a clean cut.
+    translate([-rod_cutout_width, 0, -1])
+        square([rod_cutout_width + 1, rod_cutout_height + 1], center = true);
+    
+    // Note: The prompt says "everything with x < 0 and -5 < y < 5 is removed".
+    // This implies a rectangular notch on the left side.
+    translate([-rod_cutout_width/2, 0, -1])
+        square([rod_cutout_width + 1, rod_cutout_height + 1], center = true);
+    
+    // Re-interpreting "everything with x < 0 and -5 < y < 5 is removed" 
+    // as a notch on the -X side of the ring.
+    // Let's use a more precise subtraction for the notch.
+    translate([-rod_cutout_width, 0, -1])
+        square([rod_cutout_width + 0.1, rod_cutout_height + 0.1], center = true);
+    
+    // Wait, the prompt says: "10mm wide opening cut out of its -X side (everything with x < 0 and -5 < y < 5 is removed)".
+    // This means the area where x is between -5 and 0 and y is between -5 and 5.
+    // Let's define the notch precisely.
+    translate([-5, 0, -1])
+        square([5.1, 10.1], center = true);
+
+    // 3. Subtract the Tubing Cutout
+    // x > 15 and -2.25 < y < 2.25
+    translate([tube_offset_x, 0, -1])
+        square([tube_cutout_width + 1, tube_cutout_height + 1], center = true);
+}
+
+// Final Extrusion
+// Since the logic above is 2D, we wrap the whole thing in a 2D extrude.
+// However, OpenSCAD requires the difference to be on the 3D object or 2D.
+// Let's rewrite the structure to be a proper 3D model.
+
+module profile_2d() {
+    difference() {
+        union() {
+            // Rod Ring
+            difference() {
+                circle(d = rod_outer_dia);
+                circle(d = rod_inner_dia);
+            }
+            // Tubing Ring
+            translate([tube_offset_x, 0])
+            difference() {
+                circle(d = tube_outer_dia);
+                circle(d = tube_inner_dia);
+            }
+            // Bridge
+            translate([(bridge_x_start + bridge_x_end)/2, 0])
+                square([bridge_x_end - bridge_x_start, bridge_y_width], center = true);
+        }
+        
+        // Rod Notch: x < 0 and -5 < y < 5
+        // To make it a "10mm wide opening" on the -X side, 
+        // we cut a rectangle from x = -5 to x = 0.
+        translate([-2.5, 0])
+            square([5.1, 10.1], center = true);
+            
+        // Tubing Notch: x > 15 and -2.25 < y < 2.25
+        // To make it a "4.5mm wide opening" on the +X side,
+        // we cut a rectangle from x = 15 to x = 19.5.
+        translate([17.25, 0])
+            square([4.6, 4.6], center = true);
+    }
+}
+
+// The actual final render
+linear_extrude(height = extrusion_z) {
+    profile_2d();
+}

@@ -1,0 +1,18 @@
+// Pestle for a 1.5 mL microcentrifuge tube - a cylindrical handle with a tapered section and a
+// rounded tip, with circumferential grip grooves. NOVEL part.
+//
+
+handle_d = 8;
+cone_h    = 17;
+tip_d     = 3;
+grooves   = 4;
+
+$fn = 64;
+
+union() {
+    cylinder(h = 45, d = handle_d);
+    cylinder(h = cone_h, d1 = handle_d, d2 = tip_d);
+    translate([0, 0, 62 - 3]) sphere(d = tip_d);
+    for (z = [10, 15, 20, 25])
+        translate([0, 0, z]) cylinder(h = 2, d = handle_d + 2 * 1);   // groove: wider than deep
+}

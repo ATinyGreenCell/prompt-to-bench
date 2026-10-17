@@ -1,0 +1,22 @@
+// Funnel - a spout (tube) sitting below a conical section, open at both ends. NOVEL general part.
+//
+
+spout_d = 10;
+spout_l = 20;
+cone_d1 = 10;
+cone_d2 = 60;
+wall    = 1.6;
+
+$fn = 64;
+
+ib = spout_d - 2 * wall;   // spout bore
+ic = cone_d1 - 2 * wall;   // cone inner diameter at the join
+
+difference() {
+    union() {
+        cylinder(h = spout_l, d = spout_d);                 // spout
+        translate([0, 0, spout_l]) cone(d1 = cone_d1, d2 = cone_d2, h = cone_d2 - cone_d1);  // cone
+    }
+    translate([0, 0, -1]) cylinder(h = spout_l + 2, d = ib);                     // bore through spout
+    translate([0, 0, spout_l - 1]) cylinder(h = (cone_d2 - cone_d1) + 2, d = ic);  // bore through cone
+}

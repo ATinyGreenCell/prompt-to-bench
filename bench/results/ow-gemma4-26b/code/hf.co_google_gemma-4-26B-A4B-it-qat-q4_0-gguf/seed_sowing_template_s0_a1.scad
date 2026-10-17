@@ -1,0 +1,63 @@
+// --- Parameters (Dimensions in mm) ---
+disc_diameter = 85;       // Diameter of the disc
+disc_thickness = 2;       // Thickness of the disc
+hole_diameter = 3;        // Diameter of the sowing holes
+grid_spacing = 9;         // Center-to-center spacing of holes
+grid_count = 7;           // Number of holes in X and Y directions
+
+notch_width = 10;         // Width of the orientation notch (X)
+notch_depth = 4;          // Depth of the notch from the rim (Y)
+
+/* [Hidden] */
+$fn = 64; // Smoothness for cylinders
+
+// --- Implementation ---
+
+// The part is modeled resting on the XY plane (Z=0)
+// Centered on X and Y axes
+
+difference() {
+    // 1. Main Disc Body
+    cylinder(h = disc_thickness, d = disc_diameter, center = false);
+
+    // 2. The 7x7 Grid of Holes
+    // Calculate the offset to center the grid on the disc
+    // The grid span is (grid_count - 1) * grid_spacing
+    grid_span = (grid_count - 1) * grid_spacing;
+    grid_offset = grid_span / 2;
+
+    for (i = [0 : grid_count - 1]) {
+        for (j = [0 : grid_count - 1]) {
+            // Calculate coordinates for each hole
+            // Using explicit variables to avoid OpenSCAD scope warnings
+            hole_x = (i * grid_spacing) - grid_offset;
+            hole_y = (j * grid_spacing) - grid_offset;
+            
+            translate(x = hole_x, y = hole_y, z = -0.5)
+            cylinder(h = disc_thickness + 1, d = hole_diameter);
+        }
+    }
+
+    // 3. The Orientation Notch
+    // The user specified: 10mm wide (X) and 4mm deep (Y, measured in from the rim)
+    // The rim is at Y = disc_diameter / 2.
+    // The notch starts at (disc_diameter/2 - notch_depth) and goes to the edge.
+    // To ensure a clean rectangular cut through the rim, we use a cube.
+    // We extend the cube in X to ensure it clears the circular edge.
+    
+    translate(x = -notch_width / 2, y = (disc_diameter / 2) - notch_depth, z = -0.5)
+    cube([notch_width, notch_depth + 1, disc_thickness + 1]);
+    
+    // To ensure the notch is a clean rectangular cutout that removes the rim 
+    // at the +Y side, we also subtract a block that covers the full width 
+    // of the notch area to prevent "slivers" of material at the edge.
+    translate(x = -notch_width / 2, y = (disc_diameter / 2) - notch_depth, z = -0.5)
+    cube([notch_width, disc_diameter, disc_thickness + 1]);
+}
+
+// Note on the Notch: 
+// The requirement "4mm deep (Y, measured in from the rim)" means the 
+// notch occupies the space from Y = (Radius - 4) to Y = Radius.
+// The previous error in the report (Y max 84.53) was caused by the 
+// logic in the previous iteration. This version ensures the notch 
+// is subtracted correctly from the +Y edge.

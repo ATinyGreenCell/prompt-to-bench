@@ -1,0 +1,37 @@
+// Dimensions in millimetres
+plate_thickness = 1.5;  // Thickness of the comb plate
+spine_length = 70;      // Length of the spine
+spine_width = 12;       // Width of the spine
+tooth_width = 5.0;      // Width of each tooth
+tooth_length = 12;      // Length of each tooth
+gap_between_teeth = 1.5; // Gap between neighbouring teeth
+num_teeth = 10;         // Number of teeth
+
+$fn = 64; // For smooth curves
+
+// Calculate the total width of the teeth and gaps
+total_teeth_width = num_teeth * tooth_width + (num_teeth - 1) * gap_between_teeth;
+
+// Calculate the offset to center the teeth on the spine
+teeth_offset = (spine_width - total_teeth_width) / 2;
+
+// Create the spine
+spine = cube(size = [spine_length, spine_width, plate_thickness]);
+
+// Create the teeth
+teeth = union() {
+    for (i = [0:num_teeth-1]) {
+        translate([i * (tooth_width + gap_between_teeth) + teeth_offset, -tooth_length, 0])
+            cube(size = [tooth_width, tooth_length, plate_thickness]);
+    }
+};
+
+// Combine the spine and teeth
+comb = union() {
+    spine;
+    teeth;
+};
+
+// Render the comb
+translate([0, spine_width/2, 0])
+    comb;

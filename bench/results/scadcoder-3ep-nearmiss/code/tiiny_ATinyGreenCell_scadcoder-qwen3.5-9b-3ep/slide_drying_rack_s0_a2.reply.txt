@@ -1,0 +1,32 @@
+```openscad
+// Drying rack for microscope slides - a solid base block with a row of parallel slots cut into
+// the top face so slides stand upright on their long edge. NOVEL general part (not a part I have
+// designed before).
+//
+
+slides_n   = 10;
+slide_l    = 75;
+slide_w    = 25;
+slide_t    = 1;
+base_l     = 90;
+base_w     = 45;
+base_h     = 20;
+slot_l     = 77;
+slot_w     = 1.6;
+slot_d     = 10;
+slot_gap   = 3.5;
+
+$fn = 48;
+
+slot_w_t = slot_w + 0.5;                 // cutting groove: wall + open space + wall
+
+difference() {
+    translate([-base_l / 2, -base_w / 2, 0]) cube([base_l, base_w, base_h]);
+    for (i = [0 : slides_n - 1])
+        translate([0, -base_w / 2 + slot_gap / 2 + i * slot_gap, base_h])
+            cube([slot_l, base_w, slot_d]);                                    // through slot
+    for (i = [0 : slides_n - 1])
+        translate([0, -base_w / 2 + slot_gap / 2 + i * slot_gap, base_h])
+            cube([slot_l, slot_w_t, slot_d]);                                   // wall below slot
+}
+```

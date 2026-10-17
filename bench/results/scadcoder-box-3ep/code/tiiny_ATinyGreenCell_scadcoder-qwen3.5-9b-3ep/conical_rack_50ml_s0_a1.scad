@@ -1,0 +1,29 @@
+// Tube rack for six 50 mL conical (Falcon-type) tubes - printed upside down and flipped over.
+// In print orientation: a flat plate lies on the bed (z = 0 to 4) with six through-holes for the
+// tubes, and two solid walls run along the two long edges of the plate, rising to z = 70. The two
+// short ends stay open. After flipping, the rack stands on the two walls and the tubes pass through
+// the holes.
+//
+
+plate_x = 130;
+plate_y = 90;
+plate_t = 4;
+hole_d  = 30.5;
+row_p   = 40;
+col_p   = 40;
+wall_h  = 70;
+
+$fn = 48;
+
+wall_t = 4;
+
+difference() {
+    union() {
+        translate([0, 0, 0]) cube([plate_x, plate_y, plate_t]);
+        for (x = [0, plate_x / 2])
+            translate([x, 0, 0]) cube([plate_x, wall_t, wall_h]);
+    }
+    for (r = [0, plate_y / 2])
+        for (c = [0, plate_x / 2])
+            translate([c, r, -1]) cylinder(h = plate_t + 2, d = hole_d);
+}

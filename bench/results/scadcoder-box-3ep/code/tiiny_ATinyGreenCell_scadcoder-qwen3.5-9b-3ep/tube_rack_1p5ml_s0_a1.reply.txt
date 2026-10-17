@@ -1,0 +1,30 @@
+```openscad
+// Bench rack for 1.5 mL microcentrifuge tubes - a solid rectangular block with a regular
+// grid of vertical tube holes, open at the top and closed at the bottom (a "floor" below
+// the lowest hole). NOVEL general part (a generic tube rack, not any one lab's part).
+//
+
+rows   = 24;
+columns = 6;
+depth  = 30;
+width  = 72;
+length = 106;
+hole_d = 11.2;
+hole_s = 25;
+floor  = 5;
+
+$fn = 48;
+
+pitch_x = 16;
+pitch_y = 16;
+
+difference() {
+    translate([-length / 2, -width / 2, 0]) cube([length, width, depth]);
+    for (i = [0 : columns - 1], j = [0 : rows - 1])
+        translate([
+            -length / 2 + (i + 0.5) * pitch_x,
+            -width / 2 + (j + 0.5) * pitch_y,
+            floor
+        ]) cylinder(h = depth - floor + 1, d = hole_d);
+}
+```

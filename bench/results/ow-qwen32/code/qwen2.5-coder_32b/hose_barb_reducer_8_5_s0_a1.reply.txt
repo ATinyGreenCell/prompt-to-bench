@@ -1,0 +1,82 @@
+```openscad
+// Dimensions in millimetres
+inner_diameter_large = 8; // Inner diameter of the larger tubing
+inner_diameter_small = 5; // Inner diameter of the smaller tubing
+bore_diameter = 3; // Diameter of the central bore
+barb_height_large = 10; // Height of each large barb
+barb_height_small = 8; // Height of each small barb
+barb_base_diameter_large = 7.5; // Base diameter of each large barb
+barb_tip_diameter_large = 9.5; // Tip diameter of each large barb
+barb_base_diameter_small = 6.5; // Base diameter of each small barb
+barb_tip_diameter_small = 5.0; // Tip diameter of each small barb
+collar_diameter = 12; // Diameter of the collar
+collar_height = 5; // Height of the collar
+total_height = 41; // Total height of the reducer
+
+$fn = 64;
+
+// Central bore
+bore = cylinder(h = total_height, d = bore_diameter);
+
+// Large barbs
+large_barb = difference() {
+    union() {
+        // Linearly increasing part of the barb
+        hull() {
+            cylinder(h = 0.01, d = barb_base_diameter_large);
+            cylinder(h = barb_height_large, d = barb_tip_diameter_large);
+        }
+        // Linearly decreasing part of the barb
+        hull() {
+            translate([0, 0, barb_height_large])
+                cylinder(h = 0.01, d = barb_base_diameter_large);
+            cylinder(h = barb_height_large, d = barb_tip_diameter_large);
+        }
+    }
+    // Cut out the central bore
+    translate([0, 0, -0.01])
+        cylinder(h = barb_height_large + 0.02, d = bore_diameter + 0.02);
+}
+
+// Small barbs
+small_barb = difference() {
+    union() {
+        // Linearly decreasing part of the barb
+        hull() {
+            cylinder(h = 0.01, d = barb_base_diameter_small);
+            cylinder(h = barb_height_small, d = barb_tip_diameter_small);
+        }
+        // Linearly increasing part of the barb
+        hull() {
+            translate([0, 0, barb_height_small])
+                cylinder(h = 0.01, d = barb_base_diameter_small);
+            cylinder(h = barb_height_small, d = barb_tip_diameter_small);
+        }
+    }
+    // Cut out the central bore
+    translate([0, 0, -0.01])
+        cylinder(h = barb_height_small + 0.02, d = bore_diameter + 0.02);
+}
+
+// Collar
+collar = cylinder(h = collar_height, d = collar_diameter);
+
+// Assembly
+union() {
+    // First pair of large barbs
+    translate([0, 0, barb_height_large / 2])
+        large_barb;
+    translate([0, 0, barb_height_large * 1.5])
+        large_barb;
+    // Collar
+    translate([0, 0, barb_height_large * 2])
+        collar;
+    // Second pair of small barbs
+    translate([0, 0, barb_height_large * 2 + collar_height + barb_height_small / 2])
+        small_barb;
+    translate([0, 0, barb_height_large * 2 + collar_height + barb_height_small * 1.5])
+        small_barb;
+    // Central bore
+    bore;
+}
+```

@@ -57,6 +57,8 @@ def main() -> None:
     ap.add_argument("--epochs", type=float, default=3.0)
     ap.add_argument("--max-seq", type=int, default=4096)
     ap.add_argument("--rank", type=int, default=16)
+    ap.add_argument("--lora-dropout", type=float, default=0.0, help="LoRA dropout; >0 regularises (reduces the determinism overfit)")
+    ap.add_argument("--bf16-lora", action="store_true", help="load base in bf16 instead of 4-bit (required for Qwen3.5 - QLoRA not recommended)")
     ap.add_argument("--lr", type=float, default=2e-4)
     ap.add_argument("--out", default="out")
     ap.add_argument("--completion-only", action="store_true", help="mask loss up to the assistant turn")
@@ -71,7 +73,10 @@ def main() -> None:
     ev = json.load(open(a.eval))
     system, prompts = ev["system"], ev["tasks"]
 
-    model, tok = FastLanguageModel.from_pretrained(a.base, max_seq_length=a.max_seq, load_in_4bit=True, dtype=None)
+    import torch
+    model, tok = FastLanguageModel.from_pretrained(a.base, max_seq_length=a.max_seq,
+                                                    load_in_4bit=(not a.bf16_lora),
+                                                    dtype=(torch.bfloat16 if a.bf16_lora else None))
 
     # ---- no-truncation gate: tokenize everything FIRST, abort if any example would be cut ----
     ds = load_dataset("json", data_files=a.data, split="train")
@@ -87,7 +92,7 @@ def main() -> None:
                          f"Raise --max-seq to >= {mx} (next multiple of 256) and re-run; do NOT truncate.")
 
     model = FastLanguageModel.get_peft_model(
-        model, r=a.rank, lora_alpha=a.rank, lora_dropout=0.0, bias="none",
+        model, r=a.rank, lora_alpha=a.rank, lora_dropout=a.lora_dropout, bias="none",
         target_modules=["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
         use_gradient_checkpointing="unsloth", random_state=0)
 

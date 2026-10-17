@@ -1,0 +1,24 @@
+```openscad
+// Petri dish sowing template - a flat disc with a regular hole grid and an orientation notch, for
+// hand-sowing seeds in a round Petri dish. NOVEL general part.
+//
+
+disc_d  = 90;
+t       = 2;
+grid_n  = 7;
+hole_d  = 3;
+pitch   = 9;
+notch_w = 10;
+notch_d = 4;
+
+$fn = 64;
+
+rim_t = 2;
+
+difference() {
+    cylinder(h = t, d = disc_d);
+    for (i = [-grid_n / 2 : grid_n / 2])
+        translate([0, i * pitch, -1]) cylinder(h = t + 2, d = hole_d);
+    translate([0, -t - 1, 0]) cylinder(h = t + 2, d = disc_d - 2 * rim_t);   // notch (zero measure)
+}
+```

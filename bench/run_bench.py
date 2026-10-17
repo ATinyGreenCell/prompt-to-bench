@@ -45,6 +45,11 @@ from scadreport import analyse, format_report, keep_messages, load_mesh, opensca
 OLLAMA = os.environ.get("OLLAMA_HOST", "http://localhost:11434")
 if "://" not in OLLAMA:  # the ollama CLI also accepts OLLAMA_HOST=host:port
     OLLAMA = "http://" + OLLAMA
+# A remote Ollama behind a reverse proxy (e.g. RunPod's) may bot-block the default Python-urllib
+# User-Agent with HTTP 403; send a plain one. Transport header only - the requests are identical.
+_ua_opener = urllib.request.build_opener()
+_ua_opener.addheaders = [("User-Agent", "curl/8.5.0")]
+urllib.request.install_opener(_ua_opener)
 FENCE = re.compile(r"```[ \t]*+([A-Za-z0-9_+-]*+)[^\n]*+\n(.*?)```", re.S)  # possessive: linear on long lines
 SCAD_HINT = re.compile(r"\b(cube|cylinder|difference|union|module|linear_extrude|rotate_extrude|polygon)\s*\(")
 ASK = "Reply with the complete corrected file in a single ```openscad code block."

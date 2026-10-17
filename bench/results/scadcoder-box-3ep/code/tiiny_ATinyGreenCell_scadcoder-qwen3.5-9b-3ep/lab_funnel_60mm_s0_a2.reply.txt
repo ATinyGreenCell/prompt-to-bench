@@ -1,0 +1,25 @@
+```openscad
+// Funnel - a spout (tube) sitting below a conical section, open at both ends for fluid flow.
+// NOVEL general part for a lab or craft. DO NOT use in contact with skin or food.
+//
+
+spout_d = 10;
+spout_l = 20;
+cone_d1 = 10;
+cone_d2 = 60;
+wall    = 1.6;
+
+$fn = 64;
+
+ib = spout_d - 2 * wall;   // spout bore
+ic = cone_d1 - 2 * wall;   // cone inner diameter at the spout top
+
+difference() {
+    union() {
+        cylinder(h = spout_l, d = spout_d);                 // spout
+        translate([0, 0, spout_l]) cylinder(h = 30, d1 = cone_d1, d2 = cone_d2);  // cone above
+    }
+    translate([0, 0, -1]) cylinder(h = spout_l + 2, d = ib);                     // bore through spout
+    translate([0, 0, spout_l]) cylinder(h = 31, d = ic);                         // inner cone surface (open top)
+}
+```

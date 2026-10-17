@@ -1,0 +1,48 @@
+// Dimensions
+knob_diameter = 30; // Diameter of the knob
+knob_height = 15;   // Height of the knob
+bore_depth = 12;    // Depth of the D-shaped bore
+bore_circle_diameter = 6.2; // Diameter of the circular part of the D-shaped bore
+bore_flat_length = 4.7; // Length of the flat part of the D-shaped bore
+grip_groove_count = 18; // Number of grip grooves
+grip_groove_diameter = 2; // Diameter of each grip groove
+pointer_groove_width = 1.5; // Width of the pointer groove
+pointer_groove_depth = 1; // Depth of the pointer groove
+
+$fn = 64;
+
+// Knob base
+knob = cylinder(h = knob_height, d = knob_diameter);
+
+// D-shaped bore
+circle_points = [for (i = [0:$fn-1]) let (angle = i * 360 / $fn) [bore_circle_diameter / 2 * cos(angle), bore_circle_diameter / 2 * sin(angle)]];
+flat_start = [bore_flat_length / 2, 0];
+flat_end = [-bore_flat_length / 2, 0];
+d_shaped_bore = hull() {
+    for (p = circle_points) translate([p[0], p[1], 0]) cylinder(h = bore_depth + 1, d = grip_groove_diameter, $fn = 3);
+    translate(flat_start) cylinder(h = bore_depth + 1, d = grip_groove_diameter, $fn = 3);
+    translate(flat_end) cylinder(h = bore_depth + 1, d = grip_groove_diameter, $fn = 3);
+};
+
+// Grip grooves
+grip_grooves = union() {
+    for (i = [0:grip_groove_count-1]) {
+        rotate([0, 0, i * 360 / grip_groove_count]) 
+            translate([knob_diameter / 2 - grip_groove_diameter / 2, 0, 0]) 
+            cylinder(h = knob_height + 1, d = grip_groove_diameter, $fn = 2);
+    }
+};
+
+// Pointer groove
+pointer_groove = translate([knob_diameter / 2 - pointer_groove_width / 2, 0, knob_height - pointer_groove_depth]) 
+    rotate([90, 0, 0]) 
+    linear_extrude(height = pointer_groove_width) 
+    polygon(points = [[0, 0], [pointer_groove_depth, 0], [pointer_groove_depth, pointer_groove_width]]);
+
+// Final assembly
+difference() {
+    knob;
+    translate([0, 0, -1]) d_shaped_bore; // Ensure the bore cuts into the knob
+    grip_grooves;
+    pointer_groove;
+}

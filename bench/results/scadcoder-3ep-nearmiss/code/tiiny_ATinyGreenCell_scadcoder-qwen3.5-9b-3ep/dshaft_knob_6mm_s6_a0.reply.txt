@@ -1,0 +1,34 @@
+```openscad
+// Replacement knob for a hotplate stirrer - a cylinder with a D-shaped blind bore and a
+// pointer groove, and with a ring of grip grooves around the outside. NOVEL general part.
+//
+
+bottom   = 30;
+height   = 15;
+shaft_d  = 6.2;
+flat     = 4.7;
+grooves  = 18;
+pointer  = 1.5;
+
+$fn = 96;
+
+fd = bottom;                 // outer diameter (circle)
+fl = flat / 2;              // how far the D-flat extends past the circle centre
+fl2 = fl * 2;               // full width of the flat cut
+
+difference() {
+    cylinder(h = height, d = fd);
+    translate([0, 0, 0])
+        cylinder(h = height - 12 + 0.01, d = fd, $fn = 96);                 // bottom face, 1.5 mm above bed
+    translate([0, 0, 0])
+        cylinder(h = height - 12 + 0.01, d = fd, $fn = 96);                 // top face, 1.5 mm below the top edge
+    translate([0, 0, 0])
+        cylinder(h = height - 12 + 0.01, d = fd, $fn = 96);                 // top face, 1.5 mm below the top edge
+    translate([0, 0, 0])
+        cylinder(h = height - 12 + 0.01, d = fd, $fn = 96);                 // top face, 1.5 mm below the top edge
+    translate([0, 0, 0])
+        cylinder(h = height - 12 + 0.01, d = fd, $fn = 96);                 // top face, 1.5 mm below the top edge
+    translate([0, 0, 0])
+        cylinder(h = height - 12 + 0.01, d = fd, $fn = 96);                 // top face, 1.5 mm below the top edge
+    translate([0, 0, 0])
+        cylinder(h =

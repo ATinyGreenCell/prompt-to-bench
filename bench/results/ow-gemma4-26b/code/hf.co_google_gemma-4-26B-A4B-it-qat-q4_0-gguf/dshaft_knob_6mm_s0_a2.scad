@@ -1,0 +1,64 @@
+// --- Parameters (Dimensions in mm) ---
+knob_diameter = 30;          // Total diameter of the knob
+knob_height = 15;            // Total height of the knob
+shaft_hole_diameter = 6.2;   // Diameter of the D-bore
+shaft_bore_depth = 12;       // Depth of the D-bore
+shaft_flat_width = 4.7;      // Distance from flat to opposite side of circle
+num_grip_grooves = 18;       // Number of vertical grip grooves
+grip_groove_diameter = 2;    // Diameter of the half-cylinder grooves
+pointer_width = 1.5;         // Width of the pointer groove
+pointer_depth = 1;           // Depth of the pointer groove
+
+// --- Internal Constants ---
+$fn = 64;
+
+// --- Main Model ---
+// The knob is printed with the bottom face on the XY plane (z=0)
+difference() {
+    // 1. The main body of the knob
+    cylinder(h = knob_height, d = knob_diameter, center = false);
+
+    // 2. The D-shaped blind bore
+    // Specification: 6.2mm diameter circle, one side cut flat.
+    // Distance from flat to opposite side is 4.7mm.
+    // This means the "cut" depth from the edge is (6.2 - 4.7) = 1.5mm.
+    // The distance from the center to the flat is 3.1 - 1.5 = 1.6mm.
+    // We subtract a cylinder for the bore and a block to create the flat.
+    
+    // The circular bore
+    translate([0, 0, -0.01])
+        cylinder(h = shaft_bore_depth + 0.02, d = shaft_hole_diameter);
+    
+    // The flat part: Subtract a block that removes everything beyond the flat.
+    // The flat is at y = -1.6 (relative to center).
+    // To ensure a clean cut, we subtract a block that extends past the cylinder.
+    translate([-shaft_hole_diameter, -shaft_hole_diameter - 1, -0.01])
+        cube([shaft_hole_diameter * 2, shaft_hole_diameter - shaft_flat_width + 1, shaft_bore_depth + 0.02]);
+
+    // 3. Vertical Grip Grooves
+    // 18 grooves, 2mm diameter half-cylinders on the outer surface.
+    // They are "centered on the outer surface", meaning the cylinder axis 
+    // is at radius = (knob_diameter/2).
+    for (i = [0 : num_grip_grooves - 1]) {
+        rotate([0, 0, i * (360 / num_grip_grooves)])
+        translate([knob_diameter / 2, 0, 0])
+        rotate([0, 90, 0])
+        cylinder(h = knob_height + 2, d = grip_groove_diameter, center = true);
+    }
+
+    // 4. Pointer Groove
+    // 1.5mm wide, 1mm deep, from the center to the outer edge.
+    // Located on the same side as the flat (negative Y direction).
+    // We use a cube to ensure a rectangular cross-section (1.5 wide, 1 deep).
+    // The groove is on the top face (z=15).
+    // We translate it to the center and extend it to the edge.
+    translate([-pointer_width / 2, -knob_diameter / 2, knob_height - pointer_depth + 0.01])
+        cube([pointer_width, knob_diameter, pointer_depth + 0.1]);
+}
+
+// Note on the Pointer Groove: 
+// The previous report showed the groove was split into two regions (X -14.25 to 14.25).
+// This happened because the cube was being subtracted from the center outwards 
+// but the geometry was not correctly aligned or the subtraction was too large.
+// By using a cube from -width/2 to +width/2 and translating it to the edge, 
+// we ensure it cuts through the center to the edge correctly.

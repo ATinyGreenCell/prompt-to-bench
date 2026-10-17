@@ -1,0 +1,71 @@
+// --- Dimensions (mm) ---
+collar_diameter = 13.0;      // Diameter of the base collar
+collar_thickness = 1.5;      // Height of the base collar
+sleeve_outer_diameter = 10.8; // Diameter of the main sleeve body
+sleeve_height_total = 21.5;  // Total height from Z=0 to top of sleeve
+bore_diameter = 6.2;         // Diameter of the central hole
+
+// --- Resolution ---
+$fn = 64;
+
+// --- Implementation ---
+
+// The part is printed "upside down" relative to the description:
+// The collar lies on the bed (z=0 to 1.5), and the sleeve rises from there.
+// This means the collar is the base.
+
+union() {
+    // 1. The Base Collar
+    cylinder(d = collar_diameter, h = collar_thickness);
+
+    // 2. The Sleeve Body
+    // It rises from the top of the collar (z = 1.5) to z = 21.5.
+    // The total height of the cylinder is 21.5 - 1.5 = 20.0.
+    translate([0, 0, collar_thickness])
+        cylinder(d = sleeve_outer_diameter, h = sleeve_height_total - collar_thickness);
+}
+
+// 3. The Central Bore (Subtraction)
+// The bore runs through the full height, open at both ends.
+// We use a difference to cut the hole through the entire assembly.
+difference() {
+    // We wrap the whole assembly in a union to ensure the difference 
+    // acts on the combined object, but for cleaner code, we'll 
+    // just subtract the bore from the union of the two parts.
+    
+    // Re-defining the assembly to subtract from
+    union() {
+        cylinder(d = collar_diameter, h = collar_thickness);
+        translate([0, 0, collar_thickness])
+            cylinder(d = sleeve_outer_diameter, h = sleeve_height_total - collar_thickness);
+    }
+
+    // The Bore
+    // To ensure no thin faces remain, we extend the cylinder slightly 
+    // above and below the object.
+    translate([0, 0, -1])
+        cylinder(d = bore_diameter, h = sleeve_height_total + 2);
+}
+
+// Note: The logic above is slightly redundant for clarity. 
+// Let's rewrite the final structure cleanly for the render engine.
+
+/* 
+REFINED STRUCTURE:
+*/
+
+difference() {
+    // The Solid Body
+    union() {
+        // Collar
+        cylinder(d = collar_diameter, h = collar_thickness);
+        // Sleeve
+        translate([0, 0, collar_thickness])
+            cylinder(d = sleeve_outer_diameter, h = sleeve_height_total - collar_thickness);
+    }
+
+    // The Bore (Cutting through everything)
+    // We extend it by 1mm on top and bottom to prevent coplanar artifacts
+    translate([0, 0, -1])
+        cylinder(d = bore_diameter, h = sleeve_height_total + 2);
+}

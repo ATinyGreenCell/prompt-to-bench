@@ -1,0 +1,40 @@
+// Sowing template for a 90 mm Petri dish
+// Flat disc with a 7 x 7 grid of through-holes and a +Y orientation notch
+
+// ---------------- Parameters ----------------
+disc_d        = 85;    // disc diameter (mm)
+disc_t        = 2;     // disc thickness (mm)
+
+hole_d        = 3;     // through-hole diameter (mm)
+hole_pitch    = 9;     // centre-to-centre hole spacing (mm)
+grid_n        = 7;     // holes per row / column
+
+notch_w       = 10;    // notch width along X (mm)
+notch_depth   = 4;     // notch depth along Y, measured in from the rim (mm)
+
+eps           = 0.5;   // overshoot for clean boolean cuts (mm)
+$fn           = 128;   // curve resolution
+
+// ---------------- Derived ----------------
+disc_r        = disc_d / 2;
+grid_offset   = (grid_n - 1) * hole_pitch / 2;   // centres the grid on the origin
+
+// ---------------- Model ----------------
+difference() {
+    // Base disc resting on the bed
+    cylinder(d = disc_d, h = disc_t, $fn = 128);
+
+    // 7 x 7 grid of through-holes
+    for (i = [0 : grid_n - 1])
+        for (j = [0 : grid_n - 1])
+            translate([i * hole_pitch - grid_offset,
+                       j * hole_pitch - grid_offset,
+                       -eps])
+                cylinder(d = hole_d, h = disc_t + 2 * eps, $fn = 64);
+
+    // Rectangular orientation notch on the +Y rim, centred on the Y axis
+    translate([-notch_w / 2,
+               disc_r - notch_depth,
+               -eps])
+        cube([notch_w, notch_depth + eps, disc_t + 2 * eps]);
+}

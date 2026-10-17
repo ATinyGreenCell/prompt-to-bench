@@ -1,0 +1,29 @@
+// Dimensions in millimetres
+collar_diameter = 13;    // Diameter of the collar
+collar_thickness = 1.5;  // Thickness of the collar
+sleeve_outer_diameter = 10.8;  // Outer diameter of the sleeve body
+sleeve_height = 21.5;    // Total height of the sleeve from z = 0
+bore_diameter = 6.2;     // Diameter of the bore through the sleeve
+
+$fn = 64;  // Number of facets for curved shapes
+
+// Collar part
+collar = cylinder(h = collar_thickness, d = collar_diameter);
+
+// Sleeve body part
+sleeve_body = cylinder(h = sleeve_height - collar_thickness, d = sleeve_outer_diameter, $fn = 64) - cylinder(h = sleeve_height - collar_thickness + 1, d = bore_diameter, $fn = 64);
+
+// Combine collar and sleeve body
+sleeve = union() {
+    collar,
+    translate([0, 0, collar_thickness]) sleeve_body
+};
+
+// Bore through the full height
+bore = cylinder(h = sleeve_height + 1, d = bore_diameter, $fn = 64);
+
+// Final part with bore subtracted
+difference() {
+    sleeve,
+    bore
+}

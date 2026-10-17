@@ -1,0 +1,47 @@
+// Dimensions in millimetres
+tank_outer_x = 120;  // Outer width of the tank
+tank_outer_y = 70;   // Outer depth of the tank
+tank_outer_z = 40;   // Outer height of the tank
+wall_thickness = 3;  // Thickness of the walls
+floor_thickness = 3; // Thickness of the floor
+platform_length = 60; // Length of the raised platform in X
+platform_height = 10; // Height of the raised platform above the inner floor
+platform_y = tank_outer_y - 2 * wall_thickness; // Inner depth of the tank
+platform_z = wall_thickness + floor_thickness; // Z position of the platform top
+hole_diameter = 2;   // Diameter of the electrode holes
+hole_y = 0;          // Y position of the electrode holes
+hole_z = 30;         // Z position of the electrode holes
+
+$fn = 64;
+
+// Outer tank
+tank = cube(size = [tank_outer_x, tank_outer_y, tank_outer_z], center = false);
+
+// Inner tank (to subtract from the outer tank)
+inner_tank = translate([wall_thickness, wall_thickness, floor_thickness])
+             cube(size = [tank_outer_x - 2 * wall_thickness, 
+                          tank_outer_y - 2 * wall_thickness, 
+                          tank_outer_z - floor_thickness], 
+                  center = false);
+
+// Raised platform
+platform = translate([tank_outer_x / 2 - platform_length / 2, wall_thickness, platform_z])
+           cube(size = [platform_length, platform_y, platform_height], center = false);
+
+// Electrode holes
+hole_left = translate([wall_thickness / 2, hole_y, hole_z])
+            cylinder(r = hole_diameter / 2, h = tank_outer_x - wall_thickness + 1, center = false);
+
+hole_right = translate([tank_outer_x - wall_thickness / 2, hole_y, hole_z])
+             cylinder(r = hole_diameter / 2, h = tank_outer_x - wall_thickness + 1, center = false);
+
+// Final assembly
+difference() {
+    union() {
+        tank;
+        platform;
+    }
+    inner_tank;
+    hole_left;
+    hole_right;
+}

@@ -1,0 +1,60 @@
+// Pestle for 1.5 mL Microcentrifuge Tube
+// Designed for FDM printing, standing upright on the XY plane.
+
+// --- Dimensions (mm) ---
+handle_diameter = 8;          // Diameter of the cylindrical handle
+handle_height = 45;           // Height of the handle section
+cone_base_diameter = 8;       // Diameter at the start of the taper (z=45)
+cone_tip_diameter = 3;        // Diameter at the end of the taper (z=62)
+cone_height = 62 - 45;        // Vertical height of the conical section
+tip_diameter = 3;             // Diameter of the spherical tip
+tip_center_z = 62;            // Z-coordinate of the sphere center
+
+groove_width = 2;             // Width of each groove (Z direction)
+groove_depth = 1;             // Depth of the cut into the handle
+groove_count = 4;             // Number of grooves
+groove_centers_z = [10, 15, 20, 25]; // Z-positions for the centers of the grooves
+
+// --- Resolution ---
+$fn = 64;
+
+// --- Main Construction ---
+union() {
+    // 1. Handle Section
+    difference() {
+        // Main cylinder
+        cylinder(d = handle_diameter, h = handle_height);
+
+        // 2. Grip Grooves
+        // We iterate through the specified Z-centers to cut the grooves
+        for (z_pos = groove_centers_z) {
+            translate([0, 0, z_pos - (groove_width / 2)])
+            rotate([90, 0, 0])
+            // Using a cylinder to cut the circumferential groove
+            // We make it slightly larger in X/Y to ensure a clean cut
+            cylinder(d = handle_diameter + 2, h = handle_diameter + 2, center = true);
+        }
+    }
+
+    // 3. Conical Taper
+    // We use a hull between two circles to create the taper
+    hull() {
+        // Base of cone (at z=45)
+        translate([0, 0, handle_height])
+        cylinder(d = cone_base_diameter, h = 0.01);
+        
+        // Top of cone (at z=62)
+        translate([0, 0, handle_height + cone_height])
+        cylinder(d = cone_tip_diameter, h = 0.01);
+    }
+
+    // 4. Rounded Tip
+    // A sphere centered at the top of the cone
+    translate([0, 0, tip_center_z])
+    sphere(d = tip_diameter);
+}
+
+// Note: The geometry is built from z=0 upwards.
+// The handle is a cylinder from 0 to 45.
+// The cone starts at 45 and ends at 62.
+// The sphere is centered at 62.

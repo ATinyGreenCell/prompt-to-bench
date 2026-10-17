@@ -1,0 +1,49 @@
+```openscad
+// Dimensions for the box
+box_outer_x = 70;  // Outer X dimension of the box
+box_outer_y = 50;  // Outer Y dimension of the box
+box_outer_z = 30;  // Outer Z dimension of the box
+box_wall_thickness = 2;  // Wall thickness of the box
+box_floor_thickness = 2;  // Floor thickness of the box
+
+// Dimensions for the lid
+lid_outer_x = 70;  // Outer X dimension of the lid
+lid_outer_y = 50;  // Outer Y dimension of the lid
+lid_thickness = 2;  // Thickness of the lid
+lip_outer_x = 65.6;  // Outer X dimension of the lip
+lip_outer_y = 45.6;  // Outer Y dimension of the lip
+lip_thickness = 1.5;  // Thickness of the lip
+lip_height = 4;  // Height of the lip
+
+// Calculated dimensions
+box_inner_x = box_outer_x - 2 * box_wall_thickness;
+box_inner_y = box_outer_y - 2 * box_wall_thickness;
+box_inner_z = box_outer_z - box_floor_thickness;
+lip_inner_x = lip_outer_x - 2 * lip_thickness;
+lip_inner_y = lip_outer_y - 2 * lip_thickness;
+
+// Set the number of fragments for curved shapes
+$fn = 64;
+
+// Box part
+box = difference() {
+    cube(size = [box_outer_x, box_outer_y, box_outer_z], center = false);
+    translate([box_wall_thickness, box_wall_thickness, box_floor_thickness])
+        cube(size = [box_inner_x, box_inner_y, box_inner_z], center = false);
+}
+
+// Lid part
+lid = difference() {
+    cube(size = [lid_outer_x, lid_outer_y, lid_thickness], center = false);
+    translate([(lid_outer_x - lip_outer_x) / 2, (lid_outer_y - lip_outer_y) / 2, lid_thickness])
+        cube(size = [lip_outer_x, lip_outer_y, lip_height + 0.01], center = false);
+    translate([(lid_outer_x - lip_inner_x) / 2, (lid_outer_y - lip_inner_y) / 2, lid_thickness])
+        cube(size = [lip_inner_x, lip_inner_y, lip_height - lip_thickness + 0.01], center = false);
+}
+
+// Place the box and lid side by side with a 10 mm gap
+translate([-box_outer_x/2 - 5, 0, 0]) box;
+translate([box_outer_x/2 + 5 + lid_outer_x/2, 0, 0]) lid;
+```
+
+It seems there might be an issue with the syntax or structure of

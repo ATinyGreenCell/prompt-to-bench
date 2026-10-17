@@ -1,0 +1,75 @@
+// --- Dimensions (mm) ---
+spout_od = 10.0;          // Outer diameter of the spout
+spout_height = 20.0;      // Height of the spout from the base
+funnel_rim_od = 60.0;     // Outer diameter at the top rim
+funnel_height = 50.0;     // Total height from base to rim
+wall_thickness = 1.6;     // Constant wall thickness
+
+// --- Derived Dimensions ---
+spout_id = spout_od - (2 * wall_thickness);
+funnel_id_bottom = spout_od - (2 * wall_thickness); // ID at the junction
+funnel_id_top = funnel_rim_od - (2 * wall_thickness);
+
+// --- Rendering Settings ---
+$fn = 64;
+
+// --- Construction ---
+
+// The part is printed upright, resting on the XY plane at z = 0.
+// We use a difference() to create the hollow interior.
+
+difference() {
+    // OUTER SHELL
+    union() {
+        // 1. The Spout (Cylinder)
+        cylinder(h = spout_height, d = spout_od);
+        
+        // 2. The Funnel Cone (Frustum)
+        // We use a hull of two cylinders to create the conical shape
+        hull() {
+            // Bottom of cone (at z = spout_height)
+            translate([0, 0, spout_height])
+                cylinder(h = 0.01, d = funnel_rim_od);
+            
+            // Top of cone (at z = funnel_height)
+            translate([0, 0, funnel_height])
+                cylinder(h = 0.01, d = funnel_rim_od);
+            
+            // Note: To make it a true cone from spout to rim, 
+            // we hull from the spout top to the rim top.
+            // However, the prompt specifies the cone widens from 10mm at z=20 to 60mm at z=50.
+            // So we hull the cylinder at z=20 and the cylinder at z=50.
+            translate([0, 0, spout_height])
+                cylinder(h = 0.01, d = spout_od);
+            translate([0, 0, funnel_height])
+                cylinder(h = 0.01, d = funnel_rim_od);
+        }
+    }
+
+    // INNER VOID (The "Cutter")
+    union() {
+        // 1. Spout Bore
+        // Extend slightly below z=0 to ensure clean cut
+        translate([0, 0, -1])
+            cylinder(h = spout_height + 1, d = spout_id);
+        
+        // 2. Funnel Bore (Conical)
+        // We hull the inner diameters to maintain constant wall thickness
+        hull() {
+            // Bottom of inner cone (at z = spout_height)
+            translate([0, 0, spout_height - 0.1])
+                cylinder(h = 0.1, d = spout_id);
+            
+            // Top of inner cone (at z = funnel_height)
+            translate([0, 0, funnel_height + 1])
+                cylinder(h = 1, d = funnel_id_top);
+        }
+    }
+}
+
+// Note on geometry: 
+// The prompt asks for a straight spout from z=0 to z=20.
+// Then a cone from z=20 (10mm OD) to z=50 (60mm OD).
+// The wall is 1.6mm thick everywhere.
+// To achieve this, the outer shape is a cylinder (0-20) + cone (20-50).
+// The inner shape is a cylinder (0-20) + cone (20-50).

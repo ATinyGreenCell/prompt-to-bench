@@ -165,3 +165,13 @@ is now disproven by the result above.
 - VeriSilicon accelerator toolchain: [VIP9400 IP page](https://verisilicon.com/cn/IPPortfolio/VivanteVIP9400); [ACUITYLite (open subset)](https://github.com/VeriSilicon/acuitylite); [Vivante/ACUITY SDK guide (VIP9000-series)](https://docs.radxa.com/en/cubie/a7a/app-dev/npu-dev/cubie-acuity-sdk).
 - Ternary example referenced in discussion: [Bonsai model family](https://www.llmreference.com/model-family/bonsai).
 - Silicon identity: third-party teardown analysis (bay41; Habr), not vendor-confirmed — no stable URL recorded.
+
+## Follow-up — the import succeeded (2026-10-16)
+
+Stages A–C were executed, and the conclusion above ("a user LLM cannot be imported") is **corrected**: the box's **app** *Import Model* step (Hugging Face URL, safetensors) **accepts fine-tunes of the vendor base Qwen3.5-9B**, even though the command-line `tiiny import` rejects the same architecture as image-only.
+
+- **Trained** (off-device, rented A40): `Qwen/Qwen3.5-9B` via unsloth `FastVisionModel` — LoRA on the language layers, vision encoder frozen and preserved — on the 7,238 verified OpenSCAD examples; merged to bf16 safetensors; uploaded to `ATinyGreenCell/scadcoder-qwen3.5-9b`.
+- **Imported**: the app rejected the first attempts with *"This architecture is not supported yet"* until the repo matched the stock base — not only `config.json` (transformers-4.57 schema, `vision_config.model_type: qwen3_5`, the stock preprocessor/vocab files) but the **HF-computed metadata** (`pipeline_tag: image-text-to-text`, `library_name: transformers`, `transformersInfo.auto_model: AutoModelForMultimodalLM`), which only appear once the repo has a model-card with the right YAML frontmatter. The importer reads the model *by HF URL*, so that computed metadata — not the raw config — was the gate.
+- **Ran**: loaded on the NPU via tiinykit `t.load(...)` and benchmarked through the bridge — **15/16 render, 0/16 pass, mean best 0.40** on the 16 held-out tasks (1-epoch model).
+
+Net: a lab's own language model **can** run on this appliance, within the vendor's lane (a fine-tune of a supported base, trained elsewhere, imported through the app). Reflected in README §9 and §6.4.

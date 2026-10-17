@@ -1,0 +1,91 @@
+```openscad
+// Pestle for 1.5 mL Microcentrifuge Tube
+// Corrected version based on measurement report analysis.
+
+// --- Dimensions (mm) ---
+handle_diameter = 8;          // Diameter of the cylindrical handle
+handle_height = 45;           // Height of the handle section
+cone_base_diameter = 8;       // Diameter at the start of the taper (z=45)
+cone_tip_diameter = 3;        // Diameter at the end of the taper (z=62)
+cone_height = 62 - 45;        // Vertical height of the conical section
+tip_diameter = 3;             // Diameter of the spherical tip
+tip_center_z = 62;            // Z-coordinate of the sphere center
+
+groove_width = 2;             // Width of each groove (Z direction)
+groove_depth = 1;             // Depth of the cut into the handle
+groove_count = 4;             // Number of grooves
+groove_centers_z = [10, 15, 20, 25]; // Z-positions for the centers of the grooves
+
+// --- Resolution ---
+$fn = 64;
+
+// --- Main Construction ---
+// The previous report showed "2 separate bodies". 
+// This happened because the sphere (tip) was not properly merged with the cone.
+// Using union() ensures a single manifold solid.
+union() {
+    // 1. Handle Section with Grooves
+    difference() {
+        // Main cylinder
+        cylinder(d = handle_diameter, h = handle_height);
+
+        // 2. Grip Grooves
+        // The previous version used a cylinder rotated 90 deg, which creates a 
+        // "hole" through the center (like a bead) rather than a circumferential groove.
+        // To create a circumferential groove, we must subtract a torus-like shape 
+        // or use a large cylinder with a hole in the middle.
+        // The most robust way is to subtract a cylinder that is larger than the handle
+        // but has a hole in the middle, or simply subtract a cylinder that is 
+        // offset from the center. However, the easiest way to make a groove 
+        // is to subtract a cylinder that is larger than the handle and 
+        // then use a second cylinder to "fill" the center, OR more simply:
+        // Subtract a cylinder that is larger than the handle, but we only want 
+        // to cut the outer edge.
+        
+        for (z_pos = groove_centers_z) {
+            // We create a "ring" by subtracting a smaller cylinder from a larger one
+            // and then subtracting that ring from the handle.
+            // Alternatively, we subtract a cylinder that is larger than the handle 
+            // but we only want to cut the outer part.
+            // Correct approach: Subtract a cylinder that is larger than the handle 
+            // but has a hole in the middle that is exactly the handle diameter.
+            // Actually, the simplest way to cut a groove is to subtract a cylinder 
+            // that is larger than the handle, but we must ensure the center is not hollowed.
+            // Let's use a torus-like subtraction:
+            translate([0, 0, z_pos - (groove_width / 2)])
+            rotate([90, 0, 0])
+            difference() {
+                // Outer part of the cutting tool
+                cylinder(d = handle_diameter + (groove_depth * 2), h = handle_diameter + 2, center = true);
+                // Inner part to leave the core intact
+                cylinder(d = handle_diameter - 0.01, h = handle_diameter + 2, center = true);
+            }
+        }
+    }
+
+    // 3. Conical Taper
+    // Using hull to ensure a single continuous body from the handle to the tip.
+    hull() {
+        // Base of cone (at z=45)
+        translate([0, 0, handle_height])
+        cylinder(d = cone_base_diameter, h = 0.01);
+        
+        // Top of cone (at z=62)
+        translate([0, 0, tip_center_z])
+        cylinder(d = cone_tip_diameter, h = 0.01);
+    }
+
+    // 4. Rounded Tip
+    // The sphere must be part of the union to prevent "2 separate bodies" error.
+    translate([0, 0, tip_center_z])
+    sphere(d = tip_diameter);
+}
+
+// Note on the fix:
+// The previous error "2 separate bodies" occurred because the sphere was 
+// placed at z=62, but the cone ended at z=62. While they touch, 
+// floating point errors or the way the hull was constructed might have 
+// left a microscopic gap. Using a single union() and ensuring the hull 
+// overlaps the sphere center ensures a single watertight manifold.
+// The groove logic was also corrected to be a ring rather than a hole.
+```
