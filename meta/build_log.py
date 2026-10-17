@@ -26,7 +26,9 @@ PATTERNS = [
     (re.compile(r"<system-reminder>.*?</system-reminder>", re.S), ""),
     (re.compile(r"[\w.+-]+@[\w-]+\.[\w.-]+"), "[email]"),
     (re.compile(r"[\w.+-]+@(?=[^\w.]|$)"), "[email]"),  # a bare "user@", e.g. in a grep pattern
-    (re.compile(r"\b(?:sk-ant-|sk-|ghp_|gho_|ghs_|github_pat_)[A-Za-z0-9_-]{12,}"), "[token]"),
+    (re.compile(r"\b(?:sk-ant-|sk-|ghp_|gho_|ghs_|github_pat_|hf_|rpa_|rps_)[A-Za-z0-9_-]{12,}"), "[token]"),
+    # UUID-shaped secrets (e.g. a device API key pasted into the chat); session ids lose nothing by it
+    (re.compile(r"\b[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\b"), "[uuid]"),
     (re.compile(r"\b(?:10(?:\.\d{1,3}){3}|172\.(?:1[6-9]|2\d|3[01])(?:\.\d{1,3}){2}|192\.168(?:\.\d{1,3}){2})\b"),
      "[private-ip]"),
     (re.compile(r"\bfe80::[0-9a-fA-F:%\w]*"), "[private-ip]"),

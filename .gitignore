@@ -25,3 +25,14 @@ bench/results/_selftest/
 # Private redaction list for meta/build_log.py (it names what it hides, so never commit it)
 meta/redact.txt
 finetune/out/
+
+# Fine-tune model weights and pod transfer bundles (multi-GB; the models live on Hugging Face)
+finetune/out*/
+finetune/rft/send/
+finetune/rft/trainsend/
+finetune/rft/vlmsend/
+finetune/rft/distill/cand/
+finetune/rft/distill/__pycache__/
+# Merged training sets are rebuilt from their parts (finetune/scripts/build_v4.py)
+finetune/data/v3_train.jsonl
+finetune/data/v4_train.jsonl
