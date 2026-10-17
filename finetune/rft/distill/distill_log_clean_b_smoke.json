@@ -1,0 +1,501 @@
+{
+ "started": "2026-10-17T16:09:33",
+ "finished": "2026-10-17T16:11:22",
+ "tag": "clean_b_smoke",
+ "shard": 0,
+ "num_shards": 1,
+ "model": "claude-opus-5-5",
+ "prompts": 14,
+ "claude_calls": 14,
+ "max_claude_calls": 16,
+ "kept": 14,
+ "dropped": 0,
+ "drop_reasons": {
+  "render": 0,
+  "degenerate": 0,
+  "bbox": 0,
+  "no_code": 0,
+  "call": 0
+ },
+ "yield": 1.0,
+ "bbox_tol": 0.15,
+ "out": "/home/seb/printpaper/finetune/rft/distill/clean_b_smoke.jsonl",
+ "records": [
+  {
+   "id": "tripod_ring_000",
+   "family": "tripod_ring",
+   "bbox_expected": [
+    90.0,
+    90.0,
+    60.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 6.6,
+   "gen_tokens": 565,
+   "extract": "fenced",
+   "code_lines": 37,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 22214.70284106859,
+    "bodies": 1,
+    "triangles": 2560,
+    "bbox": [
+     90.0,
+     90.0,
+     60.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "counterbored_spacer_000",
+   "family": "counterbored_spacer",
+   "bbox_expected": [
+    24.0,
+    24.0,
+    12.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 5.2,
+   "gen_tokens": 370,
+   "extract": "fenced",
+   "code_lines": 25,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 5195.491087686804,
+    "bodies": 1,
+    "triangles": 1152,
+    "bbox": [
+     24.0,
+     24.0,
+     12.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "dovetail_rail_000",
+   "family": "dovetail_rail",
+   "bbox_expected": [
+    60.0,
+    40.0,
+    12.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 9.0,
+   "gen_tokens": 739,
+   "extract": "fenced",
+   "code_lines": 35,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 18721.198024749756,
+    "bodies": 1,
+    "triangles": 40,
+    "bbox": [
+     60.0,
+     40.0,
+     12.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "disc_boss_base_000",
+   "family": "disc_boss_base",
+   "bbox_expected": [
+    100.0,
+    100.0,
+    30.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 8.1,
+   "gen_tokens": 452,
+   "extract": "fenced",
+   "code_lines": 28,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 83200.71853731206,
+    "bodies": 1,
+    "triangles": 1532,
+    "bbox": [
+     100.0,
+     100.0,
+     30.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "wedge_stop_000",
+   "family": "wedge_stop",
+   "bbox_expected": [
+    120.0,
+    40.0,
+    25.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 9.4,
+   "gen_tokens": 756,
+   "extract": "fenced",
+   "code_lines": 36,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 57750.0,
+    "bodies": 1,
+    "triangles": 28,
+    "bbox": [
+     120.0,
+     40.0,
+     25.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "washer_set_000",
+   "family": "washer_set",
+   "bbox_expected": [
+    144.0,
+    30.0,
+    2.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 6.1,
+   "gen_tokens": 428,
+   "extract": "fenced",
+   "code_lines": 29,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 4960.153156805217,
+    "bodies": 4,
+    "triangles": 4096,
+    "bbox": [
+     144.0,
+     30.0,
+     2.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "v_groove_rest_000",
+   "family": "v_groove_rest",
+   "bbox_expected": [
+    50.0,
+    30.0,
+    15.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 9.2,
+   "gen_tokens": 818,
+   "extract": "fenced",
+   "code_lines": 46,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 21060.0,
+    "bodies": 1,
+    "triangles": 48,
+    "bbox": [
+     50.0,
+     30.0,
+     15.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "nut_trap_block_000",
+   "family": "nut_trap_block",
+   "bbox_expected": [
+    30.0,
+    24.0,
+    15.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 10.3,
+   "gen_tokens": 679,
+   "extract": "fenced",
+   "code_lines": 36,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 10299.021093273725,
+    "bodies": 1,
+    "triangles": 424,
+    "bbox": [
+     30.0,
+     24.0,
+     15.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "slotted_collet_000",
+   "family": "slotted_collet",
+   "bbox_expected": [
+    30.0,
+    30.0,
+    20.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 6.3,
+   "gen_tokens": 418,
+   "extract": "fenced",
+   "code_lines": 34,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 4017.7471456816834,
+    "bodies": 1,
+    "triangles": 1120,
+    "bbox": [
+     30.0,
+     30.0,
+     20.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "cross_spacer_000",
+   "family": "cross_spacer",
+   "bbox_expected": [
+    70.0,
+    70.0,
+    3.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 5.7,
+   "gen_tokens": 481,
+   "extract": "fenced",
+   "code_lines": 32,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 3661.818356814256,
+    "bodies": 1,
+    "triangles": 1344,
+    "bbox": [
+     70.0,
+     70.0,
+     3.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "keyhole_hanger_000",
+   "family": "keyhole_hanger",
+   "bbox_expected": [
+    70.0,
+    35.0,
+    3.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 6.6,
+   "gen_tokens": 544,
+   "extract": "fenced",
+   "code_lines": 42,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 7034.050122038928,
+    "bodies": 1,
+    "triangles": 552,
+    "bbox": [
+     70.0,
+     35.0,
+     3.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "stair_block_000",
+   "family": "stair_block",
+   "bbox_expected": [
+    45.0,
+    40.0,
+    18.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 9.4,
+   "gen_tokens": 739,
+   "extract": "fenced",
+   "code_lines": 21,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 21600.0,
+    "bodies": 1,
+    "triangles": 42,
+    "bbox": [
+     45.0,
+     40.0,
+     18.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "chamfered_base_000",
+   "family": "chamfered_base",
+   "bbox_expected": [
+    100.0,
+    50.0,
+    15.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 5.6,
+   "gen_tokens": 412,
+   "extract": "fenced",
+   "code_lines": 24,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 72685.33333333333,
+    "bodies": 1,
+    "triangles": 20,
+    "bbox": [
+     100.0,
+     50.0,
+     15.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "rounded_tag_000",
+   "family": "rounded_tag",
+   "bbox_expected": [
+    50.0,
+    25.0,
+    3.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 5.4,
+   "gen_tokens": 458,
+   "extract": "fenced",
+   "code_lines": 31,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 3600.6888179233597,
+    "bodies": 1,
+    "triangles": 784,
+    "bbox": [
+     50.0,
+     25.0,
+     3.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  }
+ ]
+}

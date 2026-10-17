@@ -36,3 +36,5 @@ finetune/rft/distill/__pycache__/
 # Merged training sets are rebuilt from their parts (finetune/scripts/build_v4.py)
 finetune/data/v3_train.jsonl
 finetune/data/v4_train.jsonl
+finetune/data/v5_train.jsonl
+finetune/data/v6_train.jsonl

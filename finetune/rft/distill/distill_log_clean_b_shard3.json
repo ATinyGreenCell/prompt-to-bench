@@ -1,0 +1,3017 @@
+{
+ "started": "2026-10-17T16:11:41",
+ "finished": "2026-10-17T16:24:14",
+ "tag": "clean_b_shard3",
+ "shard": 3,
+ "num_shards": 8,
+ "model": "claude-opus-5-5",
+ "prompts": 88,
+ "claude_calls": 88,
+ "max_claude_calls": 100,
+ "kept": 88,
+ "dropped": 0,
+ "drop_reasons": {
+  "render": 0,
+  "degenerate": 0,
+  "bbox": 0,
+  "no_code": 0,
+  "call": 0
+ },
+ "yield": 1.0,
+ "bbox_tol": 0.15,
+ "out": "/home/seb/printpaper/finetune/rft/distill/clean_b_shard3.jsonl",
+ "records": [
+  {
+   "id": "tripod_ring_003",
+   "family": "tripod_ring",
+   "bbox_expected": [
+    70.0,
+    70.0,
+    50.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 7.4,
+   "gen_tokens": 635,
+   "extract": "fenced",
+   "code_lines": 39,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 11433.51354464385,
+    "bodies": 1,
+    "triangles": 1920,
+    "bbox": [
+     70.0,
+     70.0,
+     50.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "tripod_ring_011",
+   "family": "tripod_ring",
+   "bbox_expected": [
+    90.0,
+    90.0,
+    40.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 6.3,
+   "gen_tokens": 519,
+   "extract": "fenced",
+   "code_lines": 36,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 17178.523316901443,
+    "bodies": 1,
+    "triangles": 1920,
+    "bbox": [
+     90.0,
+     90.0,
+     40.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "tripod_ring_019",
+   "family": "tripod_ring",
+   "bbox_expected": [
+    80.0,
+    80.0,
+    70.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 10.1,
+   "gen_tokens": 563,
+   "extract": "fenced",
+   "code_lines": 39,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 20782.49810617378,
+    "bodies": 1,
+    "triangles": 1920,
+    "bbox": [
+     80.0,
+     80.0,
+     70.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "tripod_ring_027",
+   "family": "tripod_ring",
+   "bbox_expected": [
+    60.0,
+    60.0,
+    40.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 7.9,
+   "gen_tokens": 544,
+   "extract": "fenced",
+   "code_lines": 37,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 10717.741822288239,
+    "bodies": 1,
+    "triangles": 1920,
+    "bbox": [
+     60.0,
+     60.0,
+     40.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "tripod_ring_035",
+   "family": "tripod_ring",
+   "bbox_expected": [
+    80.0,
+    80.0,
+    70.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 10.5,
+   "gen_tokens": 572,
+   "extract": "fenced",
+   "code_lines": 38,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 20192.30059629378,
+    "bodies": 1,
+    "triangles": 1920,
+    "bbox": [
+     80.0,
+     80.0,
+     70.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "tripod_ring_043",
+   "family": "tripod_ring",
+   "bbox_expected": [
+    80.0,
+    80.0,
+    40.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 8.5,
+   "gen_tokens": 693,
+   "extract": "fenced",
+   "code_lines": 38,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 14315.436567977757,
+    "bodies": 1,
+    "triangles": 1918,
+    "bbox": [
+     80.0,
+     80.0,
+     40.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "counterbored_spacer_001",
+   "family": "counterbored_spacer",
+   "bbox_expected": [
+    18.0,
+    18.0,
+    15.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 5.4,
+   "gen_tokens": 394,
+   "extract": "fenced",
+   "code_lines": 25,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 3472.9061726633063,
+    "bodies": 1,
+    "triangles": 1152,
+    "bbox": [
+     18.0,
+     18.0,
+     15.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "counterbored_spacer_009",
+   "family": "counterbored_spacer",
+   "bbox_expected": [
+    16.0,
+    16.0,
+    15.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 6.0,
+   "gen_tokens": 372,
+   "extract": "fenced",
+   "code_lines": 25,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 2603.69854144221,
+    "bodies": 1,
+    "triangles": 1152,
+    "bbox": [
+     16.0,
+     16.0,
+     15.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "counterbored_spacer_017",
+   "family": "counterbored_spacer",
+   "bbox_expected": [
+    24.0,
+    24.0,
+    20.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 7.3,
+   "gen_tokens": 374,
+   "extract": "fenced",
+   "code_lines": 26,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 8347.532072436785,
+    "bodies": 1,
+    "triangles": 1152,
+    "bbox": [
+     24.0,
+     24.0,
+     20.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "counterbored_spacer_025",
+   "family": "counterbored_spacer",
+   "bbox_expected": [
+    20.0,
+    20.0,
+    12.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 5.6,
+   "gen_tokens": 384,
+   "extract": "fenced",
+   "code_lines": 25,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 3586.0875515989296,
+    "bodies": 1,
+    "triangles": 1152,
+    "bbox": [
+     20.0,
+     20.0,
+     12.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "counterbored_spacer_033",
+   "family": "counterbored_spacer",
+   "bbox_expected": [
+    16.0,
+    16.0,
+    12.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 6.8,
+   "gen_tokens": 396,
+   "extract": "fenced",
+   "code_lines": 27,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 1852.412804124236,
+    "bodies": 1,
+    "triangles": 1152,
+    "bbox": [
+     16.0,
+     16.0,
+     12.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "counterbored_spacer_041",
+   "family": "counterbored_spacer",
+   "bbox_expected": [
+    18.0,
+    18.0,
+    10.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 9.7,
+   "gen_tokens": 397,
+   "extract": "fenced",
+   "code_lines": 26,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 2031.7482191661832,
+    "bodies": 1,
+    "triangles": 1152,
+    "bbox": [
+     18.0,
+     18.0,
+     10.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "counterbored_spacer_049",
+   "family": "counterbored_spacer",
+   "bbox_expected": [
+    16.0,
+    16.0,
+    20.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 5.9,
+   "gen_tokens": 379,
+   "extract": "fenced",
+   "code_lines": 26,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 3764.653773803364,
+    "bodies": 1,
+    "triangles": 1152,
+    "bbox": [
+     16.0,
+     16.0,
+     20.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "dovetail_rail_007",
+   "family": "dovetail_rail",
+   "bbox_expected": [
+    60.0,
+    30.0,
+    10.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 6.0,
+   "gen_tokens": 562,
+   "extract": "fenced",
+   "code_lines": 35,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 12301.796436309814,
+    "bodies": 1,
+    "triangles": 40,
+    "bbox": [
+     60.0,
+     30.0,
+     10.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "dovetail_rail_015",
+   "family": "dovetail_rail",
+   "bbox_expected": [
+    120.0,
+    40.0,
+    10.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 9.5,
+   "gen_tokens": 810,
+   "extract": "fenced",
+   "code_lines": 38,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 27842.39604949951,
+    "bodies": 1,
+    "triangles": 40,
+    "bbox": [
+     120.0,
+     40.0,
+     10.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "dovetail_rail_023",
+   "family": "dovetail_rail",
+   "bbox_expected": [
+    80.0,
+    30.0,
+    11.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 11.8,
+   "gen_tokens": 955,
+   "extract": "fenced",
+   "code_lines": 36,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 17282.395935058594,
+    "bodies": 1,
+    "triangles": 40,
+    "bbox": [
+     80.0,
+     30.0,
+     11.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "dovetail_rail_031",
+   "family": "dovetail_rail",
+   "bbox_expected": [
+    80.0,
+    36.0,
+    12.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 11.4,
+   "gen_tokens": 987,
+   "extract": "fenced",
+   "code_lines": 36,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 20481.597900390625,
+    "bodies": 1,
+    "triangles": 40,
+    "bbox": [
+     80.0,
+     36.0,
+     12.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "dovetail_rail_039",
+   "family": "dovetail_rail",
+   "bbox_expected": [
+    100.0,
+    40.0,
+    12.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 10.7,
+   "gen_tokens": 964,
+   "extract": "fenced",
+   "code_lines": 42,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 30602.994918823242,
+    "bodies": 1,
+    "triangles": 40,
+    "bbox": [
+     100.0,
+     40.0,
+     12.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "dovetail_rail_047",
+   "family": "dovetail_rail",
+   "bbox_expected": [
+    60.0,
+    30.0,
+    14.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 12.2,
+   "gen_tokens": 989,
+   "extract": "fenced",
+   "code_lines": 43,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 17040.0,
+    "bodies": 1,
+    "triangles": 40,
+    "bbox": [
+     60.0,
+     30.0,
+     14.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "disc_boss_base_005",
+   "family": "disc_boss_base",
+   "bbox_expected": [
+    100.0,
+    100.0,
+    31.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 7.7,
+   "gen_tokens": 449,
+   "extract": "fenced",
+   "code_lines": 26,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 54835.61862493387,
+    "bodies": 1,
+    "triangles": 1148,
+    "bbox": [
+     100.0,
+     100.0,
+     31.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "disc_boss_base_013",
+   "family": "disc_boss_base",
+   "bbox_expected": [
+    120.0,
+    120.0,
+    26.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 5.6,
+   "gen_tokens": 452,
+   "extract": "fenced",
+   "code_lines": 31,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 74797.97792284019,
+    "bodies": 1,
+    "triangles": 1532,
+    "bbox": [
+     120.0,
+     120.0,
+     26.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "disc_boss_base_021",
+   "family": "disc_boss_base",
+   "bbox_expected": [
+    100.0,
+    100.0,
+    30.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 6.0,
+   "gen_tokens": 462,
+   "extract": "fenced",
+   "code_lines": 34,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 90216.21846465894,
+    "bodies": 1,
+    "triangles": 1532,
+    "bbox": [
+     100.0,
+     100.0,
+     30.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "disc_boss_base_029",
+   "family": "disc_boss_base",
+   "bbox_expected": [
+    100.0,
+    100.0,
+    25.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 6.3,
+   "gen_tokens": 433,
+   "extract": "fenced",
+   "code_lines": 28,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 83986.78287068834,
+    "bodies": 1,
+    "triangles": 1532,
+    "bbox": [
+     100.0,
+     100.0,
+     25.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "disc_boss_base_037",
+   "family": "disc_boss_base",
+   "bbox_expected": [
+    100.0,
+    100.0,
+    25.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 6.9,
+   "gen_tokens": 484,
+   "extract": "fenced",
+   "code_lines": 30,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 82470.00291694836,
+    "bodies": 1,
+    "triangles": 1532,
+    "bbox": [
+     100.0,
+     100.0,
+     25.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "disc_boss_base_045",
+   "family": "disc_boss_base",
+   "bbox_expected": [
+    100.0,
+    100.0,
+    35.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 8.1,
+   "gen_tokens": 465,
+   "extract": "fenced",
+   "code_lines": 29,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 94301.3926717905,
+    "bodies": 1,
+    "triangles": 1404,
+    "bbox": [
+     100.0,
+     100.0,
+     35.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "wedge_stop_003",
+   "family": "wedge_stop",
+   "bbox_expected": [
+    120.0,
+    35.0,
+    25.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 8.6,
+   "gen_tokens": 788,
+   "extract": "fenced",
+   "code_lines": 35,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 49500.0,
+    "bodies": 1,
+    "triangles": 28,
+    "bbox": [
+     120.0,
+     35.0,
+     25.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "wedge_stop_011",
+   "family": "wedge_stop",
+   "bbox_expected": [
+    100.0,
+    30.0,
+    20.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 9.0,
+   "gen_tokens": 737,
+   "extract": "fenced",
+   "code_lines": 35,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 28200.0,
+    "bodies": 1,
+    "triangles": 28,
+    "bbox": [
+     100.0,
+     30.0,
+     20.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "wedge_stop_019",
+   "family": "wedge_stop",
+   "bbox_expected": [
+    80.0,
+    30.0,
+    20.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 9.2,
+   "gen_tokens": 717,
+   "extract": "fenced",
+   "code_lines": 34,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 21600.0,
+    "bodies": 1,
+    "triangles": 28,
+    "bbox": [
+     80.0,
+     30.0,
+     20.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "wedge_stop_027",
+   "family": "wedge_stop",
+   "bbox_expected": [
+    100.0,
+    35.0,
+    25.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 8.5,
+   "gen_tokens": 680,
+   "extract": "fenced",
+   "code_lines": 36,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 40750.0,
+    "bodies": 1,
+    "triangles": 28,
+    "bbox": [
+     100.0,
+     35.0,
+     25.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "wedge_stop_035",
+   "family": "wedge_stop",
+   "bbox_expected": [
+    120.0,
+    40.0,
+    30.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 17.3,
+   "gen_tokens": 837,
+   "extract": "fenced",
+   "code_lines": 36,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 67200.0,
+    "bodies": 1,
+    "triangles": 28,
+    "bbox": [
+     120.0,
+     40.0,
+     30.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "wedge_stop_043",
+   "family": "wedge_stop",
+   "bbox_expected": [
+    100.0,
+    35.0,
+    20.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 9.6,
+   "gen_tokens": 828,
+   "extract": "fenced",
+   "code_lines": 36,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 33200.0,
+    "bodies": 1,
+    "triangles": 28,
+    "bbox": [
+     100.0,
+     35.0,
+     20.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "washer_set_001",
+   "family": "washer_set",
+   "bbox_expected": [
+    182.0,
+    30.0,
+    3.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 5.7,
+   "gen_tokens": 420,
+   "extract": "fenced",
+   "code_lines": 31,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 9747.784290676593,
+    "bodies": 5,
+    "triangles": 5120,
+    "bbox": [
+     182.0,
+     30.0,
+     3.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "washer_set_009",
+   "family": "washer_set",
+   "bbox_expected": [
+    110.0,
+    20.0,
+    1.5
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 10.5,
+   "gen_tokens": 465,
+   "extract": "fenced",
+   "code_lines": 31,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 1364.440117256725,
+    "bodies": 4,
+    "triangles": 3072,
+    "bbox": [
+     110.0,
+     20.0,
+     1.5
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "washer_set_017",
+   "family": "washer_set",
+   "bbox_expected": [
+    160.0,
+    24.0,
+    1.5
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 6.3,
+   "gen_tokens": 462,
+   "extract": "fenced",
+   "code_lines": 28,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 3142.7845070006956,
+    "bodies": 5,
+    "triangles": 5120,
+    "bbox": [
+     160.0,
+     24.0,
+     1.5
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "washer_set_025",
+   "family": "washer_set",
+   "bbox_expected": [
+    64.0,
+    16.0,
+    1.5
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 7.4,
+   "gen_tokens": 411,
+   "extract": "fenced",
+   "code_lines": 31,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 648.9625648766331,
+    "bodies": 3,
+    "triangles": 2304,
+    "bbox": [
+     64.0,
+     16.0,
+     1.5
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "washer_set_033",
+   "family": "washer_set",
+   "bbox_expected": [
+    152.0,
+    24.0,
+    2.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 5.8,
+   "gen_tokens": 377,
+   "extract": "fenced",
+   "code_lines": 26,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 3953.6192501108476,
+    "bodies": 5,
+    "triangles": 3840,
+    "bbox": [
+     152.0,
+     24.0,
+     2.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "washer_set_041",
+   "family": "washer_set",
+   "bbox_expected": [
+    132.0,
+    20.0,
+    1.5
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 7.7,
+   "gen_tokens": 439,
+   "extract": "fenced",
+   "code_lines": 29,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 1705.5501404472495,
+    "bodies": 5,
+    "triangles": 3840,
+    "bbox": [
+     132.0,
+     20.0,
+     1.5
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "washer_set_049",
+   "family": "washer_set",
+   "bbox_expected": [
+    68.0,
+    16.0,
+    1.5
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 5.4,
+   "gen_tokens": 383,
+   "extract": "fenced",
+   "code_lines": 30,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 648.9625542376247,
+    "bodies": 3,
+    "triangles": 2304,
+    "bbox": [
+     68.0,
+     16.0,
+     1.5
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "v_groove_rest_007",
+   "family": "v_groove_rest",
+   "bbox_expected": [
+    64.0,
+    30.0,
+    12.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 9.3,
+   "gen_tokens": 769,
+   "extract": "fenced",
+   "code_lines": 37,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 20790.0,
+    "bodies": 1,
+    "triangles": 48,
+    "bbox": [
+     64.0,
+     30.0,
+     12.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "v_groove_rest_015",
+   "family": "v_groove_rest",
+   "bbox_expected": [
+    54.0,
+    50.0,
+    18.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 9.6,
+   "gen_tokens": 757,
+   "extract": "fenced",
+   "code_lines": 40,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 46200.0,
+    "bodies": 1,
+    "triangles": 48,
+    "bbox": [
+     54.0,
+     50.0,
+     18.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "v_groove_rest_023",
+   "family": "v_groove_rest",
+   "bbox_expected": [
+    92.0,
+    40.0,
+    18.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 10.2,
+   "gen_tokens": 874,
+   "extract": "fenced",
+   "code_lines": 47,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 61240.0,
+    "bodies": 1,
+    "triangles": 72,
+    "bbox": [
+     92.0,
+     40.0,
+     18.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "v_groove_rest_031",
+   "family": "v_groove_rest",
+   "bbox_expected": [
+    84.0,
+    30.0,
+    18.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 11.6,
+   "gen_tokens": 910,
+   "extract": "fenced",
+   "code_lines": 40,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 42360.0,
+    "bodies": 1,
+    "triangles": 60,
+    "bbox": [
+     84.0,
+     30.0,
+     18.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "v_groove_rest_039",
+   "family": "v_groove_rest",
+   "bbox_expected": [
+    105.0,
+    30.0,
+    18.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 10.5,
+   "gen_tokens": 791,
+   "extract": "fenced",
+   "code_lines": 39,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 52200.0,
+    "bodies": 1,
+    "triangles": 84,
+    "bbox": [
+     105.0,
+     30.0,
+     18.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "v_groove_rest_047",
+   "family": "v_groove_rest",
+   "bbox_expected": [
+    105.0,
+    50.0,
+    15.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 11.0,
+   "gen_tokens": 821,
+   "extract": "fenced",
+   "code_lines": 40,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 73950.0,
+    "bodies": 1,
+    "triangles": 84,
+    "bbox": [
+     105.0,
+     50.0,
+     15.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "nut_trap_block_005",
+   "family": "nut_trap_block",
+   "bbox_expected": [
+    20.0,
+    24.0,
+    12.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 9.1,
+   "gen_tokens": 722,
+   "extract": "fenced",
+   "code_lines": 34,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 5604.180278400199,
+    "bodies": 1,
+    "triangles": 296,
+    "bbox": [
+     20.0,
+     24.0,
+     12.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "nut_trap_block_013",
+   "family": "nut_trap_block",
+   "bbox_expected": [
+    24.0,
+    30.0,
+    10.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 9.5,
+   "gen_tokens": 714,
+   "extract": "fenced",
+   "code_lines": 36,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 6817.727772583744,
+    "bodies": 1,
+    "triangles": 424,
+    "bbox": [
+     24.0,
+     30.0,
+     10.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "nut_trap_block_021",
+   "family": "nut_trap_block",
+   "bbox_expected": [
+    24.0,
+    20.0,
+    12.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 7.4,
+   "gen_tokens": 661,
+   "extract": "fenced",
+   "code_lines": 34,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 5330.245100859735,
+    "bodies": 1,
+    "triangles": 424,
+    "bbox": [
+     24.0,
+     20.0,
+     12.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "nut_trap_block_029",
+   "family": "nut_trap_block",
+   "bbox_expected": [
+    30.0,
+    24.0,
+    12.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 8.5,
+   "gen_tokens": 731,
+   "extract": "fenced",
+   "code_lines": 37,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 8350.800354282943,
+    "bodies": 1,
+    "triangles": 296,
+    "bbox": [
+     30.0,
+     24.0,
+     12.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "nut_trap_block_037",
+   "family": "nut_trap_block",
+   "bbox_expected": [
+    30.0,
+    20.0,
+    15.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 12.2,
+   "gen_tokens": 693,
+   "extract": "fenced",
+   "code_lines": 35,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 8662.999489328822,
+    "bodies": 1,
+    "triangles": 424,
+    "bbox": [
+     30.0,
+     20.0,
+     15.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "nut_trap_block_045",
+   "family": "nut_trap_block",
+   "bbox_expected": [
+    24.0,
+    30.0,
+    15.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 12.3,
+   "gen_tokens": 711,
+   "extract": "fenced",
+   "code_lines": 35,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 10616.986402292021,
+    "bodies": 1,
+    "triangles": 296,
+    "bbox": [
+     24.0,
+     30.0,
+     15.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "slotted_collet_003",
+   "family": "slotted_collet",
+   "bbox_expected": [
+    20.0,
+    20.0,
+    30.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 5.7,
+   "gen_tokens": 352,
+   "extract": "fenced",
+   "code_lines": 25,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 3270.387197739197,
+    "bodies": 1,
+    "triangles": 832,
+    "bbox": [
+     20.0,
+     20.0,
+     30.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "slotted_collet_011",
+   "family": "slotted_collet",
+   "bbox_expected": [
+    30.0,
+    30.0,
+    25.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 6.4,
+   "gen_tokens": 434,
+   "extract": "fenced",
+   "code_lines": 30,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 5197.287142813853,
+    "bodies": 1,
+    "triangles": 1088,
+    "bbox": [
+     30.0,
+     30.0,
+     25.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "slotted_collet_019",
+   "family": "slotted_collet",
+   "bbox_expected": [
+    24.0,
+    24.0,
+    30.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 5.9,
+   "gen_tokens": 426,
+   "extract": "fenced",
+   "code_lines": 28,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 5755.090159672373,
+    "bodies": 1,
+    "triangles": 1088,
+    "bbox": [
+     24.0,
+     24.0,
+     30.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "slotted_collet_027",
+   "family": "slotted_collet",
+   "bbox_expected": [
+    20.0,
+    20.0,
+    25.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 6.7,
+   "gen_tokens": 393,
+   "extract": "fenced",
+   "code_lines": 27,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 3732.1334337924513,
+    "bodies": 1,
+    "triangles": 816,
+    "bbox": [
+     20.0,
+     20.0,
+     25.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "slotted_collet_035",
+   "family": "slotted_collet",
+   "bbox_expected": [
+    20.0,
+    20.0,
+    20.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 5.3,
+   "gen_tokens": 446,
+   "extract": "fenced",
+   "code_lines": 29,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 2961.6589417557684,
+    "bodies": 1,
+    "triangles": 832,
+    "bbox": [
+     20.0,
+     20.0,
+     20.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "slotted_collet_043",
+   "family": "slotted_collet",
+   "bbox_expected": [
+    16.0,
+    16.0,
+    25.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 7.9,
+   "gen_tokens": 363,
+   "extract": "fenced",
+   "code_lines": 25,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 2536.125594900092,
+    "bodies": 1,
+    "triangles": 816,
+    "bbox": [
+     16.0,
+     16.0,
+     25.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "cross_spacer_001",
+   "family": "cross_spacer",
+   "bbox_expected": [
+    70.0,
+    70.0,
+    4.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 6.2,
+   "gen_tokens": 557,
+   "extract": "fenced",
+   "code_lines": 34,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 4882.424475752341,
+    "bodies": 1,
+    "triangles": 1344,
+    "bbox": [
+     70.0,
+     70.0,
+     4.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "cross_spacer_009",
+   "family": "cross_spacer",
+   "bbox_expected": [
+    50.0,
+    50.0,
+    4.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 5.4,
+   "gen_tokens": 484,
+   "extract": "fenced",
+   "code_lines": 32,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 4436.812245479677,
+    "bodies": 1,
+    "triangles": 1984,
+    "bbox": [
+     50.0,
+     50.0,
+     4.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "cross_spacer_017",
+   "family": "cross_spacer",
+   "bbox_expected": [
+    60.0,
+    60.0,
+    5.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 6.5,
+   "gen_tokens": 561,
+   "extract": "fenced",
+   "code_lines": 35,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 4671.755164753966,
+    "bodies": 1,
+    "triangles": 1344,
+    "bbox": [
+     60.0,
+     60.0,
+     5.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "cross_spacer_025",
+   "family": "cross_spacer",
+   "bbox_expected": [
+    80.0,
+    80.0,
+    3.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 5.6,
+   "gen_tokens": 495,
+   "extract": "fenced",
+   "code_lines": 33,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 4261.818354233553,
+    "bodies": 1,
+    "triangles": 1344,
+    "bbox": [
+     80.0,
+     80.0,
+     3.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "cross_spacer_033",
+   "family": "cross_spacer",
+   "bbox_expected": [
+    50.0,
+    50.0,
+    3.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 7.3,
+   "gen_tokens": 492,
+   "extract": "fenced",
+   "code_lines": 33,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 2202.6091767732473,
+    "bodies": 1,
+    "triangles": 1984,
+    "bbox": [
+     50.0,
+     50.0,
+     3.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "cross_spacer_041",
+   "family": "cross_spacer",
+   "bbox_expected": [
+    70.0,
+    70.0,
+    5.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 6.1,
+   "gen_tokens": 457,
+   "extract": "fenced",
+   "code_lines": 30,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 7283.030579546666,
+    "bodies": 1,
+    "triangles": 1344,
+    "bbox": [
+     70.0,
+     70.0,
+     5.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "cross_spacer_049",
+   "family": "cross_spacer",
+   "bbox_expected": [
+    80.0,
+    80.0,
+    4.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 6.5,
+   "gen_tokens": 492,
+   "extract": "fenced",
+   "code_lines": 35,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 8037.404060875425,
+    "bodies": 1,
+    "triangles": 1344,
+    "bbox": [
+     80.0,
+     80.0,
+     4.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "keyhole_hanger_007",
+   "family": "keyhole_hanger",
+   "bbox_expected": [
+    60.0,
+    25.0,
+    4.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 7.0,
+   "gen_tokens": 636,
+   "extract": "fenced",
+   "code_lines": 43,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 5594.2425035116785,
+    "bodies": 1,
+    "triangles": 520,
+    "bbox": [
+     60.0,
+     25.0,
+     4.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "keyhole_hanger_015",
+   "family": "keyhole_hanger",
+   "bbox_expected": [
+    60.0,
+    35.0,
+    3.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 8.4,
+   "gen_tokens": 629,
+   "extract": "fenced",
+   "code_lines": 42,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 5956.835157371735,
+    "bodies": 1,
+    "triangles": 536,
+    "bbox": [
+     60.0,
+     35.0,
+     3.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "keyhole_hanger_023",
+   "family": "keyhole_hanger",
+   "bbox_expected": [
+    70.0,
+    30.0,
+    3.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 8.8,
+   "gen_tokens": 624,
+   "extract": "fenced",
+   "code_lines": 42,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 5993.673584506384,
+    "bodies": 1,
+    "triangles": 536,
+    "bbox": [
+     70.0,
+     30.0,
+     3.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "keyhole_hanger_031",
+   "family": "keyhole_hanger",
+   "bbox_expected": [
+    50.0,
+    30.0,
+    5.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 7.9,
+   "gen_tokens": 553,
+   "extract": "fenced",
+   "code_lines": 39,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 6878.058595128355,
+    "bodies": 1,
+    "triangles": 536,
+    "bbox": [
+     50.0,
+     30.0,
+     5.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "keyhole_hanger_039",
+   "family": "keyhole_hanger",
+   "bbox_expected": [
+    50.0,
+    25.0,
+    5.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 7.2,
+   "gen_tokens": 585,
+   "extract": "fenced",
+   "code_lines": 41,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 5747.6565410626945,
+    "bodies": 1,
+    "triangles": 544,
+    "bbox": [
+     50.0,
+     25.0,
+     5.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "keyhole_hanger_047",
+   "family": "keyhole_hanger",
+   "bbox_expected": [
+    50.0,
+    25.0,
+    5.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 7.0,
+   "gen_tokens": 546,
+   "extract": "fenced",
+   "code_lines": 40,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 5683.416870064881,
+    "bodies": 1,
+    "triangles": 552,
+    "bbox": [
+     50.0,
+     25.0,
+     5.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "stair_block_005",
+   "family": "stair_block",
+   "bbox_expected": [
+    48.0,
+    40.0,
+    32.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 11.4,
+   "gen_tokens": 958,
+   "extract": "fenced",
+   "code_lines": 33,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 38400.0,
+    "bodies": 1,
+    "triangles": 36,
+    "bbox": [
+     48.0,
+     40.0,
+     32.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "stair_block_013",
+   "family": "stair_block",
+   "bbox_expected": [
+    45.0,
+    20.0,
+    24.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 5.8,
+   "gen_tokens": 437,
+   "extract": "fenced",
+   "code_lines": 23,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 14400.0,
+    "bodies": 1,
+    "triangles": 48,
+    "bbox": [
+     45.0,
+     20.0,
+     24.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "stair_block_021",
+   "family": "stair_block",
+   "bbox_expected": [
+    75.0,
+    30.0,
+    40.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 9.6,
+   "gen_tokens": 768,
+   "extract": "fenced",
+   "code_lines": 32,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 54000.0,
+    "bodies": 1,
+    "triangles": 44,
+    "bbox": [
+     75.0,
+     30.0,
+     40.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "stair_block_029",
+   "family": "stair_block",
+   "bbox_expected": [
+    45.0,
+    40.0,
+    24.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 10.9,
+   "gen_tokens": 755,
+   "extract": "fenced",
+   "code_lines": 22,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 28800.0,
+    "bodies": 1,
+    "triangles": 46,
+    "bbox": [
+     45.0,
+     40.0,
+     24.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "stair_block_037",
+   "family": "stair_block",
+   "bbox_expected": [
+    48.0,
+    40.0,
+    24.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 13.4,
+   "gen_tokens": 1026,
+   "extract": "fenced",
+   "code_lines": 24,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 28800.0,
+    "bodies": 1,
+    "triangles": 36,
+    "bbox": [
+     48.0,
+     40.0,
+     24.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "stair_block_045",
+   "family": "stair_block",
+   "bbox_expected": [
+    36.0,
+    40.0,
+    30.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 13.0,
+   "gen_tokens": 1000,
+   "extract": "fenced",
+   "code_lines": 33,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 28800.0,
+    "bodies": 1,
+    "triangles": 28,
+    "bbox": [
+     36.0,
+     40.0,
+     30.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "chamfered_base_003",
+   "family": "chamfered_base",
+   "bbox_expected": [
+    100.0,
+    40.0,
+    15.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 5.2,
+   "gen_tokens": 431,
+   "extract": "fenced",
+   "code_lines": 29,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 59450.666666666664,
+    "bodies": 1,
+    "triangles": 20,
+    "bbox": [
+     100.0,
+     40.0,
+     15.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "chamfered_base_011",
+   "family": "chamfered_base",
+   "bbox_expected": [
+    80.0,
+    40.0,
+    10.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 6.1,
+   "gen_tokens": 412,
+   "extract": "fenced",
+   "code_lines": 25,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 30956.0,
+    "bodies": 1,
+    "triangles": 20,
+    "bbox": [
+     80.0,
+     40.0,
+     10.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "chamfered_base_019",
+   "family": "chamfered_base",
+   "bbox_expected": [
+    60.0,
+    60.0,
+    12.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 7.7,
+   "gen_tokens": 522,
+   "extract": "fenced",
+   "code_lines": 34,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 41365.333333333336,
+    "bodies": 1,
+    "triangles": 28,
+    "bbox": [
+     60.0,
+     60.0,
+     12.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "chamfered_base_027",
+   "family": "chamfered_base",
+   "bbox_expected": [
+    60.0,
+    40.0,
+    10.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 5.4,
+   "gen_tokens": 425,
+   "extract": "fenced",
+   "code_lines": 29,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 22485.333333333332,
+    "bodies": 1,
+    "triangles": 20,
+    "bbox": [
+     60.0,
+     40.0,
+     10.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "chamfered_base_035",
+   "family": "chamfered_base",
+   "bbox_expected": [
+    60.0,
+    50.0,
+    10.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 7.2,
+   "gen_tokens": 506,
+   "extract": "fenced",
+   "code_lines": 30,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 28325.333333333332,
+    "bodies": 1,
+    "triangles": 28,
+    "bbox": [
+     60.0,
+     50.0,
+     10.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "chamfered_base_043",
+   "family": "chamfered_base",
+   "bbox_expected": [
+    80.0,
+    50.0,
+    10.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 7.0,
+   "gen_tokens": 454,
+   "extract": "fenced",
+   "code_lines": 24,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 39493.21339162191,
+    "bodies": 1,
+    "triangles": 28,
+    "bbox": [
+     80.0,
+     50.0,
+     10.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "rounded_tag_001",
+   "family": "rounded_tag",
+   "bbox_expected": [
+    70.0,
+    25.0,
+    2.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 7.1,
+   "gen_tokens": 460,
+   "extract": "fenced",
+   "code_lines": 32,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 3427.9999890661916,
+    "bodies": 1,
+    "triangles": 528,
+    "bbox": [
+     70.0,
+     25.0,
+     2.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "rounded_tag_009",
+   "family": "rounded_tag",
+   "bbox_expected": [
+    70.0,
+    30.0,
+    3.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 5.2,
+   "gen_tokens": 449,
+   "extract": "fenced",
+   "code_lines": 32,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 6176.430861322129,
+    "bodies": 1,
+    "triangles": 528,
+    "bbox": [
+     70.0,
+     30.0,
+     3.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "rounded_tag_017",
+   "family": "rounded_tag",
+   "bbox_expected": [
+    60.0,
+    30.0,
+    3.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 6.1,
+   "gen_tokens": 508,
+   "extract": "fenced",
+   "code_lines": 35,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 5273.926352329886,
+    "bodies": 1,
+    "triangles": 784,
+    "bbox": [
+     60.0,
+     30.0,
+     3.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "rounded_tag_025",
+   "family": "rounded_tag",
+   "bbox_expected": [
+    60.0,
+    30.0,
+    2.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 6.2,
+   "gen_tokens": 451,
+   "extract": "fenced",
+   "code_lines": 32,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 3517.620579462188,
+    "bodies": 1,
+    "triangles": 528,
+    "bbox": [
+     60.0,
+     30.0,
+     2.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "rounded_tag_033",
+   "family": "rounded_tag",
+   "bbox_expected": [
+    80.0,
+    30.0,
+    2.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 6.7,
+   "gen_tokens": 458,
+   "extract": "fenced",
+   "code_lines": 32,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 4759.365469566135,
+    "bodies": 1,
+    "triangles": 528,
+    "bbox": [
+     80.0,
+     30.0,
+     2.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "rounded_tag_041",
+   "family": "rounded_tag",
+   "bbox_expected": [
+    70.0,
+    25.0,
+    3.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 6.2,
+   "gen_tokens": 444,
+   "extract": "fenced",
+   "code_lines": 32,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 5126.43086132213,
+    "bodies": 1,
+    "triangles": 528,
+    "bbox": [
+     70.0,
+     25.0,
+     3.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  },
+  {
+   "id": "rounded_tag_049",
+   "family": "rounded_tag",
+   "bbox_expected": [
+    60.0,
+    30.0,
+    3.0
+   ],
+   "calls_used": 1,
+   "call_ok": true,
+   "wall_s": 5.8,
+   "gen_tokens": 525,
+   "extract": "fenced",
+   "code_lines": 36,
+   "render": {
+    "ok": true,
+    "watertight": true,
+    "volume": 5292.0000055508235,
+    "bodies": 1,
+    "triangles": 784,
+    "bbox": [
+     60.0,
+     30.0,
+     3.0
+    ],
+    "bbox_err": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "reason": null
+   },
+   "kept": true
+  }
+ ]
+}
