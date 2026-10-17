@@ -5,7 +5,10 @@ bench-style data, so v4 is a clean transfer test (v3 is in-family on half the ev
   base     finetune/data/train.jsonl                        (v2's 7,238 verified examples)       x1
   rft      finetune/rft/rft_passes.jsonl                    (v2's own verifier-passing samples)  x2
   distill  finetune/rft/distill/clean_shard*.jsonl          (Opus, gen_prompts_clean families)   x2
-           + v3-distilled examples already below the gate   (train_distill.jsonl, J <= MAX_J)
+
+None of v3's distilled examples are reused, not even those below the gate: the ones that pass it
+include L-brackets and tube couplers, whose nearest eval tasks (nema17_motor_bracket,
+hose_barb_reducer_8_5) are the same kind of part. Category hygiene, not just wording.
 
 Every user prompt is gated against the 16 eval prompts by token Jaccard (gen_prompts_clean.TOK): the
 distilled part must stay <= MAX_J, and the script reports the max for every component. Deterministic
@@ -55,8 +58,7 @@ def main() -> None:
     base = load(FT / "data" / "train.jsonl")
     rft = load(FT / "rft" / "rft_passes.jsonl")
     clean = [r for f in sorted(glob.glob(str(FT / "rft" / "distill" / "clean_shard*.jsonl"))) for r in load(f)]
-    old = load(FT / "rft" / "distill" / "train_distill.jsonl")
-    old_kept = [r for r in old if max_jaccard(user(r), evs)[0] <= MAX_J]
+    old_kept = []  # see the docstring: v3's distilled families are not reused
 
     report = {}
     for name, rows in (("base", base), ("rft", rft), ("distill_clean", clean), ("distill_v3_kept", old_kept)):

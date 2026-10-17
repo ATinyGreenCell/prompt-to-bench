@@ -1,0 +1,29 @@
+{
+ "base": {
+  "n": 7238,
+  "max_jaccard": 0.225,
+  "nearest_eval": "enclosure_box_and_lid"
+ },
+ "rft": {
+  "n": 269,
+  "max_jaccard": 0.203,
+  "nearest_eval": "lab_funnel_60mm"
+ },
+ "distill_clean": {
+  "n": 680,
+  "max_jaccard": 0.364,
+  "nearest_eval": "lab_funnel_60mm"
+ },
+ "distill_v3_kept": {
+  "n": 0,
+  "max_jaccard": 0.0,
+  "nearest_eval": "-"
+ },
+ "weights": {
+  "rft": 2,
+  "distill": 2
+ },
+ "unique_examples": 8187,
+ "total_rows": 9136,
+ "distill_max_jaccard": 0.364
+}
