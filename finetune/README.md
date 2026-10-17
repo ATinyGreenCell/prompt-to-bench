@@ -14,11 +14,11 @@ rail), enclosures and boxes, fasteners and spacers, adapters and couplers, conta
 organizers, knobs and handles — with lab hardware as one well-covered domain. The lab benchmark
 stays the held-out eval; broader training should still lift it, and demonstrates general competence.
 
-**Deployment target: the laptop (Ollama/GGUF), not the Tiiny box.** We verified on 2026-10-15 that
-`tiiny import` rejects LLM architectures (`MODEL_ARCHITECTURE_UNSUPPORTED`; it takes only image
-pipelines) - so a custom LLM cannot run on the box. See
-[`../meta/audits/2026-10-14_box_platform.md`](../meta/audits/2026-10-14_box_platform.md). The box's
-role here is only an optional (slow) data generator; the eval still runs it as a benchmark tier.
+**Deployment targets: the laptop (Ollama/GGUF) and the Tiiny box.** The laptop runs `scadcoder`
+(Qwen2.5-Coder-7B, Q4 GGUF). The box runs fine-tunes of its vendor base, Qwen3.5-9B, imported through the
+TiinyOS app by Hugging Face URL - its command-line `tiiny import` rejects language models, but the app's
+Import Model step accepts them (corrected 2026-10-16; [`../meta/audits/2026-10-14_box_platform.md`](../meta/audits/2026-10-14_box_platform.md),
+[`RUNBOOK.md`](RUNBOOK.md) B1-B6). When the box is down, the same weights are benched on a rented GPU (B5).
 
 ## Base model
 
@@ -37,6 +37,8 @@ Off-limits (do not use as seeds or targets): `tube_rack_1p5ml`, `conical_rack_50
 `seed_sowing_template`, `dshaft_knob_6mm`, `pcr_tube_adapter`, `hose_barb_reducer_8_5`,
 `rod_tubing_clip`, `stirrer_fan_housing`, `nema17_motor_bracket`, `enclosure_box_and_lid`,
 `mini_gel_tank`. Seeds are *novel* lab parts (e.g. `reagent_bottle_stand`).
+
+**Disjoint means the wording too, not just the ids.** v3's distilled descriptions reused eight task prompts' sentences with other numbers (token Jaccard 0.56-0.86) and v3 passed exactly those tasks. Gate every new training prompt with `rft/distill/gen_prompts_clean.max_jaccard` (<= 0.40 against `bench/tasks.yaml`; v2's data peaks at 0.22) and keep same-kind parts out (an L-bracket is the NEMA bracket's kind) - RUNBOOK B6, hiccup H31.
 
 ## Pipeline
 
@@ -94,3 +96,21 @@ run with iterations.
 - Next: build breadth (`gen_candidates.py` + feedback triples), train bigger, score with the full
   3-attempt protocol, and prove GGUF -> Ollama laptop deploy.
 - RunPod: pod terminated after the run; SSH key left registered for future runs.
+
+## Box models (Qwen3.5-9B fine-tunes), 2026-10-16/17
+
+All public on Hugging Face under `ATinyGreenCell/`, box-importable (`scripts/box_import_fix.py`). Results: paper §6.4,
+Table 8 (GPU tier, 8 samples per task; in-family / held-out split of the 16 tasks).
+
+| Repo | Training data | Pass@8, in-family / held out |
+|---|---|---|
+| `scadcoder-qwen3.5-9b` (v1) | `data/train.jsonl` (7,238), 1 epoch, rank 16 | 1/8 · 0/8 |
+| `scadcoder-qwen3.5-9b-3ep` (v2) | same, 3 epochs, rank 32 | 1/8 · 0/8 |
+| `scadcoder-qwen3.5-9b-v3` | v2 + 269 RFT + 336 distilled that paraphrase 8 tasks (**in-family**) | 5/8 · 1/8 |
+| `scadcoder-qwen3.5-9b-v4` | v2 + 269 RFT + 680 held-out distilled (`build_v4.py`) | 2/8 · 0/8 |
+| `scadcoder-qwen3.5-9b-v5` | v4 + 1,500 multi-turn report repairs (`build_v5.py`, MASK_EARLIER=1) | 3/8 · **2/8** |
+| `scadcoder-qwen3.5-9b-v6` | v4 + 700 more held-out distilled, 14 more families (`build_v6.py --base v4`) | **5/8** · 0/8 |
+| `scadcoder-qwen3.5-9b-v7-1ep` | v4's data, 1 epoch | 3/8 · 0/8 |
+
+The stock base passes 2/8 · 1/8 with thinking off. Every fine-tune renders 88-99% of first attempts but rarely changes
+its file after feedback (6-15% of repair turns, vs 84% for the base).
