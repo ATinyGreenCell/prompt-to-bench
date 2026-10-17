@@ -1,0 +1,41 @@
+// Pestle for 1.5 mL microcentrifuge tube
+// Print orientation: standing upright on the bed (z = 0)
+
+// ---------------- Parameters ----------------
+handle_d      = 8;    // handle diameter (mm)
+handle_h      = 45;   // handle height (mm)
+
+cone_top_d    = 8;    // cone diameter at top of handle (mm)
+cone_bottom_d = 3;    // cone diameter at tip base (mm)
+cone_h        = 17;   // cone height (mm), z = 45 to z = 62
+
+tip_d         = 3;    // sphere tip diameter (mm)
+tip_z         = 62;   // sphere centre height (mm)
+
+groove_w      = 2;    // groove width along Z (mm)
+groove_depth  = 1;    // groove depth into handle (mm)
+groove_z      = [10, 15, 20, 25]; // groove centre heights (mm)
+
+overcut       = 0.5;  // extra length on cutters past faces (mm)
+$fn           = 96;   // curve resolution
+
+// ---------------- Model ----------------
+difference() {
+    union() {
+        // Handle
+        cylinder(d = handle_d, h = handle_h);
+
+        // Cone (tapers 8 -> 3 mm over 17 mm)
+        translate([0, 0, handle_h])
+            cylinder(d1 = cone_top_d, d2 = cone_bottom_d, h = cone_h);
+
+        // Rounded tip: 3 mm sphere centred at z = 62
+        translate([0, 0, tip_z])
+            sphere(d = tip_d);
+    }
+
+    // Four circumferential grooves in the handle
+    for (z = groove_z)
+        translate([0, 0, z - groove_w / 2 - overcut])
+            cylinder(d = handle_d + 2 * overcut, h = groove_w + 2 * overcut);
+}

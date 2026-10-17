@@ -1,0 +1,59 @@
+// L-shaped mounting bracket for NEMA 17 stepper motor (e.g. syringe pump)
+// Print orientation: base plate on bed, vertical plate builds upward (+Z)
+
+// ---------------- Parameters ----------------
+base_x      = 25;     // base plate half-length in X (plate spans -25 to 25)
+base_y      = 45;     // base plate length in Y (0 to 45)
+base_z      = 5;      // base plate thickness
+
+motor_h     = 50;     // vertical motor plate height (z = 0 to 50)
+motor_t     = 5;      // vertical motor plate thickness in Y (0 to 5)
+
+boss_d      = 23;     // motor centring boss hole diameter
+boss_x      = 0;      // boss hole centre X
+boss_z      = 28;     // boss hole centre Z
+
+screw_d     = 3.4;    // M3 screw hole diameter
+screw_n     = 4;      // number of screw holes
+screw_a     = 31;     // square pattern side length (hole centre to hole centre)
+
+gusset_t    = 5;      // gusset thickness in X
+gusset_y    = 20;     // gusset leg along +Y (from y = 5)
+gusset_z    = 20;     // gusset leg along +Z (from z = 5)
+
+eps         = 0.5;    // cutter overshoot past faces
+$fn         = 96;     // curve resolution
+
+// ---------------- Model ----------------
+difference() {
+    union() {
+        // Base plate
+        translate([-base_x, 0, 0])
+            cube([2 * base_x, base_y, base_z]);
+
+        // Vertical motor plate
+        translate([-base_x, 0, 0])
+            cube([2 * base_x, motor_t, motor_h]);
+
+        // Gussets: right-angle corner at (y = 5, z = 5), flush with left/right edges
+        for (sx = [-1, 1])
+            translate([sx * (base_x - gusset_t), 5, 5])
+                cube([gusset_t, gusset_y, gusset_z]);
+    }
+
+    // Base plate M4 through-holes
+    translate([-17, 30, -eps])
+        cylinder(d = 4.5, h = base_z + 2 * eps);
+    translate([17, 30, -eps])
+        cylinder(d = 4.5, h = base_z + 2 * eps);
+
+    // Motor plate boss hole (along Y) and M3 screw holes on 31 mm square pattern
+    translate([boss_x, -eps, boss_z])
+        cylinder(d = boss_d, h = motor_t + 2 * eps);
+    for (i = [0 : screw_n - 1]) {
+        angle = i * 90;
+        translate([boss_x + screw_a / 2 * cos(angle),
+                   -eps, boss_z + screw_a / 2 * sin(angle)])
+            cylinder(d = screw_d, h = motor_t + 2 * eps);
+    }
+}

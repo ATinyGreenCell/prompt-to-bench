@@ -1,0 +1,47 @@
+```openscad
+// Two-part enclosure for a small electronics board (e.g. Arduino-based temperature logger)
+// Print orientation: both parts rest on the bed (z = 0), side by side, with a 10 mm gap.
+// Part 1: box (open top). Part 2: lid (printed upside down, slides into the box).
+
+// ---------------- Parameters ----------------
+box_x      = 70;    // box outer length (X)
+box_y      = 50;    // box outer width (Y)
+box_z      = 30;    // box height (Z)
+box_wall   = 2;     // box wall thickness
+box_floor  = 2;     // box floor thickness (part of wall, for clarity)
+
+lid_t      = 2;     // lid plate thickness
+lip_t      = 1.5;   // lid lip (wall) thickness
+lip_h      = 4;     // lid lip height
+lip_outer_x = 65.6; // lip outer length (X), centred on plate
+lip_outer_y = 45.6; // lip outer width (Y), centred on plate
+lip_clear_x = 0.2;  // lip clearance on each side in X
+lip_clear_y = 0.2;  // lip clearance on each side in Y
+
+eps        = 0.5;   // overcut for clean boolean differences
+
+$fn = 64;
+
+// ---------------- Derived ----------------
+lip_x  = lip_outer_x - 2 * lip_clear_x;   // lip inner length (under overcut)
+lip_y  = lip_outer_y - 2 * lip_clear_y;   // lip inner width (under overcut)
+
+// ---------------- Model ----------------
+difference() {
+    union() {
+        // Part 1: box
+        translate([-box_x/2, -box_y/2, 0])
+            cube([box_x, box_y, box_z]);
+
+        // Part 2: lid (printed upside down)
+        translate([box_x/2 + 10, -box_y/2, 0])
+            cube([box_y + eps, lip_t, lip_h]);                 // lip wall
+        translate([box_x/2 + 10, -box_y/2 - eps, lip_h])
+            cube([lip_x, box_y + 2*eps, lip_t]);               // plate under lip
+    }
+
+    // Cut the lip pocket into the box (through the open top)
+    translate([box_x/2 + 10 - eps, -box_y/2 - eps, box_z - eps])
+        cube([lip_x + 2*eps, box_y + 2*eps, lip_h + eps]);
+}
+```

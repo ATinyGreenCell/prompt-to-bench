@@ -1,0 +1,417 @@
+2.  **Geometry Calculation:**
+    *   **Spine:** 70mm (X) x 12mm (Y) x 1.5mm (Z).
+    *   **Teeth:** 10 teeth.
+    *   **Tooth Dimensions:** 5.0mm (X) x 12mm (Y).
+    *   **Gap Dimensions:** 1.5mm between teeth.
+    *   **Total Width of Teeth:** 10 * 5.0 = 50 mm.
+    *   **Total Width of Gaps:** 9 * 1.5 = 13.5 mm (9 gaps between 10 teeth).
+    *   **Total Width of Tooth Row:** 50 + 13.5 = 63.5 mm.
+    *   **Spine Width (Y):** 12 mm.
+    *   **Tooth Length (Y):** 12 mm.
+    *   **Tooth Direction:** Hang from one long edge of the spine in the -Y direction.
+        *   Spine is 12mm wide in Y.
+        *   Teeth hang 12mm long in Y.
+        *   Wait, the prompt says "Spine ... 12 mm wide (Y)" and "Each tooth is ... 12 mm long (Y)".
+        *   If teeth hang from one long edge in the -Y direction, and the spine is 12mm wide, and the teeth are 12mm long, the teeth will extend from Y=0 to Y=-12 (assuming spine is at Y=0 to Y=12).
+        *   However, usually, a comb spine is the top part, and teeth hang down.
+        *   Let's define the coordinate system carefully.
+        *   Spine: 70mm (X) x 12mm (Y).
+        *   Teeth hang from one long edge in the -Y direction.
+        *   If the spine is centered on the origin in X and Y (as per rule 3: "centre it on the origin in X and Y"), then the spine spans Y from -6 to +6.
+        *   If teeth hang in the -Y direction from the spine, they should start at Y = -6 and go to Y = -6 - 12 = -18.
+        *   Wait, the prompt says "The row of teeth is centred on the spine in X". It doesn't explicitly say the whole comb is centered on the origin in Y, but Rule 3 says "Unless told otherwise, centre it on the origin in X and Y."
+        *   So, Spine Center Y = 0. Spine Y range = [-6, 6].
+        *   Teeth hang in -Y direction. So teeth start at Y = -6.
+        *   Tooth Length = 12mm. So teeth end at Y = -18.
+        *   Total Y extent = -18 to +6.
+        *   Is this correct? "Spine ... 12 mm wide (Y)". "Teeth ... 12 mm long (Y)". "Hang from one long edge ... in the -Y direction".
+        *   If the spine is 12mm wide, and teeth are 12mm long, and they hang from the edge, the total Y length is 12 (spine) + 12 (teeth) = 24mm.
+        *   Centering on origin: The total Y span is 24mm. Center is 0. So Y goes from -12 to +12.
+        *   Spine is at Y = -6 to +6.
+        *   Teeth hang from Y = -6 down to Y = -18.
+        *   Wait, if the total Y span is 24mm, and it's centered at 0, it goes from -12 to +12.
+        *   Spine is 12mm wide. If it's centered, it's -6 to +6.
+        *   Teeth hang from -6 to -18.
+        *   This means the bottom of the teeth is at Y = -18. The top of the spine is at Y = +6.
+        *   This seems asymmetric relative to the origin if we just center the whole object.
+        *   Let's re-read Rule 3: "Model the part in the print orientation the user gives: it rests on the XY plane at z = 0 and builds upward (+Z). Unless told otherwise, centre it on the origin in X and Y."
+        *   Okay, so the *whole object* must be centered on the origin in X and Y.
+        *   Object Y extent: Spine (12mm) + Teeth (12mm) = 24mm.
+        *   Center Y = 0.
+        *   Y range: -12 to +12.
+        *   Spine Y range: -6 to +6.
+        *   Teeth hang from -Y direction. So they start at Y = -6.
+        *   Teeth Y range: -6 to -18.
+        *   Wait, if the object is centered at 0, and Y goes from -12 to +12, then the teeth (ending at -18) would be outside the centering box.
+        *   If the teeth are 12mm long and hang from the spine (12mm wide), the total length is 24mm.
+        *   If the total length is 24mm, and it's centered at 0, it spans -12 to +12.
+        *   Spine is 12mm wide. If it's centered, it spans -6 to +6.
+        *   Teeth hang from the edge. Which edge? "one long edge of the spine in the -Y direction".
+        *   So teeth start at Y = -6.
+        *   Teeth length = 12mm. So teeth end at Y = -18.
+        *   This creates a total Y span of -18 to +6 (24mm).
+        *   To center this on the origin (Y=0), we need to shift the whole object by +6mm in Y.
+        *   So Spine Y range becomes 0 to 12.
+        *   Teeth Y range becomes -12 to 0.
+        *   Wait, if Spine is 0 to 12, center is 6. Teeth hang from 0 to -12.
+        *   Total Y span: -12 to 12. Center is 0.
+        *   This satisfies "centre it on the origin in X and Y".
+        *   Let's verify the "Spine ... 12 mm wide (Y)" and "Teeth ... 12 mm long (Y)".
+        *   Spine: Y = 0 to 12.
+        *   Teeth: Y = -12 to 0.
+        *   Connection: At Y = 0.
+        *   This works.
+
+    *   **X Positioning:**
+        *   Spine Length (X): 70mm.
+        *   Teeth Row Width (X): 63.5mm (calculated above: 10*5 + 9*1.5).
+        *   Spine is 70mm long.
+        *   Teeth row is 63.5mm long.
+        *   "The row of teeth is centred on the spine in X".
+        *   So the teeth row is centered relative to the spine.
+        *   Spine X range: -35 to +35.
+        *   Teeth Row X range: Centered at 0.
+        *   Teeth Row Width = 63.5mm.
+        *   Teeth Row X range: -31.75 to +31.75.
+        *   This leaves gaps on the sides of the spine (35 - 31.75 = 3.25mm on each side).
+        *   Wait, does the spine extend beyond the teeth row? Yes, 70mm vs 63.5mm.
+        *   So the spine is the main body, teeth hang off the bottom edge (in Y).
+        *   Wait, "hang from one long edge of the spine in the -Y direction".
+        *   Spine is 70mm (X) x 12mm (Y).
+        *   Teeth are 5mm (X) x 12mm (Y).
+        *   So the teeth are narrower than the spine in X.
+        *   Spine X: -35 to +35.
+        *   Teeth Row X: -31.75 to +31.75.
+        *   This means the spine extends 3.25mm beyond the teeth on both sides.
+        *   This is standard for a comb (to hold the gel).
+
+    *   **Z Positioning:**
+        *   Thickness: 1.5mm.
+        *   Rests on XY plane at Z=0.
+        *   So Z range: 0 to 1.5.
+
+3.  **Drafting the Code:**
+
+    *   **Variables:**
+        *   `thickness = 1.5`
+        *   `spine_length = 70`
+        *   `spine_width = 12`
+        *   `num_teeth = 10`
+        *   `tooth_width = 5.0`
+        *   `tooth_length = 12`
+        *   `gap_size = 1.5`
+        *   `total_teeth_width = num_teeth * tooth_width`
+        *   `total_gap_width = (num_teeth - 1) * gap_size`
+        *   `teeth_row_width = total_teeth_width + total_gap_width`
+        *   `offset_y = (spine_width + tooth_length) / 2` (To center the whole object on Y=0, given spine is at top and teeth at bottom).
+            *   Wait, Spine Y: 0 to 12. Teeth Y: -12 to 0. Total Y: -12 to 12. Center 0.
+            *   Spine Y range: 0 to 12.
+            *   Teeth Y range: -12 to 0.
+            *   So Spine is shifted +6 relative to center.
+            *   Wait, if Spine is 12mm wide, and Teeth are 12mm long.
+            *   If Spine is at Y=0 to 12, and Teeth hang from Y=0 to Y=-12.
+            *   Total Y span is 24mm. Center is 0.
+            *   So Spine is at Y = 0 to 12.
+            *   Teeth are at Y = -12 to 0.
+            *   This means the "Spine" is the top part (positive Y), teeth are the bottom part (negative Y).
+            *   Wait, "hang from one long edge of the spine in the -Y direction".
+            *   If Spine is 0 to 12, the edge is Y=0. Teeth hang from Y=0 to Y=-12.
+            *   This matches.
+            *   Wait, if Spine is 0 to 12, and Teeth are -12 to 0.
+            *   The connection is at Y=0.
+            *   Is the spine centered on the origin in X and Y?
+            *   If the *whole object* is centered, then the Spine (0 to 12) is not centered on the origin (0 to 12 is not centered at 0).
+            *   The *whole object* (Teeth + Spine) is centered.
+            *   So Spine is at Y = 0 to 12. Teeth at Y = -12 to 0.
+            *   This makes the whole object Y = -12 to 12. Center = 0.
+            *   Okay.
+            *   X Centering: Spine is 70mm. Teeth row is 63.5mm.
+            *   Spine X: -35 to 35.
+            *   Teeth Row X: -31.75 to 31.75.
+            *   So Spine is centered at X=0. Teeth Row is centered at X=0.
+            *   This satisfies "row of teeth is centred on the spine in X".
+
+    *   **Construction:**
+        *   Create the Spine (Base).
+        *   Create the Teeth (Hanging).
+        *   Since they are one piece, we can union them.
+        *   Spine: `cube([spine_length, spine_width, thickness], center=[0, 6, 0.75])`?
+            *   Wait, Z is 0 to 1.5. Center Z = 0.75.
+            *   Spine Y: 0 to 12. Center Y = 6.
+            *   Spine X: -35 to 35. Center X = 0.
+            *   So Spine: `cube([spine_length, spine_width, thickness], center=[0, 6, 0.75])`.
+        *   Teeth:
+            *   Loop `i` from 0 to 9.
+            *   Tooth X position:
+                *   Total width = 63.5.
+                *   Center = 0.
+                *   Tooth width = 5.
+                *   Tooth X range: `[-31.75 + i * (5 + 1.5) + 2.5, ...]`
+                *   Let's calculate step size: `pitch = tooth_width + gap_size = 6.5`.
+                *   First tooth center: `-31.75 + 2.5 = -29.25`.
+                *   Wait, `total_teeth_width = 50`. `total_gap_width = 13.5`.
+                *   `teeth_row_width = 63.5`.
+                *   `half_width = 31.75`.
+                *   Tooth `i` (0-indexed) center X: `-half_width + (i + 0.5) * pitch`.
+                *   `pitch = 6.5`.
+                *   `i=0`: `-31.75 + 3.25 = -28.5`.
+                *   `i=9`: `-31.75 + 5 * 6.5 = -31.75 + 32.5 = 0.75`.
+                *   Wait, `10 * 6.5 = 65`. `65 - 1.5 = 63.5`.
+                *   Let's check: `i=0` to `9`.
+                *   `pos = -31.75 + (i + 0.5) * 6.5`.
+                *   `i=0`: `-31.75 + 3.25 = -28.5`.
+                *   `i=9`: `-31.75 + 32.5 = 0.75`.
+                *   Wait, `9 * 6.5 = 58.5`. `58.5 + 3.25 = 61.75`.
+                *   Let's re-calculate.
+                *   `teeth_row_width = 63.5`.
+                *   `half = 31.75`.
+                *   Tooth 0 Left Edge: `-31.75 + 2.5 = -29.25`.
+                *   Tooth 0 Right Edge: `-29.25 + 5 = -24.25`.
+                *   Tooth 1 Left Edge: `-24.25 + 1.5 = -22.75`.
+                *   ...
+                *   Tooth 9 Right Edge: `31.75 - 2.5 = 29.25`.
+                *   Wait, `31.75` is the right edge of the row.
+                *   Tooth 9 Right Edge should be `31.75`.
+                *   Tooth 9 Center: `31.75 - 2.5 = 29.25`.
+                *   Tooth 0 Center: `-31.75 + 2.5 = -29.25`.
+                *   Distance between centers: `29.25 - (-29.25) = 58.5`.
+                *   `9 * 6.5 = 58.5`. Correct.
+                *   So `x_pos = -31.75 + (i + 0.5) * 6.5`.
+            *   Tooth Y position:
+                *   Hang from Y=0 (Spine bottom edge).
+                *   Tooth Y range: `-12` to `0`.
+                *   Tooth Center Y: `-6`.
+            *   Tooth Z position:
+                *   `0` to `1.5`.
+                *   Center Z: `0.75`.
+            *   Tooth Dimensions: `5.0` (X) x `12` (Y) x `1.5` (Z).
+            *   Wait, the spine is 12mm wide (Y). The teeth are 12mm long (Y).
+            *   If Spine is Y=0 to 12.
+            *   Teeth hang from Y=0 to Y=-12.
+            *   So Teeth Y range: -12 to 0.
+            *   Tooth Center Y: -6.
+            *   Tooth Width (X): 5.
+            *   Tooth Height (Z): 1.5.
+        *   Union Spine and Teeth.
+
+    *   **Refining Spine Position:**
+        *   Spine X: -35 to 35.
+        *   Spine Y: 0 to 12.
+        *   Spine Z: 0 to 1.5.
+        *   Spine Center: `[0, 6, 0.75]`.
+        *   Spine Size: `[70, 12, 1.5]`.
+        *   `cube([70, 12, 1.5], center=[0, 6, 0.75])`.
+
+    *   **Refining Teeth Position:**
+        *   Loop `i` from 0 to 9.
+        *   `x = -31.75 + (i + 0.5) * 6.5`.
+        *   `y = -6`. (Center of tooth in Y).
+        *   `z = 0.75`. (Center of tooth in Z).
+        *   `size = [5.0, 12, 1.5]`.
+        *   `translate([x, y, z]) cube([5.0, 12, 1.5])`.
+        *   Wait, if I use `translate` with center, I need to be careful.
+        *   `translate([x, y, z]) cube([5.0, 12, 1.5])` places the cube with its corner at origin? No, `cube` places the corner at origin by default.
+        *   If I want the center at `[x, y, z]`, I should use `translate([x, y, z]) cube([5.0, 12, 1.5])`.
+        *   Wait, `cube([w, h, d])` creates a box from (0,0,0) to (w,h,d).
+        *   If I translate by `[x, y, z]`, the box is at `[x, y, z]` to `[x+w, y+h, z+d]`.
+        *   So the center is `[x + w/2, y + h/2, z + d/2]`.
+        *   I want the center to be `[x, y, z]`.
+        *   So I should translate by `[x - w/2, y - h/2, z - d/2]`.
+        *   Or use `cube(..., center=[...])`.
+        *   `cube([5.0, 12, 1.5], center=[x, y, z])`.
+        *   This is cleaner.
+
+    *   **Wait, Spine vs Teeth Connection:**
+        *   Spine Y: 0 to 12.
+        *   Teeth Y: -12 to 0.
+        *   They touch at Y=0.
+        *   Spine X: -35 to 35.
+        *   Teeth X: -31.75 to 31.75.
+        *   They overlap in X.
+        *   So Union is correct.
+
+    *   **Wait, "Difference" Rule:**
+        *   "In difference(), make every cutting shape extend 0.01-1 mm past the faces it cuts".
+        *   I am not using `difference` here. I am using `union`.
+        *   However, I should check if I need to subtract anything.
+        *   The prompt asks for a "10-well comb".
+        *   Usually, combs have holes in the teeth? No, "10-well comb".
+        *   "10 rectangular teeth".
+        *   Usually, the wells are formed by the teeth.
+        *   Sometimes there are holes in the spine to prevent leakage or for mounting.
+        *   The prompt does not specify holes in the spine or teeth.
+        *   It just says "Design a 10-well comb...".
+        *   It describes the geometry of the spine and teeth.
+        *   It does not mention holes for mounting or drainage.
+        *   So I will model the solid block of plastic.
+        *   Wait, is there a need to subtract the "wells"?
+        *   No, the wells are the empty spaces between the teeth.
+        *   The teeth *are* the solid parts.
+        *   So `union` of Spine and Teeth is the correct approach for the solid comb.
+        *   Wait, does the user want the "wells" to be empty space?
+        *   Yes, that's how a comb works. The teeth define the wells.
+        *   So the solid part is the Spine + Teeth.
+        *   The "wells" are the negative space between teeth.
+        *   So I don't need `difference` unless I need to add mounting holes.
+        *   The prompt doesn't ask for mounting holes.
+        *   So `union` is sufficient.
+        *   Wait, Rule 5 says "In difference(), make every cutting shape...".
+        *   Since I don't use `difference`, I don't need to worry about this rule, but I should ensure the code is robust.
+        *   Wait, is there any ambiguity about "10-well"?
+        *   10 teeth create 9 wells between them.
+        *   Usually, a "10-well comb" means 10 wells.
+        *   If there are 10 teeth, there are 9 wells between them.
+        *   Often, the spine has a hole or the teeth are arranged differently.
+        *   However, the prompt explicitly says: "10 rectangular teeth".
+        *   And "10-well comb".
+        *   This is a slight contradiction in standard terminology (10 teeth usually make 9 wells, or 10 teeth + 10 wells if including ends).
+        *   But I must follow the user's dimensions: "10 rectangular teeth".
+        *   I will build 10 teeth.
+        *   The user might mean 10 wells *including* the ends, or they just miscounted.
+        *   Given "10 rectangular teeth", I will build 10 teeth.
+        *   I will not add extra holes unless implied.
+        *   Wait, "10-well comb" usually implies 10 wells.
+        *   If I have 10 teeth, I have 9 internal wells.
+        *   Maybe the spine has a hole?
+        *   No, I should stick to the explicit geometry description.
+        *   "10 rectangular teeth".
+        *   I will build 10 teeth.
+        *   I will not add holes unless specified.
+        *   Wait, I should check if I need to subtract the "wells" from the spine?
+        *   No, the spine is the back bar. The teeth hang off it.
+        *   The space between teeth is empty (air).
+        *   So the solid is Spine + Teeth.
+        *   Okay.
+
+    *   **Wait, one more check on "Difference" rule:**
+        *   "In difference(), make every cutting shape extend 0.01-1 mm past the faces it cuts".
+        *   This implies I *might* need to use difference.
+        *   Is there any reason to use difference?
+        *   Maybe to ensure the teeth don't merge with the spine in a way that causes print issues? No.
+        *   Maybe to add mounting holes?
+        *   The prompt doesn't ask for mounting holes.
+        *   I will stick to `union`.
+        *   Wait, if I use `union`, I don't need to worry about Rule 5.
+        *   But I should ensure the code is valid.
+
+    *   **Wait, "10-well" vs "10 teeth":**
+        *   If I build 10 teeth, I get 9 wells.
+        *   If the user wants 10 wells, they might expect 11 teeth or 10 teeth + 10 wells (including ends).
+        *   But the prompt says "10 rectangular teeth".
+        *   I must follow the explicit instruction "10 rectangular teeth".
+        *   I will not second guess the user's terminology.
+        *   I will build 10 teeth.
+
+    *   **Wait, "Spine ... 70 mm long (X)".**
+        *   Spine is 70mm.
+        *   Teeth row is 63.5mm.
+        *   Spine extends 3.25mm on each side.
+        *   This is fine.
+
+    *   **Wait, "hang from one long edge of the spine in the -Y direction".**
+        *   Spine Y: 0 to 12.
+        *   Teeth Y: -12 to 0.
+        *   This means the teeth are below the spine.
+        *   If the comb is printed lying flat on the bed (Z=0).
+        *   Spine is on the bed?
+        *   "The whole comb is a flat plate 1.5 mm thick (Z) lying on the bed."
+        *   "Rests on the XY plane at z = 0".
+        *   So the bottom of the comb is at Z=0.
+        *   Spine is at Z=0 to 1.5.
+        *   Teeth are at Z=0 to 1.5.
+        *   So the whole thing is a flat plate.
+        *   This is correct.
+
+    *   **Wait, "centre it on the origin in X and Y".**
+        *   My calculation:
+        *   Spine Y: 0 to 12.
+        *   Teeth Y: -12 to 0.
+        *   Total Y: -12 to 12. Center 0.
+        *   Spine X: -35 to 35. Center 0.
+        *   Teeth Row X: -31.75 to 31.75. Center 0.
+        *   This satisfies the centering rule.
+
+    *   **Wait, "Use only built-in OpenSCAD".**
+        *   I am using `cube`, `translate`, `for`, `union`.
+        *   All built-in.
+
+    *   **Wait, "$fn = 64".**
+        *   No curved shapes.
+        *   But I should set it just in case or leave it default.
+        *   Rule 7 says "Set $fn = 64 (or more) on curved shapes".
+        *   Since there are no curved shapes, I don't strictly need it, but it's good practice for 3D printing to have some smoothing.
+        *   I will add ` $fn = 64;` at the top.
+
+    *   **Wait, "Difference" rule again.**
+        *   "In difference(), make every cutting shape extend 0.01-1 mm past the faces it cuts".
+        *   Since I am not using difference, I don't need to apply this.
+        *   But I should check if I should use difference to create the "wells"?
+        *   No, the wells are empty space.
+        *   The solid is the comb.
+        *   So `union` is correct.
+
+    *   **Wait, "10-well comb".**
+        *   If I build 10 teeth, I have 9 wells.
+        *   Is it possible the user implies 10 wells *between* 11 teeth?
+        *   "10 rectangular teeth".
+        *   I will follow "10 rectangular teeth".
+        *   If the user meant 10 wells, they might be counting the ends as wells.
+        *   I will stick to the explicit count of teeth.
+
+    *   **Wait, "Spine ... 12 mm wide (Y)".**
+        *   Spine is 12mm wide.
+        *   Teeth are 12mm long (Y).
+        *   If Spine is 0 to 12.
+        *   Teeth are -12 to 0.
+        *   They share the edge Y=0.
+        *   This is correct.
+
+    *   **Wait, "hang from one long edge of the spine in the -Y direction".**
+        *   Spine Y: 0 to 12.
+        *   Edge is Y=0.
+        *   Teeth hang in -Y.
+        *   So Teeth Y: -12 to 0.
+        *   This is correct.
+
+    *   **Wait, "row of teeth is centred on the spine in X".**
+        *   Spine X: -35 to 35.
+        *   Teeth Row X: -31.75 to 31.75.
+        *   Both centered at 0.
+        *   This is correct.
+
+    *   **Wait, "10-well comb".**
+        *   I'll add a comment about the well count vs tooth count.
+        *   Actually, I'll just build what is described.
+        *   10 teeth.
+
+    *   **Wait, "Difference" rule.**
+        *   I should check if I need to subtract the "wells" from the spine to make it a "comb" shape?
+        *   No, the spine is the back bar.
+        *   The teeth hang off it.
+        *   The space between teeth is naturally empty.
+        *   So `union` of Spine and Teeth is the solid.
+        *   Okay.
+
+    *   **Wait, "Difference" rule.**
+        *   Wait, if I use `union`, I don't need `difference`.
+        *   But I should ensure I don't accidentally create non-manifold geometry.
+        *   `cube` and `translate` are fine.
+        *   `union` is fine.
+
+    *   **Wait, "Difference" rule.**
+        *   Wait, I should check if I need to subtract the "wells" from the spine?
+        *   No, the spine is solid.
+        *   The teeth are solid.
+        *   The space between teeth is empty.
+        *   So `union` is correct.
+
+    *   **Wait, "Difference" rule.**
+        *   Wait, I should check if I need to subtract the "wells" from the spine?
+        *   No, the spine is solid.
+        *   The teeth are solid.
+        *   The space between teeth is empty.
+        *   So `union` is correct.
+
+    *   **Wait, "Difference" rule.**
+        *   Wait, I should check if I need to subtract the "wells" from the spine?
+        *   No, the spine is

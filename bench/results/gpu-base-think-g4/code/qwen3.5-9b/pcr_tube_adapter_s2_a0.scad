@@ -1,0 +1,49 @@
+2.  **Geometry Construction:**
+    *   **Base (Collar):** Cylinder, OD=13, Height=1.5.
+    *   **Body (Sleeve):** Cylinder, OD=10.8, Height=20 (from Z=1.5 to Z=21.5).
+    *   **Union:** Combine Collar and Body.
+    *   **Hole:** Cylinder, OD=6.2, Height=21.5, centered on Z-axis.
+    *   **Positioning:** Centered on X and Y. Z starts at 0.
+    *   **Difference:** Subtract the hole from the union of Collar and Body.
+
+3.  **Variable Definition:**
+    *   `collar_od = 13`
+    *   `collar_height = 1.5`
+    *   `body_od = 10.8`
+    *   `body_top_z = 21.5`
+    *   `hole_diameter = 6.2`
+    *   `fn = 64`
+
+4.  **Drafting the Code:**
+    *   Set `fn = 64` globally or locally on cylinders.
+    *   Define variables.
+    *   Create the main shape using `difference()`.
+    *   Inside `difference()`:
+        *   `union()`:
+            *   `translate([0, 0, 0]) cylinder(d = collar_od, h = collar_height, center = [0, 0, 0])` -> Wait, if center is [0,0,0], it goes from -0.75 to 0.75.
+            *   Constraint says: "rests on the XY plane at z = 0".
+            *   So, `translate([0, 0, 0]) cylinder(d = collar_od, h = collar_height)` puts bottom at 0, top at 1.5.
+            *   Body: `translate([0, 0, collar_height]) cylinder(d = body_od, h = body_top_z - collar_height)`.
+        *   `translate([0, 0, 0]) cylinder(d = hole_diameter, h = body_top_z)`.
+    *   Wait, check the "Difference" rule: "make every cutting shape extend 0.01-1 mm past the faces it cuts".
+        *   The hole needs to go through the collar and the body.
+        *   The hole cylinder height should be slightly more than 21.5 to ensure clean cut at top and bottom. Let's say 21.51 or 21.52.
+        *   Actually, usually in OpenSCAD, if the hole cylinder height matches exactly, it might leave a tiny sliver or be coplanar. Extending slightly ensures clean removal.
+        *   Bottom cut: Z=0. Hole cylinder should start at -0.01 or just be tall enough. If I define the hole cylinder from Z=0 to Z=21.5, the bottom face is at Z=0. The main object bottom is at Z=0. To ensure the hole goes *through*, the hole cylinder should extend slightly below Z=0 (e.g., -0.01) or the main object should be slightly taller.
+        *   Rule 5: "In difference(), make every cutting shape extend 0.01-1 mm past the faces it cuts".
+        *   So Hole Height = 21.5 + 0.05 (past top) + 0.05 (past bottom)? Or just ensure the hole cylinder is tall enough to cover the union.
+        *   Let's make the hole cylinder height = 21.5 + 0.1.
+        *   Wait, the hole is centered on the Z-axis.
+        *   Main object: Z=0 to Z=21.5.
+        *   Hole object: Z=-0.05 to Z=21.55.
+        *   This ensures the hole is fully through.
+
+5.  **Refining Dimensions:**
+    *   Collar OD: 13
+    *   Collar Height: 1.5
+    *   Body OD: 10.8
+    *   Body Top Z: 21.5
+    *   Hole Diameter: 6.2
+    *   Hole Height: 21.5 + 0.1 (to satisfy Rule 5).
+
+6.  **Code Structure:**

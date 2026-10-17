@@ -1,0 +1,57 @@
+// Two-part enclosure for small electronics board
+// Print orientation: both parts on the bed, z = 0 up, 10 mm gap between them
+
+// ---------- Parameters ----------
+box_x      = 70;    // box outer length (X)
+box_y      = 50;    // box outer width (Y)
+box_z      = 30;    // box height (Z)
+box_wall   = 2;     // box wall thickness
+box_floor  = 2;     // box floor thickness
+
+lid_t      = 2;     // lid plate thickness
+lip_t      = 1.5;   // lip wall thickness
+lip_h      = 4;     // lip height
+lip_x      = 65.6;  // lip outer length (X)
+lip_y      = 45.6;  // lip outer width (Y)
+lip_clear  = 0.2;   // clearance between lip and box opening (each side)
+
+gap        = 10;    // gap between box and lid prints
+eps        = 0.5;   // cutter overshoot past faces
+
+$fn = 64;
+
+// ---------- Derived ----------
+lip_x2 = lip_x - 2 * lip_clear;   // lip inner length (X), matches box opening
+lip_y2 = lip_y - 2 * lip_clear;   // lip inner width (Y), matches box opening
+
+// ---------- Modules ----------
+module box() {
+    difference() {
+        cube([box_x, box_y, box_z + box_floor]);
+        translate([box_wall, box_wall, box_floor])
+            cube([box_x2 = box_x - 2 * box_wall,
+                   box_y2 = box_y - 2 * box_wall,
+                   box_z + 1]);     // open top, cutter past the top face
+    }
+}
+
+module lid() {
+    union() {
+        // Plate, printed upside down, resting on the bed
+        translate([-box_x / 2, -box_y / 2, 0])
+            cube([box_x, box_y, lid_t]);
+
+        // Lip on top of the plate, centred on it
+        translate([-lip_x2 / 2, -lip_y2 / 2, lid_t])
+            cube([lip_x2, lip_y2, lip_h + lip_t]);
+    }
+}
+
+// ---------- Layout ----------
+union() {
+    translate([0, 0, 0])
+        box();
+
+    translate([box_x + gap, 0, 0])
+        lid();
+}

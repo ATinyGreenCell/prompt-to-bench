@@ -1,0 +1,48 @@
+```openscad
+// Tubing organiser clip for a 12.7 mm lab stand rod
+// Print orientation: flat on the bed, z = 0 up to z = 10
+
+// ---------------- Parameters ----------------
+ring_d      = 12.7;   // rod ring inner diameter (stand rod)
+ring_w      = 3;      // rod ring wall thickness
+ring_o      = ring_d + 2 * ring_w;  // rod ring outer diameter (18.7)
+
+opening_x   = 0;      // rod ring opening lies on the -X side
+opening_w   = 10;     // rod ring opening width (y extent)
+
+tub_d       = 6;      // tubing ring inner diameter
+tub_w       = 2;      // tubing ring wall thickness
+tub_o       = tub_d + 2 * tub_w;    // tubing ring outer diameter (10)
+
+tub_x       = 15;     // tubing ring centre X position
+tub_open_w  = 4.5;    // tubing ring opening width on the +X side
+
+bridge_x0   = 8;      // bridge start X
+bridge_x1   = 12;     // bridge end X
+bridge_w    = bridge_x1 - bridge_x0;  // bridge width (Y) = 6
+
+eps         = 0.5;    // cutter overshoot past faces
+$fn         = 96;     // curve resolution
+
+// ---------------- Model ----------------
+difference() {
+    union() {
+        // Rod ring: centred at origin, opening on -X
+        cylinder(d = ring_o, h = 10);
+        translate([opening_x, -opening_w / 2, 0])
+            linear_extrude(height = 10 + 2 * eps)
+                circle(d = opening_w);
+
+        // Tubing ring: centred at x = 15, opening on +X
+        translate([tub_x, 0, 0])
+            cylinder(d = tub_o, h = 10);
+        translate([tub_x, -tub_open_w / 2, 0])
+            linear_extrude(height = 10 + 2 * eps)
+                circle(d = tub_open_w);
+
+        // Solid bridge between the two rings (y = -3 to +3)
+        translate([bridge_x0, -bridge_w / 2, 0])
+            cube([bridge_w, bridge_w, 10]);
+    }
+}
+```

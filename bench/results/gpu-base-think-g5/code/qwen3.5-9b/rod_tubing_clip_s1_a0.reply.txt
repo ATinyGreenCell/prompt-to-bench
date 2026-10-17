@@ -1,0 +1,371 @@
+Thinking Process:
+
+1.  **Analyze the Request:**
+    *   **Goal:** Design a snap-on clip for a lab stand rod and a piece of tubing.
+    *   **Format:** Single, self-contained OpenSCAD file.
+    *   **Units:** Millimetres.
+    *   **Dimensions:** User-provided dimensions must be used exactly.
+    *   **Orientation:** Flat print on XY plane at Z=0, building upward (+Z). Centered on origin in X and Y.
+    *   **Constraints:**
+        *   Use only built-in OpenSCAD primitives (cube, cylinder, sphere, polygon, circle, square, linear_extrude, rotate_extrude, translate, rotate, mirror, union, difference, intersection, hull, for).
+        *   No external libraries.
+        *   Difference cuts must extend 0.01-1 mm past faces.
+        *   Set $fn = 64$ on curved shapes.
+        *   Use `for` loops for repeated features (though this specific design seems to have few repeated features, I should check if any apply).
+        *   Must render to a valid solid.
+    *   **Specific Geometry:**
+        *   **Rod Ring:**
+            *   Inner Diameter (ID): 12.7 mm.
+            *   Wall Thickness: 3 mm.
+            *   Outer Diameter (OD): 18.7 mm.
+            *   Center: (0, 0).
+            *   Opening: Cut out on -X side. Width: 10 mm. Range: $x < 0$ and $-5 < y < 5$.
+        *   **Tubing Ring:**
+            *   Inner Diameter (ID): 6 mm.
+            *   Wall Thickness: 2 mm.
+            *   Outer Diameter (OD): 10 mm.
+            *   Center: (15, 0).
+            *   Opening: Cut out on +X side. Width: 4.5 mm. Range: $x > 15$ and $-2.25 < y < 2.25$.
+        *   **Bridge:**
+            *   Width (Y): 6 mm.
+            *   X Range: 8 to 12.
+            *   Joins the two rings.
+        *   **Height (Z):** 10 mm.
+        *   **Profile:** 2D profile extruded in Z.
+
+2.  **Drafting the Code Structure:**
+    *   **Variables:** Define all dimensions at the top as requested.
+    *   **Main Module:** `clip` or similar.
+    *   **Extrusion:** Since it's a flat print (2D profile extruded in Z), I can use `linear_extrude(height=10)` on a 2D polygon or `difference` of cylinders. However, the prompt says "10 mm tall extrusion (Z) of a 2-D profile in the XY plane". This implies the base shape is in XY, and Z is the height.
+    *   **Method:**
+        *   Option A: `linear_extrude` with a polygon path.
+        *   Option B: Construct the 3D shape using `difference` of cylinders and boxes.
+        *   Given the specific cutouts (rectangular openings in rings), `difference` of cylinders and boxes is often more robust for 3D printing logic (avoiding non-manifold edges if not careful, though `linear_extrude` is fine too).
+        *   However, the prompt says "Model the part in the print orientation... it rests on the XY plane at z = 0 and builds upward (+Z)". This suggests the final object is a solid block with holes.
+        *   Let's use `difference` on the main body.
+        *   Main Body: A large cylinder or box? The profile is defined by rings and a bridge.
+        *   Actually, constructing the *positive* volume first is usually safer for `linear_extrude` or `difference`.
+        *   Let's define the 2D profile in XY, then `linear_extrude`.
+        *   Wait, the prompt says "10 mm tall extrusion (Z) of a 2-D profile in the XY plane". This usually means `linear_extrude(height=10)`.
+        *   Let's construct the 2D profile using `difference` of circles and rectangles, then extrude.
+        *   Wait, if I use `difference` inside `linear_extrude`, it works.
+        *   Better approach for 3D printing logic with `difference`: Create the solid block (cylinder/box) and subtract the voids.
+        *   Since the profile is complex (rings with gaps), `linear_extrude` with a `polygon` or `circle` path is tricky for the gaps.
+        *   Let's build the 3D shape directly using `difference` of cylinders and boxes. This is often more robust for "snap-on" clips where the walls need to be solid.
+        *   Actually, the prompt says "10 mm tall extrusion (Z) of a 2-D profile in the XY plane". This implies the Z dimension is uniform.
+        *   Let's create the base shape as a cylinder (OD 18.7, ID 12.7) and another cylinder (OD 10, ID 6) and a bridge box.
+        *   Wait, the rings are hollow.
+        *   Let's construct the *solid* material first, then subtract the holes.
+        *   Base Solid: A cylinder of OD 18.7, height 10.
+        *   Subtract Rod Hole: Cylinder ID 12.7, height 10.
+        *   Subtract Tubing Hole: Cylinder ID 6, height 10, translated to (15, 0).
+        *   Subtract Bridge Material? No, the bridge is solid material connecting them.
+        *   Subtract Openings:
+            *   Rod Opening: Box (width 10, height 10, depth 10) positioned at x < 0.
+            *   Tubing Opening: Box (width 4.5, height 10, depth 10) positioned at x > 15.
+        *   Wait, the "Bridge" is solid material between x=8 and x=12.
+        *   So, the base shape should cover the entire area from x=-9 (approx) to x=20 (approx).
+        *   Let's define the base as a large cylinder or box that encompasses everything, then subtract the specific voids.
+        *   Or, construct the rings and bridge as positive geometry and union them.
+        *   Constructing positive geometry is often cleaner for `linear_extrude` or `difference`.
+        *   Let's try `difference` on a large bounding box/cylinder.
+        *   Bounding Box: X from -9 to 20, Y from -5 to 5, Z from 0 to 10.
+        *   Actually, the Rod Ring OD is 18.7. Center (0,0). So X goes from -9.35 to 9.35.
+        *   The Tubing Ring OD is 10. Center (15,0). So X goes from 12.5 to 17.5.
+        *   The Bridge is X 8 to 12.
+        *   So the total X span is roughly -9.35 to 17.5.
+        *   Let's use a large cylinder for the base to ensure smoothness, or a box. A box is easier for the rectangular openings.
+        *   Let's use a Box for the base to ensure the rectangular openings cut cleanly.
+        *   Base Box: X: -10 to 20, Y: -5 to 5, Z: 0 to 10.
+        *   Subtract Rod Hole (Cylinder): Center (0,0), Radius 6.35 (12.7/2), Height 10.
+        *   Subtract Tubing Hole (Cylinder): Center (15,0), Radius 3 (6/2), Height 10.
+        *   Subtract Rod Opening (Box): X: -5 to 5 (Wait, opening is x < 0, width 10). So X: -5 to 5? No, "10 mm wide opening cut out of its -X side (everything with x < 0 and -5 < y < 5 is removed)".
+            *   This implies the cut is a rectangle.
+            *   X range: -5 to 0? Or -5 to 5? "x < 0 and -5 < y < 5".
+            *   Usually, a cutout implies removing material. If the ring is centered at 0, and we cut x < 0, we are cutting the left half.
+            *   Width 10 mm. If centered at y=0, and y range is -5 to 5, that's 10mm height.
+            *   X range: Since it's on the -X side, it likely goes from x = -5 to x = 0.
+            *   Wait, "10 mm wide opening". If it's on the -X side, it extends from the center outwards.
+            *   So X: -5 to 0. Y: -5 to 5.
+        *   Subtract Tubing Opening (Box): "4.5 mm wide opening cut out of its +X side (x > 15 and -2.25 < y < 2.25)".
+            *   Center (15, 0).
+            *   X range: 15 to 19.5 (Width 4.5).
+            *   Y range: -2.25 to 2.25.
+        *   Wait, I need to make sure the Bridge is solid.
+        *   The Bridge is X 8 to 12.
+        *   The Rod Ring OD is 18.7 (Radius 9.35). So the rod ring exists at X=8 to 9.35.
+        *   The Tubing Ring OD is 10 (Radius 5). So the tubing ring exists at X=10 to 15.
+        *   Wait, Tubing Ring Center is 15. Radius 5. So it spans X=10 to 20.
+        *   Bridge is X=8 to 12.
+        *   So the Bridge connects the Rod Ring (ends at 9.35) and Tubing Ring (starts at 10).
+        *   Wait, if Rod Ring ends at 9.35 and Tubing Ring starts at 10, there is a gap of 0.65 mm.
+        *   The Bridge fills X=8 to 12.
+        *   So the Bridge covers the gap and overlaps both rings.
+        *   This works.
+        *   Wait, I need to check the Rod Opening again.
+        *   "10 mm wide opening cut out of its -X side (everything with x < 0 and -5 < y < 5 is removed from this ring)".
+        *   This means the material exists for x > 0 (mostly) and x < -5 (mostly).
+        *   The cut is the rectangle defined by x < 0 and -5 < y < 5.
+        *   So I subtract a box: X: -5 to 0, Y: -5 to 5.
+        *   Wait, if I subtract a box from a cylinder, I need to make sure the box extends through the Z height.
+        *   Also, I need to ensure the Rod Ring walls are 3mm thick.
+        *   OD 18.7, ID 12.7. Wall = (18.7 - 12.7) / 2 = 3 mm. Correct.
+        *   Tubing Ring: ID 6, Wall 2. OD = 6 + 2*2 = 10. Correct.
+        *   Bridge: 6 mm wide (Y). X 8 to 12.
+        *   Height: 10 mm.
+
+    *   **Refining the Geometry Construction:**
+        *   To ensure the "snap-on" works, the openings must be clean.
+        *   To ensure the bridge connects, the bridge must be solid material.
+        *   Strategy:
+            1.  Create a base block/cylinder that covers the whole footprint.
+            2.  Subtract the Rod Hole (Cylinder).
+            3.  Subtract the Tubing Hole (Cylinder).
+            4.  Subtract the Rod Opening (Box).
+            5.  Subtract the Tubing Opening (Box).
+            6.  Wait, if I subtract the Rod Hole (Cylinder ID 12.7), the bridge (X 8-12) is outside the ID (12.7/2 = 6.35). So the bridge is safe from the Rod Hole subtraction.
+            7.  Tubing Hole (ID 6, Radius 3). Center 15. Bridge ends at 12. So bridge is safe from Tubing Hole subtraction.
+            8.  Wait, the Rod Opening cut is x < 0. The bridge is x > 8. So the bridge is safe from Rod Opening.
+            9.  The Tubing Opening cut is x > 15. The bridge is x < 12. So the bridge is safe from Tubing Opening.
+            10. So the Bridge remains solid.
+            11. The Rings remain with their holes.
+            12. The Openings remain cut.
+            13. The Base needs to be large enough to contain everything.
+            14. Rod Ring OD 18.7. Tubing Ring OD 10.
+            15. Max X: 15 + 5 = 20. Min X: -9.35.
+            16. Max Y: 5 (Rod opening) or 5 (Tubing opening is 2.25). So Y: -5 to 5.
+            17. Z: 0 to 10.
+            18. Base: Box(-10, -5, 0, 20, 5, 10).
+            19. Wait, the Rod Ring is centered at (0,0). OD 18.7. Radius 9.35.
+            20. The Tubing Ring is centered at (15,0). OD 10. Radius 5.
+            21. The Bridge is X 8 to 12, Y -3 to 3 (Width 6).
+            22. Wait, the prompt says "solid bridge 6 mm wide (Y)". So Y range is -3 to 3.
+            23. The Rod Opening Y range is -5 to 5.
+            24. The Tubing Opening Y range is -2.25 to 2.25.
+            25. So the Base Y should cover -5 to 5.
+            26. The Base X should cover -9.35 to 20.
+            27. Let's use a Box for the base to make the rectangular openings easy.
+            28. However, the Rod Ring is circular. If I use a Box base, the Rod Ring will look like a square ring.
+            29. The prompt says "a rod ring with 12.7 mm inner diameter and 3 mm wall (18.7 mm outer diameter)". This implies a circular ring.
+            30. So I should use a Cylinder for the base or construct the rings explicitly.
+            31. Constructing explicitly is better for the "Ring" description.
+            32. Let's build the Rod Ring as a Cylinder (OD) minus Cylinder (ID).
+            33. Let's build the Tubing Ring as a Cylinder (OD) minus Cylinder (ID).
+            34. Let's build the Bridge as a Box.
+            35. Union them.
+            36. Then subtract the Openings (Boxes).
+            37. Wait, if I Union the Rings and Bridge, I get the solid profile.
+            38. Then I subtract the Openings.
+            39. This ensures the Bridge is solid and the Rings are circular.
+            40. Wait, the Rod Opening is "cut out of its -X side".
+            41. If I build the Rod Ring as a Cylinder (OD) - Cylinder (ID), it is a full ring.
+            42. Then I subtract a Box for the opening.
+            43. This works.
+            44. Same for Tubing Ring.
+            45. Bridge is just a Box.
+            46. Union all three.
+            47. Extrude height 10.
+            48. Wait, the prompt says "10 mm tall extrusion (Z) of a 2-D profile in the XY plane".
+            49. This means I should define the 2D profile in XY, then `linear_extrude`.
+            50. If I use `difference` inside `linear_extrude`, it works.
+            51. Or I can build the 3D shape directly using `difference` of cylinders and boxes.
+            52. Given "Model the part in the print orientation... it rests on the XY plane at z = 0 and builds upward (+Z)", building 3D directly is often more robust for `difference` operations to ensure manifold geometry.
+            53. However, `linear_extrude` is very standard for 2D profiles.
+            54. Let's use `difference` of 3D primitives directly. It's often cleaner for "snap-on" clips where the Z-height is uniform.
+            55. Wait, if I use `difference` of 3D primitives, I need to ensure the "Ring" is a hollow cylinder.
+            56. Rod Ring: `difference(cylinder(r=9.35, h=10), cylinder(r=6.35, h=10))`.
+            57. Tubing Ring: `difference(cylinder(r=5, h=10), cylinder(r=3, h=10))`.
+            58. Bridge: `cube([4, 6, 10], center=false)`. Wait, X 8 to 12 is width 4. Y 6mm is width 6. Z 10mm.
+            59. Union these three.
+            60. Then subtract the Openings.
+            61. Rod Opening: Box. X: -5 to 0. Y: -5 to 5. Z: 0 to 10.
+            62. Tubing Opening: Box. X: 15 to 19.5. Y: -2.25 to 2.25. Z: 0 to 10.
+            63. Wait, the Rod Opening is "cut out of its -X side".
+            64. If I subtract a box from the Rod Ring, I need to make sure the box is large enough to cut through the ring.
+            65. Rod Ring OD 18.7 (Radius 9.35).
+            66. Opening X: -5 to 0.
+            67. The Ring exists at X from -9.35 to 9.35.
+            68. The Opening removes X from -5 to 0.
+            69. So the Ring remains at X from -9.35 to -5 and 0 to 9.35.
+            70. This creates a gap of 5mm on the left.
+            71. Wait, "10 mm wide opening". If it's on the -X side, it usually means the gap is 10mm wide.
+            72. If the gap is 10mm wide, and it's on the -X side, it should span 10mm in X.
+            73. If it's centered at y=0, and y range is -5 to 5 (10mm height).
+            74. X range: -5 to 5? No, "x < 0".
+            75. So X range: -5 to 0. Width = 5mm.
+            76. Wait, "10 mm wide opening".
+            77. If the opening is 10mm wide, and it's on the -X side, it should be X: -10 to 0.
+            78. But the text says "everything with x < 0 and -5 < y < 5 is removed".
+            79. This defines the region to be removed.
+            80. X < 0. Y between -5 and 5.
+            81. This region is semi-infinite in X (to the left).
+            82. But the Ring is finite (OD 18.7).
+            83. So the intersection of (Ring) and (x < 0, -5 < y < 5) is removed.
+            84. This effectively cuts the left half of the ring, but only where y is between -5 and 5.
+            85. Since the Ring OD is 18.7 (Radius 9.35), the Ring exists at Y up to 9.35.
+            86. The cut is only Y between -5 and 5.
+            87. So the top and bottom of the ring (Y > 5 and Y < -5) remain solid at X < 0.
+            88. This creates a "C" shape or a ring with a rectangular bite taken out of the left side.
+            89. This matches "10 mm wide opening". The width of the cut in Y is 10mm (-5 to 5).
+            90. The width of the cut in X is effectively 5mm (0 to -5) because the Ring ends at -9.35.
+            91. Wait, "10 mm wide opening". Usually width refers to the dimension perpendicular to the cut direction or the gap size.
+            92. If the gap is 10mm wide, it implies X distance.
+            93. But the text says "everything with x < 0 and -5 < y < 5 is removed".
+            94. This defines the cut geometry explicitly. I must follow the text.
+            95. Text: "10 mm wide opening cut out of its -X side (everything with x < 0 and -5 < y < 5 is removed from this ring)".
+            96. This implies the cut region is X < 0, Y in [-5, 5].
+            97. Since the Ring is OD 18.7, the material exists at X < 0.
+            98. So I subtract a Box: X: -9.35 to 0 (bounded by ring), Y: -5 to 5, Z: 0 to 10.
+            99. Actually, to be safe and ensure the cut goes all the way through, I should subtract a Box that covers the potential ring area.
+            100. Box: X: -10 to 0, Y: -5 to 5, Z: 0 to 10.
+            101. Wait, "10 mm wide". If Y is -5 to 5, that's 10mm height.
+            102. If X is -5 to 0, that's 5mm width.
+            103. Maybe the user means the gap is 10mm wide in X?
+            104. "10 mm wide opening cut out of its -X side".
+            105. If the opening is 10mm wide, and it's on the -X side, it should be X: -10 to 0.
+            106. But the parenthetical says "everything with x < 0 and -5 < y < 5 is removed".
+            107. This parenthetical defines the geometry precisely. I should follow the parenthetical definition over the "10 mm wide" label if they conflict, but "10 mm wide" likely refers to the Y dimension (-5 to 5 is 10mm).
+            108. So Y range is -5 to 5. X range is 0 to -infinity (bounded by ring).
+            109. So I subtract a Box: X: -10 to 0, Y: -5 to 5.
+            110. Wait, if I subtract X: -10 to 0, I am cutting more than the ring exists (Ring ends at -9.35).
+            111. So X: -10 to 0 is safe.
+            112. Tubing Opening: "4.5 mm wide opening cut out of its +X side (x > 15 and -2.25 < y < 2.25)".
+            113. Y range: -2.25 to 2.25 (Width 4.5).
+            114. X range: 15 to infinity (bounded by ring).
+            115. Tubing Ring OD 10 (Radius 5). Center 15. So Ring ends at 20.
+            116. So I subtract a Box: X: 15 to 20, Y: -2.25 to 2.25.
+            117. Wait, "4.5 mm wide". Y range is 4.5mm.
+            118. So the "width" refers to Y dimension here.
+            119. Okay, I will follow the explicit coordinate ranges given in the parentheses.
+
+    *   **Variable Definitions:**
+        *   `Z_HEIGHT = 10`
+        *   `ROD_ID = 12.7`
+        *   `ROD_WALL = 3`
+        *   `ROD_OD = 18.7`
+        *   `ROD_CENTER_X = 0`
+        *   `ROD_CENTER_Y = 0`
+        *   `ROD_OPENING_Y_MIN = -5`
+        *   `ROD_OPENING_Y_MAX = 5`
+        *   `ROD_OPENING_X_MAX = 0` (Cut is x < 0)
+        *   `ROD_OPENING_X_MIN = -10` (Safe margin)
+        *   `TUBING_ID = 6`
+        *   `TUBING_WALL = 2`
+        *   `TUBING_OD = 10`
+        *   `TUBING_CENTER_X = 15`
+        *   `TUBING_CENTER_Y = 0`
+        *   `TUBING_OPENING_Y_MIN = -2.25`
+        *   `TUBING_OPENING_Y_MAX = 2.25`
+        *   `TUBING_OPENING_X_MIN = 15` (Cut is x > 15)
+        *   `TUBING_OPENING_X_MAX = 20` (Safe margin, Ring ends at 20)
+        *   `BRIDGE_X_MIN = 8`
+        *   `BRIDGE_X_MAX = 12`
+        *   `BRIDGE_Y_WIDTH = 6`
+        *   `BRIDGE_Y_MIN = -3`
+        *   `BRIDGE_Y_MAX = 3`
+
+    *   **Refining the "Difference" Rule:**
+        *   "In difference(), make every cutting shape extend 0.01-1 mm past the faces it cuts".
+        *   This applies to the openings.
+        *   Rod Opening Box: X: -10 to 0. (Ring ends at -9.35). So -10 is 0.65mm past. Good.
+        *   Tubing Opening Box: X: 15 to 20. (Ring ends at 20). So 20 is 0mm past. I should extend it slightly. X: 15 to 20.5.
+        *   Wait, the Ring OD is 10. Radius 5. Center 15. So X max is 20.
+        *   So I should cut to 20.5.
+        *   Rod Opening: Ring OD 18.7. Radius 9.35. Center 0. X min is -9.35.
+        *   I should cut to -10.
+        *   Y ranges:
+            *   Rod: -5 to 5. Ring Y max is 9.35. So -5 to 5 is inside. No need to extend Y.
+            *   Tubing: -2.25 to 2.25. Ring Y max is 5. So -2.25 to 2.25 is inside. No need to extend Y.
+        *   Z ranges:
+            *   Height is 10. I should cut Z: 0 to 10.5 or 0 to 10.
+            *   Rule: "extend 0.01-1 mm past the faces it cuts".
+            *   So Z: -0.01 to 10.01.
+            *   Wait, the part rests on Z=0. So Z cut should be -0.01 to 10.01.
+            *   Actually, since the base is Z=0 to 10, cutting Z: -0.01 to 10.01 ensures the cut goes through the whole height.
+
+    *   **Refining the Bridge:**
+        *   "solid bridge 6 mm wide (Y) between x = 8 and x = 12".
+        *   Bridge Box: X: 8 to 12. Y: -3 to 3. Z: 0 to 10.
+        *   Wait, does the bridge need to be a separate union or part of the base?
+        *   If I Union Rod Ring, Tubing Ring, and Bridge, then subtract openings, it works.
+        *   However, the Bridge is solid material.
+        *   If I subtract the Rod Opening (X < 0), it doesn't touch the Bridge (X > 8).
+        *   If I subtract the Tubing Opening (X > 15), it doesn't touch the Bridge (X < 12).
+        *   So the Bridge remains solid.
+        *   Wait, I need to make sure the Bridge doesn't get cut by the Rod Hole or Tubing Hole.
+        *   Rod Hole: Radius 6.35. Center 0. Max X = 6.35.
+        *   Bridge Min X = 8. So Bridge is outside Rod Hole.
+        *   Tubing Hole: Radius 3. Center 15. Max X = 18. Min X = 12.
+        *   Bridge Max X = 12. So Bridge is outside Tubing Hole (touches at 12).
+        *   Wait, Tubing Hole is ID 6. Radius 3. Center 15.
+        *   So Tubing Hole spans X: 12 to 18.
+        *   Bridge spans X: 8 to 12.
+        *   So they touch at X=12.
+        *   This is fine. The Bridge is solid, the Hole is hollow.
+        *   Wait, if I Union the Rings and Bridge, the Bridge is solid.
+        *   Then I subtract the Holes.
+        *   The Hole subtraction will remove the material inside the hole.
+        *   Since the Bridge is at X=8 to 12, and Tubing Hole starts at X=12, the Bridge is not removed by the Tubing Hole.
+        *   Rod Hole ends at X=6.35. Bridge starts at X=8. So Bridge is not removed by Rod Hole.
+        *   So the Bridge remains solid.
+        *   This works.
+
+    *   **Final Check on Dimensions:**
+        *   Rod Ring: ID 12.7, Wall 3, OD 18.7.
+        *   Tubing Ring: ID 6, Wall 2, OD 10.
+        *   Bridge: X 8-12, Y 6mm (-3 to 3).
+        *   Openings:
+            *   Rod: X < 0, Y -5 to 5.
+            *   Tubing: X > 15, Y -2.25 to 2.25.
+        *   Height: 10.
+        *   Orientation: XY plane, Z up.
+
+    *   **Code Structure:**
+        *   Variables.
+        *   `fn = 64` (global or on cylinders).
+        *   `module rod_ring()`: Cylinder OD - Cylinder ID.
+        *   `module tubing_ring()`: Cylinder OD - Cylinder ID.
+        *   `module bridge()`: Box.
+        *   `module opening_cut()`: Box.
+        *   Main: Union(Rod, Tubing, Bridge) - Opening1 - Opening2.
+        *   Wait, `linear_extrude` is requested? "10 mm tall extrusion (Z) of a 2-D profile in the XY plane".
+        *   This phrasing suggests `linear_extrude`.
+        *   However, `difference` of 3D primitives is often more robust for "snap-on" clips to ensure the walls are exactly the right thickness.
+        *   If I use `linear_extrude`, I need to define the 2D profile.
+        *   2D Profile = Rod Ring (2D) + Tubing Ring (2D) + Bridge (2D).
+        *   Rod Ring 2D: Circle OD - Circle ID.
+        *   Tubing Ring 2D: Circle OD - Circle ID.
+        *   Bridge 2D: Rectangle.
+        *   Openings 2D: Rectangles.
+        *   Then `linear_extrude(height=10)`.
+        *   This is cleaner and adheres to "10 mm tall extrusion... of a 2-D profile".
+        *   I will use `linear_extrude`.
+        *   I need to set `$fn = 64` for the circles.
+        *   I need to ensure the difference operations inside the 2D profile work correctly.
+        *   Wait, `linear_extrude` takes a 2D shape.
+        *   I can define the 2D shape using `difference` of `circle` and `box`.
+        *   Wait, `difference` inside `linear_extrude` works.
+        *   So:
+            *   `difference()`
+                *   `union()`
+                    *   `rod_ring_2d()`
+                    *   `tubing_ring_2d()`
+                    *   `bridge_2d()`
+                *   `rod_opening_2d()`
+                *   `tubing_opening_2d()`
+            *   `linear_extrude(height=10)`
+        *   Wait, `linear_extrude` extrudes the *result* of the difference.
+        *   So I need to define the 2D profile first.
+        *   Actually, I can just put the `difference` block inside `linear_extrude`.
+        *   But `linear_extrude` expects a single shape.
+        *   So:
+            ```openscad
+            linear_extrude(height=10) {
+                difference() {
+                    union() {
+                        // Rings and Bridge
+                    }
+                    // Openings
+                }
+            }
+            ```

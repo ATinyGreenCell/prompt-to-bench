@@ -1,0 +1,45 @@
+// Tubing organiser clip for a 12.7 mm lab stand rod
+// Print orientation: flat on the bed, builds up in +Z
+
+// ---------------- Parameters ----------------
+rod_d      = 12.7;   // stand rod diameter
+rod_wall   = 3;      // stand rod wall thickness
+rod_outer  = rod_d + 2 * rod_wall;  // 18.7 mm outer diameter of rod ring
+
+tub_d      = 6;      // tubing inner diameter
+tub_wall   = 2;      // tubing wall thickness
+tub_outer  = tub_d + 2 * tub_wall;  // 10 mm outer diameter of tubing ring
+
+bridge_w   = 6;      // bridge width in Y
+bridge_x0  = 8;      // bridge start in X
+bridge_x1  = 12;     // bridge end in X
+
+opening_rod = 10;    // width of opening cut from -X side of rod ring
+opening_tub = 4.5;   // width of opening cut from +X side of tubing ring
+
+eps        = 0.5;    // overcut for clean differences
+$fn        = 96;     // curve resolution
+
+// ---------------- Model ----------------
+difference() {
+    union() {
+        // Rod ring, centred at origin
+        cylinder(d = rod_outer, h = 10);
+
+        // Tubing ring, centred at x = 15, y = 0
+        translate([15, 0, 0])
+            cylinder(d = tub_outer, h = 10);
+
+        // Solid bridge between x = 8 and x = 12
+        translate([bridge_x0, -bridge_w / 2, 0])
+            cube([bridge_x1 - bridge_x0, bridge_w, 10]);
+    }
+
+    // Opening in rod ring: x < 0 and -5 < y < 5
+    translate([-opening_rod / 2, -5, -eps])
+        cube([opening_rod, 10, 10 + 2 * eps]);
+
+    // Opening in tubing ring: x > 15 and -2.25 < y < 2.25
+    translate([15, -opening_tub / 2, -eps])
+        cube([10 + 2 * eps, opening_tub, 10]);
+}

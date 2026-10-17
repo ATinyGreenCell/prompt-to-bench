@@ -1,0 +1,51 @@
+// Hose-barb reducer: joins 8 mm tubing to 5 mm tubing
+// Print orientation: standing upright along +Z
+
+// ---------------- Parameters ----------------
+tube_d1      = 8;    // inner diameter of first (larger) tubing
+tube_d2      = 5;    // inner diameter of second (smaller) tubing
+bore_d       = 3;    // through-bore diameter
+z0           = 0;    // start of first barbs
+z1           = 20;   // end of first barbs / start of collar
+z2           = 25;   // end of collar / start of second barbs
+z3           = 41;   // end of part
+
+barb_h1      = 10;   // height of each 8 mm barb
+barb_d1_bot  = 7.5;  // outer diameter of 8 mm barb at bottom
+barb_d1_top  = 9.5;  // outer diameter of 8 mm barb at top
+
+barb_h2      = 8;    // height of each 5 mm barb
+barb_d2_bot  = 6.5;  // outer diameter of 5 mm barb at bottom
+barb_d2_top  = 5.0;  // outer diameter of 5 mm barb at top
+
+eps          = 0.5;  // overshoot for clean boolean cuts
+$fn          = 96;   // curve resolution
+
+// ---------------- Derived ----------------
+// Wall thickness of a barb at a given height, clamped to a minimum
+function wall(h, d_bot, d_top, h_b) = min(max((d_bot + (d_top - d_bot) * h / h_b) - tube_d1, 1.5));
+
+// ---------------- Model ----------------
+difference() {
+    union() {
+        // First section: two stacked barbs for 8 mm tubing
+        for (i = [0, 1])
+            translate([0, 0, z0 + i * barb_h1])
+                linear_extrude(height = barb_h1)
+                    circle(d = barb_d1_bot + 2 * wall([0], barb_d1_bot, barb_d1_top, barb_h1));
+
+        // Cylindrical collar
+        translate([0, 0, z1])
+            cylinder(d = 12, h = z2 - z1);
+
+        // Second section: two stacked barbs for 5 mm tubing
+        for (i = [0, 1])
+            translate([0, 0, z2 + i * barb_h2])
+                linear_extrude(height = barb_h2)
+                    circle(d = barb_d2_bot + 2 * wall([0], barb_d2_bot, barb_d2_top, barb_h2));
+    }
+
+    // Through-bore
+    translate([0, 0, z0 - eps])
+        cylinder(d = bore_d, h = z3 - z0 + 2 * eps);
+}

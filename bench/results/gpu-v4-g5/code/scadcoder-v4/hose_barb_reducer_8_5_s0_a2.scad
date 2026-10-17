@@ -1,0 +1,64 @@
+// Hose-barb reducer: joins 8 mm inner-diameter silicone tubing to 5 mm inner-diameter tubing
+// Print orientation: standing upright along +Z, centred on origin in X/Y
+// Units: mm
+
+// ---------------- Parameters ----------------
+reducer_d      = 12;   // collar outer diameter (z = 20..25)
+bore_d         = 3;    // through-bore diameter
+eps            = 0.5;  // overcut for clean differences
+
+// 8 mm tubing side (z = 0..20)
+t1_h           = 10;   // barb height
+t1_d_bottom    = 7.5;  // barb outer diameter at bottom
+t1_d_top       = 9.5;  // barb outer diameter at top
+t1_n           = 2;    // number of stacked barbs
+
+// 5 mm tubing side (z = 25..41)
+t2_h           = 8;    // barb height
+t2_d_bottom    = 6.5;  // barb outer diameter at bottom
+t2_d_top       = 5.0;  // barb outer diameter at top
+t2_n           = 2;    // number of stacked barbs
+
+// Derived
+z_collar_low   = 20;   // collar start
+z_collar_high  = 25;   // collar end
+z_t2_start     = z_collar_high + eps;  // 5 mm barbs start after collar
+z_t2_end       = z_t2_start + t2_h * t2_n;  // 41 mm overall top
+
+$fn = 96;
+
+// ---------------- Model ----------------
+difference() {
+    union() {
+        // 8 mm tubing barbs: sawtooth profile, centred on axis
+        for (i = [0 : t1_n - 1]) {
+            translate([0, 0, i * t1_h])
+                linear_extrude(height = t1_h)
+                    polygon([
+                        [0, -t1_d_bottom / 2],
+                        [0, t1_d_bottom / 2],
+                        [(i + 1) * t1_h, -t1_d_top / 2],
+                        [(i + 1) * t1_h, t1_d_top / 2]
+                    ]);
+        }
+
+        // Collar
+        cylinder(d = reducer_d, h = z_collar_high - z_collar_low);
+
+        // 5 mm tubing barbs: shrinking profile, centred on axis
+        for (i = [0 : t2_n - 1]) {
+            translate([0, 0, z_t2_start + i * t2_h])
+                linear_extrude(height = t2_h)
+                    polygon([
+                        [0, -t2_d_bottom / 2],
+                        [0, t2_d_bottom / 2],
+                        [t2_h, -t2_d_top / 2],
+                        [t2_h, t2_d_top / 2]
+                    ]);
+        }
+    }
+
+    // Through-bore
+    translate([0, 0, -eps])
+        cylinder(d = bore_d, h = z_t2_end + 2 * eps);
+}

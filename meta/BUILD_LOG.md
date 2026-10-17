@@ -14907,13 +14907,115 @@ All four chains are running. Swapping the old monitor for one on the new chain l
 
 While v4 downloads, logging the race as H38 in the hiccups file.
 
-<details><summary>5 tool call(s)</summary>
+<details><summary>6 tool call(s)</summary>
 
 - `Bash` Add hiccup H38 for the runpodctl race — `cat >> finetune/PIPELINE_HICCUPS.md <<'EOF' …`
 - `Bash` Note the send race in RUNBOOK B2 — `python3 - <<'EOF' …`
 - `Bash` Check think-run progress — `.venv/bin/python -I bench/sample_stats.py gpu-base-think 2>/dev/null | tail -1; pgrep -fc gpu-base-think; date +%T`
 - `Bash` Check v5 MASK_CHECK and progress — `ssh -i ~/.ssh/runpod_ft -p 18178 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=20 -o LogLevel=ERROR [email]  …`
 - `Bash` Stage results and scripts; scan for secrets — `.venv/bin/python meta/build_log.py >/dev/null 2>&1; git add finetune/scripts/train_vlm.py finetune/scripts/pod_train_vlm.sh finetune/scripts …`
+- `Bash` Commit GPU results and v5 tooling; push — `git commit -q -F - <<'EOF' …`
+
+</details>
+
+Pushed. Waiting on the chains; v4's download is the next event.
+
+<details><summary>1 tool call(s)</summary>
+
+- `Bash` Wait for v4 receive to finish — `until grep -qE "^exit" [scratch] 2>/dev/null; do sleep 10; done; cat [scratch] ls -la ~/printpaper/finetune/out-v4/merged16/ | grep safetens …`
+
+</details>
+
+v4 is on the laptop with correct shard sizes; the chain is now making it importable and uploading. Freeing the 18 GB zip on H100 #1, which v5 needs room on.
+
+<details><summary>1 tool call(s)</summary>
+
+- `Bash` Delete v4 zip on H100 #1; show v4b chain log — `ssh -i ~/.ssh/runpod_ft -p 18178 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=20 -o LogLevel=ERROR [email]  …`
+
+</details>
+
+That terminate line is informational only: v5 is still training on that H100, so it stays up. While v4 uploads, checking the thinking-on run.
+
+<details><summary>3 tool call(s)</summary>
+
+- `Bash` Inspect thinking-on base results — `.venv/bin/python -I bench/sample_stats.py gpu-base-think 2>/dev/null | tail -18; .venv/bin/python -I - <<'EOF' …`
+- `Bash` Wait for think run to finish — `until [ -z "$(pgrep -f gpu-base-think)" ]; do sleep 15; done; cd ~/printpaper && .venv/bin/python -I bench/sample_stats.py gpu-base-think |  …`
+- `Bash` Check think-run stragglers and chain logs — `.venv/bin/python -I bench/sample_stats.py gpu-base-think | tail -1; pgrep -fa "gpu-base-think" | grep -v pgrep | awk '{print $NF}' | head; f …`
+
+</details>
+
+The thinking-on run is complete: 1 pass (the funnel) in 48 samples, 5/48 rendered. v4 is on HF, and its chain should now be loading it on the A40.
+
+<details><summary>2 tool call(s)</summary>
+
+- `Bash` Wait for v4 to be served on the A40 — `until grep -qE "serving|FAILED" [scratch] do sleep 10; done; tail -4 [scratch]`
+- `Bash` Check v4b, v6, v7 chain logs and A40 state — `S=[scratch] echo "== v4b"; tail -3 $S/chainlog_v4b.txt; echo "== v6"; cat $S/chainlog_v6.txt; echo "== v7"; tail -2 $S/chainlog_v7.txt; ssh  …`
+
+</details>
+
+Found the stall. My own waiting shell has "gpu-base-think" in its command line, so the v4 chain's process check matches it and never sees the run as finished. Stopping that waiting shell unblocks it.
+
+<details><summary>2 tool call(s)</summary>
+
+- `TaskStop` task_id=biuweklsv
+- `Bash` Confirm no matches remain; wait for v4 loading — `pgrep -fa "gpu-base-think" | grep -v "pgrep" | cut -c1-120; echo "---"; until grep -qE "loading v4|FAILED" [scratch] do sleep 5; done; tail  …`
+
+</details>
+
+I repeated the same mistake: that last wait command also contained the pattern, so it matched itself. Stopping it, and checking without the string this time.
+
+<details><summary>2 tool call(s)</summary>
+
+- `TaskStop` task_id=bqvgc71as
+- `Bash` Check for remaining pattern matches safely — `P="base-th""ink"; pgrep -fa "$P" | cut -c1-150`
+
+</details>
+
+Nothing matches now, so the v4 chain should move on within 20 seconds.
+
+<details><summary>1 tool call(s)</summary>
+
+- `Bash` Wait for v4 chain to start loading v4 — `until grep -qE "loading v4|FAILED" [scratch] do sleep 5; done; tail -2 [scratch]`
+
+</details>
+
+v4 is loading on the A40 and v6 has started on H100 #2. My self-matching check cost about 15 minutes of A40 idle time; noting the lesson in memory.
+
+<details><summary>1 tool call(s)</summary>
+
+- `Bash` Record pgrep self-match lesson in memory — `python3 - <<'EOF' …`
+
+</details>
+
+While v4 benches (~25 minutes), I'm drafting the §9 sentence for the thinking-on result.
+
+<details><summary>7 tool call(s)</summary>
+
+- `Bash` Read the protocol-choices limitation bullet — `grep -n "Protocol choices decide some results" README.md | cut -c1-80; sed -n '/Protocol choices decide some results/p' README.md | cut -c1- …`
+- `Edit` ~/printpaper/README.md
+- `Monitor` description=model chains v4b/v7/v5/v6 (re-armed): received, uploaded, se, timeout_ms=1800000, command=cd [scratch] && tail -n 0 -F chainlog_v4b.txt chainlog_v7.tx
+- `Bash` Wait for the v4 GPU bench result — `until grep -qE "V4 BENCH DONE|\[v4\] .*FAILED" [scratch] do sleep 15; done; tail -12 [scratch]`
+- `Bash` Interim v4 GPU bench stats — `tail -3 [scratch] .venv/bin/python -I bench/sample_stats.py gpu-v4 2>/dev/null | tail -18; date +%T`
+- `Bash` Wait for full v4 bench result — `until grep -qE "V4 BENCH DONE|\[v4\] .*FAILED" [scratch] do sleep 15; done; tail -12 [scratch]`
+- `Bash` Check v4 bench, v5 and v6 training progress — `.venv/bin/python -I bench/sample_stats.py gpu-v4 2>/dev/null | tail -1; tail -2 [scratch] tail -2 [scratch] ssh -i ~/.ssh/runpod_ft -p 18178 …`
+
+</details>
+
+v4 is at 117 of 128 samples: still 2 tasks (PCR adapter and tube rack), 13 samples passed, 115/117 render. v5 finishes training around 18:42 and v6 around 19:03.
+
+<details><summary>3 tool call(s)</summary>
+
+- `Bash` Wait for v4 final and print stats — `until grep -qE "V4 BENCH DONE|\[v4\] .*FAILED" [scratch] do sleep 10; done; tail -11 [scratch] cd ~/printpaper && .venv/bin/python -I bench/ …`
+- `Bash` Locate insertion point in README section 6.4 — `grep -n "^\*\*On the NPU box" README.md | cut -c1-60 && grep -n "^## 7. Global access" README.md`
+- `Bash` Insert v3/v4 results and Table 8 into README — `cat > [scratch] <<'EOF' …`
+
+</details>
+
+The §6.4 text and Table 8 (base, v2, v3, v4) are in. I'll rewrite the Abstract and Conclusion once v5–v7 land, so that's done once. Committing and pushing this now.
+
+<details><summary>1 tool call(s)</summary>
+
+- `Bash` Commit README Table 8 and v4 results; push — `.venv/bin/python meta/build_log.py >/dev/null 2>&1; git add README.md bench/results/gpu-v4-g* bench/results/gpu-base-think-g* meta/BUILD_LOG …`
 
 </details>
 

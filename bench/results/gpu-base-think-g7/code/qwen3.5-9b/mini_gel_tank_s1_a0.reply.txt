@@ -1,0 +1,299 @@
+Thinking Process:
+
+1.  **Analyze the Request:**
+    *   **Goal:** Design a buffer tank for a mini horizontal gel-electrophoresis box.
+    *   **Part Type:** Open-top rectangular tank with a raised platform.
+    *   **Dimensions:**
+        *   Outer: 120 mm (X) x 70 mm (Y) x 40 mm (Z).
+        *   Wall Thickness: 3 mm.
+        *   Floor Thickness: 3 mm.
+        *   Platform: Solid, raised, spans full inner width (Y), 60 mm long in X (centred), top 10 mm above inner floor (at z = 13).
+        *   Platform Height relative to outer bottom: Floor (3mm) + Platform Rise (10mm) = 13mm.
+        *   Electrode Holes: 2 mm diameter, horizontal, along X, at y = 0, z = 30, through end walls.
+    *   **Constraints:**
+        *   Units: mm.
+        *   Variables: Named variables at top with comments.
+        *   Orientation: Rests on XY plane at z=0, builds upward. Centred on origin in X and Y.
+        *   Built-in OpenSCAD only.
+        *   Difference cuts: Extend 0.01-1 mm past faces.
+        *   Curved shapes: $fn = 64$.
+        *   Repeated features: Use `for` loops.
+        *   Output: Single code block.
+
+2.  **Calculate Inner Dimensions:**
+    *   Outer X: 120 mm.
+    *   Outer Y: 70 mm.
+    *   Outer Z: 40 mm.
+    *   Wall Thickness: 3 mm.
+    *   Floor Thickness: 3 mm.
+    *   Inner X: 120 - 2*3 = 114 mm.
+    *   Inner Y: 70 - 2*3 = 64 mm.
+    *   Inner Z (Depth): 40 - 3 (floor) = 37 mm.
+    *   Platform Position:
+        *   Spans full inner width (Y): 64 mm.
+        *   Length in X: 60 mm.
+        *   Centred in X: (120 - 60) / 2 = 30 mm offset from outer edge, or (114 - 60) / 2 = 27 mm offset from inner edge. Let's use outer dimensions for centering relative to origin.
+        *   Top Z: 13 mm (relative to outer bottom).
+        *   Bottom Z: 13 - 10 = 3 mm.
+        *   Wait, the prompt says "top is 10 mm above the inner floor (at z = 13)".
+        *   Inner floor is at Z = 3 mm (since floor thickness is 3mm).
+        *   So Platform Top Z = 3 + 10 = 13 mm.
+        *   Platform Bottom Z = 13 - 10 = 3 mm.
+        *   Wait, does the platform sit *on* the floor? Yes, "divides the bottom of the tank".
+        *   So Platform Height = 10 mm.
+        *   Platform Top Z = 13 mm.
+        *   Platform Bottom Z = 3 mm.
+    *   Electrode Holes:
+        *   Diameter: 2 mm.
+        *   Orientation: Horizontal along X.
+        *   Location: Through end walls (X ends).
+        *   Y position: y = 0.
+        *   Z position: z = 30.
+        *   Wait, the tank is centred on origin in X and Y.
+        *   Outer X: -60 to +60.
+        *   Outer Y: -35 to +35.
+        *   Outer Z: 0 to 40.
+        *   End walls are at X = -60 and X = +60.
+        *   Holes are along X. So they go from X = -60 to X = +60? No, "Through each end wall". Usually means through the thickness of the wall.
+        *   "Horizontal hole along X at y = 0, z = 30".
+        *   Since it's an end wall, the hole passes through the wall thickness in the X direction.
+        *   Wall thickness is 3mm.
+        *   So the hole is a cylinder centered at X = -60 (left wall) and X = +60 (right wall)?
+        *   Actually, usually "through each end wall" implies the hole goes through the wall material.
+        *   If the tank is 120mm wide, the walls are at X = -60 and X = +60.
+        *   The hole is along X. So the cylinder axis is parallel to X.
+        *   Center of hole in Y: 0.
+        *   Center of hole in Z: 30.
+        *   Length of hole: Through the wall thickness (3mm).
+        *   Wait, if it's "through each end wall", does it mean the hole exists in the wall volume? Yes.
+        *   Does it connect to the outside? Yes.
+        *   So I need to subtract cylinders from the tank volume.
+        *   Left Wall: Centered at X = -60.
+        *   Right Wall: Centered at X = +60.
+        *   Wait, if the tank is centred at origin, the outer faces are at X = -60 and X = +60.
+        *   The wall thickness is 3mm. So the inner face is at X = -57 and X = +57.
+        *   The hole goes through the wall. So the cylinder should span from X = -60 to X = -57 (left) and X = +57 to X = +60 (right)?
+        *   Or does it mean the hole is centered on the outer face?
+        *   Usually, for a wire to enter, the hole is drilled through the wall.
+        *   Let's assume the cylinder axis is along X.
+        *   Left hole: Center X = -60. Radius = 1mm. Length = 3mm (wall thickness).
+        *   Right hole: Center X = +60. Radius = 1mm. Length = 3mm (wall thickness).
+        *   Wait, the prompt says "Through each end wall... drill a 2 mm diameter horizontal hole along X".
+        *   This implies the hole passes through the wall.
+        *   So I will create cylinders of length 3mm (wall thickness) centered at the outer faces.
+        *   Wait, if I center at X = -60, the cylinder goes from -61.5 to -58.5.
+        *   If I center at X = -60, the cylinder goes from -60 - 1.5 to -60 + 1.5.
+        *   Wall thickness is 3mm. So the wall occupies X from -60 to -57.
+        *   So the hole should be inside the wall volume.
+        *   Let's define the hole cylinder length as 3mm.
+        *   Left hole center X = -60.
+        *   Right hole center X = +60.
+        *   Wait, if the tank is centred at origin, the outer boundary is X = +/- 60.
+        *   So the hole is centered at the outer face.
+        *   Y = 0.
+        *   Z = 30.
+        *   Radius = 1mm.
+        *   Length = 3mm.
+        *   Wait, if the hole is along X, the cylinder axis is X.
+        *   So the cylinder is defined by radius in Y-Z plane.
+        *   Center Y = 0. Center Z = 30.
+        *   Length along X = 3mm.
+        *   Position X = -60 (left) and X = +60 (right).
+        *   Wait, if I put the cylinder center at X = -60, it extends -61.5 to -58.5.
+        *   The wall is -60 to -57.
+        *   So the hole is centered on the outer face, extending 1.5mm into the wall and 1.5mm outside?
+        *   Or is it centered in the wall?
+        *   "Through each end wall". Usually implies entering the tank.
+        *   If I center at X = -60, half is outside, half is inside.
+        *   If I want the hole to be *in* the wall, I should center it at X = -58.5 (midpoint of wall).
+        *   However, usually for wiring, you want the hole accessible from the outside.
+        *   Let's assume the hole is centered on the outer face (X = -60 and X = 60) so it's accessible.
+        *   Actually, if I center at X = -60, the cylinder goes from -61.5 to -58.5.
+        *   The wall is -60 to -57.
+        *   So 1.5mm is outside, 1.5mm is inside.
+        *   This seems reasonable for a wire entry.
+        *   Wait, the prompt says "at y = 0, z = 30".
+        *   Since the tank is centred at Y=0, Y=0 is the center line.
+        *   Since the tank is centred at Z=0? No, "rests on the XY plane at z = 0".
+        *   So Z=0 is the bottom.
+        *   Outer Z = 40.
+        *   So Z=30 is inside the tank height (0 to 40).
+        *   Inner floor is at Z=3.
+        *   So Z=30 is 27mm above the floor.
+        *   Platform top is at Z=13.
+        *   So the hole is above the platform.
+        *   Wait, "connect above the platform".
+        *   The platform is at Z=3 to Z=13.
+        *   The hole is at Z=30.
+        *   So the hole is well above the platform.
+        *   Wait, "Through each end wall... drill a 2 mm diameter horizontal hole along X".
+        *   This implies the hole goes through the wall thickness.
+        *   Okay, I will model the tank as a solid block, then subtract the inner volume (to make it open top), subtract the platform (wait, platform is raised, so it's part of the solid), and subtract the holes.
+        *   Actually, easier to model as:
+            1.  Outer Box (120x70x40).
+            2.  Subtract Inner Box (114x64x37) to make walls/floor.
+            3.  Wait, if I subtract the inner box, I get a hollow shell.
+            4.  Then I need to add the platform.
+            5.  Platform dimensions:
+                *   Width (Y): Inner width = 64 mm.
+                *   Length (X): 60 mm.
+                *   Height: 10 mm.
+                *   Position:
+                    *   Y: -32 to +32 (Centred).
+                    *   X: -30 to +30 (Centred).
+                    *   Z: 3 to 13 (Sits on floor at Z=3).
+            6.  Holes:
+                *   Two cylinders.
+                *   Radius: 1mm.
+                *   Length: 3mm (Wall thickness).
+                *   Position:
+                    *   Left: X = -60, Y = 0, Z = 30.
+                    *   Right: X = +60, Y = 0, Z = 30.
+                    *   Wait, if I subtract a cylinder centered at X=-60 with length 3mm, it goes from -61.5 to -58.5.
+                    *   The wall is -60 to -57.
+                    *   So the hole is centered on the outer face.
+                    *   This seems correct for "through the wall".
+                    *   Wait, if the tank is open top, the "end walls" are the vertical walls at the ends.
+                    *   So the hole goes through the vertical wall.
+                    *   Okay.
+
+3.  **Coordinate System & Centering:**
+    *   User says: "rests on the XY plane at z = 0 and builds upward (+Z). Unless told otherwise, centre it on the origin in X and Y."
+    *   So Outer Box: X: -60 to 60, Y: -35 to 35, Z: 0 to 40.
+    *   Inner Volume (to subtract):
+        *   X: -57 to 57 (114mm).
+        *   Y: -32 to 32 (64mm).
+        *   Z: 3 to 40 (37mm).
+        *   Wait, if I subtract this, I get the walls and floor.
+        *   Wait, the floor is 3mm thick. So Inner Z starts at 3.
+        *   So the hollow space is Z: 3 to 40.
+        *   The tank is open top, so Z=40 is open.
+        *   So I subtract a box from Z=3 to Z=40.
+    *   Platform:
+        *   It sits on the inner floor (Z=3).
+        *   Height 10mm -> Top at Z=13.
+        *   Width (Y): Inner width = 64mm. So Y: -32 to 32.
+        *   Length (X): 60mm. Centred. So X: -30 to 30.
+        *   Wait, the platform is "solid raised platform".
+        *   So I need to add this volume back into the hollow shell?
+        *   Or model the whole thing as one solid and subtract the empty space.
+        *   Method 1: Solid Block -> Subtract Inner Void -> Add Platform.
+        *   Method 2: Solid Block -> Subtract Inner Void (including platform space).
+        *   Let's use Method 1.
+        *   Base: 120x70x40.
+        *   Subtract Void: 114x64x37 (X: -57..57, Y: -32..32, Z: 3..40).
+        *   Add Platform: 60x64x10 (X: -30..30, Y: -32..32, Z: 3..13).
+        *   Subtract Holes: Two cylinders.
+    *   Wait, if I subtract the void Z: 3..40, I remove the space where the platform *would* be if it wasn't there.
+    *   So I must add the platform volume.
+    *   Wait, the void subtraction creates the walls and floor.
+    *   The void is Z: 3 to 40.
+    *   The platform is Z: 3 to 13.
+    *   So the platform fills part of the void.
+    *   So:
+        1.  `cube([120, 70, 40])`
+        2.  `difference()`
+        3.      `translate([-57, -32, 3]) cube([114, 64, 37])` (This creates the hollow tank)
+        4.      `translate([-30, -32, 3]) cube([60, 64, 10])` (This adds the platform back)
+        5.      `translate([-60, 0, 30]) cylinder(d=2, h=3, $fn=64)` (Left Hole)
+        6.      `translate([60, 0, 30]) cylinder(d=2, h=3, $fn=64)` (Right Hole)
+    *   Wait, the hole subtraction needs to be careful.
+    *   If I subtract the void first, the walls exist.
+    *   Then I add the platform.
+    *   Then I subtract the holes.
+    *   The holes are in the end walls.
+    *   End walls are at X = -60 and X = +60.
+    *   The void subtraction leaves material at X = -60 to -57 and X = 57 to 60.
+    *   The holes should be in this material.
+    *   Hole Cylinder:
+        *   Radius 1mm.
+        *   Height 3mm (along X).
+        *   Center X = -60.
+        *   So it spans -61.5 to -58.5.
+        *   The wall is -60 to -57.
+        *   So the cylinder overlaps the wall volume (-60 to -57) and extends outside (-61.5 to -60).
+        *   This is fine for "through the wall".
+        *   Wait, if I subtract the cylinder, it removes material from the tank.
+        *   Since the tank is defined by the outer cube minus the inner void, the material exists at X=-60 to -57.
+        *   The cylinder at X=-60 (center) removes material from -61.5 to -58.5.
+        *   This removes the wall material (-60 to -57) and some outside material.
+        *   This is correct.
+    *   Wait, one detail: "Through each end wall... drill a 2 mm diameter horizontal hole along X".
+    *   Does it mean the hole goes all the way through the tank? No, "through each end wall".
+    *   So it's a hole in the wall.
+    *   Okay.
+
+4.  **Refining Dimensions:**
+    *   Outer X: 120.
+    *   Outer Y: 70.
+    *   Outer Z: 40.
+    *   Wall: 3.
+    *   Floor: 3.
+    *   Inner X: 114.
+    *   Inner Y: 64.
+    *   Inner Z (void): 37 (40 - 3).
+    *   Platform X: 60.
+    *   Platform Y: 64 (Inner width).
+    *   Platform Z: 10.
+    *   Platform Bottom Z: 3.
+    *   Platform Top Z: 13.
+    *   Hole Diameter: 2.
+    *   Hole Radius: 1.
+    *   Hole Length: 3 (Wall thickness).
+    *   Hole Center X: -60, 60.
+    *   Hole Center Y: 0.
+    *   Hole Center Z: 30.
+
+5.  **Variable Setup:**
+    *   Define all dimensions as variables.
+    *   Add comments.
+    *   Set $fn = 64.
+
+6.  **Code Structure:**
+    *   Variables.
+    *   Module for tank? Or just one block.
+    *   Use `difference()` for the void and holes.
+    *   Use `union()` for the platform addition?
+    *   Actually, `difference()` is better for the main shape.
+    *   Start with `cube([120, 70, 40])`.
+    *   `difference()`:
+        *   `translate([-57, -32, 3]) cube([114, 64, 37])` (Inner void)
+        *   `translate([-60, 0, 30]) cylinder(d=2, h=3, $fn=64)` (Left Hole)
+        *   `translate([60, 0, 30]) cylinder(d=2, h=3, $fn=64)` (Right Hole)
+    *   Wait, if I do `difference()` with the void and holes, I am subtracting them from the outer cube.
+    *   But I need to *add* the platform.
+    *   So:
+        *   `union()`
+            *   `cube([120, 70, 40])`
+            *   `translate([-30, -32, 3]) cube([60, 64, 10])` (Platform)
+        *   `difference()`
+            *   `translate([-57, -32, 3]) cube([114, 64, 37])` (Void)
+            *   `translate([-60, 0, 30]) cylinder(d=2, h=3, $fn=64)` (Hole 1)
+            *   `translate([60, 0, 30]) cylinder(d=2, h=3, $fn=64)` (Hole 2)
+    *   Wait, `union()` then `difference()` works, but `difference()` is usually the outer operation.
+    *   Correct logic:
+        *   `difference()`
+            *   `union()`
+                *   `cube([120, 70, 40])`
+                *   `translate([-30, -32, 3]) cube([60, 64, 10])`
+            *   `translate([-57, -32, 3]) cube([114, 64, 37])`
+            *   `translate([-60, 0, 30]) cylinder(d=2, h=3, $fn=64)`
+            *   `translate([60, 0, 30]) cylinder(d=2, h=3, $fn=64)`
+    *   Wait, if I use `difference()`, the first item is the positive volume.
+    *   So `union()` of Outer + Platform is the positive volume.
+    *   Then subtract Void and Holes.
+    *   This works.
+    *   Wait, `difference()` takes a list of objects. The first is kept, the rest are subtracted.
+    *   So:
+        ```openscad
+        difference() {
+            union() {
+                cube([120, 70, 40]);
+                translate([-30, -32, 3]) cube([60, 64, 10]);
+            }
+            translate([-57, -32, 3]) cube([114, 64, 37]);
+            translate([-60, 0, 30]) cylinder(d=2, h=3, $fn=64);
+            translate([60, 0, 30]) cylinder(d=2, h=3, $fn=64);
+        }
+        ```
+   

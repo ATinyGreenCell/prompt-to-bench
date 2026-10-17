@@ -1,0 +1,457 @@
+Thinking Process:
+
+1.  **Analyze the Request:**
+    *   **Goal:** Design a sowing template for a 90 mm Petri dish.
+    *   **Part Geometry:**
+        *   Base: Flat disc, 85 mm diameter, 2 mm thick.
+        *   Orientation: Lying on the bed (XY plane), Z = 0, building upward (+Z). Centered on origin (X, Y).
+        *   Holes: 7 x 7 grid (49 holes total).
+        *   Hole Size: 3 mm diameter, through-holes.
+        *   Hole Spacing: 9 mm center-to-center.
+        *   Hole Position: Centered on the disc.
+        *   Notch: Rectangular orientation notch on the +Y side rim.
+        *   Notch Dimensions: 10 mm wide (X), 4 mm deep (Y, measured in from the rim).
+    *   **Constraints:**
+        *   Units: mm.
+        *   Dimensions: Use user's exact measurements.
+        *   Variables: Named variables at the top with comments.
+        *   Orientation: XY plane, Z=0, +Z build. Centered on origin.
+        *   Built-in OpenSCAD only (no includes, etc.).
+        *   Difference cuts: Extend 0.01-1 mm past faces.
+        *   Curved shapes: `$fn = 64` or more.
+        *   Repeated features: Use `for` loops.
+        *   Output: Valid solid, no errors.
+        *   Format: Single code block.
+
+2.  **Calculate Dimensions:**
+    *   Disc Diameter: 85 mm -> Radius = 42.5 mm.
+    *   Disc Thickness: 2 mm.
+    *   Grid: 7 x 7.
+    *   Hole Diameter: 3 mm.
+    *   Hole Spacing (Pitch): 9 mm.
+    *   Notch Width (X): 10 mm.
+    *   Notch Depth (Y): 4 mm (from rim).
+    *   Rim Radius: 42.5 mm.
+    *   Notch Position: +Y side, centered on Y axis.
+    *   Notch Start Y (inner): Rim Radius - Notch Depth = 42.5 - 4 = 38.5 mm.
+    *   Notch End Y (outer): Rim Radius = 42.5 mm.
+    *   Notch X Range: Centered on Y axis (X=0). Width 10 mm -> X from -5 to +5.
+
+3.  **Grid Calculation:**
+    *   7 holes along X, 7 holes along Y.
+    *   Spacing 9 mm.
+    *   Total span = (7 - 1) * 9 = 54 mm.
+    *   Center of grid = Origin (0,0).
+    *   Offset from center = (Span / 2) = 27 mm.
+    *   X coordinates: -27, -18, -9, 0, 9, 18, 27.
+    *   Y coordinates: -27, -18, -9, 0, 9, 18, 27.
+
+4.  **Drafting the Code:**
+
+    *   **Variables:** Define all dimensions at the top.
+    *   **Main Body:** `cube([85, 85, 2])` centered at origin.
+    *   **Holes:** Loop `i` from 0 to 6 for X and Y. Calculate positions. Use `difference()` and `translate()` with `cylinder()` for holes.
+    *   **Notch:** Use `difference()` on the main body. The notch is a rectangular prism cut into the top face (Z=2) or side?
+        *   "Cut a rectangular orientation notch into the rim on the +Y side".
+        *   Usually, orientation notches are cut into the top surface or the side wall to indicate orientation.
+        *   "4 mm deep (Y, measured in from the rim)". This implies it cuts into the disc from the edge towards the center along the Y-axis.
+        *   "10 mm wide (X)".
+        *   So it's a cutout on the top surface (Z=2) or the side?
+        *   If it's a "notch into the rim", it usually means removing material from the edge.
+        *   Given "lying on the bed", the top surface is Z=2. The rim is the edge at R=42.5.
+        *   "4 mm deep (Y, measured in from the rim)". This suggests the cut goes from Y=42.5 inwards to Y=38.5.
+        *   "10 mm wide (X)". This suggests X goes from -5 to +5.
+        *   Does it go all the way through the thickness? Usually, orientation notches are cut through the thickness so you can see the edge or feel it.
+        *   However, if it's a "sowing template", you might want the holes to remain intact.
+        *   If I cut a notch into the *rim*, it removes material from the edge.
+        *   Let's assume it cuts through the thickness (Z=0 to Z=2) to make it a clear orientation feature.
+        *   Wait, "4 mm deep (Y, measured in from the rim)".
+        *   So the cut volume is defined by X: [-5, 5], Y: [38.5, 42.5], Z: [0, 2].
+        *   I need to make sure this doesn't interfere with the hole grid.
+        *   Max X of grid = 27. Max Y of grid = 27.
+        *   Notch is at Y ~ 40. So it's far from the holes.
+        *   Wait, is the notch on the *side* wall or the *top* surface?
+        *   "Cut a rectangular orientation notch into the rim".
+        *   If it's on the rim, it's usually on the side wall or the top edge.
+        *   If I cut a rectangular prism from the top surface down to the bottom, it creates a notch on the rim.
+        *   Let's define the notch as a rectangular prism removed from the main body.
+        *   Location: X: -5 to 5, Y: 38.5 to 42.5, Z: 0 to 2.
+        *   Wait, if it's "into the rim", does it mean it removes the material *at* the rim? Yes.
+        *   So `difference()` with a `cube([10, 4, 2])` translated to `x=0, y=40.5, z=1`.
+        *   Wait, `translate` needs to be precise.
+        *   Center of notch in X: 0. Width 10 -> x from -5 to 5.
+        *   Center of notch in Y: 42.5 - 2 = 40.5. Depth 4 -> y from 38.5 to 42.5.
+        *   Thickness: 2 -> z from 0 to 2.
+        *   So the cutting shape is `cube([10, 4, 2])` translated to `translate([0, 40.5, 1])`.
+
+    *   **Refining the Notch:**
+        *   "4 mm deep (Y, measured in from the rim)".
+        *   Rim is at Y = 42.5.
+        *   So the cut is between Y = 38.5 and Y = 42.5.
+        *   "10 mm wide (X)".
+        *   So X is between -5 and 5.
+        *   "into the rim".
+        *   Does it go through the thickness? Yes, usually orientation notches are through-thickness so you can see the orientation from the top or side.
+        *   So the cut shape is `cube([10, 4, 2])`.
+        *   Position: `translate([0, 42.5 - 2, 1])` -> `translate([0, 40.5, 1])`.
+
+    *   **Refining the Holes:**
+        *   Grid 7x7.
+        *   Spacing 9mm.
+        *   Center 0,0.
+        *   Indices i, j from 0 to 6.
+        *   Pos X = (i - 3) * 9.
+        *   Pos Y = (j - 3) * 9.
+        *   Hole Cylinder: `cylinder(d=3, h=2, center=true)`.
+        *   Wait, `cylinder` in OpenSCAD defaults to height along Z.
+        *   Since the part is 2mm thick (Z=0 to Z=2), the hole needs to go through.
+        *   So `cylinder(d=3, h=2, center=true)` works if centered at Z=1.
+        *   Or `translate([x, y, 1]) cylinder(d=3, h=2)`.
+        *   Wait, `cylinder` height is along Z. If I want a through hole in a 2mm thick part, the cylinder height should be 2mm.
+        *   If I center the cylinder at Z=1, it goes from Z=0 to Z=2.
+        *   So `translate([x, y, 1]) cylinder(d=3, h=2)`.
+
+    *   **Refining the Main Body:**
+        *   `cube([85, 85, 2], center=true)`.
+        *   This places the cube from -42.5 to +42.5 in X and Y, and -1 to +1 in Z.
+        *   Wait, the prompt says: "lying on the bed... at z = 0 and builds upward (+Z)".
+        *   "Centre it on the origin in X and Y".
+        *   If I use `cube(..., center=true)`, the bottom is at Z=-1.
+        *   I need the bottom at Z=0.
+        *   So `translate([0, 0, 1]) cube([85, 85, 2])`.
+        *   Or `cube([85, 85, 2])` then `translate([0, 0, 1])`.
+        *   Actually, `cube([85, 85, 2])` creates a box from 0 to 85 in X/Y if not centered.
+        *   If I want it centered on origin X/Y, and Z=0 bottom:
+        *   `translate([0, 0, 1]) cube([85, 85, 2])`.
+        *   This puts X/Y from -42.5 to 42.5. Z from 0 to 2.
+        *   This matches "lying on the bed... at z = 0".
+
+    *   **Difference Logic:**
+        *   Start with `difference()`.
+        *   Add `translate([0, 0, 1]) cube([85, 85, 2])`.
+        *   Loop for holes: `translate([x, y, 1]) cylinder(d=3, h=2)`.
+        *   Add notch cut: `translate([0, 40.5, 1]) cube([10, 4, 2])`.
+        *   Wait, the notch cut needs to extend past the faces to ensure clean cut in `difference()`.
+        *   The main body is Z=0 to Z=2.
+        *   The notch cut is Z=0 to Z=2.
+        *   Rule 5: "In difference(), make every cutting shape extend 0.01-1 mm past the faces it cuts".
+        *   So the notch cut should be Z=-0.01 to Z=2.01.
+        *   Height = 2.02.
+        *   Position Z = 1.01.
+        *   Or simply extend the Z range.
+        *   Let's make the cutting shape slightly larger in Z.
+        *   Main body Z: 0 to 2.
+        *   Cutting shape Z: -0.01 to 2.01.
+        *   So `translate([0, 40.5, 1.01]) cube([10, 4, 2.02])`.
+        *   Wait, if I use `difference()`, the cutting shape must be solid.
+        *   If I cut a hole, the cylinder must be taller than the body to ensure the top and bottom faces are cut cleanly.
+        *   So for holes: `translate([x, y, 1.01]) cylinder(d=3, h=2.02)`.
+        *   For notch: `translate([0, 40.5, 1.01]) cube([10, 4, 2.02])`.
+
+    *   **Grid Loop:**
+        *   `for (i = [0:6]) for (j = [0:6])`
+        *   `x = (i - 3) * 9`
+        *   `y = (j - 3) * 9`
+        *   `translate([x, y, 1.01]) cylinder(d=3, h=2.02)`
+
+    *   **Notch Loop:**
+        *   Just one notch.
+        *   `translate([0, 40.5, 1.01]) cube([10, 4, 2.02])`
+
+    *   **$fn:**
+        *   Set `$fn = 64` globally or on cylinders.
+        *   Prompt says: "Set $fn = 64 (or more) on curved shapes".
+        *   I should set it globally to be safe, or specifically on cylinders.
+        *   Usually setting it at the top level affects everything.
+        *   I will set `$fn = 64` at the top.
+
+    *   **Variables:**
+        *   `DISC_DIAMETER = 85`
+        *   `DISC_THICKNESS = 2`
+        *   `GRID_SIZE = 7`
+        *   `HOLE_DIAMETER = 3`
+        *   `HOLE_SPACING = 9`
+        *   `NOTCH_WIDTH = 10`
+        *   `NOTCH_DEPTH = 4`
+        *   `RIM_RADIUS = DISC_DIAMETER / 2`
+        *   `NOTCH_Y_CENTER = RIM_RADIUS - NOTCH_DEPTH / 2`
+        *   `NOTCH_X_CENTER = 0`
+        *   `NOTCH_X_HALF = NOTCH_WIDTH / 2`
+        *   `NOTCH_Y_HALF = NOTCH_DEPTH / 2`
+        *   `HOLE_COUNT = GRID_SIZE`
+        *   `HOLE_OFFSET = (HOLE_COUNT - 1) * HOLE_SPACING / 2`
+        *   `CUT_EXTENSION = 0.05` (Rule 5 says 0.01-1 mm).
+
+    *   **Wait, check Notch Position:**
+        *   "rectangular orientation notch into the rim on the +Y side, centred on the Y axis".
+        *   "10 mm wide (X)".
+        *   "4 mm deep (Y, measured in from the rim)".
+        *   Rim is at Y = 42.5.
+        *   Deep 4mm in from rim -> Y range [38.5, 42.5].
+        *   Center Y = 40.5.
+        *   Width 10mm -> X range [-5, 5].
+        *   Center X = 0.
+        *   This matches my calculation.
+
+    *   **Check Hole Grid:**
+        *   7x7.
+        *   Spacing 9mm.
+        *   Centered on disc.
+        *   Max extent = 3 * 9 = 27mm.
+        *   Disc radius = 42.5mm.
+        *   27 < 42.5. Holes are well within the disc.
+        *   Notch is at Y ~ 40.5. Holes max Y = 27.
+        *   No interference between notch and holes.
+
+    *   **Check Orientation:**
+        *   "lying on the bed... at z = 0".
+        *   "builds upward (+Z)".
+        *   "Centre it on the origin in X and Y".
+        *   My `translate([0, 0, 1]) cube([85, 85, 2])` puts Z from 0 to 2. X/Y from -42.5 to 42.5.
+        *   This is correct.
+
+    *   **Check Difference Cuts:**
+        *   Rule 5: "extend 0.01-1 mm past the faces it cuts".
+        *   Main body Z: 0 to 2.
+        *   Cut shapes Z: -0.01 to 2.01.
+        *   This ensures the top and bottom faces are fully removed.
+
+    *   **Check $fn:**
+        *   Rule 6: "Set $fn = 64 (or more) on curved shapes".
+        *   I will set `$fn = 64` at the top level.
+
+    *   **Check Code Structure:**
+        *   Variables at top.
+        *   `module` or just script?
+        *   "Write one complete, self-contained OpenSCAD file".
+        *   Usually just the script body is fine, but variables at top is required.
+        *   I will put variables, then the main block.
+
+    *   **Wait, one detail:**
+        *   "Cut a rectangular orientation notch into the rim".
+        *   Does "into the rim" imply it cuts the side wall or the top surface?
+        *   If it cuts the top surface, it's a notch on the top face.
+        *   If it cuts the side wall, it's a notch on the side.
+        *   "4 mm deep (Y, measured in from the rim)".
+        *   If it were on the side wall, "deep" would usually mean Z depth.
+        *   Since it says "deep (Y)", it implies the cut goes along the Y axis.
+        *   So it removes material from the top surface, extending inwards along Y.
+        *   This creates a rectangular indentation on the top face near the edge.
+        *   This is consistent with my `cube([10, 4, 2])` cut.
+        *   Wait, if I cut a `cube` of height 2 (Z=0 to 2), it removes the material from the top face down to the bottom.
+        *   This creates a notch on the rim.
+        *   This seems correct for an orientation feature.
+
+    *   **Final check on variables:**
+        *   Need to ensure all dimensions are variables.
+        *   Need to ensure comments are short.
+        *   Need to ensure no external libraries.
+        *   Need to ensure valid solid.
+
+    *   **One potential issue:**
+        *   `difference()` with `cube` and `cylinder`.
+        *   If the cutting shape is exactly the same size as the body in Z, it might leave a thin line.
+        *   Extending Z by 0.05mm is good practice per Rule 5.
+        *   I will use `CUT_EXTENSION = 0.05`.
+        *   Body Z: 0 to 2.
+        *   Cut Z: -0.05 to 2.05.
+        *   Cut Height: 2.1.
+        *   Cut Z Center: 1.025.
+        *   Wait, `translate([0, 0, 1]) cube([85, 85, 2])` -> Z range [0, 2].
+        *   Cut shape `cube([10, 4, 2.1])` -> Z range [0, 2.1] if centered at 1.05.
+        *   Let's calculate center precisely.
+        *   Body Z range: 0 to 2.
+        *   Cut Z range: -0.05 to 2.05.
+        *   Cut Height: 2.1.
+        *   Cut Center Z: 1.025.
+        *   So `translate([0, 40.5, 1.025]) cube([10, 4, 2.1])`.
+        *   Hole Cylinder: `translate([x, y, 1.025]) cylinder(d=3, h=2.1)`.
+        *   This ensures clean cuts.
+
+    *   **Wait, Rule 5:** "extend 0.01-1 mm past the faces it cuts".
+        *   So 0.05 is fine.
+        *   I'll use `CUT_OVERLAP = 0.05`.
+        *   Body Height = 2.
+        *   Cut Height = 2 + 2 * CUT_OVERLAP = 2.1.
+        *   Cut Z Center = 1 + CUT_OVERLAP = 1.05.
+        *   Wait, if body is 0 to 2. Center is 1.
+        *   If I extend 0.05 past top (2) and bottom (0).
+        *   New range: -0.05 to 2.05.
+        *   Center: 1.0.
+        *   Height: 2.1.
+        *   So `translate([0, 0, 1])` for body.
+        *   `translate([0, 0, 1])` for cut shape?
+        *   If I use `translate([0, 0, 1]) cube([85, 85, 2])`, the body is 0 to 2.
+        *   If I use `translate([0, 0, 1]) cube([10, 4, 2.1])`, the cut is -0.05 to 2.05.
+        *   This works.
+        *   Wait, `translate([0, 0, 1])` centers the cube at Z=1.
+        *   Cube height 2 -> Z=0 to 2.
+        *   Cube height 2.1 -> Z=-0.05 to 2.05.
+        *   Yes.
+        *   So I will use `CUT_OVERLAP = 0.05`.
+        *   Body Height = 2.
+        *   Cut Height = 2 + 2 * CUT_OVERLAP.
+        *   Cut Z Center = 1.
+        *   Wait, if I translate the cut shape by `1`, it is centered at Z=1.
+        *   So Z range is `1 - Height/2` to `1 + Height/2`.
+        *   `1 - 1.05 = -0.05`. `1 + 1.05 = 2.05`.
+        *   This works perfectly.
+
+    *   **Wait, one more check:**
+        *   "lying on the bed... at z = 0".
+        *   If I use `translate([0, 0, 1]) cube([85, 85, 2])`, the bottom is at Z=0.
+        *   This is correct.
+        *   If I use `translate([0, 0, 1]) cube([10, 4, 2.1])`, the cut shape goes from Z=-0.05 to Z=2.05.
+        *   This cuts through the body (0 to 2) and extends past both faces.
+        *   This satisfies Rule 5.
+
+    *   **Code Structure:**
+        *   Variables.
+        *   $fn = 64.
+        *   Module for holes? Or just loop in main block.
+        *   Prompt says "Write one complete, self-contained OpenSCAD file".
+        *   I can use modules for cleanliness, but loops in main block are fine.
+        *   I'll use a module for the main part to keep it clean, but variables must be at top.
+        *   Actually, putting everything in the main block is safer for "self-contained" without module nesting issues if I'm not careful, but modules are standard OpenSCAD.
+        *   I will put the main logic in the global scope.
+        *   Wait, `difference` must be at the top level of the script or inside a module.
+        *   I'll put the `difference` block at the top level.
+
+    *   **Wait, Rule 2:** "Put every dimension in a named variable at the top of the file".
+        *   I need to make sure I don't hardcode numbers in the geometry logic.
+        *   I will calculate derived values (like grid offsets) using variables.
+
+    *   **Wait, Rule 1:** "Units are millimetres. Use the user's dimensions exactly".
+        *   I will use the variables for the exact numbers.
+
+    *   **Wait, Rule 3:** "Model the part in the print orientation the user gives: it rests on the XY plane at z = 0 and builds upward (+Z). Unless told otherwise, centre it on the origin in X and Y."
+        *   My plan: `translate([0, 0, 1]) cube([85, 85, 2])`.
+        *   This centers X/Y at 0. Z bottom at 0.
+        *   Correct.
+
+    *   **Wait, Rule 7:** "Build repeated features (hole grids, slots, teeth, grooves) with for loops."
+        *   I will use `for` loops for the holes.
+
+    *   **Wait, Rule 4:** "Use only built-in OpenSCAD".
+        *   I am using `cube`, `cylinder`, `translate`, `difference`, `for`.
+        *   All good.
+
+    *   **Wait, Rule 6:** "Set $fn = 64 (or more) on curved shapes".
+        *   I will set `$fn = 64` at the top.
+
+    *   **Wait, Rule 5:** "In difference(), make every cutting shape extend 0.01-1 mm past the faces it cuts".
+        *   I will use `CUT_OVERLAP = 0.05`.
+
+    *   **Wait, Notch Logic:**
+        *   "rectangular orientation notch into the rim on the +Y side".
+        *   "centred on the Y axis".
+        *   "10 mm wide (X)".
+        *   "4 mm deep (Y, measured in from the rim)".
+        *   My calculation:
+            *   Rim Y = 42.5.
+            *   Notch Y range: 38.5 to 42.5.
+            *   Notch Y Center: 40.5.
+            *   Notch X range: -5 to 5.
+            *   Notch X Center: 0.
+            *   Notch Z range: -0.05 to 2.05 (to cut through).
+        *   This seems correct.
+
+    *   **Wait, Grid Logic:**
+        *   7x7.
+        *   Spacing 9.
+        *   Center 0,0.
+        *   Indices 0 to 6.
+        *   Offset = (i - 3) * 9.
+        *   This creates -27, -18, -9, 0, 9, 18, 27.
+        *   Correct.
+
+    *   **Wait, Hole Logic:**
+        *   Diameter 3.
+        *   Height 2.01 (2 + 2*0.005? No, 2 + 2*0.05 = 2.1).
+        *   Wait, `CUT_OVERLAP = 0.05`.
+        *   Height = 2 + 2 * 0.05 = 2.1.
+        *   Z Center = 1.
+        *   So `translate([x, y, 1]) cylinder(d=3, h=2.1)`.
+        *   This ensures the hole goes from Z=-0.05 to Z=2.05.
+        *   The body is Z=0 to Z=2.
+        *   So the hole cuts through completely.
+        *   Correct.
+
+    *   **Wait, Notch Logic:**
+        *   `translate([0, 40.5, 1]) cube([10, 4, 2.1])`.
+        *   This cuts from Z=-0.05 to Z=2.05.
+        *   Correct.
+
+    *   **Wait, Variable Naming:**
+        *   Clear and descriptive.
+        *   Comments for each.
+
+    *   **Wait, Code Block:**
+        *   Must be ```openscad.
+
+    *   **Wait, Final Check:**
+        *   "Reply with only the code, in a single ```openscad code block."
+        *   No text outside.
+
+    *   **Wait, One Detail:**
+        *   "7 x 7 grid of 3 mm diameter through-holes with 9 mm centre-to-centre spacing, centred on the disc."
+        *   Does "centred on the disc" mean the grid center is the disc center? Yes.
+        *   Does "9 mm centre-to-centre spacing" mean pitch is 9mm? Yes.
+        *   Does "7 x 7" mean 7 holes in X and 7 holes in Y? Yes.
+        *   My calculation: `(7-1)*9 = 54`. Half span = 27.
+        *   Indices 0..6. `(i-3)*9`.
+        *   i=0 -> -27. i=6 -> 27.
+        *   Correct.
+
+    *   **Wait, Notch Depth:**
+        *   "4 mm deep (Y, measured in from the rim)".
+        *   Rim Y = 42.5.
+        *   In from rim means towards center.
+        *   So Y goes from 42.5 down to 38.5.
+        *   My calculation: `NOTCH_Y_START = RIM_RADIUS - NOTCH_DEPTH`.
+        *   `NOTCH_Y_END = RIM_RADIUS`.
+        *   Center = `RIM_RADIUS - NOTCH_DEPTH / 2`.
+        *   `42.5 - 2 = 40.5`.
+        *   Correct.
+
+    *   **Wait, Notch Width:**
+        *   "10 mm wide (X)".
+        *   Centered on Y axis (X=0).
+        *   So X from -5 to 5.
+        *   Correct.
+
+    *   **Wait, Cut Extension:**
+        *   Rule 5: "extend 0.01-1 mm past the faces it cuts".
+        *   I will use `0.05`.
+        *   I need to make sure I don't hardcode `2.1` but calculate it.
+        *   `PART_HEIGHT = 2`.
+        *   `CUT_OVERLAP = 0.05`.
+        *   `CUT_HEIGHT = PART_HEIGHT + 2 * CUT_OVERLAP`.
+        *   `CUT_Z_CENTER = PART_HEIGHT / 2`.
+        *   Wait, if I use `translate([0, 0, 1])`, the center is 1.
+        *   So `CUT_Z_CENTER = 1`.
+        *   `CUT_HEIGHT = 2.1`.
+        *   This is consistent.
+
+    *   **Wait, One more thing:**
+        *   "Reply with only the code".
+        *   I must not include any markdown text outside the code block.
+        *   Wait, the instruction says "Reply with only the code, in a single ```openscad code block."
+        *   So I should output the code block.
+
+    *   **Wait, Variable Comments:**
+        *   "with a short comment".
+        *   I will add `//` comments.
+
+    *   **Wait, $fn:**
+        *   I will set `$fn = 64` at the top.
+
+    *   **Wait, Module vs Script:**
+        *   I'll write it as a script.
+        *   Variables first.
+        *   Then `difference()`.
+        *   Then `union()` (implicit, just the body).
+        *   Then `difference()` inside `difference()`? No.
+        *   Structure:
+            ```openscad
+            $fn = 6

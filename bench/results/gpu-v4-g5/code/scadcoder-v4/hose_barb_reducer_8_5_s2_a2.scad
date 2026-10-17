@@ -1,0 +1,59 @@
+// Hose-barb reducer: joins 8 mm inner-diameter silicone tubing to 5 mm inner-diameter tubing
+// Print orientation: standing upright along +Z, centred on origin in X/Y
+// Units: mm
+
+$fn = 96;
+
+// ---- Bore ----
+bore = 3;
+
+// ---- 8 mm tubing side (z = 0 to 20) ----
+z0      = 0;
+z_barb1 = 20;
+barb_h  = 10;
+barb_d0 = 7.5;   // outer diameter at bottom of each barb
+barb_d1 = 9.5;   // outer diameter at top of each barb
+
+// ---- 5 mm tubing side (z = 25 to 41) ----
+z_barb2 = 25;
+z_top   = 41;
+barb_h2 = 8;
+barb_d2 = 6.5;   // outer diameter at bottom of each barb
+barb_d3 = 5.0;   // outer diameter at top of each barb
+
+// ---- Collar (z = 20 to 25) ----
+z_collar0 = 20;
+z_collar1 = 25;
+collar_d  = 12;
+
+// ---- Stacking clearance ----
+eps = 0.5;
+
+// Derived
+n_barb = 2;
+d_f1 = (barb_d0 + barb_d1) / 2;
+d_f2 = (barb_d2 + barb_d3) / 2;
+
+difference() {
+    union() {
+        // 8 mm tubing barbs
+        for (i = [0 : n_barb - 1])
+            translate([0, 0, z0 + i * (barb_h + eps)])
+                linear_extrude(height = barb_h)
+                    circle(d = [barb_d0, barb_d1]);
+
+        // 5 mm tubing barbs
+        for (i = [0 : n_barb - 1])
+            translate([0, 0, z_barb2 + i * (barb_h2 + eps)])
+                linear_extrude(height = barb_h2)
+                    circle(d = [barb_d2, barb_d3]);
+
+        // Collar
+        translate([0, 0, z_collar0])
+            cylinder(d = collar_d, h = z_collar1 - z_collar0);
+    }
+
+    // Through bore
+    translate([0, 0, -1])
+        cylinder(d = bore, h = z_top + 2);
+}

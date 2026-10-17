@@ -1,0 +1,49 @@
+// Replacement knob for hotplate stirrer with 6 mm D-shaft
+// Print orientation: bottom face (z = 0) on the bed, pointing up
+
+// ---------------- Parameters ----------------
+knob_d        = 30;    // knob outer diameter
+knob_h        = 15;    // knob height
+bore_d        = 6.2;   // D-bore diameter (circle diameter)
+bore_flat     = 4.7;   // distance from D-bore flat to opposite side
+bore_depth    = 12;    // D-bore depth from bottom face
+groove_count  = 18;    // number of vertical grip grooves
+groove_d      = 2;     // groove diameter (half-cylinder)
+pointer_w     = 1.5;   // pointer groove width at top face
+pointer_d     = 3;     // pointer groove diameter at top face
+pointer_depth = 1;     // pointer groove depth from top face
+eps           = 0.5;   // overcut for clean differences
+
+$fn = 96;
+
+// ---------------- Derived ----------------
+bore_r = bore_d / 2 + 0.001;              // radius with tiny overlap
+flat_x = -bore_flat / 2 + 0.001;          // x of flat side (centred on -y)
+groove_pitch = 360 / groove_count;        // angular spacing of grooves
+
+// ---------------- Model ----------------
+difference() {
+    // Main knob body
+    cylinder(d = knob_d, h = knob_h);
+
+    // D-shaped blind bore from bottom face
+    translate([0, 0, -eps])
+        union() {
+            translate([flat_x, 0, 0])
+                cylinder(r = bore_r, h = bore_depth + 2 * eps, $fn = 64);
+            translate([0, -bore_flat / 2 - 0.001, 0])
+                cylinder(r = bore_flat / 2 + 0.001, h = bore_depth + 2 * eps);
+        }
+
+    // Vertical grip grooves along full height, centred on outer surface
+    for (i = [0 : groove_count - 1]) {
+        rotate([0, 0, i * groove_pitch])
+            translate([knob_d / 2, 0, -eps])
+                cylinder(d = groove_d, h = knob_h + 2 * eps, $fn = 64);
+    }
+
+    // Pointer groove on top face, same side as D-bore flat
+    translate([0, 0, knob_h - pointer_depth])
+        linear_extrude(height = pointer_depth + 0.01)
+            circle(d = pointer_d, $fn = 64);
+}

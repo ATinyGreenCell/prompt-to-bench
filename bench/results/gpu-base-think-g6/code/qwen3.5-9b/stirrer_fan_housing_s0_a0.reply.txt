@@ -1,0 +1,433 @@
+Thinking Process:
+
+1.  **Analyze the Request:**
+    *   **Goal:** Design a housing for a DIY magnetic stirrer based on an 80mm PC case fan.
+    *   **Orientation:** Upside-down open box. Top plate (closed) is on the bed (Z=0 to Z=2). Walls rise from Z=2 to Z=40. Open top is at Z=40.
+    *   **Dimensions:**
+        *   Outer size: 90 x 90 mm (X x Y).
+        *   Top plate thickness: 2 mm (Z=0 to Z=2).
+        *   Wall thickness: 2.5 mm.
+        *   Wall height: 2.5 mm (plate) + 38 mm (walls) = 40 mm total height.
+        *   Fan size: 80mm (implied by "80 mm PC case fan", usually the mounting hole pattern is 80mm, but the housing needs to cover it. The prompt says "covers the fan". Usually, an 80mm fan fits inside a 90mm outer box with some clearance. The prompt specifies outer size 90x90mm).
+        *   Screw holes: 4 holes, 4.5 mm diameter, M4 screws.
+        *   Screw hole pattern: 71.5 mm square, centred on the plate.
+        *   Cable notch: In one wall. 12 mm wide. Centred along the wall. Reaches 8 mm down from the open edge (Z=32 to Z=40).
+    *   **Constraints:**
+        *   Units: mm.
+        *   Variables: Named variables at top with comments.
+        *   Orientation: Rests on XY plane at Z=0.
+        *   Library: Only built-in OpenSCAD (no include, use, etc.).
+        *   Difference: Cutting shapes must extend 0.01-1 mm past faces.
+        *   Curved shapes: $fn = 64$ or more.
+        *   Loops: Use `for` loops for repeated features.
+        *   Output: Single code block.
+
+2.  **Geometry Breakdown:**
+    *   **Base (Top Plate):** 90 x 90 x 2 mm cube at Z=0.
+    *   **Walls:** Rise from Z=2 to Z=40. Thickness 2.5 mm.
+        *   Outer dimensions are 90 x 90.
+        *   Inner dimensions = Outer - 2 * Wall Thickness = 90 - 5 = 85 mm.
+        *   Wait, the fan is 80mm. 85mm inner space is good.
+        *   Walls need to be positioned correctly.
+        *   Since it's an open box, I can model the walls as a block and subtract the inner void, or build walls individually.
+        *   Better approach for 3D printing: Build the solid block (90x90x40) and subtract the inner void (85x85x38) starting from Z=2.
+        *   Wait, the top plate is 2mm thick. The walls rise from the top plate.
+        *   So, Base = 90x90x2.
+        *   Walls = 90x90x38 block starting at Z=2.
+        *   Inner Void = 85x85x38 block starting at Z=2.
+        *   Actually, to ensure the walls are 2.5mm thick on all sides:
+            *   Outer X: 90. Inner X: 90 - 2*2.5 = 85.
+            *   Outer Y: 90. Inner Y: 90 - 2*2.5 = 85.
+            *   Height of walls: 40 - 2 = 38.
+    *   **Screw Holes:**
+        *   4 holes, 4.5mm diameter.
+        *   Pattern: 71.5 mm square.
+        *   Centered on the plate.
+        *   Location:
+            *   Center of plate is (0,0).
+            *   Square pattern centered at (0,0) with side 71.5.
+            *   Corners of square: +/- 35.75.
+            *   Hole centers: (35.75, 35.75), (35.75, -35.75), (-35.75, 35.75), (-35.75, -35.75).
+            *   Depth: Through the top plate (Z=0 to Z=2).
+    *   **Cable Notch:**
+        *   In one wall.
+        *   Width: 12 mm.
+        *   Centred along the wall.
+        *   Reaches 8 mm down from open edge (Z=40). So Z=32 to Z=40.
+        *   Which wall? "In one wall". Let's pick the front wall (e.g., +Y wall or -Y wall). Usually, standard orientation implies +Y or -Y. Let's pick the wall at Y = 45 (Outer Y/2) or similar.
+        *   Outer Y is 90. Center is 0. Walls are from Y=42.5 to Y=47.5 (Right/Left) and X=42.5 to X=47.5 (Front/Back).
+        *   Let's define the notch on the wall at Y = 45 (Front wall, facing +Y).
+        *   Notch width 12mm. Centered along the wall.
+        *   Wall X range: -45 to +45 (Outer). Inner X range: -42.5 to +42.5.
+        *   Wait, Wall thickness is 2.5mm.
+        *   Outer X: -45 to 45. Inner X: -42.5 to 42.5.
+        *   Notch is in the wall material.
+        *   If the wall is at Y=45 (Outer edge), the wall spans X from -45 to 45.
+        *   Notch width 12mm. Centered on X=0. So X from -6 to +6.
+        *   Depth: Z from 32 to 40.
+        *   Wait, the notch needs to cut *through* the wall thickness?
+        *   "In one wall, cut a notch... reaching 8 mm down from the open edge".
+        *   Usually, a cable notch goes through the wall thickness so the cable can pass through.
+        *   Wall thickness is 2.5mm.
+        *   So the notch should cut from the outer face (Z=40) inwards to Z=32, and through the wall thickness (X or Y direction).
+        *   Let's assume the notch is on the +Y wall (Front).
+        *   The wall exists at Y roughly 42.5 to 47.5 (Inner to Outer).
+        *   Wait, if Outer is 90, Center is 0.
+        *   Top Plate: X: -45 to 45, Y: -45 to 45.
+        *   Walls:
+            *   Front (+Y): Y: 42.5 to 47.5. X: -45 to 45.
+            *   Back (-Y): Y: -47.5 to -42.5. X: -45 to 45.
+            *   Right (+X): X: 42.5 to 47.5. Y: -45 to 45.
+            *   Left (-X): X: -47.5 to -42.5. Y: -45 to 45.
+        *   Notch on Front Wall (+Y).
+        *   Cut through the wall thickness (Y direction).
+        *   Y range of notch: 42.5 to 47.5 (Full wall thickness).
+        *   X range of notch: Centered at X=0. Width 12mm. So X: -6 to 6.
+        *   Z range of notch: 32 to 40.
+        *   Wait, the prompt says "reaching 8 mm down from the open edge (from z = 32 to z = 40)".
+        *   So the notch is a rectangular cutout.
+        *   Dimensions: X: -6 to 6 (12mm), Y: 42.5 to 47.5 (2.5mm wall thickness), Z: 32 to 40 (8mm depth).
+        *   Wait, does it need to be a slot or a hole? "Notch". Usually implies a slot cut into the wall.
+        *   So I need to subtract a block: X: -6 to 6, Y: 42.5 to 47.5, Z: 32 to 40.
+
+3.  **Variable Definition:**
+    *   `OUTER_SIZE_X = 90`
+    *   `OUTER_SIZE_Y = 90`
+    *   `PLATE_THICKNESS = 2`
+    *   `WALL_THICKNESS = 2.5`
+    *   `TOTAL_HEIGHT = 40`
+    *   `WALL_HEIGHT = TOTAL_HEIGHT - PLATE_THICKNESS` (38)
+    *   `INNER_SIZE_X = OUTER_SIZE_X - 2 * WALL_THICKNESS` (85)
+    *   `INNER_SIZE_Y = OUTER_SIZE_Y - 2 * WALL_THICKNESS` (85)
+    *   `SCREW_HOLE_COUNT = 4`
+    *   `SCREW_HOLE_DIAMETER = 4.5`
+    *   `SCREW_PATTERN_SIZE = 71.5`
+    *   `CABLE_NOTCH_WIDTH = 12`
+    *   `CABLE_NOTCH_DEPTH_Z = 8` (From Z=40 down to 32)
+    *   `CABLE_NOTCH_Z_START = 32`
+    *   `CABLE_NOTCH_Z_END = 40`
+
+4.  **Drafting the Code:**
+
+    *   **Main Block:**
+        *   `translate([0,0,0])`
+        *   `difference()`
+        *   `union()`
+            *   `cube([OUTER_SIZE_X, OUTER_SIZE_Y, PLATE_THICKNESS])` (Base)
+            *   `translate([0,0,PLATE_THICKNESS])`
+            *   `cube([OUTER_SIZE_X, OUTER_SIZE_Y, WALL_HEIGHT])` (Walls outer shell)
+        *   `difference()` (Holes/Notches)
+            *   `translate([0,0,PLATE_THICKNESS])`
+            *   `cube([INNER_SIZE_X, INNER_SIZE_Y, WALL_HEIGHT])` (Inner void)
+            *   `translate([0,0,0])`
+            *   `for (i = [0, 1, 2, 3])` ... Screw holes.
+            *   `translate([0,0,CABLE_NOTCH_Z_START])` ... Cable notch.
+
+    *   **Refining the Geometry:**
+        *   To ensure the walls are exactly 2.5mm thick and the inner void is correct:
+        *   Outer Block: 90 x 90 x 40.
+        *   Inner Void: 85 x 85 x 38.
+        *   Wait, if I subtract the inner void from the outer block, I get a hollow box.
+        *   Then I subtract the screw holes from the top plate (Z=0 to Z=2).
+        *   Then I subtract the cable notch from the wall.
+        *   Wait, the cable notch is in the wall.
+        *   If I model the solid as Outer Block minus Inner Void, the walls exist.
+        *   The cable notch needs to be subtracted from this solid.
+        *   Screw holes need to be subtracted from the solid (specifically the top plate part).
+        *   Constraint Check: "In difference(), make every cutting shape extend 0.01-1 mm past the faces it cuts".
+        *   This applies to the Inner Void and the Notch/Holes.
+        *   Inner Void: Z=2 to Z=40. X: +/- 42.5. Y: +/- 42.5.
+        *   Wait, Inner Size is 85. Half is 42.5.
+        *   Outer Size is 90. Half is 45.
+        *   Wall thickness = 45 - 42.5 = 2.5. Correct.
+        *   Inner Void Z: 2 to 40. Height 38.
+        *   Outer Block Z: 0 to 40.
+        *   Screw Holes: Z=0 to Z=2.
+        *   Cable Notch: Z=32 to Z=40.
+        *   Wait, the cable notch cuts through the wall thickness.
+        *   Wall thickness is 2.5mm.
+        *   If the notch is on the +Y wall (Y=42.5 to 47.5).
+        *   The notch needs to span the full wall thickness in Y.
+        *   So Y range: 42.5 to 47.5.
+        *   X range: -6 to 6 (12mm wide).
+        *   Z range: 32 to 40.
+        *   Wait, the notch needs to extend past the faces it cuts.
+        *   It cuts the outer face (Z=40) and the inner face (Z=32).
+        *   It cuts the inner wall face (Y=42.5) and outer wall face (Y=47.5).
+        *   So the cutting shape should be slightly larger than the void it creates.
+        *   Void: X: -6 to 6, Y: 42.5 to 47.5, Z: 32 to 40.
+        *   Cutting Shape: X: -6.01 to 6.01, Y: 42.49 to 47.51, Z: 31.99 to 40.01.
+        *   Actually, usually "extend past the faces it cuts" means if I am cutting a hole in a wall, the hole shape should be slightly bigger than the wall thickness so it doesn't leave a thin rim.
+        *   However, for the cable notch, it's a slot.
+        *   Let's ensure the subtraction shape is slightly larger in all dimensions to ensure clean cuts.
+        *   Screw holes: Diameter 4.5. Cutting cylinder: Diameter 4.51.
+        *   Inner Void: 85x85x38. Cutting box: 85.01 x 85.01 x 38.01.
+        *   Cable Notch: 12x2.5x8. Cutting box: 12.01 x 2.51 x 8.01.
+
+    *   **Screw Hole Loop:**
+        *   Pattern 71.5mm square.
+        *   Center (0,0).
+        *   Offset X: 71.5 / 2 = 35.75.
+        *   Offset Y: 71.5 / 2 = 35.75.
+        *   Positions:
+            *   (35.75, 35.75)
+            *   (35.75, -35.75)
+            *   (-35.75, 35.75)
+            *   (-35.75, -35.75)
+        *   Loop `for (i = [0, 1, 2, 3])`
+        *   `translate([i % 2 == 0 ? 35.75 : -35.75, i % 2 == 0 ? 35.75 : -35.75])`
+        *   Or simpler: `for (x = [-35.75, 35.75]) for (y = [-35.75, 35.75])`
+        *   Wait, `for` loop syntax in OpenSCAD: `for (i = [0, 1, 2, 3])`.
+        *   Let's use `for (i = [0, 1, 2, 3])` and calculate X/Y based on `i`.
+        *   Or `for (x = [-35.75, 35.75]) for (y = [-35.75, 35.75])`. This is cleaner.
+        *   Wait, `for` loops in OpenSCAD allow nested loops.
+        *   `for (x = [-35.75, 35.75]) for (y = [-35.75, 35.75])`
+        *   Wait, the prompt says "Use only built-in OpenSCAD... for".
+        *   Nested `for` is allowed.
+        *   Wait, `for` loop variable naming. `x` and `y` are fine.
+        *   Wait, `for (x = [-35.75, 35.75])` creates a list.
+        *   Wait, `for (x = [-35.75, 35.75])` is valid.
+        *   Wait, I need to check if `for` loops work with `translate` inside `difference`.
+        *   Yes.
+        *   Wait, `for` loops in OpenSCAD are `for (variable = [list])`.
+        *   So `for (x = [-35.75, 35.75]) for (y = [-35.75, 35.75])` works.
+
+    *   **Cable Notch Position:**
+        *   "In one wall". Let's pick the wall at Y > 0 (Front).
+        *   Wall Y range: 42.5 to 47.5.
+        *   Notch Y range: 42.5 to 47.5.
+        *   Notch X range: -6 to 6.
+        *   Notch Z range: 32 to 40.
+        *   Wait, the notch cuts *through* the wall.
+        *   So the notch shape is X: -6 to 6, Y: 42.5 to 47.5, Z: 32 to 40.
+        *   Wait, if I subtract this, I remove the material.
+        *   Wait, does the notch need to be centered on the wall?
+        *   "Centred along the wall".
+        *   Wall width (X) is 90mm. Center is 0.
+        *   Notch width 12mm. Center is 0.
+        *   So X: -6 to 6.
+        *   Wall position (Y): 42.5 to 47.5.
+        *   So Y: 42.5 to 47.5.
+        *   Z: 32 to 40.
+
+    *   **$fn:**
+        *   "Set $fn = 64 (or more) on curved shapes".
+        *   Screw holes are cylinders.
+        *   So `cylinder(d = SCREW_HOLE_DIAMETER, h = PLATE_THICKNESS, $fn = 64)`.
+
+    *   **Difference Logic:**
+        *   Main Body: `cube([90, 90, 40])`.
+        *   Inner Void: `translate([0, 0, 2]) cube([85, 85, 38])`.
+        *   Screw Holes: `translate([0, 0, 0]) cylinder(...)`.
+        *   Cable Notch: `translate([0, 42.5, 32]) cube([12, 2.5, 8])`.
+        *   Wait, I need to ensure the cutting shapes extend past the faces.
+        *   Inner Void: `translate([0, 0, 2]) cube([85.01, 85.01, 38.01])`.
+        *   Screw Holes: `translate([x, y, 0]) cylinder(d = 4.51, h = 2, $fn = 64)`.
+        *   Cable Notch: `translate([0, 42.5, 32]) cube([12.01, 2.51, 8.01])`.
+        *   Wait, the cable notch Y range is 42.5 to 47.5.
+        *   If I use `translate([0, 42.5, 32]) cube([12, 2.5, 8])`, the Y range is 42.5 to 45.
+        *   Wait, Wall thickness is 2.5.
+        *   Outer Y is 45. Inner Y is 42.5.
+        *   So the wall is Y: 42.5 to 45.
+        *   Wait, Outer Size 90. Half is 45.
+        *   Inner Size 85. Half is 42.5.
+        *   So the wall is between Y=42.5 and Y=45.
+        *   Wait, previously I said 47.5.
+        *   Let's re-calculate.
+        *   Outer X: -45 to 45.
+        *   Inner X: -42.5 to 42.5.
+        *   Wall Thickness: 2.5.
+        *   So Wall is X: 42.5 to 45 (Right) and X: -45 to -42.5 (Left).
+        *   Wall is Y: 42.5 to 45 (Front) and Y: -45 to -42.5 (Back).
+        *   Okay, so the Front Wall is Y: 42.5 to 45.
+        *   Notch needs to be in this wall.
+        *   So Notch Y range: 42.5 to 45.
+        *   Notch X range: -6 to 6.
+        *   Notch Z range: 32 to 40.
+        *   Wait, does the notch cut through the wall thickness? Yes.
+        *   So the notch shape is X: -6 to 6, Y: 42.5 to 45, Z: 32 to 40.
+        *   Wait, if I subtract this, I remove the material.
+        *   Wait, the wall is Y: 42.5 to 45.
+        *   So the notch Y range must match the wall Y range.
+        *   So `translate([0, 42.5, 32]) cube([12, 2.5, 8])`.
+        *   Wait, `translate` Y is 42.5. Cube Y size is 2.5. Range is 42.5 to 45. Correct.
+        *   Wait, I need to extend past faces.
+        *   Y: 42.49 to 45.01.
+        *   X: -6.01 to 6.01.
+        *   Z: 31.99 to 40.01.
+
+    *   **Wait, one detail:** "Model it in print orientation, i.e. upside down: the 2 mm thick top plate lies on the bed (z = 0 to 2)".
+        *   This means the closed top is at Z=0.
+        *   The fan is underneath (Z < 0).
+        *   The walls rise from Z=2 to Z=40.
+        *   The open top is at Z=40.
+        *   This matches my geometry.
+
+    *   **Wait, another detail:** "In one wall, cut a notch... reaching 8 mm down from the open edge (from z = 32 to z = 40)".
+        *   Open edge is at Z=40.
+        *   Reaching 8mm down means Z=32 to Z=40.
+        *   This matches my geometry.
+
+    *   **Wait, another detail:** "four 4.5 mm holes for M4 screws through the top plate on a 71.5 mm square pattern centred on the plate".
+        *   Top plate is Z=0 to Z=2.
+        *   Holes go through Z=0 to Z=2.
+        *   Pattern 71.5mm square centered on plate (0,0).
+        *   This matches my geometry.
+
+    *   **Wait, another detail:** "Use only built-in OpenSCAD... Do not use include, use or any external library."
+        *   I must not use `use` or `include`.
+        *   I must use `for` loops.
+
+    *   **Wait, another detail:** "In difference(), make every cutting shape extend 0.01-1 mm past the faces it cuts".
+        *   Inner Void: 85.01 x 85.01 x 38.01.
+        *   Screw Holes: 4.51 diameter.
+        *   Cable Notch: 12.01 x 2.51 x 8.01.
+        *   Wait, for the cable notch, the Y dimension is the wall thickness.
+        *   If I extend Y past 45.01, it might cut into the adjacent wall (Right wall at X=42.5 to 45).
+        *   Wait, the notch is in the Front Wall (Y=42.5 to 45).
+        *   The Right Wall is X=42.5 to 45.
+        *   If I extend Y to 45.01, it's fine, it just cuts slightly past the outer face.
+        *   If I extend X to 6.01, it cuts into the wall thickness.
+        *   Wait, the notch is 12mm wide. Centered at 0.
+        *   So X: -6 to 6.
+        *   Wall thickness is 2.5mm.
+        *   The notch cuts through the wall.
+        *   So the notch shape should be slightly larger than the void it creates.
+        *   Void: X: -6 to 6, Y: 42.5 to 45, Z: 32 to 40.
+        *   Cutting Shape: X: -6.01 to 6.01, Y: 42.49 to 45.01, Z: 31.99 to 40.01.
+        *   Wait, if I make Y 42.49 to 45.01, it cuts slightly into the inner face (42.5) and outer face (45).
+        *   This is good for clean cuts.
+        *   Wait, does it cut into the adjacent wall?
+        *   Adjacent wall is Right Wall (X: 42.5 to 45).
+        *   Notch X range is -6 to 6.
+        *   So it doesn't touch the Right Wall.
+        *   So Y extension is safe.
+
+    *   **Wait, Inner Void:**
+        *   Inner Void is 85x85x38.
+        *   Outer is 90x90x40.
+        *   Inner Void starts at Z=2.
+        *   Cutting Shape: 85.01 x 85.01 x 38.01.
+        *   Translate: [0, 0, 2].
+        *   This ensures the walls are slightly thicker than 2.5mm (85.01 vs 90).
+        *   Wait, 90 - 85.01 = 4.99. Half is 2.495.
+        *   So walls are 2.495mm thick.
+        *   This is within the 0.01-1mm extension rule.
+        *   Wait, the rule says "extend 0.01-1 mm past the faces it cuts".
+        *   So if the face is at 45, the cut should be at 45.01.
+        *   So Inner Void X should be 85.01.
+        *   Outer X is 90.
+        *   Wall thickness = (90 - 85.01) / 2 = 2.495.
+        *   This is fine.
+
+    *   **Wait, Screw Holes:**
+        *   Diameter 4.5.
+        *   Cutting Cylinder Diameter 4.51.
+        *   Height 2.
+        *   Translate Z=0.
+        *   This ensures clean holes.
+
+    *   **Wait, Cable Notch:**
+        *   Width 12.
+        *   Cutting Width 12.01.
+        *   Depth Z 8.
+        *   Cutting Depth 8.01.
+        *   Thickness Y 2.5.
+        *   Cutting Thickness 2.51.
+        *   Translate Z=32.
+        *   Translate Y=42.5.
+        *   Translate X=0.
+        *   Wait, if I extend Y to 45.01, it cuts past the outer face of the wall.
+        *   If I extend X to 6.01, it cuts past the inner/outer faces of the notch width.
+        *   This is correct.
+
+    *   **Wait, $fn:**
+        *   Apply to cylinders.
+        *   `cylinder(d = 4.51, h = 2, $fn = 64)`.
+
+    *   **Wait, Variables:**
+        *   Put every dimension in a named variable at the top.
+        *   Include comments.
+
+    *   **Wait, Code Structure:**
+        *   Variables.
+        *   `module housing() { ... }` or just top level.
+        *   Prompt says "Write one complete, self-contained OpenSCAD file".
+        *   Usually top level is fine.
+        *   I will use `module` for cleanliness but top level is also fine.
+        *   I'll put everything in the main block to be safe and simple.
+        *   Wait, `for` loops inside `difference` work fine.
+
+    *   **Wait, One more check:**
+        *   "Model the part in the print orientation the user gives: it rests on the XY plane at z = 0 and builds upward (+Z). Unless told otherwise, centre it on the origin in X and Y."
+        *   My geometry is centered at (0,0).
+        *   Top plate at Z=0 to Z=2.
+        *   Walls at Z=2 to Z=40.
+        *   This matches.
+
+    *   **Wait, One more check:**
+        *   "In difference(), make every cutting shape extend 0.01-1 mm past the faces it cuts".
+        *   I need to make sure I apply this to the Inner Void, Screw Holes, and Cable Notch.
+        *   Inner Void: 85.01 x 85.01 x 38.01.
+        *   Screw Holes: 4.51 diameter.
+        *   Cable Notch: 12.01 x 2.51 x 8.01.
+        *   Wait, for the Cable Notch, the Y dimension is the wall thickness.
+        *   If I make it 2.51, it cuts 0.01mm past the outer face (45.01) and inner face (42.49).
+        *   This is correct.
+
+    *   **Wait, One more check:**
+        *   "Use only built-in OpenSCAD".
+        *   I will not use `module` if it complicates things, but `module` is built-in.
+        *   I'll use `module` to keep the main block clean.
+        *   Wait, `module` is built-in.
+        *   I'll use `module housing() { ... }` and call `housing();`.
+        *   Wait, the prompt says "Write one complete, self-contained OpenSCAD file".
+        *   I can just write the code directly.
+        *   I will write the code directly to avoid any scope issues.
+
+    *   **Wait, One more check:**
+        *   "Do not use include, use or any external library."
+        *   Okay.
+
+    *   **Wait, One more check:**
+        *   "Reply with only the code, in a single ```openscad code block."
+        *   Okay.
+
+    *   **Wait, One more check:**
+        *   "Set $fn = 64 (or more) on curved shapes".
+        *   I will set it on the cylinder.
+        *   I should also set it globally or locally?
+        *   "on curved shapes".
+        *   I'll set it locally on the cylinder.
+        *   Or globally `$fn = 64;` at the top.
+        *   The prompt says "Set $fn = 64 (or more) on curved shapes".
+        *   I'll set it globally to be safe for all curved shapes (holes).
+        *   Wait, if I set it globally, it affects everything.
+        *   I'll set it on the cylinder specifically.
+        *   `cylinder(..., $fn = 64)`.
+
+    *   **Wait, One more check:**
+        *   "four 4.5 mm holes for M4 screws through the top plate on a 71.5 mm square pattern centred on the plate (the fan's mounting holes)."
+        *   Fan mounting holes are usually 80mm square for 80mm fans.
+        *   But the prompt says "71.5 mm square pattern".
+        *   I must follow the prompt.
+        *   71.5 mm square pattern.
+        *   Centered on the plate.
+        *   So X/Y offsets are +/- 35.75.
+
+    *   **Wait, One more check:**
+        *   "In one wall, cut a notch for the power cable: 12 mm wide, centred along the wall, reaching 8 mm down from the open edge (from z = 32 to z = 40)."
+        *   Wall is Y: 42.5 to 45.
+        *   Notch is Y: 42.5 to 45.
+        *   Notch is X: -6 to 6.
+        *   Notch is Z: 32 to 40.
+        *   This matches.
+
+    *   **Wait, One more check:**
+        *   "Model it in print orientation, i.e. upside down: the 2 mm thick top plate lies on the bed (z = 0 to 2)".
+        *   This means the closed side is down.
+        *   The fan is under the plate.
+        *   The walls go up.
+        *   This matches.
+
+    *   **Wait

@@ -1,0 +1,51 @@
+// Tubing organiser clip - printed flat, snaps onto a 12.7 mm stand rod and holds a small piece of tubing next to it.
+// Units: mm
+
+$fn = 96;
+
+// ---- Stand rod ring ----
+stand_d  = 12.7;   // stand rod diameter (ring inner diameter)
+stand_w  = 3;      // ring wall thickness
+stand_r  = stand_d / 2 + stand_w;  // ring outer radius
+stand_x0 = 0;      // ring centre X
+stand_y0 = 0;      // ring centre Y
+stand_wid = 10;    // opening width cut out of the -X side
+
+// ---- Tubing ring ----
+tube_d   = 6;      // tubing inner diameter
+tube_w   = 2;      // ring wall thickness
+tube_r   = tube_d / 2 + tube_w;  // ring outer radius
+tube_x0  = 15;     // ring centre X
+tube_y0  = 0;      // ring centre Y
+tube_wid = 4.5;    // opening width cut out of the +X side
+
+// ---- Bridge ----
+bridge_w   = 6;    // bridge width (Y)
+bridge_x0  = 8;    // bridge start X
+bridge_x1  = 12;   // bridge end X
+
+// ---- Cut clearance ----
+eps = 0.5;         // extension of cutters past faces
+
+difference() {
+    union() {
+        // Stand rod ring, centred at origin
+        cylinder(r = stand_r, h = 10);
+
+        // Tubing ring, centred at x = 15
+        translate([tube_x0, tube_y0, 0])
+            cylinder(r = tube_r, h = 10);
+
+        // Solid bridge between x = 8 and x = 12
+        translate([bridge_x0, -bridge_w / 2, 0])
+            cube([bridge_x1 - bridge_x0, bridge_w, 10]);
+    }
+
+    // Opening in stand rod ring: everything with x < 0 and -5 < y < 5
+    translate([stand_x0 - stand_wid / 2 - eps, -stand_wid / 2, 0])
+        cube([stand_wid + 2 * eps, stand_wid, 10 + 2 * eps]);
+
+    // Opening in tubing ring: x > 15 and -2.25 < y < 2.25
+    translate([tube_x0 + tube_wid / 2 - eps, -tube_wid / 2, 0])
+        cube([tube_wid + 2 * eps, tube_wid, 10 + 2 * eps]);
+}

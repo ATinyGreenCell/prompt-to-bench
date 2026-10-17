@@ -1,0 +1,455 @@
+Thinking Process:
+
+1.  **Analyze the Request:**
+    *   **Goal:** Design a housing for a DIY magnetic stirrer based on an 80mm PC case fan.
+    *   **Orientation:** Upside-down open box. Top plate (closed) is on the bed (Z=0 to Z=2). Walls rise from Z=2 to Z=40. Open top is at Z=40.
+    *   **Dimensions:**
+        *   Outer size: 90 x 90 mm (X x Y).
+        *   Top plate thickness: 2 mm (Z=0 to Z=2).
+        *   Wall thickness: 2.5 mm.
+        *   Wall height: 2 mm (plate) + 38 mm (walls) = 40 mm total height.
+        *   Hole pattern: 4 holes, 4.5 mm diameter, M4 screws, 71.5 mm square pattern centered on the plate.
+        *   Cable notch: One wall, 12 mm wide, centered along the wall, depth 8 mm from open edge (Z=32 to Z=40).
+    *   **Constraints:**
+        *   Units: mm.
+        *   Variables for dimensions at the top.
+        *   Orientation: XY plane at Z=0, builds upward. Centered on origin.
+        *   Built-in OpenSCAD only.
+        *   Difference cuts must extend 0.01-1 mm past faces.
+        *   $fn = 64$ for curved shapes.
+        *   Use `for` loops for repeated features.
+        *   Valid solid, no errors.
+        *   Output: Only the code in a single ```openscad block.
+
+2.  **Geometry Calculation:**
+    *   **Outer Dimensions:** 90 x 90 mm.
+    *   **Inner Dimensions:**
+        *   Outer X = 90, Outer Y = 90.
+        *   Wall Thickness = 2.5 mm.
+        *   Inner X = 90 - 2 * 2.5 = 85 mm.
+        *   Inner Y = 90 - 2 * 2.5 = 85 mm.
+    *   **Top Plate:**
+        *   Thickness = 2 mm.
+        *   Z range: 0 to 2.
+        *   Outer footprint: 90 x 90.
+    *   **Walls:**
+        *   Rise from Z=2 to Z=40.
+        *   Height = 38 mm.
+        *   Thickness = 2.5 mm.
+        *   They form a box around the inner volume (85 x 85 x 38).
+        *   Wait, the prompt says "outer size is 90 x 90 mm". Usually, this means the bounding box of the whole object.
+        *   If the top plate is 90x90 and 2mm thick, and walls are 2.5mm thick rising from it...
+        *   Let's visualize: Top plate is a solid 90x90x2 block.
+        *   Walls are attached to the edges of this plate.
+        *   If the *outer* size of the housing is 90x90, then the walls must be inside the 90x90 footprint or the plate is 90x90 and walls extend out?
+        *   "The outer size is 90 x 90 mm". This implies the maximum extent of the part is 90x90.
+        *   If the top plate is 90x90, and walls are 2.5mm thick, the inner cavity would be 90 - 2*2.5 = 85mm.
+        *   So the walls sit on the perimeter of the 90x90 plate.
+        *   Wait, if the plate is 90x90 and walls are 2.5mm thick, the inner space is 85x85.
+        *   Let's check the hole pattern: "71.5 mm square pattern centred on the plate".
+        *   If the plate is 90x90, center is (0,0).
+        *   Holes are at +/- 35.75 mm.
+        *   Inner dimension is 85mm. 35.75 + 35.75 = 71.5.
+        *   Distance from edge to hole center: (90 - 71.5) / 2 = 9.25 mm.
+        *   Hole radius = 2.25 mm.
+        *   Hole edge to wall inner edge = 9.25 - 2.25 = 7 mm.
+        *   Wall thickness = 2.5 mm.
+        *   This seems physically reasonable.
+    *   **Cable Notch:**
+        *   "In one wall". Let's pick the front wall (e.g., -Y wall or +Y wall). Let's choose the wall at Y = -45 (outer edge).
+        *   Width = 12 mm.
+        *   Centered along the wall. Wall length is 90 mm. Center is Y=0.
+        *   So notch is centered at X=0.
+        *   Range X: -6 to +6 mm.
+        *   Depth: 8 mm down from open edge (Z=40).
+        *   So Z range: 32 to 40.
+        *   Wait, "reaching 8 mm down from the open edge (from z = 32 to z = 40)".
+        *   So the notch cuts into the wall volume between Z=32 and Z=40.
+        *   The wall exists from Z=2 to Z=40.
+        *   So the notch removes material from Z=32 to Z=40.
+        *   Width 12mm.
+        *   Location: One wall. Let's use the wall at Y = -45 (negative Y side).
+        *   Wait, if the outer size is 90x90, the walls are at X = +/- 45 and Y = +/- 45.
+        *   Let's define the walls explicitly.
+        *   Wall 1: X = 45 (Right)
+        *   Wall 2: X = -45 (Left)
+        *   Wall 3: Y = 45 (Front)
+        *   Wall 4: Y = -45 (Back)
+        *   Notch in one wall. Let's pick Wall 4 (Y = -45).
+        *   Notch width 12mm centered on wall. Wall is 90mm long. Center is X=0.
+        *   So notch is X from -6 to 6.
+        *   Z from 32 to 40.
+        *   Y position: The wall is at Y = -45 (outer). Inner face is Y = -42.5.
+        *   The notch goes through the wall thickness.
+        *   So the notch shape is a rectangular prism cut out.
+        *   X: -6 to 6.
+        *   Y: -45 to -42.5 (Wall thickness).
+        *   Z: 32 to 40.
+        *   Wait, if it's a notch *in* the wall, it removes material.
+        *   The wall is defined by X=45, X=-45, Y=45, Y=-45.
+        *   Actually, usually walls are defined by the inner volume and thickness.
+        *   Let's construct the solid first, then cut.
+        *   Base: 90x90x2 block (Z=0 to 2).
+        *   Walls: 4 blocks attached to the sides of the base.
+        *   Wall Height: 38mm (Z=2 to 40).
+        *   Wall Thickness: 2.5mm.
+        *   Wall Outer X: 45. Inner X: 42.5.
+        *   Wall Outer Y: 45. Inner Y: 42.5.
+        *   So Wall 1 (Right): X: 42.5 to 45, Y: -45 to 45, Z: 2 to 40.
+        *   Wall 2 (Left): X: -45 to -42.5, Y: -45 to 45, Z: 2 to 40.
+        *   Wall 3 (Front): Y: 42.5 to 45, X: -45 to 45, Z: 2 to 40.
+        *   Wall 4 (Back): Y: -45 to -42.5, X: -45 to 45, Z: 2 to 40.
+        *   Wait, this creates a solid box 90x90x40 with a hole in the middle?
+        *   No, the prompt says "open box".
+        *   So the top is open.
+        *   So the walls stop at Z=40.
+        *   The top plate is Z=0 to 2.
+        *   So the solid is:
+            *   Base: 90x90x2.
+            *   Walls: 4 rectangles of 2.5mm thickness, 90mm length (outer), 38mm height.
+            *   Wait, if the base is 90x90, and walls are 2.5mm thick, do they sit on the edge?
+            *   Yes.
+            *   So the union of Base + 4 Walls creates the outer shape.
+            *   Inner cavity: X: -42.5 to 42.5, Y: -42.5 to 42.5, Z: 2 to 40.
+            *   Wait, if walls are 2.5mm thick and outer is 90mm.
+            *   Inner dimension = 90 - 2*2.5 = 85mm.
+            *   So Inner X: -42.5 to 42.5. Inner Y: -42.5 to 42.5.
+            *   This matches.
+    *   **Holes:**
+        *   4 holes, 4.5mm diameter.
+        *   Pattern: 71.5mm square centered on plate.
+        *   Center of plate is (0,0).
+        *   Hole centers: (+/- 35.75, +/- 35.75).
+        *   Z range: 0 to 2 (through top plate).
+        *   Difference operation.
+        *   Cut shape: Cylinder, radius 2.25mm, height 2mm (or slightly more to ensure cut).
+        *   Rule 5: "extend 0.01-1 mm past the faces it cuts".
+        *   So cut height should be 2.01mm or 2.1mm. Let's use 2.1mm.
+        *   $fn = 64$ on cylinders.
+    *   **Notch:**
+        *   One wall. Let's pick the wall at Y = -45 (Back wall).
+        *   Width 12mm. Centered along wall (X=0).
+        *   So X range: -6 to 6.
+        *   Z range: 32 to 40 (8mm deep from top Z=40).
+        *   Y range: -45 to -42.5 (Wall thickness).
+        *   Cut shape: Box.
+        *   X: -6 to 6.
+        *   Y: -45 to -42.5.
+        *   Z: 32 to 40.
+        *   Wait, the wall is at Y = -45 to -42.5.
+        *   So the cut removes this volume.
+        *   Need to ensure it cuts through the wall.
+        *   Rule 5: Extend past faces.
+        *   X: -6.01 to 6.01.
+        *   Y: -45.01 to -42.49.
+        *   Z: 31.99 to 40.01.
+        *   Wait, if I cut the wall, I need to make sure the cut shape is positioned correctly relative to the union.
+        *   The wall is part of the union.
+        *   So I define the main body, then subtract the notch.
+        *   Notch position:
+            *   X: -6 to 6.
+            *   Y: -45 to -42.5 (Wall thickness).
+            *   Z: 32 to 40.
+            *   To ensure clean cut, extend slightly.
+            *   X: -6.01 to 6.01.
+            *   Y: -45.01 to -42.49.
+            *   Z: 31.99 to 40.01.
+            *   Wait, if the wall is at Y=-45 (outer), the cut needs to go through the wall thickness.
+            *   Wall thickness is 2.5mm.
+            *   So Y range of wall is -45 to -42.5.
+            *   Cut Y range should cover this.
+            *   Let's use Y: -45.01 to -42.49.
+            *   Z range: 32 to 40. Extend to 31.99 to 40.01.
+            *   X range: -6 to 6. Extend to -6.01 to 6.01.
+
+3.  **Variable Definition:**
+    *   Outer Width (X): 90
+    *   Outer Height (Y): 90
+    *   Plate Thickness: 2
+    *   Wall Thickness: 2.5
+    *   Total Height: 40
+    *   Wall Height: 38 (40 - 2)
+    *   Hole Diameter: 4.5
+    *   Hole Pattern Size: 71.5
+    *   Notch Width: 12
+    *   Notch Depth (Z): 8 (from top)
+    *   Notch Z Start: 32 (40 - 8)
+    *   Notch Z End: 40
+    *   Notch Wall: Back (Y negative).
+
+4.  **Drafting the Code:**
+    *   Variables at top.
+    *   $fn = 64$ (global or local).
+    *   Main Body:
+        *   Union of Base and 4 Walls.
+        *   Base: Cube(90, 90, 2).
+        *   Walls: Translate to positions.
+        *   Wall 1 (Right): Translate(42.5, 0, 2). Size(2.5, 90, 38).
+        *   Wall 2 (Left): Translate(-45, 0, 2). Size(2.5, 90, 38).
+        *   Wall 3 (Front): Translate(0, 42.5, 2). Size(90, 2.5, 38).
+        *   Wall 4 (Back): Translate(0, -45, 2). Size(90, 2.5, 38).
+        *   Wait, Wall 1 and 2 are X-aligned. Wall 3 and 4 are Y-aligned.
+        *   Wall 1 (Right): X from 42.5 to 45. Y from -45 to 45. Z from 2 to 40.
+        *   Wall 2 (Left): X from -45 to -42.5. Y from -45 to 45. Z from 2 to 40.
+        *   Wall 3 (Front): Y from 42.5 to 45. X from -45 to 45. Z from 2 to 40.
+        *   Wall 4 (Back): Y from -45 to -42.5. X from -45 to 45. Z from 2 to 40.
+        *   Wait, if I use Translate + Cube, I need to be careful with dimensions.
+        *   Wall 1: Translate(42.5, 0, 2). Cube(2.5, 90, 38).
+        *   Wall 2: Translate(-45, 0, 2). Cube(2.5, 90, 38).
+        *   Wall 3: Translate(0, 42.5, 2). Cube(90, 2.5, 38).
+        *   Wall 4: Translate(0, -45, 2). Cube(90, 2.5, 38).
+        *   This creates the box shape correctly.
+    *   Holes:
+        *   Loop i = -1 to 1, j = -1 to 1.
+        *   Center X = i * (71.5 / 2).
+        *   Center Y = j * (71.5 / 2).
+        *   Translate(CenterX, CenterY, 1).
+        *   Cylinder(D=4.5, h=2.1, $fn=64).
+        *   Difference.
+    *   Notch:
+        *   Translate(0, -45, 32).
+        *   Box(12, 2.5, 8).
+        *   Wait, the notch is in the wall at Y=-45.
+        *   The wall is at Y=-45 to -42.5.
+        *   So the notch Y dimension is 2.5.
+        *   X dimension is 12.
+        *   Z dimension is 8.
+        *   Position: X=0, Y=-45, Z=32.
+        *   Wait, if I translate(0, -45, 32) and use Cube(12, 2.5, 8).
+        *   X: -6 to 6.
+        *   Y: -45 to -42.5.
+        *   Z: 32 to 40.
+        *   This matches the wall location exactly.
+        *   Need to extend slightly for Rule 5.
+        *   Translate(0, -45.01, 31.99). Cube(12.02, 2.52, 8.02).
+        *   Or just translate and use slightly larger dimensions.
+        *   Let's use Translate(0, -45, 32) and Cube(12.02, 2.52, 8.02).
+        *   Wait, if I translate(0, -45, 32), the cube is centered at 0, -45, 32.
+        *   So X: -6.01 to 6.01.
+        *   Y: -45 - 1.26 to -45 + 1.26 = -46.26 to -43.74.
+        *   This is wrong. The wall is at Y=-45 to -42.5.
+        *   I need the notch to be *in* the wall.
+        *   So the notch Y range must be -45 to -42.5.
+        *   So Translate(0, -45, 32) is the corner of the notch.
+        *   Cube(12, 2.5, 8).
+        *   X: -6 to 6.
+        *   Y: -45 to -42.5.
+        *   Z: 32 to 40.
+        *   To extend past faces:
+        *   X: -6.01 to 6.01.
+        *   Y: -45.01 to -42.49.
+        *   Z: 31.99 to 40.01.
+        *   So Translate(0, -45.01, 31.99). Cube(12.02, 2.52, 8.02).
+        *   Wait, if I translate Y by -45.01, the cube starts at -45.01.
+        *   Cube height 2.52. Ends at -42.49.
+        *   This covers the wall Y range (-45 to -42.5) plus a bit.
+        *   This works.
+
+5.  **Refining Variables:**
+    *   OuterSize = 90
+    *   PlateThickness = 2
+    *   WallThickness = 2.5
+    *   TotalHeight = 40
+    *   WallHeight = TotalHeight - PlateThickness
+    *   HoleDiameter = 4.5
+    *   HolePatternSize = 71.5
+    *   NotchWidth = 12
+    *   NotchDepthZ = 8
+    *   NotchZStart = TotalHeight - NotchDepthZ
+    *   NotchZEnd = TotalHeight
+    *   NotchWallY = -OuterSize / 2
+
+6.  **Refining Logic:**
+    *   Center the part on origin.
+    *   Top plate Z=0 to 2.
+    *   Walls Z=2 to 40.
+    *   Outer X/Y = +/- 45.
+    *   Inner X/Y = +/- 42.5.
+    *   Holes centered at +/- 35.75.
+    *   Notch on Back Wall (Y = -45).
+    *   Notch X centered at 0.
+    *   Notch Z from 32 to 40.
+
+7.  **Checking Constraints:**
+    *   Units: mm.
+    *   Variables at top.
+    *   Orientation: XY plane at Z=0.
+    *   Built-in only.
+    *   Difference cuts extend 0.01-1mm.
+    *   $fn = 64$.
+    *   For loops for holes.
+    *   Valid solid.
+
+8.  **Code Structure:**
+    *   Variables.
+    *   $fn = 64.
+    *   Module for main body? Or just inline. Inline is fine for this complexity.
+    *   Union of Base + Walls.
+    *   Difference of Holes.
+    *   Difference of Notch.
+    *   Wait, Holes and Notch are both Difference operations.
+    *   Order: Union(Base, Walls) -> Difference(Holes) -> Difference(Notch).
+    *   Or Union(Base, Walls, -Holes, -Notch).
+    *   Better:
+        *   difference() {
+            *   union() {
+                *   base
+                *   walls
+            }
+            *   holes
+            *   notch
+        }
+    *   Wait, holes are cylinders. Notch is a box.
+    *   Holes cut through the plate (Z=0 to 2).
+    *   Notch cuts through the wall (Z=32 to 40).
+    *   This is fine.
+
+9.  **Notch Detail:**
+    *   Wall is at Y = -45 (outer).
+    *   Notch is 12mm wide.
+    *   Centered along the wall.
+    *   Wall length is 90mm. Center is X=0.
+    *   So Notch X is -6 to 6.
+    *   Notch Y is -45 to -42.5.
+    *   Notch Z is 32 to 40.
+    *   Cut shape: Translate(0, -45, 32). Cube(12, 2.5, 8).
+    *   Extend: Translate(0, -45.01, 31.99). Cube(12.02, 2.52, 8.02).
+    *   Wait, if I translate Y by -45.01, the cube starts at -45.01.
+    *   Cube size 2.52. Ends at -42.49.
+    *   Wall is -45 to -42.5.
+    *   So the cut covers the wall perfectly with a tiny overhang.
+    *   This satisfies Rule 5.
+
+10. **Holes Detail:**
+    *   4 holes.
+    *   Loop i = -1 to 1, j = -1 to 1.
+    *   Center X = i * (HolePatternSize / 2).
+    *   Center Y = j * (HolePatternSize / 2).
+    *   Translate(CenterX, CenterY, 1).
+    *   Cylinder(D=HoleDiameter, h=2.1, $fn=64).
+    *   Extend height 2.1mm (Plate is 2mm).
+    *   Rule 5 satisfied.
+
+11. **Final Review:**
+    *   Did I center the part?
+    *   Base: Cube(90, 90, 2). Centered at 0,0,1.
+    *   Walls:
+        *   Right: Translate(42.5, 0, 2). Cube(2.5, 90, 38).
+        *   Left: Translate(-45, 0, 2). Cube(2.5, 90, 38).
+        *   Front: Translate(0, 42.5, 2). Cube(90, 2.5, 38).
+        *   Back: Translate(0, -45, 2). Cube(90, 2.5, 38).
+    *   Wait, Left Wall X range: -45 to -42.5.
+    *   Right Wall X range: 42.5 to 45.
+    *   Front Wall Y range: 42.5 to 45.
+    *   Back Wall Y range: -45 to -42.5.
+    *   This creates a 90x90 outer box.
+    *   Inner cavity: X: -42.5 to 42.5. Y: -42.5 to 42.5.
+    *   Holes at +/- 35.75.
+    *   35.75 < 42.5. So holes are inside the cavity.
+    *   Notch at Y=-45.
+    *   Wait, Back Wall is Y: -45 to -42.5.
+    *   Notch is in this wall.
+    *   This is correct.
+
+    *   Wait, one detail: "Model it in print orientation, i.e. upside down: the 2 mm thick top plate lies on the bed (z = 0 to 2)".
+    *   My model has Z=0 to 2 for the plate.
+    *   "and four walls, 2.5 mm thick, rise from it to z = 40".
+    *   My model has walls Z=2 to 40.
+    *   "where the box is open".
+    *   My model has open top at Z=40.
+    *   "outer size is 90 x 90 mm".
+    *   My model outer X/Y is 90.
+    *   "Drill four 4.5 mm holes... on a 71.5 mm square pattern centred on the plate".
+    *   My model holes at +/- 35.75.
+    *   "In one wall, cut a notch... 12 mm wide, centred along the wall, reaching 8 mm down from the open edge (from z = 32 to z = 40)".
+    *   My model notch Z=32 to 40.
+    *   "centred along the wall". Wall is 90mm long. Center is 0. Notch is 12mm wide. Center is 0.
+    *   "In one wall". I chose Back Wall (Y=-45).
+    *   Everything seems consistent.
+
+    *   Wait, check the "extend" rule for the notch.
+    *   Cut shape: Translate(0, -45.01, 31.99). Cube(12.02, 2.52, 8.02).
+    *   X: -6.01 to 6.01.
+    *   Y: -45.01 to -42.49.
+    *   Z: 31.99 to 40.01.
+    *   Wall Y: -45 to -42.5.
+    *   Cut Y covers Wall Y.
+    *   Cut Z covers Wall Z (32 to 40).
+    *   Cut X covers Notch Width (12).
+    *   This is correct.
+
+    *   Check $fn$.
+    *   Cylinders need $fn=64$.
+    *   Cubes don't need it, but good practice for holes.
+    *   I will set $fn=64$ globally or on the cylinder.
+    *   Rule 6: "Set $fn = 64 (or more) on curved shapes".
+    *   I'll put it globally to be safe, or on the cylinder.
+    *   Better to put it on the cylinder to avoid affecting other things if any, but global is fine for this simple part.
+    *   I'll put it on the cylinder.
+
+    *   Wait, Rule 1: "Put every dimension in a named variable at the top of the file".
+    *   I need to make sure I don't hardcode numbers in the geometry logic except for derived ones (like 45 = 90/2).
+    *   I should calculate 45 from OuterSize/2.
+    *   I should calculate 35.75 from HolePatternSize/2.
+    *   I should calculate 42.5 from OuterSize/2 - WallThickness.
+    *   I should calculate 38 from TotalHeight - PlateThickness.
+    *   I should calculate 32 from TotalHeight - NotchDepthZ.
+    *   I should calculate 1.26 from WallThickness/2.
+    *   I should calculate 6 from NotchWidth/2.
+    *   I should calculate 2.25 from HoleDiameter/2.
+    *   I should calculate 2.1 for hole height extension.
+    *   I should calculate 0.01 for extension.
+
+    *   Wait, Rule 5: "extend 0.01-1 mm past the faces it cuts".
+    *   For holes: Height 2mm plate. Cut 2.1mm. Extension 0.1mm. OK.
+    *   For notch: Cut 12x2.5x8.
+    *   Extend X: 0.01mm each side (12.02).
+    *   Extend Y: 0.01mm each side (2.52).
+    *   Extend Z: 0.01mm each side (8.02).
+    *   Position: Translate(0, -45.01, 31.99).
+    *   Wait, if I translate Y by -45.01, the cube starts at -45.01.
+    *   Wall starts at -45.
+    *   So the cut starts 0.01mm *before* the wall face (outer face).
+    *   This ensures the cut goes through the face.
+    *   Wait, the wall face is at Y=-45.
+    *   If I cut at Y=-45.01, I am cutting *outside* the wall slightly.
+    *   This ensures the cut removes the material at Y=-45.
+    *   Yes.
+    *   Same for Z. Wall starts at Z=32. Cut starts at Z=31.99.
+    *   Same for X. Notch is centered. Cut is centered.
+    *   Wait, the notch is in the wall.
+    *   The wall is a solid block.
+    *   The notch is a void.
+    *   So the cut shape must intersect the wall volume.
+    *   Wall Volume: X: -45 to 45. Y: -45 to -42.5. Z: 2 to 40.
+    *   Notch Cut Volume: X: -6.01 to 6.01. Y: -45.01 to -42.49. Z: 31.99 to 40.01.
+    *   Intersection:
+        *   X: -6.01 to 6.01 (Inside -45 to 45).
+        *   Y: -45.01 to -42.49 (Inside -45 to -42.5).
+        *   Z: 31.99 to 40.01 (Inside 2 to 40).
+    *   Yes, it cuts through the wall.
+
+    *   Wait, one more check on Hole Pattern.
+    *   "71.5 mm square pattern centred on the plate".
+    *   This means the distance between hole centers is 71.5mm.
+    *   So X distance = 71.5, Y distance = 71.5.
+    *   Center to Center = 35.75.
+    *   My calculation: i * (71.5 / 2).
+    *   i = -1, 0, 1? No, 4 holes.
+    *   i = -1, 1. j = -1, 1.
+    *   So X = -35.75, 35.75.
+    *   Y = -35.75, 35.75.
+    *   This forms a square pattern.
+    *   Correct.
+
+    *   Wait, check "Model it in print orientation... centre it on the origin in X and Y".
+    *   My Base is Cube(90, 90, 2). Centered at 0,0.
+    *   My Walls are positioned relative to 0,0.
+    *   Left Wall X: -45 to -42.5.
+    *   Right Wall X: 42.5 to 45.
+    *   Front Wall Y: 42.5 to 45.
+    *   Back Wall Y: -45 to -42.5.
+    *   This is centered on origin.
+    *   Correct.
+
+    *   Wait, check "Reply with only the code, in a single ```openscad

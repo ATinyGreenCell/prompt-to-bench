@@ -1,0 +1,394 @@
+Thinking Process:
+
+1.  **Analyze the Request:**
+    *   **Goal:** Design a housing for a DIY magnetic stirrer built from an 80 mm PC case fan.
+    *   **Orientation:** Upside-down open box. Top plate (closed) is on the bed (Z=0 to Z=2). Walls rise from Z=2 to Z=40. Open top is at Z=40.
+    *   **Dimensions:**
+        *   Outer size: 90 x 90 mm (X x Y).
+        *   Top plate thickness: 2 mm (Z=0 to Z=2).
+        *   Wall thickness: 2.5 mm.
+        *   Wall height: 2.5 mm (plate) + 38 mm (walls) = 40 mm total height.
+        *   Fan size: 80 mm (implied inner opening size, but outer housing is 90x90).
+        *   Screw holes: 4 holes, 4.5 mm diameter, M4 screws.
+        *   Screw hole pattern: 71.5 mm square, centred on the plate.
+        *   Cable notch: One wall, 12 mm wide, centred along the wall, depth 8 mm from open edge (Z=32 to Z=40).
+    *   **Constraints:**
+        *   Units: mm.
+        *   Variables for dimensions at the top.
+        *   Print orientation: XY plane at Z=0, builds upward.
+        *   Built-in OpenSCAD only.
+        *   Difference cuts must extend 0.01-1 mm past faces.
+        *   $fn = 64$ for curves.
+        *   Use `for` loops for repeated features.
+        *   Valid solid, no errors.
+        *   Output: Only the code in a single ```openscad code block.
+
+2.  **Geometry Construction:**
+    *   **Base:** A 90x90x2 block.
+    *   **Walls:** Four walls rising from the base.
+        *   Outer dimensions: 90x90.
+        *   Wall thickness: 2.5 mm.
+        *   Inner dimensions: 90 - 2*2.5 = 85 mm.
+        *   Height: 40 mm total.
+        *   Since the top plate is 2mm thick, the walls sit on top of it? Or is the 40mm total height including the plate?
+        *   Prompt says: "the 2 mm thick top plate lies on the bed (z = 0 to 2) and four walls, 2.5 mm thick, rise from it to z = 40".
+        *   So, Base = 90x90x2.
+        *   Walls start at Z=2, end at Z=40. Height of walls = 38 mm.
+        *   Outer footprint of walls: 90x90.
+        *   Inner footprint of walls: 85x85.
+    *   **Screw Holes:**
+        *   4 holes, 4.5 mm diameter.
+        *   Pattern: 71.5 mm square.
+        *   Centered on the plate (which is centered on the origin).
+        *   Coordinates:
+            *   Center of plate = (0,0).
+            *   Square side = 71.5.
+            *   Distance from center to edge of square = 71.5 / 2 = 35.75.
+            *   Hole centers: (±35.75, ±35.75).
+        *   Location: Through the top plate (Z=0 to Z=2).
+    *   **Cable Notch:**
+        *   One wall. Let's pick the front wall (e.g., Y = -45 outer edge).
+        *   Width: 12 mm.
+        *   Centred along the wall.
+        *   Depth: 8 mm from open edge (Z=40). So Z=32 to Z=40.
+        *   Position: Wall is at Y = -45 (outer) to Y = -42.5 (inner).
+        *   Notch center Y: -45 (outer edge) is the reference? Or centred along the wall width?
+        *   "centred along the wall". Wall width is 2.5 mm. Notch width 12 mm.
+        *   Wait, the notch is *in* the wall. The wall is 2.5 mm thick. The notch is 12 mm wide. This implies the notch cuts *through* the wall thickness and extends into the interior.
+        *   "reaching 8 mm down from the open edge (from z = 32 to z = 40)".
+        *   So the notch is a rectangular cutout on the side of the wall.
+        *   Wall location: Let's define the walls clearly.
+        *   Outer Box: 90x90x40.
+        *   Inner Box: 85x85x38 (starting at Z=2).
+        *   Wait, if outer is 90x90 and inner is 85x85, the walls are 2.5mm thick all around.
+        *   Notch: On one wall. Let's choose the wall at Y = -45 (front).
+        *   Notch width: 12 mm.
+        *   Notch position along X: Centered on the wall. Wall spans X from -45 to 45. Center is 0. So notch spans X from -6 to 6.
+        *   Notch position along Z: From Z=32 to Z=40.
+        *   Notch position along Y: It cuts through the wall thickness. Wall is at Y = -45 to -42.5.
+        *   So the notch is a rectangular prism cutout: X: -6 to 6, Y: -45 to -42.5, Z: 32 to 40.
+        *   Wait, "reaching 8 mm down from the open edge". Open edge is Z=40. 8mm down is Z=32. Correct.
+        *   "centred along the wall". Wall is 2.5mm thick. Notch is 12mm wide. This means the notch is wider than the wall thickness. It cuts into the interior.
+        *   So the cutout is: X: -6 to 6, Y: -45 to -42.5 (wall thickness), Z: 32 to 40.
+        *   Wait, if it cuts into the interior, does it need to be deeper? "reaching 8 mm down from the open edge". This defines the Z-depth.
+        *   Does it cut all the way through the wall thickness? Yes, "cut a notch for the power cable". Usually implies going through the wall.
+        *   So the cutout volume is: X [-6, 6], Y [-45, -42.5], Z [32, 40].
+        *   Wait, is the notch centered on the *wall* (Y-axis) or the *plate* (X-axis)? "centred along the wall". Usually means centered on the wall's length (X-axis).
+        *   So X range: -6 to 6. Y range: -45 to -42.5. Z range: 32 to 40.
+        *   Wait, if the notch is 12mm wide, and the wall is 2.5mm thick, the notch extends 4.75mm into the interior on each side of the wall centerline?
+        *   Wall centerline Y = -43.75.
+        *   Notch center Y = -43.75.
+        *   Notch width 12mm -> Y range [-43.75 - 6, -43.75 + 6] = [-49.75, -37.75].
+        *   But the wall only exists at Y = [-45, -42.5].
+        *   So the notch cuts the wall completely and extends into the interior space.
+        *   This makes sense for a cable to pass through.
+        *   Let's check the constraint: "In one wall, cut a notch...".
+        *   Okay, I will place the notch on the wall at Y = -45 (front).
+        *   X range: -6 to 6.
+        *   Y range: -45 to -42.5 (wall thickness).
+        *   Z range: 32 to 40.
+        *   Wait, if I cut a box from -45 to -42.5 in Y, I am cutting the wall.
+        *   If I cut from -49.75 to -37.75 in Y, I am cutting the wall and the interior.
+        *   The prompt says "12 mm wide, centred along the wall".
+        *   Wall length (X) is 90mm. Wall center is X=0.
+        *   So X range is -6 to 6.
+        *   Wall position (Y) is -45 to -42.5.
+        *   So the notch is defined by X [-6, 6], Y [-45, -42.5], Z [32, 40].
+        *   Wait, if the notch is 12mm wide, does it mean the opening is 12mm wide?
+        *   If the wall is 2.5mm thick, and the notch is 12mm wide, the opening is 12mm wide.
+        *   So the cutout must span the full wall thickness (2.5mm) and extend into the interior?
+        *   Or does "12 mm wide" refer to the dimension along the wall length (X)?
+        *   "12 mm wide, centred along the wall". Usually "wide" implies the dimension perpendicular to the length.
+        *   If the wall is 90mm long (X), "centred along the wall" implies centered on X.
+        *   So the 12mm dimension is likely the X-dimension.
+        *   So X: -6 to 6.
+        *   The cut goes through the wall thickness (Y: -45 to -42.5).
+        *   And depth Z: 32 to 40.
+        *   This creates a slot in the wall.
+        *   Wait, if I cut X [-6, 6], Y [-45, -42.5], Z [32, 40], that is a rectangular prism.
+        *   Is that enough? Yes, it removes the material of the wall in that region.
+        *   Wait, does it need to be deeper? "reaching 8 mm down from the open edge".
+        *   Open edge is Z=40. 8mm down is Z=32.
+        *   So Z range is 32 to 40.
+        *   Okay, that seems correct.
+
+3.  **Refining Dimensions & Variables:**
+    *   `outer_width = 90`
+    *   `outer_height = 90`
+    *   `plate_thickness = 2`
+    *   `wall_thickness = 2.5`
+    *   `total_height = 40`
+    *   `wall_height = total_height - plate_thickness = 38`
+    *   `inner_width = outer_width - 2 * wall_thickness = 85`
+    *   `inner_height = outer_height - 2 * wall_thickness = 85`
+    *   `screw_hole_diameter = 4.5`
+    *   `screw_pattern_size = 71.5`
+    *   `screw_hole_count = 4`
+    *   `notch_width = 12`
+    *   `notch_depth_z = 8` (from top)
+    *   `notch_z_start = total_height - notch_depth_z = 32`
+    *   `notch_z_end = total_height = 40`
+    *   `notch_wall = 1` (e.g., front wall, Y = -outer_width/2)
+
+4.  **Modeling Strategy:**
+    *   **Union:**
+        1.  **Base Plate:** `cube([outer_width, outer_height, plate_thickness], center=[0,0,0])`.
+        2.  **Walls:**
+            *   Construct the outer shell of the walls.
+            *   Since the walls sit on the plate, the base of the walls is at Z=plate_thickness.
+            *   Outer dimensions of walls: 90x90.
+            *   Inner dimensions of walls: 85x85.
+            *   Height of walls: 38.
+            *   I can model the walls as a single block with a hole, or 4 separate blocks.
+            *   Using `hull` or `difference` is easier for the box shape.
+            *   Actually, `cube([outer_width, outer_height, wall_height], center=[0,0,plate_thickness])` creates the full outer box.
+            *   Then `difference` with `cube([inner_width, inner_height, wall_height], center=[0,0,plate_thickness])` creates the hollow walls.
+            *   Wait, the inner box starts at Z=plate_thickness.
+            *   So `cube([inner_width, inner_height, wall_height], center=[0,0,plate_thickness + wall_height/2])`.
+            *   Wait, `cube` center is at the geometric center.
+            *   Let's define the walls as a block from Z=plate_thickness to Z=total_height.
+            *   Outer: `cube([outer_width, outer_height, wall_height], center=[0,0,plate_thickness + wall_height/2])`.
+            *   Inner: `cube([inner_width, inner_height, wall_height], center=[0,0,plate_thickness + wall_height/2])`.
+            *   Difference these to get the walls.
+            *   Union with the plate.
+    *   **Screw Holes:**
+        *   Loop `i` from 0 to 3.
+        *   Calculate positions based on `screw_pattern_size`.
+        *   `pos_x = (i % 2 == 0) ? -screw_pattern_size/2 : screw_pattern_size/2`
+        *   `pos_y = (i < 2) ? -screw_pattern_size/2 : screw_pattern_size/2`
+        *   Wait, 4 holes on a square pattern.
+        *   Corners of a 71.5mm square.
+        *   X: ±35.75, Y: ±35.75.
+        *   `for (i = [0, 1, 2, 3])`
+        *   `x = (i % 2 == 0) ? -35.75 : 35.75`
+        *   `y = (i < 2) ? -35.75 : 35.75`
+        *   `translate([x, y, plate_thickness/2]) cylinder(d=screw_hole_diameter, h=plate_thickness, $fn=64)`
+        *   Wait, hole goes through the plate (Z=0 to 2).
+        *   So `translate([x, y, 1]) cylinder(d=screw_hole_diameter, h=2, $fn=64)`.
+        *   Wait, `difference` is needed.
+        *   So `difference` the main body with the holes.
+    *   **Notch:**
+        *   Cutout on one wall.
+        *   Let's pick the wall at Y = -45 (Front).
+        *   `translate([0, -45, 32])`
+        *   `cube([notch_width, wall_thickness, notch_depth_z])`
+        *   Wait, `notch_width` is 12. `wall_thickness` is 2.5. `notch_depth_z` is 8.
+        *   Wait, the notch is 12mm wide (X dimension).
+        *   The notch is centered along the wall (X=0).
+        *   So X range: -6 to 6.
+        *   Y range: -45 to -42.5 (Wall thickness).
+        *   Z range: 32 to 40.
+        *   So `cube([12, 2.5, 8])`.
+        *   Translate: `translate([0, -45, 32])`.
+        *   Wait, the wall is at Y = -45 to -42.5.
+        *   So `translate([0, -45, 32])` puts the cube at Y=-45.
+        *   The cube extends Y from -45 to -42.5.
+        *   This matches the wall thickness.
+        *   Wait, does the notch need to extend into the interior?
+        *   "cut a notch for the power cable".
+        *   If the cable needs to pass through the wall, the cut must go through the wall thickness.
+        *   If the notch is 12mm wide, and the wall is 2.5mm thick, the cut is 12mm wide.
+        *   If I cut `cube([12, 2.5, 8])` at Y=-45, it removes the wall material at that X and Z range.
+        *   This creates a slot.
+        *   Is there any ambiguity? "12 mm wide, centred along the wall".
+        *   If the wall is 90mm long (X), centered means X=0.
+        *   So X range [-6, 6].
+        *   Y range [-45, -42.5].
+        *   Z range [32, 40].
+        *   This seems correct.
+        *   Wait, I need to make sure the cut extends past the faces in `difference`.
+        *   Rule 5: "In difference(), make every cutting shape extend 0.01-1 mm past the faces it cuts".
+        *   So for the notch cut:
+            *   X: -6 to 6 -> -6.01 to 6.01.
+            *   Y: -45 to -42.5 -> -45.01 to -42.51.
+            *   Z: 32 to 40 -> 31.99 to 40.01.
+        *   For the screw holes:
+            *   Z: 0 to 2 -> -0.01 to 2.01.
+            *   X/Y: Centered.
+    *   **Wall Construction:**
+        *   I need to ensure the walls are solid.
+        *   Base: `cube([90, 90, 2])`.
+        *   Walls: `cube([90, 90, 38])` minus `cube([85, 85, 38])`.
+        *   Position: Base is Z=0 to 2. Walls are Z=2 to 40.
+        *   So Walls block: `cube([90, 90, 38], center=[0,0,21])`. (2 + 38/2 = 21).
+        *   Inner hole block: `cube([85, 85, 38], center=[0,0,21])`.
+        *   Wait, if I do `union(base, walls)`, the base is 90x90x2. The walls are 90x90x38 starting at Z=2.
+        *   So the union is a 90x90x40 block.
+        *   Then `difference` with the inner hole (85x85x38 starting at Z=2).
+        *   Then `difference` with screw holes.
+        *   Then `difference` with notch.
+        *   Wait, the inner hole block for the walls needs to start at Z=2.
+        *   So `cube([85, 85, 38], center=[0,0,21])`.
+        *   Wait, `cube` center is geometric center.
+        *   If height is 38, center is at 19.
+        *   If I want it to start at Z=2, the bottom is at 2.
+        *   So center Z = 2 + 38/2 = 21.
+        *   Correct.
+        *   Wait, the inner hole block should not cut into the plate (Z=0 to 2).
+        *   So the inner hole block height is 38.
+        *   So the walls are hollow from Z=2 to Z=40.
+        *   The plate is solid Z=0 to Z=2.
+        *   So `union(base, walls)` creates the solid outer shell.
+        *   Then `difference` with `cube([85, 85, 38], center=[0,0,21])` creates the hollow interior.
+        *   Wait, the inner hole block must be slightly larger to ensure clean cut?
+        *   Rule 5: "extend 0.01-1 mm past the faces it cuts".
+        *   So inner hole block should be slightly larger than 85x85x38?
+        *   Or the walls should be slightly smaller?
+        *   Usually, to cut a hole, the cutting shape is slightly larger.
+        *   So inner hole block: `cube([85.01, 85.01, 38.01], center=[0,0,21])`.
+        *   Wait, if I make the inner hole block larger, it cuts into the plate (Z=0 to 2).
+        *   The plate is 2mm thick. The walls start at Z=2.
+        *   If the inner hole block is 38.01mm high, and centered at Z=21, it goes from 21 - 19.005 = 1.995 to 21 + 19.005 = 40.005.
+        *   So it cuts into the plate slightly (Z=1.995 to 2).
+        *   This is fine, it cleans up the interface.
+        *   Wait, the rule says "extend 0.01-1 mm past the faces it cuts".
+        *   So for the inner hole block (cutting the walls):
+            *   X/Y: 85 -> 85.01.
+            *   Z: 38 -> 38.01.
+            *   Center Z: 21.
+            *   Bottom Z: 1.995.
+            *   Top Z: 40.005.
+            *   This cuts the plate slightly.
+            *   Is that okay? The plate is 2mm thick.
+            *   If I cut 0.01mm into the plate, it's fine.
+            *   Wait, the plate is 90x90. The inner hole is 85x85.
+            *   So the plate has a 2.5mm rim around the edge.
+            *   The inner hole block cuts the walls.
+            *   Okay.
+    *   **Screw Holes:**
+        *   Cut through the plate (Z=0 to 2).
+        *   Extend past Z=0 and Z=2.
+        *   Z range: -0.01 to 2.01.
+        *   X/Y: Centered on the hole.
+        *   Diameter: 4.5.
+        *   Extend past diameter? No, diameter is the size.
+        *   Wait, "extend 0.01-1 mm past the faces it cuts".
+        *   Faces are the top and bottom of the plate.
+        *   So Z range must be -0.01 to 2.01.
+        *   X/Y range: The hole is a cylinder. The faces are the top/bottom of the cylinder.
+        *   The cylinder cuts the plate faces.
+        *   So Z range is the critical one.
+        *   X/Y range: The cylinder diameter is 4.5.
+        *   Does it need to extend past the X/Y faces? No, the plate faces are Z=0 and Z=2.
+        *   So Z range is the main concern.
+    *   **Notch:**
+        *   Cut through the wall (Y=-45 to -42.5).
+        *   Z range: 32 to 40.
+        *   Extend past Z=32 and Z=40.
+        *   Z range: 31.99 to 40.01.
+        *   X range: -6 to 6.
+        *   Extend past X faces? The notch is on the side of the wall.
+        *   The wall faces are Y=-45 and Y=-42.5.
+        *   The notch cuts through these faces.
+        *   So Y range must extend past -45 and -42.5.
+        *   Y range: -45.01 to -42.51.
+        *   X range: -6 to 6.
+        *   Does it need to extend past X faces? The notch is open to the outside.
+        *   The "faces it cuts" are the wall surfaces.
+        *   So Y extension is critical.
+        *   X extension? The notch is 12mm wide.
+        *   If I cut X [-6, 6], it cuts the wall.
+        *   Does it need to extend past X=6 or X=-6?
+        *   No, those are the edges of the cutout.
+        *   Wait, the rule says "extend 0.01-1 mm past the faces it cuts".
+        *   The faces being cut are the wall surfaces (Y=-45 and Y=-42.5).
+        *   So Y extension is required.
+        *   What about the top/bottom of the notch (Z=32, Z=40)?
+        *   Those are faces of the notch cutout.
+        *   So Z extension is required.
+        *   What about X? The notch is bounded by X=-6 and X=6.
+        *   These are not faces of the main body, they are the edges of the cutout.
+        *   So X extension is not strictly required by the rule, but good practice to ensure clean edges?
+        *   The rule says "extend ... past the faces it cuts".
+        *   The faces of the main body are the ones being removed.
+        *   So Y and Z extensions are necessary.
+        *   I will apply extensions to all dimensions of the cutting shape to be safe and ensure no coplanar faces.
+        *   So Notch Cut:
+            *   X: -6.01 to 6.01.
+            *   Y: -45.01 to -42.51.
+            *   Z: 31.99 to 40.01.
+            *   Wait, if I extend X, the notch becomes wider.
+            *   "12 mm wide".
+            *   If I make it 12.02mm wide, is that okay?
+            *   "Use the user's dimensions exactly".
+            *   Rule 1: "Use the user's dimensions exactly".
+            *   Rule 5: "extend 0.01-1 mm past the faces it cuts".
+            *   These rules might conflict if interpreted strictly.
+            *   Interpretation: The *cutting shape* must extend past the *faces of the object being cut*.
+            *   The object being cut is the main body.
+            *   The faces of the main body at the notch location are:
+                *   Top face (Z=40).
+                *   Bottom of notch (Z=32).
+                *   Outer wall face (Y=-45).
+                *   Inner wall face (Y=-42.5).
+            *   So the cutting shape must extend past Z=40, Z=32, Y=-45, Y=-42.5.
+            *   It does not need to extend past X=-6 or X=6, because those are not faces of the main body (they are the edges of the cutout).
+            *   However, to ensure the cut is clean, extending slightly past the X boundaries of the cutout (which are not faces of the main body) is not required by Rule 5.
+            *   But wait, if I don't extend X, the edges of the notch might be sharp or coplanar with the main body edges?
+            *   No, the main body edges are at X=45 and X=-45.
+            *   The notch is at X=-6 to 6.
+            *   So X extension is not needed for Rule 5.
+            *   I will keep X dimension exactly 12mm to respect Rule 1 ("Use the user's dimensions exactly").
+            *   Wait, Rule 1 says "Use the user's dimensions exactly - they were measured with calipers."
+            *   Rule 5 says "extend 0.01-1 mm past the faces it cuts".
+            *   This implies the *cutting shape* dimensions can differ from the *feature* dimensions to ensure clean cuts.
+            *   So I will use 12mm for X, but extend Y and Z.
+            *   Wait, if I extend Y, the notch becomes wider than the wall thickness?
+            *   Wall thickness is 2.5mm.
+            *   Notch Y range: -45 to -42.5.
+            *   If I extend Y to -45.01 to -42.51, it cuts 0.01mm past the wall faces.
+            *   This is good.
+            *   So Notch Cut: `cube([12, 2.51, 8.01])`.
+            *   Translate: `translate([0, -45, 32])`.
+            *   Wait, if I translate Y=-45, and cube height is 2.51, it goes to -42.49.
+            *   Wall is -45 to -42.5.
+            *   So it cuts 0.01mm past both sides.
+            *   Z: 32 to 40.
+            *   Translate Z=32. Cube height 8.01. Goes to 40.01.
+            *   Cuts 0.01mm past top.
+            *   Bottom Z=32. Cube height 8.01. Goes to 31.99.
+            *   Cuts 0.01mm past bottom.
+            *   This satisfies Rule 5.
+            *   X: 12mm. Translate X=0. Goes -6 to 6.
+            *   This satisfies Rule 1 (12mm width).
+            *   Okay.
+
+5.  **Final Check of Dimensions:**
+    *   Outer: 90x90x40.
+    *   Plate: 90x90x2.
+    *   Walls: 90x90x38 (on top of plate).
+    *   Inner: 85x85x38 (hollow).
+    *   Screw Holes: 4.5mm dia, 4 holes, 71.5mm square pattern.
+    *   Notch: 12mm wide, 2.5mm deep (wall thickness), 8mm high (Z=32 to 40).
+    *   Orientation: Z=0 is bed. Top plate is Z=0 to 2. Walls rise to Z=40.
+    *   Wait, "the 2 mm thick top plate lies on the bed (z = 0 to 2)".
+    *   "four walls, 2.5 mm thick, rise from it to z = 40".
+    *   So the walls are on top of the plate.
+    *   My construction: `union(base, walls)`.
+    *   Base: Z=0 to 2.
+    *   Walls: Z=2 to 40.
+    *   This matches.
+    *   Wait, `cube([90, 90, 38], center=[0,0,21])`.
+    *   Center Z = 21. Height = 38.
+    *   Bottom Z = 21 - 19 = 2.
+    *   Top Z = 21 + 19 = 40.
+    *   Matches.
+    *   Inner hole: `cube([85, 85, 38], center=[0,0,21])`.
+    *   Bottom Z = 2. Top Z = 40.
+    *   Matches.
+    *   Screw holes: Z=0 to 2.
+    *   Notch: Z=32 to 40.
+    *   Matches.
+
+6.  **Code Structure:**
+    *   Variables at top.
+    *   `module housing()`
+    *   `difference`
+    *   `union` (Base + Walls)
+    *   `difference` (Inner Hole)
+    *   `difference` (Screw Holes)
+    *   `difference` (Notch)
+    *   Wait, `difference` is cumulative.
+    *   So:
+        ```openscad
+        difference() {

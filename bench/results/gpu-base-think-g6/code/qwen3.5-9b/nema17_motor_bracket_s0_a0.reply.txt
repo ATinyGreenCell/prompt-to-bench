@@ -1,0 +1,429 @@
+Thinking Process:
+
+1.  **Analyze the Request:**
+    *   **Goal:** Design an L-shaped mounting bracket for a NEMA 17 stepper motor.
+    *   **Context:** 3D printing (FDM), biology lab use.
+    *   **Input:** Specific dimensions and geometry description.
+    *   **Constraints:**
+        *   Units: mm.
+        *   Dimensions: Use user's exact values.
+        *   Variables: Named variables at the top with comments.
+        *   Orientation: Base plate on XY plane (Z=0), builds upward (+Z). Centered on origin in X and Y (unless specified otherwise, but the description gives specific X/Y ranges).
+        *   Built-in OpenSCAD only (no includes, etc.).
+        *   Difference cuts: Extend 0.01-1 mm past faces.
+        *   Curved shapes: `$fn = 64` or more.
+        *   Repeated features: Use `for` loops.
+        *   Output: Single valid OpenSCAD code block.
+
+2.  **Deconstruct the Geometry:**
+    *   **Base Plate:**
+        *   X: -25 to 25 (Width = 50)
+        *   Y: 0 to 45 (Depth = 45)
+        *   Z: 0 to 5 (Thickness = 5)
+        *   Holes: Two 4.5 mm vertical through-holes (M4).
+        *   Hole 1: (x = -17, y = 30)
+        *   Hole 2: (x = 17, y = 30)
+    *   **Vertical Motor Plate:**
+        *   X: -25 to 25 (Width = 50)
+        *   Y: 0 to 5 (Depth = 5)
+        *   Z: 0 to 50 (Height = 50)
+        *   Position: Standing on the back edge of the base. "Back edge" usually means the edge at Y=45 based on the base plate Y range (0 to 45). Wait, let's re-read carefully: "standing on the back edge of the base".
+        *   Base Y range: 0 to 45.
+        *   Vertical Plate Y range: 0 to 5.
+        *   If the vertical plate is Y: 0 to 5, it stands on the *front* edge (Y=0) if the base is Y: 0 to 45.
+        *   However, the prompt says "standing on the back edge of the base".
+        *   Let's check the coordinates provided for the vertical plate: "x from -25 to 25, y from 0 to 5, z from 0 to 50".
+        *   If the base is Y: 0 to 45, the edge at Y=0 is the "front" (usually) and Y=45 is the "back".
+        *   If the vertical plate is Y: 0 to 5, it aligns with the Y=0 edge of the base.
+        *   *Correction/Interpretation:* The prompt explicitly defines the coordinates for the vertical plate: "y from 0 to 5". It also says "standing on the back edge of the base". This is a contradiction in standard terminology if Base Y is 0-45.
+        *   *Decision:* I must follow the explicit coordinate definitions provided in the text for the geometry, as the prompt says "Use the user's dimensions exactly".
+        *   Base: Y 0 to 45.
+        *   Vertical Plate: Y 0 to 5.
+        *   This implies the vertical plate is attached to the Y=0 edge of the base. I will model it exactly as described by coordinates.
+        *   Wait, looking at the gussets: "flush with the left and right edges (x = -25 to -20 and x = 20 to 25)... right-angle corner at y = 5, z = 5 (where the plates meet)".
+        *   This confirms the junction is at Y=5.
+        *   So the Base is likely Y: 0 to 45. The Vertical Plate is Y: 0 to 5. They meet at Y=5?
+        *   If Base is Y: 0 to 45, and Vertical Plate is Y: 0 to 5, they overlap in Y: 0 to 5.
+        *   The gussets are at Y=5, Z=5.
+        *   Let's re-read: "Base plate: x from -25 to 25, y from 0 to 45, z from 0 to 5".
+        *   "Vertical motor plate: x from -25 to 25, y from 0 to 5, z from 0 to 50, standing on the back edge of the base."
+        *   If the base is Y: 0 to 45, the edge at Y=45 is the back. The edge at Y=0 is the front.
+        *   If the vertical plate is Y: 0 to 5, it sits on the Y=0 edge.
+        *   Maybe the user considers Y=0 the back? Or maybe the description "standing on the back edge" is descriptive text that conflicts with the coordinate "y from 0 to 5".
+        *   Rule 1 says: "Use the user's dimensions exactly".
+        *   Rule 3 says: "Model the part in the print orientation the user gives...".
+        *   I will prioritize the explicit coordinate ranges provided for the shapes.
+        *   Base: X[-25, 25], Y[0, 45], Z[0, 5].
+        *   Vertical: X[-25, 25], Y[0, 5], Z[0, 50].
+        *   Wait, if they overlap in Y[0, 5], they are not joined at an edge, they are stacked.
+        *   Usually, an L-bracket has a base and a vertical part joined at a corner.
+        *   If Base is Y[0, 45] and Vertical is Y[0, 5], the Vertical part is *on top* of the Base part in the Y direction? No, Z is height.
+        *   Base is flat on Z=0. Vertical is standing up.
+        *   If Vertical is Y[0, 5], it sits on the Base at Y[0, 5].
+        *   The gussets are at Y=5, Z=5.
+        *   This implies the Vertical plate starts at Y=0 and goes to Y=5. The Base goes Y=0 to Y=45.
+        *   So the Vertical plate is attached to the Y=0 edge of the Base.
+        *   The gussets are at Y=5. This means the gussets are *inside* the overlap zone?
+        *   Gusset description: "right-angle corner at y = 5, z = 5 (where the plates meet)".
+        *   If the plates meet at Y=5, then the Vertical plate should probably be Y[5, 10] or similar, or the Base should be Y[0, 45] and Vertical Y[0, 5] implies they meet at Y=0?
+        *   Let's look at the gusset description again: "flush with the left and right edges (x = -25 to -20 and x = 20 to 25)... each is a right triangle in the YZ plane with legs 20 mm along +Y and 20 mm along +Z, its right-angle corner at y = 5, z = 5".
+        *   If the corner is at Y=5, Z=5, and legs are +Y and +Z.
+        *   Gusset 1 (Left): X[-25, -20]. Y[5, 25]. Z[5, 25].
+        *   Gusset 2 (Right): X[20, 25]. Y[5, 25]. Z[5, 25].
+        *   This suggests the junction is at Y=5.
+        *   If the Vertical Plate is Y[0, 5], it ends at Y=5.
+        *   If the Base Plate is Y[0, 45], it starts at Y=0.
+        *   So the Vertical Plate sits on the Base Plate along Y[0, 5].
+        *   The Gussets are attached at Y=5, Z=5.
+        *   This seems physically consistent: Base is the floor. Vertical is the wall. They overlap in Y[0, 5]. The gussets reinforce the corner at Y=5.
+        *   Wait, "standing on the back edge". If Y=0 is the back, then Y=45 is the front.
+        *   Regardless of "front/back" semantics, I will follow the coordinates:
+            *   Base: Y 0 to 45.
+            *   Vertical: Y 0 to 5.
+            *   Gussets: Y 5 to 25 (since corner at 5, leg 20 along +Y).
+        *   Wait, if Vertical is Y 0 to 5, and Gussets are Y 5 to 25, the Gussets are *behind* the Vertical plate relative to Y=0?
+        *   Let's check the Z coordinate.
+        *   Base Z: 0 to 5.
+        *   Vertical Z: 0 to 50.
+        *   Gusset Z: Corner at 5, leg 20 along +Z -> Z 5 to 25.
+        *   Gusset Y: Corner at 5, leg 20 along +Y -> Y 5 to 25.
+        *   So the Gussets are in the region Y[5, 25], Z[5, 25].
+        *   The Vertical Plate is Y[0, 5], Z[0, 50].
+        *   The Base Plate is Y[0, 45], Z[0, 5].
+        *   So the Gussets are attached to the side of the Vertical Plate (at Y=5) and the top of the Base Plate (at Z=5).
+        *   This makes sense for reinforcement.
+        *   Wait, the prompt says "standing on the back edge of the base".
+        *   If Base is Y[0, 45], the edge at Y=0 is one edge, Y=45 is the other.
+        *   If Vertical is Y[0, 5], it sits on the Y=0 edge.
+        *   I will stick to the explicit coordinates provided for the shapes.
+
+    *   **Vertical Plate Holes:**
+        *   Boss Hole: 23 mm diameter. Center (x=0, z=28). Along Y axis (through the plate).
+        *   Screw Holes: 3.4 mm diameter (M3). 4 holes. 31 mm square pattern centered on boss hole.
+        *   Boss Hole Center: X=0, Y=0 (since it's along Y), Z=28.
+        *   Screw Pattern: 31mm square centered on (0, 0, 28).
+        *   So X offsets: +/- 15.5. Z offsets: +/- 15.5.
+        *   Wait, "square pattern centred on the boss hole".
+        *   Boss hole is along Y. The screws are in the plate (XZ plane).
+        *   So X = +/- 15.5, Z = +/- 15.5.
+        *   Wait, the boss hole is 23mm. The screws are M3 (3.4mm).
+        *   Distance from center: 31/2 = 15.5.
+        *   So X = -15.5, 15.5. Z = -15.5, 15.5.
+        *   Wait, Z range of plate is 0 to 50. Center 28.
+        *   28 - 15.5 = 12.5. 28 + 15.5 = 43.5. Both within 0-50.
+        *   X range of plate is -25 to 25.
+        *   -25 to 25 covers +/- 15.5.
+        *   So the holes are valid.
+
+    *   **Gussets:**
+        *   Two triangular gussets.
+        *   Thickness: 5 mm (flush with edges).
+        *   Left: X from -25 to -20.
+        *   Right: X from 20 to 25.
+        *   Shape: Right triangle in YZ plane.
+        *   Legs: 20 mm along +Y, 20 mm along +Z.
+        *   Right-angle corner at Y=5, Z=5.
+        *   So Y goes 5 to 25. Z goes 5 to 25.
+        *   Thickness is along X.
+        *   Left Gusset: X[-25, -20].
+        *   Right Gusset: X[20, 25].
+        *   Wait, "flush with the left and right edges".
+        *   Base X: -25 to 25.
+        *   Left Gusset X: -25 to -20. (Width 5).
+        *   Right Gusset X: 20 to 25. (Width 5).
+        *   This matches "5 mm thick".
+        *   Orientation: "right-angle corner at y = 5, z = 5".
+        *   So the triangle vertices in YZ plane: (5, 5), (25, 5), (5, 25).
+        *   Wait, legs are 20 along +Y and 20 along +Z.
+        *   Corner at (5, 5).
+        *   +Y leg: (5, 5) to (25, 5).
+        *   +Z leg: (5, 5) to (5, 25).
+        *   Hypotenuse connects (25, 5) to (5, 25).
+        *   This forms a solid triangle.
+        *   Extrude along X.
+        *   Left Gusset: Translate X to [-25, -20].
+        *   Right Gusset: Translate X to [20, 25].
+
+3.  **Variable Definition:**
+    *   Base X, Y, Z ranges.
+    *   Base Thickness.
+    *   Hole positions.
+    *   Vertical Plate X, Y, Z ranges.
+    *   Boss Hole size, position.
+    *   Screw Hole size, pattern.
+    *   Gusset dimensions.
+
+4.  **Drafting the Code:**
+    *   Variables at top.
+    *   Main module `bracket`.
+    *   `difference()` for holes.
+    *   `union()` for main parts (Base, Vertical, Gussets).
+    *   `translate()` for positioning.
+    *   `cylinder()` for holes (with $fn).
+    *   `difference()` for cutting holes into the main body.
+    *   Wait, standard practice: Build the solid, then subtract holes.
+    *   Or build Base, Vertical, Gussets, then subtract holes.
+    *   Since Gussets are solid, and holes are through-holes, I should subtract holes from the union of Base + Vertical + Gussets.
+    *   However, the prompt says "In difference(), make every cutting shape extend 0.01-1 mm past the faces it cuts".
+    *   So I will create a `union` of the three main parts, then `difference` with the holes.
+    *   Wait, the holes are "through-holes".
+    *   Base holes: Vertical through-holes (along Z).
+    *   Vertical plate hole: Along Y (through the plate).
+    *   Screw holes: Along Z (through the plate).
+    *   Wait, "Through the motor plate (along Y) cut a 23 mm hole".
+    *   "four 3.4 mm holes for M3 screws". Usually screws go through the plate (Z direction) or into the base?
+    *   "four 3.4 mm holes for M3 screws on a 31 mm square pattern centred on the boss hole".
+    *   Usually, these are mounting holes for the motor to the bracket.
+    *   If the boss hole is along Y (motor shaft), the screws likely go through the Vertical Plate (Z direction) to mount the motor body? Or through the Base?
+    *   Given "Vertical motor plate... cut a 23 mm hole... four 3.4 mm holes... centred on the boss hole".
+    *   These holes are in the Vertical Plate.
+    *   Boss hole is along Y (motor shaft).
+    *   Screw holes are likely along Z (to mount motor to bracket) or along X?
+    *   Standard NEMA 17 mounting: 4 screws on the flange.
+    *   If the bracket holds the motor, the screws go through the bracket into the motor flange.
+    *   The Vertical Plate is the part holding the motor.
+    *   So the screw holes are through the Vertical Plate (along Z axis? or X axis?).
+    *   Usually, the motor flange is perpendicular to the shaft.
+    *   If shaft is Y, flange is in XZ plane.
+    *   So screws go through the Vertical Plate (along Z? No, plate is YZ plane? No, plate is XZ plane?
+    *   Vertical Plate: X[-25, 25], Y[0, 5], Z[0, 50].
+    *   This plate is in the XZ plane (thin in Y).
+    *   So the face is XZ.
+    *   Boss hole is along Y (through the thin part).
+    *   Screw holes are on the XZ face?
+    *   "four 3.4 mm holes for M3 screws on a 31 mm square pattern centred on the boss hole".
+    *   If the boss hole is along Y, the screws are likely in the XZ plane (through the plate thickness? No, that's the boss hole).
+    *   Wait, if the plate is Y[0, 5], the thickness is 5mm.
+    *   If the screws are for the motor flange, they usually go through the flange into the motor.
+    *   If the bracket holds the motor, the screws go through the bracket into the motor.
+    *   If the boss hole is along Y, the motor shaft is along Y.
+    *   The motor flange is perpendicular to Y (in XZ plane).
+    *   So the screws go through the XZ face of the Vertical Plate?
+    *   If so, the holes are along Y? No, that's the boss hole.
+    *   If the screws go through the Vertical Plate (along Y), they would interfere with the boss hole.
+    *   Usually, NEMA 17 mounting holes are on the flange.
+    *   If the bracket is an L-bracket, the motor is mounted on the vertical part.
+    *   The screws go through the vertical plate (along Z? No, plate is XZ plane).
+    *   Wait, Vertical Plate: X[-25, 25], Y[0, 5], Z[0, 50].
+    *   This is a plate standing up. The large face is XZ. The thickness is Y (5mm).
+    *   Boss hole is along Y (through the thickness).
+    *   Screw holes are usually on the large face (XZ) to mount the motor flange.
+    *   So the screw holes are along Y? No, if they are on the XZ face, they go through the Y thickness.
+    *   But the boss hole is also along Y.
+    *   If the screw holes are along Y, they are parallel to the boss hole.
+    *   "four 3.4 mm holes... centred on the boss hole".
+    *   If they are parallel to the boss hole, they are through-holes along Y.
+    *   This makes sense for a motor mount where the motor flange is on the side?
+    *   Or maybe the screws go through the Vertical Plate (along Z) into the Base?
+    *   "four 3.4 mm holes for M3 screws... centred on the boss hole".
+    *   If they are in the Vertical Plate, and the boss hole is along Y.
+    *   If the screws are for the motor flange, and the motor is mounted on the Vertical Plate.
+    *   If the motor shaft is Y, the flange is XZ.
+    *   Screws go through the flange into the motor.
+    *   So the bracket needs holes to accept the motor screws.
+    *   So the holes are in the XZ face of the Vertical Plate.
+    *   Direction: Along Y (through the 5mm thickness).
+    *   Wait, if the boss hole is along Y, and screw holes are along Y, they are all parallel.
+    *   This is consistent.
+    *   So all holes in the Vertical Plate are along Y.
+    *   Boss Hole: Center (0, 0, 28). Radius 11.5.
+    *   Screw Holes: Center (0, 0, 28). Radius 1.7.
+    *   Wait, if they are along Y, they are cylinders centered at X=0, Z=28.
+    *   Wait, "square pattern centred on the boss hole".
+    *   Boss hole center: X=0, Z=28.
+    *   Square pattern: 31mm side.
+    *   So X = +/- 15.5, Z = +/- 15.5.
+    *   So 4 holes at (X, Z) = (-15.5, 12.5), (15.5, 12.5), (-15.5, 43.5), (15.5, 43.5).
+    *   All along Y axis.
+    *   This seems correct for a motor mount where the motor is inserted through the boss hole, and the flange is held by screws through the bracket thickness.
+    *   Wait, if the motor is inserted through the boss hole (Y axis), the flange is at the end of the shaft.
+    *   If the bracket is Y[0, 5], the motor shaft goes through Y.
+    *   The flange would be at Y=5 (or Y=0).
+    *   If the flange is at Y=5, the screws go through the bracket (Y direction) into the flange.
+    *   This works.
+
+    *   **Base Holes:**
+        *   "two 4.5 mm vertical through-holes (M4)".
+        *   Vertical means along Z.
+        *   Positions: (x = -17, y = 30) and (x = 17, y = 30).
+        *   These are in the Base Plate (Z=0 to 5).
+        *   So cylinders along Z axis.
+
+    *   **Gussets:**
+        *   Need to ensure they don't interfere with holes.
+        *   Gussets are at Y[5, 25], Z[5, 25].
+        *   Boss hole is at Z=28. Gussets go up to Z=25. No interference.
+        *   Screw holes are at Z=12.5 and 43.5.
+        *   Gussets are at Z[5, 25].
+        *   Screw holes at Z=12.5 are within Gusset Z range.
+        *   Screw holes at Z=43.5 are outside Gusset Z range.
+        *   Screw holes at X=15.5. Gussets are at X[-25, -20] and X[20, 25].
+        *   So Screw holes at X=15.5 are between the Gussets.
+        *   Screw holes at X=-15.5 are between the Gussets.
+        *   So Gussets do not intersect Screw holes.
+        *   Gussets do not intersect Boss hole (Z=28 vs Z<=25).
+        *   Gussets do not intersect Base holes (Y=30 vs Y[5, 25]).
+        *   Wait, Base holes are at Y=30. Gussets are Y[5, 25]. No overlap.
+        *   So geometry is clean.
+
+5.  **Refining the Model:**
+    *   **Base:** Cube X[-25, 25], Y[0, 45], Z[0, 5].
+    *   **Vertical:** Cube X[-25, 25], Y[0, 5], Z[0, 50].
+    *   **Gussets:**
+        *   Left: X[-25, -20], Y[5, 25], Z[5, 25] (Triangle).
+        *   Right: X[20, 25], Y[5, 25], Z[5, 25] (Triangle).
+        *   Wait, "right-angle corner at y = 5, z = 5".
+        *   Legs 20 along +Y, 20 along +Z.
+        *   So Y goes 5 -> 25. Z goes 5 -> 25.
+        *   Triangle vertices in YZ: (5,5), (25,5), (5,25).
+        *   This is a right triangle.
+        *   Extrude along X.
+        *   Left: X[-25, -20].
+        *   Right: X[20, 25].
+    *   **Holes:**
+        *   Base Holes: Z-axis cylinders.
+        *   Vertical Holes: Y-axis cylinders.
+        *   Difference logic:
+            *   Create Union of Base + Vertical + Gussets.
+            *   Difference with Base Holes (Z-axis).
+            *   Difference with Vertical Holes (Y-axis).
+            *   Ensure extension for cuts.
+
+6.  **Code Structure:**
+    *   Variables.
+    *   Module `bracket`.
+    *   `difference` block.
+    *   `union` of parts.
+    *   `translate` and `cylinder` for holes.
+    *   `$fn = 64` on cylinders.
+
+7.  **Checking Constraints:**
+    *   "Use the user's dimensions exactly".
+    *   "Named variable at the top".
+    *   "Difference cuts extend 0.01-1 mm".
+    *   "Curved shapes $fn = 64".
+    *   "For loops for repeated features".
+    *   "Valid solid".
+
+8.  **Wait, one detail:** "standing on the back edge of the base".
+    *   Base Y: 0 to 45.
+    *   Vertical Y: 0 to 5.
+    *   If Y=0 is the back edge, then Y=45 is the front.
+    *   If Y=45 is the back edge, then Y=0 is the front.
+    *   The prompt says "standing on the back edge".
+    *   If Vertical is Y[0, 5], it sits on Y=0.
+    *   So Y=0 must be the back edge.
+    *   I will not change coordinates, just follow the explicit ranges.
+    *   Gussets: "flush with the left and right edges (x = -25 to -20 and x = 20 to 25)".
+    *   This confirms X ranges.
+    *   Gussets: "right-angle corner at y = 5, z = 5".
+    *   This confirms Y/Z ranges.
+
+9.  **Hole Extension:**
+    *   Base Holes (Z-axis): Extend +0.1mm in Z (0 to 5.1) and -0.1mm in Z (-0.1 to 4.9)?
+    *   Actually, just extend the cylinder slightly beyond the base Z range (0 to 5).
+    *   Base Z: 0 to 5.
+    *   Hole Cylinder Z: -0.1 to 5.1.
+    *   Vertical Holes (Y-axis): Vertical Plate Y: 0 to 5.
+    *   Hole Cylinder Y: -0.1 to 5.1.
+    *   Boss Hole (Y-axis): Vertical Plate Y: 0 to 5.
+    *   Hole Cylinder Y: -0.1 to 5.1.
+    *   Screw Holes (Y-axis): Vertical Plate Y: 0 to 5.
+    *   Hole Cylinder Y: -0.1 to 5.1.
+
+10. **Final check on Gusset Geometry:**
+    *   "each is a right triangle in the YZ plane with legs 20 mm along +Y and 20 mm along +Z".
+    *   "right-angle corner at y = 5, z = 5".
+    *   So the triangle is defined by points (5,5), (25,5), (5,25).
+    *   This is a triangle where the hypotenuse is the line connecting (25,5) and (5,25).
+    *   In OpenSCAD, I can use `polygon` or `linear_extrude` with a path.
+    *   `polygon` is easier for a 2D shape extruded.
+    *   Points: [5, 5], [25, 5], [5, 25].
+    *   Extrude along X.
+    *   Left Gusset: Translate X to -25.
+    *   Right Gusset: Translate X to 20.
+    *   Wait, "flush with the left and right edges".
+    *   Left Edge: X = -25.
+    *   Right Edge: X = 25.
+    *   Gusset Width: 5mm.
+    *   Left Gusset X: -25 to -20.
+    *   Right Gusset X: 20 to 25.
+    *   This matches.
+
+11. **Code Construction:**
+    *   Define variables.
+    *   Define `bracket()` function.
+    *   `difference()`
+    *   `union()`
+    *   `translate()` Base.
+    *   `translate()` Vertical.
+    *   `translate()` Gussets (loop).
+    *   `translate()` Holes (loop).
+    *   `cylinder()` for holes.
+
+12. **Wait, one more check:** "Base plate: x from -25 to 25, y from 0 to 45, z from 0 to 5".
+    *   This is a solid block.
+    *   "Vertical motor plate: x from -25 to 25, y from 0 to 5, z from 0 to 50".
+    *   This is a solid block.
+    *   "two 4.5 mm vertical through-holes (M4) at (x = -17, y = 30) and (x = 17, y = 30)".
+    *   These are in the Base.
+    *   "Through the motor plate (along Y) cut a 23 mm hole...".
+    *   "four 3.4 mm holes...".
+    *   These are in the Vertical Plate.
+    *   Gussets are added.
+    *   So I build Base + Vertical + Gussets, then subtract holes.
+    *   Wait, if I subtract holes from the union, the holes must be positioned correctly.
+    *   Base holes: Translate to (-17, 30, 0) and (17, 30, 0). Cylinder along Z.
+    *   Vertical holes: Translate to (0, 0, 28). Cylinder along Y.
+    *   Screw holes: Translate to (X, 0, Z). Cylinder along Y.
+    *   Wait, screw holes are "centred on the boss hole".
+    *   Boss hole center: X=0, Z=28.
+    *   Square pattern 31mm.
+    *   So X offsets: +/- 15.5. Z offsets: +/- 15.5.
+    *   So Screw Hole Centers: (-15.5, 0, 12.5), (15.5, 0, 12.5), (-15.5, 0, 43.5), (15.5, 0, 43.5).
+    *   All along Y axis.
+    *   Wait, if the screw holes are along Y, they go through the Vertical Plate (Y=0 to 5).
+    *   This matches the "along Y" description for the boss hole.
+    *   Okay, ready to write.
+
+13. **Variable Naming:**
+    *   Use clear names like `BASE_X_MIN`, `BASE_X_MAX`, etc.
+    *   Or `BASE_WIDTH`, `BASE_DEPTH`, `BASE_HEIGHT`.
+    *   `VERTICAL_WIDTH`, `VERTICAL_DEPTH`, `VERTICAL_HEIGHT`.
+    *   `GUSSET_THICKNESS`, `GUSSET_Y_START`, etc.
+    *   `HOLE_M4_DIAMETER`, `HOLE_M3_DIAMETER`, `HOLE_BOSS_DIAMETER`.
+    *   `HOLE_BOSS_X`, `HOLE_BOSS_Z`.
+    *   `HOLE_SQUARE_SIZE`.
+
+14. **Final Review of Constraints:**
+    *   "Reply with only the code, in a single ```openscad code block."
+    *   "Use only built-in OpenSCAD".
+    *   "Difference cuts extend 0.01-1 mm".
+    *   "$fn = 64".
+    *   "For loops".
+
+15. **One detail on Gussets:**
+    *   "flush with the left and right edges (x = -25 to -20 and x = 20 to 25)".
+    *   This implies the Gusset X range is [-25, -20] and [20, 25].
+    *   The Base X range is [-25, 25].
+    *   So the Gussets are part of the Base width.
+    *   The Vertical Plate X range is [-25, 25].
+    *   So the Gussets are aligned with the Vertical Plate edges.
+    *   This is consistent.
+
+16. **One detail on Holes:**
+    *   "In difference(), make every cutting shape extend 0.01-1 mm past the faces it cuts".
+    *   Base Z: 0 to 5. Hole Z: -0.1 to 5.1.
+    *   Vertical Y: 0 to 5. Hole Y: -0.1 to 5.1.
+    *   This ensures clean cuts.
+
+17. **One detail on Orientation:**
+    *   "Base plate lies on the bed".
+    *   "Base plate: ... z from 0 to 5".
+    *   So Z is up.
+    *   "Vertical motor plate ... z from 0 to 50".
+    *   So Z is up.
+    *   "standing on the back edge".
+    *   If Base is Y[0, 45], and Vertical is Y[0, 5].
+    *   They share the Y[0, 5] region.
+    *   This means the Vertical

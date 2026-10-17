@@ -1,0 +1,33 @@
+```openscad
+// 10-well comb for agarose gel casting, printed lying flat
+// Units: mm. Print orientation: flat on bed, teeth pointing down (-Y).
+
+// ---------- Parameters ----------
+spine_len      = 70;    // spine length along X
+spine_wid      = 12;    // spine width along Y
+plate_thk      = 1.5;   // plate thickness along Z
+
+tooth_count    = 10;    // number of teeth
+tooth_w        = 5.0;   // tooth width along X
+tooth_l        = 12;    // tooth length along Y (hanging from spine)
+tooth_pitch    = 1.5;   // centre-to-centre spacing of teeth along X
+
+eps            = 0.5;   // cutter overshoot past faces
+$fn            = 64;
+
+// ---------- Derived ----------
+row_span = (tooth_count - 1) * tooth_pitch;  // span of gaps
+x0       = -(row_span + tooth_w) / 2;        // X of first tooth
+
+// ---------- Model ----------
+difference() {
+    // Base plate
+    translate([-spine_len / 2, -spine_wid / 2, 0])
+        cube([spine_len, spine_wid, plate_thk]);
+
+    // Teeth cut out from the +Y side of the plate
+    for (i = [0 : tooth_count - 1])
+        translate([x0 + i * tooth_pitch, 0, 0])
+            cube([tooth_w, tooth_l + eps, plate_thk + eps]);
+}
+```

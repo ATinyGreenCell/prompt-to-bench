@@ -1,0 +1,64 @@
+// Hose-barb reducer: joins 8 mm inner-diameter silicone tubing to 5 mm inner-diameter tubing
+// Print orientation: standing upright along +Z, centred on origin in X/Y
+// Units: mm
+
+// ---------------- Parameters ----------------
+reducer_d      = 12;   // central bore diameter (through full length)
+z0             = 0;    // start of first (8 mm) barbs
+z1             = 20;   // end of first barbs / start of collar
+z2             = 25;   // end of collar / start of second (5 mm) barbs
+z3             = 41;   // end of part
+
+barb_h8        = 10;   // height of each 8 mm barb
+barb_d8_bot    = 7.5;  // outer diameter of 8 mm barb at bottom
+barb_d8_top    = 9.5;  // outer diameter of 8 mm barb at top
+barb_n8        = 2;    // number of 8 mm barbs (stacked)
+
+barb_h5        = 8;    // height of each 5 mm barb
+barb_d5_bot    = 6.5;  // outer diameter of 5 mm barb at bottom
+barb_d5_top    = 5.0;  // outer diameter of 5 mm barb at top
+barb_n5        = 2;    // number of 5 mm barbs (stacked)
+
+eps            = 0.5;  // overshoot for clean boolean cuts
+$fn            = 96;   // curve resolution
+
+// ---------------- Model ----------------
+difference() {
+    union() {
+        // 8 mm tubing barbs: sawtooth profile, stacked
+        for (i = [0 : barb_n8 - 1]) {
+            translate([0, 0, z0 + i * barb_h8])
+                linear_extrude(height = barb_h8)
+                    polygon([
+                        [0, -barb_d8_bot / 2],
+                        [0,  barb_d8_bot / 2],
+                        [barb_h8 / 2, (barb_d8_bot + barb_d8_top) / 2],
+                        [barb_h8,   barb_d8_top / 2],
+                        [barb_h8,  -barb_d8_top / 2],
+                        [barb_h8 / 2, -(barb_d8_bot + barb_d8_top) / 2]
+                    ]);
+        }
+
+        // Cylindrical collar
+        translate([0, 0, z1])
+            cylinder(d = reducer_d, h = z2 - z1);
+
+        // 5 mm tubing barbs: shrinking profile, stacked
+        for (i = [0 : barb_n5 - 1]) {
+            translate([0, 0, z2 + i * barb_h5])
+                linear_extrude(height = barb_h5)
+                    polygon([
+                        [0, -barb_d5_bot / 2],
+                        [0,  barb_d5_bot / 2],
+                        [barb_h5 / 2, (barb_d5_bot + barb_d5_top) / 2],
+                        [barb_h5,   barb_d5_top / 2],
+                        [barb_h5,  -barb_d5_top / 2],
+                        [barb_h5 / 2, -(barb_d5_bot + barb_d5_top) / 2]
+                    ]);
+        }
+    }
+
+    // Central bore through full length
+    translate([0, 0, -eps])
+        cylinder(d = reducer_d, h = z3 - z0 + 2 * eps);
+}

@@ -1,0 +1,31 @@
+{
+ "started": "2026-10-17T16:46:46",
+ "args": {
+  "run": "gpu-base-think-g3",
+  "models": [
+   "qwen3.5-9b"
+  ],
+  "tasks": [
+   "lab_funnel_60mm",
+   "seed_sowing_template"
+  ],
+  "samples": 3,
+  "max_repairs": 0,
+  "feedback": "report",
+  "temperature": 0.2,
+  "prompts": null,
+  "lang": "en",
+  "system": "bench/prompts/system.md",
+  "render_timeout": 120,
+  "seed_base": 1000,
+  "num_predict": 8192,
+  "think": true,
+  "num_ctx": 16384
+ },
+ "git_commit": "bd7762ffa444ca5a2e603cb8048dc22586f5cc46",
+ "host": "enamel",
+ "cpu": "x86_64",
+ "python": "3.14.4",
+ "openscad": "OpenSCAD version 2026.10.01",
+ "ollama": "0.0.0-openai-shim"
+}
