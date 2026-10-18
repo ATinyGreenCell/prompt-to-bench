@@ -1,0 +1,36 @@
+```openscad
+// 10-well agarose gel comb - printed lying flat
+// Units: mm
+
+$fn = 64;
+
+// ---- Dimensions ----
+spine_len    = 70;    // spine length (X)
+spine_wid    = 12;    // spine width (Y)
+spine_thk    = 1.5;   // spine thickness (Z)
+
+tooth_count  = 10;    // number of teeth
+tooth_w      = 5.0;   // tooth width (X)
+tooth_len    = 12;    // tooth length (Y)
+tooth_gap    = 1.5;   // gap between teeth (X)
+
+eps          = 0.5;   // cutter overshoot
+
+// ---- Derived ----
+pitch        = tooth_w + tooth_gap;
+row_start_x  = -(tooth_count - 1) * pitch / 2;
+
+// ---- Model ----
+difference() {
+    // Spine
+    translate([-spine_len/2, 0, 0])
+        cube([spine_len, spine_wid, spine_thk]);
+
+    // Teeth
+    for (i = [0 : tooth_count - 1])
+        translate([row_start_x + i * pitch - tooth_w/2,
+                   spine_wid - eps,
+                   0])
+            cube([tooth_w, tooth_len + eps, spine_thk + eps]);
+}
+```

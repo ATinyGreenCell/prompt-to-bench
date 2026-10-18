@@ -1,0 +1,46 @@
+```openscad
+// 96-well PCR tube rack (0.2 mL, microplate footprint)
+// Print orientation: base on XY plane, builds up +Z
+
+// ---------- Block ----------
+block_l = 127.76;   // length along X
+block_w = 85.48;    // width along Y
+block_h = 20;       // height along Z
+
+// ---------- Holes ----------
+hole_d     = 6.2;   // through-hole diameter
+hole_n_row = 8;     // number of rows along Y
+hole_n_col = 12;    // number of columns along X
+hole_pitch = 9.0;   // centre-to-centre spacing (X and Y)
+hole_x0    = 14.38; // first hole X distance from left edge
+hole_y0    = 11.24; // first hole Y distance from back edge
+
+// ---------- Chamfer ----------
+chamf = 5;          // 45-degree chamfer leg length at A1 corner
+
+// ---------- Misc ----------
+eps   = 0.5;        // cutter overshoot past faces
+$fn   = 96;         // circle resolution
+
+difference() {
+    // Main block, centred in X/Y, resting on z = 0
+    translate([-block_l/2, -block_w/2, 0])
+        cube([block_l, block_w, block_h]);
+
+    // Hole grid (A1 = row 0, col 0)
+    for (i = [0 : hole_n_row - 1])
+        for (j = [0 : hole_n_col - 1])
+            translate([j * hole_pitch - hole_x0,
+                       i * hole_pitch - hole_y0,
+                       -eps])
+                cylinder(d = hole_d, h = block_h + 2 * eps);
+
+    // Chamfer at A1 corner (extends past the face for a clean cut)
+    translate([0, block_w/2, 0])
+        linear_extrude(height = block_h + 1, center = true)
+            polygon([[-block_h, -block_h],
+                     [ block_h, -block_h],
+                     [ block_h,  block_h],
+                     [-0.01,    block_h]]);
+}
+```

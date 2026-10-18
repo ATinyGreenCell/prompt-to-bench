@@ -1,0 +1,53 @@
+// Straight hose-barb reducer: 8 mm tubing (z = 0..20) -> 5 mm tubing (z = 25..41)
+// Print orientation: standing upright along +Z, centred on the origin in X/Y.
+// Units: mm. Bore: 3 mm through the full length.
+
+// ---------------- Parameters ----------------
+reducer_in_d     = 8;    // inlet tubing inner diameter
+reducer_out_d    = 5;    // outlet tubing inner diameter
+reducer_bore_d   = 3;    // through-bore diameter
+reducer_barb_n   = 2;    // number of barbs per end (stacked)
+reducer_len_in   = 20;   // inlet section length (z = 0..20)
+reducer_len_out  = 16;   // outlet section length (z = 25..41)
+reducer_collar_d = 12;   // intermediate collar diameter (z = 20..25)
+reducer_overlap  = 0.5;  // overlap between adjacent barbs / collar (avoid coplanar faces)
+
+$fn = 96;                // curve resolution
+
+// ---------------- Derived ----------------
+in_barb_h = 10;          // 8 mm barb height
+out_barb_h = 8;          // 5 mm barb height
+in_barb_od0 = 7.5;       // 8 mm barb outer diameter at bottom
+in_barb_od1 = 9.5;       // 8 mm barb outer diameter at top
+out_barb_od0 = 6.5;      // 5 mm barb outer diameter at bottom
+out_barb_od1 = 5.0;      // 5 mm barb outer diameter at top
+
+// ---------------- Model ----------------
+module hose_barb_reducer() {
+    union() {
+        // Inlet barbs (z = 0..20)
+        for (i = [0 : reducer_barb_n - 1]) {
+            translate([0, 0, i * in_barb_h - reducer_overlap])
+                cylinder(h = in_barb_h + reducer_overlap,
+                           r = in_barb_od0 + (i + 1) * (in_barb_od1 - in_barb_od0) / reducer_barb_n);
+        }
+
+        // Intermediate collar (z = 20..25)
+        translate([0, 0, reducer_len_in])
+            cylinder(h = reducer_collar_d, r = reducer_collar_d / 2);
+
+        // Outlet barbs (z = 25..41)
+        for (i = [0 : reducer_barb_n - 1]) {
+            translate([0, 0, reducer_len_in + reducer_overlap + i * out_barb_h])
+                cylinder(h = out_barb_h + reducer_overlap,
+                           r = out_barb_od0 + (i + 1) * (out_barb_od1 - out_barb_od0) / reducer_barb_n);
+        }
+
+        // Through bore
+        translate([0, 0, -1])
+            cylinder(h = reducer_len_in + reducer_overlap + out_barb_h + 2,
+                           r = reducer_bore_d / 2);
+    }
+}
+
+hose_barb_reducer();

@@ -1,0 +1,54 @@
+```openscad
+// 96-well PCR tube rack (0.2 mL) - microplate footprint
+// Units: mm. Print orientation: base on XY plane, builds up +Z.
+
+// ---------- Parameters ----------
+plate_length    = 127.76;   // block length along X
+plate_width     = 85.48;    // block width along Y
+plate_height    = 20;       // block height along Z
+
+hole_count      = 96;       // number of tube holes
+hole_d          = 6.2;      // hole diameter
+hole_pitch      = 9.0;      // centre-to-centre spacing (X and Y)
+hole_rows       = 8;        // rows along Y
+hole_columns    = 12;       // columns along X
+
+first_hole_x    = 14.38;    // A1 hole centre distance from left edge
+first_hole_y    = 11.24;    // A1 hole centre distance from back edge
+
+chamfer_leg     = 5;        // 45-degree chamfer leg length at A1 corner
+chamfer_overcut = 0.5;      // extra cutter length past the face
+
+$fn = 64;                   // curve resolution
+
+// ---------- Derived ----------
+total_x = (hole_columns - 1) * hole_pitch + 2 * first_hole_x;   // 127.76
+total_y = (hole_rows - 1) * hole_pitch + 2 * first_hole_y;      // 85.48
+
+// ---------- Model ----------
+difference() {
+    // Main block, centred in X/Y, resting on z = 0
+    translate([-plate_length / 2, -plate_width / 2, 0])
+        cube([plate_length, plate_width, plate_height]);
+
+    // Tube holes (through)
+    for (i = [0 : hole_count - 1]) {
+        r = hole_d / 2 + 0.5;          // radius with cutter overshoot
+        x = (i % hole_columns) * hole_pitch - total_x / 2;
+        y = (i / hole_columns) * hole_pitch - total_y / 2;
+        translate([x, y, -1])
+            cylinder(r = r, h = plate_height + 2);
+    }
+
+    // 45-degree chamfer at the A1 corner (top-left view: X+, Y+, Z+)
+    translate([plate_length / 2 - first_hole_x,
+               plate_width / 2 - first_hole_y,
+               plate_height / 2])
+        linear_extrude(height = chamfer_leg, copy = true)
+            polygon([
+                [0, 0],
+                [chamfer_leg, 0],
+                [0, chamfer_leg]
+            ]);
+}
+```

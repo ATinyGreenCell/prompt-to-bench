@@ -1,0 +1,41 @@
+// Tissue pestle for 1.5 mL microcentrifuge tubes
+// Print orientation: standing upright on the bed (z = 0)
+
+// ---------- Dimensions (mm) ----------
+handle_d      = 8;    // handle diameter
+handle_h      = 45;   // handle height (z = 0 to 45)
+cone_d_top    = 8;    // cone diameter at handle
+cone_d_tip    = 3;    // cone diameter at top
+cone_top_z    = 45;   // cone start height
+cone_bottom_z = 62;   // cone end height
+tip_d         = 3;    // rounded tip diameter
+tip_z         = 62;   // tip centre height
+groove_count  = 4;    // number of grip grooves
+groove_w      = 2;    // groove width (in Z)
+groove_depth  = 1;    // groove depth
+overcut       = 0.5;  // cutter overshoot past faces
+
+$fn = 96;
+
+// ---------- Model ----------
+difference() {
+    union() {
+        // Handle
+        cylinder(d = handle_d, h = handle_h);
+
+        // Cone
+        translate([0, 0, cone_top_z])
+            cylinder(d1 = cone_d_top, d2 = cone_d_tip, h = cone_bottom_z - cone_top_z);
+
+        // Rounded tip
+        translate([0, 0, tip_z])
+            sphere(d = tip_d);
+    }
+
+    // Grip grooves
+    for (i = [0 : groove_count - 1]) {
+        z = 10 + i * 5;
+        translate([0, 0, z - groove_w / 2])
+            cylinder(d = handle_d + 2 * overcut, h = groove_w, center = true);
+    }
+}

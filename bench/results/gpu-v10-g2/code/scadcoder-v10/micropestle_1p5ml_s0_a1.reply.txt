@@ -1,0 +1,44 @@
+```openscad
+// Tissue-pestle for 1.5 mL microcentrifuge tubes
+// Print orientation: standing upright on the bed (z = 0)
+
+// ---------- Dimensions (mm) ----------
+handle_d      = 8;    // handle diameter
+handle_h      = 45;   // handle height (z = 0 to 45)
+cone_d_top    = 8;    // cone diameter at handle junction
+cone_d_tip    = 3;    // cone diameter at tip
+cone_tip_z    = 62;   // cone tip height (z = 62)
+tip_d         = 3;    // rounded tip diameter
+tip_centre_z  = 62;   // tip sphere centre height
+groove_count  = 4;    // number of circumferential grooves
+groove_w      = 2;    // groove width (in Z)
+groove_depth  = 1;    // groove depth (in radial direction)
+groove_z      = [10, 15, 20, 25]; // groove centre heights
+overcut       = 0.5;  // cutter overshoot past faces
+
+$fn = 96;             // facet count for round features
+
+// ---------- Model ----------
+difference() {
+    union() {
+        // Handle
+        cylinder(d = handle_d, h = handle_h);
+
+        // Cone (z = 45 to 62)
+        translate([0, 0, handle_h])
+            linear_extrude(height = cone_tip_z - handle_h)
+                circle(d = cone_d_tip);
+
+        // Rounded tip (z = 62)
+        translate([0, 0, tip_centre_z])
+            sphere(d = tip_d);
+    }
+
+    // Grip grooves
+    for (g = groove_count) {
+        rotate([0, 0, groove_z[g - 1] > 0 ? 0 : 90])
+            translate([0, -groove_w / 2, groove_z[g - 1] - overcut])
+                cube([handle_d + 1, groove_w, groove_w + 2 * overcut]);
+    }
+}
+```

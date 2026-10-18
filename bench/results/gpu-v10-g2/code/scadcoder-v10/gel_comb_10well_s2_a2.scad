@@ -1,0 +1,28 @@
+// 10-well comb for agarose gel casting
+// Printed lying flat on the bed
+
+num_wells   = 10;    // number of wells
+plate_w     = 70;    // plate length (X)
+plate_d     = 12;    // plate width (Y)
+well_w      = 5;     // well width (X)
+well_l      = 12;    // well length (Y)
+gap         = 1.5;   // gap between wells (X)
+thickness   = 1.5;   // plate thickness (Z)
+overcut     = 0.5;   // extra length for clean cuts (X)
+
+$fn = 64;
+
+pitch = well_w + gap;  // 6.5 mm
+
+difference() {
+    // Base plate
+    translate([-plate_w/2, -plate_d/2, 0])
+        cube([plate_w, plate_d, thickness]);
+
+    // Wells, centred on plate in X
+    for (i = [0 : num_wells - 1])
+        translate([(i - (num_wells - 1)/2) * pitch - well_w/2,
+                   -plate_d/2 - overcut,
+                   -overcut])
+            cube([well_w, well_l + 2*overcut, thickness + 2*overcut]);
+}

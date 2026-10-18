@@ -1,0 +1,79 @@
+// L-shaped mounting bracket for NEMA 17 stepper motor (e.g. syringe pump)
+// Print orientation: base plate on the bed, motor plate building upward.
+
+// ---------------- Parameters ----------------
+base_x0      = -25;   // base plate, x start (mm)
+base_x1      = 25;    // base plate, x end (mm)
+base_y0      = 0;     // base plate, y start (mm)
+base_y1      = 45;    // base plate, y end (mm)
+base_z0      = 0;     // base plate, z start (mm)
+base_z1      = 5;     // base plate, z end (mm)
+
+hole_m4_x    = -17;   // M4 through-hole, x position (mm)
+hole_m4_y    = 30;    // M4 through-hole, y position (mm)
+hole_m4_d    = 4.5;   // M4 through-hole diameter (mm)
+
+hole_m4_x2   = 17;    // M4 through-hole, x position (mm)
+hole_m4_y2   = 30;    // M4 through-hole, y position (mm)
+hole_m4_d2   = 4.5;   // M4 through-hole diameter (mm)
+
+motor_x0     = -25;   // motor plate, x start (mm)
+motor_x1     = 25;    // motor plate, x end (mm)
+motor_y0     = 0;     // motor plate, y start (mm)
+motor_y1     = 5;     // motor plate, y end (mm)
+motor_z0     = 0;     // motor plate, z start (mm)
+motor_z1     = 50;    // motor plate, z end (mm)
+
+boss_d       = 23;    // motor boss hole diameter (mm)
+boss_x       = 0;     // motor boss hole, x position (mm)
+boss_z       = 28;    // motor boss hole, z position (mm)
+
+screw_d      = 3.4;   // M3 screw hole diameter (mm)
+screw_pitch  = 31;    // M3 screw hole pattern size (mm)
+
+gusset_t     = 5;     // gusset thickness (mm)
+gusset_leg   = 20;    // gusset leg length (mm)
+
+eps          = 0.5;   // cutter overshoot past faces (mm)
+
+$fn = 96;
+
+// ---------------- Model ----------------
+union() {
+    // Base plate with two M4 through-holes
+    difference() {
+        translate([base_x0, base_y0, base_z0])
+            cube([base_x1 - base_x0, base_y1 - base_y0, base_z1 - base_z0]);
+
+        for (h = [hole_m4_x, hole_m4_x2]) {
+            translate([h, hole_m4_y, -eps])
+                cylinder(d = hole_m4_d, h = base_z1 - base_z0 + 2 * eps);
+        }
+    }
+
+    // Vertical motor plate with boss hole and four M3 screw holes
+    difference() {
+        translate([motor_x0, motor_y0, motor_z0])
+            cube([motor_x1 - motor_x0, motor_y1 - motor_y0, motor_z1 - motor_z0]);
+
+        // Boss hole along Y, centred at x = 0, z = 28
+        translate([boss_x, -eps, boss_z])
+            cylinder(d = boss_d, h = motor_y1 - motor_y0 + 2 * eps);
+
+        // M3 screw holes on a 31 mm square pattern, centred on the boss
+        for (s = [-1, 1])
+            for (t = [-1, 1])
+                translate([t * screw_pitch / 2, motor_y0 - eps, t * screw_pitch / 2])
+                    cylinder(d = screw_d, h = motor_z1 - motor_z0 + 2 * eps);
+    }
+
+    // Gusset on the left edge (x = -25 to -20)
+    translate([base_x0 - gusset_t, gusset_leg, gusset_leg])
+        rotate([90, 0, 0])
+            cube([gusset_t, gusset_leg, gusset_leg]);
+
+    // Gusset on the right edge (x = 20 to 25)
+    translate([base_x1 - gusset_t, gusset_leg, gusset_leg])
+        rotate([90, 0, 0])
+            cube([gusset_t, gusset_leg, gusset_leg]);
+}

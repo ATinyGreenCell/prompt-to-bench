@@ -1,0 +1,35 @@
+// Two-part enclosure for small electronics board
+// Print orientation: box upright, lid upside down (lip on top)
+
+// ---- Box ----
+box_x = 70;      // outer length (X)
+box_y = 50;      // outer width (Y)
+box_z = 30;      // outer height (Z)
+wall  = 2;       // wall thickness
+floor = 2;       // floor thickness
+
+// ---- Lid ----
+lip_t      = 1.5;   // lip wall thickness
+lip_h      = 4;     // lip height
+lip_x      = 65.6;  // lip outer length (X)
+lip_y      = 45.6;  // lip outer width (Y)
+clearance  = 0.2;   // clearance between lip and box opening
+eps        = 0.5;   // cutter overshoot
+
+$fn = 64;
+
+difference() {
+    union() {
+        // Box
+        translate([-box_x/2, -box_y/2, 0])
+            cube([box_x, box_y, floor + wall]);   // floor + walls, open top
+
+        // Lid (upside down: plate on bed, lip pointing up)
+        translate([0, 0, 0])
+            cube([lip_x, lip_y, lip_h + lip_t]);
+    }
+
+    // Clearance pocket inside lid (extends above top face)
+    translate([0, 0, lip_t])
+        cube([lip_x + 2*clearance, lip_y + 2*clearance, lip_h + eps]);
+}

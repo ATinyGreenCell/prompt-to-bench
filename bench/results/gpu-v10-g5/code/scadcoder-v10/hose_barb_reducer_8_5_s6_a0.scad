@@ -1,0 +1,93 @@
+// Straight hose-barb reducer: 8 mm tubing (z = 0..20) -> 5 mm tubing (z = 25..41)
+// Print orientation: standing upright along +Z, centred on the origin in X/Y.
+// Units: mm. Bore: 3 mm through the full length.
+
+// ---------------- Parameters ----------------
+reducer_in_d     = 8;    // inlet tubing inner diameter
+reducer_out_d    = 5;    // outlet tubing inner diameter
+reducer_bore_d   = 3;    // through-bore diameter
+reducer_barb_n   = 2;    // number of barbs per end (stacked)
+reducer_len_in   = 20;   // inlet section length (z = 0..20)
+reducer_len_out  = 16;   // outlet section length (z = 25..41)
+reducer_collar_d = 12;   // collar diameter (z = 20..25)
+reducer_overlap  = 0.5;  // overlap between adjacent barbs / collar (coplanar fix)
+reducer_embed    = 0.5;  // bore extension past each face
+
+$fn = 96;
+
+// ---------------- Dimensions ----------------
+// Inlet barbs (z = 0..20): OD 7.5 -> 9.5, H = 10
+// Outlet barbs (z = 25..41): OD 6.5 -> 5.0, H = 8
+// Collar (z = 20..25): OD = 12
+// Stagger the two barbs by 180 degrees and by 0.25 mm in Z
+// so the profile is not exactly coplanar.
+
+// ---------------- Model ----------------
+union() {
+    // Inlet barbs
+    for (i = [0 : reducer_barb_n - 1]) {
+        rotate([0, 0, i % 2 * 180])
+            translate([0, 0, i < reducer_barb_n - 1 ? reducer_overlap : 0])
+                linear_extrude(height = reducer_len_in)
+                    polygon([
+                        [-7.5, -3.75],
+                        [7.5, -3.75],
+                        [9.5, 0],
+                        [7.5, 3.75],
+                        [-7.5, 3.75]
+                    ]);
+    }
+
+    // Collar
+    translate([0, 0, reducer_len_in - reducer_overlap])
+        cylinder(d = reducer_collar_d, h = reducer_overlap * 2 + 0.01);
+
+    // Outlet barbs
+    for (i = [0 : reducer_barb_n - 1]) {
+        rotate([0, 0, i % 2 * 180])
+            translate([0, 0, reducer_len_in + 0.25 + i < reducer_barb_n - 1 ? reducer_overlap : 0])
+                linear_extrude(height = reducer_len_out)
+                    polygon([
+                        [-6.5, -3.25],
+                        [6.5, -3.25],
+                        [5.0, 0],
+                        [6.5, 3.25],
+                        [-6.5, 3.25]
+                    ]);
+    }
+}
+
+difference() {
+    // ---------------- Solid ----------------
+    // Hose-barb reducer
+    hull() {
+        // Inlet end
+        cylinder(d = reducer_collar_d, h = reducer_overlap);
+        for (i = [0 : reducer_barb_n - 1]) {
+            rotate([0, 0, i % 2 * 180])
+                translate([0, reducer_overlap * (i < reducer_barb_n - 1 ? 1 : 0), 0])
+                    cylinder(d = reducer_barb_n > 1 ? 9.5 : 7.5, h = reducer_len_in);
+        }
+
+        // Outlet end
+        for (i = [0 : reducer_barb_n - 1]) {
+            rotate([0, 0, i % 2 * 180])
+                translate([0, reducer_overlap * (i < reducer_barb_n - 1 ? 1 : 0),
+                           reducer_len_in + 0.25])
+                    cylinder(d = reducer_barb_n > 1 ? 6.5 : 5.0, h = reducer_len_out);
+        }
+    }
+
+    // ---------------- Cutouts ----------------
+    // Through bore
+    translate([0, 0, -reducer_embed])
+        cylinder(d = reducer_bore_d, h = reducer_len_in + reducer_overlap * 2 + 0.01 + 2 * reducer_embed);
+
+    // Inlet tubing bore (8 mm)
+    translate([0, 0, -1])
+        cylinder(d = reducer_in_d, h = reducer_len_in + 2);
+
+    // Outlet tubing bore (5 mm)
+    translate([0, 0, reducer_len_in + 0.25])
+        cylinder(d = reducer_out_d, h = reducer_len_out + 1);
+}

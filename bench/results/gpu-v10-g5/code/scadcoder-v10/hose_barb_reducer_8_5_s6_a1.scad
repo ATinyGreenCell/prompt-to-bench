@@ -1,0 +1,37 @@
+// Straight hose-barb reducer
+// Print orientation: standing upright along Z, barbs pointing up
+
+// ---------- Dimensions ----------
+tube_od1     = 8;    // first tubing outer diameter
+tube_id1     = 5;    // first tubing inner diameter
+tube_od2     = 5;    // second tubing outer diameter
+tube_id2     = 5;    // second tubing inner diameter
+bore_d       = 3;    // through-bore diameter
+barb_len     = 10;   // barb height (first tubing)
+collar_d     = 12;   // collar diameter
+collar_len   = 5;    // collar length
+overlap      = 0.5;  // barb/collar overlap for a clean union
+
+$fn = 64;
+
+// ---------- Model ----------
+union() {
+    // First tubing + barb
+    difference() {
+        cylinder(h = barb_len, d = tube_od1);
+        translate([0, 0, -overlap])
+            cylinder(h = barb_len + 2 * overlap, d = tube_id1);
+    }
+
+    // Second tubing (embedded in the collar)
+    translate([0, 0, collar_len - overlap])
+        difference() {
+            cylinder(h = overlap + 0.01, d = tube_od2);
+            translate([0, 0, -overlap])
+                cylinder(h = overlap + 1, d = tube_id2);
+        }
+
+    // Through-bore
+    translate([0, 0, -overlap])
+        cylinder(h = barb_len + collar_len + 2 * overlap + 0.01, d = bore_d);
+}

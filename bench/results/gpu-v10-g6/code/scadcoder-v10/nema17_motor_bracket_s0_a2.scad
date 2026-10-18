@@ -1,0 +1,77 @@
+// L-shaped mounting bracket for NEMA 17 stepper motor (syringe pump)
+// Print orientation: base plate on bed, motor plate building upward
+
+$fn = 96;
+
+// ---- Base plate ----
+base_x0 = -25; base_x1 = 25;   // x span of base plate
+base_y0 = 0;   base_y1 = 45;  // y span of base plate
+base_z0 = 0;   base_z1 = 5;   // base plate thickness
+
+// ---- M4 through-holes in base ----
+hole_m4_x  = -17; hole_m4_y = 30;
+hole_m4_x2 =  17; hole_m4_y2 = 30;
+hole_d4    = 4.5;
+
+// ---- Motor plate ----
+motor_x0 = -25; motor_x1 = 25; // x span of motor plate
+motor_y0 = 0;   motor_y1 = 5;  // y span (tangent to base)
+motor_z0 = 0;   motor_z1 = 50; // plate thickness (z 0..50)
+
+// ---- Boss hole ----
+boss_d   = 23;   // boss hole diameter
+boss_x   = 0;    // boss hole x centre
+boss_z   = 28;   // boss hole z centre
+
+// ---- M3 screw holes ----
+screw_d  = 3.4;  // M3 hole diameter
+screw_n  = 4;    // number of screw holes
+screw_r  = 15.5; // circumradius of square pattern (31 mm side)
+
+// ---- Gussets ----
+gusset_t = 5;    // gusset thickness
+gusset_a = 20;   // gusset leg along +Y
+gusset_b = 20;   // gusset leg along +Z
+gusset_x0 = -25; // left edge x
+gusset_x1 =  25; // right edge x
+
+// ---- Misc ----
+eps = 0.5;       // cutter overshoot
+
+difference() {
+    union() {
+        // Base plate
+        translate([base_x0, base_y0, base_z0])
+            cube([base_x1 - base_x0, base_y1 - base_y0, base_z1 - base_z0]);
+
+        // Motor plate
+        translate([motor_x0, motor_y0, motor_z0])
+            cube([motor_x1 - motor_x0, motor_y1 - motor_y0, motor_z1 - motor_z0]);
+
+        // Gussets (right triangle in YZ, flush with left/right edges)
+        for (sx = [-1, 1])
+            translate([sx > 0 ? gusset_x1 - gusset_t : gusset_x0,
+                       gusset_a, gusset_b])
+                rotate([90, 0, 0])
+                    cube([gusset_t, gusset_a, gusset_b]);
+    }
+
+    // M4 holes in base
+    for (i = [0, 1])
+        translate([(i == 0 ? hole_m4_x : hole_m4_x2),
+                   (i == 0 ? hole_m4_y : hole_m4_y2),
+                   -eps])
+            cylinder(d = hole_d4, h = base_z1 - base_z0 + 2 * eps);
+
+    // Boss hole through motor plate
+    translate([boss_x, -eps, boss_z])
+        cylinder(d = boss_d, h = motor_y1 - motor_y0 + 2 * eps);
+
+    // M3 screw holes
+    for (j = [0 : screw_n - 1]) {
+        a = screw_r * cos(j * 90);
+        b = screw_r * sin(j * 90);
+        translate([a, motor_y0 - eps, b])
+            cylinder(d = screw_d, h = motor_z1 - motor_z0 + 2 * eps);
+    }
+}

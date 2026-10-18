@@ -1,0 +1,49 @@
+```openscad
+// Straight hose-barb reducer: 8 mm tubing (z = 0..20) -> 5 mm tubing (z = 25..41)
+// Print orientation: standing upright along +Z, centred on the origin in X/Y.
+// Units: mm. Bore: 3 mm through full length.
+
+$fn = 64;
+
+// ---- Dimensions ----
+tube_od      = 8;    // 8 mm tubing outer diameter (no wall specified)
+tube_id      = 5;    // 5 mm tubing inner diameter (no wall specified)
+barb_h8      = 10;   // height of each 8 mm barb
+barb_h5      = 8;    // height of each 5 mm barb
+barb_base7   = 7.5;  // outer diameter of 8 mm barbs at their bottom
+barb_top9    = 9.5;  // outer diameter of 8 mm barbs at their top
+barb_top6    = 6.5;  // outer diameter of 5 mm barbs at their top
+barb_bot5    = 5.0;  // outer diameter of 5 mm barbs at their bottom
+collar_d     = 12;   // diameter of the z = 20..25 collar
+bore_d       = 3;    // through-bore diameter
+eps          = 0.5;  // overshoot for clean boolean cuts
+
+// ---- Model ----
+difference() {
+    union() {
+        // 8 mm tubing section with two stacked barbs
+        translate([0, 0, 0]) {
+            cylinder(h = 20, d = tube_od);
+            for (s = [-1, 1])
+                translate([0, s * 12, 0])
+                    cylinder(h = barb_h8, d1 = barb_base7, d2 = barb_top9);
+        }
+
+        // 5 mm tubing section with two stacked barbs
+        translate([0, 0, 25]) {
+            cylinder(h = 16, d = tube_id);
+            for (s = [-1, 1])
+                translate([0, s * 12, 0])
+                    cylinder(h = barb_h5, d1 = barb_bot5, d2 = barb_top6);
+        }
+
+        // Cylindrical collar (z = 20..25)
+        translate([0, 0, 20])
+            cylinder(h = 5, d = collar_d);
+    }
+
+    // 3 mm through-bore
+    translate([0, 0, -eps])
+        cylinder(h = 42, d = bore_d);
+}
+```

@@ -1,0 +1,36 @@
+// 96-well PCR tube rack (0.2 mL, microplate footprint)
+// Units: mm. Print orientation: base on XY plane, building up +Z.
+
+// ---------- Block ----------
+plate_len   = 127.76;   // block length along X
+plate_wid   = 85.48;    // block width along Y
+plate_hgt   = 20;       // block height along Z
+
+// ---------- Holes ----------
+hole_count  = 96;       // total number of tube holes
+hole_d      = 6.2;      // hole diameter
+hole_rows   = 8;        // rows along Y
+hole_cols   = 12;       // columns along X
+hole_pitch  = 9.0;      // centre-to-centre spacing (X and Y)
+
+// ---------- Position ----------
+x0          = 14.38;    // first hole (A1) distance from left edge
+y0          = 11.24;    // first hole (A1) distance from back edge
+
+// ---------- Misc ----------
+eps         = 0.5;      // cutter overshoot past faces
+$fn         = 64;       // curve resolution
+
+difference() {
+    // Main block, centred in X/Y, resting on z = 0
+    translate([-plate_len/2, -plate_wid/2, 0])
+        cube([plate_len, plate_wid, plate_hgt]);
+
+    // Hole grid
+    for (i = [0 : hole_cols - 1])
+        for (j = [0 : hole_rows - 1])
+            translate([x0 + (i - (hole_cols - 1)/2) * hole_pitch,
+                       y0 + (j - (hole_rows - 1)/2) * hole_pitch,
+                       -eps])
+                cylinder(d = hole_d, h = plate_hgt + 2*eps);
+}

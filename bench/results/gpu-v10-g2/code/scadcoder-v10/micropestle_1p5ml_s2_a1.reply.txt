@@ -1,0 +1,41 @@
+```openscad
+// Tissue-pestle for 1.5 mL microcentrifuge tubes
+// Print orientation: standing upright on the bed (z = 0)
+
+$fn = 64;
+
+// ---- Dimensions (mm) ----
+handle_d      = 8;    // handle diameter
+handle_h      = 45;   // handle height (z = 0 to 45)
+cone_d        = 8;    // cone diameter at handle top
+cone_tip_d    = 3;    // cone diameter at tip
+cone_top_z    = 62;   // cone top / sphere centre height
+sphere_d      = 3;    // tip sphere diameter
+groove_count  = 4;    // number of circumferential grooves
+groove_w      = 2;    // groove width (in Z)
+groove_depth  = 1;    // groove depth
+overlap       = 0.5;  // overlap for clean booleans
+
+// ---- Model ----
+difference() {
+    union() {
+        // Handle
+        cylinder(d = handle_d, h = handle_h);
+
+        // Cone
+        translate([0, 0, handle_h - overlap])
+            cylinder(d1 = cone_d, d2 = cone_tip_d, h = cone_top_z - handle_h + overlap);
+
+        // Tip sphere
+        translate([0, 0, cone_top_z - sphere_d / 2])
+            sphere(d = sphere_d);
+    }
+
+    // Grooves
+    for (i = [0 : groove_count - 1]) {
+        z = 10 + i * 5;
+        translate([0, 0, z - groove_w / 2])
+            cylinder(d = handle_d + 2 * overlap, h = groove_w + overlap);
+    }
+}
+```

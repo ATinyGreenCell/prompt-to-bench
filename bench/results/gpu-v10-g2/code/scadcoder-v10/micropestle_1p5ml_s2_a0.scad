@@ -1,0 +1,38 @@
+// Pestle for grinding tissue inside a 1.5 mL microcentrifuge tube
+// Print orientation: standing upright on the bed (z = 0), centred on origin in X/Y
+
+// ---------------- Parameters ----------------
+handle_d      = 8;    // handle diameter (mm)
+handle_h      = 45;   // handle height (mm), z = 0..45
+cone_d_bottom = 8;    // cone diameter at handle top (mm)
+cone_d_top    = 3;    // cone diameter at tip base (mm)
+cone_top_z    = 62;   // cone top / sphere centre height (mm)
+sphere_d      = 3;    // tip sphere diameter (mm)
+groove_count  = 4;    // number of circumferential grooves
+groove_w      = 2;    // groove width (mm) in Z
+groove_depth  = 1;    // groove depth (mm)
+eps           = 0.5;  // overcut for clean differences (mm)
+$fn           = 96;   // curve resolution
+
+// ---------------- Model ----------------
+difference() {
+    union() {
+        // Handle
+        cylinder(d = handle_d, h = handle_h);
+
+        // Cone: from handle top (z = 45) to sphere centre (z = 62)
+        translate([0, 0, handle_h])
+            cylinder(d1 = cone_d_bottom, d2 = cone_d_top, h = cone_top_z - handle_h);
+
+        // Rounded tip sphere
+        translate([0, 0, cone_top_z - sphere_d / 2])
+            sphere(d = sphere_d);
+    }
+
+    // Grip grooves, centred at z = 10, 15, 20, 25
+    for (i = [0 : groove_count - 1]) {
+        z_c = 10 + i * 5;
+        translate([0, 0, z_c - groove_w / 2])
+            cylinder(d = handle_d + 2 * eps, h = groove_w + eps);
+    }
+}

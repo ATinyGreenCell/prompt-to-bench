@@ -1,0 +1,40 @@
+```openscad
+// Sowing template for a 90 mm Petri dish
+// Print orientation: flat on bed, z = 0 up to disc thickness
+
+// ---------- Parameters ----------
+petri_d        = 90;    // dish diameter (mm)
+disc_d         = 85;    // template disc diameter (mm)
+disc_thick     = 2;     // template disc thickness (mm)
+hole_d         = 3;     // through-hole diameter (mm)
+hole_count_x   = 7;     // holes per row (X)
+hole_count_y   = 7;     // holes per column (Y)
+hole_pitch     = 9;     // centre-to-centre spacing (mm)
+notch_w        = 10;    // orientation notch width (X) (mm)
+notch_depth    = 4;     // orientation notch depth from rim (Y) (mm)
+cut_extra      = 0.5;   // overshoot for cutting shapes (mm)
+$fn            = 128;   // curve resolution
+
+// ---------- Derived ----------
+grid_x0 = -(hole_count_x - 1) * hole_pitch / 2;  // first hole X
+grid_y0 = -(hole_count_y - 1) * hole_pitch / 2;  // first hole Y
+notch_y = disc_d / 2 - notch_depth;              // notch centre Y (in from rim)
+
+// ---------- Model ----------
+difference() {
+    // Main disc
+    cylinder(d = disc_d, h = disc_thick);
+
+    // Hole grid
+    for (i = [0 : hole_count_x - 1])
+        for (j = [0 : hole_count_y - 1])
+            translate([grid_x0 + i * hole_pitch,
+                       grid_y0 + j * hole_pitch,
+                       -cut_extra])
+                cylinder(d = hole_d, h = disc_thick + 2 * cut_extra);
+
+    // Rectangular orientation notch on +Y side
+    translate([-notch_w / 2, notch_y, -cut_extra])
+        cube([notch_w, notch_depth + cut_extra, disc_thick + 2 * cut_extra]);
+}
+```

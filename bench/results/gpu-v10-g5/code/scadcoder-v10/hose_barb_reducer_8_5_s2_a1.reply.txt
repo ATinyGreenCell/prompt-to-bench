@@ -1,0 +1,60 @@
+```openscad
+// Hose-barb reducer: 8 mm tubing (z = 0..20) -> 5 mm tubing (z = 25..41)
+// Print orientation: standing upright along +Z, centred on the origin in X/Y.
+// Units: mm. Bore: 3 mm through the full length.
+
+// ---------------- Parameters ----------------
+reducer_in_d     = 8;    // inlet tubing inner diameter
+reducer_out_d    = 5;    // outlet tubing inner diameter
+reducer_bore_d   = 3;    // through-bore diameter
+reducer_barb_n   = 2;    // number of barbs per end (stacked)
+reducer_len_in   = 20;   // inlet section length (z = 0..20)
+reducer_len_out  = 16;   // outlet section length (z = 25..41)
+reducer_collar_d = 12;   // intermediate collar diameter (z = 20..25)
+reducer_overlap  = 0.5;  // overlap/step depth so adjacent shapes fuse cleanly
+
+$fn = 96;                // curve resolution
+
+// ---------------- Derived ----------------
+in_r      = reducer_in_d / 2;      // 4.0
+out_r     = reducer_out_d / 2;     // 2.5
+collar_r  = reducer_collar_d / 2;  // 6.0
+total_h   = reducer_len_in + reducer_len_out + reducer_overlap;  // 41.5 (extends past the last face)
+
+// ---------------- Model ----------------
+difference() {
+    union() {
+        // Inlet barbs with sawtooth profile (z = 0..20)
+        for (i = [0 : reducer_barb_n - 1]) {
+            translate([0, 0, i * reducer_len_in / reducer_barb_n])
+                linear_extrude(height = reducer_len_in / reducer_barb_n)
+                    polygon([
+                        [-in_r, 0],
+                        [ in_r, 0],
+                        [ (in_r - reducer_overlap),
+                          reducer_len_in / reducer_barb_n + reducer_overlap ]
+                    ]);
+        }
+
+        // Outlet barbs with shrinking profile (z = 25..41)
+        for (i = [0 : reducer_barb_n - 1]) {
+            translate([0, 0, reducer_len_in + reducer_overlap + i * reducer_len_out / reducer_barb_n])
+                linear_extrude(height = reducer_len_out / reducer_barb_n)
+                    polygon([
+                        [out_r + reducer_overlap, 0],
+                        [-out_r - reducer_overlap, 0],
+                        [ -out_r - reducer_overlap,
+                          reducer_len_out / reducer_barb_n ]
+                    ]);
+        }
+
+        // Collar (z = 20..25)
+        translate([0, 0, reducer_len_in])
+            cylinder(h = reducer_overlap, r = collar_r);
+    }
+
+    // Through-bore (extends past both end faces)
+    translate([0, 0, -1])
+        cylinder(h = total_h + 2, d = reducer_bore_d);
+}
+```

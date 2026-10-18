@@ -1,0 +1,48 @@
+```openscad
+// Magnetic stirrer housing - upside-down open box covering an 80 mm PC case fan
+// Print orientation: closed top plate on the bed (z = 0), walls build upward (+Z).
+// The box is open at the top (z = 40), which becomes the stirring surface when flipped.
+
+$fn = 64;
+
+// ---------------- Dimensions (mm) ----------------
+fan_mount_pitch = 71.5;  // square pattern size for fan mounting holes
+top_plate_t     = 2;     // thickness of the closed top plate
+wall_t          = 2.5;   // thickness of the four side walls
+box_height      = 40;    // total height of the housing (z = 0 to z = 40)
+screw_d         = 4.5;   // diameter of M4 screws through the top plate
+notch_w         = 12;    // width of the power-cable notch in one wall
+notch_depth     = 8;     // notch reaches this far down from the open edge
+overcut         = 0.5;   // extra length on cutters past the faces they cut
+
+// ---------------- Derived ----------------
+outer_size_x = 90;   // housing outer size in X
+outer_size_y = 90;   // housing outer size in Y
+open_edge_z  = box_height;     // z of the open top edge
+notch_bottom_z = open_edge_z - notch_depth;  // z where the notch ends (z = 32)
+mount_hole_off = (fan_mount_pitch - screw_d) / 2;              // offset of screw holes from plate edges
+
+// ---------------- Model ----------------
+difference() {
+    // Solid block, centred in X/Y, resting on z = 0
+    translate([-outer_size_x / 2, -outer_size_y / 2, 0])
+        cube([outer_size_x, outer_size_y, box_height]);
+
+    // Four mounting holes for the fan, centred on the top plate
+    for (sx = [-1, 1])
+        for (sy = [-1, 1])
+            translate([sx * mount_hole_off - screw_d / 2,
+                       sy * mount_hole_off - screw_d / 2,
+                       0])
+                cylinder(r = screw_d / 2, h = top_plate_t + overcut);
+
+    // Open top: a rectangular cut through the full height, centred on the plate
+    translate([-outer_size_x / 2, -outer_size_y / 2, -overcut])
+        cube([outer_size_x, outer_size_y, box_height + 2 * overcut]);
+
+    // Power-cable notch in one wall: 12 mm wide, centred along the wall,
+    // running from the open edge down to z = 32
+    translate([-outer_size_x / 2, -notch_w / 2, notch_bottom_z])
+        cube([outer_size_x / 2, notch_w, notch_depth + overcut]);
+}
+```

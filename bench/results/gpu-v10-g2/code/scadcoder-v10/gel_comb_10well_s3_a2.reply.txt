@@ -1,0 +1,28 @@
+```openscad
+// 10-well comb for agarose gel casting
+// Printed lying flat on the bed
+
+num_wells   = 10;    // number of wells
+channel_w   = 70;    // channel length (X)
+channel_d   = 12;    // channel width (Y)
+well_w      = 5;     // well width (X)
+well_l      = 12;    // well length (Y)
+gap         = 1.5;   // gap between neighbouring wells (X)
+thickness   = 1.5;   // plate thickness (Z)
+
+$fn = 64;
+
+pitch = well_w + gap;   // centre-to-centre spacing
+x0    = -(num_wells - 1) * gap / 2;  // first well left edge
+
+difference() {
+    // Channel (back bar)
+    translate([-channel_w / 2, 0, 0])
+        cube([channel_w, channel_d, thickness]);
+
+    // Wells
+    for (i = [0 : num_wells - 1])
+        translate([x0 + i * pitch - well_w / 2, -well_l, 0])
+            cube([well_w, well_l, thickness + 1]);
+}
+```
