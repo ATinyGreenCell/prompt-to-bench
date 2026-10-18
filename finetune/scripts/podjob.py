@@ -17,6 +17,7 @@ anything local is touched.
     podjob.py --host H --port P pull /workspace/out.jsonl ./out.jsonl              # sha256-verified
     podjob.py --host H --port P pull-dir /workspace/out_vlm/merged16 ./out-v9     # runpodctl, verified
     podjob.py --host H --port P status "$RUN"
+    podjob.py --host H --port P stop "$RUN"                                        # TERM, then KILL the job
 
 Exit codes: 0 ok; the job's own code for `wait`; 2 usage; 3 pod unreachable; 4 duplicate run; 5 job crashed
 (every process gone, no exit file); 124 wait timed out; 6 transfer or verification failed, or a refused overwrite.
@@ -193,6 +194,26 @@ def cmd_status(pod: Pod, a) -> int:
     return 0
 
 
+STOP_SCRIPT = r'''J={jobs}/{run}
+[ -d "$J" ] || {{ echo "NOSUCHRUN"; exit 0; }}
+p=$(cat "$J/pid" 2>/dev/null)
+[ -n "$p" ] || {{ echo "NOPID"; exit 0; }}
+alive(){{ kill -0 -- "-$p" 2>/dev/null || kill -0 "$p" 2>/dev/null; }}
+alive || {{ echo "NOTRUNNING"; exit 0; }}
+kill -TERM -- "-$p" 2>/dev/null || kill -TERM "$p" 2>/dev/null
+for _ in $(seq {grace}); do alive || break; sleep 1; done
+if alive; then kill -KILL -- "-$p" 2>/dev/null || kill -KILL "$p" 2>/dev/null; sleep 2; fi
+if alive; then echo "STILLALIVE"; else echo "STOPPED"; fi
+'''
+
+
+def cmd_stop(pod: Pod, a) -> int:
+    """Stop a run: SIGTERM to its process group, SIGKILL after --grace seconds. 0 once nothing of it is left."""
+    out = pod.ssh(STOP_SCRIPT.format(jobs=JOBS, run=a.run, grace=a.grace), timeout=a.grace + 60).stdout.strip()
+    log(f"{a.run}: {out}")
+    return 0 if out in ("STOPPED", "NOTRUNNING") else (2 if out == "NOSUCHRUN" else 6)
+
+
 def cmd_wait(pod: Pod, a) -> int:
     t0, last_note, last_ok = time.time(), 0.0, time.time()
     while True:
@@ -327,6 +348,7 @@ def main() -> int:
     s.add_argument("--poll", type=int, default=30); s.add_argument("--tail", type=int, default=15)
     s.add_argument("--max-unreachable", type=int, default=900, help="give up (exit 3) after this long unreachable")
     s = sub.add_parser("status"); s.add_argument("run")
+    s = sub.add_parser("stop"); s.add_argument("run"); s.add_argument("--grace", type=int, default=30)
     s = sub.add_parser("pull"); s.add_argument("remote"); s.add_argument("local")
     s = sub.add_parser("pull-dir"); s.add_argument("remote"); s.add_argument("local_parent")
     s.add_argument("--replace", action="store_true", help="move an existing local copy aside after verifying")
@@ -337,7 +359,7 @@ def main() -> int:
     a.cmd = job_cmd
     pod = Pod(a.host, a.port)
     fn = {"wait-ssh": cmd_wait_ssh, "push": cmd_push, "run": cmd_run, "wait": cmd_wait, "status": cmd_status,
-          "pull": cmd_pull, "pull-dir": cmd_pull_dir}[a.cmd_name]
+          "pull": cmd_pull, "pull-dir": cmd_pull_dir, "stop": cmd_stop}[a.cmd_name]
     try:
         return fn(pod, a)
     except ConnectionError as e:

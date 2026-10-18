@@ -17,6 +17,11 @@ Sixteen biology-lab parts, described in words and numbers. A model writes OpenSC
 | [`run_bench.py`](run_bench.py) | runs models: Ollama (local) or `claude:<model>` via the Claude Code CLI |
 | [`models.yaml`](models.yaml) | model metadata: sizes, parameters, licences |
 | [`analyze.py`](analyze.py) | builds `results/summary.csv`, the figures and the README results blocks |
+| [`sample_stats.py`](sample_stats.py) | per-task pass statistics for multi-sample runs (`--samples 8`), merging a run split over `<run>-g0..g7` |
+| [`finetune_table.py`](finetune_table.py) | the paper's Table 8: fine-tunes on the in-family / held-out split of the 16 tasks |
+| [`repair_stats.py`](repair_stats.py) | how a model uses feedback: file changed, score rose, passes won by repair (§6.4) |
+| [`self_consistency.py`](self_consistency.py) | picks one of k samples by agreement of the rendered parts' size and volume, no hidden checks (§6.4) |
+| [`ollama_openai_shim.py`](ollama_openai_shim.py) | an Ollama-API front for an OpenAI-compatible server (vLLM), so `run_bench.py` can drive GPU-served models unchanged |
 | `run_main_local.sh`, `run_lang.sh` | the exact commands used for the paper |
 | `results/<run>/` | one JSON line per conversation, plus every generated `.scad` and raw reply |
 
