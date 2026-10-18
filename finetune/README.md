@@ -114,13 +114,17 @@ Table 8 (GPU tier, 8 samples per task; in-family / held-out split of the 16 task
 | `scadcoder-qwen3.5-9b-v7-1ep` | v4's data, 1 epoch | 3/8 · 0/8 | - |
 | `scadcoder-qwen3.5-9b-v8` | v6 + the 1,500 report repairs (`v8_train`, MASK_EARLIER=1) | 3/8 · 1/8 | - |
 | `scadcoder-qwen3.5-9b-v9` | v5 + 869 of v5's own failed attempts, each with its report and the reference file, x2 (`build_v9.py`, MASK_EARLIER=1) | 2/8 · 0/8 | 3/16 |
+| `scadcoder-qwen3.5-9b-v9-seed1` | v9's data and settings, seed 1 instead of 0 (a replicate: `SEED=1`) | 4/8 · 1/8 | - |
 | `scadcoder-qwen3.5-9b-v10` | v9 + 211 of v9's own passing repairs on batch C, x2 (rejection sampling over repair turns; `build_v10.py`, MASK_EARLIER=1) | 3/8 · 1/8 | 1/16 |
 
 The stock base passes 2/8 · 1/8 with thinking off. Every fine-tune renders 88-99% of first attempts but rarely changes
-its file after feedback (6-15% of repair turns through v8, vs 84% for the base; v9, trained on its own failures, 27%;
-v10, also trained on its own passing repairs, 36%, with the first pass won by repair of any fine-tune on the GPU).
-The training run itself moves these numbers: v5 retrained with seed 1 passed 3 tasks instead of 5, neither held-out one
-(the slide rack went from 7/8 samples to 0/8), and changed its file after 8% of feedback messages instead of 15%. On the box itself (one sample per task, the box's
+its file after feedback (6-15% of repair turns through v8, vs 84% for the base), except those trained on their own
+failures: v9 27% and, retrained with seed 1, 43% with three passes won by repair (as many as the base); v10, also
+trained on its own passing repairs, 36% and one, within v9's spread. The training run itself moves these numbers: v5
+retrained with seed 1 passed 3 tasks instead of 5, neither held-out one (the slide rack went from 7/8 samples to 0/8),
+and changed its file after 8% of feedback messages instead of 15%; v9 retrained passed 5 instead of 2. On batch C (674
+new descriptions from 14 unseen families, `rft/onpolicy/`) both v9 runs changed their file after 34-39% of feedback and
+fixed 2.1-3.5% of failures, against 14-17% and 0.1-0.3% for both v5 runs. On the box itself (one sample per task, the box's
 own quantised build, imported by URL with `scripts/box_import.py`) v5 passed the slide rack, the gel comb and the
 PCR-tube adapter, all on the first attempt; v1 and v2 had passed none. With eight samples on the box v5 passed 6/16 (4 in-family, 2 held out:
 the hose-barb reducer and the slide rack), against 5/16 on the GPU (`bench/results/box-v5-k8/`). v9 passed 3/16 on the box at one sample (the 1.5 mL rack, the slide

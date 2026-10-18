@@ -1,0 +1,68 @@
+// L-shaped mounting bracket for NEMA 17 stepper motor
+// Print orientation: base plate on bed, motor plate builds upward (+Z)
+
+// ---------------- Parameters ----------------
+plate_x       = 25;    // base plate half-width (X)
+plate_y       = 45;    // base plate length (Y)
+plate_t       = 5;     // base plate thickness (Z)
+
+motor_h       = 50;    // motor plate height (Z)
+motor_w       = 5;     // motor plate thickness (Y)
+
+boss_d        = 23;    // motor boss hole diameter
+boss_x        = 0;     // boss hole centre X
+boss_z        = 28;    // boss hole centre Z
+
+screw_d       = 3.4;   // M3 screw hole diameter
+screw_pattern = 31;    // square pitch of screw holes
+screw_count   = 4;     // number of screw holes
+
+gusset_t      = 5;     // gusset thickness (X)
+gusset_leg    = 20;    // right-triangle leg length (Y and Z)
+gusset_x      = [-25, -20, 20, 25]; // gusset X positions (flush edges)
+
+eps           = 0.5;   // cutter overshoot past faces
+$fn           = 96;    // curve resolution
+
+// ---------------- Model ----------------
+difference() {
+    union() {
+        // Base plate
+        translate([-plate_x, 0, 0])
+            cube([plate_x * 2, plate_y, plate_t]);
+
+        // Vertical motor plate
+        translate([-plate_x, plate_y - motor_w, 0])
+            cube([plate_x * 2, motor_w, motor_h]);
+    }
+
+    // Base plate through-holes (M4)
+    for (h = [plate_t + eps, plate_t - eps])
+        translate([-17, 30, h])
+            cylinder(d = 4.5, h = 2 * eps, $fn = 64);
+
+    // Motor boss hole (along Y) and screw holes (square pattern)
+    translate([boss_x, plate_y - motor_w - eps, boss_z])
+        rotate([90, 0, 0]) {
+            difference() {
+                cylinder(d = boss_d, h = motor_w + 2 * eps);
+                for (i = [0 : screw_count - 1])
+                    for (j = [0 : screw_count - 1])
+                        translate([(i - (screw_count - 1) / 2) * screw_pattern,
+                                   (j - (screw_count - 1) / 2) * screw_pattern,
+                                   0])
+                            cylinder(d = screw_d, h = motor_w + 2 * eps);
+            }
+        }
+
+    // Triangular gussets, flush with left and right edges
+    for (gx = gusset_x)
+        translate([gx, plate_y - gusset_leg, gusset_t])
+            rotate([90, 0, 0])
+                linear_extrude(height = gusset_t)
+                    polygon(points = [
+                        [0, 0],
+                        [gusset_leg, 0],
+                        [0, gusset_leg]
+                    ]);
+}

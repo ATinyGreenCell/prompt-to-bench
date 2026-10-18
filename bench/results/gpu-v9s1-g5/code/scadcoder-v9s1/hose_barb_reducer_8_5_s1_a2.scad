@@ -1,0 +1,41 @@
+// Hose-barb reducer: joins 8 mm ID tubing to 5 mm ID tubing
+// Print orientation: standing upright along Z, centred on origin in X/Y
+
+$fn = 96;
+
+// ---- Dimensions (mm) ----
+eps      = 0.5;     // cutter overshoot past faces
+barb8_h  = 10;      // height of each 8 mm tubing barb
+barb8_od_bottom = 7.5; // outer diameter of 8 mm barb at bottom
+barb8_od_top   = 9.5;  // outer diameter of 8 mm barb at top
+barb8_d  = 7.5;      // outer diameter of 8 mm barb after step back
+collar_d  = 12;      // diameter of cylindrical collar
+barb5_h  = 8;       // height of each 5 mm tubing barb
+barb5_od_bottom = 6.5; // outer diameter of 5 mm barb at bottom
+barb5_od_top   = 5.0;  // outer diameter of 5 mm barb at top
+barb5_d  = 6.5;      // outer diameter of 5 mm barb after step back
+bore_d   = 3;       // through-bore diameter
+z0      = 0;        // start of first 8 mm barbs
+z20     = 20;       // end of 8 mm barbs / start of collar
+z25     = 25;       // end of collar / start of 5 mm barbs
+z41     = 41;       // end of 5 mm barbs
+
+// ---- Model ----
+difference() {
+    union() {
+        // 8 mm tubing barbs (sawtooth profile, stacked)
+        for (i = [0 : 1])
+            translate([0, 0, z0 + i * barb8_h])
+                cylinder(h = barb8_h, r = (i == 0) ? barb8_od_bottom : barb8_od_top);
+        // collar
+        translate([0, 0, z20])
+            cylinder(h = collar_d, r = collar_d / 2);
+        // 5 mm tubing barbs (sawtooth profile, stacked)
+        for (i = [0 : 1])
+            translate([0, 0, z25 + i * barb5_h])
+                cylinder(h = barb5_h, r = (i == 0) ? barb5_od_bottom : barb5_od_top);
+    }
+    // through-bore
+    translate([0, 0, z0 - eps])
+        cylinder(h = z41 + 2 * eps, r = bore_d / 2);
+}

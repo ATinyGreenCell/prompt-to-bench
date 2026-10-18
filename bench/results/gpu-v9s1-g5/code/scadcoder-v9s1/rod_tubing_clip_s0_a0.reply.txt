@@ -1,0 +1,45 @@
+```openscad
+// Lab stand rod clip - printed flat, extruded in Z
+// Units: mm
+
+$fn = 96;
+
+// --- Dimensions ---
+rod_id      = 12.7;   // stand rod inner diameter
+rod_wall    = 3;      // rod ring wall thickness
+rod_od      = rod_id + 2 * rod_wall;  // rod ring outer diameter (18.7)
+rod_opening = 10;     // width of opening cut from -X side
+
+tub_id      = 6;      // tubing inner diameter
+tub_wall    = 2;      // tubing ring wall thickness
+tub_od      = tub_id + 2 * tub_wall;  // tubing ring outer diameter (10)
+tub_x       = 15;     // tubing ring centre X
+tub_opening = 4.5;    // width of opening cut from +X side
+
+bridge_w    = 6;      // bridge width along Y
+bridge_x1   = 8;      // bridge start X
+bridge_x2   = 12;     // bridge end X
+
+height      = 10;     // extrusion height in Z
+eps         = 0.5;    // cutter overshoot past faces
+
+// --- Model ---
+difference() {
+    union() {
+        // Rod ring
+        cylinder(d = rod_od, h = height);
+        // Tubing ring
+        translate([tub_x, 0, 0])
+            cylinder(d = tub_od, h = height);
+        // Solid bridge
+        translate([bridge_x1, -bridge_w / 2, 0])
+            cube([bridge_x2 - bridge_x1, bridge_w, height]);
+    }
+    // Rod ring opening (x < 0, -5 < y < 5)
+    translate([-rod_opening / 2, -rod_opening / 2, -eps])
+        cube([rod_opening, rod_opening, height + 2 * eps]);
+    // Tubing ring opening (x > 15, -2.25 < y < 2.25)
+    translate([tub_x + tub_opening / 2, -tub_opening / 2, -eps])
+        cube([tub_opening, tub_opening, height + 2 * eps]);
+}
+```

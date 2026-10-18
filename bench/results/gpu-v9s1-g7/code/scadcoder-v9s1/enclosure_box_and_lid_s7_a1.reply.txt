@@ -1,0 +1,53 @@
+```openscad
+// Two-part enclosure for small electronics board (e.g. Arduino-based temp logger)
+// Print orientation: both parts on the bed, lid on the +X side, 10 mm gap between them
+
+$fn = 64;
+
+// ---- Part 1: Box ----
+box_x      = 70;    // outer size in X
+box_y      = 50;    // outer size in Y
+box_z      = 30;    // outer size in Z
+box_wall   = 2;     // wall thickness (sides and end); open top
+box_floor  = 2;     // floor thickness under the board
+
+// ---- Part 2: Lid ----
+lip_w      = 65.6;  // outer size of the lip in X
+lip_d      = 45.6;  // outer size of the lip in Y
+lip_h      = 4;     // lip height (1.5 mm wall + ~2.5 mm overlap into the box)
+plate_t    = 2;     // thickness of the lid plate under the lip
+eps        = 0.2;   // clearance between lip outer size and box opening
+
+// ---- Layout ----
+gap        = 10;    // gap between box and lid on the bed
+overlap    = 0.5;   // lip extends this far into the box for a solid union
+
+// Derived
+opening_x = box_x - 2 * box_wall;   // 66
+opening_y = box_y - 2 * box_wall;   // 46
+
+module box() {
+    difference() {
+        cube([box_x, box_y, box_z]);
+        // open-top cavity, faces exactly at the wall/plateet boundaries
+        translate([-opening_x / 2, -opening_y / 2, box_floor])
+            cube([opening_x, opening_y, box_z - box_floor]);
+    }
+}
+
+module lid() {
+    union() {
+        // base plate
+        translate([-lip_w / 2, -plate_t / 2, 0])
+            cube([lip_w, plate_t, box_z]);
+        // lip with overlap into the box
+        translate([-lip_d / 2, -lip_h / 2, 0])
+            cube([lip_d, lip_h, box_z + overlap]);
+    }
+}
+
+// Print both parts side by side in the same file
+box();
+translate([box_x + gap, 0, 0])
+    lid();
+```

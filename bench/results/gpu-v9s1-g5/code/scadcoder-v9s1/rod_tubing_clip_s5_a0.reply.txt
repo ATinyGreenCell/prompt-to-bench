@@ -1,0 +1,37 @@
+```openscad
+// Snap-on tubing clip for a 12.7 mm lab stand rod
+// Print orientation: flat on bed, extruded up in +Z
+
+// ---- Parameters ----
+rod_id      = 12.7;   // stand rod inner diameter
+rod_wall    = 3;      // stand rod ring wall thickness
+rod_open    = 10;     // width of opening cut from -X side of rod ring
+tube_id     = 6;      // tubing inner diameter
+tube_wall   = 2;      // tubing ring wall thickness
+tube_x      = 15;     // tubing ring centre X
+tube_open   = 4.5;    // width of opening cut from +X side of tubing ring
+bridge_w    = 6;      // solid bridge width (X), between x = 8 and x = 12
+bridge_h    = 10;     // extrusion height (Z)
+eps         = 0.5;    // cutter overshoot past faces
+$fn         = 96;     // curve resolution
+
+// ---- Model ----
+difference() {
+    union() {
+        // Rod ring
+        cylinder(h = bridge_h, d = rod_id + 2 * rod_wall);
+        // Tubing ring
+        translate([tube_x, 0, 0])
+            cylinder(h = bridge_h, d = tube_id + 2 * tube_wall);
+        // Solid bridge
+        translate([tube_x - bridge_w, -bridge_h / 2, 0])
+            cube([bridge_w, bridge_h, bridge_h]);
+    }
+    // Opening in rod ring (x < 0, -5 < y < 5)
+    translate([-rod_open / 2, -5, -eps])
+        cube([rod_open, 10, bridge_h + 2 * eps]);
+    // Opening in tubing ring (x > 15, -2.25 < y < 2.25)
+    translate([tube_x, -tube_open / 2, -eps])
+        cube([tube_open, 4.5, bridge_h + 2 * eps]);
+}
+```

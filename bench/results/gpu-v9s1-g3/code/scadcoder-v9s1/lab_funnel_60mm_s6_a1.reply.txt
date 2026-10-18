@@ -1,0 +1,36 @@
+```openscad
+// Lab funnel - printed upright, open at top and bottom
+// Units: mm
+
+$fn = 64;
+
+// --- Dimensions ---
+spout_od    = 10;    // spout outer diameter
+spout_id    = spout_od - 2 * 1.6;  // spout bore (6.8 mm)
+spout_h     = 20;    // spout height (z = 0 to 20)
+cone_od     = 60;    // funnel rim outer diameter
+cone_z      = 50;    // funnel rim height
+wall        = 1.6;   // wall thickness everywhere
+
+// --- Derived ---
+cone_h = cone_z - spout_h;  // cone height (30 mm)
+eps    = 0.5;           // overlap for clean booleans
+
+union() {
+    // Spout: cylinder from z = 0 to z = 20
+    difference() {
+        translate([0, 0, 0])
+            cylinder(d = spout_od, h = spout_h);
+        translate([0, 0, -eps])
+            cylinder(d = spout_id, h = spout_h + 2 * eps);
+    }
+
+    // Cone: from z = 20 to z = 50, overlapping slightly into the spout
+    difference() {
+        translate([0, 0, spout_h - eps])
+            cylinder(d1 = spout_od, d2 = cone_od, h = cone_h + 2 * eps);
+        translate([0, 0, spout_h - eps - 0.01])
+            cylinder(d = spout_id, h = cone_h + 2 * eps + 0.01);
+    }
+}
+```

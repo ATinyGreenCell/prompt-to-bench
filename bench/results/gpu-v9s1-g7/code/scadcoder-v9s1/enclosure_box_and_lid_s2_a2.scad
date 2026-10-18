@@ -1,0 +1,46 @@
+// Two-part enclosure for a small electronics board (e.g., Arduino-based temperature logger)
+// Print orientation: both parts on the bed, side by side, with a 10 mm gap.
+// Part 1: box (open top). Part 2: lid (printed upside down).
+
+$fn = 64;
+
+// ---- Box dimensions ----
+box_x = 70;    // outer size in X (mm)
+box_y = 50;    // outer size in Y (mm)
+box_z = 30;    // outer size in Z (mm)
+wall  = 2;     // wall thickness (mm)
+floor = 2;     // floor thickness (mm)
+
+// ---- Lid dimensions ----
+lip_w = 65.6;  // lip outer size in X (mm)
+lip_d = 45.6;  // lip outer size in Y (mm)
+lip_h = 1.5;   // lip thickness (mm)
+plate = 4;     // lid plate thickness (mm)
+
+// ---- Misc ----
+gap   = 10;    // gap between box and lid (mm)
+eps   = 0.2;   // clearance / overshoot (mm)
+
+// Box (open top)
+module box() {
+    translate([-box_x/2, -box_y/2, 0])
+        cube([box_x, box_y, floor]);
+    translate([-box_x/2, -box_y/2, floor])
+        cube([box_x, box_y, box_z - floor - wall]);
+    translate([-box_x/2, -box_y/2, box_z - wall])
+        cube([box_x, box_y, wall]);
+}
+
+// Lid: plate on the bed, lip on top of it
+module lid() {
+    translate([-lip_w/2, -lip_d/2, 0])
+        cube([lip_w, lip_d, plate]);
+    translate([-lip_w/2, -lip_d/2, plate])
+        cube([lip_w, lip_d, lip_h]);
+}
+
+union() {
+    box();
+    translate([0, 0, 0]) lid();
+    // gap between parts is maintained by their positions
+}

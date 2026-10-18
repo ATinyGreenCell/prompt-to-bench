@@ -1,0 +1,40 @@
+```openscad
+// Hose-barb reducer: 8 mm ID to 5 mm ID tubing
+// Print orientation: standing upright along Z
+
+// ---- Parameters ----
+bore_d      = 3;     // through-bore diameter
+tube_a_id   = 8;     // larger tubing inner diameter
+tube_b_id   = 5;     // smaller tubing inner diameter
+barb_a_h    = 10;    // height of each 8 mm barb
+barb_a_od   = 9.5;   // outer diameter of 8 mm barb (top)
+barb_b_h    = 8;     // height of each 5 mm barb
+barb_b_od   = 5.0;   // outer diameter of 5 mm barb (top)
+collar_d    = 12;    // collar diameter
+collar_h    = 5;     // collar height
+overlap     = 0.01;  // small overlap for stacked parts
+$fn         = 96;    // curve resolution
+
+// ---- Derived ----
+total_h = 2 * barb_a_h + collar_h + 2 * barb_b_h;  // 41 mm
+
+// ---- Model ----
+difference() {
+    union() {
+        // 8 mm barbs (z = 0 to 20)
+        for (i = [0 : 1])
+            translate([0, 0, i * barb_a_h + overlap])
+                cylinder(h = barb_a_h - overlap, d = barb_a_od);
+        // collar (z = 20 to 25)
+        translate([0, 0, 2 * barb_a_h])
+            cylinder(h = collar_h, d = collar_d);
+        // 5 mm barbs (z = 25 to 41)
+        for (i = [0 : 1])
+            translate([0, 0, 2 * barb_a_h + collar_h + i * barb_b_h + overlap])
+                cylinder(h = barb_b_h - overlap, d = barb_b_od);
+    }
+    // through bore
+    translate([0, 0, -overlap])
+        cylinder(h = total_h + 2 * overlap, d = bore_d);
+}
+```

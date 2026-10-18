@@ -1,0 +1,58 @@
+// Two-part enclosure for small electronics board (e.g., Arduino-based logger)
+// Print orientation: both parts flat on the bed, side by side
+
+// ---------- Parameters ----------
+box_len      = 70;    // box outer size in X (mm)
+box_wid      = 50;    // box outer size in Y (mm)
+box_h        = 30;    // box outer size in Z (mm)
+box_wall     = 2;     // box wall thickness (mm)
+box_floor    = 2;     // box floor thickness (mm)
+
+lip_len      = 65.6;  // lid lip outer size in X (mm)
+lip_wid      = 45.6;  // lid lip outer size in Y (mm)
+lip_thick    = 1.5;   // lid lip thickness (mm)
+lip_height   = 4;     // lid lip height above plate (mm)
+
+plate_t      = 2;     // lid plate thickness (mm)
+
+gap          = 10;    // gap between box and lid (mm)
+cut_extra    = 0.5;   // extra length for cutting shapes past faces (mm)
+$fn          = 64;    // curve resolution (no curves here; kept per convention)
+
+// ---------- Derived ----------
+lip_total_h  = plate_t + lip_height;   // top of lip above bed (mm)
+
+// ---------- Modules ----------
+module box() {
+    // Open-top box: solid outer block with a hollowed-out interior
+    difference() {
+        translate([-box_len/2, -box_wid/2, 0])
+            cube([box_len, box_wid, box_h]);
+
+        // Interior cavity: from inside the floor up to the open top
+        translate([-box_len/2 + box_wall, -box_wid/2 + box_wall, box_floor])
+            cube([box_len - 2*box_wall,
+                  box_wid - 2*box_wall,
+                  box_h - box_floor + cut_extra]);
+    }
+}
+
+module lid() {
+    // Plate with a rectangular lip on top, sliding into the box opening
+    union() {
+        // Base plate
+        translate([-lip_len/2, -lip_wid/2, 0])
+            cube([lip_len, lip_wid, plate_t]);
+
+        // Lip: wall thicker than box_wall by 0.2 mm clearance on each side
+        translate([-lip_len/2 - 0.2, -lip_wid/2 - 0.2, plate_t])
+            cube([lip_len + 0.4,
+                  lip_wid + 0.4,
+                  lip_thick]);
+    }
+}
+
+// ---------- Assembly ----------
+box();   // Print the box first (lower part)
+translate([0, box_wid/2 + gap, 0])
+    lid(); // Print the lid on the +X side, flat on the bed

@@ -1,0 +1,53 @@
+```openscad
+// Replacement knob for a hotplate stirrer with a 6 mm D-shaft
+// Print orientation: bottom face (facing the hotplate) on the bed at z = 0
+
+// ---------------- Parameters ----------------
+knob_d      = 30;    // knob outer diameter (mm)
+knob_h      = 15;    // knob height (mm)
+
+bore_depth  = 12;    // D-bore depth from bottom face (mm)
+bore_flat   = 1.5;   // D-bore flat width (mm); circle diameter - flat = 4.7
+bore_angle  = 90;    // D-bore symmetry plane angle (deg)
+
+grooves     = 18;    // number of vertical grip grooves
+groove_d    = 2;     // groove diameter (mm)
+
+pointer_w   = 1.5;   // pointer groove width (mm)
+pointer_d   = 1;     // pointer groove depth (mm)
+
+eps         = 0.5;   // overcut for clean boolean differences (mm)
+
+$fn = 96;            // facet count for round features
+
+// ---------------- Model ----------------
+difference() {
+    // Main body: cylinder, centred on origin, resting on z = 0
+    translate([0, 0, -eps])
+        cylinder(d = knob_d, h = knob_h + 2 * eps);
+
+    // D-shaped blind bore from bottom face, extends past top face
+    translate([0, 0, -eps])
+        rotate([0, 0, bore_angle])
+            linear_extrude(height = bore_depth + 2 * eps)
+                polygon([
+                    [-(bore_flat / 2 + eps), -(bore_flat / 2 + eps)],
+                    [-(bore_flat / 2 + eps), (bore_flat / 2 + eps)],
+                    [0, -((bore_d() - bore_flat) / 2 + eps)],
+                    [0, (bore_d() - bore_flat) / 2 + eps]
+                ]);
+
+    // 18 evenly spaced vertical grip grooves along the full height
+    for (i = [0 : grooves - 1])
+        rotate([0, 0, i * 360 / grooves])
+            translate([knob_d / 2, 0, -eps])
+                cylinder(d = groove_d, h = knob_h + 2 * eps, $fn = 16);
+
+    // Pointer groove on top face, from centre to outer edge, on flat side
+    translate([-(bore_flat / 2 - pointer_w / 2), 0, knob_h - pointer_d])
+        cube([pointer_w, knob_d / 2, pointer_d]);
+}
+
+// Helper: D-bore circle diameter (6.2 mm per spec)
+function bore_d() = 6.2;
+```

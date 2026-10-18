@@ -1,0 +1,31 @@
+```openscad
+// Lab funnel - printed upright, open at top and bottom
+// Units: mm
+
+// ---- Parameters ----
+spout_od      = 10;    // spout outer diameter (z = 0 to 20)
+spout_length  = 20;    // spout length
+cone_top_d    = 10;    // cone diameter where it meets the spout (z = 20)
+cone_rim_d    = 60;    // cone rim diameter (z = 50)
+cone_height   = 30;    // cone height (z = 20 to 50)
+wall          = 1.6;   // wall thickness everywhere
+eps           = 0.5;   // cutter overshoot past faces
+
+$fn = 96;
+
+// ---- Model ----
+difference() {
+    union() {
+        // Straight spout
+        cylinder(d = spout_od, h = spout_length);
+        // Cone (slightly overlapping the spout for a clean union)
+        translate([0, 0, spout_length - 0.01])
+            cylinder(d1 = cone_top_d, d2 = cone_rim_d, h = cone_height + 0.01);
+    }
+    // Through-bore: spout bore extends into the cone, cone bore up to the rim
+    translate([0, 0, -eps])
+        cylinder(d = spout_od - 2 * wall, h = spout_length + 2 * eps);
+    translate([0, 0, spout_length - 0.01])
+        cylinder(d1 = cone_top_d - 2 * wall, d2 = cone_rim_d - 2 * wall, h = cone_height + 0.01);
+}
+```

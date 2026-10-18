@@ -1,0 +1,50 @@
+// Lab stand rod clip - printed flat, extruded in Z
+// Units: mm
+
+$fn = 96;
+
+// --- Dimensions ---
+rod_id      = 12.7;   // stand rod inner diameter
+rod_wall    = 3;      // rod ring wall thickness
+rod_od      = rod_id + 2 * rod_wall;  // rod ring outer diameter (18.7)
+rod_opening = 10;     // width of opening cut from -X side
+
+tub_id      = 6;      // tubing inner diameter
+tub_wall    = 2;      // tubing ring wall thickness
+tub_od      = tub_id + 2 * tub_wall;  // tubing ring outer diameter (10)
+tub_x       = 15;     // tubing ring centre X
+tub_opening = 4.5;    // width of opening cut from +X side
+
+bridge_w    = 6;      // bridge width along Y
+bridge_x1   = 8;      // bridge start X
+bridge_x2   = 12;     // bridge end X
+
+height      = 10;     // extrusion height in Z
+eps         = 0.5;    // cutter overshoot past faces
+
+// --- Profile (in XY) ---
+profile = union() {
+    // Rod ring with -X opening
+    difference() {
+        circle(d = rod_od);
+        translate([-rod_opening/2, -rod_opening/2, -eps])
+            cube([rod_opening, rod_opening, 2*eps]);
+    }
+
+    // Tubing ring with +X opening
+    difference() {
+        translate([tub_x, 0, 0])
+            circle(d = tub_od);
+        translate([tub_x, -tub_opening/2, -eps])
+            cube([tub_opening, tub_opening, 2*eps]);
+    }
+
+    // Solid bridge between the two rings
+    translate([bridge_x1, -bridge_w/2, 0])
+        cube([bridge_x2 - bridge_x1, bridge_w, 0]);
+}
+
+// --- Extrusion ---
+translate([0, 0, 0])
+    linear_extrude(height = height)
+        profile;
