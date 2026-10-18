@@ -1,0 +1,61 @@
+// L-shaped mounting bracket for NEMA 17 stepper motor
+// Print orientation: base plate on bed, motor plate builds upward (+Z)
+
+// ---------------- Parameters ----------------
+plate_x       = 50;    // base plate length (x: -25 to 25)
+plate_y       = 45;    // base plate width (y: 0 to 45)
+plate_t       = 5;     // base plate thickness (z: 0 to 5)
+
+motor_h       = 50;    // motor plate height (z: 0 to 50)
+motor_d       = 23;    // motor boss hole diameter
+motor_z       = 28;    // motor boss hole centre height
+motor_x       = 0;     // motor boss hole centre x
+
+screw_d       = 3.4;   // M3 screw hole diameter
+screw_nx      = 31;    // screw pattern side length (square)
+screw_count   = 4;     // number of screw holes
+
+gusset_t      = 5;     // gusset thickness (x)
+gusset_leg    = 20;    // gusset leg length along +Y and +Z
+gusset_x      = [-25, 25]; // gusset outer x edges (extends into plates)
+
+eps           = 0.5;   // cutter overshoot past faces
+
+$fn = 96;
+
+// ---------------- Model ----------------
+union() {
+    // Base plate with M4 through-holes
+    difference() {
+        translate([-plate_x/2, 0, 0])
+            cube([plate_x, plate_y, plate_t]);
+        for (sx = [-17, 17])
+            translate([sx, 30, -eps])
+                cylinder(d = 4.5, h = plate_t + 2*eps);
+    }
+
+    // Vertical motor plate with boss hole and M3 screw holes
+    translate([-plate_x/2, 0, 0])
+        difference() {
+            cube([plate_x, 5, motor_h]);
+            translate([motor_x, 0, motor_z])
+                cylinder(d = motor_d, h = plate_y + 2*eps);
+            for (i = [0 : screw_count - 1]) {
+                a = i < 2 ? 0 : 90;
+                rotate([0, 0, a])
+                    translate([-screw_nx/2, 0, -eps])
+                        cube([screw_nx, 5, screw_d + 2*eps]);
+            }
+        }
+
+    // Triangular gussets, flush with plate edges
+    for (gx = gusset_x)
+        translate([gx - gusset_t, 5, 5])
+            rotate([90, 0, 0])
+                linear_extrude(height = gusset_t)
+                    polygon([
+                        [0, 0],
+                        [gusset_leg, 0],
+                        [0, gusset_leg]
+                    ]);
+}

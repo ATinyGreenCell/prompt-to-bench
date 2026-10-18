@@ -1,0 +1,42 @@
+// 10-well comb for agarose gel casting
+// Print orientation: flat on bed, teeth pointing down (-Z)
+
+// ---------- Parameters ----------
+plate_thickness = 1.5;    // mm: base plate thickness
+spine_length    = 70;     // mm: spine length (X)
+spine_width     = 12;     // mm: spine width (Y)
+tooth_count     = 10;     // number of wells
+tooth_width     = 5.0;    // mm: tooth width (X)
+tooth_length    = 12;     // mm: tooth length (Y)
+gap             = 1.5;    // mm: gap between neighbouring teeth
+eps             = 0.5;    // mm: cutter overshoot past faces
+
+$fn = 64;
+
+// ---------- Derived ----------
+pitch      = tooth_width + gap;              // centre-to-centre spacing
+row_offset = (tooth_count - 1) * gap / 2;    // shift to centre row on spine
+teeth_area = tooth_width * tooth_length;
+
+// ---------- Model ----------
+difference() {
+    union() {
+        // Base plate
+        translate([-spine_length / 2, -spine_width / 2, 0])
+            cube([spine_length, spine_width, plate_thickness]);
+
+        // Teeth (extend below z = 0 for a clean cut)
+        for (i = [0 : tooth_count - 1])
+            translate([-spine_length / 2 + row_offset + i * pitch,
+                       -spine_width / 2 - tooth_length,
+                       -eps])
+                cube([tooth_width, tooth_length + eps, plate_thickness]);
+    }
+
+    // Remove the well cavities
+    for (i = [0 : tooth_count - 1])
+        translate([-spine_length / 2 + row_offset + i * pitch,
+                   -spine_width / 2 - tooth_length,
+                   0])
+            cube([tooth_width, tooth_length + 2 * eps, plate_thickness + eps]);
+}

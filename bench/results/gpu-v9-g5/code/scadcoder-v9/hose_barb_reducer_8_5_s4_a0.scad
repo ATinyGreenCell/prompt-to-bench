@@ -1,0 +1,53 @@
+// Hose-barb reducer: 8 mm ID tubing end (z = 0..20) -> 5 mm ID tubing end (z = 25..41)
+// Print orientation: standing upright along +Z. Round, rotationally symmetric.
+
+$fn = 96;
+
+// ---------------- Parameters ----------------
+tube_a_id   = 8;    // first tubing inner diameter (mm)
+tube_b_id   = 5;    // second tubing inner diameter (mm)
+bore        = 3;    // through-bore diameter (mm)
+
+barb_a_h    = 10;   // barb height for 8 mm tubing (mm)
+barb_a_bot  = 7.5;  // barb outer diameter at bottom (mm)
+barb_a_top  = 9.5;  // barb outer diameter at top (mm)
+
+collar_d    = 12;   // cylindrical collar diameter (mm)
+collar_h    = 5;    // collar height (mm), z = 20..25
+
+barb_b_h    = 8;    // barb height for 5 mm tubing (mm)
+barb_b_bot  = 6.5;  // barb outer diameter at bottom (mm)
+barb_b_top  = 5.0;  // barb outer diameter at top (mm)
+
+eps         = 0.5;  // overshoot for clean boolean cuts (mm)
+
+// ---------------- Model ----------------
+difference() {
+    union() {
+        // ---- 8 mm tubing end ----
+        // Two identical stacked barbs, each with a sawtooth profile that steps back to 7.5 mm
+        for (i = [0, 1])
+            translate([0, 0, i * barb_a_h])
+                cylinder(h = barb_a_h,
+                         r0 = barb_a_bot,
+                         r1 = barb_a_top,
+                         $fn = 96);
+
+        // ---- Collar ----
+        translate([0, 0, 20])
+            cylinder(h = collar_h, d = collar_d, $fn = 96);
+
+        // ---- 5 mm tubing end ----
+        // Two identical stacked barbs, each with a shrinking profile that steps back out to 6.5 mm
+        for (i = [0, 1])
+            translate([0, 0, 25 + i * barb_b_h])
+                cylinder(h = barb_b_h,
+                         r0 = barb_b_bot,
+                         r1 = barb_b_top,
+                         $fn = 96);
+    }
+
+    // ---- Through-bore ----
+    translate([0, 0, -eps])
+        cylinder(h = collar_h + 2 * eps, d = bore, $fn = 96);
+}

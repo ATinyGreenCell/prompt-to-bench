@@ -1,0 +1,50 @@
+```openscad
+// Tubing clip for 12.7 mm stand rod
+// Print orientation: flat on bed, extrusion along +Z
+
+$fn = 96;
+
+// ---- Ring dimensions ----
+rod_id     = 12.7;   // stand rod inner diameter
+rod_wall   = 3;      // rod ring wall thickness
+rod_od     = rod_id + 2 * rod_wall; // 18.7 mm outer diameter
+rod_open   = 10;     // opening width on -X side
+
+tube_id    = 6;      // tubing inner diameter
+tube_wall  = 2;      // tubing ring wall thickness
+tube_od    = tube_id + 2 * tube_wall; // 10 mm outer diameter
+tube_open  = 4.5;    // opening width on +X side
+
+// ---- Bridge ----
+bridge_w   = 6;      // bridge width along Y
+bridge_x0  = 8;      // bridge start (X)
+bridge_x1  = 12;     // bridge end (X)
+
+// ---- Misc ----
+eps        = 0.5;    // cutter overshoot past faces
+
+difference() {
+    union() {
+        // Rod ring
+        cylinder(d = rod_od, h = 10, $fn = 96);
+        translate([0, 0, -eps])
+            cylinder(d = rod_id + 0.4, h = 10 + 2 * eps, $fn = 96); // small clearance bore
+        // Opening on -X side
+        translate([-rod_open / 2, -rod_wall, -eps])
+            cube([rod_open, rod_od / 2 + eps, 10 + 2 * eps]);
+
+        // Tubing ring
+        translate([15, 0, 0])
+            cylinder(d = tube_od, h = 10, $fn = 96);
+        translate([15, 0, -eps])
+            cylinder(d = tube_id + 0.4, h = 10 + 2 * eps, $fn = 96); // small clearance bore
+        // Opening on +X side
+        translate([15 + tube_open / 2, -tube_wall, -eps])
+            cube([tube_open, tube_od / 2 + eps, 10 + 2 * eps]);
+
+        // Solid bridge between the rings
+        translate([bridge_x0, -bridge_w / 2, 0])
+            cube([bridge_x1 - bridge_x0, bridge_w, 10]);
+    }
+}
+```

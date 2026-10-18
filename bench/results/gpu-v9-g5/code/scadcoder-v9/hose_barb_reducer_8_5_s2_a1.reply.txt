@@ -1,0 +1,71 @@
+```openscad
+// Hose-barb reducer: 8 mm ID tubing -> 5 mm ID tubing
+// Print orientation: standing upright along Z
+
+$fn = 64;
+
+// ---- 8 mm tubing barbs (z = 0 to 20) ----
+barb_h_8 = 20;      // total height of stacked barbs
+barb_od_bottom_8 = 7.5;  // outer diameter at bottom of barbs
+barb_od_top_8 = 9.5;   // outer diameter at top of barbs
+barb_count_8 = 2;     // two barbs, stacked
+
+// ---- 5 mm tubing barbs (z = 25 to 41) ----
+barb_h_5 = 16;       // total height of stacked barbs (8 mm each)
+barb_od_bottom_5 = 6.5;  // outer diameter at bottom of barbs
+barb_od_top_5 = 5.0;   // outer diameter at top of barbs
+barb_count_5 = 2;     // two barbs, stacked
+
+// ---- Collar (z = 20 to 25) ----
+collar_d = 12;       // collar diameter
+collar_h = 5;        // collar height
+
+// ---- Through bore ----
+bore_d = 3;          // full-length bore diameter
+
+// ---- Derived ----
+barb_w = 1.5;        // wall thickness (used for stepping back)
+step_od_8 = barb_od_top_8 - barb_w;   // outer diameter after step down
+step_od_5 = barb_od_bottom_5 + barb_w; // outer diameter after step up
+
+module barbs_8() {
+    for (i = [0 : barb_count_8 - 1]) {
+        translate([0, 0, i * barb_h_8 / (barb_count_8 - 1)])
+            linear_extrude(height = barb_h_8 / (barb_count_8 - 1))
+                polygon([
+                    [0, -barb_od_bottom_8 / 2],
+                    [0, barb_od_bottom_8 / 2],
+                    [barb_od_top_8 / 2, barb_od_top_8 / 2],
+                    [-barb_od_top_8 / 2, barb_od_top_8 / 2]
+                ]);
+    }
+}
+
+module barbs_5() {
+    for (i = [0 : barb_count_5 - 1]) {
+        translate([0, 0, 25 + i * barb_h_5 / (barb_count_5 - 1)])
+            linear_extrude(height = barb_h_5 / (barb_count_5 - 1))
+                polygon([
+                    [0, -step_od_5 / 2],
+                    [0, step_od_5 / 2],
+                    [barb_od_bottom_5 / 2, barb_od_bottom_5 / 2],
+                    [-barb_od_bottom_5 / 2, barb_od_bottom_5 / 2]
+                ]);
+    }
+}
+
+difference() {
+    union() {
+        // 8 mm tubing barbs
+        barbs_8();
+        // Collar
+        translate([0, 0, 20])
+            cylinder(d = collar_d, h = collar_h);
+        // 5 mm tubing barbs
+        barbs_5();
+    }
+    // Through bore
+    translate([0, 0, -1])
+        cylinder(d = bore_d, h = 43);
+}
+```

@@ -1,0 +1,33 @@
+// Lab funnel - printed upright, open at top and bottom
+// Units: mm
+
+$fn = 64;
+
+// --- Dimensions ---
+spout_od      = 10;    // spout outer diameter
+spout_length  = 20;    // spout runs from z = 0 to z = 20
+cone_top_d    = 60;    // cone rim diameter at z = 50
+cone_bottom_d = 10;    // cone diameter at z = 20 (spout top)
+wall          = 1.6;   // wall thickness everywhere
+
+// Derived
+spout_id = spout_od - 2 * wall;   // bore diameter = 6.8
+total_h  = 50;                    // top of rim
+
+// --- Model ---
+difference() {
+    union() {
+        // Straight spout
+        cylinder(d = spout_od, h = spout_length);
+        // Cone from z = 20 to z = 50
+        translate([0, 0, spout_length])
+            cylinder(d1 = cone_bottom_d, d2 = cone_top_d, h = total_h - spout_length);
+    }
+    // Through-bore: spout bore + extended cone bore (keeps same wall thickness)
+    translate([0, 0, -wall])
+        linear_extrude(height = total_h + 2 * wall)
+            circle(d = spout_id);
+    translate([0, 0, spout_length])
+        linear_extrude(height = total_h - spout_length + wall)
+            circle(d1 = cone_bottom_d - 2 * wall, d2 = cone_top_d - 2 * wall);
+}

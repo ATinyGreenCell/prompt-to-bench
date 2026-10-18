@@ -1,0 +1,64 @@
+// L-shaped mounting bracket for NEMA 17 stepper motor (syringe pump)
+// Print orientation: base plate on bed, vertical plate builds upward (+Z)
+
+// ---------------- Parameters ----------------
+base_w      = 50;    // base plate length (X)
+base_h      = 45;    // base plate width (Y)
+base_t      = 5;     // base plate thickness (Z)
+
+hole_m4_x   = -17;   // M4 hole X offset from centre
+hole_m4_y   = 30;    // M4 hole Y position
+hole_m4_d   = 4.5;   // M4 hole diameter
+
+plate_w     = 50;    // motor plate length (X)
+plate_h     = 5;     // motor plate width (Y)
+plate_z     = 50;    // motor plate height (Z)
+
+boss_d      = 23;    // motor boss hole diameter
+boss_x      = 0;     // boss hole X centre
+boss_z      = 28;    // boss hole Z centre
+
+screw_d     = 3.4;   // M3 screw hole diameter
+screw_pitch = 31;    // square pattern side length
+
+gusset_t    = 5;     // gusset thickness (X)
+gusset_leg  = 20;    // gusset leg length (Y and Z)
+
+eps         = 0.5;   // cutter overshoot
+
+$fn = 96;
+
+// ---------------- Model ----------------
+union() {
+    // Base plate
+    translate([-base_w/2, 0, 0])
+        difference() {
+            cube([base_w, base_h, base_t]);
+            for (sx = [-1, 1])
+                translate([sx * hole_m4_x, hole_m4_y, -eps])
+                    cylinder(d = hole_m4_d, h = base_t + 2*eps);
+        }
+
+    // Motor plate
+    translate([-plate_w/2, 0, 0])
+        difference() {
+            cube([plate_w, plate_h, plate_z]);
+            translate([boss_x, -eps, boss_z])
+                cylinder(d = boss_d, h = plate_h + 2*eps);
+            for (i = [0 : 3])
+                for (j = [0 : 3])
+                    translate([(i - 1.5) * screw_pitch, (j - 1.5) * screw_pitch, -eps])
+                        cylinder(d = screw_d, h = plate_z + 2*eps);
+        }
+
+    // Gussets
+    for (x0 = [-base_w/2 + gusset_t, base_w/2 - gusset_t])
+        translate([x0, 0, 0])
+            rotate([90, 0, 0])
+                linear_extrude(height = gusset_t)
+                    polygon(points = [
+                        [gusset_leg, gusset_leg],
+                        [gusset_leg, 0],
+                        [0, gusset_leg]
+                    ]);
+}

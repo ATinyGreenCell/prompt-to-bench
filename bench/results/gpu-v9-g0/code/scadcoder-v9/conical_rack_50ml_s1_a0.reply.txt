@@ -1,0 +1,47 @@
+```openscad
+// Rack for six 50 mL conical (Falcon-type) tubes
+// Print orientation: flat plate on bed, walls rising to z = 70.
+// After printing, flip the part so the walls stand on the bed and the
+// tube holes face upward.
+//
+// Units: mm
+
+// ---- Parameters ----
+plate_x      = 130;   // plate length along X
+plate_y      = 90;    // plate width along Y
+plate_t      = 4;     // plate thickness (z = 0 to 4)
+
+hole_d       = 30.5;  // through-hole diameter
+hole_count   = 6;     // number of tube holes
+hole_pitch   = 40;    // centre-to-centre spacing, X and Y
+
+wall_h       = 70;    // wall height from top of plate (z = 74)
+wall_t       = 4;     // wall thickness (Y)
+
+eps          = 0.5;   // cutter overshoot past faces
+
+$fn = 96;
+
+// ---- Model ----
+difference() {
+    union() {
+        // Base plate
+        translate([-plate_x/2, -plate_y/2, 0])
+            cube([plate_x, plate_y, plate_t]);
+
+        // Two solid walls along the long edges (flush with plate)
+        for (sx = [-1, 1])
+            translate([sx > 0 ? plate_x/2 - wall_t : -plate_x/2,
+                       -plate_y/2, plate_t])
+                cube([wall_t, plate_y, wall_h]);
+    }
+
+    // Tube holes, 2 rows along Y, 3 along X
+    for (i = 0; i < hole_count; i++) {
+        r = (i % 3);
+        y = (i / 3 - 1) * hole_pitch;
+        translate([r * hole_pitch - 1.5 * hole_pitch, y, -eps])
+            cylinder(d = hole_d, h = plate_t + 2 * eps);
+    }
+}
+```

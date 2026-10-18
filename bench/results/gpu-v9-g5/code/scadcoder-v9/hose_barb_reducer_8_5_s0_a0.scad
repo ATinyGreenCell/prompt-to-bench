@@ -1,0 +1,64 @@
+// Hose-barb reducer: 8 mm ID tubing end (z = 0..20) -> 5 mm ID tubing end (z = 25..41)
+// Print orientation: standing upright along +Z, centred on the Z axis.
+
+// ---------------- Parameters ----------------
+tube_a_id   = 8;    // first tubing inner diameter (mm)
+tube_b_id   = 5;    // second tubing inner diameter (mm)
+bore        = 3;    // through-bore diameter (mm)
+
+barb_a_h    = 10;   // height of each 8 mm barb (mm)
+barb_a_bot  = 7.5;  // outer diameter of each 8 mm barb at its bottom (mm)
+barb_a_top  = 9.5;  // outer diameter of each 8 mm barb at its top (mm)
+
+collar_d    = 12;   // diameter of the joining collar (mm)
+collar_h    = 5;    // height of the joining collar (mm)
+
+barb_b_h    = 8;    // height of each 5 mm barb (mm)
+barb_b_bot  = 6.5;  // outer diameter of each 5 mm barb at its bottom (mm)
+barb_b_top  = 5.0;  // outer diameter of each 5 mm barb at its top (mm)
+
+eps         = 0.5;  // overshoot for clean boolean cuts (mm)
+
+$fn = 96;           // curve resolution
+
+// ---------------- Derived ----------------
+tube_a_len = 20;    // z = 0 to 20
+tube_b_len = 16;    // z = 25 to 41
+wall       = 1;     // assumed wall thickness when stepping back from the tip
+
+// ---------------- Model ----------------
+difference() {
+    union() {
+        // ---- 8 mm tubing end ----
+        for (i = [0 : 1])
+            translate([0, 0, i * barb_a_h])
+                linear_extrude(height = barb_a_h)
+                    polygon([
+                        [0, 0],
+                        [(barb_a_bot / 2) * cos(0), (barb_a_bot / 2) * sin(0)],
+                        [(barb_a_top / 2) * cos(0), (barb_a_top / 2) * sin(0)],
+                        [-(barb_a_top / 2) * cos(0), (barb_a_top / 2) * sin(0)],
+                        [-(barb_a_bot / 2) * cos(0), (barb_a_bot / 2) * sin(0)]
+                    ]);
+
+        // ---- joining collar ----
+        translate([0, 0, tube_a_len])
+            cylinder(d = collar_d, h = collar_h);
+
+        // ---- 5 mm tubing end ----
+        for (i = [0 : 1])
+            translate([0, 0, tube_a_len + collar_h + i * barb_b_h])
+                linear_extrude(height = barb_b_h)
+                    polygon([
+                        [0, 0],
+                        [(barb_b_bot / 2) * cos(0), (barb_b_bot / 2) * sin(0)],
+                        [(barb_b_top / 2) * cos(0), (barb_b_top / 2) * sin(0)],
+                        [-(barb_b_top / 2) * cos(0), (barb_b_top / 2) * sin(0)],
+                        [-(barb_b_bot / 2) * cos(0), (barb_b_bot / 2) * sin(0)]
+                    ]);
+    }
+
+    // ---- through bore ----
+    translate([0, 0, -eps])
+        cylinder(d = bore, h = tube_a_len + collar_h + tube_b_len + 2 * eps);
+}

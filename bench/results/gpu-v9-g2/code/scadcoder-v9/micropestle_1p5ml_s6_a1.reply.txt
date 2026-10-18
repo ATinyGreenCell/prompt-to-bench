@@ -1,0 +1,42 @@
+```openscad
+// Tissue-grinding pestle for 1.5 mL microcentrifuge tube
+// Print orientation: standing upright on the bed (z = 0), building +Z.
+
+// ---------------- Parameters ----------------
+handle_d      = 8;    // handle diameter (mm), z = 0 .. 45
+handle_h      = 45;   // handle height (mm)
+cone_d_bottom = 8;    // cone diameter at its bottom (mm), z = 45
+cone_d_top    = 3;    // cone diameter at its top (mm), z = 62
+tip_r         = 1.5;  // tip sphere radius (mm), centre at z = 62
+groove_count  = 4;    // number of circumferential grooves
+groove_w      = 2;    // groove width along Z (mm)
+groove_d      = 1;    // groove depth (mm)
+groove_z      = [10, 15, 20, 25]; // groove centre heights (mm)
+eps           = 0.5;  // cutter overshoot past faces (mm)
+
+$fn = 96;
+
+// ---------------- Model ----------------
+union() {
+    // (1) Cylindrical handle
+    translate([0, 0, 0])
+        cylinder(d = handle_d, h = handle_h);
+
+    // (2) Tapering cone: 8 mm at z = 45 down to 3 mm at z = 62
+    translate([0, 0, handle_h])
+        cylinder(d1 = cone_d_bottom, d2 = cone_d_top, h = handle_h + eps);
+
+    // (3) Rounded tip: 3 mm diameter sphere centred at z = 62
+    translate([0, 0, tip_r])
+        sphere(r = tip_r);
+}
+
+// ---------------- Grooves ----------------
+for (g = [0 : groove_count - 1]) {
+    a = g * 360 / groove_count;   // groove angle
+    translate([0, 0, groove_z[g]])
+        rotate([0, 0, a])
+            translate([0, -groove_d, 0])
+                cylinder(d = groove_w, h = handle_h + 2 * eps, center = true);
+}
+```

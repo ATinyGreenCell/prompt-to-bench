@@ -1,0 +1,55 @@
+// Rack for six 50 mL conical (Falcon-type) tubes
+// Print orientation: flat plate on bed, walls rising to z = 70.
+// After printing, flip the part so the walls stand on the bed and the
+// tube holes face upward.
+//
+// Units: mm. $fn = 64 on curved shapes. No external libraries.
+
+// ---------------- Parameters ----------------
+plate_x      = 130;   // plate length along X
+plate_y      = 90;    // plate width along Y
+plate_t      = 4;     // plate thickness (z = 0 to 4)
+
+hole_d       = 30.5;  // through-hole diameter (Falcon tube clearance)
+hole_nx      = 3;     // holes per row along X
+hole_ny      = 2;     // rows along Y
+hole_pitch   = 40;    // centre-to-centre spacing, both directions
+
+wall_t       = 4;     // wall thickness (Y)
+wall_h       = 70;    // wall top height (z)
+wall_nx      = 2;     // number of wall segments (two long edges)
+
+eps          = 0.5;   // cutter overshoot past faces
+$fn          = 64;    // circle resolution
+
+// Derived
+wall_x0 = -plate_x / 2 + wall_t;   // inner X of right wall
+wall_x1 = plate_x / 2 - wall_t;    // inner X of left wall
+
+// ---------------- Model ----------------
+union() {
+    // Base plate with hole grid
+    difference() {
+        translate([-plate_x / 2, -plate_y / 2, 0])
+            cube([plate_x, plate_y, plate_t]);
+
+        for (i = [0 : hole_nx - 1])
+            for (j = [0 : hole_ny - 1])
+                translate([
+                    -plate_x / 2 + i * hole_pitch,
+                    -plate_y / 2 + j * hole_pitch,
+                    -eps
+                ])
+                    cylinder(d = hole_d, h = plate_t + 2 * eps);
+    }
+
+    // Two solid walls along the long edges, flush with the plate
+    for (k = [0 : wall_nx - 1]) {
+        select(k) {
+            translate([-plate_x / 2, -wall_t, 0])
+                cube([plate_x / 2 - wall_x0, wall_t, wall_h]);   // left edge
+            translate([wall_x1, -wall_t, 0])
+                cube([plate_x / 2 - wall_x1, wall_t, wall_h]);   // right edge
+        }
+    }
+}

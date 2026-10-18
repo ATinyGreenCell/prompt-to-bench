@@ -1,0 +1,38 @@
+// Tissue-grinding pestle for a 1.5 mL microcentrifuge tube
+// Print orientation: standing upright on the XY plane, building up +Z
+
+// ---------------- Parameters ----------------
+handle_d      = 8;     // handle diameter (z = 0 .. 45)
+handle_h      = 45;    // handle height
+cone_top_d    = 8;     // cone diameter at its bottom (z = 45)
+cone_tip_d    = 3;     // cone diameter at its top (z = 62)
+cone_h        = cone_tip_z - cone_bottom_z; // cone height (37)
+tip_r         = 1.5;   // tip sphere radius (diameter 3), centre at z = 62
+groove_count  = 4;     // number of circumferential grooves
+groove_w      = 2;     // groove width along Z
+groove_d      = 1;     // groove depth from surface
+groove_z      = [10, 15, 20, 25]; // groove centre heights
+eps           = 0.5;   // cutter overshoot past faces
+
+$fn = 96;
+
+// ---------------- Model ----------------
+difference() {
+    union() {
+        // Handle
+        cylinder(d = handle_d, h = handle_h);
+        // Tapered cone (slight overlap into handle for a clean union)
+        translate([0, 0, handle_h - 1])
+            cylinder(d1 = cone_top_d, d2 = cone_tip_d, h = cone_h + 1);
+        // Rounded tip sphere
+        translate([0, 0, cone_tip_z])
+            sphere(r = tip_r);
+    }
+
+    // Grip grooves, cut through the handle only
+    for (i = [0 : groove_count - 1]) {
+        rotate([0, 0, i * 360 / groove_count])
+            translate([0, -1, groove_z[i] - groove_w / 2])
+                cylinder(d = groove_d + eps, h = groove_w + eps, center = true);
+    }
+}

@@ -1,0 +1,38 @@
+// Magnetic stirrer housing - open box covering an 80 mm PC fan
+// Print orientation: top plate on bed (z = 0), walls rise to z = 40
+
+// ---------- Parameters ----------
+top_thickness   = 2;     // top plate thickness (mm)
+wall_thickness  = 2.5;   // side wall thickness (mm)
+open_top_z      = 40;    // height of open top / walls (mm)
+outer_size      = 90;    // outer size in X and Y (mm)
+screw_hole_d    = 4.5;   // M4 screw hole diameter (mm)
+screw_pattern   = 71.5;  // square pitch of screw holes (mm)
+notch_width     = 12;    // power cable notch width (mm)
+notch_bottom_z  = 32;    // notch floor height (mm)
+eps             = 0.5;   // cutter overshoot past faces (mm)
+
+$fn = 64;
+
+// ---------- Model ----------
+difference() {
+    // Solid block of the box
+    translate([-outer_size/2, -outer_size/2, 0])
+        cube([outer_size, outer_size, open_top_z]);
+
+    // Open top: remove everything above z = open_top_z - eps
+    translate([-outer_size/2, -outer_size/2, open_top_z - eps])
+        cube([outer_size, outer_size, eps]);
+
+    // Screw holes through the top plate, centred on the plate
+    for (sx = [-screw_pattern/2, screw_pattern/2])
+        for (sy = [-screw_pattern/2, screw_pattern/2])
+            translate([sx, sy, -eps])
+                cylinder(d = screw_hole_d, h = top_thickness + 2*eps);
+
+    // Cable notch in one wall: 12 mm wide, centred along the wall,
+    // reaching 8 mm down from the open edge (z = 32 to z = 40)
+    translate([-outer_size/2 - wall_thickness, 0, notch_bottom_z])
+        cube([notch_width + 2*wall_thickness, outer_size,
+              open_top_z - notch_bottom_z]);
+}
