@@ -266,11 +266,15 @@ Format: **Symptom → Impact → Root cause → Fix** (check when the fix is in 
 - **Fix:** `meta/build_log.py` now redacts `hf_…`, `rpa_…`/`rps_…` and UUID-shaped keys; grep staged files for token
   patterns before every push; never type token fragments in commands (they are exported too). Revoke anything pasted.
 
-### H34. The box answered but every model call returned 502 for hours — [x] GPU tier
+### H34. The box answered but every model call returned 502 for hours — [x] log in on the TiinyOS app
 - **Symptom:** after a power cycle, `:39218/device.json` and nginx answered, but every vhost (`openai.api.tiiny`,
   `api.tiiny`, `p8800.api.tiiny`) returned HTTP 502 for 3+ hours. Sealed appliance: no remote fix.
-- **Fix:** serve the same merged weights with vLLM on a rented GPU and drive the unchanged harness through
-  `bench/ollama_openai_shim.py` (SSH tunnel to the pod's 127.0.0.1:8000). Label results "GPU, 16-bit" — not box numbers.
+- **Root cause (found 2026-10-17 evening):** after a power cycle the box keeps its model services down until an
+  account **logs in on the TiinyOS app**; two power cycles changed nothing, the app login brought the services up
+  within a minute (502 -> connection reset -> 401 for unauthenticated probes -> working with the device key).
+- **Fix:** after any box power cycle, open the TiinyOS app and log in, then check `tk doctor`. While the box is down,
+  the GPU tier still works: serve the merged weights with vLLM and drive the unchanged harness through
+  `bench/ollama_openai_shim.py` (RUNBOOK B5). Label those results "GPU, 16-bit" — not box numbers.
 
 ### H35. Shell footguns on the pod — [x] noted
 - `pkill -f "vllm serve"` over ssh kills the ssh shell itself (its command line matches): use `pkill -f "[v]llm serve"`.
@@ -296,3 +300,9 @@ Format: **Symptom → Impact → Root cause → Fix** (check when the fix is in 
   only opens the relay room once the zip is done (its log then says `Sending 'merged16.zip'`).
 - **Fix:** poll the sender's log for `Sending '` before running `runpodctl receive`, and retry the receive (the
   sender keeps waiting after a "room not ready" refusal). Done in the chain scripts used for v5-v7.
+
+### H39. Box import without the app — [x] `box_import.py` (proven 2026-10-17)
+- The TiinyOS app's Import Model step is two API calls; `finetune/scripts/box_import.py` makes them with the device
+  key: `POST api.tiiny/api/v1/models/import/inspect {hf_url}` (returns `import_support.base_model_id/toolkit_id`,
+  storage needs, LoRA detection), then a streamed `POST /api/v1/models/import`. Leave empty fields out of the body
+  (the app's JSON.stringify drops undefined ones). Run inspect-only first; `--go` imports. v5 and v6 went in this way.

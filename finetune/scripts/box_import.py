@@ -80,6 +80,7 @@ def main() -> None:
         "model_name": a.name, "display_name": a.name, "model_desc": a.desc,
         "reasoning_enabled": bool(a.reasoning),
     }
+    body = {k: v for k, v in body.items() if v is not None}  # the app's JSON.stringify drops undefined fields
     print("\nimport request:", json.dumps(body, indent=1))
     missing = [k for k in ("base_model_id", "toolkit_id") if not body[k]]
     if missing:
