@@ -116,13 +116,15 @@ fi
 
 exec 9>/tmp/pod_idle_guard.lock
 flock -n 9 || { log "another guard is running; exiting"; exit 0; }
+# the sleeps run with the lock's descriptor closed: a guard killed mid-sleep would otherwise leave its orphaned
+# sleep holding the lock, and the supervisor's restart would be refused until the sleep ended
 
 idle=0; warned=0
 prev_net=$(net_bytes); prev_cpu=$(cpu_usec)
 [ -n "$prev_cpu" ] || log "WARN: no cgroup CPU accounting - CPU work is not seen"
 [ -n "$(gpu_max)" ] || log "WARN: no GPU telemetry (CPU pod or driver issue) - GPU counted as idle"
 log "guard armed: pod ${RUNPOD_POD_ID:-?} stops after ${IDLE_MIN} idle min (gpu<${GPU_PCT}%, cpu<${CPU_CORES} cores, no work process, net<${NET_KBPS} KB/s) or at ${MAX_HOURS} h old"
-while sleep 60; do
+while sleep 60 9>&-; do
   net=$(net_bytes); cpu=$(cpu_usec); age=$(age_s); age=${age:-0}
   kbps=$(( (net - prev_net) / 1024 / 60 )); prev_net=$net
   cores=0
@@ -155,7 +157,7 @@ while sleep 60; do
   if [ -n "$action" ]; then
     log "stopping pod ${RUNPOD_POD_ID:-?}: $([ "$action" = cap ] && echo "hard cap ${MAX_HOURS} h reached (age ${age} s)" || echo "idle ${IDLE_MIN} min")"
     if [ "${DRY_RUN:-0}" = "1" ]; then log "DRY_RUN: would stop the pod now"; idle=0; warned=0; continue; fi
-    if stop_pod; then log "stop requested"; sleep 120; log "still running 2 min after the stop request - retrying"; fi
+    if stop_pod; then log "stop requested"; sleep 120 9>&-; log "still running 2 min after the stop request - retrying"; fi
     log "stop failed (all paths); retrying in a minute"
   fi
 done

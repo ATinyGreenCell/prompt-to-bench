@@ -17,11 +17,13 @@ export PIP_BREAK_SYSTEM_PACKAGES=1   # H26: the runpod/pytorch image python is P
 
 # H32: stop this pod by itself once it sits idle (run finished and nobody retrieved it, a chain died).
 # Sent alongside this script; no laptop credentials needed (RunPod injects a pod-scoped key).
-if [ -f pod_idle_guard.sh ]; then
+if pgrep -f "[p]od_idle_guard.sh" > /dev/null 2>&1; then
+  echo "== idle guard running since boot (guarded_pod_body.py); touch /workspace/KEEP_ALIVE to hold the pod =="
+elif [ -f pod_idle_guard.sh ]; then
   (setsid nohup bash pod_idle_guard.sh >> /workspace/idle_guard.log 2>&1 < /dev/null &)
   echo "== idle guard armed (IDLE_MIN=${IDLE_MIN:-45}); touch /workspace/KEEP_ALIVE to hold the pod =="
 else
-  echo "== WARNING: pod_idle_guard.sh not sent - this pod will bill until terminated by hand =="
+  echo "== WARNING: no idle guard (pod not created with guarded_pod_body.py, guard not sent) - this pod bills until stopped by hand =="
 fi
 
 echo "== GPU =="

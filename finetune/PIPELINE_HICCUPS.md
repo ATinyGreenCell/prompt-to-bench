@@ -332,3 +332,32 @@ session-start `list-pods` check and by Claude's allow rule to terminate; the Gra
   from a failed step still holds its old failure line.
 - **Fix:** wait for the install, then `python -c "from huggingface_hub import snapshot_download; ..."`; clear or
   rotate a step's log before re-running it, and key watchers on markers only the new run can write.
+
+### H42. Launcher audit (2026-10-18) — [x] boot launcher and job launcher tested on real pods
+Two RTX 2000 Ada pods ($0.24/hr), created from `guarded_pod_body.py` bodies (guard pinned to bba6845):
+- **Bad checksum (pod B, MAX_HOURS 0.05):** six downloads refused by the SHA-256 check, `GUARD NOT STARTED ...
+  fallback hard cap: stop after 180s` logged 62 s after boot, pod EXITED at 180 s. Nothing unverified ran.
+- **Supervisor (pod A):** guard armed on the first download; after `kill -9` the supervisor restarted it in 31 s;
+  a second copy started by hand exited at once (`another guard is running`).
+- **Found: SIGTERM mid-sleep took 61 s to recover, not 30.** The guard's lock is fd 9 and every child inherited
+  it; the killed guard's orphaned `sleep 60` kept the lock, so the supervisor's first restart was refused.
+  Fixed: the guard's sleeps run with fd 9 closed (`sleep 60 9>&-`). Re-tested on the same pod: restart in 30 s,
+  the sleep child holds no lock descriptor.
+- **Found: the hard cap lived only in the guard** (or in the fallback when the guard failed): had the guard and
+  its supervisor both died, nothing enforced MAX_HOURS. Fixed: the boot script starts the backstop sleeper
+  first, in both cases.
+- **`podjob.py`, 35 of 35 edge cases:** push/pull sha256-verified (directories and missing files refused); exit
+  codes propagate (7 stays 7); bad cwd / bad name / no command refused without leaving a run directory; a
+  second run of a busy name refused (4) and allowed again once the first crashed; `wait --timeout` returns 124
+  and leaves the job running; whole job killed -> CRASHED (5); only the wrapper killed while the work went on ->
+  RUNNING until the work ended, then CRASHED; a command containing the old heredoc terminator ran intact; argv
+  with `$HOME`, spaces and quotes arrived literally; pull-dir of a nested directory verified, refused to
+  overwrite a local copy, and `--replace` moved the old copy aside with no staging left behind.
+- **sshd down 50 s during a `wait`:** four transport failures logged, then the job's real result (rc 0). An
+  unreachable port gives exit 3 after six retries.
+- **Found in podjob before the run:** `pull-dir` ran `rm -rf <local_parent>/<name>` before receiving (a wrong
+  argument could delete a local directory of that name); a missing remote file was retried six times as a
+  transport failure and reported "unreachable"; status checked only the wrapper's pid; a stopped pod kept
+  `wait` polling until its 6 h timeout; a command line equal to the heredoc terminator truncated cmd.sh; scp and
+  receive timeouts raised tracebacks. All fixed and covered above.
+- `pod_train_vlm.sh` no longer prints "will bill until terminated by hand" on pods guarded from boot.

@@ -221,12 +221,30 @@ points: v2's data peaks at 0.22; same-style-different-part prompts sit at 0.25-0
 ```
 python finetune/scripts/guarded_pod_body.py --name <name> --gpu "NVIDIA H100 80GB HBM3" [--idle-min 45 --max-hours 12]
 ```
-Its container command downloads `scripts/pod_idle_guard.sh` from this repo pinned to a commit (SHA-256 checked),
-starts it, then execs the image's own `/start.sh`, so the guard runs from the pod's first minute and after any
-container restart. The guard stops the pod when (a) for IDLE_MIN minutes the GPU is below 5%, the container uses
-under 0.5 cores (cgroup accounting), no training/pip/HF-transfer process runs and the network is quiet, or (b)
-the pod is older than MAX_HOURS - whatever it is doing. `touch /workspace/KEEP_ALIVE` holds it against (a) only.
+Its container command first starts a backstop (a plain sleeper that stops the pod at MAX_HOURS and needs nothing
+downloaded), then downloads `scripts/pod_idle_guard.sh` from this repo pinned to a commit (SHA-256 checked), runs
+it under a supervisor loop that restarts it within 30 s if it dies, and execs the image's own `/start.sh`, so the
+guard runs from the pod's first minute and after any container restart. If the download or the checksum fails,
+the log says `GUARD NOT STARTED` and the backstop still stops the pod at MAX_HOURS. The guard stops the pod when
+(a) for IDLE_MIN minutes the GPU is below 5%, the container uses under 0.5 cores (cgroup accounting), no
+training/pip/HF-transfer process runs and the network is quiet, or (b) the pod is older than MAX_HOURS - whatever
+it is doing. `touch /workspace/KEEP_ALIVE` holds it against (a) only. Both clocks restart with the container.
 A stop clears the container disk: retrieve the merged model within IDLE_MIN of the run ending.
+
+**Run work on a pod with `scripts/podjob.py`**, not hand-written ssh/scp/pkill (H42):
+```
+podjob.py --host H --port P wait-ssh
+podjob.py --host H --port P push v9_train.jsonl train_vlm.py pod_train_vlm.sh     # sha256-verified
+RUN=$(podjob.py --host H --port P run train -- 'DATA=v9_train.jsonl MASK_EARLIER=1 bash pod_train_vlm.sh')
+podjob.py --host H --port P wait "$RUN" --timeout 18000      # exits with the job's own code
+podjob.py --host H --port P pull-dir /workspace/out_vlm/merged16 finetune/out-v9     # runpodctl, verified
+```
+Each run has its own directory (`/workspace/jobs/<run>/`: cmd.sh, out.log, pid, exit), runs in its own session
+(it survives the SSH connection), holds a per-name lock (a second `train` is refused, exit 4) and writes its exit
+code atomically. `wait` retries SSH failures instead of reading them as "job gone", exits 5 if every process of
+the job died without an exit code, and 3 once the pod has been unreachable 15 min (stopped or terminated).
+`pull-dir` receives into a fresh staging directory and touches nothing local until every file's size matches;
+an existing local copy is kept unless `--replace` (which moves it aside).
 Check a pod: `bash /usr/local/bin/pod_idle_guard.sh --self-test`, `cat /workspace/.idle_guard_state`,
 `/workspace/idle_guard.log`. `pod_train_vlm.sh` also starts the guard if `pod_idle_guard.sh` sits beside it
 (older pods). Backstops beyond the pod: Claude may stop/terminate any pod (allow rules for `delete-pod` and

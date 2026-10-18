@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
 """Print a RunPod create-pod body (REST v2 / the MCP's create-pod) for a pod that guards itself from boot.
 
-The container's command is replaced by a short bash line that downloads pod_idle_guard.sh from this repo -
-pinned to a commit and checked against its SHA-256, so what runs is exactly the audited file - starts it in
-the background, then execs the image's own /start.sh (sshd, PUBLIC_KEY, ...). The image's ENTRYPOINT is
-kept. So the guard runs from the pod's first minute, before any of our scripts, and again after a container
-restart: a pod that is never used, or whose job finished and was never collected, stops itself after
-IDLE_MIN idle minutes, and no pod outlives MAX_HOURS (pod_idle_guard.sh; RUNBOOK B7). If the download or the
-checksum fails the pod still boots and the failure is logged to /workspace/idle_guard.log.
+The container's command is replaced by a short bash script that first starts a backstop - a plain sleeper that
+stops the pod at MAX_HOURS and needs nothing downloaded - then downloads pod_idle_guard.sh from this repo, pinned
+to a commit and checked against its SHA-256 so what runs is exactly the audited file, runs it under a supervisor
+loop that restarts it within 30 s if it ever dies, and finally execs the image's own /start.sh (sshd,
+PUBLIC_KEY, ...). The image's ENTRYPOINT is kept. So the guard runs from the pod's first minute, before any of
+our scripts, and again after a container restart: a pod that is never used, or whose job finished and was never
+collected, stops itself after IDLE_MIN idle minutes, and no pod outlives MAX_HOURS (pod_idle_guard.sh; RUNBOOK
+B7). If the download or the checksum fails, the pod still boots, the failure is logged to
+/workspace/idle_guard.log, and the backstop still stops it at MAX_HOURS. Both clocks restart with the container.
 
 Every pod for this project is created through this body:
 
@@ -30,6 +32,11 @@ REPO = "ATinyGreenCell/prompt-to-bench"
 PATH = "finetune/scripts/pod_idle_guard.sh"
 BOOT = r"""L=/workspace/idle_guard.log; G=/usr/local/bin/pod_idle_guard.sh
 mkdir -p /workspace /usr/local/bin
+# backstop: the hard cap is also kept by a plain sleeper that needs nothing downloaded, so it holds even if the
+# guard never starts, or dies together with its supervisor
+S=$(awk -v h="${MAX_HOURS:-12}" 'BEGIN {h += 0; if (h <= 0) h = 12; printf "%d", h * 3600}')
+# shellcheck disable=SC2016  # the inner scripts take their values as positional arguments
+(setsid nohup bash -c 'sleep "$1"; echo "$(date -u +%FT%TZ) backstop: $1 s cap reached, stopping the pod"; timeout 60 runpodctl stop pod "$2" || timeout 60 runpodctl pod stop "$2"' _ "$S" "${RUNPOD_POD_ID:-}" >> "$L" 2>&1 < /dev/null &)
 ok=0
 for _ in 1 2 3 4 5 6; do
   rm -f "$G"
@@ -41,13 +48,10 @@ for _ in 1 2 3 4 5 6; do
 done
 if [ "$ok" = 1 ]; then
   # supervised: if the guard ever dies it is back within 30 s (its lock keeps it to one copy)
-  # shellcheck disable=SC2016  # the inner script takes its values as positional arguments
+  # shellcheck disable=SC2016
   (setsid nohup bash -c 'while :; do bash "$1"; sleep 30; done' _ "$G" >> "$L" 2>&1 < /dev/null &)
 else
-  S=$(awk -v h="${MAX_HOURS:-12}" 'BEGIN {h += 0; if (h <= 0) h = 12; printf "%d", h * 3600}')
-  echo "$(date -u +%FT%TZ) GUARD NOT STARTED (download or checksum failed); fallback hard cap: stop after ${S}s" >> "$L"
-  # shellcheck disable=SC2016
-  (setsid nohup bash -c 'sleep "$1"; timeout 60 runpodctl stop pod "$2"' _ "$S" "${RUNPOD_POD_ID:-}" >> "$L" 2>&1 < /dev/null &)
+  echo "$(date -u +%FT%TZ) GUARD NOT STARTED (download or checksum failed); only the backstop applies: stop after ${S}s" >> "$L"
 fi
 if [ -x /start.sh ]; then exec /start.sh; fi
 echo "$(date -u +%FT%TZ) no /start.sh in this image - keeping PID 1 alive so the guard can stop the pod" >> "$L"

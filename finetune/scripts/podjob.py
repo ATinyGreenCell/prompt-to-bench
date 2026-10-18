@@ -3,9 +3,12 @@
 
 Every job gets its own directory on the pod, /workspace/jobs/<run-id>/ (cmd.sh, out.log, pid, exit), so two runs
 never share a log or a marker; `exit` is written atomically when the command ends, so "done" can only mean THIS
-run finished; a per-name lock refuses a second concurrent run of the same job; and an SSH transport failure
-(exit 255, a timeout) is retried, never read as "the job is gone". Big directories come back through
-`runpodctl send/receive`, started only once the sender's room is open, then verified file by file.
+run finished; the job runs in its own session, so it outlives the SSH connection and "running" means any of its
+processes is alive; a per-name lock refuses a second concurrent run of the same job; and an SSH transport failure
+(exit 255, a timeout) is retried, never read as "the job is gone" - though a pod unreachable for --max-unreachable
+seconds (stopped, terminated) ends the wait. Big directories come back through `runpodctl send/receive`, started
+only once the sender's room is open, received into a fresh staging directory and verified file by file before
+anything local is touched.
 
     podjob.py --host H --port P wait-ssh
     podjob.py --host H --port P push train.jsonl train_vlm.py --dest /workspace
@@ -16,16 +19,17 @@ run finished; a per-name lock refuses a second concurrent run of the same job; a
     podjob.py --host H --port P status "$RUN"
 
 Exit codes: 0 ok; the job's own code for `wait`; 2 usage; 3 pod unreachable; 4 duplicate run; 5 job crashed
-(process gone, no exit file); 124 wait timed out; 6 transfer or verification failed.
+(every process gone, no exit file); 124 wait timed out; 6 transfer or verification failed, or a refused overwrite.
 """
 from __future__ import annotations
 
 import argparse
 import hashlib
-import json
 import os
 import re
+import secrets
 import shlex
+import shutil
 import subprocess
 import sys
 import time
@@ -66,10 +70,15 @@ class Pod:
     def scp(self, src: str, dst: str, timeout: int = 3600) -> None:
         cmd = ["scp", "-q", "-i", KEY, *SSH_OPTS, "-P", str(self.port), src, dst]
         for attempt in range(1, self.retries + 1):
-            r = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
-            if r.returncode == 0:
-                return
-            log(f"scp failed ({(r.stderr or '').strip()[:160]}); retry {attempt}/{self.retries}")
+            try:
+                r = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
+            except subprocess.TimeoutExpired:
+                why = f"no finish within {timeout}s"
+            else:
+                if r.returncode == 0:
+                    return
+                why = (r.stderr or "").strip()[:160]
+            log(f"scp failed ({why}); retry {attempt}/{self.retries}")
             time.sleep(min(60, 5 * attempt))
         raise ConnectionError(f"scp {src} -> {dst} failed")
 
@@ -107,6 +116,10 @@ def cmd_wait_ssh(pod: Pod, a) -> int:
 
 
 def cmd_push(pod: Pod, a) -> int:
+    bad = [f for f in a.files if not os.path.isfile(f)]
+    if bad:
+        log(f"not a file: {bad[0]} (push files; tar a directory first)")
+        return 2
     pod.ssh(f"mkdir -p {shlex.quote(a.dest)}")
     for f in a.files:
         dst = f"{a.dest.rstrip('/')}/{os.path.basename(f)}"
@@ -125,17 +138,16 @@ mkdir -p {jobs}
 exec 8>{jobs}/{name}.lock
 if ! flock -n 8; then echo "DUPLICATE: another '{name}' run holds the lock"; exit 4; fi
 mkdir "$J" || {{ echo "run dir exists"; exit 4; }}
-cat > "$J/cmd.sh" <<'PODJOB_CMD'
+cat > "$J/cmd.sh" <<'{tag}'
 {cmd}
-PODJOB_CMD
-cd {cwd} || {{ echo "no such directory: {cwd}"; rmdir "$J" 2>/dev/null; exit 6; }}
-# the job keeps the name lock (fd 8) for its whole life; the exit file is written atomically at the end
-(
-  setsid bash -c 'bash "$1/cmd.sh" > "$1/out.log" 2>&1 < /dev/null; rc=$?; echo "$rc" > "$1/exit.tmp"; mv "$1/exit.tmp" "$1/exit"' _ "$J" &
-  echo $! > "$J/pid"
-  wait
-) 8>&8 > /dev/null 2>&1 < /dev/null &
-sleep 1
+{tag}
+cd {cwd} || {{ echo "no such directory: {cwd}"; rm -rf "$J"; exit 6; }}
+# the job runs in its own session, so its pid is also its process group (status checks the whole group); it
+# inherits the name lock (fd 8) for its whole life and writes its exit status atomically at the end
+# shellcheck disable=SC2016
+setsid bash -c 'echo $$ > "$1/pid.tmp"; mv "$1/pid.tmp" "$1/pid"; bash "$1/cmd.sh" > "$1/out.log" 2>&1 < /dev/null; rc=$?; echo "$rc" > "$1/exit.tmp"; mv "$1/exit.tmp" "$1/exit"' _ "$J" > /dev/null 2>&1 < /dev/null &
+for _ in $(seq 50); do [ -s "$J/pid" ] && break; sleep 0.2; done
+if [ ! -s "$J/pid" ]; then echo "job did not start"; exit 6; fi
 echo "STARTED {run}"
 '''
 
@@ -149,7 +161,8 @@ def cmd_run(pod: Pod, a) -> int:
         return 2
     run = f"{a.name}-{time.strftime('%Y%m%dT%H%M%S')}"
     cmd = " ".join(shlex.quote(c) for c in a.cmd) if len(a.cmd) > 1 else a.cmd[0]
-    r = pod.ssh(RUN_TEMPLATE.format(jobs=JOBS, run=run, name=a.name, cmd=cmd, cwd=shlex.quote(a.cwd)))
+    tag = f"PODJOB_{secrets.token_hex(8).upper()}"   # a heredoc end no command line can contain by accident
+    r = pod.ssh(RUN_TEMPLATE.format(jobs=JOBS, run=run, name=a.name, cmd=cmd, cwd=shlex.quote(a.cwd), tag=tag))
     out = (r.stdout or "") + (r.stderr or "")
     if "DUPLICATE" in out or r.returncode == 4:
         log(out.strip())
@@ -166,7 +179,8 @@ STATUS_SCRIPT = r'''J={jobs}/{run}
 if [ ! -d "$J" ]; then echo "NOSUCHRUN"; exit 0; fi
 if [ -f "$J/exit" ]; then echo "DONE $(cat "$J/exit")"; exit 0; fi
 p=$(cat "$J/pid" 2>/dev/null)
-if [ -n "$p" ] && kill -0 "$p" 2>/dev/null; then echo "RUNNING"; else echo "CRASHED"; fi
+# any process left in the job's process group counts: the wrapper alone is not the job
+if [ -n "$p" ] && {{ kill -0 -- "-$p" 2>/dev/null || kill -0 "$p" 2>/dev/null; }}; then echo "RUNNING"; else echo "CRASHED"; fi
 '''
 
 
@@ -180,11 +194,15 @@ def cmd_status(pod: Pod, a) -> int:
 
 
 def cmd_wait(pod: Pod, a) -> int:
-    t0, last_note = time.time(), 0.0
+    t0, last_note, last_ok = time.time(), 0.0, time.time()
     while True:
         try:
             st = status(pod, a.run)
+            last_ok = time.time()
         except ConnectionError as e:
+            if time.time() - last_ok > a.max_unreachable:
+                log(f"{e} - unreachable for {time.time() - last_ok:.0f}s: giving up (stopped or terminated pod?)")
+                return 3
             log(f"{e} - still waiting (a lost connection is not a finished job)")
             st = "UNKNOWN"
         if st.startswith("DONE"):
@@ -213,6 +231,9 @@ def cmd_wait(pod: Pod, a) -> int:
 
 
 def cmd_pull(pod: Pod, a) -> int:
+    if pod.ssh(f"test -f {shlex.quote(a.remote)}").returncode != 0:   # not a transport problem: don't retry it
+        log(f"no such file on the pod: {a.remote}")
+        return 6
     os.makedirs(os.path.dirname(os.path.abspath(a.local)) or ".", exist_ok=True)
     pod.scp(pod.remote(a.remote), a.local)
     rh, lh = remote_sha(pod, a.remote), sha256(a.local)
@@ -225,6 +246,7 @@ def cmd_pull(pod: Pod, a) -> int:
 
 SEND_SCRIPT = r'''set -u
 cd {parent} || exit 6
+pkill -f "[r]unpodctl send {base}$" || true
 rm -f {base}.zip {jobs}/send-{base}.log
 mkdir -p {jobs}
 (setsid nohup runpodctl send {base} > {jobs}/send-{base}.log 2>&1 < /dev/null &)
@@ -234,6 +256,13 @@ echo started
 
 def cmd_pull_dir(pod: Pod, a) -> int:
     parent, base = os.path.dirname(a.remote.rstrip("/")), os.path.basename(a.remote.rstrip("/"))
+    if not re.fullmatch(r"[A-Za-z0-9_.-]+", base) or base in (".", ".."):
+        log("pull-dir: the remote directory's name must be letters, digits, _ . - only")
+        return 2
+    target = os.path.join(a.local_parent, base)
+    if os.path.exists(target) and not a.replace:
+        log(f"{target} exists; not touching it (--replace moves it aside once the new copy is verified)")
+        return 6
     listing = pod.ssh(f"cd {shlex.quote(a.remote)} && find . -type f ! -path './.cache/*' -printf '%P %s\\n'").stdout
     expect = {p: int(s) for p, s in (ln.rsplit(" ", 1) for ln in listing.splitlines() if ln.strip())}
     if not expect:
@@ -241,7 +270,7 @@ def cmd_pull_dir(pod: Pod, a) -> int:
         return 6
     os.makedirs(a.local_parent, exist_ok=True)
     for attempt in range(1, 4):
-        pod.ssh(SEND_SCRIPT.format(parent=shlex.quote(parent), base=shlex.quote(base), jobs=JOBS))
+        pod.ssh(SEND_SCRIPT.format(parent=shlex.quote(parent), base=base, jobs=JOBS))
         code = ""
         for _ in range(240):   # the code is printed before the zip exists; the room opens at "Sending '" (H38)
             out = pod.ssh(f"cat {JOBS}/send-{base}.log 2>/dev/null").stdout
@@ -253,19 +282,35 @@ def cmd_pull_dir(pod: Pod, a) -> int:
         if not code:
             log("sender never opened its room")
             continue
-        target = os.path.join(a.local_parent, base)
-        subprocess.run(["rm", "-rf", target])
-        r = subprocess.run(["runpodctl", "receive", code], cwd=a.local_parent, capture_output=True, text=True,
-                           timeout=7200)
-        got = {os.path.relpath(os.path.join(d, f), target): os.path.getsize(os.path.join(d, f))
-               for d, _, fs in os.walk(target) for f in fs if ".cache" not in d} if os.path.isdir(target) else {}
+        # receive into a fresh directory of our own: nothing that already exists locally is touched until the
+        # new copy is complete and verified
+        stage = os.path.join(a.local_parent, f".podjob-recv-{base}-{time.strftime('%Y%m%dT%H%M%S')}")
+        os.makedirs(stage)
+        try:
+            r = subprocess.run(["runpodctl", "receive", code], cwd=stage, capture_output=True, text=True,
+                               timeout=7200)
+            rc, err = r.returncode, (r.stderr or "")[-160:]
+        except subprocess.TimeoutExpired:
+            rc, err = 124, "receive did not finish within 2 h"
+        got_dir = os.path.join(stage, base)
+        got = {os.path.relpath(os.path.join(d, f), got_dir): os.path.getsize(os.path.join(d, f))
+               for d, _, fs in os.walk(got_dir) for f in fs if ".cache" not in d} if os.path.isdir(got_dir) else {}
         missing = [p for p in expect if got.get(p) != expect[p]]
         if not missing:
-            log(f"pulled {len(expect)} files ({sum(expect.values()) / 1e9:.1f} GB) -> {target}, sizes verified")
-            pod.ssh(f"rm -f {shlex.quote(parent)}/{shlex.quote(base)}.zip")
+            if os.path.exists(target):
+                aside = f"{target}.old-{time.strftime('%Y%m%dT%H%M%S')}"
+                os.rename(target, aside)
+                log(f"moved the existing {target} aside to {aside}")
+            os.rename(got_dir, target)
+            shutil.rmtree(stage, ignore_errors=True)
+            n = sum(expect.values())
+            size = f"{n / 1e9:.1f} GB" if n >= 1e9 else f"{n / 1e6:.1f} MB"
+            log(f"pulled {len(expect)} files ({size}) -> {target}, sizes verified")
+            pod.ssh(f"rm -f {shlex.quote(parent)}/{base}.zip")
             return 0
+        shutil.rmtree(stage, ignore_errors=True)
         log(f"receive attempt {attempt}: {len(missing)} files missing or wrong size (e.g. {missing[0]}); "
-            f"rc={r.returncode} {(r.stderr or '')[-160:]}")
+            f"rc={rc} {err}")
     return 6
 
 
@@ -280,9 +325,11 @@ def main() -> int:
     s.add_argument("name"); s.add_argument("--cwd", default="/workspace")
     s = sub.add_parser("wait"); s.add_argument("run"); s.add_argument("--timeout", type=int, default=6 * 3600)
     s.add_argument("--poll", type=int, default=30); s.add_argument("--tail", type=int, default=15)
+    s.add_argument("--max-unreachable", type=int, default=900, help="give up (exit 3) after this long unreachable")
     s = sub.add_parser("status"); s.add_argument("run")
     s = sub.add_parser("pull"); s.add_argument("remote"); s.add_argument("local")
     s = sub.add_parser("pull-dir"); s.add_argument("remote"); s.add_argument("local_parent")
+    s.add_argument("--replace", action="store_true", help="move an existing local copy aside after verifying")
     argv = sys.argv[1:]
     job_cmd = argv[argv.index("--") + 1:] if "--" in argv else []   # everything after -- is the job's command
     argv = argv[:argv.index("--")] if "--" in argv else argv
