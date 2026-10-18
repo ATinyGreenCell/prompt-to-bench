@@ -40,6 +40,13 @@ MAX_HOURS=${MAX_HOURS:-12}
 GPU_PCT=${GPU_PCT:-5}
 CPU_CORES=${CPU_CORES:-0.5}
 NET_KBPS=${NET_KBPS:-200}
+num(){ [[ "$1" =~ ^[0-9]+([.][0-9]+)?$ ]]; }  # a knob set to garbage falls back to its default, logged
+for kv in IDLE_MIN=45 MAX_HOURS=12 GPU_PCT=5 CPU_CORES=0.5 NET_KBPS=200; do
+  k=${kv%%=*}; d=${kv#*=}
+  num "${!k}" || { echo "$(date -u +%FT%TZ) WARN: $k='${!k}' is not a number - using $d"; printf -v "$k" '%s' "$d"; }
+done
+IDLE_MIN=${IDLE_MIN%.*}; GPU_PCT=${GPU_PCT%.*}; NET_KBPS=${NET_KBPS%.*}   # integer comparisons below
+[ "$IDLE_MIN" -ge 1 ] 2>/dev/null || IDLE_MIN=1
 STATE=${GUARD_STATE:-/workspace/.idle_guard_state}
 # work that can run with an idle GPU; a vLLM server is not listed - serving shows up as GPU use, and an idle
 # server must not hold the pod
@@ -55,9 +62,16 @@ cpu_usec(){  # container CPU time in microseconds (cgroup v2, else v1), empty if
   fi
 }
 gpu_max(){  # highest utilisation across GPUs, empty if no GPU telemetry
-  nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits 2>/dev/null | tr -d ' ' | grep -E '^[0-9]+$' | sort -n | tail -1
+  timeout 15 nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits 2>/dev/null | tr -d ' ' | grep -E '^[0-9]+$' | sort -n | tail -1
 }
-age_s(){ ps -o etimes= -p 1 2>/dev/null | tr -d ' '; }
+age_s(){  # PID 1's age in seconds from /proc (host-relative uptime minus PID 1's start tick); ps as fallback
+  local hz up st
+  hz=$(getconf CLK_TCK 2>/dev/null || echo 100)
+  up=$(cut -d' ' -f1 /proc/uptime 2>/dev/null)
+  st=$(sed 's/^.*) //' /proc/1/stat 2>/dev/null | awk '{print $20}')
+  if [ -n "$up" ] && [ -n "$st" ]; then awk -v u="$up" -v s="$st" -v h="$hz" 'BEGIN {printf "%d", u - s / h}'
+  else ps -o etimes= -p 1 2>/dev/null | tr -d ' '; fi
+}
 busy_proc(){ pgrep -fa "$BUSY_RE" 2>/dev/null | grep -v -e pgrep -e pod_idle_guard | head -1; }
 
 stop_pod(){
@@ -65,9 +79,9 @@ stop_pod(){
   [ -n "$id" ] || { log "ERROR: no RUNPOD_POD_ID - cannot stop"; return 1; }
   local out rc
   if command -v runpodctl >/dev/null 2>&1; then
-    out=$(runpodctl stop pod "$id" 2>&1); rc=$?; log "runpodctl stop pod -> rc=$rc ${out:0:160}"
+    out=$(timeout 60 runpodctl stop pod "$id" 2>&1); rc=$?; log "runpodctl stop pod -> rc=$rc ${out:0:160}"
     [ "$rc" -eq 0 ] && return 0
-    out=$(runpodctl pod stop "$id" 2>&1); rc=$?; log "runpodctl pod stop -> rc=$rc ${out:0:160}"
+    out=$(timeout 60 runpodctl pod stop "$id" 2>&1); rc=$?; log "runpodctl pod stop -> rc=$rc ${out:0:160}"
     [ "$rc" -eq 0 ] && return 0
   fi
   if [ -n "${RUNPOD_API_KEY:-}" ] && command -v curl >/dev/null 2>&1; then

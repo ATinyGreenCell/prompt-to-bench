@@ -28,12 +28,30 @@ HERE = pathlib.Path(__file__).resolve().parent
 ROOT = HERE.parent.parent
 REPO = "ATinyGreenCell/prompt-to-bench"
 PATH = "finetune/scripts/pod_idle_guard.sh"
-BOOT = ('G=/usr/local/bin/pod_idle_guard.sh; '
-        'for i in 1 2 3 4 5; do curl -fsSL --max-time 20 "$GUARD_URL" -o "$G" && break; sleep 10; done; '
-        'if [ -s "$G" ] && echo "$GUARD_SHA256  $G" | sha256sum -c --status -; then '
-        '(setsid nohup bash "$G" >> /workspace/idle_guard.log 2>&1 < /dev/null &); '
-        'else echo "$(date -u +%FT%TZ) GUARD NOT STARTED: download or checksum failed" >> /workspace/idle_guard.log; fi; '
-        'exec /start.sh')
+BOOT = r"""L=/workspace/idle_guard.log; G=/usr/local/bin/pod_idle_guard.sh
+mkdir -p /workspace /usr/local/bin
+ok=0
+for _ in 1 2 3 4 5 6; do
+  rm -f "$G"
+  curl -fsSL --max-time 20 "$GUARD_URL" -o "$G" 2>/dev/null \
+    || wget -q -T 20 -O "$G" "$GUARD_URL" 2>/dev/null \
+    || python3 -c 'import sys, urllib.request; urllib.request.urlretrieve(sys.argv[1], sys.argv[2])' "$GUARD_URL" "$G" 2>/dev/null
+  if [ -s "$G" ] && echo "$GUARD_SHA256  $G" | sha256sum -c --status -; then ok=1; break; fi
+  sleep 10
+done
+if [ "$ok" = 1 ]; then
+  # supervised: if the guard ever dies it is back within 30 s (its lock keeps it to one copy)
+  # shellcheck disable=SC2016  # the inner script takes its values as positional arguments
+  (setsid nohup bash -c 'while :; do bash "$1"; sleep 30; done' _ "$G" >> "$L" 2>&1 < /dev/null &)
+else
+  S=$(awk -v h="${MAX_HOURS:-12}" 'BEGIN {h += 0; if (h <= 0) h = 12; printf "%d", h * 3600}')
+  echo "$(date -u +%FT%TZ) GUARD NOT STARTED (download or checksum failed); fallback hard cap: stop after ${S}s" >> "$L"
+  # shellcheck disable=SC2016
+  (setsid nohup bash -c 'sleep "$1"; timeout 60 runpodctl stop pod "$2"' _ "$S" "${RUNPOD_POD_ID:-}" >> "$L" 2>&1 < /dev/null &)
+fi
+if [ -x /start.sh ]; then exec /start.sh; fi
+echo "$(date -u +%FT%TZ) no /start.sh in this image - keeping PID 1 alive so the guard can stop the pod" >> "$L"
+exec sleep infinity"""
 
 
 def git(*args: str) -> str:

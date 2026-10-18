@@ -324,3 +324,11 @@ Two RTX 2000 Ada pods ($0.24/hr) created with `guarded_pod_body.py` (guard pinne
 Not covered by the pod itself: a pod created some other way (console) without the guard - covered by the
 session-start `list-pods` check and by Claude's allow rule to terminate; the GraphQL fallback path is untested
 (the first path always worked).
+
+### H41. `hf` is not on a fresh runpod/pytorch pod — [x] download after the pip install, or via the library
+- **Symptom:** `hf download ...` started in parallel with `pip install vllm` died at once: `hf: command not found`
+  (exit 127); a watcher keyed on `DL_EXIT=[1-9]` then fired again later on the stale log.
+- **Root cause:** the image has no huggingface_hub CLI; vLLM's (or unsloth's) install brings it. And a log left
+  from a failed step still holds its old failure line.
+- **Fix:** wait for the install, then `python -c "from huggingface_hub import snapshot_download; ..."`; clear or
+  rotate a step's log before re-running it, and key watchers on markers only the new run can write.
