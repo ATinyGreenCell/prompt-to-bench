@@ -1,0 +1,45 @@
+// Hose-barb reducer: joins 8 mm ID silicone tubing to 5 mm ID tubing
+// Print orientation: standing upright along Z (as specified)
+
+$fn = 96;
+
+// ---- Dimensions (mm) ----
+tube_a_id   = 8;     // first tubing inner diameter
+tube_b_id   = 5;     // second tubing inner diameter
+barb_h_a    = 10;    // height of 8 mm barbs
+barb_h_b    = 8;     // height of 5 mm barbs
+outer_a     = 9.5;   // outer diameter of 8 mm barbs at top
+outer_b     = 6.5;   // outer diameter of 5 mm barbs at bottom
+collar_d    = 12;    // diameter of central collar (z = 20 to 25)
+bore        = 3;     // through-bore diameter
+eps         = 0.5;   // cutter overshoot past faces
+
+// ---- Derived ----
+outer_a_bottom = 7.5;   // 8 mm barb OD at bottom (given)
+outer_b_top    = 5.0;   // 5 mm barb OD at top (given)
+pitch          = 1.5;   // vertical spacing between stacked barbs
+
+// ---- Model ----
+union() {
+    // z = 0 to 20: two 8 mm barbs, stacked
+    for (s = [-1, 1])
+        translate([0, 0, s * pitch])
+            cylinder(h = barb_h_a,
+                     d = mix(outer_a_bottom, outer_a, v = s + 1),
+                     $fn = 96);
+
+    // z = 20 to 25: cylindrical collar
+    translate([0, 0, 20])
+        cylinder(h = 5, d = collar_d, $fn = 96);
+
+    // z = 25 to 41: two 5 mm barbs, stacked
+    for (s = [-1, 1])
+        translate([0, 0, 25 + s * pitch])
+            cylinder(h = barb_h_b,
+                     d = mix(outer_b, outer_b_top, v = s + 1),
+                     $fn = 96);
+
+    // Full-length through-bore
+    translate([0, 0, -eps])
+        cylinder(h = 42 + 2 * eps, d = bore, $fn = 64);
+}
