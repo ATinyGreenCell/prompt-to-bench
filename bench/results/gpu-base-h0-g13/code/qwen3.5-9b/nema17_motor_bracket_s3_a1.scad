@@ -1,0 +1,163 @@
+$fn = 128;
+
+// --- Base Plate Dimensions ---
+// X range: -25 to 25 (Width 50)
+// Y range: 0 to 45 (Length 45)
+// Z thickness: 5
+BASE_X_MIN = -25;
+BASE_X_MAX = 25;
+BASE_Y_MIN = 0;
+BASE_Y_MAX = 45;
+BASE_Z_THICK = 5;
+
+// --- Base Plate Mounting Holes ---
+// Two 4.5 mm vertical through-holes (M4)
+// Locations: (x = -17, y = 30) and (x = 17, y = 30)
+BASE_HOLE_DIA = 4.5;
+BASE_HOLE_X1 = -17;
+BASE_HOLE_Y1 = 30;
+BASE_HOLE_X2 = 17;
+BASE_HOLE_Y2 = 30;
+
+// --- Vertical Motor Plate Dimensions ---
+// X range: -25 to 25 (Width 50)
+// Y range: 0 to 5 (Thickness 5)
+// Z height: 50
+// Stands on the back edge of the base (y=0 to y=5)
+MOTOR_X_MIN = -25;
+MOTOR_X_MAX = 25;
+MOTOR_Y_THICK = 5;
+MOTOR_Z_HEIGHT = 50;
+
+// --- Motor Plate Boss Hole ---
+// 23 mm hole for motor centring boss
+// Centre at x = 0, z = 28
+MOTOR_BOSS_HOLE_DIA = 23;
+MOTOR_BOSS_HOLE_X = 0;
+MOTOR_BOSS_HOLE_Z = 28;
+
+// --- Motor Plate Screw Holes ---
+// Four 3.4 mm holes for M3 screws
+// 31 mm square pattern centred on the boss hole
+MOTOR_SCREW_HOLE_DIA = 3.4;
+MOTOR_SQUARE_SIZE = 31;
+MOTOR_SQUARE_OFFSET = MOTOR_SQUARE_SIZE / 2;
+
+// --- Gusset Dimensions ---
+// Two triangular gussets, 5 mm thick (same as base plate)
+// Flush with left (x=-25 to -20) and right (x=20 to 25) edges
+// Right triangle in YZ plane: legs 20 mm along +Y and 20 mm along +Z
+// Right-angle corner at y = 5, z = 5
+GUSSET_THICK = 5;
+GUSSET_LEG_Y = 20;
+GUSSET_LEG_Z = 20;
+GUSSET_X_LEFT_MIN = -25;
+GUSSET_X_LEFT_MAX = -20;
+GUSSET_X_RIGHT_MIN = 20;
+GUSSET_X_RIGHT_MAX = 25;
+
+// --- Construction ---
+
+// 1. Create the Base Plate
+base_plate = translate([0, 0, 0])
+    cube([BASE_X_MAX - BASE_X_MIN, BASE_Y_MAX - BASE_Y_MIN, BASE_Z_THICK]);
+
+// 2. Create the Vertical Motor Plate
+// It stands on the back edge of the base (y=0).
+// Dimensions: Width 50, Thickness 5, Height 50.
+motor_plate = translate([0, 0, 0])
+    cube([MOTOR_X_MAX - MOTOR_X_MIN, MOTOR_Y_THICK, MOTOR_Z_HEIGHT]);
+
+// 3. Create the Boss Hole
+// Cut a cylinder along Y axis, centred at x=0, z=28.
+// Radius = 23/2 = 11.5. Height = 5 (thickness of plate).
+// Extend slightly past faces to ensure clean cut.
+boss_hole = translate([MOTOR_BOSS_HOLE_X, 0, MOTOR_BOSS_HOLE_Z - MOTOR_Y_THICK/2])
+    cylinder(h = MOTOR_Y_THICK + 0.1, r = MOTOR_BOSS_HOLE_DIA / 2);
+
+// 4. Create the Screw Holes
+// 31mm square pattern centred on boss hole.
+// Boss hole centre is (0, 0, 28).
+// Square corners relative to centre: +/- 15.5 in X and Z.
+// Hole positions:
+// X: -15.5, +15.5
+// Z: 28 - 15.5 = 12.5, 28 + 15.5 = 43.5
+screw_holes = for (i = [-1, 1], j = [-1, 1]) {
+    translate([
+        MOTOR_BOSS_HOLE_X + (MOTOR_SQUARE_OFFSET * i),
+        0,
+        MOTOR_BOSS_HOLE_Z + (MOTOR_SQUARE_OFFSET * j) - MOTOR_Y_THICK/2
+    ])
+    cylinder(h = MOTOR_Y_THICK + 0.1, r = MOTOR_SCREW_HOLE_DIA / 2);
+};
+
+// 5. Create the Gussets
+// Right triangle in YZ plane.
+// Right angle at (y=5, z=5).
+// Legs extend +Y (to y=25) and +Z (to z=25).
+// Thickness is 5mm along X.
+// Left Gusset: x from -25 to -20.
+// Right Gusset: x from 20 to 25.
+
+// Function to generate a gusset
+// We use a polygon in the YZ plane and extrude along X.
+// Vertices for the triangle (Y, Z):
+// (5, 5) -> (25, 5) -> (5, 25) -> (5, 5)
+// Note: The prompt says "legs 20 mm along +Y and 20 mm along +Z".
+// Starting from (5,5):
+// +Y leg: 5 to 25 (length 20)
+// +Z leg: 5 to 25 (length 20)
+// Hypotenuse connects (25,5) and (5,25).
+
+gusset_shape = polygon([
+    [5, 5],
+    [5 + GUSSET_LEG_Y, 5],
+    [5, 5 + GUSSET_LEG_Z]
+]);
+
+// Extrude the gusset shape along X
+// Left Gusset
+left_gusset = translate([GUSSET_X_LEFT_MIN, 0, 0])
+    linear_extrude(height = GUSSET_X_LEFT_MAX - GUSSET_X_LEFT_MIN, center = true)
+    rotate([0, 0, 0]) // No rotation needed if polygon is aligned with YZ
+    gusset_shape;
+
+// Right Gusset
+right_gusset = translate([GUSSET_X_RIGHT_MIN, 0, 0])
+    linear_extrude(height = GUSSET_X_RIGHT_MAX - GUSSET_X_RIGHT_MIN, center = true)
+    rotate([0, 0, 0])
+    gusset_shape;
+
+// Combine everything
+union() {
+    // Main Body
+    union() {
+        base_plate;
+        motor_plate;
+    }
+    
+    // Holes (Difference)
+    difference() {
+        union() {
+            base_plate;
+            motor_plate;
+        }
+        
+        // Base Plate Holes
+        translate([BASE_HOLE_X1, BASE_HOLE_Y1, BASE_Z_THICK/2])
+            cylinder(h = 10, r = BASE_HOLE_DIA / 2);
+        
+        translate([BASE_HOLE_X2, BASE_HOLE_Y2, BASE_Z_THICK/2])
+            cylinder(h = 10, r = BASE_HOLE_DIA / 2);
+            
+        // Motor Plate Boss Hole
+        boss_hole;
+        
+        // Motor Plate Screw Holes
+        screw_holes;
+    }
+    
+    // Gussets (Union)
+    left_gusset;
+    right_gusset;
+}

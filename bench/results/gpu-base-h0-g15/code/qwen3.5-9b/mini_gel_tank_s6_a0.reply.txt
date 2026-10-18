@@ -1,0 +1,115 @@
+```openscad
+// Buffer Tank for Mini Horizontal Gel Electrophoresis
+// Units: millimetres
+
+// Outer Dimensions
+$w_outer = 120; // Width (X)
+$d_outer = 70;  // Depth (Y)
+$h_outer = 40;  // Height (Z)
+
+// Wall and Floor Thickness
+$wall_thick = 3;
+$floor_thick = 3;
+
+// Platform Dimensions
+$plat_len = 60;   // Length in X
+$plat_width = $d_outer; // Spans full inner width (Y)
+$plat_height = 10; // Height above inner floor
+
+// Hole Dimensions
+$hole_dia = 2;
+$hole_y = 0;
+$hole_z = 30;
+
+// Configuration
+$fn = 128; // High resolution for smooth curves
+
+// Derived Dimensions
+$inner_w = $w_outer - 2*$wall_thick;
+$inner_d = $d_outer - 2*$wall_thick;
+$inner_h = $h_outer - $floor_thick;
+$inner_floor_z = $floor_thick;
+
+// Helper function to create the main tank shell
+module tank_shell() {
+    translate([0, 0, 0]) {
+        // Main block
+        cube([
+            $w_outer, 
+            $d_outer, 
+            $h_outer
+        ]);
+        
+        // Cut out the top (open tank)
+        translate([0, 0, $h_outer - $wall_thick]) {
+            cube([
+                $w_outer, 
+                $d_outer, 
+                $wall_thick + 0.1 // Extend slightly past top face
+            ]);
+        }
+        
+        // Cut out the floor
+        translate([0, 0, 0]) {
+            cube([
+                $w_outer, 
+                $d_outer, 
+                $floor_thick + 0.1 // Extend slightly past bottom face
+            ]);
+        }
+    }
+}
+
+// Helper function to create the raised platform
+module platform() {
+    translate([
+        ($w_outer - $plat_len) / 2, // Center in X
+        0, // Center in Y (aligned with hole axis)
+        $inner_floor_z + $plat_height // Position on inner floor
+    ]) {
+        cube([
+            $plat_len,
+            $plat_width,
+            $plat_height
+        ]);
+    }
+}
+
+// Helper function to drill horizontal holes
+module drill_holes() {
+    // Left end wall hole
+    translate([
+        -$w_outer/2 + $wall_thick/2, // Position at left inner wall
+        $hole_y,
+        $hole_z
+    ]) {
+        cylinder(
+            h = $w_outer - 2*$wall_thick + 0.1, // Extend through wall
+            r = $hole_dia/2 + 0.1,
+            $fn = $fn
+        );
+    }
+    
+    // Right end wall hole
+    translate([
+        $w_outer/2 - $wall_thick/2, // Position at right inner wall
+        $hole_y,
+        $hole_z
+    ]) {
+        cylinder(
+            h = $w_outer - 2*$wall_thick + 0.1, // Extend through wall
+            r = $hole_dia/2 + 0.1,
+            $fn = $fn
+        );
+    }
+}
+
+// Main assembly
+difference() {
+    union() {
+        tank_shell();
+        platform();
+    }
+    drill_holes();
+}
+```

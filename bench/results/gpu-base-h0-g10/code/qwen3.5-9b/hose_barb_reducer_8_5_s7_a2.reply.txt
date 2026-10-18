@@ -1,0 +1,104 @@
+```openscad
+// Hose-Barb Reducer Design
+// Units: mm
+// Orientation: Standing upright on XY plane (Z axis up)
+
+// --- Dimensions ---
+// Main bore diameter (constant through the part)
+$main_bore_d = 3.0;
+
+// Upper Section (8mm tubing)
+$z_start_upper = 0;
+$z_end_upper = 20;
+$barb_height_upper = 10;
+$barb_od_bottom_upper = 7.5;
+$barb_od_top_upper = 9.5;
+$barb_od_step_upper = 7.5; // Step down to this OD after the taper
+
+// Collar Section
+$z_start_collar = 20;
+$z_end_collar = 25;
+$collar_od = 12;
+
+// Lower Section (5mm tubing)
+$z_start_lower = 25;
+$z_end_lower = 41;
+$barb_height_lower = 8;
+$barb_od_bottom_lower = 6.5;
+$barb_od_top_lower = 5.0;
+$barb_od_step_lower = 6.5; // Step out to this OD after the taper
+
+// --- Configuration ---
+$fn = 128; // High resolution for smooth curves and accurate hole sizing
+
+// --- Construction ---
+
+// 1. Upper Section (z=0 to z=20)
+// Contains the tapered barbs and the step back.
+// We model the barbs as the main body shape for this section.
+upper_section = union(
+    // Tapered section
+    cylinder(
+        h = $z_end_upper - $z_start_upper,
+        r1 = $barb_od_bottom_upper / 2,
+        r2 = $barb_od_top_upper / 2,
+        center = [0, 0, $z_start_upper + ($z_end_upper - $z_start_upper)/2],
+        $fn = $fn
+    ),
+    // Stepped section (cylinder with constant radius = od_step)
+    cylinder(
+        h = $z_end_upper - ($z_end_upper - $barb_height_upper),
+        r = $barb_od_step_upper / 2,
+        center = [0, 0, ($z_end_upper + ($z_end_upper - $barb_height_upper))/2],
+        $fn = $fn
+    )
+);
+
+// 2. Collar Section (z=20 to z=25)
+// Simple cylinder with central bore
+collar_section = cylinder(
+    h = $z_end_collar - $z_start_collar,
+    r = $collar_od / 2,
+    center = [0, 0, ($z_end_collar + $z_start_collar)/2],
+    $fn = $fn
+);
+
+// 3. Lower Section (z=25 to z=41)
+// Contains the tapered barbs and the step back.
+lower_section = union(
+    // Tapered section
+    cylinder(
+        h = $z_end_lower - $z_start_lower,
+        r1 = $barb_od_bottom_lower / 2,
+        r2 = $barb_od_top_lower / 2,
+        center = [0, 0, $z_start_lower + ($z_end_lower - $z_start_lower)/2],
+        $fn = $fn
+    ),
+    // Stepped section (cylinder with constant radius = od_step)
+    cylinder(
+        h = $z_end_lower - ($z_end_lower - $barb_height_lower),
+        r = $barb_od_step_lower / 2,
+        center = [0, 0, ($z_end_lower + ($z_end_lower - $barb_height_lower))/2],
+        $fn = $fn
+    )
+);
+
+// Combine all sections
+part = union(upper_section, collar_section, lower_section);
+
+// --- Final Assembly ---
+// The user requested the part to rest on the XY plane at z=0.
+// Our construction already starts at z=0.
+// We center it on the origin in X and Y (already done by using cylinder centered at [0,0]).
+
+difference(
+    part,
+    // Cut the central bore completely through to ensure perfect roundness and size
+    cylinder(
+        h = $z_end_lower - $z_start_upper,
+        r = $main_bore_d / 2 + 0.01, // Slightly larger to ensure clean cut
+        center = [0, 0, ($z_end_lower + $z_start_upper)/2],
+        $fn = $fn
+    )
+);
+```

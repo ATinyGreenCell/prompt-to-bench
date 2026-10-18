@@ -1,0 +1,149 @@
+```openscad
+// DIY Magnetic Stirrer Housing for 80mm Fan
+// Print Orientation: Upside down (Top plate on bed, walls rising up)
+
+// --- Dimensions ---
+// Outer size of the box
+W = 90;
+H = 90;
+
+// Thickness of the top plate (resting on bed)
+T_plate = 2;
+
+// Height of the walls
+H_wall = 40;
+
+// Wall thickness
+T_wall = 2.5;
+
+// Fan mounting hole pattern
+// The pattern is 71.5mm square, centred on the plate
+// This implies a 36.75mm offset from the centre to the hole centre
+P_offset = 71.5 / 2;
+
+// Fan mounting hole diameter
+D_fan_hole = 4.5;
+
+// Cable notch dimensions
+// Width of the notch
+W_notch = 12;
+// Depth of the notch from the open edge (z = 40) down to z = 32
+// So the notch extends from z = 32 to z = 40
+D_notch = 8;
+// Position of the notch: centred along one wall
+// We will define the wall direction later, but the notch is centred on that wall's length
+
+// --- Derived Dimensions ---
+// Inner dimensions of the box (for reference in logic, though we build by subtraction)
+// Inner width/height = Outer - 2*WallThickness
+I_W = W - (2 * T_wall);
+I_H = H - (2 * T_wall);
+
+// --- Configuration ---
+// Select which wall gets the notch (0: Front, 1: Right, 2: Back, 3: Left)
+// Based on standard view: Front is +Y, Right is +X
+// Let's put the notch on the Front wall (+Y direction) for easy access
+NOTCH_WALL = 0; // 0=Front(+Y), 1=Right(+X), 2=Back(-Y), 3=Left(-X)
+
+$fn = 128; // High resolution for smooth curves if needed, though mostly linear
+
+module main_housing() {
+    // 1. Create the solid base (Top plate + Walls)
+    // We build the outer block and subtract the inner void
+    
+    // Outer block: W x H x (T_plate + H_wall)
+    // Since we are printing upside down, Z goes from 0 to T_plate + H_wall
+    outer_block = cube([W, H, T_plate + H_wall], center = false);
+    
+    // 2. Create the inner void (the space inside the box)
+    // The void starts at Z = T_plate (top of the plate) and goes up to Z = T_plate + H_wall
+    // The void dimensions are the inner dimensions of the walls
+    void_height = H_wall;
+    void_x = I_W;
+    void_y = I_H;
+    
+    // Position of the void:
+    // X center: W/2
+    // Y center: H/2
+    // Z start: T_plate
+    void_start_z = T_plate;
+    
+    void = cube([void_x, void_y, void_height], 
+                 center = [W/2, H/2, void_start_z + void_height/2]);
+    
+    // 3. Create the fan mounting holes
+    // These go through the top plate (Z=0 to Z=T_plate)
+    // Pattern: 71.5mm square, centred on the plate
+    // Holes are at: +/- P_offset in X and Y
+    
+    holes = union();
+    for (i = [-1, 1]) {
+        for (j = [-1, 1]) {
+            // Calculate position relative to center
+            x_pos = (P_offset * i);
+            y_pos = (P_offset * j);
+            
+            // Hole cylinder: D_fan_hole diameter, height = T_plate
+            h = cylinder(r = D_fan_hole / 2, h = T_plate, center = [W/2 + x_pos, H/2 + y_pos, T_plate/2]);
+            holes = union(holes, h);
+        }
+    }
+    
+    // 4. Create the cable notch
+    // Dimensions: W_notch wide, D_notch deep
+    // Location: On the wall specified by NOTCH_WALL
+    // Depth is from the open edge (Z = T_plate + H_wall) down to Z = T_plate + H_wall - D_notch
+    
+    notch = cube([W_notch, T_wall, D_notch], center = false);
+    
+    // Position the notch based on wall selection
+    // Wall centers:
+    // Front (+Y): x = W/2, y = H/2 + T_wall/2 (center of wall thickness)
+    // Right (+X): x = W/2 + T_wall/2, y = H/2
+    // Back (-Y): x = W/2, y = H/2 - T_wall/2
+    // Left (-X): x = W/2 - T_wall/2, y = H/2
+    
+    // Z position: Starts at open edge (T_plate + H_wall) and goes down
+    // Center Z = (Start + End) / 2
+    // End = T_plate + H_wall - D_notch
+    // Start = T_plate + H_wall
+    notch_z_start = T_plate + H_wall;
+    notch_z_end = notch_z_start - D_notch;
+    notch_z_center = (notch_z_start + notch_z_end) / 2;
+    
+    // Determine notch position based on wall
+    if (NOTCH_WALL == 0) { // Front (+Y)
+        notch_x = W/2;
+        notch_y = H/2 + T_wall/2;
+    } else if (NOTCH_WALL == 1) { // Right (+X)
+        notch_x = W/2 + T_wall/2;
+        notch_y = H/2;
+    } else if (NOTCH_WALL == 2) { // Back (-Y)
+        notch_x = W/2;
+        notch_y = H/2 - T_wall/2;
+    } else { // Left (-X)
+        notch_x = W/2 - T_wall/2;
+        notch_y = H/2;
+    }
+    
+    notch = translate([notch_x, notch_y, notch_z_center]) notch;
+    
+    // 5. Combine everything
+    // Base Solid = Outer Block
+    // Cutters = Void + Holes + Notch
+    
+    difference() {
+        union() {
+            outer_block;
+        }
+        union() {
+            void;
+            holes;
+            notch;
+        }
+    }
+}
+
+// Render the part
+main_housing();
+```

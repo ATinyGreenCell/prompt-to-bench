@@ -1,0 +1,121 @@
+```openscad
+// Hose-barb Reducer: 8mm ID to 5mm ID
+// Orientation: Standing upright along Z, centered at origin.
+// Base Z = 0.
+
+// --- Dimensions ---
+// Main bore diameter (constant through part)
+$main_bore_d = 3.0;
+
+// Section 1: 8mm Tubing Barbs (Z = 0 to 20)
+$z_start_1 = 0;
+$z_end_1 = 20;
+$barb_height_1 = 10;
+$barb_count_1 = 2;
+$barb_od_bottom_1 = 7.5;
+$barb_od_top_1 = 9.5;
+$collar_od_1 = 7.5; // Diameter after the sawtooth step
+
+// Section 2: Collar (Z = 20 to 25)
+$z_start_2 = 20;
+$z_end_2 = 25;
+$collar_od_2 = 12.0;
+
+// Section 3: 5mm Tubing Barbs (Z = 25 to 41)
+$z_start_3 = 25;
+$z_end_3 = 41;
+$barb_height_3 = 8;
+$barb_count_3 = 2;
+$barb_od_bottom_3 = 6.5;
+$barb_od_top_3 = 5.0;
+$collar_od_3 = 6.5; // Diameter after the sawtooth step
+
+// --- Configuration ---
+$fn = 128; // High resolution for smooth curves and accurate holes
+
+module main_body() {
+    // We build the part in layers/sections to handle the complex profiles.
+    // Since the profile changes abruptly (sawtooth), we use linear_extrude with a polygon
+    // or construct the profile explicitly. Given the "steps straight back", 
+    // a polygon profile is the most robust way to ensure the exact geometry.
+    
+    // We will create the solid by extruding the 2D profile along Z.
+    // However, the profile changes at Z=20 and Z=25.
+    // Strategy: Create the main cylindrical body with the max diameter, then cut out the voids?
+    // No, the outer shape is complex. Let's build the positive volume by extruding the profile.
+    // Since the profile is rotationally symmetric, we can use rotate_extrude.
+    
+    // Actually, the "sawtooth" implies a specific shape that is hard to do with a single rotate_extrude 
+    // if the radius function isn't continuous or simple. 
+    // Let's construct the profile as a polygon and use linear_extrude.
+    
+    // We need to define the radius at specific Z heights.
+    // Z=0 to 10: Radius grows from 3.75 to 4.75
+    // Z=10 to 20: Radius stays at 4.75
+    // Z=20 to 25: Radius is 6.0 (12mm dia)
+    // Z=25 to 33: Radius shrinks from 3.25 to 2.5
+    // Z=33 to 41: Radius stays at 3.25
+    
+    // Wait, the prompt says "steps straight back".
+    // Barb 1 (0-10): OD 7.5 -> 9.5. Step back to 7.5.
+    // Barb 2 (10-20): OD 7.5 -> 9.5. Step back to 7.5.
+    // So Z=0 to 10: Radius 3.75 -> 4.75.
+    // Z=10 to 20: Radius 4.75 -> 4.75 (Wait, prompt says "stacked").
+    // "From z = 0 to z = 20: two identical barbs... stacked".
+    // This implies:
+    // Z=0 to 10: Barb 1 profile (growing).
+    // Z=10 to 20: Barb 2 profile (growing).
+    // BUT, usually "stacked" means they sit on top of each other.
+    // If Barb 1 is 0-10 and Barb 2 is 10-20, then at Z=10, the diameter jumps from 9.5 (top of Barb 1) to 7.5 (bottom of Barb 2)?
+    // Re-reading: "each barb... outer diameter grows linearly from 7.5 mm at its bottom to 9.5 mm at its top, then steps straight back to 7.5 mm".
+    // This describes a single barb unit.
+    // If they are stacked 0-20:
+    // Unit 1: Z=0 to 10. Bottom 7.5, Top 9.5. Then step back to 7.5?
+    // If it steps back to 7.5 at Z=10, then Unit 2 starts at Z=10 with OD 7.5.
+    // So the profile is:
+    // Z=0: R=3.75
+    // Z=10: R=4.75
+    // Z=10+: R=4.75 (The "step back" creates a flat top at 4.75? No, "steps straight back to 7.5" means the diameter becomes 7.5).
+    // So at Z=10, the diameter drops from 9.5 to 7.5.
+    // Then Unit 2 (Z=10 to 20) starts at 7.5 and grows to 9.5.
+    // So at Z=20, diameter drops from 9.5 to 7.5.
+    // Then Collar (Z=20 to 25) is 12mm (R=6).
+    // Then Unit 3 (Z=25 to 33): Starts 6.5 (R=3.25), grows to 5.0 (R=2.5).
+    // Then Unit 4 (Z=33 to 41): Starts 6.5 (R=3.25), grows to 5.0 (R=2.5).
+    
+    // Let's verify the "stacked" interpretation.
+    // If I have two barbs stacked, usually the bottom one is wider at the base?
+    // "From z = 0 to z = 20: two identical barbs... stacked".
+    // Barb 1: Z=0 to 10. OD 7.5 -> 9.5. Step to 7.5.
+    // Barb 2: Z=10 to 20. OD 7.5 -> 9.5. Step to 7.5.
+    // This creates a "mountain range" profile.
+    // Z=0: 3.75
+    // Z=10: 4.75 (Peak 1) -> Drop to 3.75? No, "steps straight back to 7.5".
+    // So at Z=10, the radius is 4.75. Immediately after Z=10, the radius is 3.75.
+    // Then from Z=10 to Z=20, radius grows 3.75 -> 4.75.
+    // At Z=20, radius is 4.75. Immediately after, radius is 3.75.
+    // Then Z=20 to 25: Radius 6.0.
+    
+    // Let's refine the polygon points for the profile.
+    // We need to define the radius at specific Z intervals.
+    
+    // Profile Points (Z, Radius)
+    // 0, 3.75
+    // 10, 4.75
+    // 10, 3.75 (The step down)
+    // 20, 4.75
+    // 20, 3.75 (The step down)
+    // 25, 6.0
+    // 25, 6.0 (Collar start)
+    // 33, 3.25
+    // 33, 2.5
+    // 33, 3.25 (Step down)
+    // 41, 3.25
+    
+    // Wait, the collar is 12mm diameter (R=6).
+    // The transition from Barb 2 (max R=4.75) to Collar (R=6) is a step UP.
+    // The transition from Collar (R=6) to Barb 3 (start R=3.25) is a step DOWN.
+    
+    // Let's construct the polygon.
+    // We need to be careful with the "step". In a polygon, we define vertices.
+    //

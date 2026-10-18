@@ -1,0 +1,115 @@
+```openscad
+// Straight hose-barb reducer - joins 8mm ID tubing to 5mm ID tubing.
+// Print orientation: Standing upright along Z, resting on XY plane at z=0.
+
+$fn = 128;
+
+// --- Dimensions ---
+// Large tubing (8mm ID) section
+z_start = 0;
+z_large_end = 20;
+barb_large_count = 2;
+barb_large_height = 10;
+barb_large_bottom_od = 7.5;
+barb_large_top_od = 9.5;
+barb_large_step_od = 7.5;
+
+// Collar section
+z_coll_start = 20;
+z_coll_end = 25;
+collar_od = 12;
+
+// Small tubing (5mm ID) section
+z_small_start = 25;
+z_small_end = 41;
+barb_small_count = 2;
+barb_small_height = 8;
+barb_small_bottom_od = 6.5;
+barb_small_top_od = 5.0;
+barb_small_step_od = 6.5;
+
+// Common bore
+bore_d = 3;
+
+// --- Helper: Generate Z coordinates for stacked barbs ---
+// Returns a list of Z positions for the top of each barb segment
+// such that the bottom of the first is at z_base and they stack up.
+function get_barb_z_positions(z_base, n, h) = [for (i = [0 : n - 1]) z_base + i * h];
+
+// --- Main Construction ---
+// We build the part in one union, using difference to cut the bore.
+
+difference() {
+    union() {
+        // 1. Large Tubing Barbs (z = 0 to 20)
+        // Two barbs stacked. Each is 10mm tall.
+        // Barb 1: z=0 to 10. Barb 2: z=10 to 20.
+        // Profile: Bottom OD -> Linear to Top OD -> Step to Step OD.
+        
+        // Calculate Z positions
+        z_large_base = z_start;
+        z_large_positions = get_barb_z_positions(z_large_base, barb_large_count, barb_large_height);
+        
+        for (z_base = z_large_positions) {
+            // Define the polygon profile for one barb
+            // Points: [radius, z]
+            // Bottom: radius = barb_large_bottom_od / 2
+            // Top: radius = barb_large_top_od / 2
+            // Step: radius = barb_large_step_od / 2
+            
+            r_bottom = barb_large_bottom_od / 2;
+            r_top = barb_large_top_od / 2;
+            r_step = barb_large_step_od / 2;
+            
+            h = barb_large_height;
+            
+            // Profile points:
+            // Start at bottom (z_base), go up to top (z_base + h)
+            // Then step down to step height (z_base + h) but radius changes? 
+            // Wait, description: "grows linearly from 7.5 at bottom to 9.5 at top, then steps straight back to 7.5".
+            // This implies the shape is:
+            // z_base to z_base+h: Radius grows from r_bottom to r_top.
+            // At z_base+h: Radius instantly drops from r_top to r_step.
+            // The barb ends at z_base+h.
+            
+            // Polygon points [x, y] where x=radius, y=z
+            p1 = [r_bottom, z_base];
+            p2 = [r_top, z_base + h];
+            p3 = [r_step, z_base + h];
+            p4 = [r_step, z_base];
+            
+            rotate_extrude() polygon([[p1[0], p1[1]], [p2[0], p2[1]], [p3[0], p3[1]], [p4[0], p4[1]]]);
+        }
+
+        // 2. Collar (z = 20 to 25)
+        // Cylindrical collar of 12mm diameter.
+        translate([0, 0, z_coll_start]) cylinder(h = z_coll_end - z_coll_start, d = collar_od);
+
+        // 3. Small Tubing Barbs (z = 25 to 41)
+        // Two barbs stacked. Each is 8mm tall.
+        // Profile: Bottom OD -> Linear to Top OD -> Step to Step OD.
+        
+        z_small_base = z_small_start;
+        z_small_positions = get_barb_z_positions(z_small_base, barb_small_count, barb_small_height);
+        
+        for (z_base = z_small_positions) {
+            r_bottom = barb_small_bottom_od / 2;
+            r_top = barb_small_top_od / 2;
+            r_step = barb_small_step_od / 2;
+            
+            h = barb_small_height;
+            
+            p1 = [r_bottom, z_base];
+            p2 = [r_top, z_base + h];
+            p3 = [r_step, z_base + h];
+            p4 = [r_step, z_base];
+            
+            rotate_extrude() polygon([[p1[0], p1[1]], [p2[0], p2[1]], [p3[0], p3[1]], [p4[0], p4[1]]]);
+        }
+    }
+    
+    // Cut the central bore through the entire length
+    // Bore runs from z=0 to z=41
+    translate([0, 0, -1]) cylinder(h = z_small_end - z_start + 2, d = bore_d);
+}
+```

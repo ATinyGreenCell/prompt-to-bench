@@ -1,0 +1,62 @@
+// Snap-on tubing clip for a 12.7 mm (1/2 inch) lab stand rod
+// Print orientation: flat on the bed, extruded along +Z
+
+// ---------------- Parameters ----------------
+rod_id      = 12.7;   // stand rod inner diameter
+rod_wall    = 3;      // stand rod ring wall thickness
+rod_od      = rod_id + 2 * rod_wall;  // stand rod ring outer diameter (18.7)
+
+tubing_id   = 6;      // tubing inner diameter
+tubing_wall = 2;      // tubing ring wall thickness
+tubing_od   = tubing_id + 2 * tubing_wall;  // tubing ring outer diameter (10)
+
+bridge_w    = 6;      // solid bridge width along X (from x = 8 to x = 12)
+bridge_h    = 10;     // bridge height along Y (centred on y = 0)
+
+opening_rod = 10;     // width of the opening cut from the rod ring (-X side)
+opening_tub = 4.5;    // width of the opening cut from the tubing ring (+X side)
+
+eps         = 0.5;    // cutter overshoot past faces
+$fn         = 96;     // circle resolution
+
+// ---------------- Profile (2D in XY) ----------------
+module clip_profile() {
+    union() {
+        // Rod ring, centred at origin
+        difference() {
+            cylinder(d = rod_od, h = eps);
+            translate([-rod_od - eps, 0])
+                linear_extrude(height = eps + 2 * eps)
+                    polygon([[-rod_id / 2, opening_rod / 2],
+                             [-rod_id / 2, -opening_rod / 2],
+                             [rod_id / 2, -opening_rod / 2],
+                             [rod_id / 2, opening_rod / 2]]);
+        }
+
+        // Tubing ring, centred at x = 15, y = 0
+        translate([15, 0])
+            difference() {
+                cylinder(d = tubing_od, h = eps);
+                translate([eps, 0])
+                    linear_extrude(height = eps + 2 * eps)
+                        polygon([[tubing_id / 2, -opening_tub / 2],
+                                 [tubing_id / 2, opening_tub / 2],
+                                 [-tubing_id / 2, opening_tub / 2],
+                                 [-tubing_id / 2, -opening_tub / 2]]);
+            }
+
+        // Solid bridge between x = 8 and x = 12
+        translate([8 - bridge_w / 2, -bridge_h / 2])
+            cube([bridge_w, bridge_h, eps]);
+    }
+}
+
+// ---------------- Part ----------------
+module clip() {
+    // Extrude the 2D profile along Z, from z = 0 up to z = 10
+    translate([0, 0, 0])
+        linear_extrude(height = 10)
+            clip_profile();
+}
+
+clip();

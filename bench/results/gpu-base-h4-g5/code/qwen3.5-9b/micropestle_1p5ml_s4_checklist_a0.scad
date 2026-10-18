@@ -1,0 +1,80 @@
+// Pestle for 1.5 mL microcentrifuge tube - standing upright on XY plane.
+// Dimensions in mm.
+
+// Handle
+h_dia  = 8;
+h_len  = 45;
+
+// Cone
+c_d1   = 8;
+c_d2   = 3;
+c_len  = 62 - 45; // 17
+
+// Tip
+tip_d  = 3;
+tip_z  = 62;
+
+// Grooves
+g_count = 4;
+g_w     = 2; // width in Z
+g_d     = 1; // depth
+g_locs  = [10, 15, 20, 25]; // Z positions
+
+$fn = 96;
+
+// Main body: Handle + Cone + Tip
+// We build the positive volume first, then subtract grooves.
+
+// 1. Handle (cylinder)
+// Translate to sit on Z=0, centered in X/Y.
+translate([0, 0, 0])
+    cylinder(h = h_len, d = h_dia);
+
+// 2. Cone (frustum)
+// Starts at Z = 45.
+// d1 = 8 (at Z=45), d2 = 3 (at Z=62).
+translate([0, 0, 45])
+    cylinder(h = c_len, d1 = c_d1, d2 = c_d2);
+
+// 3. Tip (sphere)
+// Centered at Z = 62.
+translate([0, 0, tip_z])
+    sphere(d = tip_d);
+
+// 4. Grooves
+// Cut into the handle section (Z=0 to Z=45).
+// Each groove is a cylinder of diameter g_d and height g_w, centered at g_locs.
+// We use difference() to cut them out.
+difference() {
+    // The main body is already defined above.
+    // We need to subtract the grooves.
+    // Since the main body is built with union() implicitly (by just listing shapes),
+    // we wrap the whole assembly in a difference() to cut the grooves.
+    // However, the previous block was just a sequence of primitives.
+    // To cut them, we must wrap the entire positive geometry in a difference().
+    
+    // Let's restructure:
+    // We will define the positive geometry in a module or just repeat the logic inside difference().
+    // To keep it clean and single-file without complex modules if not needed, 
+    // we can just repeat the positive shapes inside the difference block.
+    
+    // Positive Geometry
+    translate([0, 0, 0])
+        cylinder(h = h_len, d = h_dia);
+    
+    translate([0, 0, 45])
+        cylinder(h = c_len, d1 = c_d1, d2 = c_d2);
+    
+    translate([0, 0, tip_z])
+        sphere(d = tip_d);
+    
+    // Negative Geometry (Grooves)
+    // Extend slightly past the handle to ensure clean cut.
+    // Handle ends at Z=45. Grooves are within 0-45.
+    // We extend the cutting cylinders by 0.1mm in Z.
+    
+    for (z = g_locs) {
+        translate([0, 0, z - g_w / 2])
+            cylinder(h = g_w + 0.1, d = g_d);
+    }
+}

@@ -1,0 +1,45 @@
+```openscad
+// Hose-barb reducer: joins 8 mm ID tubing to 5 mm ID tubing
+// Print orientation: standing upright along Z
+// Units: mm
+
+// ---------------- Parameters ----------------
+reducer_id      = 8;     // central bore diameter (through)
+tube_large_id   = 8;     // inner diameter of larger tubing
+tube_small_id   = 5;     // inner diameter of smaller tubing
+barb_large_od   = 9.5;   // outer diameter of large-tubing barb (tip)
+barb_small_od   = 5.0;   // outer diameter of small-tubing barb (tip)
+barb_count      = 2;     // number of barbs per end, stacked
+barb_length     = 10;    // height of each barb (large)
+barb_small_len  = 8;     // height of each barb (small)
+collar_d        = 12;    // outer diameter of coupling collar
+collar_h        = 5;     // collar height (overlaps barbs for a solid union)
+eps             = 0.5;   // cutter overshoot past faces
+$fn             = 96;    // curve resolution
+
+// Derived
+barb_root_od = barb_large_od - 0.5;   // diameter where barb meets tube (simplified wall)
+
+// ---------------- Model ----------------
+difference() {
+    union() {
+        // End A: two barbs for the 8 mm tubing (z = 0 to 20)
+        for (i = [0 : barb_count - 1])
+            translate([0, 0, i * barb_length])
+                cylinder(h = barb_length, r = [barb_root_od, barb_large_od]);
+
+        // End B: two barbs for the 5 mm tubing (z = 25 to 33)
+        for (i = [0 : barb_count - 1])
+            translate([0, 0, collar_h + i * barb_small_len])
+                cylinder(h = barb_small_len, r = [barb_small_od, barb_small_od + 0.5]);
+
+        // Central collar (z = 20 to 25): fuses the two barb sets
+        translate([0, 0, collar_h])
+            cylinder(h = collar_h, d = collar_d);
+    }
+
+    // Straight through-bore from z = -eps to z = collar_h + barb_small_len + eps
+    translate([0, 0, -eps])
+        cylinder(h = collar_h + barb_small_len + 2 * eps, d = reducer_id);
+}
+```

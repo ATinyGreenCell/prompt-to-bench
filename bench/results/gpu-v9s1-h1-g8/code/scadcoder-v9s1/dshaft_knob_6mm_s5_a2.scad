@@ -1,0 +1,52 @@
+// Replacement knob for a hotplate stirrer with a 6 mm D-shaft
+// Print orientation: bottom face (with D-bore) on the bed at z = 0
+
+// ---------------- Parameters ----------------
+knob_d        = 30;    // knob outer diameter (mm)
+knob_h        = 15;    // knob height (mm)
+
+bore_d        = 6.2;   // D-bore circle diameter (mm)
+bore_flat     = 4.7;   // distance from D-bore flat to opposite side (mm)
+bore_depth    = 12;    // D-bore depth from bottom face (mm)
+
+groove_count  = 18;    // number of vertical grip grooves
+groove_d      = 2;     // grip groove diameter (mm)
+
+pointer_w     = 1.5;   // pointer groove width (mm)
+pointer_d     = 1;     // pointer groove depth (mm)
+
+overcut       = 0.5;   // extra length for cutting shapes past faces (mm)
+
+$fn = 128;             // curve resolution
+
+// ---------------- Derived ----------------
+bore_r = bore_d / 2;
+bore_l = (bore_d - bore_flat) / 2;   // offset of flat from centre
+
+// ---------------- Model ----------------
+difference() {
+    // Knob body
+    cylinder(d = knob_d, h = knob_h);
+
+    // D-shaped blind bore from bottom face
+    translate([0, 0, overcut])
+        union() {
+            // Circle, shifted down so its bottom is at z = overcut
+            translate([0, 0, -bore_r + overcut])
+                cylinder(r = bore_r, h = bore_depth + 2 * overcut);
+            // Flat cut on the bore (extends past top and bottom faces)
+            translate([-bore_l, -bore_d / 2 - overcut, -overcut])
+                cube([bore_d - bore_flat, bore_d + 2 * overcut,
+                      bore_depth + 2 * overcut]);
+        }
+
+    // Vertical grip grooves around the outside, full height
+    for (i = [0 : groove_count - 1])
+        rotate([0, 0, i * 360 / groove_count])
+            translate([knob_d / 2, 0, -overcut])
+                cylinder(d = groove_d, h = knob_h + 2 * overcut, $fn = 16);
+
+    // Pointer groove on top face, same side as the D-flat
+    translate([-pointer_w / 2, -knob_d / 2, knob_h - pointer_d])
+        cube([pointer_w, knob_d + pointer_w, pointer_d]);
+}

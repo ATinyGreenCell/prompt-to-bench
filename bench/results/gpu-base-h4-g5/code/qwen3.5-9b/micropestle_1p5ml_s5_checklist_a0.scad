@@ -1,0 +1,51 @@
+// Pestle for 1.5 mL microcentrifuge tube - printed standing upright.
+// Dimensions in mm.
+
+// Handle
+h_d      = 8;      // Handle diameter
+h_start  = 0;      // Handle start Z
+h_end    = 45;     // Handle end Z
+
+// Cone
+c_d_top  = 8;      // Cone top diameter (at z=45)
+c_d_bot  = 3;      // Cone bottom diameter (at z=62)
+c_start  = 45;     // Cone start Z
+c_end    = 62;     // Cone end Z
+
+// Tip
+tip_d    = 3;      // Tip diameter
+tip_c    = 62;     // Tip center Z
+
+// Grooves
+g_count  = 4;      // Number of grooves
+g_z      = [10, 15, 20, 25]; // Z positions of groove centers
+g_w      = 2;      // Groove width (Z)
+g_d      = 1;      // Groove depth
+
+$fn = 64;
+
+// Main body: Handle + Cone + Tip
+difference() {
+    union() {
+        // 1. Cylindrical Handle
+        translate([0, 0, h_start])
+            cylinder(h = h_end - h_start, d = h_d);
+
+        // 2. Cone (tapering from 8mm to 3mm)
+        translate([0, 0, c_start])
+            cylinder(h = c_end - c_start, d1 = c_d_top, d2 = c_d_bot);
+
+        // 3. Rounded Tip (Sphere centered at z=62)
+        translate([0, 0, tip_c - tip_d / 2])
+            sphere(r = tip_d / 2);
+    }
+
+    // 4. Grooves (cut into the handle)
+    // We cut a cylinder through the handle at each Z position.
+    // The cylinder must extend slightly past the handle top/bottom to ensure clean cuts.
+    for (i = [0 : g_count - 1]) {
+        z_pos = g_z[i];
+        translate([0, 0, z_pos - g_w / 2])
+            cylinder(h = g_w + 0.1, d = h_d - g_d);
+    }
+}

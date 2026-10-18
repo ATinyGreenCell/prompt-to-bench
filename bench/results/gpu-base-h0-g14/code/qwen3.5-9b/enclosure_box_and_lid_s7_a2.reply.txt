@@ -1,0 +1,32 @@
+The measurement report confirms the following matches with the specification:
+1.  **Two separate bodies**: Correct (2 bodies).
+2.  **Bed contact**: Correct (lowest point at z=0).
+3.  **Box Dimensions**: Correct (70 x 50 x 30).
+4.  **Lid Dimensions**: Correct (65.6 x 45.6 x 2 plate).
+5.  **Gap**: The bounding box X range is 0.00 to 145.60.
+    *   Box width = 70.
+    *   Gap = 10.
+    *   Lid width = 65.6.
+    *   Total = 70 + 10 + 65.6 = 145.6. **Correct.**
+6.  **Orientation**: Both parts rest on the XY plane at Z=0. **Correct.**
+
+**One minor discrepancy found in the "HORIZONTAL SLICES" report:**
+*   **Report**: At z=16.00, the hole is listed as `66.10 x 46.10`.
+*   **Spec Calculation**:
+    *   Lip Outer: 65.6 x 45.6.
+    *   Lip Wall Thickness: 1.5.
+    *   Inner Hole Size = Outer - (2 * Wall) = 65.6 - 3.0 = 62.6.
+    *   Inner Hole Size Y = 45.6 - 3.0 = 42.6.
+*   **Discrepancy**: The report shows a hole of ~66mm, which is larger than the outer lip (65.6mm). This suggests the `difference()` logic for the lip might be creating a hole that is too large or the cut is extending incorrectly.
+    *   Looking at the code: `cube([ $lip_inner_x, $lip_inner_y, ... ])` where `$lip_inner_x` is calculated as `$lip_outer_x - (2 * $lip_wall_thickness)`.
+    *   Calculation: 65.6 - 3 = 62.6.
+    *   Why does the report say 66.10?
+    *   Ah, I see the issue in the previous code's logic for the *Lip Wall* addition.
+    *   In the previous code:
+        ```openscad
+        // Cut out the inner void of the lip
+        translate([ $lip_wall_thickness, $lip_wall_thickness, $lip_wall_thickness ]) {
+            cube([ $lip_inner_x, $lip_inner_y, $lip_height - $lip_wall_thickness ]);
+        }
+        ```
+        This creates a hole of size `$lip_inner_x` (

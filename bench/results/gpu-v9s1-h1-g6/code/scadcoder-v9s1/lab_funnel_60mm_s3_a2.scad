@@ -1,0 +1,42 @@
+// Lab funnel - printed upright, wide opening at top
+// Units: mm
+
+// ---- Parameters ----
+spout_od      = 10;    // spout outer diameter
+spout_h       = 20;    // spout height (z = 0 to 20)
+cone_od_top   = 60;    // cone rim outer diameter (z = 50)
+wall          = 1.6;   // wall thickness everywhere
+eps           = 0.5;   // cutter overshoot past faces
+
+// ---- Derived ----
+spout_id = spout_od - 2 * wall;   // bore diameter
+cone_id_top = cone_od_top - 2 * wall;  // cone inner diameter at rim
+
+// ---- Model ----
+difference() {
+    union() {
+        // Spout (tube)
+        cylinder(d = spout_od, h = spout_h);
+        // Cone - thick-walled, built as a frustum
+        translate([0, 0, spout_h])
+            rotate_extrude()
+                polygon(points = [
+                    [cone_id_top / 2, spout_h + cone_h],
+                    [cone_od_top / 2, spout_h + cone_h],
+                    [cone_od_top / 2, spout_h],
+                    [cone_id_top / 2, spout_h]
+                ]);
+    }
+    // Through-bore: spout bore up to cone start, then cone bore to rim
+    translate([0, 0, spout_h])
+        rotate_extrude()
+            polygon(points = [
+                [cone_id_top / 2, spout_h + cone_h],
+                [cone_od_top / 2, spout_h + cone_h],
+                [cone_od_top / 2, spout_h],
+                [cone_id_top / 2, spout_h]
+            ]);
+    // Cap below spout start so the bore is clean through
+    translate([0, 0, -eps])
+        cylinder(d = spout_id, h = spout_h + 2 * eps);
+}

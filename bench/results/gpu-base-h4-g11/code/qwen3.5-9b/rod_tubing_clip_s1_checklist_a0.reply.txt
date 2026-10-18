@@ -1,0 +1,147 @@
+```openscad
+// Snap-on clip for lab stand rod and tubing.
+// Printed flat: 10 mm tall extrusion of a 2-D profile in XY plane.
+// Orientation: Rests on XY plane at z=0, builds upward. Centred on origin.
+
+// Rod ring dimensions
+rod_id = 12.7;   // Inner diameter (matches 1/2" rod)
+rod_wall = 3;    // Wall thickness
+rod_od = rod_id + 2 * rod_wall; // Outer diameter = 18.7
+
+// Tubing ring dimensions
+tube_id = 6;     // Inner diameter
+tube_wall = 2;   // Wall thickness
+tube_od = tube_id + 2 * tube_wall; // Outer diameter = 10
+
+// Positions and openings
+tube_x = 15;     // Center X of tubing ring
+tube_open_w = 4.5; // Width of opening on +X side
+tube_open_h = tube_open_w / 2; // Half-height of opening
+
+// Bridge dimensions
+bridge_x_start = 8;
+bridge_x_end = 12;
+bridge_w = 6;    // Width in Y
+
+// Extrusion height
+h = 10;
+
+$fn = 64;
+
+// Define the 2D profile as a list of [x, y] points for rotate_extrude
+// We will create the shape by unioning the rings and bridge, then subtracting openings.
+// Since rotate_extrude works best with a single polygon, we construct the profile polygon.
+
+// Helper to generate points for a ring with an opening
+// Returns a list of [x, y] points.
+// ring_id: inner diameter
+// ring_od: outer diameter
+// cx, cy: center
+// open_side: 1 for +X, -1 for -X
+// open_w: width of opening
+// open_h: half-height of opening
+module ring_profile_points(id, od, cx, cy, open_side, open_w, open_h) {
+    // Outer arc
+    outer_pts = [for (i = [0 : 359]) let(a = i * 360 / 360) [cx + od / 2 * cos(a), cy + od / 2 * sin(a)]];
+    
+    // Inner arc (skip the opening sector)
+    // Opening is centered on the axis.
+    // If open_side is 1 (+X), we skip angles around 0.
+    // If open_side is -1 (-X), we skip angles around 180.
+    
+    start_angle = 0;
+    end_angle = 0;
+    
+    if (open_side == 1) {
+        // Opening on +X: skip from -open_h to +open_h
+        start_angle = -open_h;
+        end_angle = open_h;
+    } else {
+        // Opening on -X: skip from 180-open_h to 180+open_h
+        start_angle = 180 - open_h;
+        end_angle = 180 + open_h;
+    }
+    
+    inner_pts = [for (i = [0 : 359]) let(a = i * 360 / 360) {
+        if (a >= start_angle && a <= end_angle) [999, 999] // Skip this sector
+        else [cx + id / 2 * cos(a), cy + id / 2 * sin(a)]
+    }];
+    
+    // Combine outer and inner, ensuring we close the loop properly for the opening
+    // We need to traverse the outer circle, then jump to the inner circle at the start of the gap,
+    // traverse the inner circle backwards (or forwards depending on winding), then close.
+    
+    // Let's build the full polygon manually to ensure correct winding (CCW for solid).
+    // 1. Outer circle CCW
+    // 2. Radial line in to inner circle at start_angle
+    // 3. Inner circle CW (reverse)
+    // 4. Radial line out to outer circle at end_angle
+    
+    poly = [];
+    
+    // Outer circle
+    for (i = [0 : 359]) {
+        a = i * 360 / 360;
+        poly += [[cx + od / 2 * cos(a), cy + od / 2 * sin(a)]];
+    }
+    
+    // Radial line in at start_angle
+    poly += [[cx + od / 2 * cos(start_angle), cy + od / 2 * sin(start_angle)], [cx + id / 2 * cos(start_angle), cy + id / 2 * sin(start_angle)]];
+    
+    // Inner circle CW (reverse order)
+    for (i = [359 : -1 : 0]) {
+        a = i * 360 / 360;
+        if (a >= start_angle && a <= end_angle) continue; // Skip the gap
+        poly += [[cx + id / 2 * cos(a), cy + id / 2 * sin(a)]];
+    }
+    
+    // Radial line out at end_angle
+    poly += [[cx + id / 2 * cos(end_angle), cy + id / 2 * sin(end_angle)], [cx + od / 2 * cos(end_angle), cy + od / 2 * sin(end_angle)]];
+    
+    poly;
+}
+
+// Generate points for Rod Ring (Opening on -X side)
+rod_pts = ring_profile_points(rod_id, rod_od, 0, 0, -1, 5, 5);
+
+// Generate points for Tubing Ring (Opening on +X side)
+tube_pts = ring_profile_points(tube_id, tube_od, tube_x, 0, 1, tube_open_w, tube_open_h);
+
+// Generate points for Bridge (Solid rectangle)
+// Bridge is from x=8 to x=12, width 6 (y=-3 to y=3)
+bridge_pts = [
+    [bridge_x_start, -bridge_w / 2],
+    [bridge_x_end, -bridge_w / 2],
+    [bridge_x_end, bridge_w / 2],
+    [bridge_x_start, bridge_w / 2]
+];
+
+// Combine all parts into one polygon
+// We need to merge the lists. Since they are disjoint (except bridge touches rings), we can just concatenate.
+// However, rotate_extrude expects a single closed loop.
+// The bridge connects the two rings. We need to traverse Rod -> Bridge -> Tube -> Rod.
+// This is complex to do automatically with simple concatenation if the winding directions differ.
+// Instead, let's create the solid by unioning the extruded rings and bridge, then subtracting the openings.
+// This is safer and easier in OpenSCAD.
+
+difference() {
+    union() {
+        // Extrude Rod Ring
+        rotate_extrude() polygon(rod_pts);
+        
+        // Extrude Tubing Ring
+        rotate_extrude() polygon(tube_pts);
+        
+        // Extrude Bridge
+        linear_extrude(h) polygon(bridge_pts);
+    }
+    
+    // Subtract Rod Opening (Rectangle cutout)
+    // x < 0, -5 < y < 5
+    translate([-5, -5, 0]) cube([10, 10, h + 1]);
+    
+    // Subtract Tubing Opening (Rectangle cutout)
+    // x > 15, -2.25 < y < 2.25
+    translate([15, -tube_open_h, 0]) cube([tube_open_w, tube_open_w * 2, h + 1]);
+}
+```

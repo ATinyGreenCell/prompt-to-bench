@@ -1,0 +1,73 @@
+// 96-well PCR tube rack - ANSI/SLAS footprint with chamfered orientation mark.
+// Dimensions in mm.
+
+// Block dimensions
+L     = 127.76; // Length (X)
+W     = 85.48;  // Width (Y)
+H     = 20;     // Height (Z)
+
+// Hole specifications
+n_cols = 12; // Columns along X
+n_rows = 8;  // Rows along Y
+hole_d = 6.2;
+pitch_x = 9.0;
+pitch_y = 9.0;
+
+// Grid origin (A1 center) relative to block corner
+origin_x = 14.38;
+origin_y = 11.24;
+
+// Chamfer specifications
+chamfer_leg = 5.0;
+
+$fn = 128;
+
+// Calculate grid start positions to center the grid on the block
+// The grid spans from origin to (origin + (n-1)*pitch)
+grid_span_x = (n_cols - 1) * pitch_x;
+grid_span_y = (n_rows - 1) * pitch_y;
+
+// Center the grid on the block
+center_offset_x = (L - grid_span_x) / 2;
+center_offset_y = (W - grid_span_y) / 2;
+
+// Actual start positions for the first hole (A1)
+start_x = origin_x + center_offset_x;
+start_y = origin_y + center_offset_y;
+
+difference() {
+    // Main block
+    translate([0, 0, 0]) cube([L, W, H]);
+
+    // Chamfer at A1 corner (top corner of the vertical edge at start_x, start_y)
+    // We cut a wedge from the top corner.
+    // The cut removes the region: X > start_x, Y > start_y, Z > H - chamfer_leg, AND (X - start_x) + (Y - start_y) < chamfer_leg.
+    // This is a prism with a triangular base on the top face, extruded down.
+    
+    // Define the triangular profile for the chamfer cutter
+    // Vertices relative to the corner (start_x, start_y): (0,0), (chamfer_leg, 0), (0, chamfer_leg)
+    // We need to extrude this shape downwards from Z=H to Z=H-chamfer_leg
+    
+    // Create the cutter shape
+    translate([start_x, start_y, H - chamfer_leg]) {
+        linear_extrude(height = chamfer_leg, center = true) {
+            polygon([[0, 0], [chamfer_leg, 0], [0, chamfer_leg]]);
+        }
+    }
+
+    // Create the 96 holes
+    for (col = [0 : n_cols - 1]) {
+        for (row = [0 : n_rows - 1]) {
+            // Calculate hole position
+            // Columns along X, Rows along Y
+            // A1 is at col=0, row=0
+            hole_x = start_x + col * pitch_x;
+            hole_y = start_y + row * pitch_y;
+            
+            // Cut the hole
+            translate([hole_x, hole_y, 0]) {
+                cylinder(h = H + 1, d = hole_d);
+            }
+        }
+    }
+}

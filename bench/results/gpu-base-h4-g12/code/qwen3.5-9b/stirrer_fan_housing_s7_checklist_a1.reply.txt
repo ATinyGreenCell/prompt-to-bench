@@ -1,0 +1,51 @@
+```openscad
+// DIY Magnetic Stirrer Housing - based on an 80mm PC fan.
+// Orientation: Upside down. Top plate on bed (z=0), walls rise to z=40.
+// Outer size: 90x90mm.
+
+// Dimensions
+outer_w = 90;
+outer_h = 90;
+top_t   = 2;
+wall_t  = 2.5;
+box_h   = 40; // Total height from bed to open top
+
+// Fan mounting hole pattern
+mounting_hole_d = 4.5;
+mounting_pitch = 71.5;
+
+// Cable notch
+notch_w = 12;
+notch_start_z = 32; // Bottom of notch
+notch_end_z = 40;   // Top of notch (open edge)
+
+$fn = 64;
+
+// Calculate notch position
+notch_x_start = (outer_w - notch_w) / 2;
+notch_y       = outer_h / 2;
+
+// Calculate hole positions
+hole_x = mounting_pitch / 2;
+hole_y = mounting_pitch / 2;
+
+difference() {
+    // Main block
+    translate([0, 0, 0]) 
+        cube([outer_w, outer_h, box_h]);
+    
+    // Subtract mounting holes (4 holes)
+    for (i = [-1, 1]) {
+        for (j = [-1, 1]) {
+            translate([i * hole_x, j * hole_y, 0]) {
+                cylinder(h = top_t + 0.1, d = mounting_hole_d);
+            }
+        }
+    }
+    
+    // Subtract cable notch
+    translate([notch_x_start, notch_y, notch_start_z]) {
+        cube([notch_w, wall_t + 0.1, notch_end_z - notch_start_z]);
+    }
+}
+```

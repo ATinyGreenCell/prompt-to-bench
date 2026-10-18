@@ -1,0 +1,92 @@
+```openscad
+// Lab Funnel Design
+// Units: millimetres
+// Orientation: Upright, wide opening at top, resting on XY plane at z=0.
+
+// Dimensions
+$fn = 128; // High resolution for smooth curves
+
+// Spout (Tube)
+spout_outer_diameter = 10;
+spout_inner_diameter = 6.8; // 10 - 2*1.6
+spout_length = 20;
+spout_wall_thickness = 1.6;
+
+// Cone (Funnel)
+cone_bottom_diameter = 10; // Matches spout outer diameter
+cone_top_diameter = 60;
+cone_bottom_z = 20; // Start of cone
+cone_top_z = 50;    // End of cone (rim)
+cone_wall_thickness = 1.6;
+
+// Calculated Cone Dimensions
+cone_bottom_radius = cone_bottom_diameter / 2;
+cone_top_radius = cone_top_diameter / 2;
+cone_height = cone_top_z - cone_bottom_z;
+
+// Main Body Construction
+// We build the solid from the bottom up.
+// 1. The Spout: A hollow cylinder from z=0 to z=20.
+// 2. The Cone: A hollow frustum from z=20 to z=50.
+// We use a single union of two hollow shapes to ensure continuity.
+
+// Helper function to create a hollow cylinder (spout)
+module hollow_cylinder(outer_d, inner_d, height, z_start) {
+    translate([0, 0, z_start]) {
+        difference() {
+            // Outer shell
+            cylinder(h = height, d = outer_d, center = [0, 0, height/2]);
+            // Inner hole
+            cylinder(h = height, d = inner_d, center = [0, 0, height/2]);
+        }
+    }
+}
+
+// Helper function to create a hollow cone (frustum)
+// z_start is the Z coordinate of the bottom of the cone
+module hollow_cone(outer_bottom_d, outer_top_d, inner_bottom_d, inner_top_d, height, z_start) {
+    translate([0, 0, z_start]) {
+        difference() {
+            // Outer shell
+            linear_extrude(height = height, center = true) {
+                polygon(points = [
+                    [-outer_bottom_d/2, 0],
+                    [outer_bottom_d/2, 0],
+                    [outer_top_d/2, height],
+                    [-outer_top_d/2, height]
+                ]);
+            }
+            // Inner hole
+            linear_extrude(height = height, center = true) {
+                polygon(points = [
+                    [-inner_bottom_d/2, 0],
+                    [inner_bottom_d/2, 0],
+                    [inner_top_d/2, height],
+                    [-inner_top_d/2, height]
+                ]);
+            }
+        }
+    }
+}
+
+// Build the part
+union() {
+    // 1. The Spout (z=0 to z=20)
+    hollow_cylinder(
+        outer_d = spout_outer_diameter,
+        inner_d = spout_inner_diameter,
+        height = spout_length,
+        z_start = 0
+    );
+
+    // 2. The Cone (z=20 to z=50)
+    hollow_cone(
+        outer_bottom_d = cone_bottom_diameter,
+        outer_top_d = cone_top_diameter,
+        inner_bottom_d = spout_inner_diameter, // Continuity with spout bore
+        inner_top_d = cone_top_diameter - (2 * cone_wall_thickness), // Top rim thickness
+        height = cone_height,
+        z_start = cone_bottom_z
+    );
+}
+```

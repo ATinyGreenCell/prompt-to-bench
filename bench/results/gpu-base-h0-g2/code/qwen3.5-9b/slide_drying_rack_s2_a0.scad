@@ -1,0 +1,66 @@
+// Drying Rack for 10 Microscope Slides
+// Base: 90 x 45 x 20 mm
+// Slots: 10 parallel slots, 77mm long, 1.6mm wide, 10mm deep
+// Spacing: 3.5mm centre-to-centre (Y)
+
+$fn = 128; // High resolution for smooth slot edges
+
+// Base Dimensions
+base_length = 90;  // X
+base_width = 45;   // Y
+base_height = 20;  // Z
+
+// Slide Dimensions (for reference)
+slide_length = 75;
+slide_width = 25;
+slide_thickness = 1;
+
+// Slot Dimensions
+slot_length = 77;  // X
+slot_width = 1.6;  // Y
+slot_depth = 10;   // Z (cut depth)
+
+// Layout
+num_slots = 10;
+slot_spacing = 3.5; // Centre-to-centre in Y
+
+// Calculate Y position of the first slot centre
+// Total width occupied by slots + gaps
+// We need to center the whole group in Y (base_width / 2)
+// The group spans from the first slot centre minus (num_slots-1)/2 * spacing to the last
+// Actually, simpler: The group of centres is symmetric around 0.
+// First slot centre = - ( (num_slots - 1) * slot_spacing ) / 2
+first_slot_y = -((num_slots - 1) * slot_spacing) / 2;
+
+// Generate the main block
+difference() {
+    // 1. Create the solid base block
+    translate([0, 0, 0])
+    cube([base_length, base_width, base_height]);
+
+    // 2. Cut the 10 slots
+    // Slots run along X, so they are extruded in X direction.
+    // We define a slot shape and rotate/extrude it, or simply translate it.
+    // Since slots are parallel to X, we can define a rectangle in YZ plane and extrude along X.
+    
+    for (i = [0 : num_slots - 1]) {
+        // Calculate Y position for this slot
+        y_pos = first_slot_y + i * slot_spacing;
+        
+        // Define the slot cutter
+        // The slot is 77mm long (X), 1.6mm wide (Y), 10mm deep (Z)
+        // We need to cut from the top surface (z=20) down to z=10.
+        // To ensure clean cuts, we extend slightly past the faces.
+        
+        translate([
+            0,              // X offset (centered on block length)
+            y_pos,          // Y offset
+            base_height - slot_depth // Z offset (start at top surface)
+        ])
+        cube([
+            slot_length + 0.1, // X: slightly longer than slot_length to cut edges
+            slot_width + 0.1,  // Y: slightly wider
+            slot_depth + 0.1   // Z: slightly deeper
+        ]);
+    }
+}

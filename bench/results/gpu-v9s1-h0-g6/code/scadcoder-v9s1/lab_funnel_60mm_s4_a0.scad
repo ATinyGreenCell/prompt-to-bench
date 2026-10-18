@@ -1,0 +1,41 @@
+// Lab funnel - printed upright, open top and bottom
+// Units: mm
+
+$fn = 64;
+
+// --- Dimensions ---
+spout_od      = 10;   // spout outer diameter (z = 0 to 20)
+spout_length  = 20;   // spout length
+cone_top_od   = 10;   // cone outer diameter at z = 20
+cone_rim_od   = 60;   // cone rim outer diameter at z = 50
+cone_height   = 30;   // cone height (z = 20 to 50)
+wall          = 1.6;  // wall thickness everywhere
+
+// --- Derived ---
+spout_id = spout_od - 2 * wall;  // bore of spout
+// Cone walls slope outward, so the bore narrows from spout_id at cone_top_od
+// to (cone_rim_od - 2 * wall) at the rim.
+
+// --- Model ---
+union() {
+    // Straight spout
+    difference() {
+        cylinder(d = spout_od, h = spout_length);
+        translate([0, 0, -1])
+            cylinder(d = spout_id, h = spout_length + 2);
+    }
+
+    // Cone on top of spout (seam at cone_top_od)
+    difference() {
+        translate([0, 0, spout_length])
+            linear_extrude(height = cone_height)
+                polygon([cone_top_od / 2, cone_top_od / 2,
+                         cone_rim_od / 2, -cone_rim_od / 2,
+                         -cone_top_od / 2, -cone_top_od / 2]);
+        translate([0, 0, spout_length - 1])
+            linear_extrude(height = cone_height + 2)
+                polygon([(cone_top_od - 2 * wall) / 2, (cone_top_od - 2 * wall) / 2,
+                         (cone_rim_od - 2 * wall) / 2, -(cone_rim_od - 2 * wall) / 2,
+                         -(cone_top_od - 2 * wall) / 2, -(cone_top_od - 2 * wall) / 2]);
+    }
+}

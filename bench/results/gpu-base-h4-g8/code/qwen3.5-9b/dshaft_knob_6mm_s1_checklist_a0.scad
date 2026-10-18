@@ -1,0 +1,132 @@
+// Replacement knob for a hotplate stirrer with a D-shaft.
+// Orientation: Bottom face (z=0) rests on the bed. D-flat faces the hotplate (down).
+
+// Dimensions
+d_shaft = 6;
+d_knob  = 30;
+h_knob  = 15;
+h_bore  = 12;
+d_bore  = 6.2;
+d_groove = 2;
+n_grooves = 18;
+w_pointer = 1.5;
+d_pointer = 1; // Approximate depth based on description "1 mm deep"
+
+$fn = 128;
+
+// Calculate D-shape geometry
+// Distance from flat to opposite side is 4.7 mm.
+// Total diameter is 6.2 mm.
+// So the flat width is 6.2 - 4.7 = 1.5 mm.
+// The flat is centered on the X-axis.
+d_flat = d_bore - 4.7;
+r_bore = d_bore / 2;
+
+// Define the D-shape profile for the bore
+// Points: Start at top of circle, go around to the flat side, close.
+// We define the profile relative to the center of the bore.
+// Top: (0, r_bore)
+// Right: (r_bore, 0)
+// Bottom: (0, -r_bore)
+// Left Flat: (-d_flat/2, -r_bore) to (-d_flat/2, r_bore)
+// Left Corner: (-r_bore, 0)
+// Actually, let's trace the perimeter:
+// (0, r_bore) -> (r_bore, 0) -> (0, -r_bore) -> (-d_flat/2, -r_bore) -> (-d_flat/2, r_bore) -> (0, r_bore)
+// Wait, the flat is on the left side (negative X) because the knob sits on the bed and the flat faces the hotplate (which is usually below or aligned with the shaft axis).
+// The prompt says "From that bottom face, a D-shaped blind bore...".
+// "Side that faces the hotplate down" -> The flat side of the D is on the bottom face of the knob.
+// So the flat side of the D-bore is on the negative X side (if we align the flat with -X).
+// Let's define the polygon for the D-bore cross-section.
+// Center at (0,0).
+// Points:
+// 1. Top: (0, r_bore)
+// 2. Right: (r_bore, 0)
+// 3. Bottom: (0, -r_bore)
+// 4. Flat start: (-d_flat/2, -r_bore)
+// 5. Flat end: (-d_flat/2, r_bore)
+// 6. Back to Top: (0, r_bore) - wait, we need to close the loop properly.
+// Correct path: (0, r_bore) -> (r_bore, 0) -> (0, -r_bore) -> (-d_flat/2, -r_bore) -> (-d_flat/2, r_bore) -> (0, r_bore).
+// This creates a shape where the left side is flat.
+
+module d_bore_profile() {
+    polygon([
+        [0, r_bore],
+        [r_bore, 0],
+        [0, -r_bore],
+        [-d_flat/2, -r_bore],
+        [-d_flat/2, r_bore]
+    ]);
+}
+
+// Main Knob Body
+difference() {
+    // 1. Main Cylinder
+    cylinder(h = h_knob, d = d_knob);
+
+    // 2. D-shaped Bore
+    // The bore starts at z=0 and goes up to z=h_bore.
+    // We extrude the 2D profile along Z.
+    translate([0, 0, -1]) // Extend slightly below z=0 to ensure clean cut
+    rotate_extrude() d_bore_profile();
+
+    // 3. Grip Grooves
+    // 18 evenly spaced vertical grooves along the full height.
+    // Each groove is a 2 mm diameter half-cylinder centred on the outer surface.
+    // "Half-cylinder" implies a semi-cylindrical cut.
+    // We can model this by rotating a half-circle profile or by subtracting cylinders.
+    // Using rotation for cleaner geometry:
+    // Profile: A rectangle of width 2mm (d_groove) and height h_knob, but we need a semi-cylindrical shape.
+    // Actually, "half-cylinder" usually means the cut is a semi-cylinder.
+    // Let's create a profile that is a rectangle of width d_groove, but we want the cut to be a semi-cylinder.
+    // A semi-cylinder cut can be made by rotating a semi-circle profile.
+    // Profile: A line from (0,0) to (d_groove, 0) and a semi-circle arc? No.
+    // A semi-cylinder cut of diameter d_groove has a depth of d_groove/2.
+    // Let's define the profile as a rectangle of width d_groove and height h_knob, then subtract a semi-circle?
+    // No, the simplest way to get a semi-cylindrical groove is to rotate a semi-circle profile.
+    // But the groove runs along the Z axis.
+    // So we need a profile in the XZ plane (or YZ) that represents the cross section of the groove.
+    // The groove is on the surface.
+    // Let's use a loop to place 18 cylinders.
+    // Each cylinder is a full cylinder of diameter d_groove, but we only want half of it?
+    // "2 mm diameter half-cylinder". This phrasing is slightly ambiguous.
+    // Interpretation A: The groove is a semi-cylinder (depth = 1mm).
+    // Interpretation B: The groove is a full cylinder (depth = 1mm) but only half the circumference? No, it's a groove.
+    // Standard interpretation: A semi-cylindrical groove with diameter 2mm (radius 1mm).
+    // We will subtract 18 cylinders of diameter d_groove, positioned on the surface.
+    // To make them "half-cylinders" (semi-cylindrical cuts), we can rotate them 90 degrees around the Z axis?
+    // No, if we rotate a cylinder 90 degrees, it becomes a flat slab.
+    // If we want a semi-cylindrical groove, we can rotate a semi-circle profile around the Z axis? No, that makes a torus.
+    // We want grooves along the Z axis.
+    // Let's create a profile in the XZ plane: A rectangle of width d_groove and height h_knob, but with a semi-circular top?
+    // No, the groove is on the side.
+    // Let's try this: Create a profile that is a rectangle of width d_groove and height h_knob.
+    // Then, to make it a semi-cylinder, we can't easily do it with a simple polygon unless we approximate.
+    // Better approach: Use `rotate_extrude` on a semi-circle profile? No, that makes a ring.
+    // Let's use the `for` loop to subtract cylinders.
+    // If we subtract a full cylinder of diameter d_groove, the depth is d_groove/2.
+    // This matches "2 mm diameter half-cylinder" (meaning the cut is a semi-cylinder of diameter 2mm).
+    // So we subtract 18 cylinders of diameter d_groove.
+    
+    for (i = [0 : n_grooves - 1]) {
+        // Calculate angle for even spacing
+        angle = i * 360 / n_grooves;
+        
+        // Position on the surface
+        // Radius of the knob surface
+        r_surface = d_knob / 2;
+        
+        // Translate to the surface point
+        tx = r_surface * cos(angle);
+        ty = r_surface * sin(angle);
+        
+        // Rotate the cylinder to align with the surface normal
+        // The cylinder axis is initially Z. We need to rotate it to point radially outward.
+        // Rotation: First rotate around Y to bring Z to the angle, then around Z?
+        // Standard rotation for radial alignment:
+        // rotate([0, 0, angle]) rotate([90, 0, 0]) cylinder(...);
+        // Let's verify:
+        // rotate([90, 0, 0]) cylinder(h, d) -> Cylinder lies along Y axis.
+        // rotate([0, 0, angle]) -> Rotates around Z.
+        // If we want the cylinder to point radially outward from the Z axis:
+        // We can use a single rotation: rotate([0, 0, angle]) rotate([90, 0, 0])?
+        // Let's

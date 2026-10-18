@@ -1,0 +1,52 @@
+```openscad
+// Replacement knob for a hotplate stirrer with a 6 mm D-shaft
+// Print orientation: bottom face (facing the hotplate) on the bed at z = 0
+
+// ---------------- Parameters ----------------
+knob_d      = 30;    // knob outer diameter (mm)
+knob_h      = 15;    // knob height (mm)
+
+bore_depth  = 12;    // D-bore depth from bottom face (mm)
+bore_w      = 4.7;   // D-bore width: flat to opposite side of circle (mm)
+bore_d      = 6.2;   // diameter of the circle the D-bore is cut from (mm)
+
+groove_n    = 18;    // number of vertical grip grooves
+groove_d    = 2;     // grip groove diameter (mm)
+
+pointer_w   = 1.5;   // pointer groove width (mm)
+pointer_d   = 1;     // pointer groove depth (mm)
+
+eps         = 0.5;   // overcut so cutting shapes pass beyond faces (mm)
+
+$fn = 96;            // circle resolution
+
+// ---------------- Derived ----------------
+// Distance from the D-bore flat to the axis of the 6.2 mm circle.
+// The flat runs through the circle at this offset, giving a chord of bore_w.
+bore_offset = (bore_d - bore_w) / 2;
+
+// ---------------- Model ----------------
+difference() {
+    // Main knob body
+    translate([0, 0, 0])
+        cylinder(d = knob_d, h = knob_h);
+
+    // D-shaped blind bore from the bottom face, open upward
+    translate([0, 0, -eps])
+        linear_extrude(height = bore_depth + 2 * eps)
+            circle(d = bore_d, $fn = 64);
+    // Cut the flat side of the D
+    translate([0, -bore_offset, -eps])
+        cube([bore_w, knob_d, bore_depth + 2 * eps]);
+
+    // 18 evenly spaced vertical grip grooves along the full height
+    for (i = [0 : groove_n - 1])
+        rotate([0, 0, i * 360 / groove_n])
+            translate([knob_d / 2, 0, -eps])
+                cylinder(d = groove_d, h = knob_h + 2 * eps, $fn = 16);
+
+    // Pointer groove on the top face, on the same side as the D flat
+    translate([0, -bore_offset - 1, knob_h])
+        cube([pointer_w, knob_d / 2, pointer_d]);
+}
+```

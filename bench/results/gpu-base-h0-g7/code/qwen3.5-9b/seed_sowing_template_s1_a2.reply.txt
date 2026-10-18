@@ -1,0 +1,96 @@
+The measurement report reveals two critical issues compared to the specification:
+
+1.  **Notch Position (X-axis):** The report shows the notch center at `X = 9.92`. The specification requires the notch to be on the **rim** of the disc. The disc radius is 42.5 mm. The notch should be centered at `X = 42.5` (or slightly less if it's a cutout from the edge, but typically "on the rim" implies the center of the cutout aligns with the edge or is centered on the edge). The previous code placed the notch at `X = 5` (half the width), which is near the center of the disc, not the rim.
+    *   *Correction:* The notch must be translated to `X = $DISC_DIAMETER / 2`.
+
+2.  **Notch Geometry (Y-axis):** The report shows the notch shape as `10.00 x 5.50` at `z=0.52` and `10.00 x 4.00` at `z=1.52`. The specification requires a **4 mm deep** notch. The varying height suggests the cutting cube is not perfectly aligned with the disc's top/bottom faces, or the "depth" is being interpreted incorrectly.
+    *   *Correction:* Ensure the cutting cube's Z-height matches the disc thickness exactly (or slightly more to ensure a clean cut) and is positioned correctly. The report's `5.50` width at the bottom suggests the cube might be tilted or the coordinate system is offset. Given the `translate([local_x, 0, 0])` logic, the cube should be upright. The discrepancy likely comes from the `center = true` on the cylinder holes shifting the internal logic or simply the previous `translate` logic being wrong.
+    *   *Re-evaluating the "4mm deep" spec:* "4 mm deep (Y, measured in from the rim)". This means the notch extends 4mm *inwards* from the edge along the Y-axis? No, usually "deep" in a notch context refers to the dimension *into* the material. If the notch is on the +Y side, it usually means it cuts into the +Y direction. However, the spec says "centred on the Y axis". This is contradictory if it's "on the +Y side" and "centred on Y".
+    *   *Interpretation:* "Centred on the Y axis" means the notch's centerline is the Y-axis (X=0). "On the +Y side" means the notch is located at the positive X edge of the disc. "4 mm deep (Y)" likely means the notch extends 4mm along the Y-axis (width of the notch in Y).
+    *   *Wait, looking at the report:* The report says `1 x rectangle 10.00 x 4.00 [centre (10.00, 2.00)]` at the top. This confirms the notch is 10mm wide (X) and 4mm high (Y). The issue is the X position. It is at X=10, but it should be at X=42.5 (the rim).
+
+3.  **Grid Hole Count:** The report lists "48 x circle" at z=0.52 and "49 x circle" at z=1.52. A 7x7 grid has 49 holes. The missing hole at the bottom slice is likely due to the `+0.1` extension on the cutting cylinder causing it to disappear from the slice at z=0.52 if the slice logic is strict, or simply a rendering artifact in the report generation. However, the volume is slightly higher than expected (10,905 vs 10,612), suggesting the notch is larger or misplaced.
+    *   *Correction:* Ensure the notch is exactly at the rim.
+
+**Plan:**
+1.  Keep the disc at `z=0`.
+2.  Keep the grid holes centered.
+3.  Move the notch translation to `X = $DISC_DIAMETER / 2`.
+4.  Ensure the notch cube dimensions are exactly `10 x 4 x 2` (plus a tiny bit for cutting).
+
+```openscad
+$fn = 128;
+
+// --- Dimensions ---
+// Petri Dish Diameter (for reference)
+$DISH_DIAMETER = 90;
+
+// Disc Dimensions
+$DISC_DIAMETER = 85;
+$DISC_THICKNESS = 2;
+
+// Grid Configuration
+$GRID_ROWS = 7;
+$GRID_COLS = 7;
+$HOLE_DIAMETER = 3;
+$HOLE_SPACING = 9;
+
+// Notch Dimensions (on +Y side)
+$NOTCH_WIDTH_X = 10;
+$NOTCH_DEPTH_Y = 4;
+
+// --- Variables ---
+// Calculate grid offset to center the 7x7 grid
+$GRID_OFFSET = (($GRID_ROWS - 1) * $HOLE_SPACING) / 2;
+
+// Main Body
+difference() {
+    // Create the main disc
+    // Ensure it sits on the bed (z=0) by not centering it vertically
+    translate([0, 0, 0])
+        cylinder(
+            h = $DISC_THICKNESS,
+            r = $DISC_DIAMETER / 2,
+            center = false // Bottom is at z=0
+        );
+
+    // Cut the 7x7 grid of holes
+    for (r = [0 : $GRID_ROWS - 1]) {
+        for (c = [0 : $GRID_COLS - 1]) {
+            // Calculate position for this hole
+            x = c * $HOLE_SPACING - $GRID_OFFSET;
+            y = r * $HOLE_SPACING - $GRID_OFFSET;
+            
+            translate([x, y, 0])
+                cylinder(
+                    h = $DISC_THICKNESS + 0.1, // Extend slightly past bottom to ensure clean cut
+                    r = $HOLE_DIAMETER / 2,
+                    center = true
+                );
+        }
+    }
+
+    // Cut the orientation notch on the +Y side
+    // Specification: "centred on the Y axis" -> Center X = 0 relative to the notch's own center.
+    // Specification: "on the +Y side" -> Located at the positive X rim of the disc.
+    // Specification: "10 mm wide (X)" -> Width along X axis.
+    // Specification: "4 mm deep (Y, measured in from the rim)" -> Depth along Y axis (4mm total height).
+    
+    // The notch is a rectangular cutout.
+    // Local cube dimensions: Width X, Depth Y, Height Z
+    local_x = $NOTCH_WIDTH_X / 2;
+    local_y = $NOTCH_DEPTH_Y / 2;
+    
+    // Translate to position on the rim (positive X) and centered on Y axis.
+    // The rim is at X = $DISC_DIAMETER / 2.
+    // The notch is centered on the Y axis, so its Y center is 0.
+    // We translate the cube to be centered at (0,0) in local space, then move it to the rim.
+    
+    translate([$DISC_DIAMETER / 2, 0, 0]) 
+        cube([
+            $NOTCH_WIDTH_X, 
+            $NOTCH_DEPTH_Y, 
+            $DISC_THICKNESS + 0.1 // Extend slightly past bottom to ensure clean cut
+        ]);
+}
+```

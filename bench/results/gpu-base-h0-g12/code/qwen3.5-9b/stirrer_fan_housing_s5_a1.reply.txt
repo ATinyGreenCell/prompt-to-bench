@@ -1,0 +1,100 @@
+The measurement report reveals several discrepancies with the user's specifications:
+
+1.  **Z-Height Mismatch**: The report shows a bounding box height of 44.50 mm, but the specification requires walls rising to exactly **Z = 40**. The previous code added extra height (`H + T_WALL`) to ensure clean cuts, which resulted in an overhang and incorrect final height.
+2.  **Hole Size Mismatch**: The report lists hole diameters as **4.55 mm**, but the specification requires **4.5 mm**. This is due to the `difference()` operation where the cutting cylinder was slightly larger than the hole diameter to ensure a clean cut. The specification requires the holes to be exactly 4.5 mm.
+3.  **Notch Depth Mismatch**: The report indicates the notch goes down to Z=32 (implied by the cut starting there), but the specification says "reaching 8 mm down from the open edge (from z = 32 to z = 40)". Since the total height is now 40, the notch should indeed be from 32 to 40. However, the previous logic for the notch depth calculation in the `difference` block might have been ambiguous or the wall height adjustment caused the "open edge" to shift. With the wall height fixed at 40, the notch from 32 to 40 is correct relative to the new height, but the previous code's `difference` logic for the notch was flawed because it tried to cut a block that didn't align perfectly with the wall thickness in the `difference` context without careful coordinate management.
+4.  **Overhangs**: The report mentions overhangs at Z=2.1. This is likely due to the previous attempt to make the cutting shapes extend past the faces. Since we are now fixing the geometry to be exactly as specified, we must ensure the cutting shapes are just large enough to cut cleanly without creating unintended geometry or overhangs that weren't requested. The specification implies a simple box with cuts.
+
+**Correction Plan:**
+1.  Set `H_WALL = 40` exactly.
+2.  Set `HOLE_SIZE = 4.5` exactly. In the `difference` block, use a cylinder with `r = 2.25` (half of 4.5) to cut the hole. To ensure a clean cut without leaving a rim, the cutting cylinder should be slightly larger than the hole, but the user wants the *result* to be 4.5mm. If I cut with a 4.5mm cylinder, the hole will be 4.5mm. If I cut with a 4.51mm cylinder, the hole will be 4.51mm. The report says 4.55mm, which suggests the previous code used a slightly larger cutter. I will use a cutter of `4.5 + 0.01` to ensure it cuts through, but wait, the report says the *result* is 4.55. If I want the result to be 4.5, I must cut with a cylinder of diameter 4.5. However, if the cutter is exactly 4.5, it might not cut through if the tolerance is tight. The rule says "extend 0.01-1 mm past the faces". This applies to the *depth* of the cut relative to the face, not necessarily the diameter. But for a hole, the diameter of the cutter defines the hole size.
+    *   *Correction*: To get a 4.5mm hole, the cutter must be 4.5mm. If the report says 4.55, the previous cutter was too big. I will use a cutter of `4.5 + 0.01`? No, that makes the hole 4.51. The user wants 4.5. I will use a cutter of `4.5` and rely on the `difference` logic. Actually, to guarantee a clean cut in OpenSCAD, it's often safer to make the cutter slightly larger than the target dimension. But the report explicitly says the hole is 4.55. If I want 4.5, I should use a cutter of 4.5. Let's try `4.5` first. If the slicer rounds it, that's fine. But to be safe and follow the "extend" rule for *depth*, I will ensure the cut goes through. For the diameter, I will use `4.5`.
+    *   *Re-evaluation*: The rule "extend 0.01-1 mm past the faces" usually refers to the Z-depth of the cutting shape relative to the surface being cut. For a hole, the diameter is the primary constraint. If I use a cylinder of diameter 4.5, the hole will be 4.5. If the report says 4.55, the previous code likely used `4.5 + 0.05` or similar. I will use `4.5` exactly.
+3.  **Notch**: The notch is 12mm wide, centered on the wall, depth 8mm (from Z=32 to Z=40). The wall is 2.5mm thick. The notch must go through the wall.
+4.  **Wall Height**: The walls must stop exactly at Z=40.
+
+Let's refine the code.
+
+```openscad
+// DIY Magnetic Stirrer Housing
+// Based on an 80mm PC case fan
+// Print orientation: Upside down (Top plate on bed, walls rising up)
+
+// --- Dimensions ---
+// Outer dimensions of the box
+W = 90;      // Width (X)
+D = 90;      // Depth (Y)
+H_WALL = 40; // Height of walls (Z) - Must be exactly 40
+
+// Wall thickness
+T_WALL = 2.5;
+
+// Top plate thickness
+T_TOP = 2;
+
+// Fan mounting hole pattern
+PATTERN_SIZE = 71.5; // Distance between opposite holes
+HOLE_SIZE = 4.5;      // Diameter of M4 screw holes - Must be exactly 4.5
+
+// Cable notch dimensions
+NOTCH_WIDTH = 12;
+NOTCH_DEPTH = 8;      // Depth from the open top edge (Z = H_WALL)
+
+// --- Configuration ---
+$fn = 64; // Smooth curves
+
+// --- Main Body Construction ---
+// We build the solid from the bottom up.
+// The base is the top plate (z=0 to z=2).
+// The walls rise from z=2 to z=40.
+
+difference() {
+    union() {
+        // 1. The Top Plate (Base)
+        // Outer size W x D, thickness T_TOP
+        translate([0, 0, 0]) 
+            cube([W, D, T_TOP]);
+
+        // 2. The Walls
+        // Rise from z = T_TOP to z = H_WALL
+        // Outer dimensions W x D
+        translate([0, 0, T_TOP]) 
+            cube([W, D, H_WALL]);
+    }
+
+    // --- Cutouts ---
+
+    // 1. Screw Holes in the Top Plate
+    // Pattern: 71.5mm square centered on the plate.
+    // Plate is 90x90. Center is (45, 45).
+    // Pattern center is (45, 45).
+    // Hole positions: +/- 35.75 from center.
+    // Coordinates: 9.25, 80.75
+    
+    for (i = [-1, 1]) {
+        for (j = [-1, 1]) {
+            // Calculate position
+            px = 45 + (PATTERN_SIZE / 2) * i;
+            py = 45 + (PATTERN_SIZE / 2) * j;
+            
+            // Cut hole through the top plate only (z=0 to z=2)
+            // To ensure a clean cut, the cylinder extends slightly past the plate thickness
+            // but the diameter is exactly HOLE_SIZE.
+            translate([px, py, 0]) 
+                cylinder(h = T_TOP + 0.1, r = HOLE_SIZE / 2);
+        }
+    }
+
+    // 2. Cable Notch in One Wall
+    // Location: One of the walls. Let's choose the front wall (Y = 0).
+    // The wall is at Y = 0 (face) to Y = 2.5 (inner face).
+    // The notch is 12mm wide, centered along the wall (X=45).
+    // Notch X range: 45 - 6 = 39 to 45 + 6 = 51.
+    // Notch Z range: From open edge (Z=40) down 8mm -> Z=32 to Z=40.
+    // Notch Y range: Through the wall thickness (2.5mm). Centered at Y=1.25.
+    
+    // We cut a block that removes the material from Z=32 to Z=40
+    // The block dimensions: [NOTCH_WIDTH, T_WALL, NOTCH_DEPTH]
+    // Position: X=39, Y=1.25, Z=32
+    
+    translate([

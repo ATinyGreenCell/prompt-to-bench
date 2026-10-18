@@ -1,0 +1,174 @@
+$fn = 128;
+
+// --- Base Plate Dimensions ---
+// X range: -25 to 25 (Width = 50)
+// Y range: 0 to 45 (Length = 45)
+// Z range: 0 to 5 (Thickness = 5)
+BASE_X_MIN = -25;
+BASE_X_MAX = 25;
+BASE_Y_MIN = 0;
+BASE_Y_MAX = 45;
+BASE_Z_MAX = 5;
+
+// --- Base Plate Holes (M4) ---
+// Position: x = -17, y = 30 and x = 17, y = 30
+// Diameter: 4.5 mm
+BASE_HOLE_X_1 = -17;
+BASE_HOLE_Y = 30;
+BASE_HOLE_X_2 = 17;
+BASE_HOLE_DIAMETER = 4.5;
+
+// --- Vertical Motor Plate Dimensions ---
+// X range: -25 to 25 (Width = 50)
+// Y range: 0 to 5 (Thickness = 5)
+// Z range: 0 to 50 (Height = 50)
+// Stands on the back edge of the base (y=0)
+MOTOR_X_MIN = -25;
+MOTOR_X_MAX = 25;
+MOTOR_Y_MAX = 5;
+MOTOR_Z_MAX = 50;
+
+// --- Motor Plate Boss Hole ---
+// Diameter: 23 mm
+// Centre: x = 0, z = 28
+// Cut along Y axis
+BOSS_DIAMETER = 23;
+BOSS_X = 0;
+BOSS_Z = 28;
+
+// --- Motor Plate Screw Holes (M3) ---
+// Diameter: 3.4 mm
+// Pattern: 31 mm square, centred on boss hole
+// 4 holes total
+SCREW_DIAMETER = 3.4;
+SCREW_PATTERN_SIZE = 31;
+
+// --- Gusset Dimensions ---
+// Thickness: 5 mm (matches base and motor plate)
+// Location: Left (x=-25 to -20) and Right (x=20 to 25)
+// Shape: Right triangle in YZ plane
+// Legs: 20 mm along +Y and 20 mm along +Z
+// Right-angle corner at y=5, z=5
+GUSSET_THICKNESS = 5;
+GUSSET_Y_LEG = 20;
+GUSSET_Z_LEG = 20;
+GUSSET_CORNER_Y = 5;
+GUSSET_CORNER_Z = 5;
+
+// --- Build ---
+
+module base_plate() {
+    // Main block
+    cube([
+        BASE_X_MAX - BASE_X_MIN,
+        BASE_Y_MAX - BASE_Y_MIN,
+        BASE_Z_MAX
+    ], center = false);
+
+    // Cut M4 holes
+    for (i = [0, 1]) {
+        translate([
+            i == 0 ? BASE_HOLE_X_1 : BASE_HOLE_X_2,
+            BASE_HOLE_Y,
+            -BASE_Z_MAX - 1 // Extend past bottom to ensure clean cut
+        ]) {
+            cylinder(
+                h = BASE_Z_MAX + 2,
+                d = BASE_HOLE_DIAMETER,
+                $fn = 64
+            );
+        }
+    }
+}
+
+module motor_plate() {
+    // Main block
+    cube([
+        MOTOR_X_MAX - MOTOR_X_MIN,
+        MOTOR_Y_MAX,
+        MOTOR_Z_MAX
+    ], center = false);
+
+    // Cut Boss Hole (along Y)
+    translate([BOSS_X, -MOTOR_Y_MAX - 1, BOSS_Z]) {
+        cylinder(
+            h = MOTOR_Y_MAX + 2,
+            d = BOSS_DIAMETER,
+            $fn = 64
+        );
+    }
+
+    // Cut Screw Holes (4 holes on 31mm square)
+    // Pattern centered at (0, 2.5, BOSS_Z)
+    // Square size 31mm -> offset from center is 15.5mm
+    // Holes at: x = +/- 15.5, z = BOSS_Z +/- 15.5
+    for (x_offset = [-1, 1]) {
+        for (z_offset = [-1, 1]) {
+            translate([
+                x_offset * (SCREW_PATTERN_SIZE / 2),
+                -MOTOR_Y_MAX - 1, // Extend past bottom
+                BOSS_Z + z_offset * (SCREW_PATTERN_SIZE / 2)
+            ]) {
+                cylinder(
+                    h = MOTOR_Y_MAX + 2,
+                    d = SCREW_DIAMETER,
+                    $fn = 64
+                );
+            }
+        }
+    }
+}
+
+module gusset() {
+    // Right triangle in YZ plane
+    // Right angle at (y=5, z=5)
+    // Extends +Y by 20, +Z by 20
+    // Thickness in X is 5
+    
+    // Define vertices for the triangle in YZ plane
+    // Corner 1: (5, 5) - Right angle
+    // Corner 2: (5 + 20, 5) = (25, 5) - Along Y
+    // Corner 3: (5, 5 + 20) = (5, 25) - Along Z
+    // Note: The hypotenuse connects (25,5) and (5,25).
+    
+    // We extrude this triangle along X.
+    // The gusset is located at the edges.
+    // Left Gusset: X from -25 to -20
+    // Right Gusset: X from 20 to 25
+    
+    // Define the polygon for the triangle
+    // Points: (y=5, z=5), (y=25, z=5), (y=5, z=25)
+    // Order matters for normal direction, but union handles it.
+    // Let's define points relative to the corner (5,5)
+    p1 = [5, 5];
+    p2 = [5 + GUSSET_Y_LEG, 5];
+    p3 = [5, 5 + GUSSET_Z_LEG];
+    
+    // Extrude along X
+    translate([-GUSSET_THICKNESS/2, 0, 0]) {
+        polygon(
+            points = [
+                [0, p1[0], p1[1]],
+                [0, p2[0], p2[1]],
+                [0, p3[0], p3[1]]
+            ],
+            extrude_height = GUSSET_THICKNESS
+        );
+    }
+}
+
+// --- Assembly ---
+union() {
+    base_plate();
+    motor_plate();
+    
+    // Left Gusset (x = -25 to -20)
+    translate([-25, 0, 0]) {
+        gusset();
+    }
+    
+    // Right Gusset (x = 20 to 25)
+    translate([20, 0, 0]) {
+        gusset();
+    }
+}

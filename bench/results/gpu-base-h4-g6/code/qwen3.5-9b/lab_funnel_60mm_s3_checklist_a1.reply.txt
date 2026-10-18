@@ -1,0 +1,81 @@
+The specification requires the part to start at `z = 0` and be open at the bottom. The report shows the part starts at `z = 1.00` and has a solid bottom cap.
+
+**Measurement Report vs Specification:**
+
+*   **Start Position (Z):** Spec: `z = 0`; Report: `z = 1.00`. -> **WRONG** (The bottom cut was insufficient to remove the solid base).
+*   **Top Opening Diameter:** Spec: `60 mm`; Report: `60.00 mm`. -> **OK**.
+*   **Spout Outer Diameter:** Spec: `10 mm`; Report: `9.99 mm` (due to rounding). -> **OK**.
+*   **Spout Inner Diameter:** Spec: `6.8 mm` (derived); Report: `9.99 mm` (hole not cut through). -> **WRONG** (The bottom hole did not extend far enough to clear the solid base).
+*   **Spout Length:** Spec: `20 mm` (0 to 20); Report: `19.00 mm` (1 to 20). -> **WRONG** (Effective length is reduced by the offset).
+*   **Funnel Length:** Spec: `30 mm` (20 to 50); Report: `29.00 mm` (20 to 49). -> **WRONG** (Effective length is reduced by the offset).
+*   **Bottom Openness:** Spec: "open at the bottom"; Report: "solid bottom cap" (implied by Z start). -> **WRONG**.
+
+**Correction Plan:**
+1.  Move the entire part down by 1 mm so the lowest point is at `z = 0`.
+2.  Extend the bottom cutting cylinder by 1 mm (total 3 mm) to ensure it cuts through the solid base created by the `linear_extrude` and the cone geometry.
+
+```openscad
+// Lab Funnel - A straight spout tube with a conical funnel body, open at top and bottom.
+// Printed upright with the wide opening at the top.
+// Corrected to start at z=0 and have a fully open bottom.
+
+// Dimensions
+spout_od    = 10;      // Outer diameter of straight spout
+spout_id    = 6.8;     // Inner diameter of straight spout (10 - 2*1.6)
+spout_len   = 20;      // Length of straight spout (z=0 to z=20)
+funnel_start_od = 10;  // Outer diameter at start of cone (z=20)
+funnel_end_od  = 60;   // Outer diameter at rim (z=50)
+funnel_len    = 30;    // Length of cone section (50 - 20)
+wall_thick    = 1.6;   // Wall thickness everywhere
+
+// Derived dimensions
+funnel_start_id = funnel_start_od - 2 * wall_thick; // 6.8
+funnel_end_id   = funnel_end_od - 2 * wall_thick;  // 52.8
+
+$fn = 64;
+
+// Build the solid part
+difference() {
+    union() {
+        // 1. Straight Spout (Tube)
+        // Outer cylinder
+        translate([0, 0, 0]) 
+            cylinder(h = spout_len, d = spout_od);
+        
+        // Inner cylinder (hole)
+        translate([0, 0, 0]) 
+            cylinder(h = spout_len, d = spout_id);
+
+        // 2. Conical Funnel Body
+        // Outer cone
+        translate([0, 0, spout_len]) 
+            linear_extrude(height = funnel_len) 
+                polygon([
+                    [spout_od / 2, 0],
+                    [funnel_end_od / 2, funnel_len],
+                    [-funnel_end_od / 2, funnel_len],
+                    [-spout_od / 2, 0]
+                ]);
+        
+        // Inner cone (hole)
+        translate([0, 0, spout_len]) 
+            linear_extrude(height = funnel_len) 
+                polygon([
+                    [spout_id / 2, 0],
+                    [funnel_end_id / 2, funnel_len],
+                    [-funnel_end_id / 2, funnel_len],
+                    [-spout_id / 2, 0]
+                ]);
+    }
+    
+    // Cut the top opening (rim)
+    // Extend slightly past the rim to ensure clean cut
+    translate([0, 0, spout_len + funnel_len]) 
+        cylinder(h = 2, d = funnel_end_od + 0.5);
+    
+    // Cut the bottom opening (spout tip)
+    // Extend significantly past the tip to ensure clean cut through the solid base
+    translate([0, 0, -1]) 
+        cylinder(h = 3, d = spout_od + 0.5);
+}
+```

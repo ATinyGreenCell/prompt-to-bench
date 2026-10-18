@@ -1,0 +1,87 @@
+The measurement report reveals two critical issues compared to the specification:
+
+1.  **Z-Position (Bed Contact):** The specification requires the part to lie on the bed at `z = 0`. The report shows the bounding box is `z = -1.00 .. 1.00`. This is because the `cylinder` command with `center=true` places the geometric center at the origin, pushing the bottom face to `z = -1.00`. The part must be translated up by its thickness (`2 mm`) so the bottom face sits at `z = 0`.
+2.  **Notch Position:** The specification requires the notch to be on the **+Y side**, centered on the Y axis. The report shows the solid region at `z=1.50` is centered at `(-0.03, -0.26)`. The negative Y offset indicates the notch was cut on the wrong side (or the coordinate system logic was inverted). The notch center Y must be positive.
+
+Here is the corrected file. I have adjusted the main body translation to sit on `z=0` and corrected the notch position calculation to ensure it is on the positive Y side.
+
+```openscad
+$fn = 128;
+
+// --- Dimensions ---
+// Petri dish inner diameter reference
+DISH_DIAMETER = 90;
+
+// Template main body
+TEMPLATE_DIAMETER = 85;
+TEMPLATE_THICKNESS = 2;
+
+// Grid configuration
+GRID_ROWS = 7;
+GRID_COLS = 7;
+HOLE_DIAMETER = 3;
+HOLE_SPACING = 9; // Centre-to-centre
+
+// Orientation notch
+NOTCH_WIDTH = 10;  // X dimension
+NOTCH_DEPTH = 4;   // Y dimension (in from rim)
+
+// --- Calculations ---
+// Calculate grid offset to center the grid on the disc
+GRID_OFFSET = (HOLE_SPACING * (GRID_ROWS - 1)) / 2;
+
+// Calculate notch position relative to center
+// Notch is on +Y side, centred on Y axis.
+// Distance from center to rim = TEMPLATE_DIAMETER / 2
+RIM_RADIUS = TEMPLATE_DIAMETER / 2;
+// Notch center Y coordinate = Rim Radius - Notch Depth
+NOTCH_CENTER_Y = RIM_RADIUS - NOTCH_DEPTH;
+
+// --- Main Body ---
+difference() {
+    // 1. Create the flat disc
+    // Translate up by TEMPLATE_THICKNESS so the bottom face sits at z = 0
+    union() {
+        translate([0, 0, TEMPLATE_THICKNESS]) {
+            cylinder(
+                h = TEMPLATE_THICKNESS,
+                d = TEMPLATE_DIAMETER,
+                center = true
+            );
+        }
+    }
+
+    // 2. Cut the 7x7 grid of holes
+    for (r = [0 : GRID_ROWS - 1]) {
+        for (c = [0 : GRID_COLS - 1]) {
+            // Calculate position for this hole
+            x_pos = (c - (GRID_COLS - 1) / 2) * HOLE_SPACING;
+            y_pos = (r - (GRID_ROWS - 1) / 2) * HOLE_SPACING;
+            
+            translate([x_pos, y_pos, 0]) {
+                cylinder(
+                    h = TEMPLATE_THICKNESS + 0.1, // Extend slightly past bottom to ensure clean cut
+                    d = HOLE_DIAMETER,
+                    center = true
+                );
+            }
+        }
+    }
+
+    // 3. Cut the rectangular orientation notch
+    // The notch is on the +Y side.
+    // We need to cut a rectangle defined by:
+    // X: from -NOTCH_WIDTH/2 to +NOTCH_WIDTH/2
+    // Y: from NOTCH_CENTER_Y - NOTCH_DEPTH/2 to NOTCH_CENTER_Y + NOTCH_DEPTH/2
+    // Z: from 0 to TEMPLATE_THICKNESS + 0.1
+    
+    // Since the body is translated up, we cut from z=0 to z=TEMPLATE_THICKNESS+0.1
+    translate([0, NOTCH_CENTER_Y, 0]) {
+        cube([
+            NOTCH_WIDTH, 
+            NOTCH_DEPTH, 
+            TEMPLATE_THICKNESS + 0.1
+        ]);
+    }
+}
+```

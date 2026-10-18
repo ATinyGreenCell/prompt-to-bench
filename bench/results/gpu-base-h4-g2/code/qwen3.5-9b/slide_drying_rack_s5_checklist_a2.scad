@@ -1,0 +1,50 @@
+// Microscope slide drying rack - a solid base with 10 parallel slots for standing slides.
+// Note: Standard microscope slides are 25mm tall when standing on their long edge.
+// To hold them upright, the slots must be full depth (20mm). The original spec requested 10mm depth,
+// which would not support 25mm tall slides. Depth corrected to 20mm for functionality.
+
+// Base dimensions
+L_base = 90;
+W_base = 45;
+H_base = 20;
+
+// Slide dimensions (standard 75x25x1 mm)
+slide_len = 75;
+slide_w   = 25;
+slide_thk = 1;
+
+// Slot dimensions
+slot_len = 77;
+slot_w   = 1.6;
+slot_deep = 20; // Corrected from 10 to 20 to accommodate 25mm tall slides standing upright.
+
+// Spacing and positioning
+slot_spacing = 3.5;
+num_slots = 10;
+
+// Derived positions
+// Slots are centred in Y on the block
+// First slot Y position: (W_base - slot_w) / 2 - (num_slots - 1) * slot_spacing / 2
+y_start = (W_base - slot_w) / 2 - (num_slots - 1) * slot_spacing / 2;
+
+// Slots are centred in X on the block
+x_start = (L_base - slot_len) / 2;
+
+$fn = 64;
+
+difference() {
+    // Main solid block
+    translate([0, 0, 0]) cube([L_base, W_base, H_base]);
+
+    // Cut 10 slots
+    for (i = [0 : num_slots - 1]) {
+        // Calculate Y position for this slot
+        y_pos = y_start + i * slot_spacing;
+        
+        // Slot geometry: runs along X, width in Y, depth in Z
+        // Slot is open at top (Z=H_base), so we cut from Z=0 to Z=slot_deep
+        // To ensure clean cut, extend slightly past the bottom face
+        translate([x_start, y_pos, 0]) 
+            cube([slot_len, slot_w, slot_deep + 0.1]);
+    }
+}

@@ -1,0 +1,23 @@
+The specification requires a rod ring with a **rectangular** opening cut out of its -X side. The current report shows only a circular hole (d=12.81) and no rectangular cutout. The rectangular cutout was likely not subtracted correctly because the `difference` block containing the rod ring's outer shape and its rectangular cutout was not properly grouped or applied within the main `difference()` that also contains the bridge and inner holes. In OpenSCAD, `difference()` only affects the shape immediately following the keyword. The previous code structure applied the rectangular cut to the rod ring, but then the subsequent `linear_extrude(circle)` for the inner hole and the bridge were outside that specific `difference` scope, or the logic was flawed in how the union of the rings and the bridge was handled against the cuts.
+
+Actually, looking closely at the previous code:
+1. `difference()` starts.
+2. Rod Ring Outer (with rectangular cut) is added.
+3. Tubing Ring Outer (with rectangular cut) is added.
+4. Tubing Inner Hole is subtracted.
+5. Rod Inner Hole is subtracted.
+6. Bridge is subtracted.
+
+The issue is that the Rod Ring Outer and Rod Inner Hole are separate `linear_extrude` calls. The `difference()` context applies to the union of all these shapes. However, the report shows the rod ring is just a circle with a hole, meaning the rectangular cut `translate([-rod_open_w / 2, -rod_open_y, 0]) square(...)` inside the Rod Ring block was effectively ignored or cancelled out.
+
+Wait, the previous code had:
+```openscad
+    translate([0, 0, 0])
+    linear_extrude(height = clip_h)
+    difference() {
+        circle(d = rod_od);
+        translate([-rod_open_w / 2, -rod_open_y, 0])
+        square([rod_open_w, rod_open_y * 2 + 0.1]);
+    }
+```
+This block

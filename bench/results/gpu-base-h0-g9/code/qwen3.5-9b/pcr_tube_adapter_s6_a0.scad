@@ -1,0 +1,68 @@
+// Adapter Sleeve for 0.2mL PCR tube in 1.5mL Rack
+// Print Orientation: Upside down (Collar on bed)
+// Units: mm
+
+// Dimensions
+$fn = 128; // High resolution for smooth cylinders
+
+// Collar (Base)
+$collar_outer_d = 13;
+$collar_thickness = 1.5;
+
+// Sleeve Body
+$sleeve_outer_d = 10.8;
+$sleeve_total_height = 21.5;
+
+// Bore
+$bore_diameter = 6.2;
+
+// Offset for cutting operations (Rule 5)
+$cut_offset = 0.1;
+
+// Calculate heights relative to Z=0 (Bed)
+// Collar sits from Z=0 to Z=1.5
+$collar_z_top = $collar_thickness;
+
+// Sleeve body sits on top of collar, so it starts at Z=1.5
+// Total height is 21.5, so body height is 21.5 - 1.5 = 20.0
+$sleeve_body_height = $sleeve_total_height - $collar_thickness;
+$sleeve_body_z_start = $collar_thickness;
+$sleeve_body_z_end = $sleeve_total_height;
+
+// Main Body Construction
+// We create the outer shape and subtract the bore in one difference operation
+// to ensure the bore goes through both the collar and the sleeve body perfectly.
+
+difference() {
+    // 1. Create the Outer Shell
+    // The shell consists of the collar (bottom) and the sleeve body (top)
+    // We build them as a single union to ensure watertightness
+    
+    union() {
+        // Collar
+        cylinder(
+            h = $collar_thickness,
+            d = $collar_outer_d,
+            center = false
+        );
+        
+        // Sleeve Body (placed on top of collar)
+        translate([0, 0, $collar_thickness]) {
+            cylinder(
+                h = $sleeve_body_height,
+                d = $sleeve_outer_d,
+                center = false
+            );
+        }
+    }
+    
+    // 2. Subtract the Bore
+    // The bore must extend slightly past the top and bottom faces to ensure clean cuts
+    translate([0, 0, -$cut_offset]) {
+        cylinder(
+            h = ($sleeve_total_height + ($cut_offset * 2)),
+            d = $bore_diameter,
+            center = false
+        );
+    }
+}

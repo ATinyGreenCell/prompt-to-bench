@@ -1,0 +1,151 @@
+// Hose-Barb Reducer Design
+// Units: mm
+// Orientation: Standing upright on XY plane (Z axis up)
+
+// --- Dimensions ---
+// Main bore diameter (constant through the part)
+$main_bore_d = 3.0;
+
+// Upper Section (8mm tubing)
+$z_start_upper = 0;
+$z_end_upper = 20;
+$barb_count_upper = 2;
+$barb_height_upper = 10;
+$barb_od_bottom_upper = 7.5;
+$barb_od_top_upper = 9.5;
+$barb_od_step_upper = 7.5; // Step down to this OD after the taper
+
+// Collar Section
+$z_start_collar = 20;
+$z_end_collar = 25;
+$collar_od = 12;
+
+// Lower Section (5mm tubing)
+$z_start_lower = 25;
+$z_end_lower = 41;
+$barb_count_lower = 2;
+$barb_height_lower = 8;
+$barb_od_bottom_lower = 6.5;
+$barb_od_top_lower = 5.0;
+$barb_od_step_lower = 6.5; // Step out to this OD after the taper
+
+// --- Configuration ---
+$fn = 128; // High resolution for smooth curves and accurate hole sizing
+
+// --- Helper Functions ---
+
+// Function to create a stepped tapered cylinder (Barb profile)
+// z_start, z_end: vertical range
+// od_bottom, od_top: outer diameters at start and end of range
+// od_step: outer diameter after the taper (for the "step back" feature)
+// z_step_start: where the step back begins (z_end of taper)
+// z_step_end: where the step back ends (z_end of the barb)
+function create_barb_profile(z_start, z_end, od_bottom, od_top, od_step, z_step_start, z_step_end) =
+    union(
+        // 1. The tapered part
+        cylinder(
+            h = z_end - z_start,
+            r1 = od_bottom / 2,
+            r2 = od_top / 2,
+            center = [0, 0, z_start + (z_end - z_start)/2],
+            $fn = $fn
+        ),
+        // 2. The stepped part (cylinder with constant radius = od_step)
+        cylinder(
+            h = z_step_end - z_step_start,
+            r = od_step / 2,
+            center = [0, 0, z_step_start + (z_step_end - z_step_start)/2],
+            $fn = $fn
+        )
+    );
+
+// Function to create the main body with the central bore
+// z_start, z_end: vertical range
+// od_bottom, od_top: outer diameters at start and end
+// od_step: outer diameter after taper
+// z_step_start, z_step_end: range for the step back
+function create_body_section(z_start, z_end, od_bottom, od_top, od_step, z_step_start, z_step_end) =
+    difference(
+        union(
+            // Tapered section
+            cylinder(
+                h = z_end - z_start,
+                r1 = od_bottom / 2,
+                r2 = od_top / 2,
+                center = [0, 0, z_start + (z_end - z_start)/2],
+                $fn = $fn
+            ),
+            // Stepped section
+            cylinder(
+                h = z_step_end - z_step_start,
+                r = od_step / 2,
+                center = [0, 0, z_step_start + (z_step_end - z_step_start)/2],
+                $fn = $fn
+            )
+        ),
+        // Central bore (straight through)
+        cylinder(
+            h = z_end - z_start,
+            r = $main_bore_d / 2,
+            center = [0, 0, z_start + (z_end - z_start)/2],
+            $fn = $fn
+        )
+    );
+
+// --- Construction ---
+
+// 1. Upper Section (z=0 to z=20)
+// Contains the tapered barbs and the step back.
+// We model the barbs as the main body shape for this section.
+upper_section = create_body_section(
+    z_start = $z_start_upper,
+    z_end = $z_end_upper,
+    od_bottom = $barb_od_bottom_upper,
+    od_top = $barb_od_top_upper,
+    od_step = $barb_od_step_upper,
+    z_step_start = $z_end_upper - $barb_height_upper, // Taper ends at top of barb
+    z_step_end = $z_end_upper // Step back ends at top of section
+);
+
+// 2. Collar Section (z=20 to z=25)
+// Simple cylinder with central bore
+collar_section = create_body_section(
+    z_start = $z_start_collar,
+    z_end = $z_end_collar,
+    od_bottom = $collar_od,
+    od_top = $collar_od,
+    od_step = $collar_od, // No step, constant
+    z_step_start = $z_start_collar,
+    z_step_end = $z_end_collar
+);
+
+// 3. Lower Section (z=25 to z=41)
+// Contains the tapered barbs and the step back.
+lower_section = create_body_section(
+    z_start = $z_start_lower,
+    z_end = $z_end_lower,
+    od_bottom = $barb_od_bottom_lower,
+    od_top = $barb_od_top_lower,
+    od_step = $barb_od_step_lower,
+    z_step_start = $z_end_lower - $barb_height_lower, // Taper ends at top of barb
+    z_step_end = $z_end_lower // Step back ends at bottom of section
+);
+
+// Combine all sections
+part = union(upper_section, collar_section, lower_section);
+
+// --- Final Assembly ---
+// The user requested the part to rest on the XY plane at z=0.
+// Our construction already starts at z=0.
+// We center it on the origin in X and Y (already done by using cylinder centered at [0,0]).
+
+difference(
+    part,
+    // Cut the central bore completely through to ensure perfect roundness and size
+    cylinder(
+        h = $z_end_lower - $z_start_upper,
+        r = $main_bore_d / 2 + 0.01, // Slightly larger to ensure clean cut
+        center = [0, 0, ($z_end_lower + $z_start_upper)/2],
+        $fn = $fn
+    )
+);

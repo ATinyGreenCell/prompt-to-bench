@@ -1,0 +1,40 @@
+// 10-well comb for casting agarose gels
+// Print orientation: flat on bed, teeth pointing down (-Z)
+
+// ---------- Parameters ----------
+plate_len    = 70;    // spine length along X (mm)
+plate_wid    = 12;    // spine width along Y (mm)
+plate_t      = 1.5;   // plate thickness along Z (mm)
+
+tooth_count  = 10;    // number of wells/teeth
+tooth_w      = 5.0;   // tooth width along X (mm)
+tooth_len    = 12;    // tooth length along Y (mm)
+tooth_h      = 12;    // tooth height from plate top (mm)
+
+gap          = 1.5;   // gap between neighbouring teeth along X (mm)
+overcut      = 0.5;   // extra length so cutters pass through faces (mm)
+
+$fn = 64;
+
+// ---------- Derived ----------
+pitch    = tooth_w + gap;                 // centre-to-centre spacing
+x_start  = -(tooth_count - 1) * pitch / 2; // first tooth centre (row centred)
+plate_h  = plate_t + tooth_h;             // overall height
+
+// ---------- Model ----------
+union() {
+    // Base plate (spine/back bar)
+    translate([-plate_len / 2, -plate_wid / 2, 0])
+        cube([plate_len, plate_wid, plate_t]);
+
+    // Teeth, hanging from one long edge of the plate in -Y
+    for (i = [0 : tooth_count - 1]) {
+        x = x_start + i * pitch;
+        translate([x - tooth_w / 2, -plate_wid / 2 - tooth_len / 2, 0])
+            cube([tooth_w, tooth_len, tooth_h]);
+    }
+}
+
+// ---------- Bill of materials ----------
+// 1 x comb plate: 70 x 12 x 1.5 mm (PLA)
+// 10 x teeth: 5.0 x 12 x 12 mm (PLA)

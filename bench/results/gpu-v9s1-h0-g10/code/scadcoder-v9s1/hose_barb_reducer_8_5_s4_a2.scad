@@ -1,0 +1,48 @@
+// Hose-barb reducer: 8 mm ID tubing to 5 mm ID tubing
+// Print orientation: standing upright along Z
+
+$fn = 96;
+
+// ---- Dimensions (mm) ----
+barb8_od_b     = 7.5;   // 8 mm barb outer diameter (bottom)
+barb8_od_t     = 9.5;   // 8 mm barb outer diameter (top)
+barb8_h        = 10;    // 8 mm barb height
+barb5_od_b     = 6.5;   // 5 mm barb outer diameter (bottom)
+barb5_od_t     = 5.0;   // 5 mm barb outer diameter (top)
+barb5_h        = 8;     // 5 mm barb height
+collar_d       = 12;    // collar diameter
+collar_h       = 5;     // collar height
+bore_d         = 3;     // through-bore diameter
+overlap        = 0.5;   // overlap for joined bodies
+cut_ext       = 0.5;    // cutter extension past faces
+
+total_h = barb8_h + collar_h + barb5_h;  // 23 mm overall
+
+// ---- Model ----
+union() {
+    // 8 mm barbs: sawtooth profile, stacked
+    for (i = [0 : 1])
+        translate([0, 0, i * barb8_h - (i ? overlap : 0)])
+            linear_extrude(height = 1)
+                polygon([[-barb8_od_b / 2, 0], [barb8_od_b / 2, 0], [0, barb8_h], [-barb8_od_b / 2, barb8_h]]);
+
+    // Collar
+    translate([0, 0, barb8_h - overlap])
+        cylinder(d = collar_d, h = collar_h + overlap);
+
+    // 5 mm barbs: shrinking profile, stacked
+    for (i = [0 : 1])
+        translate([0, 0, i * barb5_h - (i ? overlap : 0)])
+            linear_extrude(height = 1)
+                polygon([[-barb5_od_b / 2, 0], [barb5_od_b / 2, 0], [0, barb5_h], [-barb5_od_t / 2, barb5_h], [barb5_od_t / 2, barb5_h]]);
+}
+
+difference() {
+    // Bore, through full length
+    translate([0, 0, -cut_ext])
+        cylinder(d = bore_d, h = total_h + 2 * cut_ext);
+
+    // Clean up the overlap region so it is not coplanar with neighbouring faces
+    translate([0, 0, barb8_h - 0.25])
+        cylinder(d = collar_d + 1, h = 1);
+}

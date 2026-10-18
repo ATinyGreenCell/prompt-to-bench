@@ -1,0 +1,43 @@
+```openscad
+// Slide drying rack - holds 10 microscope slides standing on their long edge
+// Print orientation: base block on the bed (z = 0), slots open upward.
+
+// ---------------- Parameters ----------------
+n_slots      = 10;    // number of slide slots
+slide_len    = 75;    // slide length along X (mm)
+slide_wid    = 25;    // slide width along Y (mm)
+slide_thk    = 1;     // slide thickness along Z (mm)
+
+base_len     = 90;    // base block length along X (mm)
+base_wid     = 45;    // base block width along Y (mm)
+base_h       = 20;    // base block height along Z (mm)
+
+slot_len     = 77;    // slot length along X (mm)   (overlaps the block in X)
+slot_w       = 1.6;   // slot width along Y (mm)
+slot_depth   = 10;    // slot depth from top face (mm)
+
+slot_pitch   = 3.5;   // centre-to-centre slot spacing along Y (mm)
+
+eps          = 0.5;   // cutter overshoot past the top face (mm)
+$fn          = 64;    // circle resolution (no curves here, set per the rules)
+
+// ---------------- Derived ----------------
+slot_x0 = -(base_len - slot_len) / 2;   // first slot start X (keeps group centred)
+// With 10 slots at 3.5 mm pitch the span is 31.5 mm, leaving 58.5 mm of
+// wall on each side, so the cutter stays inside the block at both ends.
+
+// ---------------- Model ----------------
+difference() {
+    // Solid base block
+    translate([-base_len / 2, -base_wid / 2, 0])
+        cube([base_len, base_wid, base_h]);
+
+    // Parallel slots, open at the top
+    for (i = [0 : n_slots - 1]) {
+        translate([slot_x0,
+                   (i - (n_slots - 1) / 2) * slot_pitch,
+                   base_h - slot_depth])
+            cube([slot_len, slot_w, slot_depth + eps]);
+    }
+}
+```

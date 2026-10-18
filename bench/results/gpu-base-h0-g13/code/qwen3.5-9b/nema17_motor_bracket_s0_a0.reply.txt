@@ -1,0 +1,193 @@
+```openscad
+$fn = 128
+
+// --- Base Plate Dimensions ---
+// X range: -25 to 25 (Width = 50)
+// Y range: 0 to 45 (Depth = 45)
+// Z height: 0 to 5 (Thickness = 5)
+BASE_X_MIN = -25;
+BASE_X_MAX = 25;
+BASE_Y_MIN = 0;
+BASE_Y_MAX = 45;
+BASE_Z_THICK = 5;
+
+// --- Base Plate Holes (M4) ---
+// Position: x = -17, y = 30 and x = 17, y = 30
+// Diameter: 4.5 mm
+BASE_HOLE_X_1 = -17;
+BASE_HOLE_Y_1 = 30;
+BASE_HOLE_X_2 = 17;
+BASE_HOLE_Y_2 = 30;
+BASE_HOLE_DIA = 4.5;
+
+// --- Vertical Motor Plate Dimensions ---
+// X range: -25 to 25 (Width = 50)
+// Y range: 0 to 5 (Depth = 5)
+// Z range: 0 to 50 (Height = 50)
+// Stands on the back edge of the base (y=0 to y=5)
+MOTOR_X_MIN = -25;
+MOTOR_X_MAX = 25;
+MOTOR_Y_THICK = 5;
+MOTOR_Z_HEIGHT = 50;
+
+// --- Motor Plate Boss Hole ---
+// Diameter: 23 mm
+// Centre: x = 0, z = 28
+// Extends through the plate (along Y)
+BOSS_HOLE_DIA = 23;
+BOSS_HOLE_X = 0;
+BOSS_HOLE_Z = 28;
+
+// --- Motor Plate Screw Holes (M3) ---
+// Diameter: 3.4 mm
+// Pattern: 31 mm square, centred on boss hole
+// 4 holes total
+SCREW_HOLE_DIA = 3.4;
+SCREW_PATTERN_SIZE = 31;
+SCREW_HOLE_COUNT = 4;
+
+// --- Gusset Dimensions ---
+// Thickness: 5 mm (same as base)
+// Location: Left (x=-25 to -20) and Right (x=20 to 25)
+// Shape: Right triangle in YZ plane
+// Legs: 20 mm along +Y, 20 mm along +Z
+// Right-angle corner at y = 5, z = 5
+GUSSET_THICK = 5;
+GUSSET_Y_LEG = 20;
+GUSSET_Z_LEG = 20;
+GUSSET_CORNER_Y = 5;
+GUSSET_CORNER_Z = 5;
+GUSSET_LEFT_X_MIN = -25;
+GUSSET_LEFT_X_MAX = -20;
+GUSSET_RIGHT_X_MIN = 20;
+GUSSET_RIGHT_X_MAX = 25;
+
+// --- Construction ---
+
+difference() {
+    union() {
+        // 1. Base Plate
+        translate([0, 0, 0]) {
+            cube([
+                BASE_X_MAX - BASE_X_MIN,
+                BASE_Y_MAX - BASE_Y_MIN,
+                BASE_Z_THICK
+            ]);
+            
+            // Cut Base Holes
+            for (i = [0, 1]) {
+                translate([
+                    (i == 0) ? BASE_HOLE_X_1 : BASE_HOLE_X_2,
+                    (i == 0) ? BASE_HOLE_Y_1 : BASE_HOLE_Y_2,
+                    0
+                ]) {
+                    cylinder(
+                        h = BASE_Z_THICK + 0.1, // Extend slightly past face
+                        d = BASE_HOLE_DIA,
+                        $fn = 64
+                    );
+                }
+            }
+        }
+
+        // 2. Vertical Motor Plate
+        translate([0, 0, 0]) {
+            cube([
+                MOTOR_X_MAX - MOTOR_X_MIN,
+                MOTOR_Y_THICK,
+                MOTOR_Z_HEIGHT
+            ]);
+
+            // Cut Boss Hole
+            translate([BOSS_HOLE_X, 0, BOSS_HOLE_Z]) {
+                cylinder(
+                    h = MOTOR_Y_THICK + 0.1, // Extend slightly past face
+                    d = BOSS_HOLE_DIA,
+                    $fn = 64
+                );
+            }
+
+            // Cut Screw Holes (31mm square pattern centred on boss)
+            // Pattern size 31mm means distance between hole centers is 31mm
+            // Center is at x=0, z=28.
+            // Offsets: +/- 15.5mm
+            for (i = [-1, 1]) {
+                for (j = [-1, 1]) {
+                    translate([
+                        BOSS_HOLE_X + (i * SCREW_PATTERN_SIZE / 2),
+                        0,
+                        BOSS_HOLE_Z + (j * SCREW_PATTERN_SIZE / 2)
+                    ]) {
+                        cylinder(
+                            h = MOTOR_Y_THICK + 0.1, // Extend slightly past face
+                            d = SCREW_HOLE_DIA,
+                            $fn = 64
+                        );
+                    }
+                }
+            }
+        }
+
+        // 3. Left Gusset
+        // Right triangle in YZ plane.
+        // Right angle at (y=5, z=5).
+        // Legs extend +Y (to 25) and +Z (to 25).
+        // Thickness in X from -25 to -20.
+        translate([
+            (GUSSET_LEFT_X_MIN + GUSSET_LEFT_X_MAX) / 2,
+            GUSSET_CORNER_Y,
+            GUSSET_CORNER_Z
+        ]) {
+            // Define the triangle vertices relative to the corner
+            // Corner (0,0) -> (0,0)
+            // Y leg (0,0) -> (0, 20)
+            // Z leg (0,0) -> (20, 0)
+            // Hypotenuse connects (0,20) and (20,0)
+            
+            // Using polygon for the cross-section in YZ
+            // Points: (y, z)
+            // (0,0) is corner
+            // (0, 20) is end of Y leg
+            // (20, 0) is end of Z leg
+            // Note: The gusset sits on the plate, so it fills the space between y=5 and y=25, z=5 and z=25.
+            // However, the prompt says "legs 20 mm along +Y and 20 mm along +Z".
+            // If corner is at (5,5), then Y goes to 25, Z goes to 25.
+            
+            polygon([
+                [0, 0],          // Corner (y=5, z=5)
+                [GUSSET_Y_LEG, 0], // End of Y leg (y=25, z=5)
+                [GUSSET_Y_LEG, GUSSET_Z_LEG], // Tip (y=25, z=25)
+                [0, GUSSET_Z_LEG]  // End of Z leg (y=5, z=25)
+            ]);
+            
+            // Extrude along X (thickness)
+            linear_extrude(height = GUSSET_THICK, center = true) {
+                // We need to mirror the polygon to be on the correct side of the plate?
+                // The plate is at y=0..5. The gusset is at y=5..25.
+                // The plate is at x=-25..25.
+                // The gusset is at x=-25..-20 (Left).
+                // The polygon defined above is in the YZ plane.
+                // We need to position it correctly.
+                // The translate above moved the corner to the center of the gusset block.
+                // Let's rebuild the shape logic to be simpler:
+                // Translate to corner (y=5, z=5).
+                // Extrude thickness in X.
+                // The polygon defines the face.
+                
+                // Actually, let's just use the polygon directly with the correct translation.
+                // The translate above was: center of the gusset block.
+                // Let's restart the gusset logic for clarity.
+            }
+        }
+        
+        // Re-doing Gusset logic cleanly inside the loop
+        for (side = [-1, 1]) {
+            translate([
+                (side == -1) ? GUSSET_LEFT_X_MIN : GUSSET_RIGHT_X_MIN,
+                GUSSET_CORNER_Y,
+                GUSSET_CORNER_Z
+            ]) {
+                // Define the triangle face in YZ plane
+                // Vertices:
+                // 1. Corner (0,0) relative to this block
+                // 2. End of Y leg (0, 

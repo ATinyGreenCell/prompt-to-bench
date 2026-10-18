@@ -1,0 +1,164 @@
+```openscad
+// Two-part enclosure for small electronics board
+// Part 1: Box (left)
+// Part 2: Lid (right, printed upside down)
+// Prints together with a 10mm gap between them.
+
+// --- Dimensions ---
+// Box Outer Dimensions (X x Y x Z)
+$box_outer_x = 70;
+$box_outer_y = 50;
+$box_outer_z = 30;
+
+// Wall and Floor Thickness
+$wall_thickness = 2;
+$floor_thickness = 2;
+
+// Lid Dimensions
+// Plate thickness
+$plate_thickness = 2;
+// Lip dimensions
+$lip_thickness = 1.5;
+$lip_height = 4;
+// Lip outer size (fits inside box opening)
+$lip_outer_x = 65.6;
+$lip_outer_y = 45.6;
+
+// Clearance
+$clearance = 0.2;
+
+// Gap between parts
+$gap = 10;
+
+// --- Configuration ---
+$fn = 64; // Smooth curves
+
+// --- Part 1: The Box ---
+// Position: Centered on its own footprint, then shifted to left side of bed.
+// Footprint: 70 x 50.
+// Box center X = -($box_outer_x/2 + $gap/2)
+// Box center Y = 0
+translate([-($box_outer_x/2 + $gap/2), 0, 0])
+difference() {
+    // Outer Block
+    cube([
+        $box_outer_x, 
+        $box_outer_y, 
+        $box_outer_z
+    ]);
+    
+    // Cut out the inside (hollow)
+    // Inner X = Outer X - 2*Wall
+    // Inner Y = Outer Y - 2*Wall
+    // Inner Z = Outer Z - Floor
+    translate([
+        $wall_thickness, 
+        $wall_thickness, 
+        0
+    ])
+    cube([
+        $box_outer_x - (2 * $wall_thickness), 
+        $box_outer_y - (2 * $wall_thickness), 
+        $box_outer_z - $floor_thickness
+    ]);
+    
+    // Extend cut slightly to ensure clean separation
+    translate([
+        $wall_thickness, 
+        $wall_thickness, 
+        0
+    ])
+    cube([
+        $box_outer_x - (2 * $wall_thickness) + 0.1, 
+        $box_outer_y - (2 * $wall_thickness) + 0.1, 
+        $box_outer_z - $floor_thickness + 0.1
+    ]);
+}
+
+// --- Part 2: The Lid ---
+// Position: Centered on its own footprint, then shifted to right side of bed.
+// Footprint: 70 x 50.
+// Lid center X = ($box_outer_x/2 + $gap/2)
+// Lid center Y = 0
+// The lid is printed upside down (plate on bed), so we build it normally 
+// but the "lip" is the top part of the geometry relative to the print direction.
+// However, the prompt says "printed upside down: a plate... lying on the bed".
+// This implies the plate is at Z=0, and the lip sticks UP from the plate.
+// The lip slides INTO the box.
+// Box inner top Z = $box_outer_z - $floor_thickness = 28.
+// Lip height = 4.
+// So the top of the lip is at Z=4. This fits easily under the box top (Z=30).
+
+translate([($box_outer_x/2 + $gap/2), 0, 0])
+difference() {
+    // Outer Block (Plate + Lip volume)
+    // Width: 70, Depth: 50, Height: Plate + Lip
+    cube([
+        $box_outer_x, 
+        $box_outer_y, 
+        $plate_thickness + $lip_height
+    ]);
+    
+    // Cut out the hole for the electronics (under the lip)
+    // The hole goes through the plate and up to the bottom of the lip.
+    // Hole X = Lip Outer X - 2*Clearance
+    // Hole Y = Lip Outer Y - 2*Clearance
+    // Hole Z = Plate Thickness (so it stops at the top of the plate)
+    translate([
+        $wall_thickness, // Align with box wall logic for reference, but calculate based on lip
+        $wall_thickness, 
+        0
+    ])
+    // Calculate inner hole dimensions based on lip outer size and clearance
+    translate([
+        ($lip_outer_x/2) - ($lip_outer_x/2 - $clearance), 
+        ($lip_outer_y/2) - ($lip_outer_y/2 - $clearance), 
+        0
+    ])
+    cube([
+        $lip_outer_x - (2 * $clearance), 
+        $lip_outer_y - (2 * $clearance), 
+        $plate_thickness
+    ]);
+    
+    // Extend cut slightly
+    translate([
+        ($lip_outer_x/2) - ($lip_outer_x/2 - $clearance), 
+        ($lip_outer_y/2) - ($lip_outer_y/2 - $clearance), 
+        0
+    ])
+    cube([
+        $lip_outer_x - (2 * $clearance) + 0.1, 
+        $lip_outer_y - (2 * $clearance) + 0.1, 
+        $plate_thickness + 0.1
+    ]);
+    
+    // Cut out the lip itself (the part that goes over the box)
+    // Lip is centered on the plate.
+    // Lip Outer X = 65.6, Lip Outer Y = 45.6
+    // Lip Inner X = Lip Outer X - 2*Clearance
+    // Lip Inner Y = Lip Outer Y - 2*Clearance
+    translate([
+        ($lip_outer_x/2) - ($lip_outer_x/2 - $clearance), 
+        ($lip_outer_y/2) - ($lip_outer_y/2 - $clearance), 
+        $plate_thickness
+    ])
+    cube([
+        $lip_outer_x - (2 * $clearance), 
+        $lip_outer_y - (2 * $clearance), 
+        $lip_height
+    ]);
+    
+    // Extend cut slightly
+    translate([
+        ($lip_outer_x/2) - ($lip_outer_x/2 - $clearance), 
+        ($lip_outer_y/2) - ($lip_outer_y/2 - $clearance), 
+        $plate_thickness
+    ])
+    cube([
+        $lip_outer_x - (2 * $clearance) + 0.1, 
+        $lip_outer_y - (2 * $clearance) + 0.1, 
+        $lip_height + 0.1
+    ]);
+}
+```

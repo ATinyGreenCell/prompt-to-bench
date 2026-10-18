@@ -1,0 +1,93 @@
+// 96-well PCR tube rack - ANSI/SLAS footprint with chamfered orientation mark.
+// Dimensions in mm.
+
+// Overall block dimensions
+L     = 127.76;
+W     = 85.48;
+H     = 20;
+
+// Grid parameters
+n_rows = 8;   // along Y
+n_cols = 12;  // along X
+pitch_x = 9.0;
+pitch_y = 9.0;
+
+// Hole parameters
+hole_d = 6.2;
+
+// Position of first hole (A1) relative to block edges
+x_offset = 14.38;
+y_offset = 11.24;
+
+// Chamfer parameters
+chamfer_leg = 5;
+chamfer_angle = 45;
+
+$fn = 64;
+
+// Calculate grid start positions to ensure the grid is centred on the block
+// The grid spans (n_cols - 1) * pitch_x in X and (n_rows - 1) * pitch_y in Y
+// We shift the grid so that the first hole is at (x_offset, y_offset)
+// The block origin is at (0,0,0).
+
+// Define the main block
+block = translate([0, 0, 0]) cube([L, W, H]);
+
+// Define the hole positions
+// We use a loop to generate the holes.
+// The i-th column (0 to n_cols-1) is at x = x_offset + i * pitch_x
+// The j-th row (0 to n_rows-1) is at y = y_offset + j * pitch_y
+
+difference() {
+    union() {
+        // Main block
+        block;
+        
+        // Chamfer at the A1 corner (bottom-left-front in standard view, but here we define it on the vertical edge at the corner closest to origin)
+        // The corner is at (0, 0, 0). We cut a 45 deg chamfer with leg 5mm.
+        // This creates a plane cutting from (chamfer_leg, 0, 0) to (0, chamfer_leg, 0) at z=0? 
+        // No, a vertical edge chamfer usually cuts the corner of the vertical face.
+        // Let's interpret "vertical edge at the A1 corner" as the edge along Z at (0,0).
+        // A 45 deg chamfer with 5mm legs on the X and Y faces meeting at Z axis.
+        // This removes material where x < 5 and y < 5.
+        // We can model this by intersecting the block with a plane or by subtracting a wedge.
+        // Easier: Subtract a cylinder or use a plane.
+        // Let's use a plane defined by points (5,0,0), (0,5,0), (5,0,20), (0,5,20).
+        // Normal vector is (1, 1, 0). Equation: x + y = 5.
+        // We want to keep x + y >= 5.
+        // So we subtract the region x + y < 5.
+        
+        // To do this cleanly with standard primitives:
+        // Create a large plane and intersect? No, we are in difference.
+        // We can subtract a shape that represents the corner to be removed.
+        // The shape to remove is a wedge defined by x < 5, y < 5, x+y < 5?
+        // Actually, a 45 deg chamfer on the corner means the cut line is at 45 degrees.
+        // If leg is 5, the cut goes from (5,0) to (0,5).
+        // The region removed is the triangle with vertices (0,0), (5,0), (0,5) extended up to height H.
+        
+        // Let's create the wedge to subtract.
+        // Base polygon in XY: (0,0), (5,0), (0,5).
+        // Extrude this polygon up to H.
+        // Then rotate it? No, it's already in the corner.
+        // Wait, the vertices (0,0), (5,0), (0,5) form a right triangle.
+        // The hypotenuse is x + y = 5.
+        // The region x < 5 and y < 5 and x+y < 5 is exactly the triangle.
+        // So we just extrude this triangle.
+        
+        polygon = [[0, 0], [chamfer_leg, 0], [0, chamfer_leg]];
+        wedge = linear_extrude(height = H) polygon;
+        translate([0, 0, 0]) wedge;
+    }
+    
+    // Cut the holes
+    for (i = [0 : n_cols - 1]) {
+        for (j = [0 : n_rows - 1]) {
+            // Calculate position
+            cx = x_offset + i * pitch_x;
+            cy = y_offset + j * pitch_y;
+            
+            // Cut the hole
+            translate([cx, cy, 0]) cylinder(h = H + 1, d = hole_d);
+        }
+    }
+}

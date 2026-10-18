@@ -1,0 +1,129 @@
+// 10-well Agarose Gel Comb
+// Designed for FDM printing, lying flat on the XY plane (Z=0).
+// Dimensions in millimetres.
+
+// --- Dimensions ---
+$fn = 100; // High resolution for smooth curves if needed
+
+// Spine dimensions
+SPINE_LENGTH = 70;  // X
+SPINE_WIDTH = 12;   // Y
+PLATE_THICKNESS = 1.5; // Z
+
+// Tooth dimensions
+NUM_TEETH = 10;
+TOOTH_WIDTH = 5.0;  // X
+TOOTH_LENGTH = 12;  // Y (extends from spine edge)
+GAP_SIZE = 1.5;     // Gap between teeth
+
+// --- Calculations ---
+// Total width occupied by teeth
+TOTAL_TEETH_WIDTH = NUM_TEETH * TOOTH_WIDTH;
+// Total width occupied by gaps
+TOTAL_GAP_WIDTH = (NUM_TEETH - 1) * GAP_SIZE;
+// Total width of the tooth row
+TOOTH_ROW_WIDTH = TOTAL_TEETH_WIDTH + TOTAL_GAP_WIDTH;
+
+// Calculate offset to center the tooth row on the spine
+// Spine center is at Y = 0.
+// Tooth row extends from -Y direction.
+// We need to shift the row so its center aligns with the spine center.
+// Row center relative to its own local origin (if defined at top edge) needs adjustment.
+// Let's define the row geometry relative to the spine edge (Y = SPINE_WIDTH/2).
+// The row has a total width of TOOTH_ROW_WIDTH.
+// The center of this row is at (SPINE_WIDTH/2) - (TOOTH_ROW_WIDTH / 2).
+// Since we are building teeth hanging down (-Y), the "top" of the teeth is at Y = SPINE_WIDTH/2.
+// The "bottom" of the teeth is at Y = SPINE_WIDTH/2 - TOOTH_LENGTH.
+// The center of the row in Y is: SPINE_WIDTH/2 - (TOOTH_ROW_WIDTH / 2).
+// We want this center to be 0.
+// So we translate the whole tooth assembly by + (TOOTH_ROW_WIDTH / 2) in Y before placing it?
+// Actually, simpler approach:
+// Define the spine from -SPINE_LENGTH/2 to +SPINE_LENGTH/2.
+// Define the tooth row starting at Y = SPINE_WIDTH/2.
+// Shift the tooth row in X so it is centered.
+// Shift the tooth row in Y so the center of the row aligns with Y=0.
+// Center of row Y = SPINE_WIDTH/2 - TOOTH_ROW_WIDTH/2.
+// We want Center of row Y = 0.
+// So we need to translate Y by -(SPINE_WIDTH/2 - TOOTH_ROW_WIDTH/2) = TOOTH_ROW_WIDTH/2 - SPINE_WIDTH/2.
+// Wait, if the row is at the top edge (positive Y), and we want it centered on 0:
+// Current center = SPINE_WIDTH/2 - TOOTH_ROW_WIDTH/2.
+// Target center = 0.
+// Translation needed = Target - Current = 0 - (SPINE_WIDTH/2 - TOOTH_ROW_WIDTH/2) = TOOTH_ROW_WIDTH/2 - SPINE_WIDTH/2.
+// Since TOOTH_ROW_WIDTH (approx 51.5) > SPINE_WIDTH (12), this value is positive.
+// This means we shift the row UP (positive Y) to center it? No, that moves it off the spine.
+// Let's re-evaluate the coordinate system.
+// Spine: Y goes from -6 to +6. Top edge is +6.
+// Teeth hang down from +6.
+// Row of teeth: Width 51.5. Center of row is at +6 - 25.75 = -19.75.
+// We want the center of the row to be at 0.
+// So we need to shift the row UP by 19.75.
+// New Y position of top edge = +6 + 19.75 = 25.75.
+// This seems wrong. The teeth must hang from the spine.
+// Ah, the "center of the row" logic assumes the row is a single block.
+// Let's just calculate the X offset first.
+// Spine X range: [-35, 35].
+// Tooth row X range: We want the center of the row to be 0.
+// So the row starts at X = -TOOTH_ROW_WIDTH/2 and ends at +TOOTH_ROW_WIDTH/2.
+// The spine is much wider than the row. The row will be centered on the spine in X.
+// Correct.
+
+// Y offset calculation:
+// The teeth start at the top edge of the spine (Y = SPINE_WIDTH/2).
+// The row of teeth has a total width of TOOTH_ROW_WIDTH.
+// The center of this row in the local coordinate system (where top edge is Y=0) is -TOOTH_ROW_WIDTH/2.
+// We want the center of the row in the global system to be Y=0.
+// So, Global_Y_center = Local_Y_center + Y_offset.
+// 0 = -TOOTH_ROW_WIDTH/2 + Y_offset.
+// Y_offset = TOOTH_ROW_WIDTH/2.
+// So the top edge of the teeth is at Y = SPINE_WIDTH/2 + TOOTH_ROW_WIDTH/2.
+// This places the teeth centered on the spine in X, but the row is shifted up so its center is at 0.
+// Let's verify:
+// Top edge Y = 6 + 25.75 = 31.75.
+// Bottom edge Y = 31.75 - 12 = 19.75.
+// Center Y = (31.75 + 19.75) / 2 = 25.75.
+// This is NOT 0. My logic is flawed.
+
+// Let's try again.
+// We want the COM of the tooth row to be at Y=0.
+// The tooth row consists of 10 teeth and 9 gaps.
+// The teeth are at Y positions:
+// Let the top edge of the spine be Y_top.
+// The teeth extend from Y_top down to Y_top - TOOTH_LENGTH.
+// The center of a single tooth is Y_top - TOOTH_LENGTH/2.
+// The gaps are centered between teeth.
+// The entire pattern is symmetric around the center of the middle gap (or the center of the whole assembly).
+// The center of the assembly in Y is Y_top - (TOOTH_ROW_WIDTH / 2).
+// We want this center to be 0.
+// So, Y_top - (TOOTH_ROW_WIDTH / 2) = 0.
+// Y_top = TOOTH_ROW_WIDTH / 2.
+// Let's check:
+// Y_top = 51.5 / 2 = 25.75.
+// Teeth extend from 25.75 down to 25.75 - 12 = 13.75.
+// Center of the assembly = (25.75 + 13.75) / 2 = 19.75. Still not 0.
+
+// Wait, the "center of the assembly" calculation:
+// The assembly spans from Y_top (top of teeth) to Y_bottom (bottom of teeth).
+// Y_bottom = Y_top - TOOTH_LENGTH.
+// The total span is TOOTH_LENGTH + TOOTH_ROW_WIDTH? No.
+// The teeth are 12mm long. The gaps are 1.5mm.
+// The total width of the row (teeth + gaps) is 51.5mm.
+// The row is a strip of width 51.5mm.
+// The strip hangs from Y_top.
+// The bottom of the strip is Y_top - TOOTH_LENGTH.
+// The center of the strip is Y_top - TOOTH_LENGTH/2.
+// We want the center of the strip to be 0.
+// So Y_top - TOOTH_LENGTH/2 = 0 => Y_top = TOOTH_LENGTH/2 = 6.
+// If Y_top = 6:
+// Strip goes from 6 down to 6-12 = -6.
+// Center is 0.
+// Does this align with the spine?
+// Spine top edge is at Y = SPINE_WIDTH/2 = 6.
+// So the teeth hang from Y=6 down to Y=-6.
+// The spine is from Y=-6 to Y=6.
+// So the teeth hang from the top edge of the spine, and the bottom of the teeth reaches the bottom edge of the spine?
+// Yes, 12mm length matches 12mm spine width.
+// This makes perfect sense. The teeth hang from the top edge and reach the bottom edge.
+// So Y_top = SPINE_WIDTH/2.
+// And the bottom of the teeth is at SPINE_WIDTH/2 - TOOTH_LENGTH.
+// Since TOOTH_LENGTH = 12 and SPINE_WIDTH = 12, the bottom is at -6.
+// The center of the row is 0.

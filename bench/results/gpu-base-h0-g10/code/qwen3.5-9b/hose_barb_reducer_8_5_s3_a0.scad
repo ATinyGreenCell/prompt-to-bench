@@ -1,0 +1,161 @@
+// Hose-Barb Reducer Design
+// Units: millimetres
+// Orientation: Standing upright along Z, resting on XY plane at z=0
+
+// --- Dimensions ---
+// Main bore diameter (constant through the part)
+$main_bore_d = 3.0;
+
+// Upper Section (z=0 to z=20): 8mm Tubing Barbs
+$upper_start_z = 0;
+$upper_end_z = 20;
+$upper_barb_count = 2;
+$upper_barb_height = 10;
+$upper_barb_bottom_od = 7.5;
+$upper_barb_top_od = 9.5;
+$upper_barb_step_down = 7.5; // Steps back to this OD after the taper
+
+// Lower Section (z=25 to z=41): 5mm Tubing Barbs
+// Note: There is a gap/collar from z=20 to z=25
+$lower_start_z = 25;
+$lower_end_z = 41;
+$lower_barb_count = 2;
+$lower_barb_height = 8;
+$lower_barb_bottom_od = 6.5;
+$lower_barb_top_od = 5.0;
+$lower_barb_step_out = 6.5; // Steps back out to this OD after the taper
+
+// Collar Section (z=20 to z=25)
+$collar_start_z = 20;
+$collar_end_z = 25;
+$collar_diameter = 12.0;
+
+// --- Configuration ---
+$fn = 128; // High resolution for smooth curves and accurate barbs
+
+module hose_barb_reducer() {
+    // Define the main body as a cylinder with the main bore hole
+    // We will subtract the barbs and collar from this main body later, 
+    // or build them as positive geometry and union them. 
+    // Strategy: Build the main tube, then add barbs and collar using difference/union logic 
+    // to ensure clean intersections with the main bore.
+    
+    // 1. Create the Main Body (Tube)
+    // Outer diameter needs to be large enough to contain the largest barb (9.5mm)
+    // plus a small wall thickness. Let's assume a wall thickness of 1.5mm.
+    $max_outer_d = max($upper_barb_top_od, $lower_barb_bottom_od) + 3.0; 
+    $main_body_od = $max_outer_d;
+    $main_body_id = $main_bore_d;
+    
+    // Create the main tube shell
+    main_body = difference() {
+        cylinder(
+            h = $lower_end_z,
+            d1 = $main_body_od,
+            d2 = $main_body_od,
+            $fn = $fn
+        );
+        // Cut the main bore through the entire length
+        cylinder(
+            h = $lower_end_z,
+            d1 = $main_bore_d,
+            d2 = $main_bore_d,
+            $fn = $fn
+        );
+    };
+
+    // 2. Add Upper Barbs (z=0 to z=20)
+    // Each barb is 10mm tall. Two stacked.
+    // Profile: Bottom OD -> Linear Taper -> Step Down -> Top OD (which is same as bottom OD effectively, 
+    // but the prompt says "steps straight back to 7.5mm". 
+    // Interpretation: 
+    // Bottom (z=0): OD = 7.5
+    // Top of taper (z=10): OD = 9.5
+    // Top of barb (z=20): OD = 7.5 (Step down)
+    
+    upper_barbs = union() {
+        for (i = [0 : $upper_barb_count - 1]) {
+            translate([0, 0, i * $upper_barb_height]) {
+                // Define the profile points for the barb
+                // We need to create a polygon or use linear_extrude with a path.
+                // Since it's rotationally symmetric, we can use linear_extrude with a 2D profile rotated 360.
+                
+                // Profile points (x, y) where x is radius
+                // Bottom: r = 7.5/2
+                // Top of taper: r = 9.5/2
+                // Top of barb: r = 7.5/2
+                
+                $p1 = $upper_barb_bottom_d / 2; // 7.5 / 2
+                $p2 = $upper_barb_top_d / 2;    // 9.5 / 2
+                $p3 = $upper_barb_step_down / 2; // 7.5 / 2
+                
+                // Create the 2D profile
+                profile = polygon([
+                    [-1, -1], // Start
+                    [1, -1],
+                    [1, 1],
+                    [-1, 1],
+                    [-1, -1]
+                ]);
+                
+                // Actually, let's use linear_extrude with a custom path for the radius change
+                // Or simpler: Construct the shape using cylinder segments.
+                
+                // Segment 1: Bottom flat (7.5mm OD)
+                // Segment 2: Taper (7.5 to 9.5)
+                // Segment 3: Top flat (7.5mm OD)
+                
+                // We will build this barb as a union of 3 cylinders/cones
+                $barb_base_z = 0;
+                $barb_taper_z = $upper_barb_height;
+                
+                // Part A: Bottom Cylinder (7.5mm OD)
+                cylinder(
+                    h = 0, // Just a placeholder, we will do difference logic or union carefully
+                    d = $upper_barb_bottom_d,
+                    center = true
+                );
+                
+                // Let's rebuild the barb using linear_extrude for the profile
+                // Profile: Line from (0, 0) to (7.5, 0) to (9.5, 10) to (7.5, 10) to (0, 10) to (0,0)
+                // Wait, the prompt says "steps straight back".
+                // So: 0 to 10mm height: Taper? No.
+                // "outer diameter grows linearly from 7.5 mm at its bottom to 9.5 mm at its top, then steps straight back to 7.5 mm"
+                // This implies the taper is the whole height? 
+                // "each barb is 10 mm tall and its outer diameter grows linearly from 7.5 mm at its bottom to 9.5 mm at its top, then steps straight back to 7.5 mm"
+                // This phrasing is slightly ambiguous. Does the step happen at the top?
+                // Interpretation: The barb is 10mm tall. The profile goes from 7.5 -> 9.5 over some distance, then steps back to 7.5.
+                // Usually, barbs have a long taper. Let's assume the taper happens over the full 10mm, reaching 9.5 at the very top, then immediately steps down? 
+                // That would make the top OD 7.5.
+                // Alternative: Taper happens, then a flat top section? No, "steps straight back".
+                // Most logical interpretation for a 3D printable barb:
+                // Height 0-10mm: Radius grows from 3.75 to 4.75.
+                // At z=10, radius instantly drops to 3.75.
+                // This creates a sharp edge at the top.
+                
+                // Let's refine the profile points for linear_extrude (radius vs height)
+                // y = height, x = radius
+                // (0, 3.75) -> (10, 4.75) -> (10, 3.75) -> (0, 3.75)
+                
+                $r_start = $upper_barb_bottom_d / 2;
+                $r_peak = $upper_barb_top_d / 2;
+                $r_end = $upper_barb_step_down / 2;
+                
+                // Create the profile polygon
+                $pts = [
+                    [-1, -1], // Start
+                    [$r_start, 0],
+                    [$r_peak, $upper_barb_height],
+                    [$r_end, $upper_barb_height],
+                    [$r_end, 0],
+                    [$r_start, 0],
+                    [-1, -1]
+                ];
+                
+                // Use linear_extrude to rotate this profile 360 degrees
+                // Note: linear_extrude with path creates a sweep. 
+                // To make a solid of revolution, we can use linear_extrude with a path that is a circle? 
+                // No, standard way in OpenSCAD for rotationally symmetric parts is rotate_extrude.
+                // But rotate_extrude takes a 2D profile.
+                
+                // Let's use rotate_extrude.

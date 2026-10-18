@@ -1,0 +1,63 @@
+// Rack for six 50 mL conical (Falcon-type) tubes.
+// Print orientation: Flat plate on bed (z=0), walls rising to z=70.
+// After printing, flip over so walls are on the bed and tubes hang down.
+
+// Plate dimensions
+L     = 130;   // Length (X)
+W     = 90;    // Width (Y)
+t     = 4;     // Plate thickness (Z)
+
+// Hole specifications
+n_holes = 6;
+hole_d  = 30.5;
+// Grid layout: 2 rows (Y), 3 columns (X)
+// Spacing 40mm centre-to-centre
+dx = 40;
+dy = 40;
+
+// Wall specifications
+wall_h = 70;   // Total height of wall from plate top (z=4)
+wall_t = 4;    // Wall thickness (Y)
+
+// Derived positions
+// Centring the grid on the plate
+x_offset = (L - (n_holes - 1) * dx) / 2;
+y_offset = (W - (2 - 1) * dy) / 2;
+
+// Total height of the assembly (plate + wall)
+total_h = t + wall_h;
+
+$fn = 64;
+
+difference() {
+    union() {
+        // 1. The Base Plate
+        translate([0, 0, 0])
+            cube([L, W, t]);
+        
+        // 2. The Side Walls
+        // Wall 1: Left side (Y = 0), rising from z=t to z=total_h
+        translate([0, 0, t])
+            cube([L, wall_t, wall_h]);
+            
+        // Wall 2: Right side (Y = W), rising from z=t to z=total_h
+        translate([0, W, t])
+            cube([L, wall_t, wall_h]);
+    }
+    
+    // 3. Subtract Holes
+    // We subtract cylinders that extend slightly past the top of the walls to ensure clean cuts.
+    for (i = [0 : n_holes - 1]) {
+        // Map index i to row and column
+        // Rows are along Y (0 to 1), Columns along X (0 to 2)
+        row = i / 3;
+        col = i % 3;
+        
+        x_pos = x_offset + col * dx;
+        y_pos = y_offset + row * dy;
+        
+        // Subtract cylinder extending past the top of the walls
+        translate([x_pos, y_pos, 0])
+            cylinder(h = total_h + 1, d = hole_d);
+    }
+}

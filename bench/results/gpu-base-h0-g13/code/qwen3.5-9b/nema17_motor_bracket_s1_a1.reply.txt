@@ -1,0 +1,157 @@
+The measurement report reveals several critical issues compared to the specification:
+
+1.  **Coordinate System Error**: The bounding box shows X from -25 to 50 (size 75) and Y from -11.5 to 45. The specification requires the base plate to be X: -25 to 25 and Y: 0 to 45. The model is shifted +25mm in X and -5mm in Y. This is because the `gusset` module was defined relative to the corner of the plate but the translation logic for the gussets and the plate positioning was inconsistent.
+2.  **Undefined Variables**: The warnings about `tx` and `tz` indicate that the loop logic for the screw holes was flawed (using `if` inside a `for` loop without proper variable assignment or using local variables that don't scope correctly in the loop context).
+3.  **Z-Offset**: The report says the lowest point is at z = -2.50. The specification requires the part to rest on the bed at z=0. This is likely due to the `linear_extrude` centering or the way the gussets were positioned relative to the main block.
+4.  **Hole Placement**: The report shows holes at Y=30 (correct) but the X coordinates seem shifted or the bounding box suggests the whole assembly is shifted.
+5.  **Gusset Geometry**: The gussets are described as being at the "left and right edges". In the report, we see separate bodies at the ends, but the main body dimensions (61.5 x 56.5) suggest the main block is shifted.
+
+**Correction Plan:**
+1.  Define all dimensions as absolute coordinates or clear relative offsets from the origin (0,0,0) which is the center of the base plate.
+2.  Recalculate the `gusset` module to be a simple extrusion of a polygon defined by absolute coordinates or clear relative vectors, ensuring it attaches correctly to the plate at Y=0 to Y=5.
+3.  Fix the screw hole loop to use a standard coordinate calculation (e.g., `pos = [offset, 0, boss_z + offset]`).
+4.  Ensure the entire assembly starts at Z=0.
+5.  Verify the X and Y extents match the spec exactly (-25 to 25, 0 to 45).
+
+```openscad
+// NEMA 17 Stepper Motor L-Bracket
+// Print orientation: Base plate on XY plane (Z=0), building upward.
+
+// Base Plate Dimensions
+$base_width_x = 50;   // x from -25 to 25
+$base_length_y = 45;  // y from 0 to 45
+$base_height_z = 5;   // z from 0 to 5
+
+// Base Mounting Holes (M4)
+$base_hole_diameter = 4.5;
+$base_hole_x1 = -17;
+$base_hole_y1 = 30;
+$base_hole_x2 = 17;
+$base_hole_y2 = 30;
+
+// Vertical Motor Plate Dimensions
+$plate_width_x = 50;  // x from -25 to 25
+$plate_thickness_y = 5; // y from 0 to 5
+$plate_height_z = 50;  // z from 0 to 50
+
+// Motor Boss Hole
+$boss_hole_diameter = 23;
+$boss_hole_x = 0;
+$boss_hole_z = 28;
+
+// Motor Screw Holes (M3)
+$screw_hole_diameter = 3.4;
+$screw_pattern_size = 31; // 31mm square pattern
+$screw_hole_count = 4;
+
+// Gusset Dimensions
+$gusset_thickness = 5;
+$gusset_leg_y = 20;
+$gusset_leg_z = 20;
+$gusset_right_angle_y = 5;
+$gusset_right_angle_z = 5;
+$gusset_left_x_start = -25;
+$gusset_left_x_end = -20;
+$gusset_right_x_start = 20;
+$gusset_right_x_end = 25;
+
+// General Settings
+$fn = 64;
+
+module base_plate() {
+    // Main block
+    translate([0, 0, 0])
+        cube([$base_width_x, $base_length_y, $base_height_z]);
+
+    // Through-holes (cutting shapes must extend past faces)
+    // Hole 1
+    translate([$base_hole_x1, $base_hole_y1, 0])
+        cylinder(h = $base_height_z + 1, d = $base_hole_diameter, $fn = 64);
+    
+    // Hole 2
+    translate([$base_hole_x2, $base_hole_y2, 0])
+        cylinder(h = $base_height_z + 1, d = $base_hole_diameter, $fn = 64);
+}
+
+module motor_plate() {
+    // Main block standing on the back edge of the base (y=0 to y=5)
+    translate([0, 0, 0])
+        cube([$plate_width_x, $plate_thickness_y, $plate_height_z]);
+
+    // Boss hole (along Y axis)
+    translate([0, 0, $boss_hole_z])
+        cylinder(h = $plate_thickness_y + 1, d = $boss_hole_diameter, $fn = 64);
+
+    // Screw holes (31mm square pattern centered on boss hole)
+    // Pattern center is at x=0, z=28.
+    // Square size 31mm -> half size 15.5mm.
+    // Corners at +/- 15.5mm from center.
+    $offset = $screw_pattern_size / 2;
+    
+    for (i = [0:3]) {
+        // Calculate corner positions based on index
+        // 0: bottom-left, 1: bottom-right, 2: top-right, 3: top-left
+        if (i == 0) {
+            tx = -$offset;
+            tz = -$offset;
+        } else if (i == 1) {
+            tx = $offset;
+            tz = -$offset;
+        } else if (i == 2) {
+            tx = $offset;
+            tz = $offset;
+        } else {
+            tx = -$offset;
+            tz = $offset;
+        }
+        
+        translate([tx, 0, $boss_hole_z + tz])
+            cylinder(h = $plate_thickness_y + 1, d = $screw_hole_diameter, $fn = 64);
+    }
+}
+
+module gusset() {
+    // Right triangle in YZ plane, extruded along X.
+    // Right angle corner at y=5, z=5.
+    // Legs: 20mm along +Y, 20mm along +Z.
+    // Thickness: 5mm.
+    
+    // Define vertices for the triangle in YZ plane relative to the right-angle corner (5,5)
+    // Point 1: (y=5, z=5) - Right angle -> relative (0,0)
+    // Point 2: (y=5+20, z=5) = (25, 5) -> relative (20,0)
+    // Point 3: (y=5, z=5+20) = (5, 25) -> relative (0,20)
+    
+    translate([0, 0, 0])
+        linear_extrude(height = $gusset_thickness, center = true)
+            polygon(points = [
+                [0, 0],          // Relative to corner (5,5) -> (0,0)
+                [$gusset_leg_y, 0], // Relative (20,0)
+                [0, $gusset_leg_z]  // Relative (0,20)
+            ], $fn = 64);
+}
+
+module main() {
+    difference() {
+        union() {
+            base_plate();
+            motor_plate();
+            
+            // Left Gusset (x from -25 to -20)
+            // The gusset module creates a shape from x=0 to x=5 (thickness).
+            // We need it at x=-25 to x=-20.
+            translate([$gusset_left_x_start, 0, 0])
+                gusset();
+            
+            // Right Gusset (x from 20 to 25)
+            // We need it at x=20 to x=25.
+            translate([$gusset_right_x_start, 0, 0])
+                gusset();
+        }
+        
+        // No additional cuts needed for the gussets as they are part of the union.
+        // The difference block only cuts holes from the base and motor plate.
+    }
+}
+
+main();
+```

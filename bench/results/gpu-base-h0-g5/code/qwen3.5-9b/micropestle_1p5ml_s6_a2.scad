@@ -1,0 +1,190 @@
+// Pestle for 1.5 mL Microcentrifuge Tube
+// Print Orientation: Standing upright on XY plane (Z=0)
+
+// --- Dimensions ---
+$fn = 128; // High resolution for smooth curves and accurate hole sizes
+
+// Handle
+d_handle = 8;      // Handle diameter (mm)
+h_handle = 45;     // Handle height (mm)
+z_handle_start = 0;
+z_handle_end = 45;
+
+// Cone
+d_cone_bottom = 8; // Cone bottom diameter (matches handle)
+d_cone_top = 3;    // Cone top diameter (matches sphere)
+z_cone_start = 45;
+z_cone_end = 62;
+
+// Tip (Sphere)
+d_tip = 3;         // Tip diameter (mm)
+z_tip_center = 62; // Center Z of the sphere
+
+// Grooves
+n_grooves = 4;     // Number of circumferential grooves
+d_groove_width = 2; // Groove width in Z (mm)
+d_groove_depth = 1; // Groove depth (mm)
+z_groove_centers = [10, 15, 20, 25]; // Z positions of groove centers
+
+// --- Main Body Construction ---
+difference() {
+    // 1. Create the main solid body
+    union() {
+        // Handle Cylinder
+        cylinder(
+            h = h_handle,
+            d = d_handle,
+            center = false
+        );
+
+        // Cone (tapering from 8mm to 3mm)
+        // Using linear_extrude with a centered polygon for the cone
+        linear_extrude(height = z_cone_end - z_cone_start, center = false) {
+            polygon(
+                points = [
+                    [0, d_cone_bottom / 2],
+                    [z_cone_end - z_cone_start, d_cone_top / 2],
+                    [z_cone_end - z_cone_start, -d_cone_top / 2],
+                    [0, -d_cone_bottom / 2]
+                ]
+            );
+        }
+
+        // Tip Sphere
+        translate([0, 0, z_tip_center - d_tip/2]) {
+            sphere(d = d_tip);
+        }
+    }
+
+    // 2. Cut the grooves
+    // We use a for loop to generate the 4 grooves
+    for (i = [0 : n_grooves - 1]) {
+        z_center = z_groove_centers[i];
+        
+        // Calculate the Z range for the groove based on center and width
+        z_start = z_center - d_groove_width / 2;
+        z_end = z_center + d_groove_width / 2;
+
+        // Create the cutting shape: A cylinder with a cylindrical hole through it
+        // This effectively creates a groove on the surface of the main body
+        translate([0, 0, z_start]) {
+            // The cutter must be slightly taller than the groove width to ensure clean cuts
+            h_cutter = d_groove_width + 0.1; 
+            
+            difference() {
+                // Outer cylinder of the cutter (the material being removed)
+                // Diameter must be >= handle diameter to cut the full depth
+                cylinder(
+                    h = h_cutter,
+                    d = d_handle, 
+                    center = false
+                );
+                
+                // Inner cylinder (the hole left behind, which becomes the groove)
+                cylinder(
+                    h = h_cutter,
+                    d = d_handle - d_groove_depth,
+                    center = false
+                );
+            }
+            
+            // Rotate the cutter to place it around the circumference
+            // Rotate 90 degrees for each of the 4 grooves
+            rotate([0, 0, 90 * i]) {
+                // The difference() block above creates a ring at Z=0 relative to this block.
+                // We need to translate it to z_start before rotating? 
+                // No, the translate([0,0,z_start]) was outside the rotate.
+                // Let's restructure to ensure the ring is at the correct Z.
+                
+                // Actually, the previous structure:
+                // translate([0,0,z_start]) { difference() { ... } rotate(...) }
+                // This translates the result of the difference, then rotates it.
+                // This is correct. The ring is at z_start, then rotated around Z axis.
+                
+                // Wait, the rotate is inside the translate.
+                // translate([0,0,z_start]) {
+                //    rotate([0,0,90*i]) {
+                //       difference() { ... }
+                //    }
+                // }
+                // This works. The ring is created at z_start, then rotated.
+                
+                // Let's verify the logic inside the loop again.
+                // We need to output the cutter shape.
+                // The cutter shape is a ring.
+                // We translate it to z_start.
+                // We rotate it around Z.
+                
+                // Correct structure:
+                // translate([0,0,z_start]) {
+                //    rotate([0,0,90*i]) {
+                //       difference() {
+                //          cylinder(h=h_cutter, d=d_handle, center=false);
+                //          cylinder(h=h_cutter, d=d_handle-d_groove_depth, center=false);
+                //       }
+                //    }
+                // }
+                
+                // This is what I will write in the final code.
+            }
+        }
+    }
+}
+
+// --- Corrected Groove Logic ---
+// Re-writing the difference block with the correct loop structure
+
+difference() {
+    // Main Body
+    union() {
+        // Handle Cylinder
+        cylinder(h = h_handle, d = d_handle, center = false);
+        
+        // Cone
+        linear_extrude(height = z_cone_end - z_cone_start, center = false) {
+            polygon(points = [
+                [0, d_cone_bottom / 2],
+                [z_cone_end - z_cone_start, d_cone_top / 2],
+                [z_cone_end - z_cone_start, -d_cone_top / 2],
+                [0, -d_cone_bottom / 2]
+            ]);
+        }
+        
+        // Tip Sphere
+        translate([0, 0, z_tip_center - d_tip/2]) {
+            sphere(d = d_tip);
+        }
+    }
+    
+    // Grooves
+    for (i = [0 : n_grooves - 1]) {
+        z_center = z_groove_centers[i];
+        z_start = z_center - d_groove_width / 2;
+        z_end = z_center + d_groove_width / 2;
+        h_cutter = d_groove_width + 0.1; // Slightly larger than groove width
+        
+        // Create a single groove shape
+        difference() {
+            // The material to remove (cylinder matching handle diameter)
+            cylinder(h = h_cutter, d = d_handle, center = false);
+            
+            // The hole (groove)
+            cylinder(h = h_cutter, d = d_handle - d_groove_depth, center = false);
+        }
+        
+        // Position and Rotate
+        translate([0, 0, z_start]) {
+            rotate([0, 0, 90 * i]) { // Rotate 90 degrees for each of the 4 grooves
+                // Apply the cutter shape
+                // Note: The difference() above creates a ring at Z=0.
+                // We need to move it to z_start before rotating.
+                
+                // Let's rebuild the cutter logic inside the rotation block for clarity
+                difference() {
+                    cylinder(h = h_cutter, d = d_handle, center = false);
+                    cylinder(h = h_cutter, d = d_handle - d_groove_depth, center = false);
+                }
+            }
+        }
+    }
+}

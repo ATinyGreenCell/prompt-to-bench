@@ -1,0 +1,85 @@
+```openscad
+// DIY Magnetic Stirrer Housing - designed for an 80mm PC fan.
+// Orientation: Top plate on bed (z=0), walls rising to z=40.
+// Outer size: 90x90mm. Fan size: 80x80mm.
+
+$fn = 64;
+
+// Dimensions
+outer_w = 90;
+outer_h = 90;
+top_t   = 2;
+wall_t  = 2.5;
+wall_h  = 40; // Total height from bed to open top
+
+// Fan mounting hole pattern
+hole_d  = 4.5;
+pattern_size = 71.5;
+
+// Cable notch
+notch_w = 12;
+notch_start_z = 32; // Bottom of notch
+notch_end_z = 40;   // Top of notch (open edge)
+
+// Calculate positions
+// Top plate sits at z=0, so its top surface is at z=top_t.
+// Walls sit on top of the plate, so their base is at z=top_t.
+// Walls extend to z = top_t + wall_h.
+
+// Hole positions (centred on origin)
+hole_x = pattern_size / 2;
+hole_y = pattern_size / 2;
+
+// Notch position (in one wall, e.g., +X wall)
+notch_x = outer_w / 2 - notch_w / 2;
+notch_y = 0;
+
+module main_housing() {
+    difference() {
+        // 1. Create the solid box (Top plate + Walls)
+        union() {
+            // Top plate (90x90x2)
+            translate([0, 0, 0]) 
+                cube([outer_w, outer_h, top_t]);
+            
+            // Four walls rising from the top plate
+            // Wall 1: +X side
+            translate([outer_w / 2 - wall_t / 2, -outer_h / 2, top_t])
+                cube([wall_t, outer_h, wall_h]);
+            
+            // Wall 2: -X side
+            translate([-outer_w / 2 + wall_t / 2, -outer_h / 2, top_t])
+                cube([wall_t, outer_h, wall_h]);
+            
+            // Wall 3: +Y side
+            translate([outer_w / 2 - wall_t / 2, outer_h / 2 - wall_t / 2, top_t])
+                cube([outer_w, wall_t, wall_h]);
+            
+            // Wall 4: -Y side
+            translate([-outer_w / 2 + wall_t / 2, outer_h / 2 - wall_t / 2, top_t])
+                cube([outer_w, wall_t, wall_h]);
+        }
+        
+        // 2. Cut the four mounting holes through the top plate
+        // Holes go from z=0 to z=top_t + 0.01 to ensure clean cut
+        for (i = [0 : 3]) {
+            translate([
+                i % 2 == 0 ? hole_x : -hole_x,
+                i < 2 ? hole_y : -hole_y,
+                0
+            ]) {
+                cylinder(h = top_t + 0.01, d = hole_d);
+            }
+        }
+        
+        // 3. Cut the cable notch in the +X wall
+        // The notch is in the wall at x = outer_w/2 - wall_t/2
+        // It goes from z = notch_start_z to z = notch_end_z
+        // Width is notch_w, centered at y=0
+        translate([notch_x, -notch_w / 2, notch_start_z])
+            cube([notch_w, notch_w, notch_end_z - notch_start_z + 0.01]);
+    }
+}
+
+main_housing();
+```

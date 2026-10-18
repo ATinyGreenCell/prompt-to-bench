@@ -1,0 +1,85 @@
+```openscad
+$fn = 128;
+
+// --- Dimensions ---
+// Handle
+d_handle = 8;
+h_handle = 45;
+z_handle_start = 0;
+z_handle_end = 45;
+
+// Cone
+d_cone_bottom = 8;
+d_cone_top = 3;
+h_cone = 17; // 62 - 45
+z_cone_start = 45;
+z_cone_end = 62;
+
+// Tip
+d_tip = 3;
+z_tip_center = 62;
+
+// Grooves
+n_grooves = 4;
+w_groove = 2; // Width in Z
+d_groove = 1; // Depth
+z_groove_centers = [10, 15, 20, 25];
+
+// --- Main Body Construction ---
+// We build the solid body first, then subtract the grooves.
+// The body consists of a cylinder, a cone, and a sphere.
+
+difference() {
+    union() {
+        // 1. Cylindrical Handle
+        // From z=0 to z=45, diameter 8mm
+        translate([0, 0, z_handle_start])
+            cylinder(h = h_handle, d = d_handle, center = false);
+
+        // 2. Conical Section
+        // From z=45 to z=62, tapering from 8mm to 3mm
+        // We use a cylinder with a linear_extrude path or simply a cylinder with varying radius?
+        // OpenSCAD cylinder has fixed radius. We use a polygon or rotate_extrude for a cone, 
+        // but since we need to union it with the cylinder below, a simple cylinder with 
+        // the larger diameter and then cutting the smaller part is tricky without boolean logic.
+        // Easiest way: Create a cylinder from 45 to 62 with diameter 8, then cut the cone shape?
+        // No, let's use a cylinder with the bottom diameter and a specific height, 
+        // but we need the top to be 3mm.
+        // Let's use a cylinder with diameter 8 from 45 to 62, then we will cut the cone shape out?
+        // Actually, standard practice: Cylinder (d=8, h=17) + Cone (d=8 to 3).
+        // To make a cone in OpenSCAD easily for union:
+        // Use a cylinder with d=8, h=17, then cut a cone shape? No.
+        // Use rotate_extrude?
+        // Let's use a cylinder with d=8, h=17, then subtract a cone? No, that leaves a cylinder.
+        // Correct approach: 
+        // Create a cylinder d=8, h=17.
+        // Create a cone d=8, d=3, h=17.
+        // Union them? No, they overlap.
+        // Let's define the cone as a cylinder with d=8, h=17, then cut the top part?
+        // Better: Use a cylinder with d=8, h=17. Then use a difference to cut the cone shape?
+        // No, let's just build the cone as a separate primitive and union it.
+        // How to make a cone in OpenSCAD? 
+        // cylinder(d1=8, d2=3, h=17, center=false) works perfectly for a frustum.
+        translate([0, 0, z_cone_start])
+            cylinder(h = h_cone, d1 = d_cone_bottom, d2 = d_cone_top, center = false);
+
+        // 3. Rounded Tip (Sphere)
+        // Centered at z=62, diameter 3mm
+        translate([0, 0, z_tip_center])
+            sphere(d = d_tip);
+    }
+
+    // --- Grooves ---
+    // Cut four circumferential grooves into the handle.
+    // Each groove is 2mm wide in Z, 1mm deep.
+    // Centred at z = 10, 15, 20, 25.
+    // We cut a cylinder of diameter (d_handle - 2*depth) through the handle.
+    
+    groove_d = d_handle - 2 * d_groove; // 8 - 2 = 6mm
+    
+    for (z_c = z_groove_centers) {
+        translate([0, 0, z_c - w_groove/2])
+            cylinder(h = w_groove, d = groove_d, center = false);
+    }
+}
+```

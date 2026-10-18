@@ -1,0 +1,166 @@
+// Two-part enclosure for small electronics board
+// Part 1: Box (left)
+// Part 2: Lid (right, printed upside down relative to assembly, but on bed)
+// Prints together with a 10 mm gap.
+
+// --- Dimensions ---
+// Box Outer Dimensions (X x Y x Z)
+$box_outer_x = 70;
+$box_outer_y = 50;
+$box_outer_z = 30;
+
+// Wall and Floor Thickness
+$wall_thickness = 2;
+$floor_thickness = 2;
+
+// Lid Dimensions
+// Plate thickness
+$plate_thickness = 2;
+// Lip dimensions (height and wall thickness)
+$lip_height = 4;
+$lip_wall_thickness = 1.5;
+// Lip outer size (X x Y)
+$lip_outer_x = 65.6;
+$lip_outer_y = 45.6;
+
+// Clearance
+$clearance = 0.2;
+
+// Gap between parts
+$gap = 10;
+
+// --- Configuration ---
+// Set global resolution for curved shapes
+$fn = 64;
+
+// --- Part 1: The Box ---
+// Position: Bottom-left-front corner at (0,0,0)
+// Dimensions: $box_outer_x by $box_outer_y by $box_outer_z
+translate([0, 0, 0]) {
+    difference() {
+        // Main outer block
+        cube([
+            $box_outer_x, 
+            $box_outer_y, 
+            $box_outer_z
+        ]);
+        
+        // Cut out the interior (open top)
+        translate([
+            $wall_thickness, 
+            $wall_thickness, 
+            $floor_thickness
+        ]) {
+            cube([
+                $box_outer_x - (2 * $wall_thickness),
+                $box_outer_y - (2 * $wall_thickness),
+                $box_outer_z - $floor_thickness
+            ]);
+        }
+        
+        // Extend cut slightly to ensure clean separation
+        translate([
+            $wall_thickness, 
+            $wall_thickness, 
+            $floor_thickness
+        ]) {
+            cube([
+                $box_outer_x - (2 * $wall_thickness) + 0.1,
+                $box_outer_y - (2 * $wall_thickness) + 0.1,
+                $box_outer_z - $floor_thickness + 0.1
+            ]);
+        }
+    }
+}
+
+// --- Part 2: The Lid ---
+// Position: Starts after the gap.
+// Box ends at X = 70. Gap is 10. Lid starts at X = 80.
+// Lid Center X = 80 + ($lip_outer_x / 2)
+$lid_start_x = $box_outer_x + $gap;
+$lid_center_x = $lid_start_x + ($lip_outer_x / 2);
+
+// The lid is a plate with a lip.
+// It rests on the bed (z=0).
+translate([
+    $lid_center_x - ($lip_outer_x / 2), 
+    0, 
+    0
+]) {
+    difference() {
+        // 1. The main plate (70x50x2)
+        cube([
+            $lip_outer_x, 
+            $lip_outer_y, 
+            $plate_thickness
+        ]);
+        
+        // 2. The Lip (raised wall)
+        // The lip sits on top of the plate.
+        // Lip outer size: 65.6 x 45.6
+        // Lip wall thickness: 1.5
+        // Lip height: 4
+        
+        // Step 2a: Cut the hole for the lip in the plate
+        $lip_inner_x = $lip_outer_x - (2 * $lip_wall_thickness);
+        $lip_inner_y = $lip_outer_y - (2 * $lip_wall_thickness);
+        
+        translate([
+            0, 
+            0, 
+            $plate_thickness
+        ]) {
+            // Cut the hole through the plate
+            cube([
+                $lip_inner_x, 
+                $lip_inner_y, 
+                $plate_thickness + 1 // Extend past bottom to ensure clean cut
+            ]);
+        }
+        
+        // Step 2b: Add the Lip Wall
+        // The lip is a hollow box sitting on the plate.
+        // Outer: 65.6 x 45.6 x 4
+        // Inner: 65.6 - 3 = 62.6 x 45.6 - 3 = 42.6 x 4 (height)
+        // Floor of lip: 1.5 thick
+        
+        translate([
+            0, 
+            0, 
+            $plate_thickness
+        ]) {
+            // Solid block for the lip outer dimensions
+            cube([
+                $lip_outer_x, 
+                $lip_outer_y, 
+                $lip_height
+            ]);
+            
+            // Cut out the inner void of the lip
+            translate([
+                $lip_wall_thickness, 
+                $lip_wall_thickness, 
+                $lip_wall_thickness
+            ]) {
+                cube([
+                    $lip_inner_x, 
+                    $lip_inner_y, 
+                    $lip_height - $lip_wall_thickness
+                ]);
+            }
+            
+            // Extend cut slightly to ensure clean separation from plate
+            translate([
+                $lip_wall_thickness, 
+                $lip_wall_thickness, 
+                $lip_wall_thickness
+            ]) {
+                cube([
+                    $lip_inner_x + 0.1, 
+                    $lip_inner_y + 0.1, 
+                    $lip_height - $lip_wall_thickness + 0.1
+                ]);
+            }
+        }
+    }
+}

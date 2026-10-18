@@ -1,0 +1,77 @@
+The measurement report confirms that the part is now correctly positioned (Z=0 to Z=20) and has no overhangs. However, there is a critical error in the **slot length** and **centering**:
+
+1.  **Slot Length Mismatch**: The specification requires slots that are **77 mm long**. The report shows the bounding box X size is 90 mm, but the internal geometry is missing the "cut extension" logic I attempted to add in the previous step. In the previous code, `translate([0, ...])` placed the cut starting at X=0. Since the block is 90mm long (0 to 90), a 77mm cut starting at 0 ends at 77. This leaves 13mm of solid material on the right side (X=77 to 90) and 0mm on the left. The slots should be centered on the 90mm block.
+2.  **Centering Mismatch**: The report shows the solid region at Z=15 is "centred (47.83, 22.15)". The X center of a 90mm block is 45.00. The Y center is 22.50 (correct). The X offset (47.83 vs 45.00) confirms the slots are not centered along the X-axis.
+
+**Fixes applied:**
+1.  **Center the cuts in X**: Instead of translating the cut shape to `[0, y_pos, ...]`, I will translate it to `[ (base_length - slot_length)/2, y_pos, ... ]`. This centers the 77mm slot within the 90mm block.
+2.  **Remove unnecessary extension**: Since the slot is now perfectly centered and the block is solid, the cut shape exactly matches the slot dimensions. No extra extension is needed to avoid coplanar faces because the cut is internal and the surrounding material is thick enough, but to be safe and strictly follow the "extend past faces" rule for difference operations, I will keep a tiny extension (0.1mm) on the X ends, which will be hidden inside the solid block.
+
+```openscad
+// Drying Rack for 10 Microscope Slides
+// Base: 90 x 45 x 20 mm (Resting on Z=0)
+// Slots: 10 parallel slots along X, 77mm long, 1.6mm wide, 10mm deep
+// Spacing: 3.5mm centre-to-centre in Y
+// Centering: Slots centered on the block in both X and Y.
+
+$fn = 128;
+
+// Base Dimensions
+base_length = 90;
+base_width = 45;
+base_height = 20;
+
+// Slide Dimensions (for reference)
+slide_length = 75;
+slide_width = 25;
+slide_thickness = 1;
+
+// Slot Dimensions
+num_slots = 10;
+slot_length = 77;
+slot_width = 1.6;
+slot_depth = 10;
+slot_spacing = 3.5; // Centre-to-centre in Y
+
+// Calculate Y position of the first slot centre
+// The group of slots is centred on the block in Y.
+total_span = (num_slots - 1) * slot_spacing;
+y_offset = (base_width - total_span) / 2;
+
+// Build the solid base block starting at Z=0
+difference() {
+    // Main block: 90 x 45 x 20, resting on Z=0
+    // Centered at (45, 22.5, 10) relative to origin, but we want it at Z=0.
+    // So we define it from 0 to 20 in Z.
+    cube([base_length, base_width, base_height], center = false);
+    
+    // Cut the 10 slots
+    // Slots run along X.
+    // We cut from the top surface (Z=20) downwards to Z=10.
+    // The cut shape must extend slightly past the slot length in X to ensure clean cut 
+    // and avoid coplanar faces on the slot walls.
+    cut_extension = 0.1; 
+    
+    for (i = [0 : num_slots - 1]) {
+        // Calculate Y position for this specific slot
+        y_pos = y_offset + i * slot_spacing;
+        
+        // Calculate X position to center the slot on the 90mm block
+        // Block X range: 0 to 90. Center: 45.
+        // Slot X range: 45 - (77/2) to 45 + (77/2) = 7.5 to 82.5
+        x_pos = (base_length - slot_length) / 2;
+        
+        // Define the slot geometry
+        // The slot is a rectangular prism cut into the top face.
+        // It runs along X, has width in Y, and depth in Z.
+        
+        translate([x_pos, y_pos, base_height - slot_depth]) {
+            // Cut shape: 
+            // X: slot_length + 2*extension (extends past both ends)
+            // Y: slot_width
+            // Z: slot_depth (extends from current Z up to base_height)
+            cube([slot_length + 2*cut_extension, slot_width, slot_depth], center = false);
+        }
+    }
+}
+```

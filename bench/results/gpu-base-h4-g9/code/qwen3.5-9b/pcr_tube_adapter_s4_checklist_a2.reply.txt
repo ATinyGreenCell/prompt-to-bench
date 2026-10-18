@@ -1,0 +1,39 @@
+The specification requires the sleeve body to rise from the collar to **z = 21.5**. The report shows the bounding box height is **21.50 mm**, which is correct.
+
+However, the report indicates a geometry error in the top section:
+*   **Specification**: A straight 6.2 mm diameter bore runs through the **full height**, open at both ends.
+*   **Report**: At `z=21.00` (near the top), the slice shows "0 holes". This means the bore cut cylinder (height `top_z + 0.01` = 21.51) is not extending far enough past the main body cylinder (height `top_z` = 21.5) to create a clean opening at the very top surface. The cut stops just inside the top face, leaving the hole closed or very shallow.
+*   **Correction**: The bore cut cylinder must extend slightly past the top of the main body cylinder to ensure the hole is fully open at z=21.5. I will increase the bore cut height to `top_z + 0.1` to guarantee clearance.
+
+All other dimensions (Collar OD 13, Collar Height 1.5, Body OD 10.8, Bore 6.2) match the report and specification.
+
+```openscad
+// PCR Tube Adapter Sleeve - fits 0.2mL tubes into 1.5mL rack holes.
+// Print orientation: Collar on bed (z=0 to 1.5), body rises to z=21.5.
+
+// Dimensions
+collar_od = 13;
+collar_t  = 1.5;
+body_od   = 10.8;
+top_z     = 21.5;
+bore_d    = 6.2;
+
+$fn = 64;
+
+difference() {
+    // Main body: Cylinder from z=0 to z=top_z (21.5)
+    translate([0, 0, 0]) 
+        cylinder(h = top_z, d = collar_od);
+    
+    // Cut out the bore through the entire height
+    // Extend slightly past top_z to ensure the hole is fully open at the top surface
+    translate([0, 0, -1]) 
+        cylinder(h = top_z + 0.1, d = bore_d);
+    
+    // Cut out the collar area to create the step down to the body OD
+    // The collar sits on the bed (z=0 to 1.5). We cut a cylinder from z=0 to z=1.5
+    // with diameter = body_od. We extend slightly past the collar top (1.5) to ensure the step is clean.
+    translate([0, 0, -1]) 
+        cylinder(h = collar_t + 0.01, d = body_od);
+}
+```

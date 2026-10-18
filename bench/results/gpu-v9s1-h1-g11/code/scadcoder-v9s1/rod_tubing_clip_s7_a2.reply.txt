@@ -1,0 +1,57 @@
+```openscad
+// Snap-on tubing clip for a 12.7 mm (1/2 inch) lab stand rod
+// Print orientation: flat on the bed, extruded along +Z
+
+// ---------------- Parameters ----------------
+rod_id      = 12.7;   // stand rod inner diameter
+rod_wall    = 3;      // stand rod ring wall thickness
+rod_od      = rod_id + 2 * rod_wall; // stand rod ring outer diameter (18.7)
+
+tubing_id   = 6;      // tubing inner diameter
+tubing_wall = 2;      // tubing ring wall thickness
+tubing_od   = tubing_id + 2 * tubing_wall; // tubing ring outer diameter (10)
+
+bridge_w    = 6;      // solid bridge width along X (from x = 8 to x = 12)
+bridge_h    = 10;     // bridge height along Y (centred on y = 0)
+
+opening_rod = 10;     // width of the opening cut from the rod ring (-X side)
+opening_tub = 4.5;    // width of the opening cut from the tubing ring (+X side)
+
+eps         = 0.5;    // cutter overshoot past faces
+$fn         = 96;     // circle resolution
+
+// ---------------- Profile (2D, X/Y) ----------------
+module profile() {
+    union() {
+        // Rod ring, centred at origin
+        difference() {
+            cylinder(d = rod_od, h = eps);
+            // Cut out everything with x < 0 and -5 < y < 5
+            translate([-rod_od - eps, -5, 0])
+                cube([rod_od + 2 * eps, opening_rod, eps + 2 * eps]);
+        }
+
+        // Tubing ring, centred at x = 15, y = 0
+        translate([15, 0])
+            difference() {
+                cylinder(d = tubing_od, h = eps);
+                // Cut out x > 15 and -2.25 < y < 2.25
+                translate([15 + eps, -opening_tub / 2, 0])
+                    cube([opening_tub + 2 * eps, tubing_od, eps + 2 * eps]);
+            }
+
+        // Solid bridge between x = 8 and x = 12
+        translate([8 - eps, -bridge_h / 2, 0])
+            cube([bridge_w + 2 * eps, bridge_h, eps]);
+    }
+}
+
+// ---------------- Part ----------------
+module clip() {
+    // Extrude the 2D profile along Z, from z = 0 up to z = 10
+    linear_extrude(height = 10)
+        profile();
+}
+
+clip();
+```

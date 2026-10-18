@@ -21,6 +21,7 @@ Sixteen biology-lab parts, described in words and numbers. A model writes OpenSC
 | [`finetune_table.py`](finetune_table.py) | the paper's Table 8: fine-tunes on the in-family / held-out split of the 16 tasks |
 | [`repair_stats.py`](repair_stats.py) | how a model uses feedback: file changed, score rose, passes won by repair (§6.4) |
 | [`self_consistency.py`](self_consistency.py) | picks one of k samples by agreement of the rendered parts' size and volume, no hidden checks (§6.4) |
+| [`harness_search.py`](harness_search.py) | compares harnesses (system prompt x feedback) on batch-C descriptions, scored against their reference files, never the 16 tasks (§6.4, Table 9) |
 | [`ollama_openai_shim.py`](ollama_openai_shim.py) | an Ollama-API front for an OpenAI-compatible server (vLLM), so `run_bench.py` can drive GPU-served models unchanged |
 | `run_main_local.sh`, `run_lang.sh` | the exact commands used for the paper |
 | `results/<run>/` | one JSON line per conversation, plus every generated `.scad` and raw reply |
@@ -48,6 +49,7 @@ You need OpenSCAD on your `PATH`. A development snapshot with the Manifold backe
   - When the file did not render: OpenSCAD's messages.
   - When it rendered but failed: the generic `tools/scadreport.py` measurement report, which never mentions the hidden checks.
   - `--feedback generic` replaces the report with "it does not match the specification, try again", which measures how much the measurements themselves help.
+  - `--feedback checklist` keeps the report and adds instructions: common causes of a parser error, a request to list every size and count of the specification beside the report's value before rewriting, and a note when the file came back unchanged. With `--system bench/prompts/system_idioms_examples.md` it is the h4 harness of §6.4; the paper's main results all use the default.
 - **Pass:** every check passes. We also record partial scores, failure stages, tokens and timings.
 
 ## Robustness

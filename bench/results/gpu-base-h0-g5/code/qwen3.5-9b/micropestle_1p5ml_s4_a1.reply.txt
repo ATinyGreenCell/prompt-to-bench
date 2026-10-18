@@ -1,0 +1,72 @@
+```openscad
+$fn = 128;
+
+// --- Dimensions ---
+// Handle
+d_handle = 8;
+h_handle = 45;
+z_handle_start = 0;
+z_handle_end = 45;
+
+// Cone
+d_cone_bottom = 8;
+d_cone_top = 3;
+h_cone = 17; // 62 - 45
+z_cone_start = 45;
+z_cone_end = 62;
+
+// Tip (Sphere)
+d_tip = 3;
+z_tip_center = 62;
+
+// Grooves
+n_grooves = 4;
+w_groove = 2; // Width in Z
+d_groove = 1; // Depth
+z_grooves = [10, 15, 20, 25]; // Center Z positions
+
+// --- Main Body Construction ---
+// We build the solid body first, then subtract the grooves.
+// The body consists of a cylinder, a cone, and a sphere.
+
+difference() {
+    union() {
+        // 1. Handle Cylinder
+        // From z=0 to z=45, diameter 8
+        translate([0, 0, z_handle_start])
+            cylinder(h = h_handle, d = d_handle, center = false);
+
+        // 2. Cone (Frustum)
+        // From z=45 to z=62, tapering from 8mm to 3mm
+        // Constructed by taking a cylinder of the bottom diameter and subtracting a cone
+        // that matches the missing top part.
+        // Cylinder: d=8, h=17
+        // Cone to subtract: d=5 (8-3), h=17, centered at the top of the cylinder
+        translate([0, 0, z_cone_start])
+            cylinder(h = h_cone, d = d_cone_bottom, center = false);
+        
+        translate([0, 0, z_cone_end])
+            cone(h = h_cone, d = d_cone_bottom, d2 = d_cone_top, center = false);
+
+        // 3. Tip Sphere
+        // 3 mm diameter sphere centred at z = 62
+        translate([0, 0, z_tip_center])
+            sphere(d = d_tip);
+    }
+
+    // --- Cut Grooves ---
+    // Four circumferential grooves into the handle
+    // Each 2 mm wide (in Z) and 1 mm deep
+    for (i = [0:3]) {
+        z_pos = z_grooves[i];
+        
+        // Calculate rotation angle for the 4 grooves (90 degrees apart)
+        angle = i * 90;
+        
+        translate([0, 0, z_pos])
+            rotate([0, 0, angle])
+                translate([0, 0, -w_groove/2]) // Center groove in Z
+                cylinder(h = w_groove, d = d_groove, center = false);
+    }
+}
+```

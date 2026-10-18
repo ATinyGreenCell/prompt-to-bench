@@ -1,0 +1,52 @@
+```openscad
+// Two-part enclosure for small electronics board (e.g., Arduino-based logger)
+// Print orientation: both parts on the bed, lid on the +X side, 10 mm gap
+
+// ---------- Parameters ----------
+box_x      = 70;    // box outer length (X)
+box_y      = 50;    // box outer width (Y)
+box_z      = 30;    // box outer height (Z)
+box_wall   = 2;     // box wall thickness (sides and top)
+box_floor  = 2;     // box floor thickness
+
+lip_w      = 65.6;  // lid lip outer length (X)
+lip_d      = 45.6;  // lid lip outer width (Y)
+lip_h      = 4;     // lid lip height (extends above the open top)
+lip_t      = 1.5;   // lid lip wall thickness
+
+gap        = 10;    // gap between box and lid
+eps        = 0.5;   // cutter overshoot past faces
+
+$fn = 64;           // curve resolution (no curves here, set per the rules)
+
+// ---------- Derived ----------
+lip_r_pos  = lip_w  - 2 * box_wall;   // lip outer position relative to box centre (+X)
+lip_r_neg  = lip_d  - 2 * box_wall;   // lip outer position relative to box centre (+Y)
+clearance  = lip_r_pos - (box_x - 2 * box_wall) / 2;  // 0.2 mm clearance on each side
+clearance_y= lip_r_neg - (box_y - 2 * box_wall) / 2;
+
+// ---------- Model ----------
+difference() {
+    union() {
+        // Part 1: Box (open top)
+        translate([-box_x / 2, -box_y / 2, 0])
+            cube([box_x, box_y, box_z - box_floor]);
+
+        // Part 2: Lid, printed upside down.
+        // Plate lies on the bed; the lip is on top of it, sliding into the opening.
+        translate([-box_x / 2 + gap, -box_y / 2, 0])
+            cube([lip_w, lip_d, box_z - box_floor]);
+    }
+
+    // Box interior (cut through the open top; side walls remain at box_wall)
+    translate([-box_x / 2 + box_wall, -box_y / 2 + box_wall, box_floor])
+        cube([box_x - 2 * box_wall, box_y - 2 * box_wall, box_z - box_floor + eps]);
+
+    // Lip pocket: rectangular channel the lip slides into
+    translate([-box_x / 2 + gap - lip_r_pos / 2,
+               -box_y / 2 + box_wall + clearance_y,
+               box_floor + eps])
+        cube([lip_r_pos, lip_d - 2 * clearance_y,
+              box_z - box_floor - lip_h + eps]);
+}
+```

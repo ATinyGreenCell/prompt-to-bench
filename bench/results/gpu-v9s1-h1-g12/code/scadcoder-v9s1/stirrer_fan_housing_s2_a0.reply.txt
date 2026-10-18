@@ -1,0 +1,44 @@
+```openscad
+// Magnetic stirrer housing (upside-down open box)
+// Print orientation: top plate on bed, walls rise to open top
+
+$fn = 64;
+
+// --- Dimensions (mm) ---
+plate_t      = 2;     // top plate thickness
+wall_t       = 2.5;   // wall thickness
+box_h        = 40;    // outer height of box
+outer_w      = 90;    // outer size in X and Y
+screw_holes  = 4;     // number of M4 screw holes
+screw_pitch  = 71.5;  // square pattern pitch between hole centres
+notch_w      = 12;    // cable notch width
+notch_d      = 8;     // notch depth from open edge (z = 32 to z = 40)
+eps          = 0.5;   // overcut for clean differences
+
+// --- Model ---
+difference() {
+    // Closed top plate (now bottom)
+    translate([-outer_w/2, -outer_w/2, 0])
+        cube([outer_w, outer_w, plate_t]);
+
+    // Four walls rising to open top
+    for (i = [0 : 3]) {
+        rotate([0, 0, i * 90])
+            translate([0, -outer_w/2 - eps, plate_t])
+                cube([outer_w + 2*eps, wall_t, box_h - plate_t]);
+    }
+
+    // Screw holes through top plate, centred on plate
+    for (j = [0 : screw_holes - 1]) {
+        a = (j - (screw_holes - 1)/2) * screw_pitch;
+        translate([a, a, 0])
+            cylinder(d = 4.5, h = plate_t + eps);
+    }
+
+    // Cable notch in one wall, centred along the wall
+    translate([-outer_w/2 + (outer_w - notch_w)/2,
+               -outer_w/2 - eps,
+               box_h - notch_d])
+        cube([notch_w, wall_t + 2*eps, notch_d + eps]);
+}
+```

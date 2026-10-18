@@ -1,0 +1,83 @@
+// 10-well Agarose Gel Comb
+// Designed for FDM printing, lying flat on the XY plane (Z=0).
+// Dimensions in millimetres.
+
+// --- Dimensions ---
+$fn = 128; // High resolution for smooth edges
+
+// Spine dimensions
+SPINE_LENGTH = 70;   // X dimension
+SPINE_WIDTH = 12;    // Y dimension
+PLATE_THICKNESS = 1.5; // Z dimension
+
+// Tooth dimensions
+NUM_TEETH = 10;
+TOOTH_WIDTH = 5.0;   // X dimension
+TOOTH_LENGTH = 12;   // Y dimension (extends from spine edge)
+TOOTH_GAP = 1.5;     // Gap between teeth
+
+// --- Calculations ---
+// Total width of the tooth row
+TOOTH_ROW_WIDTH = (NUM_TEETH * TOOTH_WIDTH) + ((NUM_TEETH - 1) * TOOTH_GAP);
+
+// Offset to center the tooth row on the spine in X
+X_OFFSET = (SPINE_LENGTH - TOOTH_ROW_WIDTH) / 2;
+
+// Position of the spine edge from which teeth hang (negative Y direction)
+// Spine spans from -SPINE_WIDTH/2 to +SPINE_WIDTH/2.
+// Teeth hang from the edge at Y = -SPINE_WIDTH/2.
+SPINE_Y_MIN = -SPINE_WIDTH / 2;
+
+// --- Generation ---
+
+// 1. Create the Spine (Back Bar)
+// A flat plate: X = SPINE_LENGTH, Y = SPINE_WIDTH, Z = PLATE_THICKNESS
+spine = translate([0, 0, PLATE_THICKNESS/2]) 
+    cube([SPINE_LENGTH, SPINE_WIDTH, PLATE_THICKNESS]);
+
+// 2. Create the Teeth
+// We need to cut holes into the spine.
+// The teeth hang in the -Y direction.
+// We will create a "negative" shape for each tooth and subtract it from the spine.
+// Tooth geometry:
+//   Width (X): TOOTH_WIDTH
+//   Length (Y): TOOTH_LENGTH
+//   Depth (Z): PLATE_THICKNESS
+// Positioning:
+//   X: Starts at X_OFFSET, steps by (TOOTH_WIDTH + TOOTH_GAP)
+//   Y: Starts at SPINE_Y_MIN - TOOTH_LENGTH, extends up to SPINE_Y_MIN
+//   Z: Extends from 0 to PLATE_THICKNESS (we cut through the whole plate)
+
+teeth_to_cut = [];
+for (i = [0 : NUM_TEETH - 1]) {
+    // Calculate X position for this tooth
+    x_pos = X_OFFSET + (i * (TOOTH_WIDTH + TOOTH_GAP));
+    
+    // Calculate Y position for this tooth
+    // The tooth hangs down from the spine edge (SPINE_Y_MIN)
+    // So the top of the hole is at SPINE_Y_MIN
+    // The bottom of the hole is at SPINE_Y_MIN - TOOTH_LENGTH
+    y_pos = SPINE_Y_MIN - TOOTH_LENGTH;
+    
+    // Create the cutting volume
+    // We add a small overhang (0.05mm) to ensure clean cuts
+    cut_volume = translate([x_pos, y_pos, 0]) 
+        cube([TOOTH_WIDTH, TOOTH_LENGTH, PLATE_THICKNESS + 0.05]);
+    
+    teeth_to_cut.push(cut_volume);
+}
+
+// --- Assembly ---
+// Start with the spine
+final_part = spine;
+
+// Subtract all teeth
+for (t = teeth_to_cut) {
+    final_part = difference() {
+        final_part;
+        t;
+    };
+}
+
+// Output the final part
+final_part;

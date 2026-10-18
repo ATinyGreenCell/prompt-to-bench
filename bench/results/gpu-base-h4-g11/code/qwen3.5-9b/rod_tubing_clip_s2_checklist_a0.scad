@@ -1,0 +1,141 @@
+// Snap-on clip for lab stand rod and tubing.
+// Printed flat: 10 mm tall extrusion of a 2-D profile in the XY plane.
+// Orientation: Rests on XY plane at z=0, builds upward. Centred on origin.
+
+// Rod dimensions
+rod_id = 12.7;      // Inner diameter of rod ring
+rod_wall = 3;       // Wall thickness of rod ring
+rod_od = rod_id + 2 * rod_wall; // Outer diameter of rod ring (18.7)
+
+// Tubing dimensions
+tube_id = 6;        // Inner diameter of tubing ring
+tube_wall = 2;      // Wall thickness of tubing ring
+tube_od = tube_id + 2 * tube_wall; // Outer diameter of tubing ring (10)
+
+// Bridge dimensions
+bridge_x_start = 8; // Start X of bridge
+bridge_x_end = 12;  // End X of bridge
+bridge_y = 6;       // Width of bridge in Y
+
+// Cutout dimensions
+cutout_rod_width = 10; // Width of cutout on rod ring (-X side)
+cutout_tube_width = 4.5; // Width of cutout on tubing ring (+X side)
+
+// Extrusion height
+height = 10;
+
+$fn = 64;
+
+// Define the 2D profile as a list of points [x, y]
+// We will use rotate_extrude to create the 3D part from this 2D profile.
+// The profile is defined in the XY plane, extruded along Z.
+// Points are ordered counter-clockwise for a solid shape.
+
+// Rod Ring Points (Outer)
+// Center at (0,0), OD = 18.7.
+// We need to cut out the -X side where x < 0 and -5 < y < 5.
+// To do this with polygon, we trace the outer circle, then go inwards to cut the gap, then back out.
+// Actually, it's easier to define the outer boundary and the inner boundary (hole + cutout) separately
+// and use difference, OR define the single continuous polygon of the solid material.
+// Let's define the solid material polygon directly.
+
+// Rod Ring Solid Path:
+// Start at top of outer circle (0, 9.35), go CCW to bottom of outer circle,
+// then go inwards to the cutout limits, trace the cutout gap, then back out to the bottom,
+// then continue CCW to the start.
+// Wait, the cutout is on the -X side. So we go from bottom of circle, move left to x=-5,
+// go up to y=-5, go right to x=0 (center), go up to y=5, go left to x=-5, go down to bottom?
+// No, the cutout is "everything with x < 0 and -5 < y < 5".
+// So the solid part of the ring on the left side stops at x=-5 for y between -5 and 5.
+// The outer radius is 9.35.
+// Path:
+// 1. Start at (0, 9.35).
+// 2. Go CCW along circle to (-9.35, 0).
+// 3. Continue to (-5, 0) - this is the start of the cutout gap on the left.
+// 4. Go down to (-5, -5).
+// 5. Go right to (0, -5).
+// 6. Go up to (0, 5).
+// 7. Go left to (-5, 5).
+// 8. Go down to (-5, 0).
+// 9. Continue CCW along circle to (0, -9.35).
+// 10. Continue to (0, 9.35).
+
+// Let's refine the points for the Rod Ring Outer Boundary + Cutout:
+// Circle points:
+// Top: (0, 9.35)
+// Left-most of circle: (-9.35, 0)
+// Left-most of cutout: (-5, 0)
+// Bottom of cutout: (-5, -5)
+// Center-bottom of cutout: (0, -5)
+// Center-top of cutout: (0, 5)
+// Left-most of cutout (top): (-5, 5)
+// Bottom of circle: (0, -9.35)
+
+// Let's generate the points programmatically in the code to ensure smoothness.
+// We will create two polygons: one for the Rod Ring and one for the Tubing Ring,
+// and one for the Bridge, and unite them. Then we subtract the cutouts.
+// Actually, the prompt says "a 2-D profile... consists of...".
+// It implies a single solid shape.
+// Let's build the union of the three parts (Rod Ring, Tubing Ring, Bridge) first,
+// then subtract the cutouts. This is cleaner than trying to trace a complex single polygon.
+
+// Part 1: Rod Ring
+// Outer circle OD = 18.7, ID = 12.7.
+// Cutout: x < 0, -5 < y < 5.
+// We can model this as a full ring, then subtract a rectangular block.
+// But since we are using rotate_extrude on a 2D profile, we must define the 2D profile.
+// Let's define the Rod Ring 2D profile as a union of a full ring and a bridge? No.
+// Let's define the Rod Ring 2D profile as a full ring, then subtract the cutout rectangle.
+// Wait, if I use difference in 3D, I can just make the full ring and subtract the cutout.
+// The prompt asks for a "2-D profile" that is extruded.
+// So I will create the 2D profile of the Rod Ring (full ring) and the Tubing Ring (full ring)
+// and the Bridge, unite them, then subtract the cutouts.
+// This satisfies "a 2-D profile... consists of..." by defining the components of the profile.
+
+// Rod Ring 2D Profile (Full Ring)
+// Outer radius 9.35, Inner radius 6.35.
+// Center (0,0).
+
+// Tubing Ring 2D Profile (Full Ring)
+// Outer radius 5, Inner radius 3.
+// Center (15, 0).
+
+// Bridge 2D Profile
+// Rectangle from x=8 to x=12, y=-3 to y=3.
+
+// Cutouts to subtract from the 3D model (or 2D profile before extrusion?):
+// The prompt says "with a 10 mm wide opening cut out...".
+// If I subtract in 2D, the extrusion will have the hole.
+// Let's do the subtraction in 2D to keep it as a single extrusion operation if possible,
+// or do it in 3D. The prompt says "a 2-D profile... consists of... (1)... (2)... (3)...".
+// This suggests the profile is the union of these three shapes, and the cutouts are part of the definition.
+// I will construct the 2D profile as the union of the three shapes, then subtract the cutouts.
+
+// Rod Ring Cutout: x < 0, -5 < y < 5.
+// This is a rectangle from x=-5 to x=0, y=-5 to y=5.
+// But we must ensure we don't cut into the inner hole of the ring if the cutout is too deep.
+// The inner hole goes from x=-6.35 to x=6.35. The cutout goes to x=0. So it's safe.
+
+// Tubing Ring Cutout: x > 15, -2.25 < y < 2.25.
+// This is a rectangle from x=15 to x=19.5, y=-2.25 to y=2.25.
+// Inner hole of tubing ring: x=13 to x=17.
+// Cutout starts at x=15, so it's inside the ring material. Safe.
+
+// Let's build the 2D profile.
+
+// Rod Ring Outer Circle
+// Points for outer circle (radius 9.35)
+// We need enough points for a smooth circle.
+// Rod Ring Inner Circle
+// Points for inner circle (radius 6.35)
+
+// To make the 2D profile, we can define the Rod Ring as a polygon that traces the outer circle
+// then goes inwards to the inner circle, traces the inner circle, and goes back out.
+// But we have a cutout.
+// Let's define the Rod Ring 2D shape as a full ring, then subtract the cutout rectangle.
+// Same for Tubing Ring.
+// Then unite Rod Ring, Tubing Ring, and Bridge.
+// Then subtract the cutouts from the union.
+
+// Wait, if I subtract the cutouts from the union in 2D, I need to make sure the cutouts are defined correctly.
+// Cutout

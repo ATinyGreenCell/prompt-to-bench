@@ -1,0 +1,121 @@
+// Snap-on clip for lab stand rod and tubing.
+// Printed flat: 10 mm tall extrusion of a 2-D profile in the XY plane.
+// Orientation: Rests on XY plane at z=0, builds upward. Centred on origin.
+
+// Dimensions
+rod_id   = 12.7;   // Rod inner diameter
+rod_wall = 3;      // Rod ring wall thickness
+rod_od   = rod_id + 2 * rod_wall; // Rod outer diameter (18.7)
+rod_cut  = 10;     // Width of opening in rod ring (-X side)
+
+tube_id  = 6;      // Tubing inner diameter
+tube_wall = 2;     // Tubing ring wall thickness
+tube_od  = tube_id + 2 * tube_wall; // Tubing outer diameter (10)
+tube_x   = 15;     // Center X of tubing ring
+tube_cut = 4.5;    // Width of opening in tubing ring (+X side)
+
+bridge_w = 6;      // Width of bridge in Y
+bridge_x1 = 8;     // Start X of bridge
+bridge_x2 = 12;    // End X of bridge
+
+height   = 10;     // Extrusion height (Z)
+
+$fn = 64;
+
+// Define the 2D profile as a list of points [x, y]
+// We will use rotate_extrude to create the 3D part from this 2D profile.
+// The profile is defined in the XY plane, extruded along Z.
+// To ensure the part sits on Z=0 and builds up, the profile Y coordinates must be non-negative.
+// However, the prompt implies a standard 2D profile where Y is the vertical axis of the drawing.
+// Let's define the profile in the XY plane where Y is the "height" of the profile relative to the bottom.
+// Wait, the prompt says "10 mm tall extrusion (Z) of a 2-D profile in the XY plane".
+// This usually means the profile is in the XY plane, and we extrude along Z.
+// So the profile points are [x, y]. The extrusion goes from z=0 to z=10.
+// The "opening" descriptions refer to the 2D shape in the XY plane.
+
+// Let's construct the profile points.
+// We need to close the loop.
+// Start at bottom left of rod ring, go around, cut the opening, etc.
+
+// Helper to generate points for a rectangle with a cutout on one side.
+// For the rod ring: Center (0,0), OD=18.7, ID=12.7. Cut on -X side from y=-5 to y=5.
+// Since we are extruding along Z, the "cut" is a void in the XY profile.
+// We can model the solid profile by drawing the outer boundary and then subtracting the inner hole and the cutout.
+// But rotate_extrude only takes a single polygon.
+// So we must define the polygon of the solid material.
+
+// Strategy:
+// 1. Define the outer boundary of the entire assembly.
+// 2. Define the inner boundaries (holes and cutouts) as "negative" space? No, rotate_extrude creates a solid.
+// We need to use difference() on the extruded shape.
+
+// Let's build the 3D shape using difference().
+// Base: Extrude the full outer shape.
+// Cutouts:
+// 1. Rod inner hole (cylinder).
+// 2. Rod cutout (rectangular prism).
+// 3. Tubing inner hole (cylinder).
+// 4. Tubing cutout (rectangular prism).
+
+// Outer Shape Construction:
+// The outer shape consists of the Rod Ring outer edge and the Tubing Ring outer edge connected by the bridge.
+// Rod Ring: Circle OD=18.7, centered at (0,0).
+// Tubing Ring: Circle OD=10, centered at (15,0).
+// Bridge: Rectangle from x=8 to x=12, y=-3 to y=3 (width 6).
+// Connection: The bridge connects the two rings. The rod ring has a gap at x<0. The tubing ring has a gap at x>15.
+// The bridge is at x=8 to 12. This is inside the tubing ring's gap?
+// Tubing ring gap: x > 15. Bridge ends at 12. So the bridge is solid material between the rings.
+// The rod ring gap is x < 0. The bridge starts at 8. So the bridge is solid material between the rings.
+// The profile is continuous.
+
+// Let's define the outer polygon points.
+// We traverse the perimeter of the combined shape.
+// Start at bottom of rod ring, go clockwise.
+
+// Rod Ring (OD 18.7, center 0,0):
+// Bottom: (0, -9.35) -> (-18.7, -9.35) -> (-18.7, 9.35) -> (0, 9.35)
+// But there is a cutout on the -X side from y=-5 to y=5.
+// So the perimeter goes:
+// (0, -9.35) -> (-18.7, -9.35) -> (-18.7, -5) -> (0, -5) [start of cutout]
+// Wait, the cutout is "everything with x < 0 and -5 < y < 5 is removed".
+// This implies the material stops at x=0 for |y| < 5.
+// So the perimeter goes from (-18.7, -5) to (0, -5), then up the cutout edge?
+// No, the cutout is a void. The material is the ring.
+// The ring has an opening. The opening is a rectangle: x from -18.7 to 0, y from -5 to 5.
+// So the perimeter goes:
+// (0, -9.35) -> (-18.7, -9.35) -> (-18.7, -5) -> (0, -5) -> (0, 5) -> (-18.7, 5) -> (-18.7, 9.35) -> (0, 9.35) -> back to start.
+// This creates a C-shape for the rod ring.
+
+// Tubing Ring (OD 10, center 15,0):
+// Gap on +X side: x > 15, |y| < 2.25.
+// Perimeter goes:
+// (15, -5) -> (25, -5) -> (25, -2.25) -> (15, -2.25) [start of gap]
+// ... gap ...
+// (15, 2.25) -> (25, 2.25) -> (25, 5) -> (15, 5) -> back to start.
+// This creates a C-shape for the tubing ring facing +X.
+
+// Bridge:
+// Connects Rod Ring (at x=0) to Tubing Ring (at x=15).
+// Bridge is from x=8 to x=12.
+// Wait, the bridge connects the two rings.
+// The rod ring ends at x=0 (due to cutout). The bridge starts at x=8.
+// There is a gap between x=0 and x=8?
+// The prompt says "solid bridge 6 mm wide (Y) between x = 8 and x = 12".
+// It does not say the bridge connects directly to the rod ring.
+// However, "joins the two rings".
+// If the rod ring ends at x=0 and the bridge starts at x=8, they are not connected.
+// Let's re-read: "a solid bridge 6 mm wide (Y) between x = 8 and x = 12 that joins the two rings".
+// This implies the bridge must connect to the rings.
+// Perhaps the rod ring's cutout is not all the way to the center?
+// "10 mm wide opening cut out of its -X side (everything with x < 0 and -5 < y < 5 is removed)".
+// This means the rod ring is open from x=-18.7 to x=0.
+// The bridge is at x=8 to 12.
+// How do they join?
+// Maybe the bridge connects to the *inner* face of the rod ring? No, the rod ring is open.
+// Maybe the bridge connects to the *outer* face?
+// Or maybe the "rod ring" is not a full circle, but the bridge connects to the part of the ring that remains.
+// The rod ring remains for x > 0.
+// The bridge is at x=8 to 12.
+// So the bridge connects to the rod ring at x=8?
+// But the rod ring exists for x > 0.
+// So the rod ring has a

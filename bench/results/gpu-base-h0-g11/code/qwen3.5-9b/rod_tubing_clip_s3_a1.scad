@@ -1,0 +1,109 @@
+// Snap-on Clip for Lab Stand Rod and Tubing
+// Orientation: Flat on XY plane, building up in +Z
+// Units: Millimetres
+
+// --- Dimensions ---
+// Rod Ring
+$rod_id = 12.7;      // Inner diameter of rod ring
+$rod_wall = 3.0;     // Wall thickness of rod ring
+$rod_od = $rod_id + 2 * $rod_wall; // Outer diameter (18.7 mm)
+$rod_height = 10.0;  // Height of extrusion
+
+// Tubing Ring
+$tube_id = 6.0;      // Inner diameter of tubing ring
+$tube_wall = 2.0;    // Wall thickness of tubing ring
+$tube_od = $tube_id + 2 * $tube_wall; // Outer diameter (10 mm)
+$tube_x = 15.0;      // X position of tubing ring center
+
+// Bridge
+$bridge_width_x = 4.0; // Width in X (from 8 to 12)
+$bridge_width_y = 6.0; // Width in Y
+$bridge_height = 10.0; // Height (same as extrusion)
+
+// Cutouts
+$rod_cut_width = 10.0; // Width of opening on rod ring (-X side)
+$rod_cut_y_limit = 5.0; // Y limit for rod cutout (-5 to 5)
+
+$tube_cut_width = 4.5; // Width of opening on tubing ring (+X side)
+$tube_cut_y_limit = 2.25; // Y limit for tube cutout (-2.25 to 2.25)
+
+// --- Main Body Construction ---
+$fn = 64;
+
+// 1. Create the Rod Ring
+// Outer cylinder
+rod_ring_outer = cylinder(
+    h = $rod_height,
+    r = $rod_od / 2,
+    center = [0, 0, $rod_height/2]
+);
+
+// Inner hole (Rod ID)
+rod_ring_inner = cylinder(
+    h = $rod_height,
+    r = $rod_id / 2,
+    center = [0, 0, $rod_height/2]
+);
+
+// 2. Create the Tubing Ring
+// Outer cylinder
+tube_ring_outer = translate([tube_x, 0, $rod_height/2]) cylinder(
+    h = $rod_height,
+    r = $tube_od / 2,
+    center = [0, 0, 0]
+);
+
+// Inner hole (Tube ID)
+tube_ring_inner = translate([tube_x, 0, $rod_height/2]) cylinder(
+    h = $rod_height,
+    r = $tube_id / 2,
+    center = [0, 0, 0]
+);
+
+// 3. Create the Bridge
+// Solid block connecting the rings
+bridge = translate([tube_x - $bridge_width_x/2, 0, $rod_height/2]) cube(
+    [
+        $bridge_width_x,
+        $bridge_width_y,
+        $rod_height
+    ]
+);
+
+// 4. Create Cutouts (Difference shapes)
+// We extend cutouts slightly past the faces to ensure clean removal
+
+// Rod Cutout (Left side, -X)
+// Defined as a box extending slightly past the ring wall on the left
+rod_cut = translate([-($rod_od/2) - 0.1, 0, $rod_height/2]) cube(
+    [
+        $rod_cut_width + 0.2, // Extend past the cut width
+        $rod_cut_y_limit * 2 + 0.2, // Extend past Y limits
+        $rod_height + 0.2 // Extend past top/bottom
+    ]
+);
+
+// Tubing Cutout (Right side, +X)
+// Defined as a box extending slightly past the ring wall on the right
+tube_cut = translate([tube_x + ($tube_od/2) + 0.1, 0, $rod_height/2]) cube(
+    [
+        $tube_cut_width + 0.2, // Extend past the cut width
+        $tube_cut_y_limit * 2 + 0.2, // Extend past Y limits
+        $rod_height + 0.2 // Extend past top/bottom
+    ]
+);
+
+// --- Final Assembly ---
+difference() {
+    union() {
+        rod_ring_outer;
+        rod_ring_inner;
+        tube_ring_outer;
+        tube_ring_inner;
+        bridge;
+    }
+    
+    // Subtract cutouts
+    rod_cut;
+    tube_cut;
+}

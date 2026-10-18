@@ -1,0 +1,86 @@
+// DIY Magnetic Stirrer Housing - based on an 80mm PC fan.
+// Orientation: Upside down. Top plate on bed (z=0 to 2). Walls rise to z=40.
+// Outer size: 90 x 90 mm.
+
+$fn = 64;
+
+// Dimensions
+outer_w = 90;
+outer_h = 90;
+top_thk = 2;
+wall_thk = 2.5;
+wall_h   = 40; // Total height from bed
+box_h    = wall_h - top_thk; // Internal height of the box
+
+// Fan mounting holes
+hole_d   = 4.5;
+hole_pat = 71.5; // Distance between hole centers
+
+// Cable notch
+notch_w  = 12;
+notch_d  = 8;    // Depth from open edge (z = 32 to 40)
+
+// Main body: Top plate + 4 walls
+difference() {
+    union() {
+        // 1. Top Plate (solid block)
+        translate([-outer_w/2, -outer_h/2, 0]) 
+            cube([outer_w, outer_h, top_thk]);
+
+        // 2. Four Walls
+        // Left Wall
+        translate([-outer_w/2, -outer_h/2, top_thk]) 
+            cube([wall_thk, outer_h, wall_h - top_thk]);
+        // Right Wall
+        translate([outer_w/2 - wall_thk, -outer_h/2, top_thk]) 
+            cube([wall_thk, outer_h, wall_h - top_thk]);
+        // Front Wall
+        translate([-outer_w/2, outer_h/2 - wall_thk, top_thk]) 
+            cube([outer_w, wall_thk, wall_h - top_thk]);
+        // Back Wall
+        translate([-outer_w/2, -outer_h/2 + wall_thk, top_thk]) 
+            cube([outer_w, wall_thk, wall_h - top_thk]);
+    }
+
+    // Cut Fan Mounting Holes
+    // Pattern: 4 holes on a 71.5mm square centered on origin.
+    // Positions: +/- hole_pat/2, +/- hole_pat/2
+    for (i = [0 : 3]) {
+        // Calculate X and Y directly based on index to avoid scope issues
+        if (i == 0) {
+            tx = -hole_pat/2;
+            ty = -hole_pat/2;
+        } else if (i == 1) {
+            tx = hole_pat/2;
+            ty = -hole_pat/2;
+        } else if (i == 2) {
+            tx = -hole_pat/2;
+            ty = hole_pat/2;
+        } else {
+            tx = hole_pat/2;
+            ty = hole_pat/2;
+        }
+        
+        // Cut hole through top plate only (z=0 to top_thk)
+        // Extend slightly past top to ensure clean cut
+        translate([tx, ty, -1]) 
+            cylinder(h = top_thk + 1, d = hole_d);
+    }
+
+    // Cut Cable Notch
+    // Location: One wall. Let's choose the Front Wall (at y = outer_h/2 - wall_thk).
+    // Notch is 12mm wide, centered along the wall.
+    // Wall runs from x = -outer_w/2 to x = outer_w/2.
+    // Center of wall in X is 0.
+    // Notch depth: 8mm down from open edge (z = 32 to 40).
+    // Open edge is at z = wall_h = 40. So cut from z = 32 to 40.
+    
+    // Notch center X
+    notch_x = 0;
+    // Notch center Y (on the front face)
+    notch_y = outer_h/2 - wall_thk;
+    // Notch Z range: 32 to 40
+    
+    translate([notch_x, notch_y, 31]) // Extend 1mm past bottom of notch (z=32)
+        cube([notch_w, wall_thk, notch_d + 1]);
+}

@@ -1,0 +1,135 @@
+```openscad
+// Snap-on clip for lab stand rod and tubing.
+// Printed flat: 10 mm tall extrusion of a 2-D profile in the XY plane.
+// Orientation: Rests on XY plane at z = 0, builds upward (+Z). Centred on origin.
+
+$fn = 64;
+
+// Dimensions
+rod_id   = 12.7;   // Rod inner diameter
+rod_wall = 3;      // Rod ring wall thickness
+rod_od   = rod_id + 2 * rod_wall; // Rod outer diameter (18.7)
+
+tube_id  = 6;      // Tubing inner diameter
+tube_wall = 2;     // Tubing wall thickness
+tube_od  = tube_id + 2 * tube_wall; // Tubing outer diameter (10)
+
+tube_x   = 15;     // Tubing ring center X
+bridge_w = 6;      // Bridge width in Y
+bridge_x_start = 8; // Bridge start X
+bridge_x_end   = 12; // Bridge end X
+height    = 10;    // Extrusion height (Z)
+
+// Helper to create a ring with a cutout on one side
+// ring_id: inner diameter
+// ring_od: outer diameter
+// cut_width: width of the cutout
+// cut_side: -1 for left (-X), 1 for right (+X)
+module ring_with_cut(ring_id, ring_od, cut_width, cut_side) {
+    // Define the polygon path for the ring
+    // We create a full ring first, then subtract the cutout rectangle
+    // To ensure the cutout is exactly where needed, we define the outer and inner paths
+    // and subtract a rectangle from the appropriate side.
+    
+    // Instead of complex polygon math, we build the solid ring and subtract a rectangle.
+    // The rectangle must extend slightly past the ring boundaries to ensure clean cuts.
+    
+    difference() {
+        // Solid ring
+        difference() {
+            cylinder(h = height, d = ring_od);
+            translate([0, 0, -0.01]) cylinder(h = height + 0.02, d = ring_id);
+        }
+        
+        // Cutout rectangle
+        // Position depends on cut_side
+        // Center of cutout in Y is 0. Width is cut_width.
+        // Height of cutout in Z is height + 0.01 to ensure full cut.
+        // X position: if cut_side == -1, center is at -cut_width/2. If 1, center is at +cut_width/2.
+        // However, the requirement says "everything with x < 0 and -5 < y < 5 is removed".
+        // This implies the cutout is a rectangle defined by x < 0 (relative to ring center) and y range.
+        // Let's interpret "opening cut out of its -X side" as a rectangular hole centered on the X-axis of the ring,
+        // extending from the inner edge outwards to the left.
+        // But the prompt specifies exact coordinates for the cutout logic: "everything with x < 0 and -5 < y < 5".
+        // This suggests the cutout is a rectangle defined by x < 0 (relative to ring center) and y between -5 and 5.
+        // Wait, the prompt says "10 mm wide opening". If it's 10mm wide, and centered on Y=0, it goes from y=-5 to y=5.
+        // So the cutout is a rectangle: x < 0, y in [-5, 5].
+        // We need to subtract this rectangle from the ring.
+        
+        // Rectangle dimensions:
+        // Width in Y: 10 mm (from -5 to 5)
+        // Width in X: We need to cut from the inner edge outwards? Or just a specific width?
+        // The prompt says "10 mm wide opening". Usually this refers to the Y-dimension (height of the slot).
+        // But it also says "everything with x < 0 ... is removed". This implies an infinite cut to the left?
+        // No, it must be bounded by the ring geometry. The ring exists for x > -rod_od/2.
+        // So the cutout is the intersection of the ring and the region x < 0, |y| < 5.
+        // To model this, we subtract a rectangle that covers the region x < 0, |y| < 5.
+        // Since the ring is centered at 0, the leftmost point is -rod_od/2.
+        // So we subtract a rectangle from x = -rod_od/2 - 1 to x = 0, y = -5 to y = 5.
+        
+        // Let's refine the cutout logic based on "10 mm wide opening".
+        // If the opening is 10mm wide in Y, it spans y=-5 to y=5.
+        // The cut is on the -X side. So it removes material where x < 0.
+        // The rectangle to subtract should be:
+        // x: from -rod_od/2 - 0.1 to 0 (to ensure full cut)
+        // y: from -5 to 5
+        
+        // Let's generalize for any ring.
+        // Cutout Y range: [-5, 5]
+        // Cutout X range: from -ring_od/2 - 0.1 to 0
+        
+        cut_y_min = -5;
+        cut_y_max = 5;
+        cut_x_max = 0;
+        cut_x_min = -ring_od / 2 - 0.1; // Extend slightly past the edge
+        
+        translate([cut_x_min, cut_y_min, -0.01]) 
+            cube([cut_x_max - cut_x_min + 0.02, cut_y_max - cut_y_min + 0.02, height + 0.02]);
+            
+    }
+}
+
+// Main assembly
+difference() {
+    union() {
+        // 1. Rod Ring
+        ring_with_cut(rod_id, rod_od, 10, -1);
+        
+        // 2. Tubing Ring
+        // Centered at x = 15, y = 0
+        translate([tube_x, 0, 0]) {
+            ring_with_cut(tube_id, tube_od, 4.5, 1);
+            // Note: The prompt says "4.5 mm wide opening cut out of its +X side".
+            // This implies the cutout is on the right side.
+            // The logic in ring_with_cut subtracts x < 0 relative to the ring center.
+            // If we want a cut on the +X side, we need to adjust the logic or translate the cut.
+            // Let's re-implement the cutout logic specifically for the tubing ring to be safe.
+            // Actually, let's just use the generic logic but translate the cutout rectangle.
+            // The generic module subtracts x < 0. For the tubing ring, we want to subtract x > 15.
+            // So we need to subtract a rectangle from x = 15 to x = 15 + 4.5/2? No, "4.5 mm wide".
+            // If it's 4.5mm wide, and centered on Y=0, it goes from y=-2.25 to y=2.25.
+            // The cut is on the +X side. So it removes material where x > 15.
+            // Let's add a specific subtraction for the tubing ring.
+        }
+        
+        // Re-do Tubing Ring with specific cutout logic
+        translate([tube_x, 0, 0]) {
+            // Solid ring
+            difference() {
+                cylinder(h = height, d = tube_od);
+                translate([0, 0, -0.01]) cylinder(h = height + 0.02, d = tube_id);
+            }
+            // Cutout on +X side
+            // Width in Y: 4.5 mm -> y from -2.25 to 2.25
+            // Cut starts at x = tube_x (15) and goes to the right.
+            // Rectangle: x from 15 to 15 + 0.1 (just enough to cut through), y from -2.25 to 2.25
+            // Actually, to be safe, let's make it extend a bit.
+            translate([tube_x, -2.25, -0.01]) 
+                cube([0.1, 4.5 + 0.02, height + 0.02]);
+        }
+        
+        // 3. Solid Bridge
+        // Joins the two rings without blocking either ring's hole.
+        // x from 8 to 12, y from -3 to 3 (6 mm wide), z from 0 to 10.
+        // We need to ensure it doesn't block the rod hole (x < 0) or tubing hole (x > 15).
+        // The bridge is between x=8 and x=12, so it's far from both holes.

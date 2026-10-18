@@ -1,0 +1,61 @@
+```openscad
+// Hose-barb reducer: 8 mm ID tubing to 5 mm ID tubing
+// Print orientation: standing upright along Z, centred on origin in X/Y
+
+$fn = 96;
+
+// ---- Dimensions (mm) ----
+eps      = 0.5;     // cutter overshoot past faces
+barb8_h  = 10;      // height of each 8 mm tubing barb
+barb8_d0 = 7.5;     // outer diameter of 8 mm barb at bottom
+barb8_d1 = 9.5;     // outer diameter of 8 mm barb at top
+barb5_h  = 8;       // height of each 5 mm tubing barb
+barb5_d0 = 6.5;     // outer diameter of 5 mm barb at bottom
+barb5_d1 = 5.0;     // outer diameter of 5 mm barb at top
+collar_d = 12;      // diameter of cylindrical collar
+length   = 41;      // overall length (z = 0 to z = 41)
+bore     = 3;       // central through-bore diameter
+
+// ---- Derived ----
+barb8_r0 = barb8_d0 / 2;
+barb8_r1 = barb8_d1 / 2;
+barb5_r0 = barb5_d0 / 2;
+barb5_r1 = barb5_d1 / 2;
+
+// ---- Model ----
+difference() {
+    union() {
+        // 8 mm tubing barbs: z = 0 to 20
+        for (z = [0, barb8_h])
+            translate([0, 0, z * barb8_h / 2])
+                linear_extrude(height = bore + 2 * eps)
+                    polygon([
+                        [0, 0],
+                        [(z * (barb8_r1 - barb8_r0)) / barb8_h,
+                         (z * (barb8_r1 - barb8_r0)) / barb8_h],
+                        [-(z * (barb8_r1 - barb8_r0)) / barb8_h,
+                         -(z * (barb8_r1 - barb8_r0)) / barb8_h]
+                    ]);
+
+        // Cylindrical collar: z = 20 to 25
+        translate([0, 0, 20])
+            cylinder(d = collar_d, h = 5);
+
+        // 5 mm tubing barbs: z = 25 to 41
+        for (z = [0, barb5_h])
+            translate([0, 0, 25 + z * barb5_h / 2])
+                linear_extrude(height = bore + 2 * eps)
+                    polygon([
+                        [0, 0],
+                        [(z * (barb5_r0 - barb5_r1)) / barb5_h,
+                         (z * (barb5_r0 - barb5_r1)) / barb5_h],
+                        [-(z * (barb5_r0 - barb5_r1)) / barb5_h,
+                         -(z * (barb5_r0 - barb5_r1)) / barb5_h]
+                    ]);
+    }
+
+    // Central through-bore, extends past both end faces
+    translate([0, 0, -eps])
+        cylinder(d = bore, h = length + 2 * eps);
+}
+```

@@ -1,0 +1,45 @@
+// 10-well comb for casting agarose gels
+// Printed lying flat: whole comb is a flat plate in XY, builds up in +Z
+
+// ---------- Parameters ----------
+well_count     = 10;    // number of wells (teeth)
+plate_length   = 70;    // spine length along X (mm)
+plate_width    = 12;    // spine width along Y (mm)
+plate_thick    = 1.5;   // plate thickness along Z (mm)
+
+tooth_width    = 5.0;   // tooth width along X (mm)
+tooth_length   = 12;    // tooth length along Y (mm)
+tooth_height   = 12;    // tooth height from top of spine (mm)
+
+gap            = 1.5;   // gap between neighbouring teeth along X (mm)
+overcut        = 0.5;   // extra length on cutting shapes past faces (mm)
+
+$fn = 64;
+
+// ---------- Derived ----------
+pitch       = tooth_width + gap;               // centre-to-centre spacing
+row_start_x = -(well_count - 1) * pitch / 2;   // first tooth centre (row centred)
+top_z       = plate_thick + tooth_height;     // top of teeth / bottom of wells
+
+// ---------- Model ----------
+difference() {
+    // Base plate (spine + tooth footprints)
+    translate([-plate_length / 2, -plate_width / 2, 0])
+        cube([plate_length, plate_width, plate_thick]);
+
+    // Teeth hanging from the -Y edge of the spine
+    for (i = [0 : well_count - 1]) {
+        translate([row_start_x + i * pitch - tooth_width / 2,
+                   -plate_width / 2 - tooth_height,
+                   0])
+            cube([tooth_width, tooth_length, plate_thick + tooth_height]);
+    }
+
+    // Wells cut through the top of each tooth (and into the spine)
+    for (i = [0 : well_count - 1]) {
+        translate([row_start_x + i * pitch - tooth_width / 2,
+                   -plate_width / 2 + overcut,
+                   top_z - overcut])
+            cube([tooth_width, tooth_length, plate_thick + tooth_height]);
+    }
+}

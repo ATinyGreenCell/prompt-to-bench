@@ -1,0 +1,71 @@
+// Adapter Sleeve for 0.2 mL PCR tube in 1.5 mL rack
+// Print orientation: Upside down (Collar on bed)
+// Units: mm
+
+// Dimensions
+$fn = 128; // High resolution for smooth curves and accurate holes
+
+// Collar (Base)
+$collar_diameter = 13.0;
+$collar_thickness = 1.5;
+
+// Sleeve Body
+$sleeve_outer_diameter = 10.8;
+$sleeve_total_height = 21.5;
+
+// Bore
+$bore_diameter = 6.2;
+
+// Overcuts for clean printing (Rule 5)
+$overcut = 0.1;
+
+// Calculate derived dimensions
+$collar_radius = $collar_diameter / 2;
+$sleeve_outer_radius = $sleeve_outer_diameter / 2;
+$bore_radius = $bore_diameter / 2;
+
+// Main Body Construction
+// We build the collar first, then union the sleeve body on top.
+// The sleeve body extends from z=0 to z=sleeve_total_height.
+// The collar is effectively the bottom part of this assembly.
+
+difference() {
+    // 1. Create the outer shell (Collar + Sleeve Body)
+    // We use a cylinder for the main body and a smaller cylinder for the collar top if needed,
+    // but since the collar is wider, we can model the whole thing as a stepped cylinder.
+    
+    // Outer Shell:
+    // Bottom part (Collar): Radius = $collar_radius, Height = $collar_thickness
+    // Top part (Sleeve): Radius = $sleeve_outer_radius, Height = ($sleeve_total_height - $collar_thickness)
+    
+    // To make it one solid piece easily, we can extrude a polygon or use two cylinders.
+    // Using two cylinders unioned is robust.
+    
+    // Collar Cylinder (Base)
+    translate([0, 0, 0])
+    cylinder(
+        h = $collar_thickness,
+        r1 = $collar_radius,
+        r2 = $collar_radius,
+        $fn = $fn
+    );
+    
+    // Sleeve Body Cylinder (Rising from collar)
+    translate([0, 0, $collar_thickness])
+    cylinder(
+        h = ($sleeve_total_height - $collar_thickness),
+        r1 = $sleeve_outer_radius,
+        r2 = $sleeve_outer_radius,
+        $fn = $fn
+    );
+    
+    // 2. Cut the Bore
+    // The bore runs through the full height ($sleeve_total_height)
+    // We extend the cutter slightly past the top and bottom to ensure clean cuts (Rule 5)
+    translate([0, 0, -($overcut)])
+    cylinder(
+        h = ($sleeve_total_height + ($overcut * 2)),
+        r = $bore_radius,
+        $fn = $fn
+    );
+}

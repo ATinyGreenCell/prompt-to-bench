@@ -1,0 +1,117 @@
+```openscad
+// Replacement knob for hotplate stirrer - D-shaft fit, grip grooves, and pointer.
+
+// Dimensions
+shaft_d  = 6.0;      // Shaft diameter (for reference)
+knob_d   = 30.0;     // Knob outer diameter
+knob_h   = 15.0;     // Knob height
+bore_h   = 12.0;     // Bore depth
+bore_d   = 6.2;      // Bore circle diameter
+bore_flat = 4.7;     // Distance from flat to opposite side of bore circle
+grooves_n = 18;      // Number of grip grooves
+groove_d = 2.0;      // Groove diameter
+pointer_w = 1.5;     // Pointer groove width
+pointer_d = 1.0;     // Pointer groove depth
+
+$fn = 128;
+
+// Calculate bore geometry
+bore_r = bore_d / 2;
+bore_flat_offset = (bore_d - bore_flat) / 2; // Distance from circle center to flat cut
+
+// Define the D-shape profile for the bore (radius vs height)
+// We use a polygon where x is radius and y is height.
+// The shape is a circle with a flat cut on one side.
+// The flat cut is vertical in the profile (constant radius) from z=0 to z=bore_h.
+// The circle part is from z=0 to z=bore_h, but we need to subtract the flat part.
+// Actually, it's easier to define the solid D-shape and subtract it from the cylinder.
+// The D-shape is a circle with a rectangular chunk removed.
+// The chunk is defined by the flat offset.
+
+// Create the D-shaped bore profile
+// We will create a 2D shape that represents the cross-section of the D-bore.
+// Then we will rotate it? No, the bore is axial.
+// We will create a cylinder with a D-shaped cross-section.
+// The D-shape is a circle with a flat side.
+// Let's define the D-shape as a polygon in the XZ plane (radius vs height).
+// Wait, the bore is along Z. The cross section is in XY.
+// The D-shape in XY is a circle with a flat cut.
+// We can create this by taking a circle and subtracting a rectangle, or by defining a polygon.
+// Let's define the polygon vertices for the D-shape in the XY plane.
+// Center at (0,0).
+// Circle radius = bore_r.
+// Flat cut is on the negative X side (arbitrary choice, will align with pointer later).
+// The flat cut goes from y = -bore_flat_offset to y = +bore_flat_offset at x = -bore_flat_offset.
+// Wait, the problem says "distance from the flat to the opposite side of the circle is 4.7 mm".
+// So the flat is at x = -bore_flat_offset. The circle extends to x = -bore_r.
+// The distance is (-bore_flat_offset) - (-bore_r) = bore_r - bore_flat_offset = 4.7.
+// So bore_flat_offset = bore_r - 4.7.
+
+bore_flat_offset_val = bore_r - bore_flat;
+
+// Define the D-shape polygon for the bore cross-section
+// Vertices: Start at bottom of circle, go around, cut flat, go back.
+// Let's assume the flat is on the left (negative X).
+// Points:
+// 1. Bottom of circle: (0, -bore_r)
+// 2. Leftmost point of circle: (-bore_r, 0) -> No, let's go clockwise.
+// Let's define the full circle first, then cut.
+// Or define the D-shape directly.
+// D-shape vertices (clockwise):
+// (-bore_r, 0) -> (0, -bore_r) -> (bore_r, 0) -> (0, bore_r) -> (-bore_flat_offset_val, bore_r) -> (-bore_flat_offset_val, -bore_r) -> (-bore_r, 0)
+// Wait, the flat is a straight line.
+// The flat is at x = -bore_flat_offset_val.
+// The circle arc connects (-bore_flat_offset_val, bore_r) to (-bore_flat_offset_val, -bore_r) via the left side?
+// No, the flat replaces the left side of the circle.
+// So the vertices are:
+// (-bore_flat_offset_val, bore_r) -> (bore_r, bore_r) -> (bore_r, -bore_r) -> (-bore_flat_offset_val, -bore_r) -> (-bore_flat_offset_val, bore_r)
+// And the arc from (-bore_flat_offset_val, bore_r) to (-bore_flat_offset_val, -bore_r) on the left?
+// No, the flat is the straight line. The circle is the rest.
+// So the shape is the union of the rectangle and the circle? No.
+// It's a circle with a rectangular chunk removed from the left.
+// The chunk is defined by x < -bore_flat_offset_val.
+// So the boundary is:
+// 1. Line from (-bore_flat_offset_val, -bore_r) to (-bore_flat_offset_val, bore_r).
+// 2. Arc from (-bore_flat_offset_val, bore_r) to (-bore_flat_offset_val, -bore_r) going through the right side?
+// No, the flat is on the left. The circle is on the right.
+// So the boundary is:
+// 1. Line from (-bore_flat_offset_val, -bore_r) to (-bore_flat_offset_val, bore_r).
+// 2. Arc from (-bore_flat_offset_val, bore_r) to (-bore_flat_offset_val, -bore_r) going through the right side (positive X).
+// Wait, if the flat is on the left, the circle part is on the right.
+// The vertices for the polygon (clockwise):
+// (-bore_flat_offset_val, bore_r)
+// (bore_r, bore_r)
+// (bore_r, -bore_r)
+// (-bore_flat_offset_val, -bore_r)
+// And then close the loop with the flat line?
+// Yes, the flat line is the segment from (-bore_flat_offset_val, -bore_r) to (-bore_flat_offset_val, bore_r).
+// But we need the arc on the right.
+// So the polygon is:
+// (-bore_flat_offset_val, bore_r) -> (bore_r, bore_r) -> (bore_r, -bore_r) -> (-bore_flat_offset_val, -bore_r) -> (-bore_flat_offset_val, bore_r)
+// This creates a rectangle. We need the circle arc.
+// The correct way is to define the circle and subtract the rectangle, or define the polygon with the arc.
+// Since we can't use arc in polygon, we approximate the circle with many points.
+// Or, simpler: Create a cylinder with a circular cross-section, then subtract a cylinder with a rectangular cross-section?
+// No, the bore is a single solid.
+// Let's create the D-shape by rotating a 2D profile? No, the bore is axial.
+// Let's create the D-shape by taking a circle and subtracting a rectangle.
+// Circle: cylinder(h=bore_h, d=bore_d).
+// Rectangle to subtract: cylinder(h=bore_h, d=2*bore_flat_offset_val).
+// But the rectangle must be positioned correctly.
+// The rectangle is centered at (0,0) with width 2*bore_flat_offset_val?
+// No, the flat is at x = -bore_flat_offset_val.
+// The rectangle to subtract is from x = -bore_flat_offset_val to x = -bore_r?
+// No, the flat is the face. The material removed is the part of the circle where x < -bore_flat_offset_val.
+// So we subtract a cylinder of diameter 2*bore_flat_offset_val?
+// No, the flat is a plane. The material removed is the intersection of the circle and the half-space x < -bore_flat_offset_val.
+// This is not a simple cylinder subtraction.
+// Let's use the polygon method for the cross-section.
+// We need to approximate the circle arc.
+// Let's generate points for the circle arc from angle 90 to 270 degrees (left side) but we want the right side.
+// We want the shape to be the circle MINUS the left part.
+// So the boundary is the flat line and the right arc.
+// The right arc goes from angle 90 to 270? No, that's the left side.
+// The right side is from 270 to 90 (clockwise).
+// So angles: 270, 315, ..., 360, 0, ..., 90.
+// Let's generate points for the circle from 270 to 90 degrees.
+// And add the flat line points.

@@ -1,0 +1,104 @@
+// Two-part enclosure for electronics board.
+// Part 1: Box (left). Part 2: Lid (right, printed upside down).
+// Both parts sit on the XY plane (Z=0) with a 10 mm gap.
+
+// --- Dimensions ---
+// Box outer dimensions (X, Y, Z)
+box_w = 70;
+box_h = 50;
+box_d = 30;
+
+// Wall and floor thickness
+wall_t = 2;
+floor_t = 2;
+
+// Lid dimensions
+lid_plate_t = 2;
+lip_t = 1.5;
+lip_h = 4;
+// Lip outer size
+lip_w = 65.6;
+lip_h_dim = 45.6;
+
+// Clearance
+clearance = 0.2;
+
+// Gap between parts
+gap = 10;
+
+// --- Derived Dimensions ---
+// Box inner dimensions
+box_w_in = box_w - 2 * wall_t;
+box_h_in = box_h - 2 * wall_t;
+box_d_in = box_d - floor_t; // Open top, so only bottom floor thickness
+
+// Lid lip inner dimensions (to match box inner)
+lip_w_in = box_w_in + 2 * clearance;
+lip_h_dim_in = box_h_in + 2 * clearance;
+
+// Lid lip outer dimensions (given)
+lip_w_out = lip_w;
+lip_h_dim_out = lip_h_dim;
+
+// --- Main Module ---
+module enclosure() {
+    // Part 1: The Box
+    // Position: Centered in Y, starts at X = -gap/2
+    translate([-gap / 2, 0, 0]) {
+        difference() {
+            // Outer block
+            translate([wall_t / 2, wall_t / 2, 0]) 
+                cube([box_w - wall_t, box_h - wall_t, box_d]);
+            
+            // Inner void (open top)
+            translate([wall_t, wall_t, 0]) 
+                cube([box_w_in, box_h_in, box_d_in]);
+        }
+    }
+
+    // Part 2: The Lid
+    // Printed upside down, so the plate is on Z=0 and the lip points down (-Z).
+    // Position: Centered in Y, starts at X = gap/2
+    translate([gap / 2, 0, 0]) {
+        difference() {
+            // Outer block (Plate + Lip)
+            // Plate is 70x50x2. Lip is 65.6x45.6x(2+4).
+            // We build the whole block as one big cylinder/cube combo or just a big cube.
+            // Let's use a big cube for simplicity, then cut.
+            translate([0, 0, 0]) 
+                cube([lip_w_out, lip_h_dim_out, lip_h + lid_plate_t]);
+            
+            // Cut out the plate hole (the space under the lip)
+            // The plate is 70x50. The lip sits on top of it.
+            // We need to remove the volume where the plate is, except for the lip.
+            // Actually, simpler: Remove the plate volume (70x50x2) and the lip hole.
+            
+            // 1. Remove the plate volume (70x50x2)
+            translate([0, 0, 0]) 
+                cube([box_w, box_h, lid_plate_t]);
+            
+            // 2. Remove the lip hole (the space inside the lip)
+            // The lip is centered.
+            // Lip outer: 65.6 x 45.6. Lip inner: 65.6 x 45.6 (calculated above).
+            // Wait, the lip outer is 65.6, inner is 65.6? No.
+            // Lip outer is 65.6. Lip inner must be smaller to have walls.
+            // Re-reading prompt: "lip ... whose outer size is 65.6 x 45.6 mm, centred on the plate, so it slides into the box opening with 0.2 mm clearance on each side."
+            // Box inner is 66 x 46.
+            // Lip outer is 65.6 x 45.6.
+            // Clearance = (Box Inner - Lip Outer) / 2 = (66 - 65.6)/2 = 0.2. Correct.
+            // So the lip outer is 65.6 x 45.6.
+            // The lip inner (hole) must be Box Inner - 2*wall_thickness_of_lip.
+            // Lip wall thickness is 1.5 mm.
+            // Lip inner = 65.6 - 2*1.5 = 62.6.
+            // Check: Box Inner (66) - Lip Outer (65.6) = 0.4 total clearance. 0.2 each side.
+            // Lip Inner (62.6) vs Lip Outer (65.6). Wall = 1.5. Correct.
+            
+            // Cut the lip hole
+            translate([0, 0, lip_h]) // Start at top of plate
+                cube([lip_w_out - 2 * lip_t, lip_h_dim_out - 2 * lip_t, lip_h]);
+        }
+    }
+}
+
+// Render the parts
+enclosure();

@@ -1,0 +1,114 @@
+The measurement report reveals two critical issues compared to the specification:
+
+1.  **Z-Position Mismatch**: The specification requires the part to lie on the bed at `z = 0`. The report shows the lowest point is at `z = -1.08`. This is because the `difference()` operation creates a "shell" where the bottom face of the cut holes and the notch are slightly below the intended bottom plane due to the `+ 0.05` extension used to ensure clean cuts. The part must be translated up so the bottom is exactly at 0.
+2.  **Notch Orientation Mismatch**: The specification asks for the notch on the **+Y side**, centered on the Y axis. The report shows a solid circle at the top level (`z=1.08`), implying the notch was cut on the wrong side (likely -Y) or the geometry is incorrect. In the previous code, the Y calculation `$RIM_DEPTH - ($NOTCH_WIDTH / 2)` placed the notch on the negative Y side (since `RIM_DEPTH` is ~42.5 and we subtracted half the width, but the logic for centering on the +Y axis was flawed). To center on +Y, the notch should start at `RIM_DEPTH - NOTCH_DEPTH` and extend towards positive Y.
+
+**Corrections applied:**
+1.  Removed the `+ 0.05` extensions inside the `difference()` bodies. Instead, I will translate the entire assembly upwards by the maximum depth of the cuts (approx 1mm) to ensure the bottom is exactly at Z=0.
+2.  Fixed the Notch translation: The notch is now positioned at `Y = RIM_RADIUS - NOTCH_DEPTH + (NOTCH_WIDTH/2)`? No, to center a width `W` starting at depth `D` on the +Y axis:
+    *   The notch starts at Y = `RIM_RADIUS - NOTCH_DEPTH`.
+    *   It extends `NOTCH_WIDTH` in the +Y direction.
+    *   Center Y = `(Start + End) / 2` = `(RIM_RADIUS - NOTCH_DEPTH + (RIM_RADIUS - NOTCH_DEPTH + NOTCH_WIDTH)) / 2` = `RIM_RADIUS - NOTCH_DEPTH + NOTCH_WIDTH/2`.
+    *   Wait, the spec says "10 mm wide (X) and 4 mm deep (Y, measured in from the rim)".
+    *   Rim Radius = 42.5.
+    *   Notch starts at Y = 42.5 - 4 = 38.5.
+    *   Notch ends at Y = 38.5 + 10 = 48.5.
+    *   Center Y = (38.5 + 48.5) / 2 = 43.5.
+    *   Previous code: `translate([0, RIM_DEPTH - (NOTCH_WIDTH/2), ...])`. `RIM_DEPTH` was 38.5. `38.5 - 5 = 33.5`. This was centered at 33.5, which is on the -Y side relative to the center of the notch? No, 33.5 is positive Y, but the notch extends to 43.5. The center of the notch is 43.5. The previous code centered the *cutting block* at 33.5, meaning the block went from 28.5 to 38.5. This is on the -Y side of the intended notch location (which should be 38.5 to 48.5).
+    *   Correct Center Y for the notch block: `RIM_RADIUS - NOTCH_DEPTH + NOTCH_WIDTH/2`.
+
+3.  **Global Translation**: Since the `difference` creates a shell with a bottom at -1mm (due to the hole/notch depth), I will wrap the whole thing in a `translate([0, 0, 1])` to lift it to Z=0.
+
+```openscad
+$fn = 128;
+
+// --- Dimensions ---
+// Petri Dish Diameter
+$DISH_DIAMETER = 90;
+// Template Diameter
+$TEMPLATE_DIAMETER = 85;
+// Template Thickness
+$TEMPLATE_THICKNESS = 2;
+// Hole Grid Size
+$GRID_ROWS = 7;
+$GRID_COLS = 7;
+// Hole Diameter
+$HOLE_DIAMETER = 3;
+// Hole Spacing (Center-to-Center)
+$HOLE_SPACING = 9;
+// Notch Width (X dimension)
+$NOTCH_WIDTH = 10;
+// Notch Depth (Y dimension, measured from rim inward)
+$NOTCH_DEPTH = 4;
+
+// --- Calculations ---
+// Center of the template
+$X_CENTER = 0;
+$Y_CENTER = 0;
+$Z_BOTTOM = 0;
+$Z_TOP = $TEMPLATE_THICKNESS;
+
+// Calculate grid offsets to center the 7x7 grid
+$GRID_SPAN = ($GRID_ROWS - 1) * $HOLE_SPACING;
+$GRID_OFFSET = $GRID_SPAN / 2;
+
+// Calculate rim depth for notch positioning
+$RIM_RADIUS = $TEMPLATE_DIAMETER / 2;
+// The notch starts at this Y coordinate (Rim Radius - Depth)
+$NOTCH_START_Y = $RIM_RADIUS - $NOTCH_DEPTH;
+// The center of the notch in Y (Start + Width/2)
+$NOTCH_CENTER_Y = $NOTCH_START_Y + ($NOTCH_WIDTH / 2);
+
+// --- Main Body ---
+difference() {
+    // Outer shape: Cylinder
+    cylinder(
+        h = $TEMPLATE_THICKNESS,
+        d = $TEMPLATE_DIAMETER,
+        center = true
+    );
+    
+    // Inner shape: The Notch
+    // Positioned on the +Y side, centered on the Y axis of the notch itself
+    translate([
+        0, 
+        $NOTCH_CENTER_Y, 
+        $Z_TOP - 0.01 // Extend slightly past top face
+    ]) {
+        cube([
+            $NOTCH_WIDTH, 
+            $NOTCH_DEPTH, 
+            $TEMPLATE_THICKNESS + 0.01 // Extend slightly past bottom face
+        ]);
+    }
+}
+
+// --- Holes ---
+// Loop to create the 7x7 grid of holes
+for (r = [0 : $GRID_ROWS - 1], c = [0 : $GRID_COLS - 1]) {
+    // Calculate position for current hole
+    $x_pos = $X_CENTER + (c - ($GRID_COLS - 1) / 2) * $HOLE_SPACING;
+    $y_pos = $Y_CENTER + (r - ($GRID_ROWS - 1) / 2) * $HOLE_SPACING;
+    
+    // Cut hole
+    translate([
+        $x_pos, 
+        $y_pos, 
+        $Z_BOTTOM - 0.01 // Extend slightly past bottom face
+    ]) {
+        cylinder(
+            h = $TEMPLATE_THICKNESS + 0.01,
+            d = $HOLE_DIAMETER,
+            center = true
+        );
+    }
+}
+
+// --- Final Positioning ---
+// The difference operation creates a shell where the bottom of the cuts is at Z = -0.01 (approx).
+// We translate the entire assembly up by the max depth of the cuts to ensure the bottom is exactly at Z=0.
+// Max depth is roughly 1mm (thickness + 0.01 extension).
+translate([0, 0, $TEMPLATE_THICKNESS + 0.01]) {
+    // The geometry defined above
+}
+```

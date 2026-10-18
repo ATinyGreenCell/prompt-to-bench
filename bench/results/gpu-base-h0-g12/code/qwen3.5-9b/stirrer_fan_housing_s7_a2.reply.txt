@@ -1,0 +1,103 @@
+The measurement report confirms that the Z-height is now correct (40.00 mm) and the volume is reasonable. However, there is a critical discrepancy in the **Cable Notch** location and the **Screw Hole Pattern** calculation.
+
+**Analysis of Errors:**
+1.  **Cable Notch Location:**
+    *   **Spec:** "In **one wall**, cut a notch... centred along the wall".
+    *   **Code:** The notch was placed at `wall_y = H/2 - T_WALL`. Since the box is 90mm high and walls are 2.5mm thick, the inner face of the front wall is at Y = 43.75. The code placed the notch centered on this face.
+    *   **Result:** The notch is correctly placed on the front wall. Wait, let me re-evaluate the coordinate system.
+    *   Box Outer: 90x90. Walls: 2.5mm.
+    *   Inner dimensions: 85x85.
+    *   Front Wall (Y=0 to Y=2.5): Inner face is at Y=2.5. Center of inner face is Y=43.75.
+    *   Back Wall (Y=87.5 to Y=90): Inner face is at Y=87.5. Center is Y=87.5 + 42.5 = 130? No.
+    *   Let's trace the Y coordinates carefully.
+        *   Outer Y range: 0 to 90.
+        *   Front Wall (at Y=0): Thickness 2.5. Inner face at Y=2.5.
+        *   Back Wall (at Y=90): Thickness 2.5. Inner face at Y=87.5.
+        *   Left Wall (at X=0): Inner face at X=2.5.
+        *   Right Wall (at X=90): Inner face at X=87.5.
+    *   The code used `wall_y = H/2 - T_WALL`.
+        *   `H/2` = 45.
+        *   `T_WALL` = 2.5.
+        *   `wall_y` = 42.5.
+    *   This places the notch at Y=42.5.
+    *   The inner face of the front wall is at Y=2.5. The inner face of the back wall is at Y=87.5.
+    *   The center of the front wall's *inner face* is at Y = 2.5 + (85/2) = 45.
+    *   The center of the back wall's *inner face* is at Y = 87.5 - (85/2) = 45.
+    *   The code placed the notch at Y=42.5. This is inside the front wall (which spans Y=0 to Y=2.5? No, the wall is the solid part).
+    *   Let's re-read the geometry construction.
+    *   `cube([W, H, Z_MAX])` creates a solid from (0,0,0) to (90,90,40).
+    *   The "walls" are the outer shell. The "open box" implies the interior is empty.
+    *   The code does **not** explicitly create an inner void. It relies on the `difference` to cut holes.
+    *   **CRITICAL FLAW:** The code creates a solid block 90x90x40. It cuts screw holes (4.5mm) and a notch. It does **not** cut out the main interior volume of the box.
+    *   **Wait, looking at the volume:** 323,728 mm³.
+        *   If it were a solid block: 90 * 90 * 40 = 324,000 mm³.
+        *   The volume is 323,728. This is extremely close to the solid block volume.
+        *   The screw holes (4 * 4.5mm dia) remove very little volume.
+        *   The notch removes very little volume.
+        *   **Conclusion:** The code has **failed to create the hollow interior** of the box. It is essentially a solid block with a few holes.
+    *   **Why did the user think it worked?** The previous prompt asked for a "housing... that covers the fan". A solid block would cover the fan, but it wouldn't be a "box" in the traditional sense, and the fan wouldn't fit inside. The user likely assumed the `difference` logic would automatically hollow it out or missed that step.
+    *   **Correction:** I must explicitly subtract the inner volume to create the hollow box.
+    *   Inner dimensions:
+        *   X: 90 - 2*2.5 = 85.
+        *   Y: 90 - 2*2.5 = 85.
+        *   Z: 40 - 2.5 (top plate) = 37.5? No, the top plate is 2mm. The walls are 2.5mm.
+        *   The box is open at the top. The top plate is at Z=0 to Z=2.
+        *   The walls rise from Z=2 to Z=40.
+        *   So the hollow space is:
+            *   X: 2.5 to 87.5 (Width 85).
+            *   Y: 2.5 to 87.5 (Depth 85).
+            *   Z: 2 to 40 (Height 38).
+    *   I need to subtract a cube of size [85, 85, 38] positioned at [2.5, 2.5, 2].
+
+2.  **Screw Hole Pattern:**
+    *   **Spec:** "71.5 mm square pattern centred on the plate".
+    *   **Code:** `PATTERN_SIZE = 71.5`.
+    *   **Calculation:** `x_pos = (PATTERN_SIZE / 2) * i`.
+        *   i = -1 -> -35.75.
+        *   i = 1 -> 35.75.
+    *   This creates a square from -35.75 to +35.75. Total size = 71.5.
+    *   This matches the spec.
+
+3.  **Notch Position Re-evaluation:**
+    *   The code placed the notch at `wall_y = 42.5`.
+    *   The inner face of the front wall (Y=0 to Y=2.5) is at Y=2.5. The center of the *opening* on that wall is at Y = 2.5 + 42.5 = 45.
+    *   The code placed the notch at Y=42.5.
+    *   If the notch is cut *into* the wall, its center should be at the center of the wall's face.
+    *   Front Wall Face Center: Y = 2.5 + (85/2) = 45.
+    *   Back Wall Face Center: Y = 87.5 - (85/2) = 45.
+    *   Left Wall Face Center: X = 2.5 + 42.5 = 45.
+    *   Right Wall Face Center: X = 87.5 - 42.5 = 45.
+    *   The code used `wall_y = H/2 - T_WALL` = 45 - 2.5 = 42.5.
+    *   This places the notch 2.5mm away from the center of the wall face. This is incorrect. It should be centered.
+    *   Correct Y for notch center: 45.
+
+**Plan:**
+1.  Add a `difference` block to subtract the main interior volume (the hollow part of the box).
+2.  Fix the notch Y-position to be exactly centered on the wall face (Y=45).
+3.  Ensure the notch cuts through the wall thickness correctly.
+
+```openscad
+// DIY Magnetic Stirrer Housing for 80mm PC Fan
+// Print Orientation: Upside down. Top plate on bed (Z=0), walls rise to Z=40.
+
+// --- Dimensions ---
+// Outer size of the box (X, Y)
+W = 90;
+H = 90;
+
+// Wall height (above the top plate)
+// Spec: Walls rise to Z=40. Top plate is 2mm thick.
+// Wall height = 40 - 2 = 38 mm.
+D_WALL_HEIGHT = 38;
+
+// Wall thickness
+T_WALL = 2.5;
+
+// Top plate thickness
+T_TOP = 2;
+
+// Total height of the part (Top plate + Walls)
+Z_MAX = T_TOP + D_WALL_HEIGHT; // Should be 40
+
+// Fan mounting hole pattern
+// 71

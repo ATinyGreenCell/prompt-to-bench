@@ -1,0 +1,59 @@
+// Two-part enclosure for small electronics board (e.g., Arduino-based logger)
+// Print orientation: both parts on the bed (z = 0), lid on the +X side,
+// with a 10 mm gap between them. The lid is printed upside down so its lip
+// hangs into the box opening.
+
+// ---------------- Parameters ----------------
+box_x      = 70;    // box outer size in X (mm)
+box_y      = 50;    // box outer size in Y (mm)
+box_z      = 30;    // box outer size in Z (mm)
+box_wall   = 2;     // box wall thickness (mm)
+box_floor  = 2;     // box floor thickness (mm)
+
+lip_w      = 65.6;  // lid lip outer size in X (mm)
+lip_d      = 45.6;  // lid lip outer size in Y (mm)
+lip_h      = 4;     // lid lip height above plate (mm)
+lip_t      = 1.5;   // lid lip wall thickness (mm)
+
+plate_t    = 2;     // lid plate thickness (mm)
+
+gap        = 10;    // gap between box and lid (mm)
+
+eps        = 0.5;   // overshoot for clean boolean cuts (mm)
+
+$fn = 64;           // curve resolution (no curved features here)
+
+// Derived
+lip_y0     = box_y + gap;   // lip bottom edge in Y
+lip_x0     = box_x / 2 - (lip_w - box_x + 2 * box_wall) / 2;  // lip left edge in X
+
+// ---------------- Modules ----------------
+module box() {
+    // Open-top box: solid outer block with a hollow interior.
+    // The top face at z = box_z - box_wall is not cut; it stays solid.
+    difference() {
+        translate([0, 0, 0])
+            cube([box_x, box_y, box_z]);
+        translate([box_wall, box_wall, box_floor])
+            cube([box_x - 2 * box_wall,
+                  box_y - 2 * box_wall,
+                  box_z - box_floor]);
+    }
+}
+
+module lid() {
+    // Base plate lying on the bed
+    translate([0, 0, 0])
+        cube([box_x, box_y, plate_t]);
+
+    // Rectangular lip on top of the plate. Its thickness (1.5 mm) is added
+    // upward from the plate top, and it extends eps past the plate edges
+    // so the union is one solid block with no coplanar faces.
+    translate([lip_x0, 0, plate_t])
+        cube([lip_w, lip_d + eps, lip_t + eps]);
+}
+
+// ---------------- Assembly ----------------
+box();        // Part 1: the open-top box
+translate([0, 0, 0])
+    lid();     // Part 2: the upside-down lid, printed on the +X side

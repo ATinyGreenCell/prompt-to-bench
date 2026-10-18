@@ -1,0 +1,139 @@
+// Replacement Knob for Hotplate Stirrer (6mm D-shaft)
+// Print Orientation: Bottom face (with D-bore) on Z=0, building upward.
+
+// --- Dimensions ---
+$fn = 128; // High resolution for smooth curves and precise D-shape
+
+// Main Body
+D_KNOB_DIAMETER = 30;
+D_KNOB_HEIGHT = 15;
+D_KNOB_RADIUS = D_KNOB_DIAMETER / 2;
+
+// Shaft Bore (D-shape)
+SHAFT_DIAMETER = 6.2;
+SHAFT_RADIUS = SHAFT_DIAMETER / 2;
+SHAFT_DEPTH = 12;
+// D-shape geometry: Distance from flat to opposite arc
+D_SHAPE_CHORD = 4.7;
+// Calculate the offset of the flat face from the center of the circle.
+// Distance from flat to arc tip = Radius + distance_from_center_to_flat
+// 4.7 = 3.1 + offset => offset = 1.6
+SHAFT_FLAT_OFFSET = 1.6;
+
+// Grooves
+NUM_GROOVES = 18;
+GROOVE_DIAMETER = 2;
+GROOVE_RADIUS = GROOVE_DIAMETER / 2;
+GROOVE_DEPTH = 1.5; // Depth from outer surface
+
+// Pointer
+POINTER_WIDTH = 1.5;
+POINTER_DEPTH = 1;
+
+// --- Main Body ---
+difference() {
+    // 1. Create the main cylinder
+    cylinder(h = D_KNOB_HEIGHT, r = D_KNOB_RADIUS, center = [0, 0, D_KNOB_HEIGHT/2]);
+
+    // 2. Cut the D-shaped bore
+    // The bore is a cylinder of 6.2mm diameter, but with one side flat.
+    // We create a D-shape profile and extrude it downwards.
+    // The flat side is at X = SHAFT_FLAT_OFFSET.
+    // The arc is the circle of radius SHAFT_RADIUS centered at (0,0).
+    // The D-shape is the area where X <= SHAFT_FLAT_OFFSET AND X^2 + Y^2 <= SHAFT_RADIUS^2.
+    // Wait, if the flat is at X = 1.6 and the arc is at X = -3.1, the distance is 4.7.
+    // The "flat" face of the bore will be the surface at X = SHAFT_FLAT_OFFSET.
+    // The "rounded" face will be the surface of the cylinder.
+    
+    translate([0, 0, D_KNOB_HEIGHT/2 - SHAFT_DEPTH]) {
+        difference() {
+            // The bounding box of the D-shape to ensure we cut everything
+            // Width = SHAFT_DIAMETER = 6.2
+            // Height = SHAFT_DIAMETER = 6.2
+            // We need to be careful with the flat side.
+            // The flat side is a vertical plane at X = SHAFT_FLAT_OFFSET.
+            // The arc is x^2 + y^2 = SHAFT_RADIUS^2.
+            // The D-shape is the intersection of the circle and the half-plane X <= SHAFT_FLAT_OFFSET.
+            
+            // Create the D-shape profile
+            // We use a polygon for the cross-section.
+            // Points: Top of arc, Bottom of arc, Flat side bottom, Flat side top.
+            // Actually, it's easier to define the D-shape as a union of a rectangle and a semicircle?
+            // No, the flat side is a chord.
+            // Let's define the D-shape by its boundary.
+            // Boundary: Arc from angle 0 to 360, but cut by line X = SHAFT_FLAT_OFFSET.
+            // The flat face is at X = SHAFT_FLAT_OFFSET.
+            // The arc is at X = -sqrt(R^2 - Y^2).
+            // Wait, if the flat is at X = 1.6, and the circle is centered at 0.
+            // The arc exists for X from -3.1 to 1.6.
+            // The flat face is the segment from Y = -sqrt(R^2 - 1.6^2) to Y = +sqrt(R^2 - 1.6^2) at X = 1.6.
+            
+            // Let's construct the D-shape using a polygon.
+            // We need the points on the circle where X = SHAFT_FLAT_OFFSET.
+            // Y_coord = sqrt(SHAFT_RADIUS^2 - SHAFT_FLAT_OFFSET^2)
+            Y_LIMIT = sqrt(SHAFT_RADIUS^2 - SHAFT_FLAT_OFFSET^2);
+            
+            // Polygon points:
+            // Start at top of flat (SHAFT_FLAT_OFFSET, Y_LIMIT)
+            // Go along the arc to the bottom of flat (SHAFT_FLAT_OFFSET, -Y_LIMIT)
+            // Then go straight back to start.
+            // But we need to extrude this.
+            // Let's use a simpler approach: Extrude a D-shape polygon.
+            
+            // Points for the D-shape cross section (in XY plane):
+            // 1. (SHAFT_FLAT_OFFSET, Y_LIMIT)
+            // 2. (SHAFT_FLAT_OFFSET, -Y_LIMIT)
+            // 3. (-SHAFT_RADIUS, -SHAFT_RADIUS) -> No, just follow the circle.
+            // Let's generate points on the circle from angle -90 to 90 (relative to the cut)
+            // Actually, let's just use the circle and cut it with a plane?
+            // No, we need to create the solid D-shape to subtract.
+            
+            // Let's build the D-shape polygon explicitly.
+            // We need points on the circle from angle 0 to 360, but stop at the chord.
+            // The chord is at X = SHAFT_FLAT_OFFSET.
+            // The circle is x^2 + y^2 = R^2.
+            // The D-shape is the region x <= SHAFT_FLAT_OFFSET inside the circle.
+            
+            // Let's create a polygon with many points.
+            // Start at (SHAFT_FLAT_OFFSET, Y_LIMIT)
+            // Go along the circle counter-clockwise to (SHAFT_FLAT_OFFSET, -Y_LIMIT)
+            // Then go straight to (SHAFT_FLAT_OFFSET, Y_LIMIT).
+            
+            // Actually, the flat face is the "front" of the D.
+            // The user wants the flat side to face the user (or a specific direction).
+            // Let's assume the flat side is at +X.
+            // So the flat face is at X = SHAFT_FLAT_OFFSET.
+            // The arc is at X < SHAFT_FLAT_OFFSET.
+            
+            // Polygon points:
+            // 1. (SHAFT_FLAT_OFFSET, Y_LIMIT)
+            // 2. (SHAFT_FLAT_OFFSET, -Y_LIMIT)
+            // 3. ... points on the circle ...
+            // Wait, if we go from (SHAFT_FLAT_OFFSET, Y_LIMIT) to (SHAFT_FLAT_OFFSET, -Y_LIMIT) along the circle,
+            // we are going through X = -3.1.
+            // Then we close the loop with the line segment at X = SHAFT_FLAT_OFFSET.
+            
+            // Let's generate points on the circle from angle 90 to -90 (going through 180).
+            // Angle 90: (0, R)
+            // Angle -90: (0, -R)
+            // We need to go from (SHAFT_FLAT_OFFSET, Y_LIMIT) to (SHAFT_FLAT_OFFSET, -Y_LIMIT) via the arc.
+            // The angle for (SHAFT_FLAT_OFFSET, Y_LIMIT) is acos(SHAFT_FLAT_OFFSET / SHAFT_RADIUS).
+            // Let's call this angle alpha.
+            // alpha = acos(1.6 / 3.1) ≈ 58.8 degrees.
+            // So we go from 58.8 deg to -58.8 deg (via 180 deg).
+            
+            // Let's just use a polygon with a few points for the arc and the flat.
+            // Flat side: (SHAFT_FLAT_OFFSET, Y_LIMIT) to (SHAFT_FLAT_OFFSET, -Y_LIMIT)
+            // Arc side: Points on circle from angle 58.8 to -58.8 (passing through 180).
+            
+            // Actually, simpler:
+            // Create a cylinder of 6.2mm diameter.
+            // Cut it with a plane at X = SHAFT_FLAT_OFFSET?
+            // No, that would leave a flat face at X = SHAFT_FLAT_OFFSET, but the shape would be a cylinder cut in half.
+            // We want the flat face to be the chord.
+            // So we take the cylinder and remove the part where X > SHAFT_FLAT_OFFSET.
+            // This creates a flat face at X = SHAFT_FLAT_OFFSET.
+            // And the rest is the cylinder.
+            // This is exactly what we want!
+            
+            // So the D-shape is

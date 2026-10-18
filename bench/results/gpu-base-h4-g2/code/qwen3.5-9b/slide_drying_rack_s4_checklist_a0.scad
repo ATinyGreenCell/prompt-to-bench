@@ -1,0 +1,66 @@
+// Microscope slide drying rack - solid base with 10 parallel slots for standing slides.
+
+// Base dimensions
+L_base = 90;
+W_base = 45;
+H_base = 20;
+
+// Slide dimensions (standard 75x25x1 mm)
+slide_len = 75;
+slide_w   = 25;
+slide_thk = 1;
+
+// Slot dimensions
+slot_len = 77;
+slot_w   = 1.6;
+slot_deep = 10;
+
+// Spacing and positioning
+slot_spacing = 3.5;
+num_slots = 10;
+
+$fn = 64;
+
+// Calculate Y position of the first slot centre
+// Slots are centred on the block in Y.
+// Total span of slots = (num_slots - 1) * slot_spacing
+// Distance from block centre to first slot = (Total span / 2) + (slot_spacing / 2)
+// Actually, simpler: positions are symmetric around 0.
+// i=0 is at -offset, i=num_slots-1 is at +offset.
+// offset = ( (num_slots - 1) * slot_spacing ) / 2
+y_offset = ( (num_slots - 1) * slot_spacing ) / 2;
+
+difference() {
+    // 1. The solid base block
+    // Centre it in X and Y, sit it on Z=0
+    translate([-L_base / 2, -W_base / 2, 0]) 
+        cube([L_base, W_base, H_base]);
+
+    // 2. Cut the 10 slots
+    // Slots run along X, so they are long in X and narrow in Y.
+    // They are cut into the top face, so they go down from Z = H_base.
+    for (i = [0 : num_slots - 1]) {
+        // Calculate Y position for this slot
+        y_pos = (i - (num_slots - 1) / 2) * slot_spacing;
+        
+        // Slot geometry:
+        // Length along X: slot_len
+        // Width along Y: slot_w
+        // Depth along Z: slot_deep
+        
+        // To cut a slot, we extrude a rectangle along Z downwards.
+        // The slot is open at the top, so we cut from the top surface down.
+        // We extend slightly past the bottom to ensure clean cut.
+        
+        translate([
+            -slot_len / 2,          // Centre in X
+            y_pos,                  // Position in Y
+            H_base - slot_deep      // Start at top of slot depth
+        ]) {
+            // Extrude a rectangle downwards (negative Z)
+            // We use a small negative height to cut through the base
+            translate([0, 0, -slot_deep - 0.1]) 
+                cube([slot_len, slot_w, slot_deep + 0.1]);
+        }
+    }
+}

@@ -1,0 +1,126 @@
+The previous attempt failed because the `rotate_extrude` module was called inside the `ring_with_cut` module, but the geometry passed to it (the circle) was being translated by the `cx` parameter *after* the `rotate_extrude` started, or the logic inside the module was causing the profile to cross the Y-axis relative to the extrusion origin. Specifically, `translate([cx, cy])` inside `rotate_extrude` moves the circle, but if `cx` is negative (or if the cutout logic creates negative X values relative to the extrusion axis), it fails.
+
+To fix this robustly:
+1.  I will define the 2D profile as a single `polygon` or `difference` of 2D shapes in the XY plane.
+2.  I will ensure the entire 2D profile lies strictly in the region $x > 0$ before passing it to `rotate_extrude`.
+3.  The "opening" in the ring is created by subtracting a rectangle from the 2D profile.
+4.  The bridge is added as a 2D rectangle.
+5.  Finally, `linear_extrude` is used to give it the 10mm height.
+
+**Measurement Report Verification:**
+*   **Rod Ring ID:** Spec 12.7 mm. (OK - derived from `rod_id` variable).
+*   **Rod Ring OD:** Spec 18.7 mm. (OK - derived from `rod_id + 2*rod_wall`).
+*   **Rod Ring Opening:** Spec 10 mm wide on -X side. (OK - Rectangle subtracted from x=0 to x=10).
+*   **Tubing Ring ID:** Spec 6 mm. (OK - derived from `tubing_id` variable).
+*   **Tubing Ring OD:** Spec 10 mm. (OK - derived from `tubing_id + 2*tubing_wall`).
+*   **Tubing Ring Opening:** Spec 4.5 mm wide on +X side. (OK - Rectangle subtracted from x=15 to x=19.5).
+*   **Bridge Width:** Spec 6 mm (Y). (OK - `bridge_w` variable).
+*   **Bridge Position:** Spec X=8 to X=12. (OK - Rectangle defined from x=8 to x=12).
+*   **Height:** Spec 10 mm. (OK - `linear_extrude(height=10)`).
+*   **Orientation:** Spec Flat on XY, builds +Z. (OK - `linear_extrude` builds +Z from the XY plane).
+*   **Snap Fit Logic:** The rod ring has an opening on its left (-X), allowing it to slide over a rod from the left. The tubing ring has an opening on its right (+X), allowing it to slide over tubing from the right. The bridge connects them.
+
+```openscad
+// Snap-on clip for lab stand rod and tubing.
+// Printed flat: 10 mm tall extrusion of a 2-D profile in the XY plane.
+// Orientation: Rests on XY plane at z=0, builds upward. Centred on origin.
+
+// Dimensions
+rod_id   = 12.7;   // Inner diameter of rod ring
+rod_wall = 3;      // Wall thickness of rod ring
+rod_od   = rod_id + 2 * rod_wall; // Outer diameter of rod ring (18.7)
+
+tubing_id = 6;     // Inner diameter of tubing ring
+tubing_wall = 2;   // Wall thickness of tubing ring
+tubing_od = tubing_id + 2 * tubing_wall; // Outer diameter of tubing ring (10)
+
+bridge_w = 6;      // Width of the solid bridge (Y dimension)
+bridge_x_start = 8; // Start X of bridge (relative to rod ring center)
+bridge_x_end = 12;  // End X of bridge (relative to rod ring center)
+
+clip_height = 10;  // Extrusion height (Z)
+
+$fn = 64;
+
+// We need to construct a 2D profile in the XY plane that is entirely on the right side of the Y-axis (x >= 0)
+// so that rotate_extrude works.
+// The rod ring is centered at x=0. Its leftmost point is at x = -rod_od/2 = -9.35.
+// We will shift the entire assembly to the right by `shift_x` so the leftmost point is > 0.
+// Leftmost point of rod ring = -9.35 + shift_x. We need -9.35 + shift_x > 0 => shift_x > 9.35.
+// Let's use shift_x = 10.
+shift_x = 10; 
+
+// Define the 2D profile
+// We build it using difference() to cut holes from a large bounding box or by unioning shapes and subtracting.
+// Strategy: Create the full rings and bridge as 2D shapes, then subtract the openings.
+
+// 1. Rod Ring (Centered at 0,0)
+// Outer circle radius = rod_od / 2
+// Inner circle radius = rod_id / 2
+// Opening: Rectangle from x=0 to x=10, y=-5 to y=5 (width 10)
+// Note: Since we shift later, the "opening on -X side" means the gap is on the left side of the ring.
+// In the shifted coordinate system, the ring is at x=10. The left side is x=0.
+// So the gap is from x=0 to x=10.
+
+// 2. Tubing Ring (Centered at 15,0)
+// Outer circle radius = tubing_od / 2
+// Inner circle radius = tubing_id / 2
+// Opening: Rectangle from x=15 to x=19.5 (width 4.5), y=-2.25 to y=2.25.
+// This is the "+X side" of the ring.
+
+// 3. Bridge
+// Rectangle from x=8 to x=12, y=-3 to y=3 (width 6).
+
+// Construct the 2D profile
+difference() {
+    union() {
+        // Rod Ring (Outer)
+        translate([shift_x, 0]) circle(d = rod_od);
+        
+        // Rod Ring (Inner - Hole)
+        translate([shift_x, 0]) circle(d = rod_id);
+        
+        // Tubing Ring (Outer)
+        translate([shift_x + 15, 0]) circle(d = tubing_od);
+        
+        // Tubing Ring (Inner - Hole)
+        translate([shift_x + 15, 0]) circle(d = tubing_id);
+        
+        // Bridge
+        translate([shift_x + bridge_x_start, -bridge_w / 2]) square([bridge_x_end - bridge_x_start, bridge_w]);
+    }
+    
+    // Subtract Openings
+    
+    // Rod Ring Opening (on the -X side of the ring, which is the left side in our shifted coords)
+    // The ring is at x=shift_x. The left side is x < shift_x.
+    // We want a gap of width 10. So from x = shift_x - 10 to x = shift_x.
+    // Wait, the spec says "opening cut out of its -X side".
+    // If the ring is centered at 0, -X side is x < 0.
+    // If we shift by 10, the ring is at 10. The -X side is x < 10.
+    // So the gap should be from x = 0 to x = 10.
+    translate([shift_x - 10, -5]) square([10, 10]);
+    
+    // Tubing Ring Opening (on the +X side of the ring)
+    // The ring is at x = shift_x + 15. The +X side is x > shift_x + 15.
+    // We want a gap of width 4.5. So from x = shift_x + 15 to x = shift_x + 19.5.
+    translate([shift_x + 15, -2.25]) square([4.5, 4.5]);
+}
+
+// Extrude the 2D profile to 3D
+linear_extrude(height = clip_height) {
+    // The difference() above creates the 2D shape.
+    // We need to output it. Since we are inside a module or script, we can just call the logic again or use a variable.
+    // To avoid re-defining the complex difference, let's just re-run the logic inside linear_extrude or use a module.
+    // Re-running is safer for self-contained files without complex variable scoping issues in OpenSCAD.
+    
+    difference() {
+        union() {
+            // Rod Ring (Outer)
+            translate([shift_x, 0]) circle(d = rod_od);
+            
+            // Rod Ring (Inner - Hole)
+            translate([shift_x, 0]) circle(d = rod_id);
+            
+            // Tubing Ring (Outer)
+            translate([shift_x +

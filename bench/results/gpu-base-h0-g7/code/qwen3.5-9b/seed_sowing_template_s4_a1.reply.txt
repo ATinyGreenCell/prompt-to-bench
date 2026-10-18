@@ -1,0 +1,86 @@
+The measurement report reveals two critical issues compared to your specifications:
+
+1.  **Grid Size**: The report shows a "6 x 6 grid" with 36 holes, but the specification requires a "7 x 7 grid" with 49 holes. The loop range in the original code was incorrect (`[-offset : step : offset]` creates 6 steps for a 9mm spacing over a 54mm span, but the logic for the count was flawed).
+2.  **Grid Centering**: The report shows the grid center at `(-3.00, -3.00)`, but the specification requires the grid to be **centred on the disc**. The previous calculation for the offset was incorrect.
+3.  **Z-Position**: The report shows the part resting at `z = -1.00`. The specification requires the part to lie on the bed at `z = 0`. The original code used `cylinder(..., center=true)`, which places the center of the cylinder at Z=0, resulting in the bottom being at Z=-1. The cylinder must be translated up by its thickness.
+
+Here is the corrected OpenSCAD file:
+
+```openscad
+$fn = 128;
+
+// --- Dimensions ---
+// Disc dimensions
+$DISC_DIAMETER = 85;
+$DISC_THICKNESS = 2;
+
+// Grid dimensions
+$GRID_SIZE = 7;
+$HOLE_COUNT = 7;
+$HOLE_DIAMETER = 3;
+$HOLE_SPACING = 9;
+
+// Notch dimensions (on +Y side)
+$NOTCH_WIDTH = 10;   // X dimension
+$NOTCH_DEPTH = 4;    // Y dimension (in from rim)
+
+// --- Calculations ---
+// Calculate disc radius
+$R = $DISC_DIAMETER / 2;
+
+// Calculate grid offset to center the 7x7 grid
+// Total span = (count - 1) * spacing
+$GRID_SPAN = ($HOLE_COUNT - 1) * $HOLE_SPACING;
+// To center the grid, the first hole center should be at: -(TotalSpan / 2) + (HoleDiameter / 2)
+// Or simply generate indices from -(Count-1)/2 to +(Count-1)/2
+$GRID_START = -($GRID_SPAN / 2) + ($HOLE_DIAMETER / 2);
+$GRID_STEP = $HOLE_SPACING;
+
+// Calculate notch position
+// Notch is centred on Y axis (X=0).
+// Y position is (Radius - Depth).
+$NOTCH_Y_POS = $R - $NOTCH_DEPTH;
+
+// --- Main Body ---
+difference() {
+    // Create the main disc
+    // Translate up by thickness so the bottom is at Z=0
+    translate([0, 0, $DISC_THICKNESS])
+    cylinder(
+        h = $DISC_THICKNESS,
+        d = $DISC_DIAMETER,
+        center = true
+    );
+
+    // --- Cut Holes ---
+    // Loop for 7x7 grid
+    for (i = [0 : $HOLE_COUNT - 1]) {
+        for (j = [0 : $HOLE_COUNT - 1]) {
+            // Calculate position based on index to ensure centering
+            x = $GRID_START + (i * $GRID_STEP);
+            y = $GRID_START + (j * $GRID_STEP);
+            
+            translate([x, y, 0])
+            cylinder(
+                h = $DISC_THICKNESS + 0.1, // Extend slightly past bottom for clean cut
+                d = $HOLE_DIAMETER,
+                center = true
+            );
+        }
+    }
+
+    // --- Cut Notch ---
+    // The notch is a rectangular cutout on the side face.
+    // We define a box that intersects the side of the cylinder.
+    // The notch is 10mm wide (X) and 4mm deep (Y).
+    // It is located at Y = $NOTCH_Y_POS.
+    // The cut needs to go through the thickness of the disc.
+    
+    translate([0, $NOTCH_Y_POS, 0])
+    cube([
+        $NOTCH_WIDTH,      // Width in X
+        $NOTCH_DEPTH,      // Depth in Y
+        $DISC_THICKNESS + 0.1 // Thickness in Z (extend slightly)
+    ]);
+}
+```

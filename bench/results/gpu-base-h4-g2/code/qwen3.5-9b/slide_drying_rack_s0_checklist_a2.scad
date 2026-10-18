@@ -1,0 +1,56 @@
+// Microscope slide drying rack - solid base with 10 parallel slots for standing slides.
+// Orientation: Rests on XY plane at Z=0, builds upward. Centred on origin.
+
+// Base dimensions
+L_base = 90;
+W_base = 45;
+H_base = 20;
+
+// Slide dimensions (75 x 25 x 1 mm)
+slide_len = 75;
+slide_w   = 25;
+slide_thk = 1;
+
+// Slot dimensions
+slot_len = 77;      // Must be slightly shorter than slide_len to fit
+slot_w   = 1.6;     // Width in Y
+slot_deep = 10;     // Depth in Z
+
+// Slot spacing
+slot_spacing = 3.5; // Centre-to-centre in Y
+
+// Number of slots
+n_slots = 10;
+
+$fn = 64;
+
+difference() {
+    // Create the solid base block
+    translate([0, 0, 0]) cube([L_base, W_base, H_base]);
+    
+    // Cut the slots
+    for (i = [0 : n_slots - 1]) {
+        // Calculate Y position for each slot
+        // Total span = (n_slots - 1) * slot_spacing
+        // Half span = Total span / 2
+        // Y_pos = -Half span + i * slot_spacing
+        y_pos = -((n_slots - 1) * slot_spacing / 2) + i * slot_spacing;
+        
+        // Define the slot cutter shape
+        // The slot runs along X, is narrow in Y, and deep in Z.
+        // We use a cube for the cutter.
+        // Dimensions: [slot_len, slot_w, slot_deep]
+        // Position: X=0, Y=y_pos, Z=0
+        
+        // Extend slightly past faces to ensure clean cuts (Rule 5)
+        // The slot is 77mm long, block is 90mm. No coplanar faces in X.
+        // The slot is 1.6mm wide, block is 45mm. No coplanar faces in Y.
+        // The slot is 10mm deep, block is 20mm. No coplanar faces in Z.
+        // However, to be safe and follow the rule strictly for "cutting shapes",
+        // we extend the Z dimension slightly past the bottom face of the block.
+        // The block top is at Z=20. The slot goes to Z=10.
+        // We extend the cutter to Z=10.01 to ensure it cuts through.
+        
+        translate([0, y_pos, 0]) cube([slot_len, slot_w, slot_deep + 0.01]);
+    }
+}

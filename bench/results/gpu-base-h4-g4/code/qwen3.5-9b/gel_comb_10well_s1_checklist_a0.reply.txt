@@ -1,0 +1,74 @@
+```openscad
+// 10-well agarose gel comb - flat plate with spine and hanging teeth.
+// Orientation: Lying flat on XY plane (Z=0), spine along X, teeth hanging in -Y.
+
+// Dimensions
+spine_len = 70;   // Length of the spine (X)
+spine_w   = 12;   // Width of the spine (Y)
+plate_thk = 1.5;  // Thickness of the plate (Z)
+
+tooth_w   = 5.0;  // Width of each tooth (X)
+tooth_l   = 12;   // Length of each tooth (Y)
+gap       = 1.5;  // Gap between teeth (X)
+n_teeth   = 10;   // Number of teeth
+
+// Calculated positions
+// Total width of teeth row = n_teeth * tooth_w + (n_teeth - 1) * gap
+tooth_row_w = n_teeth * tooth_w + (n_teeth - 1) * gap;
+
+// Spine is 12mm wide, tooth row is wider. We need to center the tooth row on the spine.
+// The spine extends from -spine_w/2 to +spine_w/2 in Y.
+// The tooth row extends from -(tooth_row_w/2) to +(tooth_row_w/2) in Y.
+// Offset to center the tooth row on the spine:
+y_offset = (spine_w - tooth_row_w) / 2;
+
+// X positions for the teeth, centered on the spine (origin)
+// Positions: -(total_width/2) + i * (tooth_w + gap)
+x_step = tooth_w + gap;
+x_start = -tooth_row_w / 2;
+
+$fn = 64;
+
+// Main body: Spine + Plate
+// We build the spine as a block, then subtract the gaps to create the teeth wells.
+// Alternatively, build the full block and subtract the tooth volumes.
+
+difference() {
+    // 1. The main block (Spine + Plate)
+    // Spine is at Z=0 to Z=plate_thk.
+    // Spine X: -spine_len/2 to +spine_len/2
+    // Spine Y: -spine_w/2 to +spine_w/2
+    translate([-spine_len / 2, -spine_w / 2, 0]) 
+        cube([spine_len, spine_w, plate_thk]);
+
+    // 2. The teeth (holes to be cut)
+    // Each tooth hangs down in -Y direction from the spine.
+    // Tooth geometry:
+    // X: tooth_w wide
+    // Y: tooth_l long (hanging from spine edge)
+    // Z: plate_thk deep
+    
+    // We cut the teeth out of the main block.
+    // The spine edge is at Y = -spine_w/2.
+    // The teeth hang from Y = -spine_w/2 down to Y = -spine_w/2 - tooth_l.
+    
+    for (i = [0 : n_teeth - 1]) {
+        // Calculate X position for this tooth
+        x_pos = x_start + i * x_step;
+        
+        // Calculate Y position for this tooth
+        // Starts at the bottom edge of the spine (-spine_w/2)
+        // Extends in -Y direction by tooth_l
+        y_start = -spine_w / 2;
+        y_end = y_start - tooth_l;
+        
+        // Define the tooth volume to cut
+        // X range: [x_pos - tooth_w/2, x_pos + tooth_w/2]
+        // Y range: [y_end, y_start] (since we are cutting, order doesn't matter for bounds, but logic is clear)
+        // Z range: [0, plate_thk]
+        
+        translate([x_pos - tooth_w / 2, y_end, 0])
+            cube([tooth_w, tooth_l, plate_thk]);
+    }
+}
+```

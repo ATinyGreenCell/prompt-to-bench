@@ -1,0 +1,60 @@
+```openscad
+// Rack for six 50 mL conical tubes.
+// Print orientation: Flat plate on bed (z=0), walls rising to z=70.
+// After printing, flip over so walls are on the bed and tubes hang down.
+
+// Plate dimensions
+L     = 130; // Length (X)
+W     = 90;  // Width (Y)
+t     = 4;   // Plate thickness (Z)
+
+// Tube hole dimensions
+n_rows = 2; // Rows along Y
+n_cols = 3; // Columns along X
+hole_d = 30.5; // Hole diameter
+pitch_x = 40; // Centre-to-centre spacing X
+pitch_y = 40; // Centre-to-centre spacing Y
+
+// Wall dimensions
+wall_h = 70; // Wall height from plate top
+wall_t = 4;  // Wall thickness (Y)
+
+// Geometry parameters
+$fn = 64;
+
+// Calculate positions for holes centred on the plate
+// Rows along Y: indices 0, 1. Centres at -pitch_y/2, +pitch_y/2
+// Cols along X: indices 0, 1, 2. Centres at -pitch_x, 0, +pitch_x
+hole_positions = [
+    [0, -pitch_y / 2],
+    [1, -pitch_y / 2],
+    [2, -pitch_y / 2],
+    [0, pitch_y / 2],
+    [1, pitch_y / 2],
+    [2, pitch_y / 2]
+];
+
+// Main body: Plate + Walls
+difference() {
+    union() {
+        // 1. The flat plate
+        translate([-L / 2, -W / 2, 0]) 
+            cube([L, W, t]);
+
+        // 2. Two solid walls along the long edges (X axis)
+        // Left wall (at Y = -W/2)
+        translate([-L / 2, -W / 2, 0]) 
+            cube([L, wall_t, wall_h]);
+        
+        // Right wall (at Y = +W/2)
+        translate([-L / 2, W / 2 - wall_t, 0]) 
+            cube([L, wall_t, wall_h]);
+    }
+
+    // Cut out the six tube holes
+    for (p = hole_positions) {
+        translate(p) 
+            cylinder(h = t + 1, d = hole_d); // Extend slightly past plate thickness
+    }
+}
+```

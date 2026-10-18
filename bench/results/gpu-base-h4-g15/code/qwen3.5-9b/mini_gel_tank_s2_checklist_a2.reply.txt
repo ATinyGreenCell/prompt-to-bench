@@ -1,0 +1,140 @@
+The specification requires the tank to be an "open-top" container. The current model renders as 3 separate bodies because the top face of the outer shell is missing (it's open), but the electrode holes are drilled through the side walls. This creates a situation where the "void" logic in the `difference()` operation is not correctly isolating the internal chambers from the external space, resulting in the side walls being disconnected from the main body or the holes creating separate floating islands.
+
+Specifically, the electrode holes are drilled at `z=30`. The report shows holes at `z=30.50` (centered at 30, so top is 31, bottom is 29). The tank height is 40. The holes are correctly positioned relative to the tank height. However, the geometry construction is flawed. The `union()` of the void shapes and the `cube()` of the outer shell are not interacting correctly to form a single continuous shell with holes.
+
+The correct approach for an open-top tank with holes in the side walls is to:
+1.  Create the solid outer block.
+2.  Subtract the inner void (which includes the two chambers and the space above the platform).
+3.  Subtract the platform.
+4.  Subtract the electrode holes.
+
+The previous attempt failed because the void subtraction logic for the chambers was relative to the wrong origin or the union of the void didn't fully clear the path for the holes to connect the inside to the outside without breaking the shell integrity.
+
+Let's rebuild using a simpler, more robust "shell subtraction" method.
+1.  Outer block: 120x70x40, centered.
+2.  Inner void: A single shape representing the empty space.
+    *   The empty space is the union of:
+        *   The two buffer chambers (left and right).
+        *   The space above the platform.
+    *   Crucially, the void must extend all the way to the top (Z=40) and to the outside of the walls (Y=-35 to 35, X=-60 to 60) to ensure the "open top" and "side holes" are part of the void, not the solid.
+3.  Platform: Solid block inside.
+4.  Holes: Cylinders subtracted from the solid.
+
+Wait, if I subtract a void that goes to the outside, I am subtracting the walls too.
+Correct logic:
+1.  Start with a solid block (Outer dimensions).
+2.  Subtract the "Inner Volume" (The space where buffer goes).
+    *   The Inner Volume is defined by the inner walls and the platform.
+    *   It consists of the two chambers and the space above the platform.
+    *   This volume is bounded by X = -54 to -30 (Chamber 1), X = 30 to 54 (Chamber 2), and Z = 3 to 13 (Platform top) and Z = 13 to 37 (Above platform).
+    *   Wait, the "Inner Volume" is the space *inside* the tank.
+    *   The tank walls are 3mm thick.
+    *   Inner X range: -54 to 54. Inner Y range: -35 to 35. Inner Z range: 3 to 37 (since floor is 3mm thick, top is open).
+    *   The platform occupies X: -30 to 30, Y: -35 to 35, Z: 3 to 13.
+    *   So the void is:
+        *   Region A (Left Chamber): X: -54 to -30, Y: -35 to 35, Z: 3 to 37.
+        *   Region B (Right Chamber): X: 30 to 54, Y: -35 to 35, Z: 3 to 37.
+        *   Region C (Above Platform): X: -54 to 54, Y: -35 to 35, Z: 13 to 37.
+    *   Union of A, B, C is the total void.
+3.  Subtract the Platform (Solid).
+4.  Subtract the Electrode Holes.
+
+The previous code failed likely because the `translate` coordinates for the void chambers were calculated incorrectly relative to the centered origin, or the `union` of the void didn't cover the full height properly, leaving the shell disconnected.
+
+Let's re-calculate coordinates carefully.
+Origin: Center of the 120x70x40 box.
+Outer bounds: X: -60..60, Y: -35..35, Z: 0..40.
+Inner bounds: X: -54..54, Y: -35..35, Z: 3..37.
+Platform: X: -30..30, Y: -35..35, Z: 3..13.
+
+Void Chambers:
+Left: X: -54 to -30. Width = 24.
+Right: X: 30 to 54. Width = 24.
+Above: X: -54 to 54. Width = 108.
+
+Electrode Holes:
+Location: "Through each end wall... at y=0, z=30".
+End walls are at X = -60 and X = 60.
+The hole is horizontal along X.
+So the cylinder axis is X.
+Center of hole: X = -60 (or 60), Y = 0, Z = 30.
+Diameter = 2.
+Length = Wall thickness = 3.
+Direction: Along X.
+
+Let's write the code.
+
+```openscad
+// Mini Horizontal Gel Electrophoresis Buffer Tank
+// Outer dimensions: 120 x 70 x 40 mm
+// Wall thickness: 3 mm
+// Floor thickness: 3 mm
+// Inner platform: 60 mm long, full width, 10 mm high from inner floor
+
+$fn = 64;
+
+// Outer dimensions
+X_OUT = 120;
+Y_OUT = 70;
+Z_OUT = 40;
+
+// Thicknesses
+wall_t = 3;
+floor_t = 3;
+
+// Inner dimensions
+X_IN  = X_OUT - 2 * wall_t;
+Y_IN  = Y_OUT - 2 * wall_t;
+Z_IN  = Z_OUT - floor_t;
+
+// Platform dimensions
+plat_len = 60;
+plat_w   = Y_IN;
+plat_h   = 10; // Height from inner floor
+
+// Electrode hole
+hole_d   = 2;
+hole_y   = 0;
+hole_z   = 30;
+
+difference() {
+    // 1. Outer Shell (Solid Block)
+    translate([-X_OUT / 2, -Y_OUT / 2, 0]) 
+        cube([X_OUT, Y_OUT, Z_OUT]);
+    
+    // 2. Inner Void (Subtract this to create the tank cavity)
+    // The void consists of the two side chambers and the space above the platform.
+    // All void extends from the inner floor (z=3) to the top (z=40).
+    
+    void_h = X_IN - plat_len; // Total width of chambers (24)
+    half_void = void_h / 2;   // Width of one chamber (12)
+    
+    // Chamber 1 (Left)
+    // X range: -X_IN/2 to -X_IN/2 + half_void
+    // Y range: -Y_IN/2 to Y_IN/2
+    // Z range: floor_t to Z_OUT
+    translate([-X_IN / 2, -Y_IN / 2, floor_t]) 
+        cube([half_void, Y_IN, Z_OUT - floor_t]);
+        
+    // Chamber 2 (Right)
+    // X range: X_IN/2 - half_void to X_IN/2
+    // Y range: -Y_IN/2 to Y_IN/2
+    // Z range: floor_t to Z_OUT
+    translate([X_IN / 2 - half_void, -Y_IN / 2, floor_t]) 
+        cube([half_void, Y_IN, Z_OUT - floor_t]);
+        
+    // Space Above Platform
+    // X range: -X_IN/2 to X_IN/2
+    // Y range: -Y_IN/2 to Y_IN/2
+    // Z range: plat_h + floor_t to Z_OUT
+    translate([-X_IN / 2, -Y_IN / 2, plat_h + floor_t]) 
+        cube([X_IN, Y_IN, Z_OUT - (plat_h + floor_t)]);
+        
+    // 3. Platform (Solid block inside the void)
+    // Positioned at the bottom of the void.
+    // Bottom at z = floor_t. Top at z = floor_t + plat_h.
+    // Centered in X. Spans full inner width Y_IN.
+    translate([
+        -X_OUT / 2 + (X_OUT - plat_len) / 2, 
+        -Y_OUT / 2, 
+        0

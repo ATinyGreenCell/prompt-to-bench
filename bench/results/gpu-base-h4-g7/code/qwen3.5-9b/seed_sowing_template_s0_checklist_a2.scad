@@ -1,0 +1,93 @@
+// Sowing template for 90 mm Petri dish
+// Flat disc with grid of holes and orientation notch.
+
+$fn = 64;
+
+// Dimensions
+DISH_DIA = 90;
+DISC_DIA = 85;
+THICKNESS = 2;
+GRID_SIZE = 7;
+HOLE_DIA = 3;
+HOLE_SPACING = 9;
+NOTCH_WIDTH = 10;
+NOTCH_DEPTH = 4;
+
+// Calculate grid positions
+// Grid is 7x7, centred on origin.
+// Spacing is 9mm.
+// Offset from centre to first hole = (GRID_SIZE - 1) / 2 * spacing
+grid_offset = (GRID_SIZE - 1) / 2 * HOLE_SPACING;
+
+difference() {
+    // Main disc body
+    // Centre on X/Y, sitting on Z=0
+    translate([0, 0, 0]) 
+        cylinder(h = THICKNESS, d = DISC_DIA);
+
+    // Grid of holes
+    for (i = [0 : GRID_SIZE - 1]) {
+        for (j = [0 : GRID_SIZE - 1]) {
+            // Calculate position relative to disc centre
+            x = (i - (GRID_SIZE - 1) / 2) * HOLE_SPACING;
+            y = (j - (GRID_SIZE - 1) / 2) * HOLE_SPACING;
+            
+            // Cut hole extending slightly past thickness
+            translate([x, y, -0.01]) 
+                cylinder(h = THICKNESS + 0.02, d = HOLE_DIA);
+        }
+    }
+
+    // Orientation notch on the +Y side
+    // Notch is 10mm wide (X) and 4mm deep (Y)
+    // Centred on Y axis, so it spans from -5 to +5 in X
+    // Depth is measured in from the rim.
+    // Rim Y position = DISC_DIA / 2 = 42.5
+    // Notch starts at Y = 42.5 - NOTCH_DEPTH = 38.5
+    
+    // Create the notch shape as a cylinder to cut out
+    // The notch is a rectangular prism cut from the top surface
+    // We model it as a cylinder lying on its side to cut the volume
+    
+    // To get 10mm width in X and 4mm depth in Y:
+    // The cylinder must lie along the X-axis (length = 10mm).
+    // The cylinder diameter must be 4mm (depth in Y).
+    // The cylinder height (Z) must be sufficient to cut through the disc (2mm).
+    
+    // Cylinder parameters:
+    // h = NOTCH_WIDTH (10mm) -> along X after rotation
+    // d = NOTCH_DEPTH (4mm) -> along Y after rotation
+    // We need to rotate the cylinder 90 degrees around the Y axis to lie on X.
+    // Original cylinder points Z. Rotate Y 90 -> Points X.
+    // The diameter is in XY plane originally. After rotate Y 90, diameter is in XZ plane.
+    // Wait, if cylinder points X, its cross section is in YZ.
+    // So diameter is in Y and Z.
+    // We want diameter to be in Y (4mm depth) and Z (thickness).
+    // So d = 4mm is correct for the Y dimension.
+    // The Z dimension will be the other half of the diameter? No.
+    // A cylinder has circular cross section. If it lies on X, the cross section in YZ is a circle of diameter d.
+    // This means it cuts d/2 in Y and d/2 in Z.
+    // We want it to cut 4mm in Y and 2mm in Z (through the disc).
+    // Since the disc is only 2mm thick, a cylinder with d=4mm will cut 2mm in Y and 2mm in Z.
+    // This is not enough depth in Y (we need 4mm).
+    
+    // Alternative approach: Use a box (cube) for the notch.
+    // Cube([width, depth, thickness])
+    // Width = 10 (X)
+    // Depth = 4 (Y)
+    // Thickness = 2 (Z)
+    // Position: X=0, Y=40.5 (center of 38.5 to 42.5), Z=0 to 2.
+    
+    // Let's use a cube for the notch to get exact rectangular dimensions.
+    // The notch is a cutout, so we subtract a cube.
+    
+    // Position Y:
+    // We want the notch to go from Y = 42.5 (rim) to Y = 38.5.
+    // Center Y = (42.5 + 38.5) / 2 = 40.5.
+    // Position Z:
+    // We want to cut through the whole thickness (0 to 2).
+    // Center Z = 1.
+    
+    translate([0, 40.5, 1])
+        cube([NOTCH_WIDTH, NOTCH_DEPTH, THICKNESS]);
+}

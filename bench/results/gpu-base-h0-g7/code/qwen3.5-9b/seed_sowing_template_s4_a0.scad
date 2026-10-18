@@ -1,0 +1,71 @@
+$fn = 128;
+
+// --- Dimensions ---
+// Petri dish inner diameter reference
+$DISH_DIAMETER = 90;
+
+// Disc dimensions
+$DISC_DIAMETER = 85;
+$DISC_THICKNESS = 2;
+
+// Grid dimensions
+$GRID_SIZE = 7;
+$HOLE_COUNT = 7;
+$HOLE_DIAMETER = 3;
+$HOLE_SPACING = 9;
+
+// Notch dimensions (on +Y side)
+$NOTCH_WIDTH = 10;   // X dimension
+$NOTCH_DEPTH = 4;    // Y dimension (in from rim)
+
+// --- Calculations ---
+// Calculate disc radius
+$R = $DISC_DIAMETER / 2;
+
+// Calculate grid offset to center the 7x7 grid
+// Total span = (count - 1) * spacing
+$GRID_SPAN = ($HOLE_COUNT - 1) * $HOLE_SPACING;
+$GRID_OFFSET = ($GRID_SPAN / 2) - ($HOLE_DIAMETER / 2);
+
+// Calculate notch position
+// Notch is centred on Y axis, so X center is 0.
+// Y position is (Radius - Depth).
+$NOTCH_Y_POS = $R - $NOTCH_DEPTH;
+
+// --- Main Body ---
+difference() {
+    // Create the main disc
+    translate([0, 0, 0])
+    cylinder(
+        h = $DISC_THICKNESS,
+        d = $DISC_DIAMETER,
+        center = true
+    );
+
+    // --- Cut Holes ---
+    // Loop for 7x7 grid
+    for (x = [-$GRID_OFFSET : $HOLE_SPACING : $GRID_OFFSET]) {
+        for (y = [-$GRID_OFFSET : $HOLE_SPACING : $GRID_OFFSET]) {
+            translate([x, y, 0])
+            cylinder(
+                h = $DISC_THICKNESS + 0.1, // Extend slightly past bottom for clean cut
+                d = $HOLE_DIAMETER,
+                center = true
+            );
+        }
+    }
+
+    // --- Cut Notch ---
+    // The notch is a rectangular cutout on the side face.
+    // We define a box that intersects the side of the cylinder.
+    // The notch is 10mm wide (X) and 4mm deep (Y).
+    // It is located at Y = $NOTCH_Y_POS.
+    // The cut needs to go through the thickness of the disc.
+    
+    translate([0, $NOTCH_Y_POS, 0])
+    cube([
+        $NOTCH_WIDTH,      // Width in X
+        $NOTCH_DEPTH,      // Depth in Y
+        $DISC_THICKNESS + 0.1 // Thickness in Z (extend slightly)
+    ]);
+}

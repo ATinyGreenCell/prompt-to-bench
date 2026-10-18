@@ -1,0 +1,180 @@
+$fn = 128
+
+// --- Base Plate Dimensions ---
+// X range: -25 to 25 (Width = 50)
+// Y range: 0 to 45 (Depth = 45)
+// Z height: 0 to 5 (Thickness = 5)
+BASE_X_MIN = -25;
+BASE_X_MAX = 25;
+BASE_Y_MIN = 0;
+BASE_Y_MAX = 45;
+BASE_Z_THICK = 5;
+
+// --- Base Plate Holes (M4) ---
+// Position: x = -17, y = 30 and x = 17, y = 30
+// Diameter: 4.5 mm
+BASE_HOLE_X_1 = -17;
+BASE_HOLE_Y_1 = 30;
+BASE_HOLE_X_2 = 17;
+BASE_HOLE_Y_2 = 30;
+BASE_HOLE_DIA = 4.5;
+
+// --- Vertical Motor Plate Dimensions ---
+// X range: -25 to 25 (Width = 50)
+// Y range: 0 to 5 (Depth = 5)
+// Z range: 0 to 50 (Height = 50)
+// Stands on the back edge of the base (y=0 to y=5)
+MOTOR_X_MIN = -25;
+MOTOR_X_MAX = 25;
+MOTOR_Y_THICK = 5;
+MOTOR_Z_HEIGHT = 50;
+
+// --- Motor Plate Boss Hole ---
+// Diameter: 23 mm
+// Centre: x = 0, z = 28
+// Extends through the plate (along Y)
+BOSS_HOLE_DIA = 23;
+BOSS_HOLE_X = 0;
+BOSS_HOLE_Z = 28;
+
+// --- Motor Plate Screw Holes (M3) ---
+// Diameter: 3.4 mm
+// Pattern: 31 mm square, centred on boss hole
+// 4 holes total
+SCREW_HOLE_DIA = 3.4;
+SCREW_PATTERN_SIZE = 31;
+SCREW_HOLE_COUNT = 4;
+
+// --- Gusset Dimensions ---
+// Thickness: 5 mm (same as base)
+// Location: Left (x=-25 to -20) and Right (x=20 to 25)
+// Shape: Right triangle in YZ plane
+// Legs: 20 mm along +Y, 20 mm along +Z
+// Right-angle corner at y = 5, z = 5
+GUSSET_THICK = 5;
+GUSSET_Y_LEG = 20;
+GUSSET_Z_LEG = 20;
+GUSSET_CORNER_Y = 5;
+GUSSET_CORNER_Z = 5;
+GUSSET_LEFT_X_MIN = -25;
+GUSSET_LEFT_X_MAX = -20;
+GUSSET_RIGHT_X_MIN = 20;
+GUSSET_RIGHT_X_MAX = 25;
+
+// --- Construction ---
+
+difference() {
+    union() {
+        // 1. Base Plate
+        translate([0, 0, 0]) {
+            cube([
+                BASE_X_MAX - BASE_X_MIN,
+                BASE_Y_MAX - BASE_Y_MIN,
+                BASE_Z_THICK
+            ]);
+            
+            // Cut Base Holes
+            for (i = [0, 1]) {
+                translate([
+                    (i == 0) ? BASE_HOLE_X_1 : BASE_HOLE_X_2,
+                    (i == 0) ? BASE_HOLE_Y_1 : BASE_HOLE_Y_2,
+                    0
+                ]) {
+                    cylinder(
+                        h = BASE_Z_THICK + 0.1, // Extend slightly past face
+                        d = BASE_HOLE_DIA,
+                        $fn = 64
+                    );
+                }
+            }
+        }
+
+        // 2. Vertical Motor Plate
+        translate([0, 0, 0]) {
+            cube([
+                MOTOR_X_MAX - MOTOR_X_MIN,
+                MOTOR_Y_THICK,
+                MOTOR_Z_HEIGHT
+            ]);
+
+            // Cut Boss Hole
+            translate([BOSS_HOLE_X, 0, BOSS_HOLE_Z]) {
+                cylinder(
+                    h = MOTOR_Y_THICK + 0.1, // Extend slightly past face
+                    d = BOSS_HOLE_DIA,
+                    $fn = 64
+                );
+            }
+
+            // Cut Screw Holes (31mm square pattern centred on boss)
+            // Pattern size 31mm means distance between hole centers is 31mm
+            // Center is at x=0, z=28.
+            // Offsets: +/- 15.5mm
+            for (i = [-1, 1]) {
+                for (j = [-1, 1]) {
+                    translate([
+                        BOSS_HOLE_X + (i * SCREW_PATTERN_SIZE / 2),
+                        0,
+                        BOSS_HOLE_Z + (j * SCREW_PATTERN_SIZE / 2)
+                    ]) {
+                        cylinder(
+                            h = MOTOR_Y_THICK + 0.1, // Extend slightly past face
+                            d = SCREW_HOLE_DIA,
+                            $fn = 64
+                        );
+                    }
+                }
+            }
+        }
+
+        // 3. Gussets
+        // Loop for Left and Right sides
+        for (side = [-1, 1]) {
+            // Determine X position for this side
+            x_start = (side == -1) ? GUSSET_LEFT_X_MIN : GUSSET_RIGHT_X_MIN;
+            x_end = (side == -1) ? GUSSET_LEFT_X_MAX : GUSSET_RIGHT_X_MAX;
+            
+            // Translate to the start of the gusset block
+            translate([x_start, GUSSET_CORNER_Y, GUSSET_CORNER_Z]) {
+                // Define the triangle face in YZ plane relative to the corner (0,0)
+                // Vertices:
+                // 1. Corner (0,0) -> (y=5, z=5)
+                // 2. End of Y leg (0, 20) -> (y=25, z=5)
+                // 3. Tip (20, 20) -> (y=25, z=25)
+                // 4. End of Z leg (0, 20) -> (y=5, z=25)
+                // Note: The polygon points are (y, z) coordinates relative to the corner.
+                
+                // To extrude a shape in the YZ plane along the X axis using linear_extrude:
+                // We must rotate the shape 90 degrees around the Y axis so it lies flat in the XY plane,
+                // extrude it along Z (which becomes the X axis after rotation), and then rotate back.
+                // However, linear_extrude extrudes along the Z axis of the current coordinate system.
+                // If we define the polygon with points [y, z], OpenSCAD treats the first coordinate as X and second as Y.
+                // So [0, 0] is (0,0), [20, 0] is (20,0) in XY.
+                // We want the shape to be in YZ.
+                // Let's rotate the polygon 90 deg around Y before extruding.
+                
+                rotate([0, 90, 0]) {
+                    // Define the triangle in the local XY plane (which will become YZ after rotation)
+                    // Original Y leg (along global Y) -> Local X leg
+                    // Original Z leg (along global Z) -> Local Y leg
+                    polygon([
+                        [0, 0],          // Corner
+                        [GUSSET_Y_LEG, 0], // End of Y leg (mapped to local X)
+                        [GUSSET_Y_LEG, GUSSET_Z_LEG], // Tip
+                        [0, GUSSET_Z_LEG]  // End of Z leg (mapped to local Y)
+                    ]);
+                    
+                    // Extrude along the local Z axis (which corresponds to global X due to the 90 deg rotation)
+                    linear_extrude(height = GUSSET_THICK, center = true) {
+                        // The shape is now a flat polygon in the XY plane (local).
+                        // We just need to define the same polygon again for the extrusion profile?
+                        // No, linear_extrude takes a 2D profile and extrudes it.
+                        // The profile is the polygon we just defined.
+                        // But we need to be careful about the orientation.
+                        // The polygon defined above is in the XY plane.
+                        // Extruding it along Z creates a prism.
+                        // The rotation [0, 90, 0] was applied to the polygon definition context?
+                        // No, rotate applies to the children.
+                        // So:
+                        // 1. Define polygon in XY plane.
+                        // 2. Rotate 90 deg around Y. Now the polygon is in XZ plane (flat on bed if Z

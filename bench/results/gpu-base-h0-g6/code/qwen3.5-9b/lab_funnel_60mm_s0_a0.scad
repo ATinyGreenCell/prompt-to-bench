@@ -1,0 +1,88 @@
+// Lab Funnel Design
+// Units: millimetres
+// Orientation: Upright, wide opening at top, rests on XY plane at z=0.
+
+// --- Dimensions ---
+// Spout (Tube)
+$spout_outer_diameter = 10;
+$spout_inner_diameter = 6.8; // 10 - 2*1.6
+$spout_length = 20;
+
+// Cone (Funnel)
+$cone_bottom_diameter = 10;  // Matches spout outer diameter
+$cone_top_diameter = 60;     // Rim diameter
+$cone_height = 30;           // From z=20 to z=50
+
+// Wall Thickness
+$wall_thickness = 1.6;
+
+// Resolution for curved surfaces
+$fn = 128;
+
+// --- Helper Functions ---
+// Function to create a hollow cylinder (tube)
+// Arguments: outer_d, inner_d, height, center_z
+module hollow_cylinder(outer_d, inner_d, height, center_z) {
+    translate([0, 0, center_z - height/2]) {
+        difference() {
+            cylinder(h = height, d = outer_d, $fn = $fn);
+            cylinder(h = height, d = inner_d, $fn = $fn);
+        }
+    }
+}
+
+// Function to create a hollow cone
+// Arguments: bottom_d, top_d, height, center_z
+// The cone tapers from bottom_d at center_z - height/2 to top_d at center_z + height/2
+module hollow_cone(bottom_d, top_d, height, center_z) {
+    translate([0, 0, center_z - height/2]) {
+        difference() {
+            // Outer Cone
+            // Using linear_extrude with a triangle profile
+            // The triangle goes from -bottom_d/2 to -top_d/2 over the height
+            // We need to rotate the profile 90 deg around X to stand up
+            rotate([90, 0, 0]) {
+                linear_extrude(height = height, center = true) {
+                    polygon(points = [
+                        [-bottom_d/2, 0],
+                        [-top_d/2, height],
+                        [top_d/2, height],
+                        [bottom_d/2, 0]
+                    ]);
+                }
+            }
+            
+            // Inner Cone (Hole)
+            rotate([90, 0, 0]) {
+                linear_extrude(height = height, center = true) {
+                    polygon(points = [
+                        [-bottom_d/2 + $wall_thickness, 0],
+                        [-top_d/2 + $wall_thickness, height],
+                        [top_d/2 - $wall_thickness, height],
+                        [bottom_d/2 - $wall_thickness, 0]
+                    ]);
+                }
+            }
+        }
+    }
+}
+
+// --- Main Assembly ---
+
+// 1. Build the Spout (Tube)
+// Located from z = 0 to z = 20. Centered at z = 10.
+hollow_cylinder(
+    outer_d = $spout_outer_diameter,
+    inner_d = $spout_inner_diameter,
+    height = $spout_length,
+    center_z = $spout_length / 2
+);
+
+// 2. Build the Cone (Funnel)
+// Located from z = 20 to z = 50. Centered at z = 35.
+hollow_cone(
+    bottom_d = $cone_bottom_diameter,
+    top_d = $cone_top_diameter,
+    height = $cone_height,
+    center_z = $spout_length + ($cone_height / 2)
+);

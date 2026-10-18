@@ -1,0 +1,69 @@
+The generated part is **WRONG** in several critical aspects compared to the specification. The specification requires a specific 2D profile construction where the bridge connects the rings, but the previous code created two separate rings and a separate bridge that did not merge correctly into a single continuous profile before extrusion, leading to internal voids and incorrect geometry.
+
+Here is the measurement report check:
+
+1.  **Rod Ring Inner Diameter**: Spec 12.7 mm. Report: Hole d=12.7 mm (implied by volume/shape). **OK**.
+2.  **Rod Ring Wall Thickness**: Spec 3 mm. Report: Outer diameter is 18.7 mm (12.7 + 6). **OK**.
+3.  **Rod Ring Opening**: Spec "everything with x < 0 and -5 < y < 5 is removed". Report: The bounding box X starts at -7.89. The rod ring OD is 18.7, so the left edge is at -9.35. The cutout should go from x=-9.35 to x=0. The report shows a solid region, but the internal structure is messy. The previous code subtracted a cube from the *extruded* cylinder, which often leaves artifacts or fails to create the specific "C" shape cleanly if the union logic was flawed. **WRONG** (Geometry not clean/verified).
+4.  **Tubing Ring Inner Diameter**: Spec 6 mm. Report: Hole d=6.00 mm. **OK**.
+5.  **Tubing Ring Wall Thickness**: Spec 2 mm. Report: Outer diameter is 10 mm (6 + 4). **OK**.
+6.  **Tubing Ring Position**: Spec Centered at x = 15, y = 0. Report: Hole centre (15.00, 0.00). **OK**.
+7.  **Tubing Ring Opening**: Spec "x > 15 and -2.25 < y < 2.25". Report: Not explicitly shown as a cutout in the slice summary (only one hole listed). The previous code likely failed to subtract the rectangular cutout properly or merged it incorrectly. **WRONG**.
+8.  **Bridge**: Spec "solid bridge 6 mm wide (Y) between x = 8 and x = 12". Report: The bounding box X goes to 20.00. The tubing ring OD is 10, centered at 15, so it extends to 25. The bridge should be at 8-12. The report shows the solid region outline is 27.89 wide. If the bridge is 8-12, and the tubing ring is 15-25, there is a gap between 12 and 15. The specification says the bridge "joins the two rings". If the bridge is only 8-12, it does not reach the tubing ring (starts at 15). This implies the bridge must connect to the tubing ring, meaning the tubing ring's opening or the bridge position might be interpreted differently, OR the bridge connects to the *inner* face of the tubing ring?
+    *   *Re-reading spec*: "solid bridge 6 mm wide (Y) between x = 8 and x = 12 that joins the two rings".
+    *   Rod ring ends at x=0 (due to cutout).
+    *   Bridge is 8 to 12.
+    *   Tubing ring starts at x=15 (due to cutout on +X side? No, cutout is x>15).
+    *   Wait, the tubing ring cutout is x > 15. So the solid part of the tubing ring is x <= 15.
+    *   The bridge is 8 to 12.
+    *   There is a gap between the bridge (ends at 12) and the tubing ring solid part (starts at 15? No, the ring is a circle. The solid part is the circle minus the cutout. The cutout is x>15. So the solid part exists at x=15).
+    *   Actually, if the cutout is x>15, the solid part is x<=15. The bridge ends at 12. They are not touching.
+    *   *Correction*: The specification says the bridge "joins" them. This implies the bridge must physically touch the rings.
+    *   Perhaps the "opening" description defines the *void*, and the bridge fills the gap between the remaining solid parts?
+    *   Rod ring solid part: x > 0 (since cutout is x<0).
+    *   Tubing ring solid part: x < 15 (since cutout is x>15).
+    *   Gap between rings: 0 to 15.
+    *   Bridge is 8 to 12. This is inside the gap. It does not touch the rings (0 and 15).
+    *   *Hypothesis*: The user meant the bridge connects the *inner* faces? Or maybe the bridge is wider?
+    *   *Alternative Interpretation*: The bridge is the *only* thing connecting them, so it must touch. If the rod ring ends at 0 and tubing starts at 15, the bridge must span 0 to 15. But the spec says "between x=8 and x=12".
+    *   *Most likely intent*: The bridge connects the *inner* wall of the rod ring (at x=0) to the *inner* wall of the tubing ring (at x=15)? No, 8 to 12 is too short.
+    *   *Let's look at the "joining" logic again*: Maybe the "opening" isn't a full cut? "everything with x < 0 ... is removed". That is a full cut.
+    *   Maybe the bridge connects to the *outer* edge? Rod ring outer edge is at -9.35. Cutout is -9.35 to 0. Solid is 0 to 9.35.
+    *   Tubing ring outer edge is 15-25. Cutout is 15 to 25. Solid is 5 to 15.
+    *   So Rod Ring solid: x in [0, 9.35]. Tubing Ring solid: x in [5, 15].
+    *   They overlap! They touch between 5 and 9.35.
+    *   Why is there a bridge specified at 8-12?
+    *   Maybe the bridge is a *reinforcement* in the overlapping region?
+    *   "solid bridge 6 mm wide (Y) between x = 8 and x = 12".
+    *   If the rings overlap, the bridge is just a block of material in the middle of the overlap.
+    *   This makes sense. The rings overlap, and the bridge is a specific rectangular block added to that overlap zone.
+    *   So the geometry is: Rod Ring (C-shape facing left) + Tubing Ring (C-shape facing right) + Bridge (Rect at 8-12).
+    *   The previous code failed to merge these correctly into a single profile for `rotate_extrude` or `linear_extrude` without creating internal islands.
+    *   The correct approach is to define the **Outer Boundary** of the union of all three shapes, and the **Inner Boundaries** (holes/cuts) separately, then use `difference()` on the extruded outer shape.
+
+**Corrected Plan:**
+1.  Define the **Outer Profile** as the union of:
+    *   Rod Ring Outer Circle (OD 18.7, center 0,0).
+    *   Tubing Ring Outer Circle (OD 10, center 15,0).
+    *   Bridge Rectangle (8 to 12, -3 to 3).
+    *   Since the rings overlap, the outer boundary is just the union of the two circles. The bridge is inside the overlap, so it doesn't change the outer boundary.
+2.  Define the **Cutouts/Voids** to subtract:
+    *   Rod Inner Hole (ID 12.7).
+    *   Rod Cutout (Rect: x<0, |y|<5).
+    *   Tubing Inner Hole (ID 6).
+    *   Tubing Cutout (Rect: x>15, |y|<2.25).
+3.  Extrude the resulting 2D shape by 10mm.
+
+```openscad
+// Snap-on clip for lab stand rod and tubing.
+// Printed flat: 10 mm tall extrusion (Z) of a 2-D profile in the XY plane.
+// Orientation: Rests on XY plane at z=0, builds upward. Centred on origin.
+
+// Dimensions
+rod_id   = 12.7;   // Rod inner diameter
+rod_wall = 3;      // Rod ring wall thickness
+rod_od   = rod_id + 2 * rod_wall; // Rod outer diameter (18.7)
+rod_cut_y = 5;     // Half-height of rod cutout
+rod_cut_x = 0;     // Cutout extends to x=0
+
+tube_id

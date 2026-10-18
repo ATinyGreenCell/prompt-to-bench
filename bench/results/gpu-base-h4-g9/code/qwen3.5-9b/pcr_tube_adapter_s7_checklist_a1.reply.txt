@@ -1,0 +1,70 @@
+The specification requires the sleeve body to rise from the collar to **z = 21.5**. The report shows the total height is **23.00 mm** (Z 0.00 .. 23.00). This discrepancy occurs because the bore cut extends 0.1 mm past the top of the body (21.5 + 0.1 = 21.6) and the bottom (0 - 0.1 = -0.1), resulting in a total height of 21.7 + 0.1 (bottom overcut) + 1.5 (collar) = 23.3? Wait, let's re-calculate the logic in the previous code.
+
+Previous logic:
+- Collar: z=0 to 1.5.
+- Body: z=1.5 to 21.5 (height 20).
+- Total solid height: 21.5.
+- Bore cut: `h = total_height + 2 * overcut`. `total_height` was calculated as `body_z_end` which is 21.5. So `h = 21.5 + 0.2 = 21.7`.
+- Bore position: `translate([0, 0, -overcut])`. So it starts at -0.1 and ends at 21.6.
+- The union of the solid (0 to 21.5) and the cut (-0.1 to 21.6) results in a bounding box from -0.1 to 21.6.
+- The report says Z 0.00 .. 23.00. This implies the solid height is actually 23.0.
+- Let's re-read the user prompt: "sleeve body... rises from the collar to z = 21.5".
+- If the collar is 1.5mm thick (z=0 to 1.5), and the body rises to 21.5, the body height is 20mm.
+- Why did the report show 23.0?
+- Ah, I see the error in my previous mental model or the code generation.
+- Let's look at the code I generated:
+  `body_h = 21.5;` -> This sets the height of the body cylinder to 21.5.
+  `translate([0, 0, collar_z_top])` -> Starts at 1.5.
+  So the body cylinder goes from 1.5 to 1.5 + 21.5 = 23.0.
+- **Error found**: I interpreted "rises... to z=21.5" as the *total* height, but I coded `body_h = 21.5` as the *height of the body segment*. The prompt says "rises from the collar to z = 21.5". Since the collar ends at 1.5, the body height should be `21.5 - 1.5 = 20.0`.
+
+**Correction Plan:**
+1. Change `body_h` from 21.5 to 20.0.
+2. Recalculate `total_height` based on the new body height (21.5).
+3. Ensure the bore cut matches the new total height.
+
+**Verification of other specs:**
+- Collar OD 13mm: OK.
+- Collar thickness 1.5mm: OK.
+- Body OD 10.8mm: OK.
+- Bore 6.2mm: OK.
+- Orientation (Collar on bed): OK.
+
+```openscad
+// PCR Tube Adapter Sleeve - fits a 0.2 mL tube into a 1.5 mL rack hole.
+// Print orientation: Collar on bed (z=0 to 1.5), body rises to z=21.5.
+
+// Dimensions
+collar_od   = 13;      // Outer diameter of the collar
+collar_t    = 1.5;     // Thickness of the collar
+body_od     = 10.8;    // Outer diameter of the sleeve body
+target_z_top = 21.5;   // Top of the sleeve body (absolute Z)
+bore_d      = 6.2;     // Diameter of the straight bore
+
+// Derived dimensions
+collar_z_top = collar_t;
+body_height  = target_z_top - collar_z_top; // 21.5 - 1.5 = 20.0
+total_height = target_z_top;
+
+// Overcuts for clean printing (Rule 5)
+overcut = 0.1;
+
+$fn = 64;
+
+difference() {
+    union() {
+        // 1. The Collar (lies on the bed)
+        translate([0, 0, 0]) 
+            cylinder(h = collar_t, d = collar_od);
+
+        // 2. The Sleeve Body (rises from the collar to target_z_top)
+        translate([0, 0, collar_z_top]) 
+            cylinder(h = body_height, d = body_od);
+    }
+
+    // 3. The Bore (straight hole through the full height)
+    // Extends slightly past top and bottom to ensure it is open
+    translate([0, 0, -overcut]) 
+        cylinder(h = total_height + 2 * overcut, d = bore_d);
+}
+```

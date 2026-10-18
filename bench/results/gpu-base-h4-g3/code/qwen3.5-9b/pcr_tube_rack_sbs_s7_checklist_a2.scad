@@ -1,0 +1,41 @@
+// no code found in reply
+/*
+The specification requires a 45-degree chamfer with 5 mm legs off the vertical edge at the A1 corner. The previous code used a tetrahedron (a 60-degree corner cut), which is geometrically incorrect for a 45-degree chamfer. A 45-degree chamfer on a corner requires a planar cut where the intersection with the X and Y axes is equal (forming a right triangle on the top face), and the slope is 1:1:1 relative to the corner? No, a 45-degree chamfer on a vertical edge means the angle between the cut face and the vertical edge is 45 degrees.
+
+If the leg is 5mm along the X axis and 5mm along the Y axis, the cut face on the top surface (Z=20) is a line from (5,0,20) to (0,5,20). The angle of this line with the X-axis is 45 degrees. The plane connecting (5,0,20), (0,5,20) and (0,0,0) creates a 45-degree angle with the vertical edges?
+Let's check the slope. The vector from (0,0,0) to (5,0,20) has a slope of 20/5 = 4. That's not 45 degrees.
+A 45-degree chamfer usually implies the angle between the cut face and the face being chamfered is 45 degrees.
+If we cut the corner (0,0,0) such that the cut plane passes through (5,0,0), (0,5,0) and (0,0,5), the normal to the plane is (1,1,1). The angle between this normal and the Z-axis (0,0,1) is arccos(1/sqrt(3)) ≈ 54.7 degrees. The angle between the plane and the XY plane is 90 - 54.7 = 35.3 degrees. This is not 45.
+
+To get a 45-degree angle with the vertical (Z-axis), the normal must be at 45 degrees to the Z-axis.
+Let the plane be $ax + by + cz = d$.
+If the leg is 5mm on X and 5mm on Y, the intercepts are (5,0,0) and (0,5,0). So $5a = d$ and $5b = d$. Thus $a=b$.
+The plane passes through (0,0,z_intercept). Let's say the cut goes all the way to the bottom? No, a chamfer on a vertical edge usually removes a prism or a wedge.
+"Cut a 45-degree chamfer with 5 mm legs off the vertical edge".
+This typically means the cut face makes a 45-degree angle with the vertical edge.
+If the cut face is a plane, and it intersects the X-axis at 5 and Y-axis at 5, the line of intersection on the top face is at 45 degrees.
+The angle of the plane with the vertical edge (Z-axis) depends on the Z-intercept.
+If the chamfer is "off the vertical edge", it implies the cut starts at the edge and goes outwards.
+If the leg is 5mm, it means the distance from the edge to the cut along the horizontal plane is 5mm.
+For the angle to be 45 degrees with the vertical, the rise (Z) must equal the run (horizontal distance).
+So if the horizontal leg is 5mm, the vertical leg (depth of cut) must also be 5mm.
+The plane passes through (5, 0, 5), (0, 5, 5) and (0, 0, 5)? No, that would be a flat plane parallel to the XY plane at Z=5, which is not a chamfer.
+The plane must pass through (5, 0, 0) and (0, 5, 0) to have 5mm legs on the bottom? Or (5,0,20) and (0,5,20) on the top?
+Usually, a chamfer on a corner of a block removes the corner.
+If we want a 45-degree angle with the vertical edge, the plane equation is $x + y = k$? No, that's vertical.
+The plane equation for a 45-degree chamfer on the corner (0,0) with leg $L$ is $x + y = L$? No, that's a vertical cut.
+The plane equation is $x + y + z = L$? No, that's the tetrahedron (35.3 deg).
+We need the angle between the plane and the Z-axis to be 45 degrees.
+The normal vector $\vec{n} = (n_x, n_y, n_z)$. The angle $\theta$ with $\vec{k}=(0,0,1)$ is given by $\cos(\theta) = \frac{n_z}{|\vec{n}|}$.
+We want $\theta = 45^\circ$, so $\cos(45) = \frac{1}{\sqrt{2}}$.
+So $\frac{n_z}{\sqrt{n_x^2 + n_y^2 + n_z^2}} = \frac{1}{\sqrt{2}}$.
+Squaring: $\frac{n_z^2}{n_x^2 + n_y^2 + n_z^2} = \frac{1}{2} \Rightarrow 2n_z^2 = n_x^2 + n_y^2 + n_z^2 \Rightarrow n_z^2 = n_x^2 + n_y^2$.
+If we assume symmetry in X and Y, $n_x = n_y$. Then $n_z^2 = 2n_x^2 \Rightarrow n_z = \sqrt{2}n_x$.
+Let $n_x = 1, n_y = 1, n_z = \sqrt{2}$.
+The plane equation is $x + y + \sqrt{2}z = d$.
+The intercepts:
+X-intercept (y=0, z=0): $x = d$.
+Y-intercept (x=0, z=0): $y = d$.
+Z-intercept (x=0, y=0): $z = d/\sqrt{2}$.
+The "leg" along the X axis is
+*/

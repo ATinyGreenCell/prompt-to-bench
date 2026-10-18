@@ -1,0 +1,48 @@
+// Rack for six 50 mL conical (Falcon-type) tubes.
+// Print orientation: Flat plate on bed (z=0), walls rising to z=70.
+// After printing, flip over so walls are on the bed and tubes hang down.
+
+// Plate dimensions
+L     = 130; // Length (X)
+W     = 90;  // Width (Y)
+t     = 4;   // Plate thickness (Z)
+
+// Hole specifications
+hole_d  = 30.5;
+
+// Grid layout
+row_spacing = 40; // Centre-to-centre Y
+col_spacing = 40; // Centre-to-centre X
+
+// Wall specifications
+wall_h = 70; // Height of walls from plate top (z=4)
+wall_t = 4;  // Thickness of walls (Y)
+
+// Derived positions
+// Centred on origin in X and Y
+// 3 holes along X: positions -40, 0, 40
+// 2 holes along Y: positions -20, 20
+x_positions = [-40, 0, 40];
+y_positions = [-20, 20];
+
+$fn = 64;
+
+difference() {
+    union() {
+        // 1. The flat base plate
+        translate([-L / 2, -W / 2, 0]) cube([L, W, t]);
+
+        // 2. The two side walls
+        // Left wall (at -L/2)
+        translate([-L / 2, -W / 2, t]) cube([L, wall_t, wall_h]);
+        // Right wall (at +L/2)
+        translate([L / 2 - L, -W / 2, t]) cube([L, wall_t, wall_h]);
+    }
+
+    // Cut the holes for the tubes
+    for (x = x_positions) {
+        for (y = y_positions) {
+            translate([x, y, 0]) cylinder(h = t + 1, d = hole_d);
+        }
+    }
+}

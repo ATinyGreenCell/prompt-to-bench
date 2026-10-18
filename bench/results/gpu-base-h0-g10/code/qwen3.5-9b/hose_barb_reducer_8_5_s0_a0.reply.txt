@@ -1,0 +1,178 @@
+```openscad
+// Hose-Barb Reducer Design
+// Units: mm
+// Orientation: Standing upright on XY plane, building +Z
+
+// --- Dimensions ---
+// Main bore diameter
+$main_bore_d = 3.0;
+$main_bore_r = $main_bore_d / 2.0;
+
+// Section 1: 8mm Tubing Interface (z=0 to z=20)
+$sec1_start_z = 0;
+$sec1_end_z = 20;
+$sec1_barb_height = 10;
+$sec1_barb_bottom_od = 7.5;
+$sec1_barb_top_od = 9.5;
+$sec1_barb_count = 2;
+$sec1_barb_spacing = 12; // Center-to-center distance between barbs
+
+// Section 2: Collar (z=20 to z=25)
+$sec2_start_z = 20;
+$sec2_end_z = 25;
+$sec2_collar_od = 12;
+$sec2_collar_id = $main_bore_d; // Matches main bore
+
+// Section 3: 5mm Tubing Interface (z=25 to z=41)
+$sec3_start_z = 25;
+$sec3_end_z = 41;
+$sec3_barb_height = 8;
+$sec3_barb_bottom_od = 6.5;
+$sec3_barb_top_od = 5.0;
+$sec3_barb_count = 2;
+$sec3_barb_spacing = 10; // Center-to-center distance between barbs
+
+// --- Helper Functions ---
+// Function to create a single tapered barb profile
+// Returns a polygon path for linear_extrude
+function create_barb_profile(z_start, z_end, r_bottom, r_top, r_inner) = 
+    [
+        [0, 0], // Start at center bottom (will be offset by translate)
+        [r_bottom, 0],
+        [r_bottom, z_end - z_start],
+        [r_top, z_end - z_start],
+        [r_top, z_end - z_start + 1], // Step out slightly for printability
+        [r_bottom, z_end - z_start + 1],
+        [0, z_end - z_start + 1]
+    ];
+
+// Function to create the stepped return profile for the barb
+// This creates the "sawtooth" look: taper -> step back -> flat
+function create_barb_stepped_profile(z_start, z_end, r_bottom, r_top, r_inner) = 
+    [
+        [0, 0],
+        [r_bottom, 0],
+        [r_bottom, z_end - z_start],
+        [r_top, z_end - z_start],
+        [r_top, z_end - z_start + 0.5], // Step out
+        [r_bottom, z_end - z_start + 0.5],
+        [0, z_end - z_start + 0.5]
+    ];
+
+// --- Main Build ---
+
+difference() {
+    // 1. Create the Main Body (Cylinder with central bore)
+    // We build the outer shell and subtract the inner bore
+    $fn = 64;
+    
+    // Outer shell of the main body (excluding barbs for now, we'll add them)
+    // Actually, let's build the main cylinder first, then add barbs on top, 
+    // then subtract the barbs from the main body to create the holes.
+    
+    // Main Cylinder Body (from z=0 to z=41)
+    // We need a large enough OD to cover the widest part of the barbs (9.5mm)
+    $max_od = 9.5;
+    $max_od_r = $max_od / 2.0;
+    
+    // Create the main tube body
+    translate([0, 0, 0])
+    difference() {
+        // Outer shell
+        cylinder(h = 41, r = $max_od_r, $fn = 64);
+        
+        // Inner bore through the whole length
+        cylinder(h = 41, r = $main_bore_r, $fn = 64);
+    }
+    
+    // 2. Add Section 1 Barbs (8mm tubing)
+    // These are added to the main body, then we cut them out to make the holes
+    // We place them at z = 0 and z = 10 (stacked)
+    for (i = [0, 1]) {
+        $z_offset = i * $sec1_barb_height;
+        $z_pos = $z_offset;
+        
+        // Calculate radius at the bottom of the barb (z=0) and top (z=10)
+        // The profile grows from 7.5 to 9.5 over 10mm
+        $r_bottom = $sec1_barb_bottom_od / 2.0;
+        $r_top = $sec1_barb_top_od / 2.0;
+        
+        // Create the barb shape
+        translate([0, 0, $z_pos])
+        difference() {
+            // The solid barb to be added
+            // We use a polygon extrusion to get the tapered shape
+            // Path: Bottom radius -> Top radius -> Step back -> Bottom radius
+            // Note: The "step back" creates the flat top surface for the tube
+            
+            // Define the profile points relative to the barb base
+            $h = $sec1_barb_height;
+            $step_h = 0.5; // Height of the flat top
+            
+            $pts = [
+                [$r_bottom, 0],
+                [$r_bottom, $h],
+                [$r_top, $h],
+                [$r_top, $h + $step_h],
+                [$r_bottom, $h + $step_h],
+                [0, $h + $step_h]
+            ];
+            
+            // Extrude the profile
+            linear_extrude(height = $h + $step_h, center = false, convexity = 3)
+            polygon(points = $pts);
+            
+            // Cut the main bore through the barb
+            cylinder(h = $h + $step_h, r = $main_bore_r, $fn = 64);
+        }
+    }
+    
+    // 3. Add Section 2 Collar (z=20 to z=25)
+    // This is just a thickening of the main body, no cutting needed as it's solid
+    // We can model this by adding a cylinder on top of the main body
+    // But since we are in a difference() block, we need to add it to the union of the main body.
+    // However, the main body is already defined. 
+    // To simplify, let's just ensure the main cylinder is tall enough (it is, 41mm).
+    // The collar is just the main body OD expanded from 9.5 to 12mm in that region.
+    
+    // Let's rebuild the main body logic to include the collar expansion properly.
+    // Instead of one big cylinder, let's use a union of sections or modify the main cylinder.
+    // Easiest way in this structure: Add the collar as a separate positive shape.
+    
+    translate([0, 0, $sec2_start_z])
+    cylinder(h = $sec2_end_z - $sec2_start_z, r = $sec2_collar_od / 2.0, $fn = 64);
+    
+    // 4. Add Section 3 Barbs (5mm tubing)
+    // Placed at z = 25 and z = 33 (stacked)
+    for (i = [0, 1]) {
+        $z_offset = i * $sec3_barb_height;
+        $z_pos = $sec3_start_z + $z_offset;
+        
+        // Profile shrinks from 6.5 to 5.0 over 8mm
+        $r_bottom = $sec3_barb_bottom_od / 2.0;
+        $r_top = $sec3_barb_top_od / 2.0;
+        
+        translate([0, 0, $z_pos])
+        difference() {
+            // Solid barb shape
+            $h = $sec3_barb_height;
+            $step_h = 0.5;
+            
+            $pts = [
+                [$r_bottom, 0],
+                [$r_bottom, $h],
+                [$r_top, $h],
+                [$r_top, $h + $step_h],
+                [$r_bottom, $h + $step_h],
+                [0, $h + $step_h]
+            ];
+            
+            linear_extrude(height = $h + $step_h, center = false, convexity = 3)
+            polygon(points = $pts);
+            
+            // Cut the main bore
+            cylinder(h = $h + $step_h, r = $main_bore_r, $fn = 64);
+        }
+    }
+}
+```

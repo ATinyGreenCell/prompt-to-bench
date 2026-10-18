@@ -1,0 +1,77 @@
+// DIY Magnetic Stirrer Housing for 80mm PC Fan
+// Print Orientation: Upside down. Top plate on bed (Z=0), walls rise to Z=40.
+
+// --- Dimensions ---
+// Outer size of the box (X, Y)
+W = 90;
+H = 90;
+
+// Wall height (above the top plate)
+// Spec: Walls rise to Z=40. Top plate is 2mm thick.
+// Wall height = 40 - 2 = 38 mm.
+D_WALL_HEIGHT = 38;
+
+// Wall thickness
+T_WALL = 2.5;
+
+// Top plate thickness
+T_TOP = 2;
+
+// Total height of the part (Top plate + Walls)
+Z_MAX = T_TOP + D_WALL_HEIGHT; // Should be 40
+
+// Fan mounting hole pattern
+// 71.5 mm square pattern centred on the plate
+PATTERN_SIZE = 71.5;
+// Hole diameter for M4 screws
+D_HOLE = 4.5;
+
+// Cable notch dimensions
+NOTCH_W = 12;
+NOTCH_Y = (H - NOTCH_W) / 2; // Center Y position
+NOTCH_DEPTH = 8; // Depth from open edge (Z = 32 to 40)
+
+// --- Configuration ---
+$fn = 128; // High resolution for smooth curves and accurate holes
+
+// --- Main Body Construction ---
+difference() {
+    // 1. The Main Block
+    // Outer dimensions: W x H x Z_MAX
+    cube([W, H, Z_MAX], center = false);
+    
+    // 2. Screw Holes
+    // Pattern: 71.5mm square centered on the plate.
+    // The plate is at Z=0 to Z=2.
+    // We cut through the top plate only.
+    
+    for (i = [-1, 1]) {
+        for (j = [-1, 1]) {
+            // Calculate position based on pattern size
+            x_pos = (PATTERN_SIZE / 2) * i;
+            y_pos = (PATTERN_SIZE / 2) * j;
+            
+            // Cylinder cutter
+            // Extend 0.1mm past the top plate (Z=2) to ensure full cut
+            translate([x_pos, y_pos, -0.1]) 
+                cylinder(h = T_TOP + 0.1, d = D_HOLE, $fn = 64);
+        }
+    }
+    
+    // 3. Cable Notch
+    // Location: One wall. Let's choose the front wall (Y = H/2 - T_WALL).
+    // Dimensions: 12mm wide, centered along the wall.
+    // Depth: 8mm down from the open edge.
+    // Open edge is at Z = Z_MAX. So notch goes from Z = Z_MAX - 8 to Z = Z_MAX.
+    
+    // Wall position (Front wall)
+    wall_y = H/2 - T_WALL;
+    
+    // Notch geometry
+    notch_y_center = NOTCH_W / 2;
+    
+    // Create the notch cutter
+    // It needs to be tall enough to cut through the wall thickness
+    translate([0, wall_y - notch_y_center, Z_MAX - NOTCH_DEPTH])
+        cube([NOTCH_W, T_WALL, NOTCH_DEPTH]);
+}

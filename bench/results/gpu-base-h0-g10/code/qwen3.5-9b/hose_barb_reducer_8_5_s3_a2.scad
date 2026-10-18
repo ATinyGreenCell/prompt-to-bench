@@ -1,0 +1,159 @@
+// Hose-Barb Reducer Design
+// Units: millimetres
+// Orientation: Standing upright along Z, resting on XY plane at z=0
+
+// --- Dimensions ---
+// Main bore diameter (constant through the part)
+$main_bore_d = 3.0;
+
+// Upper Section (z=0 to z=20): 8mm Tubing Barbs
+$upper_start_z = 0;
+$upper_end_z = 20;
+$upper_barb_count = 2;
+$upper_barb_height = 10;
+$upper_barb_bottom_od = 7.5;
+$upper_barb_top_od = 9.5;
+$upper_barb_step_down = 7.5; // Steps back to this OD after the taper
+
+// Lower Section (z=25 to z=41): 5mm Tubing Barbs
+// Note: There is a gap/collar from z=20 to z=25
+$lower_start_z = 25;
+$lower_end_z = 41;
+$lower_barb_count = 2;
+$lower_barb_height = 8;
+$lower_barb_bottom_od = 6.5;
+$lower_barb_top_od = 5.0;
+$lower_barb_step_out = 6.5; // Steps back out to this OD after the taper
+
+// Collar Section (z=20 to z=25)
+$collar_start_z = 20;
+$collar_end_z = 25;
+$collar_diameter = 12.0;
+
+// --- Configuration ---
+$fn = 128; // High resolution for smooth curves and accurate barbs
+
+module hose_barb_reducer() {
+    // 1. Create the Main Body (Tube)
+    // Outer diameter needs to be large enough to contain the largest barb (9.5mm)
+    // plus a small wall thickness. Let's assume a wall thickness of 1.5mm.
+    $max_outer_d = max($upper_barb_top_od, $lower_barb_bottom_od) + 3.0; 
+    $main_body_od = $max_outer_d;
+    $main_body_id = $main_bore_d;
+    
+    // Create the main tube shell
+    main_body = difference() {
+        cylinder(
+            h = $lower_end_z,
+            d1 = $main_body_od,
+            d2 = $main_body_od,
+            $fn = $fn
+        );
+        // Cut the main bore through the entire length
+        cylinder(
+            h = $lower_end_z,
+            d1 = $main_bore_d,
+            d2 = $main_bore_d,
+            $fn = $fn
+        );
+    };
+
+    // 2. Add Upper Barbs (z=0 to z=20)
+    // Each barb is 10mm tall. Two stacked.
+    // Profile: Bottom OD -> Linear Taper -> Step Down -> Top OD
+    // Interpretation: 
+    // Bottom (z=0): OD = 7.5
+    // Top of taper (z=10): OD = 9.5
+    // Top of barb (z=20): OD = 7.5 (Step down)
+    
+    upper_barbs = union() {
+        for (i = [0 : $upper_barb_count - 1]) {
+            translate([0, 0, i * $upper_barb_height]) {
+                // Part 1: Tapered section (Cone)
+                // Height 0 to 10. Radius 3.75 to 4.75.
+                cone_part = cylinder(
+                    h = $upper_barb_height,
+                    d1 = $upper_barb_bottom_od,
+                    d2 = $upper_barb_top_od,
+                    $fn = $fn
+                );
+                
+                // Part 2: Top flat section (Cylinder)
+                // Height 10 to 20. Radius 3.75 (7.5/2).
+                top_part = cylinder(
+                    h = $upper_barb_height,
+                    d = $upper_barb_step_down,
+                    $fn = $fn
+                );
+                
+                union() {
+                    cone_part;
+                    top_part;
+                }
+            }
+        }
+    };
+
+    // 3. Add Collar (z=20 to z=25)
+    collar = cylinder(
+        h = $collar_end_z - $collar_start_z,
+        d = $collar_diameter,
+        $fn = $fn
+    );
+
+    // 4. Add Lower Barbs (z=25 to z=41)
+    // Each barb is 8mm tall. Two stacked.
+    // Profile: Bottom OD -> Linear Taper -> Step Out -> Top OD
+    // Interpretation:
+    // Bottom (z=25): OD = 6.5
+    // Top of taper (z=33): OD = 5.0
+    // Top of barb (z=41): OD = 6.5 (Step out)
+    // Since the taper is the full height (8mm), the "step out" creates a top section of height 0 if interpreted literally as a point, 
+    // but physically it means the taper ends at 5.0 and then immediately expands to 6.5. 
+    // To make this printable and robust, we will model the taper over the full height, and add a tiny top section 
+    // or just rely on the union of the taper and the top cylinder which will be very short.
+    // However, the prompt says "shrinks linearly... to its top, then steps". 
+    // This implies the taper is the main body, and the step is the very top edge.
+    // We will model: Taper (0 to 8mm) + Top Cylinder (8 to 8mm + epsilon). 
+    // Actually, let's assume the taper is the full 8mm, and the "step" is just the edge geometry.
+    // But to ensure it's a solid, we will add a tiny top section of height 0.1mm to represent the step.
+    
+    lower_barbs = union() {
+        for (i = [0 : $lower_barb_count - 1]) {
+            translate([0, 0, $lower_start_z + i * $lower_barb_height]) {
+                // Part 1: Tapered section (Cone)
+                // Height 0 to 8. Radius 3.25 to 2.5.
+                cone_part = cylinder(
+                    h = $lower_barb_height,
+                    d1 = $lower_barb_bottom_od,
+                    d2 = $lower_barb_top_od,
+                    $fn = $fn
+                );
+                
+                // Part 2: Top flat section (Cylinder)
+                // Height 8 to 8.1 (representing the step out to 6.5mm).
+                // This ensures the solid exists and has the correct top OD.
+                top_part = cylinder(
+                    h = 0.1,
+                    d = $lower_barb_step_out,
+                    $fn = $fn
+                );
+                
+                union() {
+                    cone_part;
+                    top_part;
+                }
+            }
+        }
+    };
+
+    // Combine all parts
+    union() {
+        main_body;
+        upper_barbs;
+        collar;
+        lower_barbs;
+    }
+}
+
+hose_barb_reducer();

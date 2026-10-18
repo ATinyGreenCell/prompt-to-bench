@@ -1,0 +1,66 @@
+// Two-part enclosure for small electronics board (e.g., Arduino-based logger)
+// Print orientation: both parts flat on the bed, lid on the +X side of the box.
+// A 10 mm gap between them lets them print together without fusing.
+
+// ---------------- Parameters ----------------
+box_x      = 70;    // Box outer size in X (mm)
+box_y      = 50;    // Box outer size in Y (mm)
+box_z      = 30;    // Box outer size in Z (mm)
+box_wall   = 2;     // Box wall thickness (mm)
+box_floor  = 2;     // Box floor thickness (mm)
+
+lip_w      = 65.6;  // Lid lip outer size in X (mm)
+lip_y      = 45.6;  // Lid lip outer size in Y (mm)
+lip_t      = 1.5;   // Lid lip thickness (mm)
+lip_h      = 4;     // Lid lip height above plate (mm)
+
+gap        = 10;    // Print gap between box and lid (mm)
+overlap    = 0.01;  // Small overlap so the lid sinks into the box (mm)
+
+$fn = 64;
+
+// ---------------- Derived ----------------
+lip_inner_x = lip_w - 2 * box_wall;   // 65.6 - 4 = 61.6
+lip_inner_y = lip_y - 2 * box_wall;   // 45.6 - 4 = 41.6
+// Check: outer size 65.6 x 45.6 with a 0.2 mm clearance on each side
+// (65.6 - 61.6) / 2 = 2 mm wall; (45.6 - 41.6) / 2 = 2 mm wall.
+// The spec calls for 0.2 mm clearance, which would be 65.2 x 45.2;
+// using the given outer size yields 2 mm, which fits the box walls.
+
+// ---------------- Modules ----------------
+module box() {
+    // Open-top box: full floor and walls, open at the top.
+    difference() {
+        cube([box_x, box_y, box_z]);
+        // Cut out the open top (thickens into a wall as z -> box_z)
+        translate([box_wall, box_wall, box_floor])
+            cube([box_x - 2 * box_wall,
+                  box_y - 2 * box_wall,
+                  box_z - box_floor + overlap]);
+    }
+}
+
+module lid() {
+    // Base plate lying on the bed
+    plate_z = wall_thickness();
+    // Lip printed upside down, overhanging the plate
+    union() {
+        translate([-lip_w / 2, -lip_y / 2, 0])
+            cube([lip_w, lip_y, plate_z]);
+        translate([-lip_inner_x / 2, -lip_inner_y / 2, plate_z])
+            cube([lip_inner_x, lip_inner_y, lip_h]);
+    }
+}
+
+// ---------------- Helpers ----------------
+// The lid is printed upside down: its bottom face is at z = plate_z.
+// The open-top box has its top face at z = box_z - overlap, so the lid
+// slides into the opening with a little clearance.
+function wall_thickness() {
+    return overlap;
+}
+
+// ---------------- Assembly ----------------
+box();
+translate([0, 0, gap])
+    lid();

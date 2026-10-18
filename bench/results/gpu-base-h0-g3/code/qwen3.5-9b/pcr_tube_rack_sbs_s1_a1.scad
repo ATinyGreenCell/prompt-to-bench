@@ -1,0 +1,95 @@
+// PCR Tube Rack for 96-well plates (0.2 mL)
+// ANSI/SLAS footprint: 127.76 x 85.48 x 20 mm
+// 96 holes: 6.2 mm diameter, 9.0 mm pitch, 8 rows x 12 columns
+// Orientation: A1 corner chamfered at 45 degrees (5 mm leg)
+
+$fn = 128; // High resolution for smooth holes and chamfers
+
+// --- Dimensions ---
+// Overall block size
+W_X = 127.76; // Length (X)
+W_Y = 85.48;  // Width (Y)
+W_Z = 20;     // Height (Z)
+
+// Hole specifications
+HOLE_DIA = 6.2;
+PITCH_X = 9.0;
+PITCH_Y = 9.0;
+
+// Grid positioning (A1 corner offset from left/back edge)
+OFFSET_X = 14.38;
+OFFSET_Y = 11.24;
+
+// Chamfer specification
+CHAMFER_LEG = 5;
+
+// --- Main Block ---
+block = cube([W_X, W_Y, W_Z]);
+
+// --- Holes ---
+// We create holes by subtracting cylinders.
+// To ensure clean cuts, we extend the cylinder slightly past the top face (Z=20).
+hole_height = W_Z + 0.5; 
+
+holes = union();
+for (col = [0 : 11]) {
+    for (row = [0 : 7]) {
+        // Calculate position of current hole center
+        x_pos = OFFSET_X + col * PITCH_X;
+        y_pos = OFFSET_Y + row * PITCH_Y;
+        
+        // Create cylinder for this hole
+        // Translate to center, then subtract from the main block later
+        h = cylinder(
+            h = hole_height,
+            r = HOLE_DIA / 2,
+            center = [x_pos, y_pos, W_Z / 2],
+            $fn = 64
+        );
+        holes = union(holes, h);
+    }
+}
+
+// --- Chamfer ---
+// Cut a 45-degree chamfer with 5mm legs from the A1 corner.
+// A1 is at (OFFSET_X, OFFSET_Y).
+// The chamfer removes material from the vertical edge at that corner.
+// We define a wedge to subtract.
+// The wedge starts at Z=0 and goes up to Z=CHAMFER_LEG.
+// The cut plane passes through (OFFSET_X - CHAMFER_LEG, OFFSET_Y, 0) and (OFFSET_X, OFFSET_Y, CHAMFER_LEG).
+
+// Define the triangular profile in the XZ plane
+// Vertices: [0,0], [CHAMFER_LEG, 0], [0, CHAMFER_LEG]
+// This creates a triangle where the hypotenuse connects (CHAMFER_LEG, 0) and (0, CHAMFER_LEG).
+// When extruded along Y and positioned correctly, this creates the 45-degree chamfer.
+chamfer_profile = polygon([
+    [0, 0],
+    [CHAMFER_LEG, 0],
+    [0, CHAMFER_LEG]
+]);
+
+// Extrude the profile along the Y axis
+chamfer_wedge = linear_extrude(height = W_Y, center = false, convexity = 3) {
+    chamfer_profile;
+};
+
+// Position the wedge
+// The triangle's (0,0) point corresponds to the corner start in local coordinates.
+// We need to translate it so that the corner of the triangle aligns with the block's corner.
+// The block corner is at (OFFSET_X, OFFSET_Y).
+// The triangle's right angle is at (0,0) in local coords? No, the right angle is at (0,0) in the polygon definition above?
+// Polygon: (0,0) -> (5,0) -> (0,5). The right angle is at (0,0).
+// We want the cut to start at X = OFFSET_X - 5.
+// So we translate X by -(OFFSET_X - 5) = 5 - OFFSET_X.
+// We want the cut to start at Y = OFFSET_Y.
+// So we translate Y by -(OFFSET_Y).
+// We want the cut to start at Z = 0.
+// So we translate Z by 0.
+
+translate([OFFSET_X - CHAMFER_LEG, OFFSET_Y, 0]) {
+    difference() {
+        block;
+        holes;
+        chamfer_wedge;
+    }
+}

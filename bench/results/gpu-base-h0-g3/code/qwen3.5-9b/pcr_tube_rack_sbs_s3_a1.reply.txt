@@ -1,0 +1,136 @@
+```openscad
+// 96-Well PCR Tube Rack (0.2 mL)
+// Designed for FDM 3D printing.
+// Orientation: Rests on XY plane at Z=0, builds upward (+Z).
+// Centred on origin in X and Y.
+
+// --- Dimensions (mm) ---
+// Block Dimensions
+$block_length = 127.76; // X
+$block_width  = 85.48;  // Y
+$block_height = 20;     // Z
+
+// Hole Specifications
+$hole_diameter = 6.2;
+$hole_count_x = 12;    // Columns along X
+$hole_count_y = 8;     // Rows along Y
+$hole_spacing = 9.0;   // Centre-to-centre spacing
+
+// Grid Positioning (Distance from nearest edge to first hole centre)
+$offset_x = 14.38;     // Distance from left edge to A1
+$offset_y = 11.24;     // Distance from back edge to A1
+
+// Chamfer Specifications
+$chamfer_angle = 45;   // Degrees
+$chamfer_leg = 5;      // Length of the leg along the edge
+
+// --- Configuration ---
+$fn = 64; // Smooth curves for holes
+
+// --- Calculations ---
+// Calculate total grid size based on offsets and spacing
+$total_grid_x = $offset_x + (($hole_count_x - 1) * $hole_spacing);
+$total_grid_y = $offset_y + (($hole_count_y - 1) * $hole_spacing);
+
+// Calculate block centre
+$block_cx = $block_length / 2;
+$block_cy = $block_width / 2;
+
+// Calculate grid centre relative to block
+$grid_cx = $block_cx - ($block_length / 2 - $total_grid_x / 2);
+$grid_cy = $block_cy - ($block_width / 2 - $total_grid_y / 2);
+
+// --- Main Block ---
+difference() {
+    // 1. Main Block
+    cube([
+        $block_length,
+        $block_width,
+        $block_height
+    ]);
+
+    // 2. Holes (96 vertical through-holes)
+    // Loop over columns (X) and rows (Y)
+    for (col = [0 : $hole_count_x - 1]) {
+        for (row = [0 : $hole_count_y - 1]) {
+            // Calculate position of current hole
+            $x_pos = $grid_cx + (col * $hole_spacing);
+            $y_pos = $grid_cy + (row * $hole_spacing);
+            
+            // Cut hole extending slightly past the top face to ensure clean removal
+            translate([
+                $x_pos - ($hole_diameter / 2),
+                $y_pos - ($hole_diameter / 2),
+                0
+            ])
+            cylinder(
+                h = $block_height + 0.1, // Extend 0.1mm past top
+                d = $hole_diameter,
+                $fn = $fn
+            );
+        }
+    }
+
+    // 3. Chamfer at A1 corner (Left/Back corner)
+    // A1 is at (offset_x, offset_y) from the left/back edge.
+    // We need to cut a 45-degree chamfer with leg length 5mm.
+    // The cut removes the corner defined by X < $chamfer_leg and Y < $chamfer_leg near the top.
+    // The cut plane passes through:
+    // 1. (0, $chamfer_leg, $block_height)
+    // 2. ($chamfer_leg, 0, $block_height)
+    // 3. (0, 0, $block_height - $chamfer_leg)
+    
+    // We create a cutting shape that represents the material to be removed.
+    // This shape is a pyramid with a square base on the top face (at Z=$block_height)
+    // and a point at the bottom corner (0,0, $block_height - $chamfer_leg).
+    // Wait, a standard 45 deg chamfer on a corner usually creates a flat face connecting the top edges to the side edges.
+    // Let's define the cutting shape as a rotated box or a specific polygon extrusion.
+    
+    // Let's use a polygon extrusion for the cross-section in the XZ plane at Y=0, then sweep?
+    // No, the cut is diagonal in the XY plane at the top, tapering down to a point (or line) at the bottom.
+    // Actually, the simplest way to model a 45 deg chamfer on a corner is to define the plane equation.
+    // Plane: X + Y + (Z - $block_height) * tan(45) = 0?
+    // If Z = $block_height, X + Y = 0 (at the corner).
+    // If Z = $block_height - $chamfer_leg, X + Y = $chamfer_leg.
+    // This creates a chamfer that goes from the top corner down to a line at the bottom.
+    // The user asked for "45-degree chamfer with 5 mm legs off the vertical edge".
+    // This usually means the cut removes a triangular prism if it were a single edge, but for a corner, it's a pyramid.
+    // Let's construct the cutting volume explicitly using a loop of points or a specific shape.
+    
+    // Let's define the cutting shape as a rotated box.
+    // The cut is a wedge.
+    // Vertices of the wedge (material to remove):
+    // Top face (Z=$block_height): Rectangle from (0,0) to ($chamfer_leg, $chamfer_leg).
+    // Bottom face (Z=$block_height - $chamfer_leg): Line segment from (0,0) to (0,0)? No.
+    // At Z = $block_height - $chamfer_leg, the cut width is 0 at the corner (0,0).
+    // So it's a pyramid with a square base on the top face and a point at the bottom corner?
+    // No, a 45 degree chamfer on a corner usually means the cut plane intersects the axes at distance L.
+    // Plane equation: X + Y + Z = Constant?
+    // Let's stick to the visual description: "45-degree chamfer with 5 mm legs off the vertical edge".
+    // This implies the cut removes a triangular prism if it were a single edge, but it's a corner.
+    // Let's assume the cut plane passes through:
+    // 1. (0, $chamfer_leg, $block_height)
+    // 2. ($chamfer_leg, 0, $block_height)
+    // 3. (0, 0, $block_height - $chamfer_leg)
+    
+    // Let's generate the vertices of the cutting prism.
+    // We need to cut the region X>0, Y>0, Z<$block_height.
+    // The cutting shape will be a pyramid with a square base on the top face (at Z=$block_height)
+    // and a point at the bottom corner (0,0, $block_height - $chamfer_leg).
+    // Wait, if the plane passes through (0, $chamfer_leg, $block_height) and ($chamfer_leg, 0, $block_height)
+    // and (0, 0, $block_height - $chamfer_leg), then at Z=$block_height, the intersection is the line segment
+    // from (0, $chamfer_leg) to ($chamfer_leg, 0).
+    // At Z=$block_height - $chamfer_leg, the intersection is the point (0,0).
+    // This creates a triangular pyramid (tetrahedron) with a triangular base on the top face?
+    // No, the base on the top face is the triangle with vertices (0,0), (0, $chamfer_leg), ($chamfer_leg, 0).
+    // But we want to cut the corner, so we remove the volume defined by X>0, Y>0, and below the plane.
+    // The plane equation is X + Y + (Z - $block_height) = 0? No.
+    // Let's use the plane equation: X + Y + (Z - $block_height) * tan(45) = 0?
+    // If Z = $block_height, X + Y = 0.
+    // If Z = $block_height - $chamfer_leg, X + Y = $chamfer_leg.
+    // This creates a chamfer that goes from the top corner down to a line at the bottom.
+    // The user asked for "45-degree chamfer with 5 mm legs off the vertical edge".
+    // This implies the cut removes a triangular prism if it were a single edge, but it's a corner.
+    // Let's assume the cut plane passes through:
+    // 1. (0, $chamfer_leg, $block_height)
+    // 2. ($chamfer

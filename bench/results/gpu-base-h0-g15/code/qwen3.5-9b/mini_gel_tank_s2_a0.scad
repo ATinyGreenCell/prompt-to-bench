@@ -1,0 +1,92 @@
+// Buffer Tank for Mini Horizontal Gel Electrophoresis
+// Units: millimetres
+
+// Outer Dimensions
+$outer_x = 120;
+$outer_y = 70;
+$outer_z = 40;
+
+// Wall and Floor Thickness
+$wall_thickness = 3;
+$floor_thickness = 3;
+
+// Platform Dimensions
+$platform_length = 60; // X dimension
+$platform_width = $outer_y - (2 * $wall_thickness); // Spans full inner width
+$platform_height = 10; // Height above inner floor
+$platform_top_z = $floor_thickness + $platform_height; // Absolute Z of top surface
+
+// Hole Dimensions
+$hole_diameter = 2;
+$hole_y = ($outer_y / 2) - ($wall_thickness); // Centered in Y relative to inner wall
+$hole_z = 30; // Absolute Z position
+$hole_extension = 0.5; // Extension past face for clean cutting
+
+// Configuration
+$fn = 128; // High resolution for smooth curves
+
+// Calculate Inner Dimensions
+$inner_x = $outer_x - (2 * $wall_thickness);
+$inner_y = $outer_y - (2 * $wall_thickness);
+$inner_z = $outer_z - $floor_thickness;
+
+// Main Tank Body
+// Constructed as a hollow box with a floor
+difference() {
+    // Outer Block
+    cube([
+        $outer_x, 
+        $outer_y, 
+        $outer_z
+    ]);
+    
+    // Inner Void (Hollow space)
+    // The void starts at z = $floor_thickness
+    translate([
+        $wall_thickness, 
+        $wall_thickness, 
+        $floor_thickness
+    ]) {
+        cube([
+            $inner_x, 
+            $inner_y, 
+            $inner_z
+        ]);
+    }
+}
+
+// Raised Platform
+// Positioned in the middle of the tank, spanning full inner width
+translate([
+    ($outer_x / 2) - ($platform_length / 2), 
+    $wall_thickness, // Aligned with inner wall start
+    $floor_thickness
+]) {
+    // Platform Base (extends through the void to the floor)
+    cube([
+        $platform_length, 
+        $platform_width, 
+        $platform_height + $floor_thickness
+    ]);
+}
+
+// Electrode Holes
+// Two holes, one at each end (X = 0 and X = $outer_x)
+// Located at y = $hole_y, z = $hole_z
+// Drilled horizontally along X axis
+
+for (x_offset = [0, $outer_x]) {
+    translate([
+        x_offset, 
+        $hole_y, 
+        $hole_z
+    ]) {
+        // Cylinder for the hole
+        // Extend slightly past the face to ensure clean cut
+        cylinder(
+            h = $hole_extension, 
+            r = $hole_diameter / 2,
+            $fn = $fn
+        );
+    }
+}

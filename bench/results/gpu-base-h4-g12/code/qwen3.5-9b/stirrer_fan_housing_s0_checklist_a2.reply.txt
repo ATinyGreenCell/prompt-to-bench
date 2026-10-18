@@ -1,0 +1,74 @@
+```openscad
+// DIY Magnetic Stirrer Housing - based on an 80mm PC fan.
+// Orientation: Top plate on bed (z=0), walls rising to z=40.
+// Outer dimensions: 90 x 90 mm.
+
+$fn = 64;
+
+// Dimensions
+outer_w = 90;
+outer_h = 90;
+top_thk = 2;
+wall_thk = 2.5;
+wall_h   = 40; // Total height from bed to open top
+notch_w  = 12;
+notch_d  = 8;  // Depth from open edge (z=40) down to z=32
+
+// Fan mounting hole pattern
+mounting_sq = 71.5;
+mounting_hole = 4.5;
+
+// Derived positions
+half_outer = outer_w / 2;
+half_mount = mounting_sq / 2;
+z_open     = wall_h; // The open top is at z = 40
+
+difference() {
+    // 1. The main solid block (Top plate + Walls)
+    // Outer box: 90x90x40
+    translate([0, 0, 0]) 
+        cube([outer_w, outer_h, wall_h + 0.01]); // +0.01 to ensure solid union
+
+    // 2. Cut the internal cavity
+    // Cavity starts at z = top_thk and goes up to z_open
+    // Inner dimensions: (90 - 2*2.5) x (90 - 2*2.5) = 85 x 85
+    translate([0, 0, top_thk]) 
+        cube([outer_w - 2*wall_thk, outer_h - 2*wall_thk, wall_h - top_thk + 0.01]);
+
+    // 3. Screw holes in the top plate
+    // Pattern: 71.5 mm square centred on the plate.
+    // Corners at: +/- 35.75, +/- 35.75
+    for (i = [0 : 3]) {
+        x_pos = 0;
+        y_pos = 0;
+        if (i == 0) {
+            x_pos = -half_mount;
+            y_pos = -half_mount;
+        } else if (i == 1) {
+            x_pos = -half_mount;
+            y_pos = half_mount;
+        } else if (i == 2) {
+            x_pos = half_mount;
+            y_pos = half_mount;
+        } else {
+            x_pos = half_mount;
+            y_pos = -half_mount;
+        }
+        
+        translate([x_pos, y_pos, 0]) {
+            // Cut through the top plate only (z=0 to z=top_thk)
+            // Extend slightly below z=0 to ensure clean cut
+            translate([0, 0, -1]) 
+                cylinder(h = top_thk + 1, d = mounting_hole);
+        }
+    }
+
+    // 4. Cable notch in one wall (Front wall, facing +Y)
+    // Position: Centred along the wall (x=0), on the inner face (y = half_outer - wall_thk/2)
+    // The notch cuts through the entire wall thickness in Y.
+    translate([0, half_outer - wall_thk/2, 0]) {
+        translate([0, 0, 32]) 
+            cube([notch_w, wall_thk, notch_d + 0.01]);
+    }
+}
+```

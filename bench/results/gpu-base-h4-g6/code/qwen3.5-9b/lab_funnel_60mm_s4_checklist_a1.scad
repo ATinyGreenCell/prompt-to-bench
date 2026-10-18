@@ -1,0 +1,69 @@
+// Small lab funnel - straight spout with conical top, printed upright.
+// Dimensions measured with calipers.
+
+// Spout dimensions
+spout_od = 10;
+spout_id = 6.8;
+spout_h  = 20;
+
+// Cone dimensions
+cone_bottom_od = 10;
+cone_top_od    = 60;
+cone_h         = 30; // from z=20 to z=50
+
+// Wall thickness
+wall = 1.6;
+
+// Geometry helpers
+$fn = 64;
+
+// Calculate inner dimensions for the cone
+cone_bottom_id = cone_bottom_od - 2 * wall;
+cone_top_id    = cone_top_od - 2 * wall;
+
+// Build the solid part
+difference() {
+    // 1. The outer shell (Union of Spout and Cone)
+    union() {
+        // Spout: Cylinder from z=0 to z=20
+        translate([0, 0, 0]) 
+            cylinder(h = spout_h, d = spout_od);
+        
+        // Cone: From z=20 to z=50
+        // Constructed using rotate_extrude with a polygon profile
+        // Profile points: [radius, height]
+        // At z=20 (local 0), radius = cone_bottom_od/2 = 5
+        // At z=50 (local 30), radius = cone_top_od/2 = 30
+        translate([0, 0, 20]) 
+            rotate_extrude($fn = 64) 
+                polygon([
+                    [cone_bottom_od/2, 0],
+                    [cone_top_od/2, cone_h],
+                    [cone_top_od/2, 0],
+                    [cone_bottom_od/2, 0]
+                ]);
+    }
+    
+    // 2. The inner void (Difference to cut out the hole)
+    // We need to cut out the spout bore and the cone bore.
+    // Inner void: Vertical cylinder for spout, then tapered cone.
+    
+    union() {
+        // Void Spout: Vertical cylinder from z=0 to z=20
+        translate([0, 0, 0]) 
+            cylinder(h = spout_h, d = spout_id);
+        
+        // Void Cone: From z=20 to z=50
+        // Profile points: [radius, height]
+        // At z=20 (local 0), radius = cone_bottom_id/2 = 3.4
+        // At z=50 (local 30), radius = cone_top_id/2 = 26.7
+        translate([0, 0, 20]) 
+            rotate_extrude($fn = 64) 
+                polygon([
+                    [cone_bottom_id/2, 0],
+                    [cone_top_id/2, cone_h],
+                    [cone_top_id/2, 0],
+                    [cone_bottom_id/2, 0]
+                ]);
+    }
+}

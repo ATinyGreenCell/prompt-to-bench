@@ -1,0 +1,72 @@
+// Lab funnel - straight spout with conical body, open top and bottom.
+// Printed upright, wide opening at top (z=50), spout at bottom (z=0).
+
+// Dimensions
+spout_od      = 10;      // Outer diameter of straight spout
+spout_id      = 6.8;     // Inner diameter of straight spout (10 - 2*1.6)
+spout_len     = 20;      // Length of straight spout
+funnel_start  = 20;      // Z position where cone begins
+funnel_end    = 50;      // Z position of funnel rim
+funnel_od     = 60;      // Outer diameter at rim
+funnel_id     = 56.8;    // Inner diameter at rim (60 - 2*1.6)
+wall_thick    = 1.6;     // Wall thickness everywhere
+
+$fn = 128;
+
+// Define the outer profile as a list of [radius, z] points
+// We build the profile from bottom (z=0) to top (z=50).
+// Points:
+// 1. Bottom tip (radius 0, z=0)
+// 2. Spout start (radius 5, z=0) -> Wait, the spout is a tube. 
+//    The profile must define the outer surface.
+//    At z=0, outer radius is 0 (tip) or 5 (if it's a tube starting at 0)?
+//    "Straight spout... runs from z=0 to z=20". Usually implies a tube.
+//    If it's a tube, the outer radius at z=0 is 5mm.
+//    Let's assume the spout is a hollow cylinder starting at z=0 with OD=10.
+//    So at z=0, outer radius = 5.
+//    At z=20, outer radius = 5.
+//    At z=50, outer radius = 30.
+//    Inner radius:
+//    At z=0, inner radius = 3.4.
+//    At z=20, inner radius = 3.4.
+//    At z=50, inner radius = 28.4.
+
+// Outer Profile Points [radius, z]
+// Start at z=0, r=5. End at z=50, r=30.
+// We need to ensure the bottom is closed or open? "Open at the bottom".
+// So the solid exists from z=0 to z=50.
+// The profile for rotate_extrude starts at z=0.
+// Point 1: [5, 0]
+// Point 2: [5, 20]
+// Point 3: [30, 50]
+
+// Inner Profile Points [radius, z]
+// Point 1: [3.4, 0]
+// Point 2: [3.4, 20]
+// Point 3: [28.4, 50]
+
+// Construct the outer shape
+outer_points = [
+    [spout_od / 2, 0],
+    [spout_od / 2, funnel_start],
+    [funnel_od / 2, funnel_end]
+];
+
+// Construct the inner shape
+inner_points = [
+    [spout_id / 2, 0],
+    [spout_id / 2, funnel_start],
+    [funnel_id / 2, funnel_end]
+];
+
+difference() {
+    // Create the outer solid
+    rotate_extrude() 
+        linear_extrude(height = funnel_end) 
+            polygon(outer_points);
+    
+    // Create the inner void (hole)
+    rotate_extrude() 
+        linear_extrude(height = funnel_end) 
+            polygon(inner_points);
+}

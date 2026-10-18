@@ -1,0 +1,97 @@
+// Rack for six 50 mL conical (Falcon-type) tubes.
+// Print orientation: Flat plate on bed (z=0), walls rising to z=70.
+// After printing, flip over so walls are on the bed and tubes hang down.
+
+// Plate dimensions
+L     = 130;   // Length (X)
+W     = 90;    // Width (Y)
+t     = 4;     // Plate thickness (Z)
+
+// Hole specifications
+n_holes = 6;
+hole_d  = 30.5;
+// Grid layout: 2 rows (Y), 3 columns (X)
+// Spacing 40mm centre-to-centre
+dx = 40;
+dy = 40;
+
+// Wall specifications
+wall_h = 70;   // Total height of wall from plate top (z=4)
+wall_t = 4;    // Wall thickness (Y)
+
+// Derived positions
+// Centring the grid on the plate
+x_offset = (L - (n_holes - 1) * dx) / 2;
+y_offset = (W - (2 - 1) * dy) / 2;
+
+// Calculate wall positions (flush with long edges, i.e., Y = 0 and Y = W)
+// Since the plate is at z=0 to z=4, walls start at z=4.
+// We model the whole assembly from z=0.
+// Wall 1: at Y = 0, from Z=0 to Z=74 (4mm plate + 70mm wall)
+// Wall 2: at Y = W, from Z=0 to Z=74
+
+$fn = 64;
+
+module rack() {
+    // 1. The Base Plate
+    translate([0, 0, 0])
+        cube([L, W, t]);
+
+    // 2. The Through Holes
+    // We subtract cylinders. To ensure clean cuts, we extend them slightly past the plate top.
+    for (i = [0 : n_holes - 1]) {
+        // Determine X and Y position for this hole
+        // i goes 0, 1, 2 (columns) and we need to map to rows.
+        // Let's iterate rows first, then columns to match the description "2 rows of 3".
+        // Actually, the loop above is just one index. Let's use nested loops or a single loop with mapping.
+        // Mapping: row = i / 3, col = i % 3.
+        row = i / 3;
+        col = i % 3;
+        
+        x_pos = x_offset + col * dx;
+        y_pos = y_offset + row * dy;
+        
+        translate([x_pos, y_pos, 0])
+            cylinder(h = t + 1, d = hole_d); // +1mm to clear the top face
+    }
+
+    // 3. The Side Walls
+    // Wall 1: Left side (Y = 0)
+    translate([0, 0, 0])
+        cube([L, wall_t, wall_h + t]); // Extends down to z=0 for simplicity in union/difference logic if needed, 
+                                       // but here we just add to the plate. 
+                                       // Wait, the plate is at z=0..4. Walls rise from z=4 to z=74.
+                                       // So total height is 74.
+                                       // Let's make them sit on the plate.
+    
+    // Correct approach: Union the plate and walls, then subtract holes.
+    // Re-doing structure for clarity:
+    
+    union() {
+        // Base Plate
+        translate([0, 0, 0])
+            cube([L, W, t]);
+        
+        // Left Wall (at Y=0)
+        translate([0, 0, t])
+            cube([L, wall_t, wall_h]);
+            
+        // Right Wall (at Y=W)
+        translate([0, W, t])
+            cube([L, wall_t, wall_h]);
+    }
+    
+    // Subtract Holes (applied to the union above)
+    for (i = [0 : n_holes - 1]) {
+        row = i / 3;
+        col = i % 3;
+        
+        x_pos = x_offset + col * dx;
+        y_pos = y_offset + row * dy;
+        
+        translate([x_pos, y_pos, 0])
+            cylinder(h = t + wall_h + 1, d = hole_d); // Extend past top of walls
+    }
+}
+
+rack();

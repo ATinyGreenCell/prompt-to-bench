@@ -1,0 +1,41 @@
+// 10-well agarose gel comb - flat plate with spine and hanging teeth.
+// Orientation: Lying flat on XY plane, spine along X, teeth hanging in -Y.
+
+// Dimensions
+spine_len = 70;
+spine_w   = 12;
+plate_thk = 1.5;
+
+tooth_w   = 5.0;
+tooth_l   = 12;
+tooth_gap = 1.5;
+num_teeth = 10;
+
+$fn = 64;
+
+// Calculate total width of the tooth row
+tooth_row_w = (num_teeth * tooth_w) + ((num_teeth - 1) * tooth_gap);
+
+// Calculate the starting X position for the row to center it on the spine
+// Spine center is at 0. Tooth row center must be at 0.
+// Left edge of the row = -tooth_row_w / 2
+row_start_x = -tooth_row_w / 2;
+
+// Step size for X positions (tooth width + gap)
+step_x = tooth_w + tooth_gap;
+
+// Build the spine
+translate([-spine_len / 2, -spine_w / 2, 0])
+    cube([spine_len, spine_w, plate_thk]);
+
+// Build the teeth
+for (i = [0 : num_teeth - 1]) {
+    // Calculate X position for this tooth
+    tooth_x = row_start_x + i * step_x;
+    
+    // Teeth hang from the -Y edge of the spine
+    // Spine bottom edge is at y = -spine_w / 2
+    // Teeth extend from there down by tooth_l
+    translate([tooth_x, -spine_w / 2 - tooth_l, 0])
+        cube([tooth_w, tooth_l, plate_thk]);
+}

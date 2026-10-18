@@ -1,0 +1,119 @@
+// Hose-barb Reducer Design
+// Units: millimetres
+// Orientation: Standing upright along Z, resting on XY plane at z=0
+
+// --- Dimensions ---
+// Main bore diameter (constant through part)
+$main_bore_d = 3.0;
+
+// Section 1: 8mm Tubing Barbs (z = 0 to 20)
+$sec1_start_z = 0;
+$sec1_end_z = 20;
+$barb_height_1 = 10;
+$barb_base_od_1 = 7.5;
+$barb_tip_od_1 = 9.5;
+$barb_step_od_1 = 7.5;
+
+// Section 2: Collar (z = 20 to 25)
+$sec2_start_z = 20;
+$sec2_end_z = 25;
+$collar_od = 12.0;
+
+// Section 3: 5mm Tubing Barbs (z = 25 to 41)
+$sec3_start_z = 25;
+$sec3_end_z = 41;
+$barb_height_3 = 8;
+$barb_base_od_3 = 6.5;
+$barb_tip_od_3 = 5.0;
+$barb_step_od_3 = 6.5;
+
+// --- Configuration ---
+$fn = 128;
+
+// --- Main Body Construction ---
+difference() {
+    union() {
+        // Section 1: Sawtooth Barbs (8mm tubing)
+        // Profile: Base 7.5 -> Linear Grow to 9.5 -> Step Back to 7.5.
+        // Since the barb is 10mm tall and grows linearly over that height, the tip is at 9.5.
+        // The "step back" implies the diameter drops to 7.5 immediately at the tip.
+        // We model this as a cone (frustum) for the growth, and a small flat top or sharp edge.
+        // To ensure printability and correct geometry, we model the "step" as a very small flat top
+        // or simply the cone tip if the step is instantaneous.
+        // However, a cone in OpenSCAD with r1 != r2 creates a flat top face if we don't specify a point.
+        // Actually, a cone with r1 and r2 creates a frustum with a flat top face of radius r2.
+        // If we want it to "step back" to 7.5, we need a cylinder of 7.5mm sitting on top?
+        // No, that would make it wider.
+        // The only way to "step back" is if the 7.5mm cylinder continues *under* the barb,
+        // and the barb is just the protrusion.
+        // BUT the prompt says "From z=0 to z=20: two identical barbs... stacked".
+        // This implies the object *is* the barbs.
+        // Let's assume the "step back" is the return to the base diameter *at the very top* of the barb,
+        // creating a re-entrant corner.
+        // We will model the barb as a cone (7.5 to 9.5) and then a tiny cylinder (9.5 to 7.5) is impossible.
+        // We will model it as: Cylinder (7.5) + Cone (7.5 to 9.5). The "step back" is the transition from the cone tip to the next section.
+        // Wait, if the next section starts at z=20, and the cone ends at z=20 with r=4.75.
+        // The next section (Collar) is 12mm.
+        // So the "step back" must be the transition from the 9.5mm tip to the 12mm collar? No, that's a step up.
+        // Maybe the "step back" means the barb is a "tent" on top of a 7.5mm cylinder, and the 7.5mm cylinder continues.
+        // If so, the object from z=0 to 20 is:
+        // z=0 to 10: Cylinder 7.5 + Cone (7.5 to 9.5).
+        // z=10 to 20: Cylinder 7.5 + Cone (7.5 to 9.5).
+        // This fits "two identical barbs stacked".
+        // And the "step back" is the return to the 7.5mm cylinder diameter at the top of the cone.
+        
+        // Let's build Section 1 as two stacked units.
+        // Unit 1 (z=0 to 10):
+        //   - Base: Cylinder r=3.75, h=10.
+        //   - Barb: Cone r1=3.75, r2=4.75, h=10.
+        //   - Union them.
+        
+        // Unit 2 (z=10 to 20):
+        //   - Base: Cylinder r=3.75, h=10.
+        //   - Barb: Cone r1=3.75, r2=4.75, h=10.
+        //   - Union them.
+        
+        // This creates a shape where the OD is 7.5 everywhere except the cones which go to 9.5.
+        // This matches "grows linearly... then steps straight back to 7.5" (the step is the return to the base cylinder).
+        
+        // Barb 1 (Bottom)
+        translate([0, 0, $sec1_start_z])
+        union() {
+            cylinder(h = $barb_height_1, r = $barb_base_od_1 / 2, $fn = $fn);
+            cone(h = $barb_height_1, r1 = $barb_base_od_1 / 2, r2 = $barb_tip_od_1 / 2, $fn = $fn);
+        }
+        
+        // Barb 2 (Top)
+        translate([0, 0, $sec1_start_z + $barb_height_1])
+        union() {
+            cylinder(h = $barb_height_1, r = $barb_base_od_1 / 2, $fn = $fn);
+            cone(h = $barb_height_1, r1 = $barb_base_od_1 / 2, r2 = $barb_tip_od_1 / 2, $fn = $fn);
+        }
+        
+        // Section 2: Collar (z = 20 to 25)
+        translate([0, 0, $sec2_start_z])
+        cylinder(h = $sec2_end_z - $sec2_start_z, r = $collar_od / 2, $fn = $fn);
+        
+        // Section 3: 5mm Tubing Barbs (z = 25 to 41)
+        // Profile: Base 6.5 -> Linear Shrink to 5.0 -> Step Back to 6.5.
+        // Similar logic: Base cylinder + Shrinking cone.
+        
+        // Barb 3 (Bottom)
+        translate([0, 0, $sec3_start_z])
+        union() {
+            cylinder(h = $barb_height_3, r = $barb_base_od_3 / 2, $fn = $fn);
+            cone(h = $barb_height_3, r1 = $barb_base_od_3 / 2, r2 = $barb_tip_od_3 / 2, $fn = $fn);
+        }
+        
+        // Barb 4 (Top)
+        translate([0, 0, $sec3_start_z + $barb_height_3])
+        union() {
+            cylinder(h = $barb_height_3, r = $barb_base_od_3 / 2, $fn = $fn);
+            cone(h = $barb_height_3, r1 = $barb_base_od_3 / 2, r2 = $barb_tip_od_3 / 2, $fn = $fn);
+        }
+    }
+    
+    // Subtract the central bore
+    translate([0, 0, 0])
+    cylinder(h = $sec3_end_z, r = $main_bore_d / 2, $fn = $fn);
+}

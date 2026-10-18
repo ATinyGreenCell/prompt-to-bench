@@ -1,0 +1,42 @@
+// Drying rack for 10 microscope slides.
+// Base: 90 x 45 x 20 mm.
+// Slots: 10 parallel slots along X, 77 mm long, 1.6 mm wide, 10 mm deep.
+// Spacing: 3.5 mm centre-to-centre, centred on the block.
+
+// Dimensions
+L_base = 90;
+W_base = 45;
+H_base = 20;
+
+L_slot = 77;
+W_slot = 1.6;
+D_slot = 10;
+
+N_slots = 10;
+P_spacing = 3.5;
+
+$fn = 64;
+
+// Calculate slot positions to centre the group in Y
+// The first slot is at -(N_slots-1)/2 * P_spacing
+// The i-th slot (0 to N_slots-1) is at i * P_spacing relative to the first
+// Then shift the whole group so the centre is at 0.
+// Group centre offset = - (N_slots - 1) / 2 * P_spacing
+group_offset = - (N_slots - 1) / 2 * P_spacing;
+
+difference() {
+    // Main block
+    translate([0, 0, 0]) cube([L_base, W_base, H_base]);
+
+    // Cut slots
+    for (i = [0 : N_slots - 1]) {
+        // Calculate Y position for this slot
+        y_pos = i * P_spacing + group_offset;
+        
+        // Slot geometry: runs along X, width in Y, depth in Z
+        // Slot is open at top (Z=H_base), so we cut from Z=0 up to Z=D_slot
+        // To ensure clean cut, extend slightly past the top face
+        translate([0, y_pos, 0]) 
+            cube([L_slot, W_slot, D_slot + 0.1]);
+    }
+}

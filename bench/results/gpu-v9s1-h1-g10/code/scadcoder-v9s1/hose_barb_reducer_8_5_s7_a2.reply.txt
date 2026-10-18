@@ -1,0 +1,67 @@
+```openscad
+// Hose-barb reducer: 8 mm ID -> 5 mm ID
+// Print orientation: standing upright along Z
+
+$fn = 96;
+
+// ---- Dimensions (mm) ----
+id1      = 8;     // 8 mm tubing inner diameter
+id2      = 5;     // 5 mm tubing inner diameter
+bore     = 3;     // through-bore diameter
+barb_h8  = 10;    // height of 8 mm barbs
+barb_h5  = 8;     // height of 5 mm barbs
+collar_d = 12;    // collar diameter
+z0       = 0;     // start of barbs
+z1       = 20;    // start of collar
+z2       = 25;    // end of collar
+z3       = 41;    // end of 5 mm barbs
+eps      = 0.5;   // overlap for clean booleans
+
+// ---- Derived ----
+od8_bot = 7.5;
+od8_top = 9.5;
+od5_bot = 6.5;
+od5_top = 5.0;
+
+module barb8() {
+    hull() {
+        translate([0, 0, z0])
+            cylinder(d = od8_bot, h = barb_h8);
+        translate([0, 0, z1 - eps])
+            cylinder(d = od8_top, h = eps);
+    }
+}
+
+module barb5() {
+    hull() {
+        translate([0, 0, z2])
+            cylinder(d = od5_bot, h = barb_h5);
+        translate([0, 0, z3 - eps])
+            cylinder(d = od5_top, h = eps);
+    }
+}
+
+module through() {
+    translate([0, 0, -eps])
+        cylinder(d = bore, h = z3 + 2 * eps);
+}
+
+union() {
+    // 8 mm barbs
+    for (i = [0 : 1])
+        translate([0, 0, z0 + i * barb_h8])
+            cylinder(d = [od8_bot, od8_top], h = barb_h8, $fn = 96);
+
+    // collar
+    translate([0, 0, z1])
+        cylinder(d = collar_d, h = z2 - z1);
+
+    // 5 mm barbs
+    for (i = [0 : 1])
+        translate([0, 0, z2 + i * barb_h5])
+            cylinder(d = [od5_bot, od5_top], h = barb_h5, $fn = 96);
+
+    // through bore
+    through();
+}
+```

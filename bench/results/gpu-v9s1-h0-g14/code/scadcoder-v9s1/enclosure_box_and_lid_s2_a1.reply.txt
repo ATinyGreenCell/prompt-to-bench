@@ -1,0 +1,50 @@
+```openscad
+// Two-part enclosure for small electronics board (e.g., Arduino-based temp logger)
+// Print orientation: both parts on the bed, side by side, with a 10 mm gap.
+// Part 1 (left): open-top box. Part 2 (right): lid, printed upside down.
+
+// ---------------- Parameters ----------------
+box_x      = 70;    // box outer size in X (mm)
+box_y      = 50;    // box outer size in Y (mm)
+box_z      = 30;    // box outer size in Z (mm)
+box_wall   = 2;     // box wall thickness (mm)
+box_floor  = 2;     // box floor thickness (mm)
+
+lip_w      = 65.6;  // lid lip outer size in X (mm)
+lip_d      = 45.6;  // lid lip outer size in Y (mm)
+lip_h      = 1.5;   // lid lip thickness (mm)
+lip_t      = 4;     // lid plate thickness (mm)
+
+gap        = 10;    // gap between box and lid on the bed (mm)
+clearance  = 0.2;   // clearance between lid lip and box opening (mm)
+eps        = 0.5;   // cutter overshoot past faces (mm)
+
+$fn = 64;
+
+// ---------------- Derived ----------------
+box_h_internal = box_z - box_floor - box_wall;   // 27 mm
+lip_w_clear    = lip_w + 2 * clearance;          // 66 mm (0.2 clearance each side)
+lip_d_clear    = lip_d + 2 * clearance;          // 46 mm
+
+// ---------------- Model ----------------
+union() {
+    // Part 1: Open-top box
+    translate([-box_x / 2, -box_y / 2, 0])
+        cube([box_x, box_y, box_z]);
+
+    // Part 2: Lid, printed upside down.
+    // Plate on the bed, lip on top of it, sliding into the box opening.
+    translate([-(lip_w_clear / 2 - gap), -lip_d / 2, 0])
+        linear_extrude(height = lip_t + lip_h)
+            polygon([
+                [-lip_w / 2, -lip_d / 2],
+                [ lip_w / 2, -lip_d / 2],
+                [ lip_w / 2,  lip_d / 2],
+                [-lip_w / 2,  lip_d / 2]
+            ]);
+
+    // Cut the lip out except for the part that overlaps the plate (fusion)
+    translate([-(lip_w / 2 + eps), -lip_d / 2 - eps, lip_t])
+        cube([lip_w + 2 * eps, lip_d + 2 * eps, lip_h + eps]);
+}
+```

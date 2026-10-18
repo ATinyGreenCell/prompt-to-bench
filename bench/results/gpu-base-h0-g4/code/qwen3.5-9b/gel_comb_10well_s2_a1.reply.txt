@@ -1,0 +1,96 @@
+The measurement report reveals a critical error in the Y-axis positioning logic.
+
+**Analysis of the Error:**
+1.  **Specification:** The spine is 12 mm wide. The teeth hang 12 mm long in the **-Y** direction.
+2.  **Report Data:** The bounding box shows Y ranges from **-6.00 to 12.00**.
+    *   Total Y span = 18 mm.
+    *   Spine width = 12 mm.
+    *   Tooth length = 12 mm.
+    *   Expected Total Y span = 12 (spine) + 12 (teeth) = 24 mm.
+3.  **The Mismatch:** The report shows the part is only 18 mm tall in Y, meaning the teeth are not extending the full 12 mm length.
+    *   The spine is correctly centered at Y=0 (from -6 to +6).
+    *   The teeth start at Y=-6 (the bottom edge).
+    *   The code used `translate([..., -6, 0])` followed by `cube(..., 12, ...)`.
+    *   However, `cube` with `center=false` places the object starting at (0,0,0) by default. The translation moved the *origin* of the cube to (-6, 0). The cube then extends from Y=0 to Y=12.
+    *   Wait, let's re-evaluate the coordinate math.
+    *   `translate([x, -6, 0])` moves the object so its local (0,0) is at global (-6, 0).
+    *   `cube([5, 12, 1.5])` creates a box from local (0,0) to (5, 12, 1.5).
+    *   Global coordinates: Y goes from -6 to (-6 + 12) = +6.
+    *   This places the teeth *overlapping* the spine (from -6 to +6) instead of hanging *below* it.
+    *   The spine occupies Y: -6 to +6.
+    *   The teeth should occupy Y: -6 to -18.
+    *   To get a box from -6 to -18, we need to translate the origin to -6, but the box must extend in the negative direction.
+    *   Correct approach: Translate to `y = -6`, then use `cube` which extends positive Y? No, that goes to +6.
+    *   Correct approach: Translate to `y = -6`, then we need the box to go from 0 to -12? No, `cube` always grows positive from origin.
+    *   We need the box to occupy Y range [-18, -6].
+    *   If we translate to `y = -18`, and make the box height 12, it goes from -18 to -6.
+    *   Alternatively, translate to `y = -6` and use a negative dimension? No, dimensions must be positive.
+    *   So, the translation Y should be `-6 - 12 = -18`.
+    *   Let's check the previous logic again.
+    *   Previous code: `translate([..., -6, 0])` + `cube(..., 12, ...)`. Result: Y from -6 to +6. (Overlap).
+    *   Desired: Y from -6 to -18.
+    *   Fix: Translate Y to `-18`. The box grows from -18 to -6. This works perfectly.
+
+**Correction Plan:**
+Change the tooth translation Y coordinate from `-SPINE_WIDTH / 2` (-6) to `-(SPINE_WIDTH / 2 + TOOTH_LENGTH)` (-18).
+
+```openscad
+// 10-well Agarose Gel Casting Comb
+// Designed for FDM printing, lying flat on the XY plane (Z=0).
+
+// --- Dimensions ---
+$fn = 64; // Smoothness for curved features
+
+// Spine dimensions
+SPINE_LENGTH = 70;   // mm (X)
+SPINE_WIDTH = 12;    // mm (Y)
+PLATE_THICKNESS = 1.5; // mm (Z)
+
+// Tooth dimensions
+NUM_TEETH = 10;
+TOOTH_WIDTH = 5.0;   // mm (X)
+TOOTH_LENGTH = 12;   // mm (Y) (extends from spine edge)
+GAP_SIZE = 1.5;      // mm (X) between teeth
+
+// --- Calculations ---
+// Total width of the tooth row
+TOOTH_ROW_WIDTH = (NUM_TEETH * TOOTH_WIDTH) + ((NUM_TEETH - 1) * GAP_SIZE);
+
+// Offset to center the tooth row on the spine in X
+X_OFFSET = (SPINE_LENGTH - TOOTH_ROW_WIDTH) / 2;
+
+// Position of the spine edge where teeth hang (in Y)
+// Spine goes from -SPINE_WIDTH/2 to +SPINE_WIDTH/2.
+// Teeth hang in -Y direction, so they start at -SPINE_WIDTH/2 and extend to -SPINE_WIDTH/2 - TOOTH_LENGTH.
+SPINE_Y_START = -SPINE_WIDTH / 2;
+TEETH_Y_START = SPINE_Y_START - TOOTH_LENGTH;
+
+// --- Main Body (Spine) ---
+// A flat plate 70x12x1.5
+difference() {
+    // Outer block
+    cube([SPINE_LENGTH, SPINE_WIDTH, PLATE_THICKNESS], center = false);
+    
+    // Cut out the area where teeth will hang to ensure clean separation
+    // We cut a rectangle slightly larger than the tooth row to avoid coplanar faces
+    translate([X_OFFSET, SPINE_Y_START, 0]) {
+        cube([TOOTH_ROW_WIDTH, TOOTH_LENGTH + 0.1, PLATE_THICKNESS + 0.1], center = false);
+    }
+}
+
+// --- Teeth ---
+// We iterate through each tooth position
+for (i = [0 : NUM_TEETH - 1]) {
+    // Calculate X position for this tooth
+    // Start at X_OFFSET, add tooth width and gaps
+    current_x = X_OFFSET + (i * (TOOTH_WIDTH + GAP_SIZE));
+    
+    // Translate to position
+    translate([current_x, TEETH_Y_START, 0]) {
+        // Tooth geometry: 5.0 wide (X) x 12 long (Y) x 1.5 thick (Z)
+        // The tooth hangs down from the spine edge.
+        // With TEETH_Y_START = -18, and cube growing positive Y, it occupies Y from -18 to -6.
+        cube([TOOTH_WIDTH, TOOTH_LENGTH, PLATE_THICKNESS], center = false);
+    }
+}
+```

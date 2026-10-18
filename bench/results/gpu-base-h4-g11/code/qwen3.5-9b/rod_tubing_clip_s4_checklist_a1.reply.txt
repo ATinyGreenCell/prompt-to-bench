@@ -1,0 +1,74 @@
+```openscad
+// Snap-on clip for lab stand rod and tubing.
+// Printed flat: 10 mm tall extrusion (Z) of a 2-D profile in the XY plane.
+// Orientation: Rests on XY plane at z=0, builds upward. Centred on origin.
+
+// Dimensions
+rod_id   = 12.7;   // Rod inner diameter
+rod_wall = 3;      // Rod ring wall thickness
+rod_od   = rod_id + 2 * rod_wall; // Rod outer diameter (18.7)
+rod_cut  = 10;     // Width of opening in rod ring (-X side)
+
+tube_id  = 6;      // Tubing inner diameter
+tube_wall = 2;     // Tubing ring wall thickness
+tube_od  = tube_id + 2 * tube_wall; // Tubing outer diameter (10)
+tube_x   = 15;     // Center X of tubing ring
+tube_cut = 4.5;    // Width of opening in tubing ring (+X side)
+
+bridge_w = 6;      // Width of bridge in Y
+bridge_x1 = 8;     // Start X of bridge
+bridge_x2 = 12;    // End X of bridge
+
+height   = 10;     // Extrusion height (Z)
+
+$fn = 64;
+
+// Build the solid profile in the XY plane, then extrude along Z.
+// The profile is constructed by uniting the outer boundaries and subtracting the voids.
+
+difference() {
+    // 1. Create the solid outer shape by uniting the three main components:
+    //    - Rod Ring (C-shape)
+    //    - Tubing Ring (C-shape)
+    //    - Bridge (Rectangle)
+    
+    union() {
+        // Rod Ring: OD 18.7, centered at (0,0). Opening on -X side (x<0, |y|<5).
+        // We create a C-shape by taking a full circle and subtracting a rectangle.
+        // To ensure the cutout is deep enough, we subtract a rectangle slightly larger than the cutout dimensions.
+        translate([0, 0]) {
+            cylinder(h = height, d = rod_od);
+            // Subtract the void inside the rod ring
+            translate([0, 0]) cylinder(h = height + 0.1, d = rod_id);
+            // Subtract the opening on the -X side
+            translate([-rod_od/2, -rod_cut/2]) cube([rod_cut + 0.1, rod_cut, height + 0.1]);
+        }
+        
+        // Tubing Ring: OD 10, centered at (15,0). Opening on +X side (x>15, |y|<2.25).
+        translate([tube_x, 0]) {
+            cylinder(h = height, d = tube_od);
+            // Subtract the void inside the tubing ring
+            translate([0, 0]) cylinder(h = height + 0.1, d = tube_id);
+            // Subtract the opening on the +X side
+            translate([tube_od/2, -tube_cut/2]) cube([tube_cut + 0.1, tube_cut, height + 0.1]);
+        }
+        
+        // Bridge: Rectangle from x=8 to x=12, y=-3 to y=3 (width 6).
+        // Positioned to connect the two rings.
+        translate([bridge_x1, -bridge_w/2]) cube([bridge_x2 - bridge_x1, bridge_w, height]);
+    }
+    
+    // 2. Subtract the internal voids (holes) to ensure clean internal surfaces.
+    // Rod Inner Hole
+    translate([0, 0]) cylinder(h = height + 0.1, d = rod_id);
+    
+    // Tubing Inner Hole
+    translate([tube_x, 0]) cylinder(h = height + 0.1, d = tube_id);
+    
+    // Rod Cutout Void (ensure it's fully removed)
+    translate([-rod_od/2, -rod_cut/2]) cube([rod_cut + 0.1, rod_cut, height + 0.1]);
+    
+    // Tubing Cutout Void (ensure it's fully removed)
+    translate([tube_x + tube_od/2, -tube_cut/2]) cube([tube_cut + 0.1, tube_cut, height + 0.1]);
+}
+```

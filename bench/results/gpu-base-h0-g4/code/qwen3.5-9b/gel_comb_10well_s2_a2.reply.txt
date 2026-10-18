@@ -1,0 +1,115 @@
+The measurement report confirms the geometry is now correct:
+1.  **Bounding Box Y**: -18.00 .. 12.00 (Size 30.00). This matches the spec: Spine (12mm) + Teeth (12mm) = 24mm? Wait.
+    *   Spine is 12mm wide. Centered at 0 -> Y: -6 to +6.
+    *   Teeth hang 12mm in -Y direction from the spine edge (-6).
+    *   Tooth bottom Y = -6 - 12 = -18.
+    *   Total Y span = -18 to +6. Size = 24mm.
+    *   **Report says**: Y -18.00 .. 12.00. Size 30.00.
+    *   **Discrepancy**: The spine is extending to +12 instead of +6.
+    *   **Cause**: In the `difference()` block, I used `cube([SPINE_LENGTH, SPINE_WIDTH, ...])`. `SPINE_WIDTH` is 12.
+    *   If the spine is centered at Y=0, a width of 12 should go from -6 to +6.
+    *   However, the report says the spine goes to +12. This implies the spine is not centered at Y=0, or the width variable is being interpreted differently relative to the translation.
+    *   Let's re-read the code logic.
+    *   `cube([70, 12, 1.5])` centered at (0,0) goes from -6 to +6.
+    *   Why does the report say Y max is 12?
+    *   Ah, I see the issue in my mental model of the previous code vs the report.
+    *   If the report says Y max is 12, and Y min is -18, the total height is 30.
+    *   Spec: Spine 12mm, Teeth 12mm. Total should be 24mm.
+    *   Where did the extra 6mm come from?
+    *   Maybe the spine is not centered at Y=0 in the final assembly?
+    *   Let's look at the `difference` block again.
+    *   `cube([SPINE_LENGTH, SPINE_WIDTH, PLATE_THICKNESS], center = false)` creates a box from 0 to 12 in Y.
+    *   **Found it!** In the first version of the code (and potentially carried over), I might have forgotten `center = true` or the logic assumed the spine started at 0.
+    *   In the *previous* code block I generated: `cube([SPINE_LENGTH, SPINE_WIDTH, PLATE_THICKNESS], center = false);`
+    *   This creates a spine from Y=0 to Y=12.
+    *   Then I cut the teeth area starting at `SPINE_Y_START = -SPINE_WIDTH / 2` (-6).
+    *   So the spine is from 0 to 12. The cut starts at -6.
+    *   The teeth hang from -6 down to -18.
+    *   So the total Y range is -18 to 12. Size = 30mm.
+    *   **Specification**: Spine is 12mm wide. It should be centered on the origin (X and Y).
+    *   **Fix**: The spine `cube` must be centered at Y=0. I need to add `center = true` to the spine cube, OR translate it.
+    *   Also, the cut for the teeth needs to be adjusted if the spine moves.
+    *   If spine is centered (Y: -6 to +6), the cut should start at -6.
+    *   If spine is centered, `cube(..., center=true)` works.
+    *   Then `translate([X_OFFSET, -6, 0])` for the cut.
+    *   Then `translate([current_x, -18, 0])` for the teeth.
+
+Let's verify the "centered on the origin" rule.
+"Unless told otherwise, centre it on the origin in X and Y."
+The user said: "the row of teeth is centred on the spine in X". It didn't explicitly say the spine is centered in Y, but standard practice and the "centre it on the origin" rule implies the whole part should be centered.
+If the spine is 12mm wide and centered, it goes -6 to +6.
+If the teeth hang 12mm from the bottom (-6), they go -6 to -18.
+Total Y: -18 to +6. Size 24mm.
+This matches the spec (12+12).
+
+The previous code had `center = false` for the spine, placing it at 0..12.
+I will change the spine to `center = true`.
+I will also ensure the cut and teeth translations are consistent with a centered spine.
+
+Revised Logic:
+1.  Spine: `cube(..., center=true)`. Range Y: -6 to +6.
+2.  Cut: Start at Y = -6 (bottom of spine). Translate Y by -6.
+3.  Teeth: Start at Y = -6 - 12 = -18. Translate Y by -18.
+
+```openscad
+// 10-well Agarose Gel Casting Comb
+// Designed for FDM printing, lying flat on the XY plane (Z=0).
+
+// --- Dimensions ---
+$fn = 64; // Smoothness for curved features
+
+// Spine dimensions
+SPINE_LENGTH = 70;   // mm (X)
+SPINE_WIDTH = 12;    // mm (Y)
+PLATE_THICKNESS = 1.5; // mm (Z)
+
+// Tooth dimensions
+NUM_TEETH = 10;
+TOOTH_WIDTH = 5.0;   // mm (X)
+TOOTH_LENGTH = 12;   // mm (Y) (extends from spine edge)
+GAP_SIZE = 1.5;      // mm (X) between teeth
+
+// --- Calculations ---
+// Total width of the tooth row
+TOOTH_ROW_WIDTH = (NUM_TEETH * TOOTH_WIDTH) + ((NUM_TEETH - 1) * GAP_SIZE);
+
+// Offset to center the tooth row on the spine in X
+X_OFFSET = (SPINE_LENGTH - TOOTH_ROW_WIDTH) / 2;
+
+// Position of the spine edge where teeth hang (in Y)
+// Spine is centered at Y=0, so it goes from -SPINE_WIDTH/2 to +SPINE_WIDTH/2.
+// Teeth hang in -Y direction from the bottom edge (-SPINE_WIDTH/2).
+SPINE_Y_HALF = SPINE_WIDTH / 2;
+SPINE_Y_START = -SPINE_Y_HALF; // Bottom of spine
+TEETH_Y_START = SPINE_Y_START - TOOTH_LENGTH; // Bottom of teeth
+
+// --- Main Body (Spine) ---
+// A flat plate 70x12x1.5, centered at origin
+difference() {
+    // Outer block (centered)
+    cube([SPINE_LENGTH, SPINE_WIDTH, PLATE_THICKNESS], center = true);
+    
+    // Cut out the area where teeth will hang to ensure clean separation
+    // We cut a rectangle slightly larger than the tooth row to avoid coplanar faces
+    // Start at the bottom of the spine (Y = -6)
+    translate([X_OFFSET, SPINE_Y_START, 0]) {
+        cube([TOOTH_ROW_WIDTH, TOOTH_LENGTH + 0.1, PLATE_THICKNESS + 0.1], center = false);
+    }
+}
+
+// --- Teeth ---
+// We iterate through each tooth position
+for (i = [0 : NUM_TEETH - 1]) {
+    // Calculate X position for this tooth
+    // Start at X_OFFSET, add tooth width and gaps
+    current_x = X_OFFSET + (i * (TOOTH_WIDTH + GAP_SIZE));
+    
+    // Translate to position
+    translate([current_x, TEETH_Y_START, 0]) {
+        // Tooth geometry: 5.0 wide (X) x 12 long (Y) x 1.5 thick (Z)
+        // The tooth hangs down from the spine edge.
+        // With TEETH_Y_START = -18, and cube growing positive Y, it occupies Y from -18 to -6.
+        cube([TOOTH_WIDTH, TOOTH_LENGTH, PLATE_THICKNESS], center = false);
+    }
+}
+```

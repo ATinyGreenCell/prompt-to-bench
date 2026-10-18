@@ -1,0 +1,150 @@
+The measurement report reveals several critical deviations from the user's specifications:
+
+1.  **Incorrect Geometry (Barbs are Rectangular):** The report shows outlines like `12.00 x 16.50` and `12.00 x 14.50`. The user specified the part is **round** (rotationally symmetric). The previous code used `polygon` with a 2D profile and `linear_extrude`, which creates a rectangular prism with rounded corners, not a cylinder.
+2.  **Incorrect Barb Placement (Section 1):** The report shows a solid region at `z=15.25` (inside the 0-20mm range) but no hole. The spec requires two stacked barbs (one at z=0, one at z=10) with a specific sawtooth profile. The current code places them incorrectly or fails to cut the bore through them properly in the union.
+3.  **Incorrect Barb Placement (Section 3):** Similar to Section 1, the report shows a solid region at `z=33.25` but the shape is rectangular, not cylindrical.
+4.  **Missing Section 2 (Collar):** The report shows a circular outline at `z=21.39` (inside the 20-25mm collar range), which is good, but the overall shape is wrong because the barbs are rectangular.
+5.  **Z-Height:** The bounding box shows `Z 0.00 .. 41.50`. The spec ends at `z=41`. The extra 0.5mm comes from the `step_h` (0.5mm) added to the extrusion height in the previous attempt.
+
+**Correction Strategy:**
+1.  Use `rotate_extrude` to create the true cylindrical shapes for the barbs and the main body.
+2.  Define the profile for each barb section as a 2D polygon in the XZ plane (or YZ), then rotate it 360 degrees.
+3.  Ensure the main body is a cylinder with a central bore.
+4.  Place the barbs at the correct Z positions:
+    *   Section 1: z=0 and z=10.
+    *   Section 2: z=20 to z=25 (Collar).
+    *   Section 3: z=25 and z=33.
+5.  Ensure the bore (3mm) cuts through the entire length, including the barbs.
+
+```openscad
+// Hose-Barb Reducer Design (Corrected)
+// Units: mm
+// Orientation: Standing upright on XY plane, building +Z
+
+// --- Dimensions ---
+// Main bore diameter
+$main_bore_d = 3.0;
+$main_bore_r = $main_bore_d / 2.0;
+
+// Section 1: 8mm Tubing Interface (z=0 to z=20)
+$sec1_start_z = 0;
+$sec1_end_z = 20;
+$sec1_barb_height = 10;
+$sec1_barb_bottom_od = 7.5;
+$sec1_barb_top_od = 9.5;
+$sec1_barb_count = 2;
+$sec1_barb_spacing = 12; // Center-to-center distance between barbs
+
+// Section 2: Collar (z=20 to z=25)
+$sec2_start_z = 20;
+$sec2_end_z = 25;
+$sec2_collar_od = 12;
+$sec2_collar_id = $main_bore_d; // Matches main bore
+
+// Section 3: 5mm Tubing Interface (z=25 to z=41)
+$sec3_start_z = 25;
+$sec3_end_z = 41;
+$sec3_barb_height = 8;
+$sec3_barb_bottom_od = 6.5;
+$sec3_barb_top_od = 5.0;
+$sec3_barb_count = 2;
+$sec3_barb_spacing = 10; // Center-to-center distance between barbs
+
+// --- Helper: Create Barb Profile Points ---
+// Returns a list of [x, z] points for the cross-section of one barb
+// z_start, z_end: The Z range of the barb
+// r_bottom, r_top: Radii at bottom and top
+// r_inner: Radius of the main bore (to ensure hole goes through)
+// The profile is defined in the XZ plane, rotated around Z.
+function get_barb_profile_points(z_start, z_end, r_bottom, r_top, r_inner) = 
+    [
+        // Bottom flat face (inner radius to outer radius)
+        [r_inner, z_start],
+        [r_bottom, z_start],
+        // Taper up
+        [r_bottom, z_end],
+        [r_top, z_end],
+        // Step out (flat top face)
+        [r_top, z_end + 0.5],
+        [r_inner, z_end + 0.5],
+        // Close loop back to start
+        [r_inner, z_start]
+    ];
+
+// --- Main Build ---
+
+$fn = 64;
+
+// We build the part in three main components:
+// 1. The Main Body (Cylinder with central bore)
+// 2. The Barbs (Union of all barb shapes)
+// 3. The Collar (Cylinder)
+// Then we Union them all together.
+
+// 1. Main Body
+// Height must cover the full length (41mm)
+// Radius must be large enough to contain the widest part of the barbs (9.5mm)
+// We add a tiny bit of safety margin for the collar calculation if needed, but 9.5 is the max OD.
+// However, the collar is 12mm, so the main body radius must be at least 6mm.
+// Let's make the main body radius 6mm (12mm OD) to cover the collar, 
+// and the barbs will be added on top of this base.
+$main_body_r = $sec2_collar_od / 2.0; 
+
+translate([0, 0, 0])
+difference() {
+    // Outer shell of the main body
+    cylinder(h = $sec3_end_z, r = $main_body_r, $fn = 64);
+    
+    // Inner bore through the whole length
+    cylinder(h = $sec3_end_z, r = $main_bore_r, $fn = 64);
+}
+
+// 2. Section 1 Barbs (8mm tubing)
+// Stacked at z=0 and z=10
+translate([0, 0, 0])
+union() {
+    for (i = [0, 1]) {
+        $z_pos = i * $sec1_barb_height;
+        
+        // Calculate radii
+        $r_bottom = $sec1_barb_bottom_od / 2.0;
+        $r_top = $sec1_barb_top_od / 2.0;
+        
+        // Get profile points
+        $pts = get_barb_profile_points($z_pos, $z_pos + $sec1_barb_height, $r_bottom, $r_top, $main_bore_r);
+        
+        // Extrude the profile
+        // The height of extrusion is the barb height + the step height (0.5mm)
+        $extrude_h = $sec1_barb_height + 0.5;
+        
+        rotate_extrude()
+        polygon(points = $pts);
+    }
+}
+
+// 3. Section 2 Collar (z=20 to z=25)
+translate([0, 0, $sec2_start_z])
+cylinder(h = $sec2_end_z - $sec2_start_z, r = $sec2_collar_od / 2.0, $fn = 64);
+
+// 4. Section 3 Barbs (5mm tubing)
+// Stacked at z=25 and z=33
+translate([0, 0, 0])
+union() {
+    for (i = [0, 1]) {
+        $z_pos = $sec3_start_z + i * $sec3_barb_height;
+        
+        // Calculate radii
+        $r_bottom = $sec3_barb_bottom_od / 2.0;
+        $r_top = $sec3_barb_top_od / 2.0;
+        
+        // Get profile points
+        $pts = get_barb_profile_points($z_pos, $z_pos + $sec3_barb_height, $r_bottom, $r_top, $main_bore_r);
+        
+        // Extrude the profile
+        $extrude_h = $sec3_barb_height + 0.5;
+        
+        rotate_extrude()
+        polygon(points = $pts);
+    }
+}
+```

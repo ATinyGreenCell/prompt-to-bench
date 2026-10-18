@@ -1,0 +1,115 @@
+// Hose-barb reducer: 8mm ID to 5mm ID
+// Orientation: Standing upright along Z, resting on XY plane at z=0.
+// Centered on origin in X and Y.
+
+$fn = 128; // High resolution for smooth curves and accurate hole sizes
+
+// --- Dimensions ---
+// Main bore
+$BoreID = 3.0;
+
+// Upper Section (z=0 to z=20): 8mm tubing connection
+$UpperStartZ = 0;
+$UpperEndZ = 20;
+$BarbCountUpper = 2;
+$BarbHeightUpper = 10;
+$BarbBaseODUpper = 7.5;
+$BarbTipODUpper = 9.5;
+$BarbStepODUpper = 7.5; // Diameter after the sawtooth tip
+
+// Collar Section (z=20 to z=25)
+$CollarStartZ = 20;
+$CollarEndZ = 25;
+$CollarOD = 12.0;
+
+// Lower Section (z=25 to z=41): 5mm tubing connection
+$LowerStartZ = 25;
+$LowerEndZ = 41;
+$BarbCountLower = 2;
+$BarbHeightLower = 8;
+$BarbBaseODLower = 6.5;
+$BarbTipODLower = 5.0;
+$BarbStepODLower = 6.5; // Diameter after the sawtooth tip
+
+// Barb Width (assumed constant width for the barb fin)
+$BarbWidth = 2.0; 
+
+// --- Helper Module: Create a single barb fin ---
+// Builds a fin with a sawtooth profile (Base -> Tip -> Step)
+// direction: 1 for growing (bottom to top), -1 for shrinking (top to bottom)
+module createBarb(z_start, z_end, base_od, tip_od, step_od, width, direction) {
+    local_height = z_end - z_start;
+    
+    // Define Z coordinates for the profile points
+    // We assume the "Tip" is at 80% of the height, and the "Step" is at the very top/bottom
+    if (direction == 1) {
+        // Growing: Base at bottom, Tip at peak, Step at top
+        z_base = z_start;
+        z_tip = z_start + (local_height * 0.8);
+        z_step = z_end;
+    } else {
+        // Shrinking: Base at top, Tip at peak (lower), Step at bottom
+        z_base = z_end;
+        z_tip = z_end - (local_height * 0.8);
+        z_step = z_start;
+    }
+    
+    // Radii
+    r_base = base_od / 2;
+    r_tip = tip_od / 2;
+    r_step = step_od / 2;
+    
+    // Half-width
+    w_half = width / 2;
+    
+    // Define the 2D profile in the XZ plane (X is radial, Z is vertical)
+    // We will rotate this profile around the Z axis to create the barb? 
+    // No, the barb is a discrete fin. We need to rotate the profile around the Z axis 
+    // but only for the width of the fin? 
+    // Actually, the simplest way to make a discrete fin is to rotate a 2D profile 
+    // that has a "cutout" or just rotate the profile and subtract the empty space?
+    // No, let's build the fin as a solid by rotating a 2D profile around the Z axis 
+    // but limiting the rotation? No.
+    // Let's build the fin by rotating a 2D profile around the Z axis, but the profile 
+    // itself is a "fin" shape (a rectangle with a tapered top).
+    // Wait, if I rotate a rectangle around Z, I get a cylinder.
+    // If I rotate a triangle around Z, I get a cone.
+    // To get a discrete fin, I need to rotate a profile that is NOT symmetric around Z.
+    // The profile should be defined in the XZ plane, where X goes from -w_half to +w_half.
+    // Then I rotate this profile around the Z axis.
+    // The resulting shape will be a ring if the profile spans across X=0.
+    // If the profile is only on one side (e.g., X from 0 to w_half), rotating it gives a solid of revolution (cone/cylinder).
+    // If the profile is from -w_half to +w_half, rotating it gives a ring (torus-like).
+    // The user wants a "barb". A barb is usually a fin sticking out.
+    // Let's assume the barb is a fin with width W, centered on the radius? 
+    // Or is the "OD" the diameter of the tip circle, and the barb is a wedge?
+    // Let's assume the barb is a wedge: Base radius R_base, Tip radius R_tip.
+    // The "OD" is the diameter of the tip circle.
+    // Let's assume the barb has a width of 2.0mm (radius 1.0mm) at the base and tapers to the tip.
+    // Let's assume the barb is a wedge: 
+    // Profile: X from -w_half to +w_half.
+    // At z_base, X goes from -w_half to +w_half.
+    // At z_tip, X goes from -r_tip to +r_tip? No, that would be a ring.
+    // Let's assume the barb is a simple wedge: 
+    // The profile is a triangle in the XZ plane, with the base at X=0? No.
+    // Let's assume the barb is a wedge with the "back" at X=0 and the "tip" at X=w_half.
+    // Then rotating it gives a solid cone/cylinder.
+    // But the user says "Outer diameter grows...". This implies the tip is a circle of that diameter.
+    // This suggests the barb is a ring-like structure? No, "barb" usually means a fin.
+    // Let's assume the barb is a fin with a rectangular cross-section that tapers.
+    // Let's assume the barb is a wedge: 
+    // Profile: X from 0 to w_half.
+    // At z_base, X goes from 0 to w_half.
+    // At z_tip, X goes from 0 to r_tip? No, that would be a cone.
+    // Let's assume the barb is a wedge with the "back" at X=0 and the "tip" at X=w_half.
+    // Then rotating it gives a solid cone/cylinder.
+    // But the user says "Outer diameter grows...". This implies the tip is a circle of that diameter.
+    // This suggests the barb is a ring-like structure? No, "barb" usually means a fin.
+    // Let's assume the barb is a fin with a rectangular cross-section that tapers.
+    // Let's assume the barb is a wedge: 
+    // Profile: X from 0 to w_half.
+    // At z_base, X goes from 0 to w_half.
+    // At z_tip, X goes from 0 to r_tip? No, that would be a cone.
+    // Let's assume the barb is a wedge with the "back" at X=0 and the "tip" at X=w_half.
+    // Then rotating it gives a solid cone/cylinder.
+    // But the user says "Outer diameter grows...

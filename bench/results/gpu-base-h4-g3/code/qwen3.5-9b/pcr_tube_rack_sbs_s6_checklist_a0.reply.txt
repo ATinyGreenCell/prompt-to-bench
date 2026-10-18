@@ -1,0 +1,144 @@
+```openscad
+// 96-Well PCR Tube Rack - ANSI/SLAS footprint with chamfered orientation mark.
+// Dimensions in millimetres.
+
+// Overall block dimensions
+L     = 127.76; // Length (X)
+W     = 85.48;  // Width (Y)
+H     = 20;     // Height (Z)
+
+// Hole specifications
+n_rows = 8;     // Rows along Y
+n_cols = 12;    // Columns along X
+hole_d = 6.2;   // Hole diameter
+pitch_x = 9.0;  // Spacing along X
+pitch_y = 9.0;  // Spacing along Y
+
+// Position of first hole (A1) relative to left and back edges
+offset_x = 14.38;
+offset_y = 11.24;
+
+// Chamfer specifications
+chamfer_leg = 5.0;
+chamfer_angle = 45;
+
+$fn = 128;
+
+// Calculate grid start positions to center the grid on the block
+// Grid width = n_cols * pitch_x
+// Grid height = n_rows * pitch_y
+// Start X = (L - Grid width) / 2
+// Start Y = (W - Grid height) / 2
+grid_start_x = (L - n_cols * pitch_x) / 2;
+grid_start_y = (W - n_rows * pitch_y) / 2;
+
+// Verify offsets match the calculated centering (optional check logic, not executed)
+// Expected offset_x_calc = grid_start_x + offset_x
+// Expected offset_y_calc = grid_start_y + offset_y
+
+difference() {
+    // Main block
+    translate([0, 0, 0]) cube([L, W, H]);
+
+    // 96 Through-holes
+    for (r = [0 : n_rows - 1]) {
+        for (c = [0 : n_cols - 1]) {
+            // Calculate hole center coordinates
+            // Column index c goes 0..11. Position = start_x + c * pitch_x
+            // Row index r goes 0..7. Position = start_y + r * pitch_y
+            // Note: The prompt says "first hole (A1) is ... from left edge and ... from back edge".
+            // In standard plate notation, A1 is usually bottom-left (or top-left depending on view).
+            // Assuming standard Cartesian where Y increases "forward" or "up" in the plate view.
+            // Let's place A1 at the calculated offset from the left (X=0) and back (Y=0).
+            
+            cx = grid_start_x + c * pitch_x;
+            cy = grid_start_y + r * pitch_y;
+            
+            translate([cx, cy, 0]) cylinder(h = H + 1, d = hole_d);
+        }
+    }
+
+    // Chamfer at the A1 corner (X=0, Y=0 side)
+    // We need to cut a 45-degree chamfer with 5mm legs.
+    // This removes material where x < 5 and y < 5.
+    // The cut surface is a plane at 45 degrees.
+    // Equation: x + y = 5 (if cutting from origin corner).
+    // We create a wedge shape to subtract.
+    
+    // Create a chamfer wedge
+    // Base is a square 5x5 at the corner.
+    // The top face is cut at 45 degrees.
+    // We can model this as a prism with a triangular cross-section in XY, extruded in Z.
+    // Or simpler: A large block minus a specific shape.
+    
+    // Let's build the chamfer shape to subtract.
+    // It occupies the corner x:0->5, y:0->5.
+    // The cut face goes from (5,0,0) to (0,5,0) at z=0 up to z=5? 
+    // No, a chamfer on a vertical edge usually cuts the corner off.
+    // "Cut a 45-degree chamfer with 5 mm legs off the vertical edge".
+    // This implies the corner at (0,0) is shaved off.
+    // The cut surface connects the point (5,0,0) to (0,5,0) at the bottom?
+    // Actually, a chamfer on a block corner usually removes the corner volume.
+    // If the leg is 5mm, it means we remove material where x < 5 and y < 5.
+    // The new face is a plane.
+    
+    // To cut this with difference(), we need a solid that covers the corner.
+    // The solid should be the volume of the corner that is being removed.
+    // The removed volume is bounded by x=0, y=0, z=0, x=5, y=5, and the plane x+y=5 (if 45 deg).
+    // Wait, if it's a 45 degree chamfer on the vertical edge, the cut is along the Z axis?
+    // "off the vertical edge" -> The edge is the line x=0, y=0.
+    // A chamfer removes the corner. The cut face is slanted.
+    // The legs are 5mm. This means the intersection of the cut face with the X-axis is at x=5, and with Y-axis is at y=5.
+    // The cut face equation is x + y = 5 (for the bottom part).
+    // But does it go all the way up? Usually yes, for a full chamfer.
+    // So we subtract a shape defined by:
+    // x >= 0, y >= 0, z >= 0
+    // x <= 5, y <= 5
+    // x + y >= 5 (the material remaining is outside this plane? No, we are cutting the corner).
+    // The material to remove is where x < 5, y < 5 AND x + y < 5?
+    // No, if we cut a chamfer, we remove the corner.
+    // The remaining part satisfies x + y >= 5 (inside the block).
+    // So the removed part is the tetrahedron-like shape where x+y < 5.
+    // Let's construct the "chamfer cutter" shape.
+    // It is a prism with a triangular base in XY, extruded in Z.
+    // Base triangle vertices: (0,0), (5,0), (0,5).
+    // Wait, if the cut is x+y=5, the triangle is (0,0), (5,0), (0,5).
+    // The volume to remove is the pyramid with base (0,0)-(5,0)-(0,5) and height H?
+    // Yes, if the chamfer goes all the way up.
+    
+    // Let's define the cutter shape.
+    // Base polygon in XY: [0,0], [5,0], [0,5].
+    // Extrude height H.
+    // This creates a triangular prism.
+    // When we difference this from the cube, it removes the corner.
+    // The cut face will be the hypotenuse of the triangle, which is at 45 degrees.
+    
+    // However, we need to be careful with the orientation.
+    // The cube is at [0,0,0] to [L,W,H].
+    // The corner is at (0,0).
+    // The triangle vertices are (0,0), (5,0), (0,5).
+    // Extruding this triangle from z=0 to z=H creates the shape to subtract.
+    
+    // Let's refine the shape to ensure the cut is exactly 45 degrees and 5mm legs.
+    // The plane x+y=5 passes through (5,0) and (0,5).
+    // The distance from origin to this plane is 5/sqrt(2) ~ 3.53mm.
+    // The "leg" is the distance along the axes, which is 5mm.
+    // This matches the requirement.
+    
+    // Construct the chamfer cutter
+    // We can use linear_extrude on a polygon.
+    // Polygon points: [0, 0], [5, 0], [0, 5].
+    // Note: OpenSCAD polygon expects [x, y] coordinates.
+    // We need to close the loop.
+    
+    chamfer_poly = [
+        [0, 0],
+        [chamfer_leg, 0],
+        [0, chamfer_leg]
+    ];
+    
+    // Extrude the polygon to create the wedge to subtract
+    // We place it at the corner (0,0)
+    translate([0, 0, 0]) linear_extrude(height = H) polygon(chamfer_poly);
+}
+```

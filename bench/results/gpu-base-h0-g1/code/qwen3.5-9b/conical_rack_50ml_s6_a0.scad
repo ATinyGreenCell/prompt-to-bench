@@ -1,0 +1,106 @@
+// Rack for six 50 mL conical (Falcon-type) tubes
+// Print orientation: Upside down. Flat plate on bed (Z=0).
+// After printing, flip over so walls stand on bed and tubes hang through holes.
+
+// --- Dimensions ---
+// Plate dimensions
+$plate_length_X = 130; // mm
+$plate_width_Y = 90;   // mm
+$plate_thickness = 4;  // mm
+
+// Hole specifications
+$hole_diameter = 30.5; // mm
+$hole_count = 6;
+$hole_rows = 2;        // Rows along Y
+$hole_cols = 3;        // Cols along X
+$hole_spacing_X = 40;  // mm centre-to-centre
+$hole_spacing_Y = 40;  // mm centre-to-centre
+
+// Wall specifications
+$wall_length_X = 130;  // mm
+$wall_thickness_Y = 4; // mm
+$wall_height = 70;     // mm (total height from bed to top of wall)
+
+// --- Derived Variables ---
+// Calculate hole positions relative to plate center (0,0)
+// Since plate is centred, we offset by half the total span
+$hole_offset_X = ($hole_cols - 1) * $hole_spacing_X / 2;
+$hole_offset_Y = ($hole_rows - 1) * $hole_spacing_Y / 2;
+
+// Wall position: Flush with long edges (Y = +/- plate_width_Y / 2)
+$wall_Y_pos = $plate_width_Y / 2;
+
+// --- Main Module ---
+module tube_rack() {
+    // Set global resolution for curved shapes
+    $fn = 64;
+
+    // 1. Create the base plate
+    // Dimensions: X=$plate_length_X, Y=$plate_width_Y, Z=$plate_thickness
+    plate = cube([
+        $plate_length_X,
+        $plate_width_Y,
+        $plate_thickness
+    ]);
+
+    // 2. Create the two side walls
+    // Dimensions: X=$wall_length_X, Y=$wall_thickness_Y, Z=$wall_height
+    // Positioned at Y = +/- $wall_Y_pos
+    wall_left = translate([0, -$wall_Y_pos, 0]) 
+                cube([
+                    $wall_length_X,
+                    $wall_thickness_Y,
+                    $wall_height
+                ]);
+    
+    wall_right = translate([0, $wall_Y_pos, 0]) 
+                 cube([
+                    $wall_length_X,
+                    $wall_thickness_Y,
+                    $wall_height
+                ]);
+
+    // 3. Create the six through-holes
+    // We use a loop to generate the hole positions
+    holes = [];
+    for (r = [0 : $hole_rows - 1]) {
+        for (c = [0 : $hole_cols - 1]) {
+            // Calculate position for this specific hole
+            pos_x = (c * $hole_spacing_X) - $hole_offset_X;
+            pos_y = (r * $hole_spacing_Y) - $hole_offset_Y;
+            
+            // Add cylinder to list (will be used in difference)
+            // Cylinder extends slightly past plate thickness to ensure clean cut
+            holes.push(translate([pos_x, pos_y, 0]) 
+                       cylinder(h = $plate_thickness + 0.1, r = $hole_diameter / 2));
+        }
+    }
+
+    // 4. Assemble the part
+    // Start with the union of plate and walls
+    union() {
+        plate;
+        wall_left;
+        wall_right;
+    }
+
+    // Subtract the holes
+    difference() {
+        // Re-include the main body to ensure subtraction works correctly
+        // (OpenSCAD difference requires the subtractor to be inside the union context or handled carefully)
+        // Strategy: Union the solid parts, then difference with the holes.
+        union() {
+            plate;
+            wall_left;
+            wall_right;
+        }
+        
+        // Subtract all generated holes
+        for (h = holes) {
+            h;
+        }
+    }
+}
+
+// Render the final part
+tube_rack();

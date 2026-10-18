@@ -123,8 +123,12 @@ failures: v9 27% and, retrained with seed 1, 43% with three passes won by repair
 trained on its own passing repairs, 36% and one, within v9's spread. The training run itself moves these numbers: v5
 retrained with seed 1 passed 3 tasks instead of 5, neither held-out one (the slide rack went from 7/8 samples to 0/8),
 and changed its file after 8% of feedback messages instead of 15%; v9 retrained passed 5 instead of 2. On batch C (674
-new descriptions from 14 unseen families, `rft/onpolicy/`) both v9 runs changed their file after 34-39% of feedback and
-fixed 2.1-3.5% of failures, against 14-17% and 0.1-0.3% for both v5 runs. On the box itself (one sample per task, the box's
+new descriptions from 14 families, 13 of them unseen, `rft/onpolicy/`) both v9 runs changed their file after 34-39% of
+feedback and fixed 2.1-3.5% of failures, against 14-17% and 0.1-0.3% for both v5 runs. A better prompt instead of
+training (`bench/harness_search.py`: OpenSCAD idioms, two worked examples, checklist feedback) lifted the stock base
+from 2 to 6 tasks in eight samples on the GPU (5 in-family, 1 held out), but added nothing reliable to v9 seed 1
+(paper Tables 9-10). Next: `build_v11.py` (v9's data + batch C for ten families, as plain examples and as v9 seed 1's
+own failures; four families held out), trained with seeds 0 and 1. On the box itself (one sample per task, the box's
 own quantised build, imported by URL with `scripts/box_import.py`) v5 passed the slide rack, the gel comb and the
 PCR-tube adapter, all on the first attempt; v1 and v2 had passed none. With eight samples on the box v5 passed 6/16 (4 in-family, 2 held out:
 the hose-barb reducer and the slide rack), against 5/16 on the GPU (`bench/results/box-v5-k8/`). v9 passed 3/16 on the box at one sample (the 1.5 mL rack, the slide

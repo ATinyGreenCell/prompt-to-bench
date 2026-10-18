@@ -1,0 +1,91 @@
+The measurement report confirms that the holes are still not being cut. The volume remains exactly the same as the solid block ($228,960 \text{ mm}^3$), and the horizontal slices show "0 holes" at all levels.
+
+**Diagnosis:**
+The issue is that the `difference()` operation in OpenSCAD requires the cutting object (the cylinder) to **overlap** with the object being cut (the cube) in 3D space.
+In the previous attempt:
+1.  The cube was defined from $Z=0$ to $Z=30$.
+2.  The cylinder was translated to start at $Z=30$ and extended downwards by $25.01$ mm.
+3.  This places the cylinder's volume in the range $Z \approx 4.99$ to $Z=30.01$.
+4.  While this *should* overlap with the cube ($0$ to $30$), the intersection at the very top ($Z=30$) is a single plane. If the cylinder's top face is exactly coplanar with the cube's top face, or if the slight extension pushes the cylinder entirely outside the cube's bounding box in the Z-direction (e.g., if the cube is strictly $0 \le Z \le 30$ and the cylinder is $4.99 \le Z \le 30.01$), the boolean engine might fail to register the subtraction if the overlap is considered negligible or if the topology is degenerate at the boundary.
+
+**The Fix:**
+To guarantee a robust subtraction, the cutting cylinder must extend **above** the top surface of the block.
+-   Block Top: $Z=30$.
+-   Cylinder Top: Move to $Z=30 + \text{overlap}$.
+-   Cylinder Bottom: $Z=30 - 25 = 5$.
+-   By placing the cylinder's top at $Z=31$ (or even just ensuring it clearly overlaps the $Z=30$ plane), we ensure a significant volume overlap ($Z=30$ to $Z=31$) which forces the boolean engine to remove the material.
+
+I will adjust the translation of the cylinder so its top is at $Z = 30 + 1$ (or simply ensure the height calculation accounts for an overlap above the block). Let's set the cylinder's top at $Z=31$ and height to $25.01$, so it occupies $Z=5.99$ to $Z=31.01$. This clearly overlaps the block ($0$ to $30$) from $5.99$ to $30$.
+
+```openscad
+// Bench Rack for 1.5 mL Microcentrifuge Tubes
+// Designed for FDM printing. Rests on XY plane at Z=0.
+
+// --- Dimensions ---
+// Block dimensions
+$block_length = 106; // X
+$block_width  = 72;  // Y
+$block_height = 30;  // Z
+
+// Hole grid configuration
+$hole_count_x = 6;   // Holes along X
+$hole_count_y = 4;   // Holes along Y
+$hole_spacing = 16;  // Centre-to-centre spacing (X and Y)
+
+// Hole dimensions
+$hole_diameter = 11.2; // mm
+$hole_depth    = 25;   // mm (open top, closed bottom)
+$floor_height  = 5;    // mm (solid floor thickness)
+
+// Print settings
+$fn = 64; // Smoothness for holes
+
+// --- Main Block ---
+difference() {
+    // 1. The solid rectangular block
+    // Defined from Z=0 to Z=30
+    cube([
+        $block_length,
+        $block_width,
+        $block_height
+    ]);
+
+    // 2. The holes
+    // We subtract cylinders. 
+    // To ensure the boolean difference works correctly, the cutting cylinder 
+    // must overlap the block's volume. We place the top of the cylinder 
+    // slightly above the block's top surface (Z=30) to guarantee overlap.
+    
+    $cut_height = $hole_depth + 1; // Height 26mm to ensure overlap above and below
+    
+    for (i = [0 : $hole_count_x - 1]) {
+        for (j = [0 : $hole_count_y - 1]) {
+            // Calculate position for current hole
+            // Grid is centered on the block
+            $x_pos = -($block_length / 2) + ($hole_spacing * ($hole_count_x - 1)) / 2 + (i * $hole_spacing);
+            $y_pos = -($block_width / 2) + ($hole_spacing * ($hole_count_y - 1)) / 2 + (j * $hole_spacing);
+            
+            // Cylinder parameters
+            $r = $hole_diameter / 2;
+            
+            // Translate to position. 
+            // Top of cylinder is at Z = $block_height + 1 (31).
+            // Cylinder extends down by $cut_height (26).
+            // This places the cylinder from Z=5 to Z=31.
+            // It overlaps the block (Z=0 to Z=30) from Z=5 to Z=30.
+            translate([
+                $x_pos,
+                $y_pos,
+                $block_height + 1
+            ]) {
+                cylinder(
+                    h = $cut_height,
+                    r1 = $r,
+                    r2 = $r,
+                    $fn = $fn
+                );
+            }
+        }
+    }
+}
+```

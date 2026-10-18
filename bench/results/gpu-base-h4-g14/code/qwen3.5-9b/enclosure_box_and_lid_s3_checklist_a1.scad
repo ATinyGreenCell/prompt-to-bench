@@ -1,0 +1,115 @@
+// Two-part electronics enclosure: Box and Lid printed side-by-side.
+// Part 1: Box (70x50x30 mm, 2mm walls, 2mm floor, open top).
+// Part 2: Lid (70x50x2 mm plate with 4mm tall lip, 65.6x45.6 mm outer lip size).
+// Orientation: Box on left, Lid on right, 10 mm gap between them.
+// Both rest on Z=0.
+
+// --- Dimensions ---
+// Box dimensions (Outer X, Outer Y, Outer Z)
+box_X = 70;
+box_Y = 50;
+box_Z = 30;
+
+// Wall and floor thickness
+wall_t = 2;
+floor_t = 2;
+
+// Lid dimensions
+lid_plate_t = 2;
+lip_h = 4;
+lip_w = 1.5; // Lip wall thickness
+lip_outer_X = 65.6;
+lip_outer_Y = 45.6;
+
+// Clearance
+clearance = 0.2;
+
+// Layout
+gap = 10;
+
+// --- Derived Dimensions ---
+// Internal box dimensions
+box_in_X = box_X - 2 * wall_t;
+box_in_Y = box_Y - 2 * wall_t;
+box_in_Z = box_Z - floor_t;
+
+// Lip inner dimensions (to fit inside box with clearance)
+// The lip outer size is given. The lip wall thickness is given.
+// Lip inner X = Lip outer X - 2 * Lip wall thickness
+lip_in_X = lip_outer_X - 2 * lip_w;
+lip_in_Y = lip_outer_Y - 2 * lip_w;
+
+// Check fit: Lip inner must be smaller than Box inner by at least clearance*2
+// Lip inner X = 65.6 - 3 = 62.6. Box inner X = 70 - 4 = 66.
+// Diff = 3.4 mm. Clearance required = 0.4 mm total (0.2 each side). OK.
+
+$fn = 64;
+
+// --- Part 1: The Box ---
+// Position: Centred in Y, Left side of origin.
+// Box sits on Z=0.
+box_x_pos = -((box_X + gap) / 2);
+box_y_pos = 0;
+box_z_pos = 0;
+
+module box() {
+    translate([box_x_pos, box_y_pos, box_z_pos]) {
+        // Main block (solid)
+        // Outer size: box_X x box_Y x box_Z
+        // We build a solid block and subtract the top opening and the internal air volume.
+        
+        // 1. Solid block
+        translate([0, 0, 0]) cube([box_X, box_Y, box_Z]);
+        
+        // 2. Subtract the internal air volume (the empty space inside)
+        // Inner dimensions: box_in_X x box_in_Y x (box_Z - floor_t)
+        // The hole goes from floor_t to box_Z
+        translate([wall_t, wall_t, floor_t]) 
+            cube([box_in_X, box_in_Y, box_Z - floor_t]);
+        
+        // 3. Subtract the top opening (to make it open)
+        // The opening is the same size as the internal air volume at the top
+        translate([wall_t, wall_t, box_Z - floor_t]) 
+            cube([box_in_X, box_in_Y, floor_t]);
+    }
+}
+
+// --- Part 2: The Lid ---
+// Position: Right side of origin, separated by gap.
+// Lid sits on Z=0.
+lid_x_pos = box_x_pos + box_X + gap;
+lid_y_pos = 0;
+lid_z_pos = 0;
+
+module lid() {
+    translate([lid_x_pos, lid_y_pos, lid_z_pos]) {
+        // The lid consists of a base plate and a lip.
+        // Base plate: 70 x 50 x 2 mm.
+        // Lip: Rectangular wall on top of the plate.
+        // Lip outer size: 65.6 x 45.6 mm.
+        // Lip height: 4 mm.
+        // Lip wall thickness: 1.5 mm.
+        // The lip is centred on the plate.
+        
+        // 1. Base Plate
+        translate([0, 0, 0]) cube([box_X, box_Y, lid_plate_t]);
+        
+        // 2. Lip
+        // We build the lip as a hollow rectangular prism sitting on the plate.
+        // Outer dimensions of the lip block: lip_outer_X x lip_outer_Y x lip_h
+        // Inner hole of the lip: lip_in_X x lip_in_Y x lip_h
+        
+        // Outer block of the lip
+        translate([0, 0, lid_plate_t]) 
+            cube([lip_outer_X, lip_outer_Y, lip_h]);
+        
+        // Inner hole of the lip (subtract)
+        // The hole goes from lid_plate_t to lid_plate_t + lip_h
+        translate([lip_w, lip_w, lid_plate_t]) 
+            cube([lip_in_X, lip_in_Y, lip_h]);
+    }
+}
+
+// Render both parts
+box();
+lid();

@@ -1,0 +1,162 @@
+// Replacement knob for hotplate stirrer - D-shaft fit, grip grooves, and pointer.
+
+// Dimensions
+d_shaft = 6;
+d_outer = 30;
+h_total = 15;
+h_bore  = 12;
+d_bore  = 6.2;
+d_flat  = 4.7; // Distance from flat to opposite side of D-bore
+n_grooves = 18;
+d_groove = 2;
+w_pointer = 1.5;
+d_pointer = 1; // Depth of pointer groove
+
+$fn = 128;
+
+// Calculate D-bore geometry
+// The D-bore is a circle of diameter d_bore with a flat cut.
+// The distance from the flat to the far side is d_flat.
+// Let R_b = d_bore / 2.
+// The flat is a chord. The distance from the center of the circle to the chord is (R_b - d_flat/2).
+// The width of the flat (chord length) is 2 * sqrt(R_b^2 - (R_b - d_flat/2)^2).
+R_b = d_bore / 2;
+dist_center_to_flat = R_b - d_flat / 2;
+w_flat = 2 * sqrt(R_b * R_b - dist_center_to_flat * dist_center_to_flat);
+
+// Generate points for the D-shaped bore profile (2D in XZ plane, extruded along Y)
+// We need the profile in the XZ plane to use linear_extrude along Y.
+// The knob sits on Z=0, so Z goes from 0 to h_total.
+// The bore starts at Z = h_total - h_bore.
+
+module d_bore_profile() {
+    // Profile points: [x, z]
+    // Center of the circle in X is 0.
+    // The flat is on the left side (negative X) based on standard D-shape orientation, 
+    // but we will align the pointer later. Let's assume the flat is on the -X side for now.
+    // Actually, let's define the flat on the -X side.
+    
+    // Points for the circular arc
+    for (i = [0 : 360 - 1]) {
+        a = i * 360 / 360;
+        // Circle center is at (0, h_total - h_bore)
+        // We only want the part of the circle that is NOT cut by the flat.
+        // The flat is at x = -dist_center_to_flat.
+        // We keep points where x > -dist_center_to_flat.
+        
+        cx = 0;
+        cz = h_total - h_bore;
+        
+        px = cx + R_b * cos(a);
+        pz = cz + R_b * sin(a);
+        
+        // Check if point is to the right of the flat line
+        if (px > -dist_center_to_flat) {
+            [px, pz];
+        }
+    }
+    // Close the shape with the flat line
+    [-dist_center_to_flat, h_total - h_bore];
+    [-dist_center_to_flat, h_total];
+}
+
+// Generate points for the outer cylinder with grip grooves
+// We will use rotate_extrude for the main body and grooves.
+// Actually, it's easier to build the solid body and then subtract grooves.
+// Body: Cylinder d_outer, h_total.
+// Grooves: 18 half-cylinders along the side.
+
+// Generate points for the pointer groove (2D in XZ plane)
+// Runs from center (0, h_total) to edge (d_outer/2, h_total).
+// Width w_pointer, depth d_pointer.
+module pointer_profile() {
+    // Start at center
+    [0, h_total];
+    // Go out to edge
+    [d_outer / 2, h_total];
+    // Cut depth
+    [d_outer / 2 + d_pointer, h_total];
+    // Back to edge
+    [d_outer / 2, h_total - d_pointer];
+    // Back to center
+    [0, h_total - d_pointer];
+}
+
+difference() {
+    // Main Body
+    cylinder(h = h_total, d = d_outer);
+    
+    // D-shaped Bore
+    // Extrude the D-profile along Y axis.
+    // The profile is in XZ plane.
+    translate([0, 0, h_total - h_bore]) 
+        linear_extrude(height = w_flat) 
+            d_bore_profile();
+    
+    // Grip Grooves
+    // 18 grooves evenly spaced around the Z axis (circumference).
+    // Each groove is a half-cylinder of diameter d_groove.
+    // They are cut into the side of the main cylinder.
+    for (i = [0 : n_grooves - 1]) {
+        angle = i * 360 / n_grooves;
+        // Position the groove center on the cylinder surface
+        // Radius of cylinder surface
+        r_surf = d_outer / 2;
+        
+        // Translate to the surface point
+        t_x = r_surf * cos(angle);
+        t_z = r_surf * sin(angle);
+        
+        // The groove is a half-cylinder. 
+        // A full cylinder of diameter d_groove has radius d_groove/2.
+        // We want to cut a half-cylinder. 
+        // We can model a full cylinder and intersect it with a half-space, 
+        // or use a half-cylinder primitive if available (not standard).
+        // Standard way: Cylinder with radius d_groove/2, then cut the other half?
+        // No, simpler: Use a cylinder of diameter d_groove, but only the part that overlaps.
+        // Actually, `cylinder` creates a full cylinder. 
+        // To get a half-cylinder groove, we can create a cylinder and then difference it with a plane?
+        // Or, create a cylinder and rotate it 90 degrees? No.
+        // Let's create a full cylinder of diameter d_groove and then use `intersection`? No.
+        // The easiest way to make a half-cylinder groove in OpenSCAD without external libs:
+        // Create a cylinder of diameter d_groove. Then create a plane (large square) and intersect?
+        // No, we need to subtract the half-cylinder.
+        // We can create a cylinder and then subtract the part that is "outside" the tangent plane?
+        // Simpler: Create a cylinder, then use `difference` with a large plane to cut it in half?
+        // Yes.
+        
+        // Define the half-cylinder module
+        module half_cylinder_groove() {
+            // Create a full cylinder
+            c = cylinder(h = h_total, d = d_groove);
+            // Create a large plane to cut it in half
+            // The plane should be tangent to the cylinder at the center of the groove.
+            // The normal of the plane should point towards the center of the knob (inwards).
+            // The groove is on the surface. The cylinder axis is Z.
+            // The plane should be perpendicular to the radius vector (t_x, 0, t_z).
+            // Normal vector n = [t_x, 0, t_z].
+            // We want to keep the part of the cylinder where dot(pos, n) > dot(center, n).
+            // Actually, we want to subtract the half-cylinder.
+            // Let's create the half-cylinder shape explicitly.
+            // It's a cylinder cut by a plane.
+            // We can use `intersection` of a cylinder and a half-space? No, `intersection` keeps the overlap.
+            // We want the shape of the groove to be subtracted.
+            // So we need the geometry of the half-cylinder.
+            // Let's build the half-cylinder using `difference` of a full cylinder and a large plane?
+            // No, `difference` subtracts the second object from the first.
+            // If we have a full cylinder and we difference it with a large plane, we get a half-cylinder.
+            // But we need to position the plane correctly.
+            
+            // Let's try a different approach: 
+            // Create a cylinder. Then create a large plane. 
+            // `difference(cylinder, plane)` -> Half cylinder.
+            // But we need to position the plane such that it cuts the cylinder exactly in half.
+            // The plane equation: n_x * x + n_z * z = 0 (passing through origin of local coords).
+            // But the cylinder is centered at (0,0,0) in local coords.
+            // We want to cut it along the plane passing through the center.
+            // So the plane passes through (0,0,0).
+            // The normal is [t_x, 0, t_z].
+            // We need a large square representing the plane.
+            // The square should be large enough to cover the cylinder.
+            // Size: [d_outer + d_groove, d_outer + d_groove].
+            // Rotate the square to align with the normal.

@@ -1,0 +1,149 @@
+```openscad
+// 96-Well PCR Tube Rack (0.2 mL) - ANSI/SLAS footprint.
+// Dimensions: 127.76 x 85.48 x 20 mm.
+// 96 holes (6.2 mm) in 8 rows x 12 columns.
+// Chamfer at A1 corner for orientation.
+
+// Main block dimensions
+L     = 127.76;
+W     = 85.48;
+H     = 20;
+
+// Hole specifications
+hole_d = 6.2;
+n_cols = 12; // along X
+n_rows = 8;  // along Y
+pitch_x = 9.0;
+pitch_y = 9.0;
+
+// Grid origin offset (distance from left/back edge to first hole centre)
+offset_x = 14.38;
+offset_y = 11.24;
+
+// Chamfer specifications (at A1 corner: bottom-left-back)
+chamfer_leg = 5;
+chamfer_angle = 45;
+
+$fn = 64;
+
+// Calculate total grid size to ensure symmetry
+total_x = (n_cols - 1) * pitch_x;
+total_y = (n_rows - 1) * pitch_y;
+
+// Verify symmetry: (L - total_x) / 2 should equal offset_x
+// (W - total_y) / 2 should equal offset_y
+// Based on user input: 
+// L = 127.76, total_x = 11*9 = 99. Diff = 28.76. Half = 14.38. Matches offset_x.
+// W = 85.48, total_y = 7*9 = 63. Diff = 22.48. Half = 11.24. Matches offset_y.
+
+module create_rack() {
+    // 1. Create the main block
+    translate([0, 0, 0])
+        cube([L, W, H]);
+
+    // 2. Create the 96 holes
+    // We use difference() to cut holes from the block.
+    // To ensure clean cuts, we extend the cutting cylinders slightly past the faces.
+    difference() {
+        // We need to cut holes from the block defined above.
+        // Since we cannot reference the previous block directly in a difference without unioning first,
+        // we will create the block and holes in one difference block.
+        
+        // Re-create the block for the difference context
+        translate([0, 0, 0])
+            cube([L, W, H]);
+
+        // Loop through columns (X) and rows (Y)
+        for (c = [0 : n_cols - 1]) {
+            for (r = [0 : n_rows - 1]) {
+                // Calculate position of the hole centre
+                // X position: offset_x + c * pitch_x
+                // Y position: offset_y + r * pitch_y
+                // Z position: H / 2 (centre of the block)
+                
+                pos_x = offset_x + c * pitch_x;
+                pos_y = offset_y + r * pitch_y;
+                pos_z = H / 2;
+                
+                // Cut the hole
+                // Extend slightly in Z to ensure full depth
+                translate([pos_x, pos_y, -1])
+                    cylinder(h = H + 2, d = hole_d);
+            }
+        }
+    }
+    
+    // 3. Create the chamfer at the A1 corner (bottom-left-back)
+    // A1 is at X=0, Y=0, Z=0.
+    // We need to cut a 45-degree chamfer with leg length 5mm.
+    // This means cutting a pyramid or a truncated corner.
+    // A simple way is to define a plane or a polyhedron.
+    // Since we are in a difference block, we can subtract a shape.
+    // The shape to subtract is a pyramid with apex at (chamfer_leg, chamfer_leg, chamfer_leg)
+    // and base on the faces X=0, Y=0, Z=0.
+    // Actually, a chamfer on a corner is usually a plane cutting off the corner.
+    // The plane equation for a 45 deg chamfer cutting off a cube corner at (L, L, L) relative to origin:
+    // x + y + z = L (if L is the leg length).
+    // Here, we want to cut the corner at (0,0,0).
+    // The cut plane passes through (chamfer_leg, 0, 0), (0, chamfer_leg, 0), and (0, 0, chamfer_leg).
+    // We can model this by subtracting a pyramid defined by these 4 points.
+    
+    // Define the pyramid vertices
+    p1 = [chamfer_leg, 0, 0];
+    p2 = [0, chamfer_leg, 0];
+    p3 = [0, 0, chamfer_leg];
+    p4 = [0, 0, 0]; // The corner being cut
+    
+    // Create the pyramid to subtract
+    // polyhedron(points, faces)
+    // Faces:
+    // 1. Base on X-Y plane (p1, p2, p4) -> No, p4 is origin. p1, p2, p4 form a triangle on Z=0.
+    // 2. Base on Y-Z plane (p2, p3, p4)
+    // 3. Base on X-Z plane (p1, p3, p4)
+    // 4. Top face (p1, p2, p3)
+    
+    // Let's construct the faces explicitly.
+    // Face 1 (XY): p1, p2, p4
+    // Face 2 (YZ): p2, p3, p4
+    // Face 3 (XZ): p1, p3, p4
+    // Face 4 (Slanted): p1, p2, p3
+    
+    // Note: polyhedron requires faces to be counter-clockwise when viewed from outside.
+    // Since we are subtracting, the "outside" of the pyramid is the part we want to keep?
+    // No, in difference(), we subtract the volume of the pyramid.
+    // So the pyramid's surface must be the boundary of the volume to be removed.
+    // The normal vectors should point outwards from the pyramid volume.
+    // For Face 1 (on Z=0, looking down), normal is (0,0,-1). Vertices p1, p2, p4.
+    // For Face 2 (on X=0, looking left), normal is (-1,0,0). Vertices p2, p3, p4.
+    // For Face 3 (on Y=0, looking back), normal is (0,-1,0). Vertices p1, p3, p4.
+    // For Face 4 (slanted), normal points towards origin? No, away from origin.
+    // Let's just use the standard order and hope the orientation is correct for subtraction.
+    // Actually, simpler: define the pyramid with vertices and faces.
+    
+    // Vertices
+    pts = [
+        [chamfer_leg, 0, 0],
+        [0, chamfer_leg, 0],
+        [0, 0, chamfer_leg],
+        [0, 0, 0]
+    ];
+    
+    // Faces (indices into pts)
+    // 0: p1, p2, p4 (on Z=0)
+    // 1: p2, p3, p4 (on X=0)
+    // 2: p1, p3, p4 (on Y=0)
+    // 3: p1, p2, p3 (slanted)
+    faces = [
+        [0, 1, 3], // p1, p2, p4
+        [1, 2, 3], // p2, p3, p4
+        [0, 2, 3], // p1, p3, p4
+        [0, 1, 2]  // p1, p2, p3
+    ];
+    
+    // Subtract the pyramid
+    translate([0, 0, 0])
+        polyhedron(points = pts, faces = faces);
+}
+
+create_rack();
+```

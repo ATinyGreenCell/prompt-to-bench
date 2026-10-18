@@ -1,0 +1,113 @@
+```openscad
+// Snap-on Clip for Lab Stand Rod and Tubing
+// Orientation: Flat on XY plane, building up in +Z.
+// Units: Millimetres.
+
+// --- Dimensions ---
+// Rod Stand Dimensions
+$rod_diameter = 12.7;
+$rod_wall_thickness = 3;
+$rod_outer_diameter = $rod_diameter + 2 * $rod_wall_thickness; // 18.7
+$rod_ring_height = 10;
+
+// Tubing Dimensions
+$tubing_inner_diameter = 6;
+$tubing_wall_thickness = 2;
+$tubing_outer_diameter = $tubing_inner_diameter + 2 * $tubing_wall_thickness; // 10
+$tubing_ring_height = 10;
+
+// Bridge Dimensions
+$bridge_width_x = 4; // From x=8 to x=12
+$bridge_width_y = 6;
+$bridge_height = 10;
+
+// Cutout Dimensions (Opening widths)
+$rod_cutout_width = 10;
+$rod_cutout_y_limit = $rod_cutout_width / 2; // 5
+
+$tubing_cutout_width = 4.5;
+$tubing_cutout_y_limit = $tubing_cutout_width / 2; // 2.25
+
+// --- Geometry Construction ---
+
+// Set resolution for curved shapes
+$fn = 64;
+
+// 1. Rod Ring
+// Outer cylinder
+rod_ring_outer = cylinder(
+    h = $rod_ring_height,
+    d = $rod_outer_diameter,
+    center = [0, 0, $rod_ring_height/2]
+);
+
+// Inner hole (for the rod)
+rod_ring_inner = cylinder(
+    h = $rod_ring_height,
+    d = $rod_diameter,
+    center = [0, 0, $rod_ring_height/2]
+);
+
+// Cutout for rod snap (x < 0, -5 < y < 5)
+// We create a rectangular prism that intersects the ring to remove material
+rod_cutout = cube(
+    [100, $rod_cutout_width, $rod_ring_height],
+    center = [-5, 0, $rod_ring_height/2]
+);
+
+// Combine Rod Ring parts
+rod_ring = union(
+    rod_ring_outer,
+    difference(
+        rod_ring_inner,
+        rod_cutout
+    )
+);
+
+// 2. Tubing Ring
+// Outer cylinder
+tubing_ring_outer = cylinder(
+    h = $tubing_ring_height,
+    d = $tubing_outer_diameter,
+    center = [15, 0, $tubing_ring_height/2]
+);
+
+// Inner hole (for the tubing)
+tubing_ring_inner = cylinder(
+    h = $tubing_ring_height,
+    d = $tubing_inner_diameter,
+    center = [15, 0, $tubing_ring_height/2]
+);
+
+// Cutout for tubing (x > 15, -2.25 < y < 2.25)
+tubing_cutout = cube(
+    [100, $tubing_cutout_width, $tubing_ring_height],
+    center = [20, 0, $tubing_ring_height/2]
+);
+
+// Combine Tubing Ring parts
+tubing_ring = union(
+    tubing_ring_outer,
+    difference(
+        tubing_ring_inner,
+        tubing_cutout
+    )
+);
+
+// 3. Solid Bridge
+// Joins x=8 to x=12, width 6 in Y
+bridge = cube(
+    [$bridge_width_x, $bridge_width_y, $bridge_height],
+    center = [10, 0, $bridge_height/2]
+);
+
+// Final Assembly
+clip = union(
+    rod_ring,
+    tubing_ring,
+    bridge
+);
+
+// Output
+clip;
+```

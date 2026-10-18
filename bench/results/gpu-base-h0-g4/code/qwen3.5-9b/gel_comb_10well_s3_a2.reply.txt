@@ -1,0 +1,109 @@
+The previous attempt resulted in **11 separate bodies** instead of a single solid. This happened because the `difference()` block (cutting the slots) and the `union()` block (adding the teeth) were not combined into a single `difference()` operation where the teeth are added *after* the cuts but within the same logical flow, or simply because the teeth were added as a separate top-level union which OpenSCAD treats as distinct objects if not merged.
+
+To fix this and ensure a **single watertight body**, I will use a single `difference()` block to create the spine with slots, and then use a `union()` inside a `difference()`? No, the standard way to merge solids in OpenSCAD without external libraries is to use `difference()` to cut the holes, and then use `union()` to add the teeth, but they must be part of the same top-level operation.
+
+Actually, the most robust way to ensure they are one body is to create the full block, cut the holes, and then use `union()` to add the teeth *inside* the same `difference()`? No, `union` merges objects. If I do `difference() { spine; holes; }` that leaves a plate with holes. If I then do `union() { teeth; }` outside, they are separate.
+
+The correct logic for a single body is:
+1. Start with the full spine block.
+2. Subtract the tooth slots.
+3. Add the teeth.
+This is done by: `difference() { spine; holes; }` -> This leaves the plate. Then we need to add teeth.
+Wait, if I do `difference() { spine; holes; }` I get a plate with holes. If I then `union()` the teeth, they are separate.
+To make them one body, I must construct the final shape as:
+`union() { difference() { spine; holes; } teeth; }`
+This tells OpenSCAD: "Take the result of (Spine minus Holes) and merge it with the Teeth". This guarantees a single body.
+
+Let's verify the dimensions again:
+- Spine: 70 x 12 x 1.5. Centered at (0,0). Z: 0 to 1.5.
+- Teeth: Hang from Y = -6 (edge of spine). Length 12. So Y range: -18 to -6.
+- Total Y: -18 to 12. Size 30. (Matches report).
+- X: Centered. 10 teeth * 5mm + 9 gaps * 1.5mm = 50 + 13.5 = 63.5mm total width.
+- Offset: (70 - 63.5) / 2 = 3.25mm.
+- Tooth centers: 3.25, 9.75, 16.25, ...
+- Z: 0 to 1.5.
+
+The previous code had the logic correct but the structure `difference() {...} union() {...}` at the top level creates separate bodies. I will wrap them in a `union()`.
+
+```openscad
+// 10-well Agarose Gel Comb
+// Designed for FDM printing, lying flat on the XY plane (Z=0).
+// Dimensions in millimetres.
+
+$fn = 100; // High resolution for smooth edges
+
+// --- Dimensions ---
+SPINE_LENGTH = 70;  // X
+SPINE_WIDTH = 12;   // Y
+PLATE_THICKNESS = 1.5; // Z
+
+TOOTH_WIDTH = 5.0;  // X
+TOOTH_LENGTH = 12;  // Y (extends from spine edge)
+NUM_TEETH = 10;
+GAP_SIZE = 1.5;     // Gap between teeth
+
+// --- Calculations ---
+// Total width of the tooth row
+TOOTH_ROW_WIDTH = (NUM_TEETH * TOOTH_WIDTH) + ((NUM_TEETH - 1) * GAP_SIZE);
+
+// Offset to center the tooth row on the spine in X
+X_OFFSET = (SPINE_LENGTH - TOOTH_ROW_WIDTH) / 2;
+
+// Spine geometry: Centered at (0,0) in XY.
+// Spine Y range: -SPINE_WIDTH/2 to +SPINE_WIDTH/2
+// Spine Edge (where teeth hang): Y = -SPINE_WIDTH/2
+SPINE_EDGE_Y = -SPINE_WIDTH / 2;
+
+// Tooth Y range: Starts at SPINE_EDGE_Y, extends TOOTH_LENGTH in -Y direction.
+// Tooth Center Y = SPINE_EDGE_Y - (TOOTH_LENGTH / 2)
+TOOTH_CENTER_Y = SPINE_EDGE_Y - (TOOTH_LENGTH / 2);
+
+// --- Main Body Construction ---
+// We use a single union to merge the "Spine with Slots" and the "Teeth" into one solid body.
+// This ensures the output is 1 separate body.
+
+union() {
+    // Part 1: Spine with slots cut out
+    difference() {
+        // The full spine block
+        translate([0, 0, 0]) {
+            cube([SPINE_LENGTH, SPINE_WIDTH, PLATE_THICKNESS], center = false);
+        }
+        
+        // Cut out slots for the teeth
+        // We cut a rectangle for each tooth slot.
+        // The slot extends from the spine edge (SPINE_EDGE_Y) downwards by TOOTH_LENGTH.
+        // The slot width is TOOTH_WIDTH.
+        // We extend the cut slightly (0.02mm) to ensure clean separation.
+        
+        for (i = [0 : NUM_TEETH - 1]) {
+            // Calculate X position for this tooth
+            tooth_x = X_OFFSET + (i * (TOOTH_WIDTH + GAP_SIZE));
+            
+            // Calculate Y position for the slot
+            // The slot spans from SPINE_EDGE_Y down to SPINE_EDGE_Y - TOOTH_LENGTH
+            translate([tooth_x, SPINE_EDGE_Y, 0]) {
+                // Cut a rectangle slightly larger than the tooth to ensure separation
+                cube([TOOTH_WIDTH + 0.02, TOOTH_LENGTH + 0.02, PLATE_THICKNESS], center = false);
+            }
+        }
+    }
+    
+    // Part 2: The solid teeth
+    // They sit on the bed (Z=0) and go up to PLATE_THICKNESS.
+    // They hang from the spine edge.
+    
+    for (i = [0 : NUM_TEETH - 1]) {
+        tooth_x = X_OFFSET + (i * (TOOTH_WIDTH + GAP_SIZE));
+        
+        // Position the tooth
+        // X: tooth_x
+        // Y: tooth_x is center. Y center is TOOTH_CENTER_Y.
+        // Z: Centered at PLATE_THICKNESS/2
+        
+        translate([tooth_x, TOOTH_CENTER_Y, PLATE_THICKNESS / 2]) {
+            cube([TOOTH_WIDTH, TOOTH_LENGTH, PLATE_THICKNESS], center = true);
+        }
+    }
+}
+```

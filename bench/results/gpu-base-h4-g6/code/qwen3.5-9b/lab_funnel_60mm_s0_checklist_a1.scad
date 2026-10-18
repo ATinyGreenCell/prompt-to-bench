@@ -1,0 +1,45 @@
+// Lab Funnel - A straight spout tube with a conical funnel on top.
+// Printed upright with the wide opening at the top.
+// Spout: 10mm OD, 20mm long. Funnel: widens from 10mm to 60mm OD over 30mm height.
+// Wall thickness: 1.6mm everywhere.
+
+$fn = 64;
+
+// Dimensions
+spout_od      = 10;
+wall          = 1.6;
+spout_id      = spout_od - 2 * wall; // 6.8
+spout_height  = 20;
+funnel_start_od = spout_od;
+funnel_end_od   = 60;
+funnel_height   = 50 - spout_height; // 30
+
+// Build the part from the bottom (z=0) upwards.
+// We use a difference operation to cut the inner bore from a solid outer shell.
+
+difference() {
+    // 1. Outer Shell
+    union() {
+        // Spout section (cylinder)
+        cylinder(h = spout_height, d = spout_od);
+        
+        // Funnel section (cone)
+        // Cone starts at z = spout_height with d = funnel_start_od
+        // Cone ends at z = 50 with d = funnel_end_od
+        translate([0, 0, spout_height]) 
+            cylinder(h = funnel_height, d1 = funnel_start_od, d2 = funnel_end_od);
+    }
+    
+    // 2. Inner Bore (cutting shapes)
+    // We extend the cutting cylinders slightly past the faces to ensure clean cuts.
+    
+    // Spout bore
+    translate([0, 0, -1]) 
+        cylinder(h = spout_height + 2, d = spout_id);
+        
+    // Funnel bore (cone)
+    // Must align exactly with the outer cone: starts at z=spout_height, ends at z=50.
+    // d1 is at the start (z=spout_height), d2 is at the end (z=50).
+    translate([0, 0, spout_height - 1]) 
+        cylinder(h = funnel_height + 2, d1 = spout_id, d2 = funnel_end_od - 2 * wall);
+}

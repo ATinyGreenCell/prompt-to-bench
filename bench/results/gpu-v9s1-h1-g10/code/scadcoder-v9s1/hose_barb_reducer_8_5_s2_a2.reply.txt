@@ -1,0 +1,61 @@
+```openscad
+// Straight hose-barb reducer: 8 mm ID tubing to 5 mm ID tubing
+// Print orientation: standing upright along +Z
+
+// ---- Dimensions (mm) ----
+id_8     = 8;    // 8 mm tubing inner diameter
+id_5     = 5;    // 5 mm tubing inner diameter
+bore     = 3;    // central through-bore diameter
+
+// 8 mm tubing barbs: z = 0 to 20
+barb_h_8 = 10;   // barb height
+od_8_bot = 7.5;  // barb outer diameter at bottom
+od_8_top = 9.5;  // barb outer diameter at top
+overlap_8 = 0.5; // overlap into collar for a solid union
+
+// 5 mm tubing barbs: z = 25 to 41
+barb_h_5 = 8;    // barb height
+od_5_bot = 6.5;  // barb outer diameter at bottom
+od_5_top = 5.0;  // barb outer diameter at top
+overlap_5 = 0.5; // overlap into collar for a solid union
+
+// ---- Derived ----
+barbs_8 = 2;     // number of 8 mm barbs, stacked
+barbs_5 = 2;     // number of 5 mm barbs, stacked
+collar_d = 12;   // collar diameter (z = 20 to 25)
+
+// ---- Model ----
+union() {
+    // 8 mm barbs
+    for (i = [0 : barbs_8 - 1]) {
+        z0 = i * barb_h_8;
+        translate([0, 0, z0])
+            linear_extrude(height = barb_h_8 + overlap_8)
+                polygon([
+                    [od_8_bot / 2, 0],
+                    [od_8_top / 2, barb_h_8],
+                    [od_8_bot / 2, 2 * barb_h_8]
+                ]);
+    }
+
+    // Collar
+    translate([0, 0, 20])
+        cylinder(d = collar_d, h = 5);
+
+    // 5 mm barbs
+    for (i = [0 : barbs_5 - 1]) {
+        z0 = 25 + i * barb_h_5;
+        translate([0, 0, z0])
+            linear_extrude(height = barb_h_5 + overlap_5)
+                polygon([
+                    [od_5_bot / 2, 0],
+                    [od_5_top / 2, barb_h_5],
+                    [od_5_bot / 2, 2 * barb_h_5]
+                ]);
+    }
+
+    // Through-bore
+    translate([0, 0, -1])
+        cylinder(d = bore, h = 43);
+}
+```

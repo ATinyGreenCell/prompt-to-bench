@@ -1,0 +1,150 @@
+```openscad
+// PCR Tube Rack for 96-well plates (0.2 mL)
+// ANSI/SLAS footprint: 127.76 x 85.48 x 20 mm
+// 96 holes: 6.2 mm diameter, 9.0 mm pitch, 8 rows x 12 columns
+// Orientation: A1 corner chamfered at 45 degrees (5 mm leg)
+
+$fn = 128; // High resolution for smooth holes and chamfers
+
+// --- Dimensions ---
+// Overall block size
+W_X = 127.76; // Length (X)
+W_Y = 85.48;  // Width (Y)
+W_Z = 20;     // Height (Z)
+
+// Hole specifications
+HOLE_DIA = 6.2;
+PITCH_X = 9.0;
+PITCH_Y = 9.0;
+
+// Grid positioning (A1 corner offset from left/back edge)
+OFFSET_X = 14.38;
+OFFSET_Y = 11.24;
+
+// Chamfer specification
+CHAMFER_LEG = 5;
+CHAMFER_ANGLE = 45;
+
+// --- Calculations ---
+// Number of holes
+COLS = 12;
+ROWS = 8;
+
+// Verify grid dimensions match block size (optional check)
+// Total span X = (COLS - 1) * PITCH_X = 11 * 9 = 99
+// Total span Y = (ROWS - 1) * PITCH_Y = 7 * 9 = 63
+// Left margin = OFFSET_X = 14.38
+// Right margin = W_X - (OFFSET_X + Total span X) = 127.76 - (14.38 + 99) = 14.38 (Symmetric)
+// Back margin = OFFSET_Y = 11.24
+// Front margin = W_Y - (OFFSET_Y + Total span Y) = 85.48 - (11.24 + 63) = 11.24 (Symmetric)
+
+// --- Main Block ---
+block = cube([W_X, W_Y, W_Z]);
+
+// --- Holes ---
+// We create holes by subtracting cylinders.
+// To ensure clean cuts, we extend the cylinder slightly past the top face (Z=20).
+hole_height = W_Z + 0.5; 
+
+holes = union();
+for (col = [0 : COLS - 1]) {
+    for (row = [0 : ROWS - 1]) {
+        // Calculate position of current hole center
+        x_pos = OFFSET_X + col * PITCH_X;
+        y_pos = OFFSET_Y + row * PITCH_Y;
+        
+        // Create cylinder for this hole
+        // Translate to center, then subtract from the main block later
+        // We define the hole geometry here to be subtracted
+        h = cylinder(
+            h = hole_height,
+            r = HOLE_DIA / 2,
+            center = [x_pos, y_pos, W_Z / 2],
+            $fn = 64
+        );
+        holes = union(holes, h);
+    }
+}
+
+// --- Chamfer ---
+// Cut a 45-degree chamfer with 5mm legs from the A1 corner.
+// A1 is at (OFFSET_X, OFFSET_Y).
+// The chamfer removes material from the vertical edge at that corner.
+// We define a wedge to subtract.
+// The wedge starts at Z=0 and goes up to Z=CHAMFER_LEG (since tan(45)=1, leg length is same in X and Z).
+// Actually, a 45 deg chamfer on a vertical edge means removing a triangular prism.
+// The cut plane passes through (OFFSET_X - CHAMFER_LEG, OFFSET_Y, 0) and (OFFSET_X, OFFSET_Y, CHAMFER_LEG).
+
+chamfer_wedge = translate([OFFSET_X - CHAMFER_LEG, OFFSET_Y, 0])
+    union(
+        // The vertical face of the wedge (the cut surface)
+        // This is a rectangle in XZ plane, extruded along Y? No, it's a prism along Y.
+        // Let's construct the volume to remove.
+        // It is a right triangular prism with the right angle at the bottom-left of the cut zone.
+        // Vertices of the triangle in XZ: (0,0), (5,0), (0,5) relative to the corner start.
+        // We extrude this triangle along Y from 0 to W_Y.
+        
+        // Define the triangle profile
+        poly = polygon([
+            [0, 0],      // Bottom left (relative to corner start)
+            [CHAMFER_LEG, 0], // Bottom right
+            [0, CHAMFER_LEG]  // Top left
+        ]);
+        
+        // Extrude the polygon along Y
+        extruded = linear_extrude(height = W_Y, center = false, convexity = 3) {
+            polygon(poly);
+        };
+        
+        // Position the extruded wedge correctly
+        // The triangle's (0,0) point is at the corner start (OFFSET_X - CHAMFER_LEG, OFFSET_Y)
+        // But we want the cut to start at the edge.
+        // Let's re-orient: The wedge is defined by points:
+        // A: (OFFSET_X - CHAMFER_LEG, OFFSET_Y, 0)
+        // B: (OFFSET_X, OFFSET_Y, 0)
+        // C: (OFFSET_X, OFFSET_Y, CHAMFER_LEG)
+        // And extruded along Y.
+        
+        translate([OFFSET_X - CHAMFER_LEG, OFFSET_Y, 0]) {
+            // Rotate to align the triangle correctly if needed, but linear_extrude handles the shape.
+            // The polygon [0,0], [5,0], [0,5] creates a triangle with hypotenuse from (5,0) to (0,5).
+            // This matches the cut from (OFFSET_X, 0, 0) to (OFFSET_X-5, 0, 5) if we rotate?
+            // Wait, standard chamfer on a vertical edge (X=const, Y=const) removes material where X < X_corner and Z > 0?
+            // No, it removes the corner.
+            // The plane equation is (X - X_corner) + (Z - Z_corner) = 0?
+            // Let's just build the volume to subtract.
+            // Volume is bounded by X = OFFSET_X - CHAMFER_LEG to OFFSET_X, Z = 0 to CHAMFER_LEG.
+            // The hypotenuse connects (OFFSET_X - CHAMFER_LEG, 0) to (OFFSET_X, CHAMFER_LEG).
+            
+            // Let's use a simpler approach: Rotate a rectangle.
+            // Start with a rectangle of size CHAMFER_LEG x CHAMFER_LEG at the corner.
+            // Rotate 45 degrees around the bottom edge? No.
+            
+            // Correct geometric construction:
+            // Translate to corner start: [OFFSET_X - CHAMFER_LEG, OFFSET_Y, 0]
+            // We want to remove the region where X < OFFSET_X and Z > 0, bounded by the 45 deg line.
+            // The line is Z = X - (OFFSET_X - CHAMFER_LEG).
+            // So we remove points where Z > X - (OFFSET_X - CHAMFER_LEG).
+            
+            // Let's build the solid to subtract:
+            // It is a prism with triangular cross section in XZ plane.
+            // Triangle vertices:
+            // 1. (OFFSET_X - CHAMFER_LEG, OFFSET_Y, 0)
+            // 2. (OFFSET_X, OFFSET_Y, 0)
+            // 3. (OFFSET_X, OFFSET_Y, CHAMFER_LEG)
+            // Extrude along Y.
+            
+            // To make this with basic shapes:
+            // Translate to [OFFSET_X - CHAMFER_LEG, OFFSET_Y, 0]
+            // Create a triangle polygon: [0,0], [5,0], [0,5] -> This is X from 0 to 5, Z from 0 to 5-X.
+            // This matches our requirement if we map X_local to X_global correctly.
+            // Local X=0 -> Global X = OFFSET_X - CHAMFER_LEG.
+            // Local X=5 -> Global X = OFFSET_X.
+            // Local Z=0 -> Global Z = 0.
+            // Local Z=5 -> Global Z = 5.
+            // The hypotenuse connects (Local X=5, Z=0) to (Local X=0, Z=5).
+            // Equation: Z = 5 - X_local => Z = 5 - (X_global - (OFFSET_X - 5)) => Z = 5 - X_global + OFFSET_X - 5 => Z = OFFSET_X - X_global.
+            // This is a 45 degree line.
+            
+            // So the polygon [0,0], [5,0], [0,5] works perfectly.
+            // We

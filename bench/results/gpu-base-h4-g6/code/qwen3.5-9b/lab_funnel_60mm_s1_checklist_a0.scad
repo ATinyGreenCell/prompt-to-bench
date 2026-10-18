@@ -1,0 +1,56 @@
+// Small lab funnel - upright print, straight spout at bottom, conical top.
+// Dimensions measured with calipers.
+
+// Spout dimensions
+spout_od = 10;      // Outer diameter of spout
+spout_id = 6.8;     // Inner diameter of spout (spout_od - 2*wall)
+spout_z  = 20;      // Height of spout section
+
+// Cone dimensions
+cone_bottom_od = 10; // Matches spout outer diameter
+cone_top_od    = 60; // Outer diameter at rim
+cone_wall      = 1.6; // Wall thickness everywhere
+cone_z         = 30; // Height of cone section (from z=20 to z=50)
+
+// Derived dimensions
+wall = cone_wall;
+cone_top_id = cone_top_od - 2 * wall;
+
+// Orientation: Rests on XY plane at z=0, builds upward.
+// Centred on origin in X and Y.
+// $fn set high for smooth curves.
+$fn = 96;
+
+module funnel() {
+    difference() {
+        // --- Outer Shell ---
+        union() {
+            // 1. Straight Spout (Cylinder)
+            // From z=0 to z=20. Outer radius = 5.
+            translate([0, 0, 0]) 
+                cylinder(h = spout_z, d = spout_od);
+
+            // 2. Conical Top
+            // From z=20 to z=50.
+            // Outer radius at z=20 is 5. Outer radius at z=50 is 30.
+            // We use a cylinder with d1 and d2 to create the cone shape.
+            translate([0, 0, spout_z]) 
+                cylinder(h = cone_z, d1 = cone_bottom_od, d2 = cone_top_od);
+        }
+
+        // --- Inner Bore (Holes) ---
+        // We subtract the inner volume to make it hollow.
+        // 1. Inner Spout Hole
+        // From z=0 to z=20. Inner radius = 3.4.
+        translate([0, 0, 0]) 
+            cylinder(h = spout_z, d = spout_id);
+
+        // 2. Inner Cone Hole
+        // From z=20 to z=50.
+        // Inner radius at z=20 is 3.4. Inner radius at z=50 is 28 (60 - 2*1.6).
+        translate([0, 0, spout_z]) 
+            cylinder(h = cone_z, d1 = spout_id, d2 = cone_top_id);
+    }
+}
+
+funnel();

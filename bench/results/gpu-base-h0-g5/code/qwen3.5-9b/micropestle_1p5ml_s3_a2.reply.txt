@@ -1,0 +1,86 @@
+```openscad
+$fn = 128;
+
+// --- Dimensions ---
+// Handle
+d_handle = 8;
+h_handle = 45;
+z_handle_start = 0;
+z_handle_end = 45;
+
+// Cone
+d_cone_bottom = 8;
+d_cone_top = 3;
+z_cone_start = 45;
+z_cone_end = 62;
+h_cone = z_cone_end - z_cone_start;
+
+// Tip
+d_tip = 3;
+z_tip_center = 62;
+r_tip = d_tip / 2;
+
+// Grooves
+n_grooves = 4;
+w_groove = 2; // Width in Z (total width)
+d_groove = 1; // Depth
+z_groove_centers = [10, 15, 20, 25];
+
+// --- Main Body Construction ---
+difference() {
+    union() {
+        // 1. Cylindrical Handle
+        // Centered at z = 22.5 to span 0 to 45
+        cylinder(
+            h = h_handle,
+            d = d_handle,
+            center = [0, 0, z_handle_start + h_handle/2]
+        );
+
+        // 2. Conical Section
+        // Tapers from 8mm at z=45 to 3mm at z=62.
+        // Center of cone is at z = 45 + 17/2 = 53.5
+        // Using linear_extrude with a polygon profile
+        profile_cone = [
+            d_cone_bottom/2, 0,
+            d_cone_top/2, h_cone
+        ];
+        linear_extrude(
+            h = h_cone,
+            center = [0, 0, z_cone_start + h_cone/2]
+        ) {
+            polygon(points = profile_cone);
+        }
+
+        // 3. Rounded Tip (Sphere)
+        sphere(
+            r = r_tip,
+            center = [0, 0, z_tip_center]
+        );
+    }
+
+    // --- Cut Grooves ---
+    // We cut 4 grooves into the handle section.
+    for (z_c = z_groove_centers) {
+        // Calculate the Z range for the groove
+        z_start = z_c - w_groove/2;
+        z_end = z_c + w_groove/2;
+
+        // Ensure the cut stays within the handle bounds
+        z_start = max(z_start, z_handle_start);
+        z_end = min(z_end, z_handle_end);
+
+        // The groove is a hole through the cylinder.
+        // Cutter diameter must be Handle Diameter + 2 * Depth
+        d_cutter = d_handle + 2 * d_groove; 
+        
+        translate([0, 0, z_start]) {
+            cylinder(
+                h = z_end - z_start,
+                d = d_cutter,
+                center = [0, 0, z_c]
+            );
+        }
+    }
+}
+```

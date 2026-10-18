@@ -1,0 +1,54 @@
+// Lab Funnel - A straight spout tube with a conical funnel top.
+// Printed upright (wide opening at top), resting on XY plane at z=0.
+
+// Dimensions
+spout_od    = 10;      // Outer diameter of straight spout
+spout_id    = 6.8;     // Inner diameter of straight spout (10 - 2*1.6)
+spout_len   = 20;      // Length of straight spout (z=0 to z=20)
+funnel_start_od = 10;  // Outer diameter at start of cone (z=20)
+funnel_end_od  = 60;   // Outer diameter at rim (z=50)
+funnel_height = 30;    // Height of cone section (50 - 20)
+wall_thick   = 1.6;    // Wall thickness everywhere
+
+// Derived dimensions
+funnel_end_id = funnel_end_od - 2 * wall_thick; // 56.8 mm
+
+$fn = 64;
+
+// Build the solid part
+difference() {
+    // 1. The outer shell (Union of spout and cone)
+    union() {
+        // Straight spout tube
+        translate([0, 0, 0]) 
+            cylinder(h = spout_len, d = spout_od);
+        
+        // Conical funnel top
+        translate([0, 0, spout_len]) 
+            linear_extrude(height = funnel_height, convexity = 3) 
+                polygon([
+                    [spout_od / 2, 0],
+                    [funnel_end_od / 2, 0],
+                    [funnel_end_od / 2, funnel_height],
+                    [spout_od / 2, funnel_height]
+                ]);
+    }
+    
+    // 2. The inner void (Difference to create the bore)
+    // We subtract the inner shapes from the outer shell.
+    // To ensure clean cuts, we extend the inner shapes slightly past the boundaries.
+    
+    // Inner straight spout
+    translate([0, 0, 0]) 
+        cylinder(h = spout_len + 0.1, d = spout_id);
+    
+    // Inner conical funnel
+    translate([0, 0, spout_len]) 
+        linear_extrude(height = funnel_height + 0.1, convexity = 3) 
+            polygon([
+                [spout_id / 2, 0],
+                [funnel_end_id / 2, 0],
+                [funnel_end_id / 2, funnel_height],
+                [spout_id / 2, funnel_height]
+            ]);
+}

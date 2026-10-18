@@ -1,0 +1,92 @@
+```openscad
+// Bench Rack for 1.5 mL Microcentrifuge Tubes
+// Designed for FDM printing. Rests on XY plane at Z=0.
+
+// --- Dimensions ---
+// Block dimensions
+$block_length = 106; // X
+$block_width = 72;   // Y
+$block_height = 30;  // Z
+
+// Grid configuration
+$grid_rows = 4;      // Rows along Y
+$grid_cols = 6;      // Columns along X
+$grid_spacing_x = 16; // Centre-to-centre X
+$grid_spacing_y = 16; // Centre-to-centre Y
+
+// Hole configuration
+$hole_diameter = 11.2;
+$hole_depth = 25;    // Depth of the hole (open top, closed bottom)
+$floor_thickness = 5; // Solid floor at bottom (30 - 25 = 5)
+
+// --- Settings ---
+$fn = 64; // Smooth curves
+
+// --- Calculations ---
+// Calculate grid offsets to center the grid on the block
+// Total grid width = (cols - 1) * spacing
+// Offset = (BlockWidth - TotalGridWidth) / 2
+$grid_offset_x = ($block_length - ($grid_cols - 1) * $grid_spacing_x) / 2;
+$grid_offset_y = ($block_width - ($grid_rows - 1) * $grid_spacing_y) / 2;
+
+// --- Main Block ---
+difference() {
+    // 1. Create the solid rectangular block
+    block = cube([
+        $block_length,
+        $block_width,
+        $block_height
+    ]);
+
+    // 2. Create holes using a loop
+    // We subtract cylinders from the block.
+    // To ensure clean cuts, we extend the cylinder slightly past the block faces.
+    for (r = [0 : $grid_rows - 1]) {
+        for (c = [0 : $grid_cols - 1]) {
+            // Calculate position of current hole center
+            $x_pos = $grid_offset_x + c * $grid_spacing_x;
+            $y_pos = $grid_offset_y + r * $grid_spacing_y;
+            
+            // Cylinder parameters
+            // Radius
+            $r_hole = $hole_diameter / 2;
+            // Height: We need to cut through the top surface and down to the floor.
+            // The block is 30mm high. The hole is 25mm deep.
+            // We extend the cylinder 0.1mm past the top (Z=30) and bottom (Z=0) to ensure clean cuts.
+            $cyl_height = $block_height + 0.1; 
+            
+            // Create the cutter cylinder centered at origin
+            cutter = cylinder(
+                h = $cyl_height,
+                r = $r_hole,
+                center = [true, true, true]
+            );
+            
+            // Translate cutter to correct position
+            // Center the cylinder on the calculated X/Y, and span the full Z range
+            translate([
+                $x_pos,
+                $y_pos,
+                -($cyl_height / 2)
+            ]) {
+                difference() {
+                    // The hole shape is a cylinder that goes through the whole block
+                    // We subtract this from the 'block' variable.
+                    // Since we are inside a difference() block, we just place the cutter here.
+                    // However, to be explicit about the geometry being subtracted:
+                    // We create a temporary union of the cutter to ensure it's a solid object before subtracting.
+                    union() {
+                        // The actual hole volume
+                        translate([0, 0, 0]) {
+                            cylinder(h = $cyl_height, r = $r_hole, center = [true, true, true]);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    // Apply the block and the holes
+    block;
+}
+```

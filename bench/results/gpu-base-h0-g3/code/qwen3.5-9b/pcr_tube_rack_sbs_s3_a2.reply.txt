@@ -1,0 +1,133 @@
+```openscad
+// 96-Well PCR Tube Rack (0.2 mL)
+// Designed for FDM 3D printing.
+// Orientation: Rests on XY plane at Z=0, builds upward (+Z).
+// Centred on origin in X and Y.
+
+// --- Dimensions (mm) ---
+// Block Dimensions
+$block_length = 127.76; // X
+$block_width  = 85.48;  // Y
+$block_height = 20;     // Z
+
+// Hole Specifications
+$hole_diameter = 6.2;
+$hole_count_x = 12;    // Columns along X
+$hole_count_y = 8;     // Rows along Y
+$hole_spacing = 9.0;   // Centre-to-centre spacing
+
+// Grid Positioning (Distance from nearest edge to first hole centre)
+$offset_x = 14.38;     // Distance from left edge to A1
+$offset_y = 11.24;     // Distance from back edge to A1
+
+// Chamfer Specifications
+$chamfer_leg = 5;      // Length of the leg along the edge
+
+// --- Configuration ---
+$fn = 64; // Smooth curves for holes
+
+// --- Calculations ---
+// Calculate total grid size based on offsets and spacing
+$total_grid_x = $offset_x + (($hole_count_x - 1) * $hole_spacing);
+$total_grid_y = $offset_y + (($hole_count_y - 1) * $hole_spacing);
+
+// Calculate block centre
+$block_cx = $block_length / 2;
+$block_cy = $block_width / 2;
+
+// Calculate grid centre relative to block
+$grid_cx = $block_cx - ($block_length / 2 - $total_grid_x / 2);
+$grid_cy = $block_cy - ($block_width / 2 - $total_grid_y / 2);
+
+// --- Main Block ---
+difference() {
+    // 1. Main Block
+    cube([
+        $block_length,
+        $block_width,
+        $block_height
+    ]);
+
+    // 2. Holes (96 vertical through-holes)
+    // Loop over columns (X) and rows (Y)
+    for (col = [0 : $hole_count_x - 1]) {
+        for (row = [0 : $hole_count_y - 1]) {
+            // Calculate position of current hole
+            $x_pos = $grid_cx + (col * $hole_spacing);
+            $y_pos = $grid_cy + (row * $hole_spacing);
+            
+            // Cut hole extending slightly past the top face to ensure clean removal
+            translate([
+                $x_pos - ($hole_diameter / 2),
+                $y_pos - ($hole_diameter / 2),
+                0
+            ])
+            cylinder(
+                h = $block_height + 0.1, // Extend 0.1mm past top
+                d = $hole_diameter,
+                $fn = $fn
+            );
+        }
+    }
+
+    // 3. Chamfer at A1 corner (Left/Back corner)
+    // We define the cutting shape as a pyramid with a triangular base on the top face
+    // and a vertex at the bottom corner (0,0, $block_height - $chamfer_leg).
+    // The base on the top face is the triangle with vertices:
+    // (0, 0, $block_height), (0, $chamfer_leg, $block_height), ($chamfer_leg, 0, $block_height).
+    // The vertex is at (0, 0, $block_height - $chamfer_leg).
+    
+    // Define the vertices of the cutting pyramid
+    $v1 = [0, 0, $block_height];
+    $v2 = [0, $chamfer_leg, $block_height];
+    $v3 = [$chamfer_leg, 0, $block_height];
+    $v4 = [0, 0, $block_height - $chamfer_leg];
+    
+    // Create the cutting shape using polygon extrusion
+    // We define the cross-section in the XZ plane at Y=0, then rotate?
+    // No, let's use a simpler approach: define the polygon in the XY plane at Z=$block_height
+    // and extrude it downwards while shrinking to a point?
+    // OpenSCAD doesn't have a direct "shrink to point" extrude.
+    // We can use a loop to create a series of polygons or use a specific shape.
+    // Let's use a loop to create a series of triangular slices.
+    
+    // Alternatively, we can define the cutting shape as a union of two wedges or use a specific geometry.
+    // Let's try a different approach: define the cutting shape as a rotated box.
+    // The cut is a wedge.
+    // Let's define the cutting shape as a prism with a triangular cross-section in the XZ plane,
+    // rotated around the Y axis? No.
+    
+    // Let's use the `polygon` command with `linear_extrude` but with a twist.
+    // We can't easily do a tapering extrude in one go without loops.
+    // Let's use a loop to create a series of thin slices that form the pyramid.
+    
+    $slice_height = 0.1;
+    for (z = [$block_height - $chamfer_leg : $slice_height : $block_height]) {
+        $z_level = z;
+        // Calculate the size of the triangle at this Z level
+        // At Z = $block_height - $chamfer_leg, size is 0.
+        // At Z = $block_height, size is $chamfer_leg.
+        // The size scales linearly.
+        $scale = ($z_level - ($block_height - $chamfer_leg)) / $chamfer_leg;
+        
+        // Define the triangle vertices at this Z level
+        // The triangle is in the XY plane, centered at (0,0) but aligned to the corner.
+        // Vertices: (0,0), (0, $size), ($size, 0)
+        $size = $scale * $chamfer_leg;
+        
+        $pts = [
+            [0, 0, $z_level],
+            [0, $size, $z_level],
+            [$size, 0, $z_level]
+        ];
+        
+        // Extrude this triangle by a small height to form a slice
+        // We need to ensure the slices connect properly.
+        // Since we are using difference, we just need to cut the volume.
+        // Let's create a thin box for each slice.
+        translate([0, 0, $z_level])
+        linear_extrude(h = $slice_height)
+        polygon(points = $pts);
+    }
+}
+```

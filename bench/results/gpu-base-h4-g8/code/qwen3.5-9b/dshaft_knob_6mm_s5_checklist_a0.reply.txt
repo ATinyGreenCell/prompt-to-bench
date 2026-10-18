@@ -1,0 +1,153 @@
+```openscad
+// Replacement knob for hotplate stirrer - D-shaft mount, grip grooves, and pointer.
+
+// Dimensions
+d_shaft = 6.0;
+d_outer = 30.0;
+h_total = 15.0;
+h_bore  = 12.0;
+h_groove = 2.0;
+n_grooves = 18;
+w_pointer = 1.5;
+d_pointer = 1.0;
+
+// D-shape geometry
+d_circle = 6.2;
+d_flat = 4.7;
+
+$fn = 96;
+
+// Calculate D-shape parameters
+r_circle = d_circle / 2;
+r_flat = d_flat / 2;
+// The flat side is at x = -r_flat, the circle arc goes to x = +r_circle
+// Center of the D-shape is at x = 0.
+// The flat face is vertical at x = -r_flat.
+// The circle center is at x = r_circle - r_flat.
+x_circle_center = r_circle - r_flat;
+
+// Create the main body (Cylinder)
+// Oriented with flat side facing -X (left) so it fits the D-shaft.
+// The shaft is usually a D-shape with the flat on one side.
+// We assume the flat side of the bore aligns with the flat side of the knob.
+// The knob sits on Z=0.
+
+difference() {
+    // 1. Main Body
+    translate([0, 0, 0]) 
+        cylinder(h = h_total, d = d_outer);
+
+    // 2. D-Shaped Bore
+    // We create the D-shape profile in 2D and extrude it.
+    // The profile is a circle of d_circle centered at (x_circle_center, 0)
+    // minus a rectangle of width d_flat and height h_bore at x = -r_flat.
+    
+    // Profile points for the D-shape (radius vs height)
+    // We need to subtract this volume from the main body.
+    // Since we are using difference(), we extrude the D-shape profile.
+    
+    // Define the D-shape polygon in the XZ plane (radius X, height Z)
+    // Actually, for a blind bore, we extrude along Z.
+    // The profile is defined by radius (X) vs Z.
+    // The flat side is at X = -r_flat. The circle arc is centered at X = x_circle_center.
+    
+    // Let's build the D-shape profile points:
+    // Start at bottom flat: [-r_flat, 0]
+    // Go up flat: [-r_flat, h_bore]
+    // Go to circle top: [x_circle_center + r_circle, h_bore]
+    // Go around circle arc to bottom: [x_circle_center + r_circle, 0]
+    // Close to start.
+    
+    // Circle arc points
+    // Center of circle in XZ plane is (x_circle_center, 0)
+    // Radius is r_circle.
+    // We need points from angle 0 (rightmost) to 180 (leftmost).
+    // Leftmost point is x_circle_center - r_circle = -r_flat. Correct.
+    
+    // Generate points for the circle arc
+    // Angle 0 is at x = x_circle_center + r_circle, z = 0
+    // Angle 180 is at x = x_circle_center - r_flat, z = 0
+    
+    // We will create the D-shape as a 2D polygon and extrude it.
+    // Points: [radius, height]
+    
+    // Flat part
+    p_flat_bottom = [-r_flat, 0];
+    p_flat_top = [-r_flat, h_bore];
+    
+    // Circle arc points
+    // We need to go from the top of the flat (-r_flat, h_bore) to the rightmost point (x_circle_center + r_circle, h_bore)
+    // Wait, the circle center is at (x_circle_center, 0).
+    // Top of the circle is at z = r_circle.
+    // The flat goes up to h_bore.
+    // If h_bore > r_circle, the flat extends above the circle center.
+    // The circle arc connects (-r_flat, 0) to (x_circle_center + r_circle, 0).
+    // The flat connects (-r_flat, 0) to (-r_flat, h_bore).
+    // We need to connect (-r_flat, h_bore) to the circle arc.
+    // The circle arc starts at (-r_flat, 0) and goes to (x_circle_center + r_circle, 0).
+    // The top of the circle is at (x_circle_center, r_circle).
+    // If h_bore > r_circle, the flat side is taller than the circle height.
+    // The profile must be closed.
+    // Path: (-r_flat, 0) -> (-r_flat, h_bore) -> (x_circle_center + r_circle, h_bore) -> (x_circle_center + r_circle, 0) -> Arc -> (-r_flat, 0).
+    // Wait, the circle arc is only the bottom part? No, it's a D-shape.
+    // A D-shape is a circle with a rectangle cut out of one side.
+    // So the boundary is: Flat side (vertical), Top horizontal, Right vertical, Bottom horizontal, Left arc.
+    // But here the "flat" is the cutout side.
+    // So the solid is: Circle minus Rectangle.
+    // The boundary of the hole is:
+    // 1. Vertical line at x = -r_flat from z=0 to z=h_bore.
+    // 2. Horizontal line at z=h_bore from x=-r_flat to x=x_circle_center+r_circle.
+    // 3. Vertical line at x=x_circle_center+r_circle from z=h_bore to z=0.
+    // 4. Circle arc from (x_circle_center+r_circle, 0) to (-r_flat, 0).
+    // 5. Horizontal line at z=0 from x=-r_flat to x=x_circle_center+r_circle.
+    
+    // Let's construct the polygon for the hole profile.
+    // Points: [x, z]
+    p1 = [-r_flat, 0];
+    p2 = [-r_flat, h_bore];
+    p3 = [x_circle_center + r_circle, h_bore];
+    p4 = [x_circle_center + r_circle, 0];
+    
+    // Circle arc from p4 to p1
+    // Center (cx, cy) = (x_circle_center, 0)
+    // Radius r = r_circle
+    // Start angle: 0 (at p4)
+    // End angle: 180 (at p1)
+    
+    // Generate arc points
+    arc_points = [for (i = [0 : 180]) let(a = i) [x_circle_center + r_circle * cos(a * PI / 180), r_circle * sin(a * PI / 180)]];
+    
+    // Combine points
+    hole_profile = concat([p1, p2, p3, p4], arc_points);
+    
+    // Extrude the hole profile
+    // Since we are in difference(), we extrude the profile to remove material.
+    // The profile is in XZ plane. We extrude along Y? No, the knob is a cylinder along Z.
+    // The bore is along Z. So the profile is in XY plane?
+    // No, the knob is a cylinder along Z. The bore is a hole along Z.
+    // So the profile of the hole is in the XY plane.
+    // The D-shape is in the XY plane.
+    // The flat side is along the Y-axis? Or X-axis?
+    // "D-shaped blind bore... distance from the flat to the opposite side... is 4.7 mm".
+    // Usually, the flat is on one side. Let's put the flat on the -X side.
+    // So the profile is in the XY plane.
+    // Points: [x, y]
+    // Flat side at x = -r_flat.
+    // Circle center at x = x_circle_center.
+    // Radius r_circle.
+    // Flat height (width in Y) = h_bore.
+    
+    // Profile points in XY:
+    // Start bottom left: [-r_flat, -h_bore/2]
+    // Go up: [-r_flat, h_bore/2]
+    // Go right to circle edge: [x_circle_center + r_circle, h_bore/2]
+    // Go down circle arc to bottom right: [x_circle_center + r_circle, -h_bore/2]
+    // Close.
+    
+    // Circle arc in XY plane:
+    // Center (cx, cy) = (x_circle_center, 0)
+    // Radius r_circle.
+    // Start angle 0 (rightmost), End angle 180 (leftmost).
+    
+    // Let's rebuild the profile correctly for XY plane.
+    //

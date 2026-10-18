@@ -1,0 +1,64 @@
+```openscad
+// Sowing template for 90 mm Petri dish
+// Flat disc with grid of holes and orientation notch.
+
+$fn = 64;
+
+// Dimensions
+DISH_DIA = 90;
+DISC_DIA = 85;
+THICKNESS = 2;
+GRID_SIZE = 7;
+HOLE_DIA = 3;
+HOLE_SPACING = 9;
+NOTCH_WIDTH = 10;
+NOTCH_DEPTH = 4;
+
+// Calculate grid positions
+// Grid is 7x7, centred on origin.
+// Spacing is 9mm.
+// Offset from centre to first hole = (GRID_SIZE - 1) / 2 * spacing
+grid_offset = (GRID_SIZE - 1) / 2 * HOLE_SPACING;
+
+difference() {
+    // Main disc body
+    // Centre on X/Y, sitting on Z=0
+    translate([0, 0, 0]) 
+        cylinder(h = THICKNESS, d = DISC_DIA);
+
+    // Grid of holes
+    for (i = [0 : GRID_SIZE - 1]) {
+        for (j = [0 : GRID_SIZE - 1]) {
+            // Calculate position relative to disc centre
+            x = (i - (GRID_SIZE - 1) / 2) * HOLE_SPACING;
+            y = (j - (GRID_SIZE - 1) / 2) * HOLE_SPACING;
+            
+            // Cut hole extending slightly past thickness
+            translate([x, y, -0.01]) 
+                cylinder(h = THICKNESS + 0.02, d = HOLE_DIA);
+        }
+    }
+
+    // Orientation notch on the +Y side
+    // Notch is 10mm wide (X) and 4mm deep (Y)
+    // Centred on Y axis, so it spans from -5 to +5 in X
+    // Depth is measured in from the rim.
+    // Rim Y position = DISC_DIA / 2 = 42.5
+    // Notch starts at Y = 42.5 - NOTCH_DEPTH = 38.5
+    
+    // Create the notch shape as a cylinder to cut out
+    // The notch is a rectangular prism cut from the top surface
+    // We model it as a cylinder lying on its side to cut the volume
+    // Or simpler: use a polygon extruded or a cylinder rotated 90 deg
+    
+    // Let's use a cylinder rotated 90 degrees around X axis
+    // The cylinder will represent the "knife" cutting the notch
+    // Length of cylinder = NOTCH_WIDTH
+    // Diameter of cylinder = NOTCH_DEPTH (to cut the depth)
+    // Position: Centred at X=0, Y = 42.5 - NOTCH_DEPTH/2
+    
+    translate([0, DISC_DIA / 2 - NOTCH_DEPTH / 2, 0])
+        rotate([90, 0, 0])
+            cylinder(h = NOTCH_WIDTH, d = NOTCH_DEPTH);
+}
+```

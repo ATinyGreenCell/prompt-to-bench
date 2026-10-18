@@ -1,0 +1,100 @@
+```openscad
+// Snap-on clip for lab stand rod and tubing.
+// Printed flat: 10 mm tall extrusion of a 2-D profile in the XY plane.
+// Orientation: Rests on XY plane at Z=0, builds upward. Centred on origin.
+
+// Rod dimensions
+rod_id = 12.7;      // Inner diameter of rod ring
+rod_wall = 3;       // Wall thickness of rod ring
+rod_od = rod_id + 2 * rod_wall; // Outer diameter of rod ring (18.7 mm)
+
+// Tubing dimensions
+tube_id = 6;        // Inner diameter of tubing ring
+tube_wall = 2;      // Wall thickness of tubing ring
+tube_od = tube_id + 2 * tube_wall; // Outer diameter of tubing ring (10 mm)
+
+// Bridge dimensions
+bridge_x_start = 8; // Start X of bridge
+bridge_x_end = 12;  // End X of bridge
+bridge_y = 6;       // Width of bridge in Y
+
+// Extrusion height
+height = 10;
+
+// Cutout dimensions for rod ring (opening on -X side)
+cutout_rod_y_min = -5;
+cutout_rod_y_max = 5;
+cutout_rod_width = 10; // Width of the gap (from x = -5 to x = 5)
+
+// Cutout dimensions for tubing ring (opening on +X side)
+cutout_tube_y_min = -2.25;
+cutout_tube_y_max = 2.25;
+cutout_tube_width = 4.5; // Width of the gap (from x = 15 to x = 19.5)
+
+$fn = 64;
+
+// Define the 2D profile as a polygon in the XY plane.
+// We construct the union of the three solid shapes (Rod Ring, Tubing Ring, Bridge)
+// and then subtract the cutouts.
+
+// Helper to generate points for a rectangle defined by x-range [x1, x2] and y-range [y1, y2]
+function rect_xy_points(x1, y1, x2, y2) = [
+    [x1, y1],
+    [x2, y1],
+    [x2, y2],
+    [x1, y2]
+];
+
+// Helper to generate points for a rectangle centered at (cx, cy) with width w and height h
+function rect_points(cx, cy, w, h) = [
+    [cx - w/2, cy - h/2],
+    [cx + w/2, cy - h/2],
+    [cx + w/2, cy + h/2],
+    [cx - w/2, cy + h/2]
+];
+
+// Construct the main body polygon
+// 1. Outer Rod Ring (Centered at 0,0, OD=18.7)
+rod_ring_outer = rect_points(0, 0, rod_od, height);
+
+// 2. Outer Tubing Ring (Centered at 15,0, OD=10)
+tube_ring_outer = rect_points(15, 0, tube_od, height);
+
+// 3. Bridge (Rectangle from x=8 to x=12, y=-3 to y=3)
+bridge_poly = rect_xy_points(bridge_x_start, -bridge_y/2, bridge_x_end, bridge_y/2);
+
+// Cutout 1: Rod Ring Opening (-X side)
+// Defined as x < 0 and -5 < y < 5.
+// We need to cut a rectangle from x = -5 to x = 0, y = -5 to y = 5.
+cutout_rod = rect_xy_points(-cutout_rod_width/2, cutout_rod_y_min, 0, cutout_rod_y_max);
+
+// Cutout 2: Tubing Ring Opening (+X side)
+// Defined as x > 15 and -2.25 < y < 2.25.
+// We need to cut a rectangle from x = 15 to x = 19.5, y = -2.25 to y = 2.25.
+cutout_tube = rect_xy_points(15, cutout_tube_y_min, 15 + cutout_tube_width, cutout_tube_y_max);
+
+// Create the 2D profile
+// Union of Rod Ring, Tubing Ring, and Bridge
+// Difference with Cutouts
+
+difference() {
+    union() {
+        // Rod Ring
+        linear_extrude(height = height) polygon(rod_ring_outer);
+        
+        // Tubing Ring
+        linear_extrude(height = height) polygon(tube_ring_outer);
+        
+        // Bridge
+        linear_extrude(height = height) polygon(bridge_poly);
+    }
+    
+    // Subtract Cutouts
+    // Extend cutouts slightly to ensure clean cuts (Rule 5)
+    // Cutout Rod
+    translate([0, 0, -0.01]) linear_extrude(height = height + 0.02) polygon(cutout_rod);
+    
+    // Cutout Tube
+    translate([0, 0, -0.01]) linear_extrude(height = height + 0.02) polygon(cutout_tube);
+}
+```

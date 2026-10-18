@@ -1,0 +1,148 @@
+$fn = 128;
+
+// --- Base Plate Dimensions ---
+// X range: -25 to 25 (Width = 50)
+// Y range: 0 to 45 (Length = 45)
+// Z range: 0 to 5 (Thickness = 5)
+BASE_X_MIN = -25;
+BASE_X_MAX = 25;
+BASE_Y_MIN = 0;
+BASE_Y_MAX = 45;
+BASE_Z_MAX = 5;
+
+// --- Base Plate Holes (M4) ---
+// Position: x = -17, y = 30 and x = 17, y = 30
+// Diameter: 4.5 mm
+BASE_HOLE_X1 = -17;
+BASE_HOLE_Y1 = 30;
+BASE_HOLE_X2 = 17;
+BASE_HOLE_Y2 = 30;
+BASE_HOLE_DIA = 4.5;
+
+// --- Vertical Motor Plate Dimensions ---
+// X range: -25 to 25 (Width = 50)
+// Y range: 0 to 5 (Thickness = 5)
+// Z range: 0 to 50 (Height = 50)
+// Stands on the back edge of the base (y=0 to y=5)
+MOTOR_X_MIN = -25;
+MOTOR_X_MAX = 25;
+MOTOR_Y_MAX = 5;
+MOTOR_Z_MAX = 50;
+
+// --- Motor Plate Boss Hole ---
+// Diameter: 23 mm
+// Centre: x = 0, z = 28 (along Y axis)
+MOTOR_BOSS_DIA = 23;
+MOTOR_BOSS_X = 0;
+MOTOR_BOSS_Z = 28;
+
+// --- Motor Plate Screw Holes (M3) ---
+// Diameter: 3.4 mm
+// Pattern: 31 mm square, centred on boss hole
+MOTOR_SCREW_DIA = 3.4;
+MOTOR_SCREW_PATTERN_SIZE = 31;
+
+// --- Gusset Dimensions ---
+// Thickness: 5 mm (matches base and motor plate)
+// Location: Left (x = -25 to -20) and Right (x = 20 to 25)
+// Shape: Right triangle in YZ plane
+// Legs: 20 mm along +Y, 20 mm along +Z
+// Right-angle corner: y = 5, z = 5
+GUSSET_THICKNESS = 5;
+GUSSET_LEG_Y = 20;
+GUSSET_LEG_Z = 20;
+GUSSET_CORNER_Y = 5;
+GUSSET_CORNER_Z = 5;
+
+// --- Helper: Cut Hole Function ---
+// Extends slightly past the face to ensure clean cut
+function cut_hole(x, y, z, diameter, depth) = 
+    cylinder(h = depth + 0.1, r = diameter / 2, center = [x, y, z]);
+
+// --- Main Module ---
+module L_Bracket() {
+    union() {
+        // 1. Base Plate
+        translate([0, 0, 0]) {
+            cube([
+                BASE_X_MAX - BASE_X_MIN,
+                BASE_Y_MAX - BASE_Y_MIN,
+                BASE_Z_MAX
+            ]);
+            
+            // Cut Base Holes
+            translate([BASE_HOLE_X1, BASE_HOLE_Y1, 0]) {
+                cylinder(h = BASE_Z_MAX + 0.1, r = BASE_HOLE_DIA / 2);
+            }
+            translate([BASE_HOLE_X2, BASE_HOLE_Y2, 0]) {
+                cylinder(h = BASE_Z_MAX + 0.1, r = BASE_HOLE_DIA / 2);
+            }
+        }
+
+        // 2. Vertical Motor Plate
+        translate([0, 0, 0]) {
+            cube([
+                MOTOR_X_MAX - MOTOR_X_MIN,
+                MOTOR_Y_MAX,
+                MOTOR_Z_MAX
+            ]);
+
+            // Cut Boss Hole
+            translate([MOTOR_BOSS_X, 0, MOTOR_BOSS_Z]) {
+                cylinder(h = MOTOR_Y_MAX + 0.1, r = MOTOR_BOSS_DIA / 2);
+            }
+
+            // Cut Screw Holes (4 holes on 31mm square pattern)
+            // Pattern centered at x=0, z=28
+            for (i = [-1, 1]) {
+                for (j = [-1, 1]) {
+                    translate([
+                        MOTOR_BOSS_X + (MOTOR_SCREW_PATTERN_SIZE / 2) * i,
+                        0,
+                        MOTOR_BOSS_Z + (MOTOR_SCREW_PATTERN_SIZE / 2) * j
+                    ]) {
+                        cylinder(h = MOTOR_Y_MAX + 0.1, r = MOTOR_SCREW_DIA / 2);
+                    }
+                }
+            }
+        }
+
+        // 3. Left Gusset
+        // Right-angle corner at y=5, z=5. Extends +Y and +Z.
+        // Thickness is in X direction from -25 to -20.
+        translate([-25, 0, 0]) {
+            // Define the triangle vertices in YZ plane relative to corner (5,5)
+            // Corner: (0,0) in local coords -> (5,5) in global
+            // Leg Y: 20mm -> (20, 0) local -> (25, 5) global
+            // Leg Z: 20mm -> (0, 20) local -> (5, 25) global
+            // Hypotenuse connects (25,5) and (5,25)
+            
+            polygon(
+                points = [
+                    [-25, 0, 0], // Bottom-Left (Corner)
+                    [-25, 20, 0], // Bottom-Right (y=25)
+                    [-25, 0, 20], // Top-Left (z=25)
+                    [-25, 20, 20] // Top-Right (hypotenuse end)
+                ],
+                convexity = 3
+            );
+        }
+
+        // 4. Right Gusset
+        // Right-angle corner at y=5, z=5. Extends +Y and +Z.
+        // Thickness is in X direction from 20 to 25.
+        translate([20, 0, 0]) {
+            polygon(
+                points = [
+                    [25, 0, 0], // Bottom-Left (Corner)
+                    [25, 20, 0], // Bottom-Right (y=25)
+                    [25, 0, 20], // Top-Left (z=25)
+                    [25, 20, 20] // Top-Right (hypotenuse end)
+                ],
+                convexity = 3
+            );
+        }
+    }
+}
+
+L_Bracket();

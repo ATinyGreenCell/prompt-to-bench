@@ -1,0 +1,73 @@
+// Bench Rack for 1.5 mL Microcentrifuge Tubes
+// Designed for FDM printing. Rests on XY plane at Z=0.
+
+// Block Dimensions
+$block_length = 106; // X
+$block_width = 72;   // Y
+$block_height = 30;  // Z
+
+// Grid Configuration
+$hole_count_x = 6;   // Holes along X
+$hole_count_y = 4;   // Holes along Y
+$hole_spacing_x = 16; // Centre-to-centre X
+$hole_spacing_y = 16; // Centre-to-centre Y
+
+// Hole Dimensions
+$hole_diameter = 11.2;
+$hole_depth = 25;    // Open at top, closed at bottom
+$floor_thickness = 5; // Solid floor at bottom (30 - 25 = 5)
+
+// Quality Settings
+$fn = 64;
+
+// --- Main Block ---
+block = cube([
+    $block_length,
+    $block_width,
+    $block_height
+], center = true);
+
+// --- Hole Generator ---
+// Calculate grid origin to center the grid on the block
+// Total span X = (count_x - 1) * spacing_x
+// Total span Y = (count_y - 1) * spacing_y
+// Origin X = -Total_span_X / 2
+// Origin Y = -Total_span_Y / 2
+
+$grid_origin_x = -(($hole_count_x - 1) * $hole_spacing_x) / 2;
+$grid_origin_y = -(($hole_count_y - 1) * $hole_spacing_y) / 2;
+
+// Create holes using difference
+// Holes are cylinders. To ensure clean cuts, we extend them slightly past the intended depth
+// The block is 30mm tall. Holes are 25mm deep. We cut from Z=25 down to Z=-0.01 (effectively through the bottom)
+// However, the prompt says "closed at the bottom, leaving a 5 mm solid floor".
+// This implies the hole is a cylinder of depth 25mm starting from the top surface (Z=30) down to Z=5.
+// We must cut this cylinder out of the block.
+// To ensure the cut goes all the way through the intended depth without leaving a thin wall artifact,
+// we extend the cutting cylinder slightly past Z=5 (e.g., to Z=4.99) or simply let it go through.
+// Standard practice in OpenSCAD for "through holes" in a difference operation is to extend past the face.
+// Here, we want the hole to stop at Z=5. So we cut a cylinder from Z=30 to Z=5.
+// We will extend the bottom of the cutting cylinder by 0.1mm to ensure it clears the Z=5 plane.
+
+holes = for (i = 0 : $hole_count_x - 1) {
+    for (j = 0 : $hole_count_y - 1) {
+        translate([
+            $grid_origin_x + i * $hole_spacing_x,
+            $grid_origin_y + j * $hole_spacing_y,
+            0 // Z position relative to block center will be handled by the block centering
+        ])
+        cylinder(
+            h = $hole_depth + 0.1, // Extend slightly past the floor to ensure clean cut
+            r = $hole_diameter / 2,
+            center = true
+        )
+    }
+};
+
+// --- Final Assembly ---
+difference() {
+    union() {
+        block;
+    }
+    holes;
+}

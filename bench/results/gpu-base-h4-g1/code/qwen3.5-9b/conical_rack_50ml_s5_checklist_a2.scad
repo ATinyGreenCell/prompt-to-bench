@@ -1,0 +1,63 @@
+// Rack for six 50 mL conical tubes.
+// Print orientation: Flat plate on bed (z=0), walls rising to z=70.
+// After printing, flip over so walls support tubes.
+
+// Plate dimensions
+L     = 130;   // Length (X)
+W     = 90;    // Width (Y)
+t     = 4;     // Plate thickness (Z)
+
+// Hole dimensions
+n_holes = 6;
+hole_d  = 30.5;
+
+// Grid layout
+// 3 columns along X, 2 rows along Y
+// Spacing 40 mm centre-to-centre
+// X positions: -40, 0, 40
+// Y positions: -20, 20
+x_pos = [-40, 0, 40];
+y_pos = [-20, 20];
+
+// Wall dimensions
+wall_h = 70; // Height of walls from plate (z=4 to z=74)
+wall_t = 4;  // Wall thickness (Y)
+
+// Derived positions (centred on origin)
+// Plate is centred: X -65..65, Y -45..45
+// Walls are flush with plate edges (Y = +/- 45)
+
+$fn = 64;
+
+module side_wall(side) {
+    // side = 1 for right (+Y), -1 for left (-Y)
+    // Wall runs along X, thickness in Y
+    // Flush with plate edge means starting at Y = W/2
+    translate([0, side * (W / 2), 0]) {
+        // Base of wall (part of plate thickness)
+        cube([L, wall_t, t]);
+        // Rising part of wall
+        translate([0, 0, t]) cube([L, wall_t, wall_h]);
+    }
+}
+
+difference() {
+    union() {
+        // 1. Main Plate
+        translate([-L / 2, -W / 2, 0]) cube([L, W, t]);
+
+        // 2. Side Walls
+        side_wall(1);
+        side_wall(-1);
+    }
+
+    // 3. Cut out holes for tubes
+    for (i = [0 : n_holes - 1]) {
+        row = i / 3; // 0 or 1
+        col = i % 3; // 0, 1, 2
+        x = x_pos[col];
+        y = y_pos[row];
+        // Cut hole through plate and slightly above to ensure clean exit
+        translate([x, y, 0]) cylinder(h = t + 1, d = hole_d);
+    }
+}

@@ -1,0 +1,85 @@
+// Mini Horizontal Gel Electrophoresis Buffer Tank
+// Outer dimensions: 120 (X) x 70 (Y) x 40 (Z)
+// Wall thickness: 3 mm
+// Floor thickness: 3 mm
+// Inner platform: 60 (X) x 70 (Y) x 10 (height from inner floor)
+// Electrode holes: 2 mm diameter, horizontal along X, at Y=0, Z=30 (outer coords)
+
+$fn = 64;
+
+// --- Dimensions ---
+X_out = 120;
+Y_out = 70;
+Z_out = 40;
+wall  = 3;
+floor = 3;
+
+// --- Calculated Inner Dimensions ---
+X_in  = X_out - 2 * wall;
+Y_in  = Y_out - 2 * wall;
+Z_in  = Z_out - floor; // Inner floor is at Z = floor
+
+// --- Platform Dimensions ---
+plat_len = 60;
+plat_w   = Y_in;     // Spans full inner width
+plat_h   = 10;       // Height above inner floor
+plat_z   = floor + plat_h; // Absolute Z position of platform top
+
+// --- Electrode Hole Dimensions ---
+hole_d   = 2;
+hole_y   = wall;     // Y position (center of wall thickness)
+hole_z   = Z_out - 30; // Z position (30mm from bottom, so 10mm from top)
+
+// --- Helper: Create the main tank body ---
+module tank_body() {
+    // Outer box
+    translate([0, 0, 0]) cube([X_out, Y_out, Z_out]);
+    
+    // Cut out the inner volume (air space)
+    // Inner box starts at wall, goes to X_in, Y_in, Z_in
+    translate([wall, wall, floor]) cube([X_in, Y_in, Z_in]);
+}
+
+// --- Helper: Create the raised platform ---
+module platform() {
+    // Platform sits on the inner floor.
+    // Bottom of platform is at Z = floor.
+    // Top of platform is at Z = floor + plat_h.
+    // It spans the full inner width (Y_in) and is centered in X.
+    
+    translate([
+        (X_out - plat_len) / 2, 
+        wall, 
+        floor
+    ]) cube([plat_len, plat_w, plat_h]);
+}
+
+// --- Helper: Create the electrode hole ---
+// The hole is horizontal along X.
+// It passes through the end walls at Y = wall and Y = Y_out - wall.
+// The center of the hole is at Y = hole_y, Z = hole_z.
+// We need to cut a cylinder of diameter hole_d, length X_out, 
+// centered at the specific Y and Z.
+module electrode_hole() {
+    // Cylinder axis is X.
+    // Center of cylinder:
+    // X: 0 (centered)
+    // Y: hole_y
+    // Z: hole_z
+    translate([0, hole_y, hole_z]) cylinder(h = X_out, d = hole_d);
+}
+
+// --- Main Assembly ---
+difference() {
+    union() {
+        tank_body();
+        platform();
+    }
+    
+    // Cut the electrode holes
+    // We need to cut through the end walls.
+    // The hole is defined as a cylinder along X.
+    // Since we are in a difference(), this cylinder will cut through the tank.
+    // We must ensure the cylinder extends slightly past the tank faces to ensure clean cuts.
+    translate([0, hole_y, hole_z]) cylinder(h = X_out + 2, d = hole_d);
+}

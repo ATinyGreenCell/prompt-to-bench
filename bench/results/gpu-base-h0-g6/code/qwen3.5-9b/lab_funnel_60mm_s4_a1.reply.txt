@@ -1,0 +1,83 @@
+The measurement report reveals several critical issues with the previous design:
+
+1.  **Floating Part**: The part starts at `z=10` instead of `z=0`. This is because the `hollow_cylinder` module was centered at `z=10` (half of 20), placing its bottom at `z=0` but its top at `z=20`. However, the `hollow_cone` was centered at `z=30` (20 + 15), placing its bottom at `z=20` and top at `z=40`. Wait, the report says Z goes to 50. Let's re-read the report.
+    *   Report Z: 10.00 .. 50.00.
+    *   My logic: Spout 0-20, Cone 20-50.
+    *   The report says the lowest point is 10. This implies the spout is actually floating or the cone is shifted.
+    *   Actually, looking at the report `z=2.00` slice: It shows a circle d=10. This confirms the spout exists.
+    *   Why is the lowest point 10? If the spout is 0-20, the lowest point should be 0.
+    *   Ah, the report says `BED: lowest point at z = 10.00`. This suggests the *entire* object is shifted up by 10mm, OR the spout is not being generated correctly, OR the cone is intersecting in a way that creates a floating island.
+    *   Let's look at the `z=30.00` slice: "2 solid regions [rectangle... centred (-16.70, 15.00); ... centred (16.70, 15.00)]". This indicates the cone walls are disconnected or the intersection logic failed, creating two separate pieces floating in the middle. This is a classic symptom of `linear_extrude` with a polygon that doesn't close properly or self-intersecting geometry in a difference operation.
+    *   The `hollow_cone` module using `linear_extrude` with a polygon defined by `[-bottom_d/2, 0]` to `[top_d/2, height]` creates a shape that is open at the bottom if not handled carefully, but more importantly, the `difference` operation between the outer cone and the inner cone often fails to produce a single solid if the inner cone is not perfectly aligned or if the `convexity` is too low.
+    *   The most robust way to make a hollow cone in OpenSCAD without external libraries is to use `rotate_extrude` with a profile, or to construct it from two cones (outer and inner) using `difference`. The `linear_extrude` method with a polygon is risky for hollow shapes because the "hole" must be a valid polygon that doesn't touch the boundary in a way that breaks the manifold.
+    *   The report shows the part is "NOT watertight". The `linear_extrude` approach for a hollow cone often results in a non-manifold edge at the seam or the inner/outer surfaces not merging correctly.
+    *   **Solution**: Use `difference()` of two solid cones (outer and inner) created with `rotate_extrude`. This guarantees a watertight shell.
+    *   **Positioning**: Ensure the spout sits on `z=0`. The spout is 20mm long. If it sits on `z=0`, it goes from 0 to 20. The cone starts at 20 and goes to 50.
+    *   **Spout**: A hollow cylinder from 0 to 20.
+    *   **Cone**: A hollow cone from 20 to 50.
+    *   **Correction**: I will rewrite the geometry using `rotate_extrude` for the cone to ensure watertightness, and explicitly translate the spout to sit on the bed.
+
+    *   **Spout**: `translate([0,0,0])` -> `cylinder(h=20, d=10)` minus `cylinder(h=20, d=6.8)`.
+    *   **Cone**: Needs to start at `z=20`.
+        *   Outer cone: Base at `z=20` (d=10), Top at `z=50` (d=60).
+        *   Inner cone: Base at `z=20` (d=6.8), Top at `z=50` (d=60 - 2*1.6 = 56.8).
+        *   Wait, the wall thickness is 1.6mm everywhere.
+        *   At z=20: Outer D=10, Inner D=10 - 3.2 = 6.8. Correct.
+        *   At z=50: Outer D=60, Inner D=60 - 3.2 = 56.8. Correct.
+    *   I will construct the cone by rotating a line segment.
+    *   Outer profile: Line from (0, 20) to (30, 50) (radius vs z).
+    *   Inner profile: Line from (0, 20) to (28.4, 50) (radius vs z).
+    *   I will use `difference` of two `rotate_extrude` shapes.
+
+    *   **Re-evaluating the "Floating" issue**: The previous report said lowest point z=10. If I use `translate([0,0,0])` for the spout, the lowest point will be 0. The previous code likely had the spout centered at 10 (0 to 20) and the cone centered at 30 (20 to 40?? No, 20 to 50 is height 30, center 25+20=45?).
+    *   Let's just build it from scratch with absolute coordinates to be safe.
+    *   Spout: Z range [0, 20].
+    *   Cone: Z range [20, 50].
+
+    *   **Refining the Cone Construction**:
+        *   Outer Cone: `rotate_extrude` of a line from (0, 20) to (30, 50). Height 30, Radius 30.
+        *   Inner Cone: `rotate_extrude` of a line from (0, 20) to (28.4, 50). Height 30, Radius 28.4.
+        *   Translate both up by 20 so they start at z=20.
+        *   Subtract Inner from Outer.
+        *   Union with Spout.
+
+    *   **Wait, one more check on the report**: "2 solid regions" at z=30. This confirms the cone was broken into two pieces. This happens when `linear_extrude` is used on a polygon that isn't a simple closed loop or when the inner/outer polygons interact poorly. `rotate_extrude` is much safer for rotational symmetry.
+
+    *   **Final Plan**:
+        1.  Define variables.
+        2.  Create Spout: `translate([0,0,0])` -> `difference(cylinder_outer, cylinder_inner)`.
+        3.  Create Cone: `translate([0,0,20])` -> `difference(outer_cone, inner_cone)` where cones are made via `rotate_extrude`.
+        4.  Union them.
+        5.  Ensure `$fn` is high enough.
+
+```openscad
+// Lab Funnel Design - Corrected
+// Units: millimetres
+// Orientation: Upright, wide opening at top, rests on XY plane at z=0.
+
+$fn = 128; // High resolution for smooth curves
+
+// Dimensions
+spout_outer_diameter = 10;
+spout_inner_diameter = 6.8; // 10 - 2*1.6
+spout_length = 20;
+spout_wall_thickness = 1.6;
+
+cone_bottom_outer_diameter = 10;
+cone_top_outer_diameter = 60;
+cone_height = 30; // From z=20 to z=50
+wall_thickness = 1.6;
+
+// Calculate inner diameters for the cone
+cone_bottom_inner_diameter = cone_bottom_outer_diameter - 2 * wall_thickness;
+cone_top_inner_diameter = cone_top_outer_diameter - 2 * wall_thickness;
+
+// Helper to create a hollow cone using rotate_extrude for watertightness
+// base_z: z-coordinate of the base (smaller diameter)
+// top_z: z-coordinate of the top (larger diameter)
+// base_d: diameter at base_z
+// top_d: diameter at top_z
+module hollow_cone(base_z, top_z, base_d, top_d) {
+    // Outer Cone
+    outer_cone = rotate_extrude(convexity = 3) {
+        // Profile: line from (0, base_z) to

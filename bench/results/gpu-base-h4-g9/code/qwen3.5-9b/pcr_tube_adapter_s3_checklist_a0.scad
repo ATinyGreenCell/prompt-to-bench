@@ -1,0 +1,31 @@
+// Adapter sleeve for 0.2 mL PCR tube in a 1.5 mL rack hole.
+// Print orientation: Collar on bed (z=0 to 1.5), body rises to z=21.5.
+
+// Dimensions
+collar_od = 13;
+collar_t  = 1.5;
+body_od   = 10.8;
+body_h    = 21.5; // Total height of the part from z=0
+bore_d    = 6.2;
+
+$fn = 64;
+
+// Calculate body height relative to the collar top
+// Total height is 21.5, collar is 1.5 thick.
+body_height_above_collar = body_h - collar_t;
+
+difference() {
+    union() {
+        // 1. The Collar (lies on z=0)
+        cylinder(h = collar_t, d = collar_od);
+
+        // 2. The Sleeve Body (rises from z=collar_t)
+        translate([0, 0, collar_t])
+            cylinder(h = body_height_above_collar, d = body_od);
+    }
+    
+    // 3. The Bore (straight hole through full height)
+    // Extend slightly past top and bottom to ensure clean cut
+    translate([0, 0, -1])
+        cylinder(h = body_h + 2, d = bore_d);
+}

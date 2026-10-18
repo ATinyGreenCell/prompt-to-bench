@@ -1,0 +1,126 @@
+```openscad
+// Replacement Knob for Hotplate Stirrer (6mm D-shaft)
+// Dimensions measured with calipers.
+// Print orientation: Bottom face (D-shaft side) on Z=0.
+
+$fn = 128; // High resolution for smooth curves and accurate D-shape
+
+// --- Main Dimensions ---
+D_shaft_diameter = 6.0;
+Knob_diameter = 30.0;
+Knob_height = 15.0;
+Bore_depth = 12.0;
+
+// --- D-Shaft Bore Dimensions ---
+// Circle diameter
+Bore_circle_d = 6.2;
+// Distance from flat to opposite side (Chord length)
+Bore_flat_to_top = 4.7;
+
+// --- Groove Dimensions ---
+Num_grooves = 18;
+Groove_diameter = 2.0;
+Groove_depth = 1.0; // Half of diameter for half-cylinder
+
+// --- Pointer Groove Dimensions ---
+Pointer_width = 1.5;
+Pointer_depth = 1.0;
+
+// --- Calculated Variables ---
+// Radius of the main knob
+R_knob = Knob_diameter / 2;
+// Radius of the D-shaft bore circle
+R_bore = Bore_circle_d / 2;
+// Radius of the D-shaft bore flat (distance from center to flat)
+R_bore_flat = Bore_flat_to_top / 2;
+
+// --- Construction ---
+
+// 1. Create the main D-shaped cylinder body
+// We use a polygon profile rotated around the Z axis.
+// The profile is defined by the circle arc and the flat chord.
+// To ensure the flat is exactly at the calculated distance, we define the polygon points.
+
+// Calculate the angle of the flat relative to the vertical axis to align the flat correctly.
+// However, for a D-shape, it's easier to define the polygon in a local coordinate system 
+// where the flat is on the X-axis (or Y-axis) and rotate the whole thing.
+// Let's define the profile such that the flat is on the +X side initially, then rotate.
+// Actually, let's define the profile with the flat on the +Y axis for easier rotation logic later if needed,
+// but standard D-shape usually has the flat on one side.
+// Let's construct the polygon points manually to ensure exact dimensions.
+
+// We will create a polygon that represents the cross-section of the D-shape.
+// Center of the circle is at (0,0).
+// The flat is a chord. We need to find the endpoints of the chord.
+// Distance from center to chord = R_bore_flat.
+// Half-chord length = sqrt(R_bore^2 - R_bore_flat^2).
+half_chord = sqrt(R_bore^2 - R_bore_flat^2);
+
+// Define the polygon points for the D-shape cross section.
+// We start at the top of the circle, go around to the flat, and back.
+// Let's orient the flat along the X-axis for the polygon definition, then rotate the whole thing.
+// Points: Top of circle -> Right side of circle -> Bottom of circle -> Left side of circle -> Flat -> Top.
+// Wait, a D-shape is a circle with a segment cut out.
+// Let's define the full circle and subtract the segment, OR define the polygon directly.
+// Defining the polygon directly is more robust for the "flat" requirement.
+
+// Polygon points (x, y):
+// Start at top of circle (0, R_bore)
+// Go clockwise to the start of the flat.
+// The flat is at y = -R_bore_flat (if flat is horizontal) or x = R_bore_flat (if vertical).
+// Let's make the flat vertical on the right side for the polygon definition: x = R_bore_flat.
+// Endpoints of flat: (R_bore_flat, -half_chord) and (R_bore_flat, half_chord).
+// Arc goes from (R_bore_flat, half_chord) around the circle to (R_bore_flat, -half_chord).
+
+// Let's build the polygon list:
+// 1. (R_bore_flat, half_chord)
+// 2. (R_bore, 0)
+// 3. (R_bore_flat, -half_chord)
+// 4. (R_bore_flat, -half_chord) // Repeat to close the flat line
+// Actually, polygon needs ordered vertices.
+// Path: Start at (R_bore_flat, half_chord), go along arc to (R_bore_flat, -half_chord), then straight line back to start.
+// But we need to close the loop.
+// Vertices:
+// A: (R_bore_flat, half_chord)
+// B: (R_bore, 0)
+// C: (R_bore_flat, -half_chord)
+// D: (R_bore_flat, -half_chord) // This is just repeating C, we need the line segment CD.
+// The polygon command takes a list of points.
+// Points: [A, B, C, C] -> This creates a triangle if not careful.
+// Correct sequence for a D-shape (flat on right):
+// (R_bore_flat, half_chord) -> (R_bore, 0) -> (R_bore_flat, -half_chord) -> (R_bore_flat, -half_chord) is wrong.
+// We need: (R_bore_flat, half_chord) -> (R_bore, 0) -> (R_bore_flat, -half_chord) -> (R_bore_flat, -half_chord) is redundant.
+// Just: (R_bore_flat, half_chord), (R_bore, 0), (R_bore_flat, -half_chord).
+// And close the line from (R_bore_flat, -half_chord) to (R_bore_flat, half_chord).
+// OpenSCAD polygon handles closing automatically if the list is closed or if we just list the unique points and it assumes a line back to start?
+// No, polygon requires a closed loop. We must repeat the first point at the end.
+// Points: [ (R_bore_flat, half_chord), (R_bore, 0), (R_bore_flat, -half_chord), (R_bore_flat, half_chord) ]
+
+// Let's refine the orientation. The user wants the flat side to face the hotplate (Z=0).
+// So the flat must be on the bottom face of the printed part.
+// We will generate the D-shape cylinder with the flat on the +X side (for example), then rotate it 90 degrees around Z so the flat is on the -Y or +Y side?
+// No, "side that faces the hotplate down".
+// If the knob sits on Z=0, the bottom face is the XY plane.
+// The D-shape is a cross-section. The "flat" is a line in the cross-section.
+// When extruded, this line becomes a flat face on the cylinder.
+// We want this flat face to be on the bottom (Z=0).
+// So the D-shape cross-section must have the flat edge aligned with the Z-axis? No.
+// The D-shape is the profile. If we extrude a D-shape along Z, the flat part of the D becomes a flat face on the side of the cylinder.
+// Wait, a D-shaft bore is a D-shaped hole. The knob itself is a cylinder with a D-shaped hole?
+// "D-shaped blind bore... distance from the flat to the opposite side".
+// This implies the hole is D-shaped. The knob material is the rest of the cylinder.
+// So the knob is a cylinder with a D-shaped hole.
+// The "side that faces the hotplate" is the bottom of the knob.
+// The D-shape of the hole has a flat side.
+// We need to orient the D-shape hole such that the flat side is on the bottom face of the knob?
+// No, the flat side of the D-shape hole is a vertical surface inside the knob (parallel to Z axis) if the knob is a cylinder.
+// Re-reading: "From that bottom face, a D-shaped blind bore goes 12 mm up".
+// "Distance from the flat to the opposite side of the circle is 4.7 mm".
+// This describes the cross-section of the hole.
+// The "flat" of the D-shape is a flat surface inside the hole.
+// The user says "the side that faces the hotplate down". This refers to the bottom of the knob.
+// Does the flat of the D-shape align with the bottom face?
+// Usually, for a D-shaft, the flat is on one side. If the knob is printed with the "side that faces the hotplate" down, it implies the flat of the D-shape is on the bottom?
+// No, the flat of the D-shape is a vertical wall inside the hole.
+// Perhaps the user means the knob is printed such that the flat of the D-shape is on the "front" or "back" relative to the hotplate?
+// Or maybe the knob is not a simple cylinder, but

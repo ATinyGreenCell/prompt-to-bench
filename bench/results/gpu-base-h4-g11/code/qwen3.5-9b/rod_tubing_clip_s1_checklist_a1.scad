@@ -1,0 +1,117 @@
+// Snap-on clip for lab stand rod and tubing.
+// Printed flat: 10 mm tall extrusion of a 2-D profile in XY plane.
+// Orientation: Rests on XY plane at z=0, builds upward. Centred on origin.
+
+// Rod ring dimensions
+rod_id = 12.7;   // Inner diameter (matches 1/2" rod)
+rod_wall = 3;    // Wall thickness
+rod_od = rod_id + 2 * rod_wall; // Outer diameter = 18.7
+
+// Tubing ring dimensions
+tube_id = 6;     // Inner diameter
+tube_wall = 2;   // Wall thickness
+tube_od = tube_id + 2 * tube_wall; // Outer diameter = 10
+
+// Positions and openings
+tube_x = 15;     // Center X of tubing ring
+tube_open_w = 4.5; // Width of opening on +X side
+tube_open_h = tube_open_w / 2; // Half-height of opening
+
+// Bridge dimensions
+bridge_x_start = 8;
+bridge_x_end = 12;
+bridge_w = 6;    // Width in Y
+
+// Extrusion height
+h = 10;
+
+$fn = 64;
+
+// Helper to generate points for a ring with an opening
+// Returns a list of [x, y] points.
+// ring_id: inner diameter
+// ring_od: outer diameter
+// cx, cy: center
+// open_side: 1 for +X, -1 for -X
+// open_w: width of opening
+// open_h: half-height of opening
+module ring_profile_points(id, od, cx, cy, open_side, open_w, open_h) {
+    // Opening is centered on the axis.
+    // If open_side is 1 (+X), we skip angles around 0.
+    // If open_side is -1 (-X), we skip angles around 180.
+    
+    start_angle = 0;
+    end_angle = 0;
+    
+    if (open_side == 1) {
+        // Opening on +X: skip from -open_h to +open_h
+        start_angle = -open_h;
+        end_angle = open_h;
+    } else {
+        // Opening on -X: skip from 180-open_h to 180+open_h
+        start_angle = 180 - open_h;
+        end_angle = 180 + open_h;
+    }
+    
+    poly = [];
+    
+    // Outer circle CCW
+    for (i = [0 : 359]) {
+        a = i * 360 / 360;
+        poly += [[cx + od / 2 * cos(a), cy + od / 2 * sin(a)]];
+    }
+    
+    // Radial line in at start_angle
+    poly += [[cx + od / 2 * cos(start_angle), cy + od / 2 * sin(start_angle)], [cx + id / 2 * cos(start_angle), cy + id / 2 * sin(start_angle)]];
+    
+    // Inner circle CW (reverse order)
+    for (i = [359 : -1 : 0]) {
+        a = i * 360 / 360;
+        if (a >= start_angle && a <= end_angle) {
+            // Skip the gap
+        } else {
+            poly += [[cx + id / 2 * cos(a), cy + id / 2 * sin(a)]];
+        }
+    }
+    
+    // Radial line out at end_angle
+    poly += [[cx + id / 2 * cos(end_angle), cy + id / 2 * sin(end_angle)], [cx + od / 2 * cos(end_angle), cy + od / 2 * sin(end_angle)]];
+    
+    poly;
+}
+
+// Generate points for Rod Ring (Opening on -X side)
+rod_pts = ring_profile_points(rod_id, rod_od, 0, 0, -1, 5, 5);
+
+// Generate points for Tubing Ring (Opening on +X side)
+tube_pts = ring_profile_points(tube_id, tube_od, tube_x, 0, 1, tube_open_w, tube_open_h);
+
+// Generate points for Bridge (Solid rectangle)
+// Bridge is from x=8 to x=12, width 6 (y=-3 to y=3)
+bridge_pts = [
+    [bridge_x_start, -bridge_w / 2],
+    [bridge_x_end, -bridge_w / 2],
+    [bridge_x_end, bridge_w / 2],
+    [bridge_x_start, bridge_w / 2]
+];
+
+difference() {
+    union() {
+        // Extrude Rod Ring
+        rotate_extrude() polygon(rod_pts);
+        
+        // Extrude Tubing Ring
+        rotate_extrude() polygon(tube_pts);
+        
+        // Extrude Bridge
+        linear_extrude(h) polygon(bridge_pts);
+    }
+    
+    // Subtract Rod Opening (Rectangle cutout)
+    // x < 0, -5 < y < 5
+    translate([-5, -5, 0]) cube([10, 10, h + 1]);
+    
+    // Subtract Tubing Opening (Rectangle cutout)
+    // x > 15, -2.25 < y < 2.25
+    translate([15, -tube_open_h, 0]) cube([tube_open_w, tube_open_w * 2, h + 1]);
+}

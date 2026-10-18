@@ -1,0 +1,58 @@
+// 10-well agarose gel comb - flat plate with spine and hanging teeth.
+// Orientation: Lying flat on XY plane, spine along X, teeth hanging in -Y.
+
+// Dimensions
+spine_len = 70;
+spine_w   = 12;
+plate_thk = 1.5;
+
+tooth_w   = 5.0;
+tooth_l   = 12;
+tooth_gap = 1.5;
+n_teeth   = 10;
+
+$fn = 64;
+
+// Calculate total width of the tooth row
+tooth_row_w = n_teeth * tooth_w + (n_teeth - 1) * tooth_gap;
+
+// Calculate position of the tooth row relative to the spine edge
+// The teeth hang from the -Y edge of the spine.
+// We define the spine as a block from Y=0 to Y=spine_w.
+// The teeth start at Y=0 and extend to Y=-tooth_l.
+// The tooth row is centred on the spine in X.
+
+module comb() {
+    // 1. The Spine (Back Bar)
+    // Dimensions: spine_len x spine_w x plate_thk
+    // Position: Centred in X, sitting on Z=0.
+    // Y range: 0 to spine_w (teeth hang from Y=0)
+    translate([-spine_len / 2, 0, 0])
+        cube([spine_len, spine_w, plate_thk]);
+
+    // 2. The Teeth
+    // We generate the positions for the teeth.
+    // The row is centred on the spine in X.
+    // The row starts at Y=0 and goes to Y=-tooth_l.
+    
+    // Calculate the X offset to centre the row on the spine
+    spine_half_w = spine_w / 2;
+    row_half_w   = tooth_row_w / 2;
+    x_offset     = spine_half_w - row_half_w;
+
+    // Generate tooth positions
+    // i goes from 0 to n_teeth - 1
+    // Position in X: x_offset + i * (tooth_w + tooth_gap)
+    // Position in Y: 0 (top of tooth) to -tooth_l (bottom)
+    
+    for (i = [0 : n_teeth - 1]) {
+        tx = x_offset + i * (tooth_w + tooth_gap);
+        ty = 0;
+        tz = 0;
+        
+        translate([tx, ty, tz])
+            cube([tooth_w, tooth_l, plate_thk]);
+    }
+}
+
+comb();

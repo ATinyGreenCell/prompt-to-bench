@@ -41,3 +41,4 @@ finetune/data/v6_train.jsonl
 finetune/data/v8_train.jsonl
 finetune/data/v9_train.jsonl
 finetune/data/v10_train.jsonl
+finetune/data/v11_train.jsonl

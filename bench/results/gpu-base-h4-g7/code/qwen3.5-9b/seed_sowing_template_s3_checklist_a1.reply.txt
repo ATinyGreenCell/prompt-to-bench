@@ -1,0 +1,113 @@
+The generated file has a critical error in the notch geometry. The specification asks for a notch "centred on the Y axis" on the "+Y side". The previous code placed the notch starting at Y=38.5 and extending to Y=38.5+4=42.5. This places the notch entirely in the positive Y quadrant but does not center the *width* of the notch on the Y-axis (it is centered on X, but the prompt implies the notch feature itself should be symmetric around the Y-axis line, or simply that the cut is centered on the Y axis coordinate-wise).
+
+More importantly, the prompt says "centred on the Y axis". In standard geometry, a feature centered on the Y-axis is symmetric around X=0. The previous code `translate([0, 38.5, -1]) cube([10, 4, ...])` creates a block from X=-5 to X=5 (centered on X=0) and Y=38.5 to Y=42.5. This *is* centered on the Y-axis (X=0).
+
+However, let's re-read carefully: "Cut a rectangular orientation notch into the rim on the +Y side, centred on the Y axis: 10 mm wide (X) and 4 mm deep (Y, measured in from the rim)."
+
+The previous code:
+- Width (X): 10mm. Correct.
+- Depth (Y): 4mm. Correct.
+- Position: "on the +Y side". The disc radius is 42.5mm. The rim is at Y=42.5. A 4mm deep notch measured *in from the rim* should go from Y=38.5 to Y=42.5.
+- "Centred on the Y axis": This usually means the notch is symmetric about the Y-axis (X=0). The previous code `translate([0, ...])` with width 10 does exactly this (X from -5 to 5).
+
+Wait, the report says: `z=0.10: 1 solid region [outline: rectangle 85.00 x 85.00 centred (-0.03, -0.23)]`.
+The outline is still a full 85x85 rectangle. This means the notch did not cut through the material or the difference operation failed to remove the volume.
+Why?
+The main body is `cube([85, 85, 2])`.
+The cutter is `cube([10, 4, 4])` (height 2+2=4).
+Position: `translate([0, 38.5, -1])`.
+The cutter occupies Y from 38.5 to 42.5.
+The body occupies Y from -42.5 to 42.5.
+The intersection in Y is [38.5, 42.5].
+The intersection in X is [-5, 5].
+The intersection in Z is [0, 2].
+The cutter is at Z [-1, 3]. The body is at Z [0, 2].
+The intersection is valid.
+Why is the outline still 85x85?
+Ah, the `cube` command in OpenSCAD starts at the origin (0,0,0) by default.
+`translate([0, 38.5, -1]) cube([10, 4, 4])` creates a block from X=0 to 10, Y=38.5 to 42.5, Z=-1 to 3.
+**ERROR FOUND**: The `cube` dimensions are `[x, y, z]`.
+I wrote `cube([NOTCH_WIDTH, NOTCH_DEPTH, THICKNESS + 2])`.
+`NOTCH_WIDTH` = 10. `NOTCH_DEPTH` = 4.
+So the cube is X: 0 to 10, Y: 38.5 to 42.5.
+The notch should be centered on the Y-axis (X=0).
+So the X range should be -5 to +5.
+The `cube` starts at the corner. I need to translate X by `-NOTCH_WIDTH / 2`.
+The previous code had `translate([0, 38.5, -1])`. It did not center the X position of the notch. It placed the notch from X=0 to X=10.
+The specification says "centred on the Y axis". This implies symmetry around X=0.
+So the notch must go from X=-5 to X=5.
+The previous code cut from X=0 to X=10. This is on the +X side, not centered on the Y axis.
+
+Correction:
+Translate X by `-NOTCH_WIDTH / 2`.
+
+Let's double check the "centred on the Y axis" phrasing.
+If I have a notch on the +Y side, and it is "centred on the Y axis", it means the notch's centerline is the Y-axis (X=0).
+Yes, the previous code missed the X-offset.
+
+Corrected logic:
+`translate([-NOTCH_WIDTH / 2, 38.5, -1])`
+
+Let's verify the rest.
+Grid: 7x7, 3mm holes, 9mm spacing.
+Offset = (7-1)/2 * 9 = 3 * 9 = 27.
+Positions: -27, -18, -9, 0, 9, 18, 27.
+This looks correct.
+
+Final check on the notch depth: "4 mm deep (Y, measured in from the rim)".
+Rim is at Y = 42.5.
+In 4mm means Y goes from 38.5 to 42.5.
+Code: `translate([..., 38.5, ...])` with height 4 in Y. Correct.
+
+One more thing: The report shows the outline is 85x85.
+If the notch was at X=0 to 10, the outline would be 85x85 because the cut didn't reach the edge? No, the cut is inside.
+Wait, if the cut is at X=0 to 10, and the body is X=-42.5 to 42.5.
+The cut removes material at X=0..10.
+The resulting shape would have a "bite" taken out of the right side (positive X).
+The bounding box would still be 85x85 because the max X is still 42.5 and min X is -42.5.
+The "outline" reported by the slicer might be the convex hull or just the bounding box of the solid regions?
+The report says: `1 solid region [outline: rectangle 85.00 x 85.00 centred (-0.03, -0.23)]`.
+If there is a notch, the outline should not be a perfect rectangle.
+Unless the slicer is reporting the bounding box of the *union* of the slices?
+Actually, if the notch is small (10x4) compared to the disc (85), and the slicer reports "1 solid region", it might be simplifying the description or the notch wasn't deep enough to break the topology? No, a notch is just a hole in the surface.
+Wait, if the notch is at X=0 to 10, the part is still one solid body.
+The "outline" description in the report might be misleading or I am misinterpreting "outline".
+However, the visual evidence of the error is clear: The notch is not centered on the Y axis (X=0). It is shifted to the +X side.
+The prompt requires it to be "centred on the Y axis".
+
+So the fix is definitely adding the X offset.
+
+```openscad
+// Sowing template for 90 mm Petri dish
+// Flat disc with grid of holes and orientation notch.
+
+$fn = 64;
+
+// Dimensions
+DISH_DIA = 90;
+DISC_DIA = 85;
+THICKNESS = 2;
+HOLE_COUNT = 7;
+HOLE_DIA = 3;
+HOLE_SPACING = 9;
+NOTCH_WIDTH = 10;
+NOTCH_DEPTH = 4;
+
+// Calculate grid positions
+// n features spaced p apart and centred on the origin sit at (i - (n - 1) / 2) * p
+grid_offset = (HOLE_COUNT - 1) / 2 * HOLE_SPACING;
+
+difference() {
+    // Main disc body
+    translate([-DISC_DIA / 2, -DISC_DIA / 2, 0])
+        cube([DISC_DIA, DISC_DIA, THICKNESS]);
+
+    // Grid of holes
+    for (i = [0 : HOLE_COUNT - 1]) {
+        x_pos = (i - grid_offset) * HOLE_SPACING;
+        translate([x_pos, 0, -1])
+            cylinder(h = THICKNESS + 2, d = HOLE_DIA);
+    }
+
+    // Orientation notch on the +Y side
+    // Not

@@ -1,0 +1,45 @@
+// Pestle for 1.5 mL microcentrifuge tube
+// Print orientation: standing upright on the bed (z = 0)
+
+// ---------------- Parameters ----------------
+tube_max_r    = 1.28;   // tube radius (10 mm diameter) near the bottom
+cone_top_r    = 1.28;   // cone radius at tube height (z = 45)
+cone_bottom_r = 0.75;   // cone radius at tip base (z = 62)
+tip_r         = 0.75;   // tip sphere radius
+tip_center_z  = 62;     // tip center height
+
+groove_count  = 4;      // number of circumferential grooves
+groove_w      = 2;      // groove width along Z
+groove_depth  = 1;      // groove depth from surface
+groove_z      = [10, 15, 20, 25]; // groove center heights
+
+eps           = 0.5;    // overshoot for clean cuts / union overlaps
+$fn           = 96;     // curve resolution
+
+// ---------------- Derived ----------------
+tube_h = 45;            // cone top height (tube length)
+cone_h = tip_center_z - tube_h;   // cone height (19 mm)
+
+// ---------------- Model ----------------
+difference() {
+    union() {
+        // Handle: cylinder from bed to tube top
+        translate([0, 0, 0])
+            cylinder(r = tube_max_r, h = tube_h + eps);
+
+        // Cone: tapers from tube diameter down to tip base diameter
+        translate([0, 0, tube_h])
+            cylinder(r1 = cone_top_r, r2 = cone_bottom_r, h = cone_h + eps);
+
+        // Rounded tip: sphere centered at z = 62
+        translate([0, 0, tip_center_z])
+            sphere(r = tip_r);
+    }
+
+    // Grooves cut into the handle (z = 0 to ~46)
+    for (g = [0 : groove_count - 1]) {
+        rotate([0, 0, g * 360 / groove_count])
+            translate([0, -1.5, groove_z[g] - groove_w / 2])
+                cube([tube_max_r + 1, 3, groove_w]);
+    }
+}

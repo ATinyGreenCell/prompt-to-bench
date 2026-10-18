@@ -1,0 +1,110 @@
+The previous code had a geometric impossibility: the total width required for 10 slots (1.6mm wide with 3.5mm spacing) is 47.5mm, which exceeds the 45mm base width. This caused the slots to extend outside the base footprint, resulting in the incorrect volume reported.
+
+To fix this while adhering to the "3.5 mm apart centre-to-centre" and "10 slots" constraints, the only valid solution is to assume the "3.5 mm" refers to the **gap** (clearance) between the slots, not the center-to-center distance, OR to adjust the spacing to fit. However, strictly following "3.5 mm apart centre-to-centre" on a 45mm base with 10 slots is impossible ($10 \times 1.6 + 9 \times 3.5 = 47.5 > 45$).
+
+Given the constraint of a 45mm base, I will adjust the **spacing** to fit the 10 slots exactly within the 45mm width, keeping the center-to-center distance constant for the group, or more likely, the user intended the **gap** to be smaller or the **spacing** to be calculated to fit.
+
+Actually, the most robust interpretation for a functional part when dimensions conflict is to calculate the spacing that fits the count within the width.
+Total Width = 45mm.
+Slot Width = 1.6mm.
+Count = 10.
+Total Slot Width = 16mm.
+Remaining Space = 29mm.
+Gaps = 9.
+Gap Size = 29 / 9 = 3.22mm.
+
+However, the prompt explicitly says "3.5 mm apart centre-to-centre". If I must follow that, the part cannot fit. But since I must provide a working file, I will assume the "3.5 mm" was an estimate and the "45 mm" base is the hard constraint. I will recalculate the center-to-center spacing to fit 10 slots of 1.6mm width into 45mm.
+
+Wait, let's re-read carefully: "The slots are 3.5 mm apart centre-to-centre".
+If I use 3.5mm C-C:
+Positions: -17.5, -14, -10.5, -7, -3.5, 0, 3.5, 7, 10.5, 14.
+Outer edges:
+Slot 1 (at -17.5): -17.5 - 0.8 = -18.3
+Slot 10 (at 14): 14 + 0.8 = 14.8
+Total span = 14.8 - (-18.3) = 33.1mm.
+Wait, my previous calculation was wrong.
+Center-to-center = 3.5.
+Width of 10 slots = 10 * 1.6 = 16.
+Total span = (10-1)*3.5 + 1.6 = 31.5 + 1.6 = 33.1mm.
+The total span is 33.1mm. The base is 45mm.
+33.1 < 45. It **does** fit!
+Where did I get 47.5mm?
+Ah, I calculated $10 \times 1.6 + 9 \times 3.5$. That is the sum of widths plus sum of gaps.
+Width = $10 \times 1.6 = 16$.
+Gaps = $9 \times 3.5 = 31.5$.
+Total = $16 + 31.5 = 47.5$.
+Why is the span only 33.1?
+Because the "gap" in C-C distance includes half the slot width on each side.
+Distance between centers = Slot Width + Gap.
+If C-C = 3.5, then Gap = 3.5 - 1.6 = 1.9mm.
+So the "3.5 mm apart" means the distance from center to center is 3.5mm.
+The physical gap between the slots is $3.5 - 1.6 = 1.9$mm.
+My previous error was assuming "3.5 mm apart" meant the empty space was 3.5mm.
+So, with C-C = 3.5mm:
+Total Span = (Count - 1) * C-C + Slot Width
+Total Span = 9 * 3.5 + 1.6 = 31.5 + 1.6 = 33.1mm.
+This fits easily in 45mm.
+Margin = (45 - 33.1) / 2 = 5.95mm.
+The previous code used `slot_gap = 3.5` as the physical gap, which led to the error.
+The code should use `slot_gap = 3.5` as the **center-to-center** distance, or calculate the physical gap from it.
+The prompt says "3.5 mm apart centre-to-centre".
+So `slot_cc = 3.5`.
+Physical gap = `slot_cc - slot_w = 3.5 - 1.6 = 1.9`.
+
+The previous code:
+`slot_gap = 3.5;`
+`margin = (W_base - total_occupied) / 2;`
+`total_occupied = (N_slots * slot_w) + ((N_slots - 1) * slot_gap);`
+This calculated `total_occupied` as if `slot_gap` was the physical gap.
+It calculated `16 + 31.5 = 47.5`.
+This was the bug.
+
+Correction:
+Define `slot_cc = 3.5`.
+Calculate physical gap: `gap = slot_cc - slot_w`.
+Calculate total occupied: `total_occupied = (N_slots * slot_w) + ((N_slots - 1) * gap)`.
+Or simpler: `total_occupied = (N_slots - 1) * slot_cc + slot_w`.
+
+Let's write the corrected code.
+
+```openscad
+// Drying rack for 10 microscope slides.
+// Base: 90 x 45 x 20 mm.
+// 10 slots: 77 x 1.6 x 10 mm, spaced 3.5 mm C-C in Y, centred on block.
+
+$fn = 64;
+
+// Base dimensions
+L_base = 90;
+W_base = 45;
+H_base = 20;
+
+// Slot dimensions
+N_slots = 10;
+slot_len = 77;
+slot_w   = 1.6;
+slot_deep = 10;
+
+// Spacing: 3.5 mm centre-to-centre
+slot_cc = 3.5;
+
+// Calculate positions
+// Total span of slots = (N_slots - 1) * slot_cc + slot_w
+total_span = (N_slots - 1) * slot_cc + slot_w;
+margin = (W_base - total_span) / 2;
+
+// Generate Y positions for the 10 slots
+// Positions are centred on the origin in Y
+// y_pos[i] = margin + (i - (N_slots-1)/2) * slot_cc
+slot_positions = [for (i = [0 : N_slots - 1]) margin + (i - (N_slots - 1) / 2) * slot_cc];
+
+difference() {
+    // Main block
+    translate([0, 0, 0]) cube([L_base, W_base, H_base]);
+    
+    // Cut slots
+    for (y = slot_positions) {
+        translate([0, y, 0]) cube([slot_len, slot_w, slot_deep]);
+    }
+}
+```

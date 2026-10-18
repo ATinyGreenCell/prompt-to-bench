@@ -1,0 +1,119 @@
+```openscad
+$fn = 128;
+
+// --- Dimensions ---
+// Handle
+d_handle = 8;
+h_handle = 45;
+z_handle_start = 0;
+z_handle_end = 45;
+
+// Cone
+d_cone_bottom = 8;
+d_cone_top = 3;
+z_cone_start = 45;
+z_cone_end = 62;
+
+// Tip
+d_tip = 3;
+z_tip_center = 62;
+
+// Grooves
+n_grooves = 4;
+w_groove = 2; // Width in Z
+d_groove = 1; // Depth
+z_groove_centers = [10, 15, 20, 25];
+
+// --- Main Body Construction ---
+// 1. Handle Cylinder
+// Radius = 4mm. Height = 45mm. Centered at z=22.5
+handle = cylinder(
+    h = h_handle,
+    r = d_handle / 2,
+    center = [0, 0, z_handle_start + h_handle/2]
+);
+
+// 2. Cone
+// Tapers from 8mm at z=45 to 3mm at z=62.
+// Height = 17mm. Centered at z=53.5
+cone = linear_extrude(
+    height = z_cone_end - z_cone_start,
+    center = [0, 0, z_cone_start + (z_cone_end - z_cone_start)/2]
+) {
+    polygon(
+        points = [
+            [-d_cone_bottom/2, 0],
+            [d_cone_bottom/2, 0],
+            [d_cone_top/2, z_cone_end - z_cone_start],
+            [-d_cone_top/2, z_cone_end - z_cone_start]
+        ],
+        convex = true
+    )
+};
+
+// 3. Tip Sphere
+// 3mm diameter sphere centered at z=62.
+tip = sphere(
+    r = d_tip / 2,
+    center = [0, 0, z_tip_center]
+);
+
+// Combine Body Parts
+body = union(
+    handle,
+    cone,
+    tip
+);
+
+// --- Groove Cutting ---
+// We create a cutting block that matches the handle's outer diameter 
+// and subtracts it from the body.
+// The cutting block needs to extend slightly past the handle boundaries 
+// to ensure clean cuts (Rule 5).
+
+// Define the cutting block geometry
+cutting_block = difference() {
+    // The base shape for cutting is a cylinder matching the handle diameter
+    // We extend it slightly in Z to cover the full handle range plus overlap
+    cylinder(
+        h = h_handle + 2, // +1mm overlap on each side
+        r = d_handle / 2 + 0.01, // Slightly larger radius to ensure full coverage
+        center = [0, 0, z_handle_start + h_handle/2]
+    );
+    
+    // The actual grooves are subtracted from this block
+    // We iterate through the specified Z centers
+    for (z_c = z_groove_centers) {
+        translate([0, 0, z_c]) {
+            // Groove dimensions:
+            // Width (Z) = 2mm
+            // Depth = 1mm (extends inward from surface)
+            // Length (XY) = Handle diameter + clearance
+            
+            // We use a cylinder for the groove cut.
+            // Radius of groove cut = Handle Radius + Depth
+            // Height of groove cut = Width of groove
+            
+            cylinder(
+                h = w_groove,
+                r = (d_handle / 2) + d_groove,
+                center = [0, 0, 0]
+            );
+        }
+    }
+};
+
+// Final Assembly: Body minus the Groove Cut
+// We add a tiny epsilon to the cutting block dimensions in the difference 
+// to ensure no faces are exactly coplanar (Rule 5).
+// The cutting_block defined above already has +0.01 radius and +2mm height.
+
+final_part = difference() {
+    body;
+    cutting_block;
+};
+
+// Center the final part on the origin in X and Y as requested (Rule 3)
+// The part is already centered at X=0, Y=0 by construction.
+translate([0, 0, 0]) final_part;
+```

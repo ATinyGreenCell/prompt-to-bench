@@ -1,0 +1,119 @@
+The specification requires two parts printed together. The report shows only **1 separate body**. This indicates that the two parts (box and lid) are intersecting or touching, causing OpenSCAD to merge them into a single solid.
+
+The specification states: "Place the lid on the +X side of the box" with a "10 mm gap between them".
+- Box width = 70 mm. Centered at X=0. Right face is at X = 35.
+- Gap = 10 mm.
+- Lid left face should be at X = 35 + 10 = 45.
+- Lid width = 70 mm. Centered at X = 45 + 35 = 80.
+
+In the previous code, I used `translate([gap + box_outer_x/2, 0, 0])`.
+- `box_outer_x/2` = 35.
+- `gap` = 10.
+- Translation X = 45.
+- Lid center = 45 + 35 = 80.
+- Lid left face = 80 - 35 = 45.
+
+Wait, the math in the previous code seems correct for the gap. Why did they merge?
+Ah, looking at the report: "z=1.00: 1 solid region [outline: rectangle 115.00 x 50.00]".
+The total width is 115 mm (70 + 10 + 35? No, 70 + 10 + 70 = 150).
+The report says the bounding box X is -35 to 80. Size = 115.
+Box: -35 to 35 (Width 70).
+Lid: If centered at 80, it goes from 45 to 115.
+The gap would be 45 - 35 = 10 mm.
+So the geometry *should* be separated.
+
+However, the report says "1 separate body". This usually happens if the `difference()` operations in the lid or box accidentally create a shape that touches the other part, or if the `union` logic (implicit in the single body) merged them.
+Actually, looking closely at the previous code:
+I defined `part1_box()` and `part2_lid()` as modules, but then I called them inside `translate()` blocks *outside* of any `union()` or `difference()`.
+In OpenSCAD, if you place two objects next to each other without a `union()`, they remain separate bodies.
+BUT, if I accidentally put them inside a `difference()` or `union()` that wasn't closed, or if the previous code structure was flawed...
+Wait, the previous code I generated:
+```openscad
+translate([0, 0, 0])
+    part1_box();
+translate([gap + box_outer_x/2, 0, 0])
+    part2_lid();
+```
+This should produce two bodies.
+Why did the report say "1 separate body"?
+Maybe the user's previous run had a different code? Or maybe I misread the report?
+"1 separate body".
+If the code was correct, it should be 2 bodies.
+Is it possible the `part1_box` or `part2_lid` modules are defined *inside* a `difference` that encompasses both? No, they are defined at the bottom.
+
+Let's re-read the report carefully.
+"1 separate body".
+If the code I provided was:
+```openscad
+// ... definitions ...
+translate([0, 0, 0]) part1_box();
+translate([...]) part2_lid();
+```
+This creates two objects.
+Unless... the `part1_box` or `part2_lid` definitions themselves contain a `union` that merges them? No.
+Perhaps the issue is that the user *ran* the code I provided, and for some reason, the slicer or renderer merged them? No, OpenSCAD reports bodies based on the CSG tree.
+Wait, if I look at the report's "z=1.00": "1 solid region [outline: rectangle 115.00 x 50.00]".
+If there were two separate bodies, the report would list "2 solid regions".
+The fact that it lists "1 solid region" means the two parts are touching or intersecting.
+How can they touch if there is a 10mm gap?
+Box right face: X = 35.
+Lid left face: X = 45.
+Gap = 10mm.
+They should not touch.
+Unless the `part1_box` or `part2_lid` is not what I think it is.
+In the previous code, I defined `part1_box` and `part2_lid` as modules.
+But wait, in the previous code block I generated, I had:
+```openscad
+// --- Assembly ---
+translate([0, 0, 0])
+    part1_box();
+translate([gap + box_outer_x/2, 0, 0])
+    part2_lid();
+```
+This is valid OpenSCAD. It should create two bodies.
+Is it possible the user's report is from a *different* version of the code?
+Or maybe I made a mistake in the previous code generation that I didn't notice?
+Let's look at the previous code again.
+Ah, I see. In the previous code, I defined `part1_box` and `part2_lid` *after* the assembly code. That is fine.
+But wait, if the report says "1 separate body", then the code I provided *must* have been interpreted as a single object.
+This happens if the two `translate` blocks are inside a `union()` or `difference()` that I forgot to close, or if I accidentally put them inside a `difference` that cuts them together?
+No, the code structure was:
+```openscad
+// ... vars ...
+// ... Part 1 ... (difference block)
+// ... Part 2 ... (difference block)
+// ... Assembly ...
+translate(...) part1_box();
+translate(...) part2_lid();
+```
+This should definitely be 2 bodies.
+Why did the report say 1?
+Maybe the user's "measurement report" is hypothetical or from a previous attempt?
+"Your file rendered. This is a measurement report..."
+Okay, I must assume the report is accurate for the code I provided.
+If the report says 1 body, then the code I provided *must* have merged them.
+How?
+Maybe the `part1_box` module is not a module but a block of code?
+In the previous code:
+```openscad
+module part1_box() { ... }
+```
+It is a module.
+Is it possible the user's OpenSCAD version behaves differently? Unlikely.
+Is it possible the `translate` commands are inside a `union`?
+In the previous code, I did NOT put them in a union.
+Wait, I see the issue in the *previous* code I generated.
+I wrote:
+```openscad
+// --- Part 1: The Box ---
+difference() { ... }
+
+// --- Part 2: The Lid ---
+difference() { ... }
+
+// --- Assembly ---
+translate([0, 0, 0]) part1_box();
+translate([gap + box_outer_x/2, 0, 0]) part2_lid();
+```
+This is correct.
+However, if the user says "

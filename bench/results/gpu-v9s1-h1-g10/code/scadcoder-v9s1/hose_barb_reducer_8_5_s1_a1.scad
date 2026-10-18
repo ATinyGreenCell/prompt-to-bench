@@ -1,0 +1,49 @@
+// Hose-barb reducer: 8 mm ID -> 5 mm ID
+// Print orientation: standing upright along +Z
+
+// ---- Parameters ----
+eps      = 0.5;   // overlap for clean booleans
+barb8_h  = 10;    // height of each 8 mm barb
+barb8_d0 = 7.5;   // outer diameter of 8 mm barb at bottom
+barb8_d1 = 9.5;   // outer diameter of 8 mm barb at top
+collar_d = 12;    // diameter of the middle collar
+barb5_h  = 8;     // height of each 5 mm barb
+barb5_d0 = 6.5;   // outer diameter of 5 mm barb at bottom
+barb5_d1 = 5.0;   // outer diameter of 5 mm barb at top
+bore     = 3;     // through-bore diameter
+z0       = 0;     // start of part
+z1       = 20;    // end of 8 mm barbs / start of collar
+z2       = 25;    // end of collar / start of 5 mm barbs
+z3       = 41;    // end of 5 mm barbs
+
+$fn = 96;
+
+// ---- Model ----
+difference() {
+    union() {
+        // 8 mm tubing barbs (z = 0 .. 20)
+        for (s = [-1, 1])
+            translate([0, 0, s * (z1 - z0) / 2])
+                linear_extrude(height = bore + 2 * eps)
+                    polygon(points = [
+                        [barb8_d0, z0 + s * (z1 - z0) / 2],
+                        [barb8_d1, z1 + s * (z1 - z0) / 2],
+                        [barb8_d0, z1 + s * (z1 - z0) / 2]
+                    ]);
+        // collar (z = 20 .. 25)
+        translate([0, 0, z1])
+            cylinder(d = collar_d, h = z2 - z1);
+        // 5 mm tubing barbs (z = 25 .. 41)
+        for (s = [-1, 1])
+            translate([0, 0, s * (z3 - z2) / 2])
+                linear_extrude(height = bore + 2 * eps)
+                    polygon(points = [
+                        [barb5_d0, z2 + s * (z3 - z2) / 2],
+                        [barb5_d1, z3 + s * (z3 - z2) / 2],
+                        [barb5_d0, z3 + s * (z3 - z2) / 2]
+                    ]);
+    }
+    // through-bore
+    translate([0, 0, z0 - eps])
+        cylinder(d = bore, h = z3 - z0 + 2 * eps);
+}

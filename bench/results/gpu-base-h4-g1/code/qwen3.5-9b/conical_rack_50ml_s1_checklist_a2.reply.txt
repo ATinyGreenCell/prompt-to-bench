@@ -1,0 +1,74 @@
+The previous code failed because the `difference()` block was not properly structured to subtract the holes from the *entire* union of the plate and walls. In the previous attempt, the subtraction logic was either outside the `difference()` or the geometry inside `difference()` was not a single solid union before the holes were cut. The report shows 3 separate bodies, indicating the holes were not successfully cutting through the combined volume, or the subtraction was applied to disjoint parts.
+
+Here is the corrected logic:
+1.  Define the **Union** of the Plate and the two Walls as a single solid block.
+2.  Inside a `difference()` block, place that **Union** first.
+3.  Then, inside the same `difference()` block, subtract the 6 cylinders representing the holes. The cylinders must extend slightly past the top of the walls to ensure they cut all the way through.
+
+```openscad
+// Rack for six 50 mL conical (Falcon-type) tubes.
+// Print orientation: Flat plate on bed (z=0), walls rising to z=70.
+// After printing, flip over so walls are on the bed and tubes hang down.
+
+// Plate dimensions
+L     = 130;   // Length (X)
+W     = 90;    // Width (Y)
+t     = 4;     // Plate thickness (Z)
+
+// Hole specifications
+n_holes = 6;
+hole_d  = 30.5;
+// Grid layout: 2 rows (Y), 3 columns (X)
+// Spacing 40mm centre-to-centre
+dx = 40;
+dy = 40;
+
+// Wall specifications
+wall_h = 70;   // Height of wall above plate
+wall_t = 4;    // Wall thickness (Y)
+
+// Derived positions
+// Centring the grid on the plate
+x_offset = (L - (n_holes - 1) * dx) / 2;
+y_offset = (W - (2 - 1) * dy) / 2;
+
+// Total height of the assembly (plate + wall)
+total_h = t + wall_h;
+
+$fn = 64;
+
+difference() {
+    // 1. Create the solid base (Plate + Walls)
+    union() {
+        // Base Plate
+        translate([0, 0, 0])
+            cube([L, W, t]);
+        
+        // Left Wall (at Y=0)
+        // Starts at z=t, goes up to z=total_h
+        translate([0, 0, t])
+            cube([L, wall_t, wall_h]);
+            
+        // Right Wall (at Y=W)
+        // Starts at z=t, goes up to z=total_h
+        translate([0, W, t])
+            cube([L, wall_t, wall_h]);
+    }
+    
+    // 2. Subtract the 6 holes
+    // Holes must extend slightly past the top of the walls to ensure clean cuts
+    for (i = [0 : n_holes - 1]) {
+        // Map index i to row and column
+        // Rows are along Y (0 to 1), Columns along X (0 to 2)
+        row = i / 3;
+        col = i % 3;
+        
+        x_pos = x_offset + col * dx;
+        y_pos = y_offset + row * dy;
+        
+        // Subtract cylinder extending past the top of the walls
+        translate([x_pos, y_pos, 0])
+            cylinder(h = total_h + 1, d = hole_d);
+    }
+}
+```

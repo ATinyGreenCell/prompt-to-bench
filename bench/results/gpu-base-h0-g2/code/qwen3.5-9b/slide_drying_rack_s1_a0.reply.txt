@@ -1,0 +1,89 @@
+```openscad
+// Drying Rack for 10 Microscope Slides
+// Base: 90 x 45 x 20 mm
+// Slots: 10 parallel slots along X, 77mm long, 1.6mm wide, 10mm deep
+// Spacing: 3.5mm centre-to-centre in Y
+
+$fn = 128;
+
+// Base Dimensions
+base_length = 90;  // X
+base_width = 45;   // Y
+base_height = 20;  // Z
+
+// Slot Dimensions
+num_slots = 10;
+slot_length = 77;  // X (runs along length)
+slot_width = 1.6;  // Y
+slot_depth = 10;   // Z
+
+// Spacing
+slot_spacing = 3.5; // Centre-to-centre in Y
+
+// Calculation for Y positioning
+// Total width occupied by slots = num_slots * slot_width
+// Total gaps = num_slots - 1
+// We need the group to be centred in Y (base_width/2)
+// Let's calculate the offset from the edge to the first slot centre
+// Or simpler: Calculate the position of the first slot centre relative to the block centre.
+// The pattern is symmetric.
+// Distance from centre to first slot centre = ( (num_slots-1) * slot_spacing ) / 2
+// Wait, the slots are spaced 3.5mm apart.
+// Let's verify the total span.
+// If we have 10 slots, there are 9 gaps between them.
+// Total gap width = 9 * 3.5 = 31.5 mm.
+// Total slot width = 10 * 1.6 = 16.0 mm.
+// Total span of the slot group = 31.5 + 16.0 = 47.5 mm.
+// The block width is 45 mm.
+// The prompt says "group of slots is centred on the block in X and Y".
+// However, the total span (47.5mm) is larger than the block width (45mm).
+// This implies the slots will overhang the sides of the block.
+// We will follow the instruction "centred on the block" strictly, meaning the geometric centre of the slot array aligns with the geometric centre of the block.
+
+// Calculate Y position of the first slot centre
+// The array of centres is: -4.5, -1.0, 2.5, ...
+// Let's derive the offset from the block centre (0,0).
+// The distance from the centre of the array to the centre of the first slot is:
+// ( (num_slots - 1) * slot_spacing ) / 2
+// = (9 * 3.5) / 2 = 15.75 mm.
+// So the first slot centre is at Y = -15.75 mm.
+
+y_offset_first = ((num_slots - 1) * slot_spacing) / 2;
+
+// Build the base block
+difference() {
+    // Main Block
+    cube([base_length, base_width, base_height], center = true);
+    
+    // Cut Slots
+    // We iterate from i = 0 to num_slots - 1
+    for (i = [0 : num_slots - 1]) {
+        // Calculate Y position for this slot
+        // y_pos = -y_offset_first + i * slot_spacing
+        y_pos = -y_offset_first + (i * slot_spacing);
+        
+        // Define the cutting volume
+        // The slot runs along X (length slot_length)
+        // It is located at Y = y_pos with width slot_width
+        // It goes down Z from top (base_height) by slot_depth
+        
+        // To ensure clean cuts, we extend slightly past the faces
+        // X: extend 0.1mm past the ends of the slot
+        // Y: extend 0.1mm past the sides of the slot
+        // Z: extend 0.1mm past the bottom of the cut
+        
+        translate([0, y_pos, base_height - slot_depth]) {
+            // Slot dimensions with clearance
+            slot_clearance_x = 0.1;
+            slot_clearance_y = 0.1;
+            slot_clearance_z = 0.1;
+            
+            cube([
+                slot_length + 2 * slot_clearance_x,
+                slot_width + 2 * slot_clearance_y,
+                slot_depth + slot_clearance_z
+            ]);
+        }
+    }
+}
+```

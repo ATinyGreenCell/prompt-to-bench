@@ -1,0 +1,99 @@
+// L-shaped mounting bracket for NEMA 17 stepper motor.
+// Base plate: 50x45x5 mm. Vertical plate: 50x5x50 mm.
+// Includes M4 holes in base, motor boss hole, M3 screw holes, and gussets.
+
+// Base dimensions
+base_x = 50;
+base_y = 45;
+base_z = 5;
+
+// Vertical plate dimensions
+vert_x = 50;
+vert_y = 5;
+vert_z = 50;
+
+// Hole positions and sizes
+m4_x1 = -17;
+m4_y1 = 30;
+m4_x2 = 17;
+m4_y2 = 30;
+m4_d  = 4.5;
+
+boss_x = 0;
+boss_z = 28;
+boss_d = 23;
+
+m3_count = 4;
+m3_d    = 3.4;
+m3_pat  = 31; // square pattern size
+
+// Gusset dimensions
+gusset_x_start = -25;
+gusset_x_end   = -20;
+gusset_x2_start = 20;
+gusset_x2_end   = 25;
+gusset_y_leg = 20;
+gusset_z_leg = 20;
+gusset_t     = 5;
+
+$fn = 64;
+
+// Base plate
+difference() {
+    translate([-base_x / 2, 0, 0]) cube([base_x, base_y, base_z]);
+    
+    // M4 holes (extend slightly past base thickness)
+    for (i = [0 : 1]) {
+        translate([
+            i == 0 ? m4_x1 : m4_x2,
+            m4_y1,
+            -0.1
+        ]) cylinder(h = base_z + 0.2, d = m4_d);
+    }
+}
+
+// Vertical plate
+difference() {
+    // Main body of vertical plate
+    translate([-vert_x / 2, 0, base_z]) cube([vert_x, vert_y, vert_z]);
+    
+    // Boss hole (along Y axis)
+    translate([boss_x, 0, boss_z]) cylinder(h = vert_y, d = boss_d);
+    
+    // M3 screw holes (square pattern centred on boss)
+    // Pattern: 31mm square, centred at x=0, z=28.
+    // Points: (-15.5, 0, 12.5), (-15.5, 0, 43.5), (15.5, 0, 12.5), (15.5, 0, 43.5)
+    
+    for (i = [0 : 3]) {
+        translate([
+            i == 0 ? -15.5 : (i == 1 ? 15.5 : 0),
+            0,
+            i == 0 ? 12.5 : (i == 1 ? 43.5 : 28)
+        ]) cylinder(h = vert_y, d = m3_d);
+    }
+}
+
+// Gussets (Right triangles in YZ plane, extruded along X)
+// Left Gusset
+translate([gusset_x_start, 0, 0]) {
+    rotate([0, 0, 90]) // Face YZ plane
+    linear_extrude(height = gusset_x_end - gusset_x_start)
+    polygon([
+        [0, 0],       // (y=0, z=0) - bottom left
+        [gusset_y_leg, 0], // (y=20, z=0) - bottom right
+        [gusset_y_leg, gusset_z_leg], // (y=20, z=20) - top right
+        [0, gusset_z_leg]  // (y=0, z=20) - top left
+    ]);
+}
+
+// Right Gusset
+translate([gusset_x2_start, 0, 0]) {
+    rotate([0, 0, 90]) // Face YZ plane
+    linear_extrude(height = gusset_x2_end - gusset_x2_start)
+    polygon([
+        [0, 0],       // (y=0, z=0)
+        [gusset_y_leg, 0], // (y=20, z=0)
+        [gusset_y_leg, gusset_z_leg], // (y=20, z=20)
+        [0, gusset_z_leg]  // (y=0, z=20)
+    ]);
+}

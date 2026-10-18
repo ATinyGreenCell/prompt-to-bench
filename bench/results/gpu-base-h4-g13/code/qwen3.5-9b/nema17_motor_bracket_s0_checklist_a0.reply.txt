@@ -1,0 +1,153 @@
+```openscad
+// L-shaped mounting bracket for NEMA 17 stepper motor.
+// Base plate: 50x45x5, Motor plate: 50x5x50, Gussets on sides.
+
+$fn = 64;
+
+// Base plate dimensions
+base_x = 50;
+base_y = 45;
+base_z = 5;
+
+// Motor plate dimensions
+motor_x = 50;
+motor_y = 5;
+motor_z = 50;
+
+// Hole dimensions
+m4_diameter = 4.5;
+m3_diameter = 3.4;
+
+// Boss hole dimensions
+boss_hole_diameter = 23;
+
+// Gusset dimensions
+gusset_thickness = 5;
+gusset_leg_y = 20;
+gusset_leg_z = 20;
+
+// Positions
+base_hole_x1 = -17;
+base_hole_y1 = 30;
+base_hole_x2 = 17;
+base_hole_y2 = 30;
+
+boss_hole_x = 0;
+boss_hole_z = 28;
+
+// Gusset attachment positions (relative to part origin)
+// Left gusset: x from -25 to -20
+gusset_left_x_start = -25;
+gusset_left_x_end = -20;
+// Right gusset: x from 20 to 25
+gusset_right_x_start = 20;
+gusset_right_x_end = 25;
+
+// Build the main body (Base + Motor Plate)
+difference() {
+    union() {
+        // Base Plate
+        translate([-base_x / 2, 0, 0]) cube([base_x, base_y, base_z]);
+        
+        // Motor Plate (standing on the back edge of the base, y=0)
+        // It extends from y=0 to y=5.
+        translate([-motor_x / 2, 0, 0]) cube([motor_x, motor_y, motor_z]);
+    }
+    
+    // Cut Base Plate Holes (M4)
+    // Hole 1
+    translate([base_hole_x1, base_hole_y1, 0]) cylinder(h = base_z + 1, d = m4_diameter);
+    // Hole 2
+    translate([base_hole_x2, base_hole_y2, 0]) cylinder(h = base_z + 1, d = m4_diameter);
+    
+    // Cut Motor Plate Boss Hole (along Y axis)
+    // Centre at x=0, z=28. Extends through the plate (y=0 to y=5).
+    translate([boss_hole_x, 0, boss_hole_z]) cylinder(h = motor_y + 1, d = boss_hole_diameter);
+    
+    // Cut Motor Plate Screw Holes (M3)
+    // 4 holes on a 31mm square pattern centred on the boss hole (x=0, z=28).
+    // Pattern size 31mm means distance from center to edge is 15.5mm.
+    // Holes are at +/- 15.5mm in X and Z.
+    hole_offset = 15.5;
+    for (i = [-1, 1]) {
+        for (j = [-1, 1]) {
+            translate([i * hole_offset, 0, boss_hole_z + j * hole_offset]) cylinder(h = motor_y + 1, d = m3_diameter);
+        }
+    }
+}
+
+// Build Gussets
+// Left Gusset
+translate([gusset_left_x_start, 0, 0]) {
+    // Right triangle in YZ plane.
+    // Vertices: (-25, 5, 5), (-25, 25, 5), (-25, 5, 25).
+    // Wait, the prompt says: "right-angle corner at y = 5, z = 5".
+    // Legs: 20mm along +Y (from y=5 to y=25) and 20mm along +Z (from z=5 to z=25).
+    // Thickness is 5mm (along X, from -25 to -20).
+    
+    // Define the 3 vertices of the triangle in the YZ plane (relative to the gusset's local origin at -25, 0, 0)
+    // Local coords: y goes 0..20, z goes 0..20.
+    // Vertices: (0,0), (20,0), (0,20) in local YZ.
+    // Global coords: y = 5 + local_y, z = 5 + local_z.
+    
+    // Polygon definition for rotate_extrude: [x, y] where x is radius (distance from axis) and y is height?
+    // No, for a flat plate in YZ plane, we use polygon() with 3D points or rotate_extrude a 2D profile.
+    // Since it's a flat plate, linear_extrude is best if we define the shape in XY or XZ.
+    // Let's define the shape in the YZ plane using polygon() and extrude along X.
+    
+    // Points in YZ plane:
+    // P1: y=5, z=5 (corner)
+    // P2: y=25, z=5 (end of Y leg)
+    // P3: y=5, z=25 (end of Z leg)
+    
+    // Extrude along X from -25 to -20.
+    translate([-25, 0, 0]) {
+        // Create the triangle profile in YZ plane
+        // We need to extrude this shape along X.
+        // The shape is defined by points in Y and Z.
+        // linear_extrude(height = 5) expects a 2D shape in XY plane.
+        // So we rotate the part 90 deg around Z to put the triangle in XY, extrude, then rotate back?
+        // Or simply use polygon() with 3D points and linear_extrude? No, linear_extrude extrudes along Z.
+        // We want to extrude along X.
+        
+        // Strategy: Rotate the whole gusset 90 deg around Z so the X-axis becomes the Z-axis of the extruder.
+        // Then the triangle lies in the YZ plane (which is now YX plane relative to extruder?).
+        // Let's stick to standard: Define shape in XY, extrude along Z.
+        // Rotate the gusset so its thickness is along Z.
+        
+        rotate([0, 0, 90]) {
+            // Now the gusset thickness is along Z.
+            // The triangle is in the XY plane (originally YZ).
+            // Original Y is now X. Original Z is now -Y.
+            // Points:
+            // (y=5, z=5) -> (x=5, y=-5)
+            // (y=25, z=5) -> (x=25, y=-5)
+            // (y=5, z=25) -> (x=5, y=-25)
+            
+            // Let's just build it directly with linear_extrude along X by rotating the profile.
+            // Profile in YZ plane:
+            // [y, z] points: [5, 5], [25, 5], [5, 25].
+            // We want to extrude this along X.
+            // linear_extrude(height=5) extrudes along Z.
+            // So we rotate the profile 90 deg around Y to put it in XZ? No.
+            
+            // Simplest way:
+            // 1. Create the triangle in YZ plane using polygon().
+            // 2. Extrude it along X using linear_extrude? No, linear_extrude is always Z.
+            // 3. Rotate the whole thing 90 deg around Z so X becomes Z.
+            //    Then the triangle is in YZ (now YX) plane.
+            //    Then linear_extrude along Z (which is old X).
+            
+            // Let's try:
+            // Define triangle in YZ plane:
+            // p1 = [5, 5] (y, z)
+            // p2 = [25, 5]
+            // p3 = [5, 25]
+            // Rotate 90 deg around Z: (y, z) -> (z, -y) ?? No.
+            // Rotation matrix around Z: x' = x*cos - y*sin, y' = x*sin + y*cos.
+            // We want to map Y to Z and Z to -X?
+            
+            // Let's just use the points directly in a rotated coordinate system.
+            // We want a block from x=-25 to -20.
+            // The face is in the plane x = -25.
+            // The triangle is in the plane

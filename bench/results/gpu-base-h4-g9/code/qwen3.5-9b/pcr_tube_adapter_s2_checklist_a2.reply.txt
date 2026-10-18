@@ -1,0 +1,103 @@
+The specification requires the part to rise to a total height of **21.5 mm** (collar 1.5 mm + body to z=21.5). The report shows the total height is only **20.00 mm**. This is because the `body_h` variable was set to 20.0, but the total height is the sum of the collar (1.5) and the body. To reach z=21.5, the body height must be 20.0, making the total 21.5. Wait, let me re-calculate:
+Spec: Collar (1.5) + Body (to z=21.5).
+Total Height = 21.5 mm.
+Collar Height = 1.5 mm.
+Body Height = 21.5 - 1.5 = 20.0 mm.
+My previous code had `body_h = 20.0` and `total_height = collar_t + body_h` = 21.5.
+Why did the report show 20.00?
+Ah, I see the issue in the previous code block I generated. I wrote `body_h = 20.0` and `total_height = collar_t + body_h`. That should be 21.5.
+Let's look at the report again: `Z 0.00 .. 20.00 (size 20.00)`.
+This implies `total_height` was calculated as 20.0.
+In the code I wrote: `body_h = 20.0; total_height = collar_t + body_h;`.
+If `collar_t` is 1.5 and `body_h` is 20.0, `total_height` is 21.5.
+Why did the report say 20.00?
+Perhaps the previous code block I generated actually had `body_h = 18.5` or `total_height = 20`?
+Let's re-read the previous code block I provided in the thought trace:
+```openscad
+body_h    = 20.0;    // Sleeve body height (Total height 21.5 - Collar 1.5)
+...
+total_height = collar_t + body_h; // Must equal 21.5
+```
+If `collar_t` is 1.5 and `body_h` is 20.0, `total_height` is 21.5.
+The report says `Z 0.00 .. 20.00`. This means the height is 20.0.
+This suggests that in the actual rendered file, `total_height` was 20.0.
+Maybe I made a mistake in the calculation in my head or the previous code block had a typo like `body_h = 18.5`?
+Wait, if the user said "body... rises from the collar to z = 21.5", and the collar is 1.5mm thick, the body height is indeed 20mm. The total height is 21.5mm.
+The report says the bounding box Z is 0.00 .. 20.00. This means the total height is 20mm.
+This means `total_height` in the code was 20.0.
+If `total_height` is 20.0 and `collar_t` is 1.5, then `body_h` must be 18.5.
+But I wrote `body_h = 20.0`.
+There is a contradiction between my code logic and the report.
+Let's assume the report is correct and the code I generated previously resulted in a 20mm part.
+To fix this, I must ensure `total_height` is explicitly 21.5.
+I will set `total_height = 21.5` directly to avoid any addition errors, or ensure `body_h` is calculated correctly.
+Actually, looking at the previous code block I generated:
+`body_h = 20.0;`
+`total_height = collar_t + body_h;`
+If `collar_t` is 1.5, `total_height` is 21.5.
+Why did the report say 20.00?
+Maybe the previous code block I generated had `body_h = 18.5`?
+No, I wrote 20.0.
+Is it possible the user's previous report was from a different version?
+Or maybe I misread the report? "Z 0.00 .. 20.00".
+Okay, I will force the total height to be 21.5 in the code to be safe.
+Also, I need to check the volume. 1227 mm3.
+If the part is 21.5mm high, 10.8mm OD, 6.2mm ID.
+Volume = PI * ( (10.8/2)^2 - (6.2/2)^2 ) * 21.5 + PI * ( (13/2)^2 - (10.8/2)^2 ) * 1.5
+Let's approximate:
+Body area = PI * (5.4^2 - 3.1^2) = PI * (29.16 - 9.61) = PI * 19.55 ≈ 61.4 mm2.
+Body vol = 61.4 * 21.5 ≈ 1320 mm3.
+Collar area = PI * (6.5^2 - 5.4^2) = PI * (42.25 - 29.16) = PI * 13.09 ≈ 41.1 mm2.
+Collar vol = 41.1 * 1.5 ≈ 61.7 mm3.
+Total vol ≈ 1381 mm3.
+The report says 1227 mm3. This is closer to a 20mm height part (1320 * 20/21.5 ≈ 1227).
+So the part is definitely 20mm high.
+I need to make it 21.5mm high.
+
+**Comparison:**
+*   **Collar OD (13 mm):** Report shows 13.00 mm. OK.
+*   **Collar Height (1.5 mm):** Report shows height 0.00 to 1.50 is the collar section. OK.
+*   **Body OD (10.8 mm):** Report shows 10.80 mm. OK.
+*   **Total Height (to z=21.5):** Report shows max Z is 20.00 mm. WRONG (Should be 21.5 mm).
+*   **Bore Diameter (6.2 mm):** Report shows 6.20 mm. OK.
+*   **Bed Contact (z=0):** Report shows lowest point at z=0.00. OK.
+
+**Correction:**
+Set the total height to 21.5 mm explicitly.
+
+```openscad
+// PCR Tube Adapter Sleeve - fits 0.2mL tubes into 1.5mL rack holes.
+// Print orientation: Collar on bed (z=0 to 1.5), body rises to z=21.5.
+
+// Dimensions
+collar_od = 13;      // Collar outer diameter
+collar_t  = 1.5;     // Collar thickness (height)
+body_od   = 10.8;    // Sleeve body outer diameter
+bore_d    = 6.2;     // Bore diameter
+total_h   = 21.5;    // Total height of the part (Collar + Body)
+
+// Ensure smooth rendering for cylindrical surfaces
+$fn = 96;
+
+module adapter() {
+    difference() {
+        // 1. Main Body Cylinder (Outer Shell)
+        // Starts at z=0, goes up to total_h
+        cylinder(h = total_h, d = body_od);
+
+        // 2. Collar (Outer Ring)
+        // Starts at z=0, goes up to collar_t
+        // We subtract this from the main body to create the step down
+        cylinder(h = collar_t, d = collar_od);
+
+        // 3. Bore (Inner Hole)
+        // Runs through the full height of the part
+        translate([0, 0, -1]) cylinder(h = total_h + 2, d = bore_d);
+    }
+}
+
+// Translate the whole part down so the collar sits on the bed (z=0)
+// The module is already defined with z=0 start, so no translation needed if we assume the module starts at 0.
+// However, to be explicit and safe against any coordinate shifts:
+translate([0, 0, 0]) adapter();
+```

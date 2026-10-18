@@ -1,0 +1,71 @@
+```openscad
+// Straight hose-barb reducer - joins 8mm ID tubing to 5mm ID tubing.
+// Prints upright along Z, centred on origin in X and Y.
+
+$fn = 128;
+
+// Dimensions
+z_start      = 0;
+z_8mm_end    = 20;
+z_collar_end = 25;
+z_5mm_end    = 41;
+
+// 8mm tubing section (z = 0 to 20)
+// Two stacked barbs, each 10mm tall.
+// Barb profile: OD grows 7.5 -> 9.5, then steps back to 7.5.
+z_8mm_barb_h = 10;
+od_8mm_bottom = 7.5;
+od_8mm_top    = 9.5;
+od_8mm_step   = 7.5;
+
+// Collar section (z = 20 to 25)
+z_collar_h = 5;
+od_collar  = 12;
+
+// 5mm tubing section (z = 25 to 41)
+// Two stacked barbs, each 8mm tall.
+// Barb profile: OD shrinks 6.5 -> 5.0, then steps back to 6.5.
+z_5mm_barb_h = 8;
+od_5mm_bottom = 6.5;
+od_5mm_top    = 5.0;
+od_5mm_step   = 6.5;
+
+// Common bore
+bore_d = 3;
+
+// Define profile points [radius, z]
+// 1. 8mm Barb 1 (z=0 to 10)
+p1 = [od_8mm_bottom / 2, z_start];
+p2 = [od_8mm_top / 2, z_start + z_8mm_barb_h];
+p3 = [od_8mm_step / 2, z_start + z_8mm_barb_h];
+
+// 2. 8mm Barb 2 (z=10 to 20)
+p4 = [od_8mm_step / 2, z_start + z_8mm_barb_h];
+p5 = [od_8mm_top / 2, z_start + 2 * z_8mm_barb_h];
+p6 = [od_8mm_step / 2, z_start + 2 * z_8mm_barb_h];
+
+// 3. Collar (z=20 to 25)
+p7 = [od_collar / 2, z_start + z_collar_end];
+p8 = [od_collar / 2, z_start + z_collar_end + z_collar_h];
+
+// 4. 5mm Barb 1 (z=25 to 33)
+p9 = [od_5mm_bottom / 2, z_start + z_collar_end];
+p10 = [od_5mm_top / 2, z_start + z_collar_end + z_5mm_barb_h];
+p11 = [od_5mm_step / 2, z_start + z_collar_end + z_5mm_barb_h];
+
+// 5. 5mm Barb 2 (z=33 to 41)
+p12 = [od_5mm_step / 2, z_start + z_collar_end + 2 * z_5mm_barb_h];
+p13 = [od_5mm_top / 2, z_start + z_collar_end + 2 * z_5mm_barb_h];
+p14 = [od_5mm_step / 2, z_start + z_collar_end + 2 * z_5mm_barb_h];
+
+// Combine profile points
+profile = [p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12, p13, p14];
+
+difference() {
+    rotate_extrude() profile;
+    
+    // Cut the central bore through the entire length
+    // The bore runs from z=0 to z=41
+    translate([0, 0, -1]) cylinder(h = z_5mm_end + 2, d = bore_d);
+}
+```

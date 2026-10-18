@@ -1,0 +1,53 @@
+// Drying Rack for Microscope Slides
+// Base: 90 x 45 x 20 mm
+// Slots: 10 parallel slots for 75x25mm slides
+// Orientation: Rests on XY plane at Z=0, builds upward.
+
+$fn = 128; // High resolution for smooth slot edges
+
+// --- Base Dimensions ---
+base_length_X = 90;
+base_width_Y = 45;
+base_height_Z = 20;
+
+// --- Slot Dimensions ---
+num_slots = 10;
+slide_length = 75;
+slide_width = 25;
+slot_width = 1.6; // Width of the slot in Y
+slot_depth = 10;  // Depth of the cut in Z
+slot_spacing = 3.5; // Centre-to-centre distance in Y
+
+// --- Calculated Positions ---
+// Group of slots centred on the block in X and Y
+// Total width of slots + spacing
+total_slot_width = (num_slots - 1) * slot_spacing + slot_width;
+offset_Y = (base_width_Y - total_slot_width) / 2;
+
+// --- Main Block ---
+difference() {
+    // 1. Create the solid base block
+    cube([base_length_X, base_width_Y, base_height_Z], center = false);
+    
+    // 2. Cut the 10 parallel slots
+    // Slots run along X, so we extrude a rectangle along the X-axis
+    for (i = [0 : num_slots - 1]) {
+        // Calculate Y position for this slot
+        // Start at offset_Y, then add (i * spacing) + (half_slot_width) to center the slot
+        y_pos = offset_Y + (i * slot_spacing) + (slot_width / 2);
+        
+        // Define the cutting shape
+        // The slot is 77mm long (user specified 77mm long slot, slightly longer than 75mm slide)
+        // Width is slot_width in Y
+        // Depth is slot_depth in Z
+        // We extend slightly past the faces to ensure clean cuts (Rule 5)
+        cut_length = 77; 
+        cut_width = slot_width + 0.1; // Slight overcut in Y
+        cut_depth = slot_depth + 0.1; // Slight overcut in Z
+        
+        translate([0, y_pos, base_height_Z - cut_depth]) {
+            // Extrude along X axis
+            cube([cut_length, cut_width, cut_depth], center = false);
+        }
+    }
+}

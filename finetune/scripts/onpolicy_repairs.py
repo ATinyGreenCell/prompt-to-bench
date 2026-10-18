@@ -54,6 +54,17 @@ def code_of(text):
     return code
 
 
+def ref_ok(mesh, an, ref) -> bool:
+    """The part matches its reference with rft_score's tolerances: watertight, bounding box per axis, volume,
+    bodies, triangle floor (batch C's pass in §6.4; also bench/harness_search.py)."""
+    size = mesh.bounds[1] - mesh.bounds[0]
+    return bool(an["watertight"]
+                and all(abs(c - r) <= max(rft_score.BBOX_ABS, rft_score.BBOX_REL * r) for c, r in zip(size, ref["bbox"]))
+                and ref["volume"] > 0 and abs(float(an["volume"]) - ref["volume"]) <= rft_score.VOL_REL * ref["volume"]
+                and int(an["bodies"]) == ref["bodies"]
+                and len(mesh.faces) >= rft_score.TRI_FLOOR * ref.get("triangles", 0))
+
+
 def cmd_prompts(a) -> None:
     from gen_prompts_clean import eval_token_sets, max_jaccard
     evs = eval_token_sets()
@@ -106,13 +117,7 @@ def _score(job):
             an = analyse(mesh)
         except Exception:  # noqa: BLE001
             return "error", None
-        size = mesh.bounds[1] - mesh.bounds[0]
-        ok = (an["watertight"]
-              and all(abs(c - r) <= max(rft_score.BBOX_ABS, rft_score.BBOX_REL * r) for c, r in zip(size, ref["bbox"]))
-              and ref["volume"] > 0 and abs(float(an["volume"]) - ref["volume"]) <= rft_score.VOL_REL * ref["volume"]
-              and int(an["bodies"]) == ref["bodies"]
-              and len(mesh.faces) >= rft_score.TRI_FLOOR * ref.get("triangles", 0))
-        if ok:
+        if ref_ok(mesh, an, ref):
             return "pass", None
         return "fail", convo(run_bench.feedback_message("report", rr, format_report(rr, an), how))
 
@@ -156,13 +161,7 @@ def _score_rft(job):
             an = analyse(mesh)
         except Exception:  # noqa: BLE001
             return "error", changed, None
-    size = mesh.bounds[1] - mesh.bounds[0]
-    ok = (an["watertight"]
-          and all(abs(c - r) <= max(rft_score.BBOX_ABS, rft_score.BBOX_REL * r) for c, r in zip(size, ref["bbox"]))
-          and ref["volume"] > 0 and abs(float(an["volume"]) - ref["volume"]) <= rft_score.VOL_REL * ref["volume"]
-          and int(an["bodies"]) == ref["bodies"]
-          and len(mesh.faces) >= rft_score.TRI_FLOOR * ref.get("triangles", 0))
-    if not ok:
+    if not ref_ok(mesh, an, ref):
         return "fail", changed, None
     return "pass", changed, [*p["messages"], {"role": "assistant", "content": reply}]
 

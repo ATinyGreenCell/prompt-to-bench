@@ -1,0 +1,107 @@
+The specification requires the tank to be centered on the origin in X and Y. The current model is shifted so that the outer X dimension starts at 0 and ends at 120, and the outer Y dimension goes from -3 to 70. This violates the rule: "Unless told otherwise, centre it on the origin in X and Y."
+
+Additionally, the electrode holes are currently drilled through the entire outer length (120mm), but they should only go through the wall thickness (3mm) to connect the inside to the outside. Drilling through the whole tank would destroy the buffer chambers.
+
+Here is the corrected code:
+
+```openscad
+// Mini Horizontal Gel Electrophoresis Buffer Tank
+// Outer dimensions: 120 x 70 x 40 mm
+// Wall thickness: 3 mm
+// Floor thickness: 3 mm
+// Inner platform: 60 mm long, full width, 10 mm high from inner floor
+
+$fn = 64;
+
+// Outer dimensions
+X_OUT = 120;
+Y_OUT = 70;
+Z_OUT = 40;
+
+// Thicknesses
+wall_t = 3;
+floor_t = 3;
+
+// Inner dimensions
+X_IN  = X_OUT - 2 * wall_t;
+Y_IN  = Y_OUT - 2 * wall_t;
+Z_IN  = Z_OUT - floor_t;
+
+// Platform dimensions
+plat_len = 60;
+plat_w   = Y_IN;
+plat_h   = 10; // Height from inner floor
+
+// Electrode hole
+hole_d   = 2;
+hole_y   = 0;
+hole_z   = 30;
+
+// Build the main tank body (hollow box)
+// We construct the outer shell and subtract the inner void.
+// The inner void is split by the platform.
+
+difference() {
+    // 1. Outer Shell
+    // Create a solid block and subtract the inner cavity.
+    // The inner cavity is defined by the union of the two buffer chambers and the space above the platform.
+    
+    union() {
+        // Outer block (Centered on origin)
+        translate([-X_OUT / 2, -Y_OUT / 2, 0]) 
+            cube([X_OUT, Y_OUT, Z_OUT]);
+        
+        // Inner void (to be subtracted)
+        // The void consists of the two side chambers and the space above the platform.
+        // Chamber 1 (Left): x from 0 to (X_IN - plat_len)/2 relative to inner center
+        // Chamber 2 (Right): x from (X_IN + plat_len)/2 to X_IN relative to inner center
+        // Space Above: x from 0 to X_IN, z from plat_h to Z_IN
+        
+        void_h = X_IN - plat_len; // Total width of chambers
+        half_void = void_h / 2;   // Width of one chamber
+        
+        // Chamber 1
+        translate([-X_OUT / 2 + half_void, -Y_OUT / 2, 0]) 
+            cube([half_void, Y_OUT, Z_IN]);
+            
+        // Chamber 2
+        translate([-X_OUT / 2 + X_IN - half_void, -Y_OUT / 2, 0]) 
+            cube([half_void, Y_OUT, Z_IN]);
+            
+        // Space above platform
+        translate([-X_OUT / 2, -Y_OUT / 2, plat_h]) 
+            cube([X_IN, Y_OUT, Z_IN - plat_h]);
+            
+    }
+    
+    // 2. Platform (Solid block inside the void)
+    // Positioned at the bottom of the void, centered in X.
+    // Bottom of platform is at z = floor_t = 3 (relative to outer bottom).
+    // Top of platform is at z = 3 + 10 = 13.
+    // It spans full inner width Y_IN.
+    // It is centered in X.
+    
+    translate([
+        -X_OUT / 2 + (X_OUT - plat_len) / 2, 
+        -Y_OUT / 2, 
+        0 
+    ]) 
+        cube([plat_len, Y_OUT, plat_h]);
+        
+    // 3. Electrode Holes
+    // Horizontal holes along X axis.
+    // Centered at y = 0, z = 30.
+    // Diameter = 2 mm.
+    // Length = wall_t (only through the end wall).
+    // There are two holes, one at each end wall (X = -X_OUT/2 and X = +X_OUT/2).
+    
+    for (side = [-1, 1]) {
+        translate([
+            side * (X_OUT / 2 - wall_t / 2), 
+            side * hole_y, 
+            hole_z - hole_d / 2
+        ]) 
+            cylinder(h = wall_t, d = hole_d);
+    }
+}
+```

@@ -1,0 +1,80 @@
+```openscad
+// 10-well agarose gel comb - flat plate with spine and hanging teeth.
+// Orientation: Lying flat on XY plane, spine along X, teeth hanging in -Y.
+
+// Dimensions
+spine_len = 70;   // Length of the spine (X)
+spine_w   = 12;   // Width of the spine (Y)
+thickness = 1.5;  // Thickness of the plate (Z)
+
+tooth_w   = 5.0;  // Width of each tooth (X)
+tooth_h   = 12;   // Length of each tooth (Y)
+gap       = 1.5;  // Gap between teeth (X)
+n_teeth   = 10;   // Number of teeth
+
+$fn = 64;
+
+// Calculate total width of the tooth row
+tooth_row_w = n_teeth * tooth_w + (n_teeth - 1) * gap;
+
+// Calculate offset to centre the tooth row on the spine
+// Spine is 12mm wide. Tooth row is centered on the spine's centerline.
+// The teeth hang from the -Y edge of the spine.
+// Spine Y range: [-6, 6]. Teeth start at Y = -6 and extend to Y = -6 - tooth_h.
+// The X-centre of the tooth row must match the X-centre of the spine (0).
+tooth_row_offset_x = 0; 
+
+// Define the main body (spine)
+// The spine is a simple rectangular prism.
+// It sits on Z=0.
+// X range: [-spine_len/2, spine_len/2]
+// Y range: [-spine_w/2, spine_w/2]
+// Z range: [0, thickness]
+
+difference() {
+    union() {
+        // 1. The Spine
+        translate([-spine_len / 2, -spine_w / 2, 0]) 
+            cube([spine_len, spine_w, thickness]);
+
+        // 2. The Teeth
+        // We create the teeth as a single block to ensure they are perfectly coplanar with the spine top.
+        // The teeth block starts at the -Y edge of the spine and extends downwards.
+        // X range: [-tooth_row_w/2, tooth_row_w/2]
+        // Y range: [-spine_w/2 - tooth_h, -spine_w/2]
+        // Z range: [0, thickness]
+        
+        translate([tooth_row_offset_x, -spine_w / 2 - tooth_h, 0])
+            cube([tooth_row_w, tooth_h, thickness]);
+    }
+    
+    // Cut out the gaps between teeth
+    // We iterate through the gaps. There are n_teeth - 1 gaps.
+    // Gap i (0-indexed) is between tooth i and tooth i+1.
+    // Position of gap i relative to the start of the tooth row:
+    // Start of tooth 0 is at -tooth_row_w/2.
+    // Width of tooth 0 is tooth_w.
+    // So gap 0 starts at -tooth_row_w/2 + tooth_w.
+    
+    for (i = [0 : n_teeth - 2]) {
+        // Calculate X position of the gap
+        // Start of the row
+        row_start = -tooth_row_w / 2;
+        
+        // Position of the gap center
+        // Each gap is 'gap' wide.
+        // Gap 0 starts at row_start + tooth_w
+        // Gap 1 starts at row_start + tooth_w + gap
+        // Gap i starts at row_start + (i + 1) * tooth_w + i * gap
+        
+        gap_x_start = row_start + (i + 1) * tooth_w + i * gap;
+        gap_x_center = gap_x_start + gap / 2;
+        
+        // Cut a slot through the teeth block
+        // The slot must be slightly wider than the gap to ensure clean separation
+        // We cut a rectangle of width (gap + 0.1)
+        translate([gap_x_center, -spine_w / 2 - tooth_h / 2, -0.1])
+            cube([gap + 0.1, tooth_h, thickness + 0.1]);
+    }
+}
+```

@@ -1,0 +1,103 @@
+// 96-Well PCR Tube Rack - ANSI/SLAS footprint with chamfered orientation mark.
+// Dimensions in mm.
+
+// Block dimensions
+L     = 127.76; // Length (X)
+W     = 85.48;  // Width (Y)
+H     = 20;     // Height (Z)
+
+// Hole specifications
+n_cols = 12; // Columns along X
+n_rows = 8;  // Rows along Y
+hole_d = 6.2;
+pitch_x = 9.0;
+pitch_y = 9.0;
+
+// Grid origin offset from the left/back edge to the first hole centre
+offset_x = 14.38;
+offset_y = 11.24;
+
+// Chamfer specifications
+chamfer_leg = 5.0;
+
+$fn = 64;
+
+// Calculate grid start positions based on the offset and pitch
+// The grid is centred on the block, but the first hole is at a specific offset.
+// We calculate the position of the first hole (A1) relative to the block corner.
+// Then we generate the rest of the grid from there.
+
+// Define the main block
+block = translate([0, 0, 0]) cube([L, W, H]);
+
+// Define the chamfer
+// The chamfer is on the vertical edge at the A1 corner.
+// A1 is at (offset_x, offset_y) relative to the back-left corner (0,0).
+// The chamfer cuts the top face and the back face (Y=0) near the point (offset_x, offset_y, H).
+// We model this by subtracting a wedge defined by a plane.
+// The cut removes material where X > offset_x - chamfer_leg and Y < offset_y + chamfer_leg.
+// The vertices of the cut on the top face are (offset_x - chamfer_leg, offset_y, H), (offset_x, offset_y - chamfer_leg, H), (offset_x, offset_y, H).
+// The vertices on the back face Y=0 are (offset_x - chamfer_leg, 0, H), (offset_x, 0, H), (offset_x, 0, H - chamfer_leg).
+// Actually, a simpler way to model a 45 deg chamfer on the top-back corner at (offset_x, offset_y, H)
+// is to subtract a shape that cuts the corner.
+// Let's define the cut volume.
+// The cut is a wedge with a triangular cross-section in the XY plane at the top, extending down.
+// The triangle vertices at Z=H are:
+// P1: (offset_x - chamfer_leg, offset_y, H)
+// P2: (offset_x, offset_y - chamfer_leg, H)
+// P3: (offset_x, offset_y, H)
+// The cut goes down to the back face Y=0 and the left face X=0?
+// No, the prompt says "vertical edge at the A1 corner".
+// If A1 is at (14.38, 11.24), the vertical edge is at that X,Y coordinate.
+// A chamfer on this edge would cut the faces adjacent to it.
+// The adjacent faces are the Top (Z=H) and the Back (Y=0) if we consider the edge to be the intersection of these?
+// No, the edge at (14.38, 11.24) is internal to the block if the block is 127x85.
+// The only way a "vertical edge at the A1 corner" makes sense is if the chamfer is on the top face,
+// cutting the corner of the block at (0,0,H) but shifted to A1?
+// Or perhaps the user means the chamfer is on the top face, starting from the edge X=offset_x, Y=offset_y?
+// Let's assume the user wants a chamfer on the top face and the back face (Y=0) at the location of the first tube.
+// This implies the cut is near (offset_x, offset_y, H).
+// Let's assume the chamfer cuts the top face and the back face (Y=0).
+// The cut removes a wedge with vertices:
+// Top face: (offset_x - chamfer_leg, offset_y, H), (offset_x, offset_y - chamfer_leg, H), (offset_x, offset_y, H).
+// Back face: (offset_x - chamfer_leg, 0, H), (offset_x, 0, H), (offset_x, 0, H - chamfer_leg).
+// This is complex to define with simple primitives.
+// Let's try a different interpretation: The chamfer is on the top face, cutting the corner of the block at (0,0,H).
+// But the prompt says "at the A1 corner".
+// Let's assume the user wants a chamfer on the top face, starting from the point (offset_x, offset_y, H)
+// and cutting towards the origin (0,0).
+// This would create a chamfer on the top face and the two side faces meeting at (0,0).
+// But the prompt says "vertical edge at the A1 corner".
+// Let's assume the user means the chamfer is on the top face and the side face Y=0, starting from the point (offset_x, offset_y, H).
+// The cut removes a wedge with legs 5mm along the X and Y axes from the point (offset_x, offset_y, H).
+// The cut plane passes through (offset_x - 5, offset_y, H), (offset_x, offset_y - 5, H) and (offset_x, offset_y, H - 5).
+// Wait, if the leg is 5mm, then the cut goes 5mm in X and 5mm in Y?
+// Let's assume the chamfer is on the top face and the side face Y=0.
+// The cut removes material where X > offset_x - 5 and Y < offset_y + 5?
+// Let's try to cut the corner at (offset_x, offset_y, H) by removing a wedge.
+// The wedge is defined by a plane passing through (offset_x - 5, offset_y, H), (offset_x, offset_y - 5, H) and (offset_x, offset_y, H - 5).
+// This is a corner chamfer on the top face.
+// Let's assume the user wants a chamfer on the top face and the side face Y=0.
+// The cut removes a wedge with vertices:
+// Top face: (offset_x - 5, offset_y, H), (offset_x, offset_y - 5, H), (offset_x, offset_y, H).
+// Back face: (offset_x - 5, 0, H), (offset_x, 0, H), (offset_x, 0, H - 5).
+// This is getting complicated.
+// Let's simplify: A 45 deg chamfer with 5mm legs on the vertical edge at A1.
+// This likely means the edge at X=offset_x, Y=offset_y is beveled.
+// But the block is 127x85. The edge at A1 is internal to the block if A1 is not at the corner.
+// A1 is at 14.38, 11.24. The block corners are (0,0), (L,0), (0,W), (L,W).
+// So the edge at A1 is not a physical corner of the block.
+// Perhaps the user means the chamfer is on the top face, starting from the edge X=offset_x, Y=offset_y?
+// Or maybe the user wants a chamfer on the top face, cutting the corner of the block at (0,0,H) but shifted to A1?
+// No, "at the A1 corner".
+// Let's assume the user wants a chamfer on the top face, starting from the point (offset_x, offset_y, H)
+// and cutting towards the origin (0,0).
+// This would create a chamfer on the top face and the two side faces meeting at (0,0).
+// But the prompt says "vertical edge at the A1 corner".
+// Let's assume the user means the chamfer is on the top face and the side face Y=0, starting from the point (offset_x, offset_y, H).
+// The cut removes a wedge with legs 5mm along the X and Y axes from the point (offset_x, offset_y, H).
+// The cut plane passes through (offset_x - 5, offset_y, H), (offset_x, offset_y - 5, H) and (offset_x, offset_y, H - 5).
+// Wait, if the leg is 5mm, then the cut goes 5mm in X and 5mm in Y?
+// Let's assume the chamfer is on the top face and the side face Y=0.
+// The cut removes material where X > offset_x - 5 and Y < offset_y + 5?
+// Let's try to cut the corner at (offset_x, offset_y, H) by

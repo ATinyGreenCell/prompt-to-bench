@@ -1,0 +1,51 @@
+```openscad
+// Replacement knob for a hotplate stirrer with a 6 mm D-shaft
+// Print orientation: the side that faces the hotplate is down (z = 0)
+
+// ---------------- Parameters ----------------
+knob_d      = 30;    // knob outer diameter (mm)
+knob_h      = 15;    // knob height (mm)
+
+bore_depth  = 12;    // D-bore depth from bottom face (mm)
+bore_w      = 4.7;   // D-bore width: flat to opposite side of circle (mm)
+bore_r      = bore_w / 2 + (6.2 - bore_w) / 4;  // radius of the 6.2 mm circle (mm)
+
+groove_n    = 18;    // number of vertical grip grooves
+groove_d    = 2;     // groove diameter (mm)
+
+pointer_w   = 1.5;   // pointer groove width (mm)
+pointer_d   = 1;     // pointer groove depth (mm)
+
+eps         = 0.5;   // overcut so cutting faces are not coplanar (mm)
+
+$fn = 128;           // facet count for round features
+
+// ---------------- Model ----------------
+difference() {
+    // Main body: cylinder, centred in X/Y, resting on z = 0
+    cylinder(d = knob_d, h = knob_h);
+
+    // D-shaped blind bore from the bottom face
+    // circle([r, h]) has radius r at height h, extended above the top face
+    translate([0, 0, eps])
+        linear_extrude(height = bore_depth + eps)
+            circle([bore_r, bore_depth + eps]);
+    // cut the flat on the side facing -X
+    translate([-bore_w / 2, 0, eps])
+        linear_extrude(height = bore_depth + eps)
+            polygon([[-bore_w / 2, -bore_w / 2],
+                     [-bore_w / 2,  bore_w / 2]]);
+
+    // 18 evenly spaced vertical grip grooves, full height, centred on the surface
+    for (i = [0 : groove_n - 1])
+        rotate([0, 0, i * 360 / groove_n])
+            translate([knob_d / 2, 0, 0])
+                cylinder(d = groove_d, h = knob_h);
+
+    // Pointer groove on the same side as the D-flat (along -X)
+    translate([0, 0, knob_h - pointer_d])
+        linear_extrude(height = pointer_d, center = true)
+            polygon([[0, 0], [pointer_w / 2, pointer_w / 2],
+                     [-pointer_w / 2, pointer_w / 2]]);
+}
+```

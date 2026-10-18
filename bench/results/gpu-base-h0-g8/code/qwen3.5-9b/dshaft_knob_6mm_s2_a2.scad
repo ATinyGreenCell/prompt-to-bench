@@ -1,0 +1,148 @@
+// Replacement Knob for Hotplate Stirrer (6mm D-shaft)
+// Units: mm
+// Orientation: Bottom face (D-flat side) on Z=0, building upward.
+
+$fn = 128; // High resolution for smooth curves and precise D-shape
+
+// --- Dimensions ---
+// Outer Cylinder
+D_OUTER = 30;
+H_TOTAL = 15;
+
+// Shaft Bore (D-shape)
+D_SHAFT_CIRCLE = 6.2;
+D_SHAFT_FLAT = 4.7; // Distance from flat to opposite arc
+H_BORE = 12;
+
+// Grip Grooves
+N_GROOVES = 18;
+D_GROOVE = 2; // Diameter of the half-cylinder groove
+H_GROOVE = H_TOTAL; // Full height
+
+// Top Pointer Groove
+W_POINTER = 1.5;
+D_POINTER = 1; // Depth
+
+// --- Calculations ---
+// Radius of the outer cylinder
+R_OUTER = D_OUTER / 2;
+
+// Geometry of the D-shape bore
+R_SHAFT = D_SHAFT_CIRCLE / 2;
+DIST_CENTER_TO_FLAT = R_SHAFT - (D_SHAFT_FLAT / 2);
+
+// Calculate the half-width of the flat face of the D-shape
+// Using Pythagoras: width/2 = sqrt(R^2 - dist^2)
+HALF_WIDTH_FLAT = sqrt(pow(R_SHAFT, 2) - pow(DIST_CENTER_TO_FLAT, 2));
+
+// --- Main Body Construction ---
+difference() {
+    // 1. Create the main D-shaped cylinder
+    // We build this by rotating a 2D profile (circle with a flat side) 360 degrees.
+    // The profile is defined in the XZ plane.
+    
+    // Define the D-profile points
+    // We start at the bottom of the circle, go up the arc, then down the flat side.
+    // Actually, it's easier to define the polygon as the area to keep.
+    // The area is bounded by the circle arc and the flat chord.
+    
+    // Let's construct the D-bore as a separate solid to subtract.
+    // The D-bore is a cylinder of diameter D_SHAFT_CIRCLE, but with one side flat.
+    // We create this by rotating a polygon that represents the D-cross-section.
+    
+    // Profile points in XZ plane (X is horizontal, Z is vertical axis of knob):
+    // Start at bottom of circle: (0, -R_SHAFT)
+    // Go along arc to top: (0, R_SHAFT)
+    // Go down the flat side: (0, R_SHAFT) -> (-DIST_CENTER_TO_FLAT, R_SHAFT)
+    // Go along flat: (-DIST_CENTER_TO_FLAT, R_SHAFT) -> (-DIST_CENTER_TO_FLAT, -R_SHAFT)
+    // Go down to start: (-DIST_CENTER_TO_FLAT, -R_SHAFT) -> (0, -R_SHAFT)
+    
+    // Wait, the flat side is a straight line. The arc connects the ends of the flat.
+    // The flat is at x = -DIST_CENTER_TO_FLAT.
+    // The arc connects (-DIST_CENTER_TO_FLAT, -HALF_WIDTH_FLAT) to (-DIST_CENTER_TO_FLAT, HALF_WIDTH_FLAT)?
+    // No, the flat is a chord. The distance from center to chord is DIST_CENTER_TO_FLAT.
+    // The chord endpoints are at x = -DIST_CENTER_TO_FLAT.
+    // The y-coordinates (which become Z in our profile) are +/- sqrt(R^2 - x^2).
+    // So the flat connects (-DIST_CENTER_TO_FLAT, -HALF_WIDTH_FLAT) to (-DIST_CENTER_TO_FLAT, HALF_WIDTH_FLAT).
+    // The arc connects these two points via the origin side? No, via the far side.
+    // The D-shape is the area between the chord and the arc on the opposite side.
+    // So the boundary is:
+    // 1. Line from (-DIST_CENTER_TO_FLAT, -HALF_WIDTH_FLAT) to (-DIST_CENTER_TO_FLAT, HALF_WIDTH_FLAT)
+    // 2. Arc from (-DIST_CENTER_TO_FLAT, HALF_WIDTH_FLAT) to (-DIST_CENTER_TO_FLAT, -HALF_WIDTH_FLAT) passing through (R_SHAFT, 0).
+    
+    // Let's create the D-bore solid using a polygon extrusion.
+    // We need to rotate this profile 360 degrees around the Z axis.
+    
+    // Define the polygon points for the D-profile in XZ plane.
+    // We will use a high number of points for the arc.
+    num_arc_points = 32;
+    points = [];
+    
+    // Start at bottom of flat
+    points.push([ -DIST_CENTER_TO_FLAT, -HALF_WIDTH_FLAT ]);
+    
+    // Add points along the arc from bottom to top
+    for (i = 0; i <= num_arc_points; i++) {
+        angle = (i / num_arc_points) * 3.14159265359; // 0 to PI
+        x = R_SHAFT * cos(angle);
+        z = R_SHAFT * sin(angle);
+        points.push([x, z]);
+    }
+    
+    // Add points along the flat from top to bottom
+    // The flat is a straight line at x = -DIST_CENTER_TO_FLAT
+    for (i = num_arc_points; i >= 0; i--) {
+        // We already have the top point at i=0 of the loop above? No, the loop goes 0 to num_arc_points.
+        // The last point added is at angle PI, which is (-R_SHAFT, 0).
+        // We need to go from (-R_SHAFT, 0) to (-DIST_CENTER_TO_FLAT, -HALF_WIDTH_FLAT).
+        // But the flat is a straight line.
+        // Let's just add the flat segment explicitly.
+        // The flat segment goes from (-DIST_CENTER_TO_FLAT, HALF_WIDTH_FLAT) to (-DIST_CENTER_TO_FLAT, -HALF_WIDTH_FLAT).
+        // But the arc ended at (-R_SHAFT, 0).
+        // We need to connect the arc end to the flat end.
+        // Actually, the D-shape is defined by the chord and the arc.
+        // The chord connects (-DIST_CENTER_TO_FLAT, -HALF_WIDTH_FLAT) and (-DIST_CENTER_TO_FLAT, HALF_WIDTH_FLAT).
+        // The arc connects these two points.
+        // So the polygon should be:
+        // 1. Start at (-DIST_CENTER_TO_FLAT, -HALF_WIDTH_FLAT)
+        // 2. Go along arc to (-DIST_CENTER_TO_FLAT, HALF_WIDTH_FLAT)
+        // 3. Go along flat back to start.
+        
+        // Let's rebuild the points list correctly.
+    }
+    
+    // Corrected Points List
+    d_bore_points = [];
+    
+    // Start at bottom of flat
+    d_bore_points.push([ -DIST_CENTER_TO_FLAT, -HALF_WIDTH_FLAT ]);
+    
+    // Add points along the arc from bottom to top
+    for (i = 0; i <= num_arc_points; i++) {
+        angle = (i / num_arc_points) * 3.14159265359; // 0 to PI
+        x = R_SHAFT * cos(angle);
+        z = R_SHAFT * sin(angle);
+        d_bore_points.push([x, z]);
+    }
+    
+    // Add points along the flat from top to bottom
+    // The flat is a straight line at x = -DIST_CENTER_TO_FLAT
+    // We need to go from the top of the arc (which is at angle PI/2, x=0, z=R_SHAFT) 
+    // to the top of the flat (-DIST_CENTER_TO_FLAT, HALF_WIDTH_FLAT).
+    // Wait, the arc goes from angle 0 (R, 0) to angle PI (-R, 0).
+    // The flat is at x = -DIST_CENTER_TO_FLAT.
+    // The arc intersects the line x = -DIST_CENTER_TO_FLAT at z = +/- HALF_WIDTH_FLAT.
+    // So the arc goes from (-DIST_CENTER_TO_FLAT, -HALF_WIDTH_FLAT) to (-DIST_CENTER_TO_FLAT, HALF_WIDTH_FLAT)
+    // passing through (R_SHAFT, 0).
+    
+    // So the points are:
+    // 1. Start at (-DIST_CENTER_TO_FLAT, -HALF_WIDTH_FLAT)
+    // 2. Arc points from angle = acos(-DIST_CENTER_TO_FLAT/R_SHAFT) to angle = PI - acos(-DIST_CENTER_TO_FLAT/R_SHAFT)
+    // 3. Flat points from (-DIST_CENTER_TO_FLAT, HALF_WIDTH_FLAT) to (-DIST_CENTER_TO_FLAT, -HALF_WIDTH_FLAT)
+    
+    start_angle = acos(-DIST_CENTER_TO_FLAT / R_SHAFT);
+    end_angle = PI - start_angle;
+    
+    // Re-generate points
+    d_bore_points = [];
+    d_bore_points.push([

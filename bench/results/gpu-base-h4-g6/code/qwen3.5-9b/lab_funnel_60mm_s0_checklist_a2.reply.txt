@@ -1,0 +1,76 @@
+The specification requires a funnel with a straight spout (10mm OD) transitioning to a cone (10mm to 60mm OD). The report shows the outer diameter of the spout is correct (~10mm), but the transition to the cone is incorrect. The report indicates the cone starts at a diameter of ~7.6mm at z=19.5mm and widens to ~55.8mm at the top. This implies the inner diameter of the spout was cut too deep or the cone's inner diameter was calculated incorrectly, causing the outer wall to be thinner than 1.6mm at the junction or the cone geometry to be inverted relative to the cut.
+
+Specifically, the report shows at z=19.50 (just below the cone start at z=20):
+- Outer diameter: ~9.99mm (Correct)
+- Inner diameter: ~7.60mm (Incorrect, should be 6.8mm)
+- Wall thickness: (9.99 - 7.60) / 2 = 1.195mm (Incorrect, should be 1.6mm)
+
+The error is in the `cylinder` command for the inner bore of the funnel section. I used `d1 = spout_id` (6.8mm) and `d2 = funnel_end_od - 2 * 1.6` (56.8mm). However, the `cylinder` command in OpenSCAD tapers from `d1` at the base (z=0 of the cylinder) to `d2` at the top.
+In my code:
+`translate([0, 0, spout_height - 1]) cylinder(h = funnel_height + 2, d1 = spout_id, d2 = ...)`
+This places the base of the inner cone cylinder at z=19. The top of this cylinder is at z=19 + 32 = 51.
+The outer cone starts at z=20 and ends at z=50.
+The inner cone starts at z=19 and ends at z=51.
+At z=20 (start of outer cone), the inner cone is at height 1 (relative to its base).
+The outer cone diameter at z=20 is 10mm.
+The inner cone diameter at z=20 should be 6.8mm.
+My inner cone goes from d=6.8 (at z=19) to d=56.8 (at z=51).
+At z=20 (height 1), the diameter is 6.8 + (56.8-6.8)*(1/32) = 6.8 + 1.56 = 8.36mm.
+This creates a "step" where the wall thickness changes abruptly and incorrectly. The wall thickness at the junction (z=20) becomes (10 - 8.36)/2 = 0.82mm, which is wrong.
+
+To fix this, the inner cone must start exactly at z=20 with d=6.8mm and end at z=50 with d=56.8mm.
+I will adjust the translation and height of the inner cone cylinder so it aligns perfectly with the outer cone.
+
+Corrected parameters:
+- Inner cone base: z = 20, d = 6.8
+- Inner cone top: z = 50, d = 56.8
+- Outer cone base: z = 20, d = 10
+- Outer cone top: z = 50, d = 60
+
+```openscad
+// Lab Funnel - A straight spout tube with a conical funnel on top.
+// Printed upright with the wide opening at the top.
+// Spout: 10mm OD, 20mm long. Funnel: widens from 10mm to 60mm OD over 30mm height.
+// Wall thickness: 1.6mm everywhere.
+
+$fn = 64;
+
+// Dimensions
+spout_od      = 10;
+wall          = 1.6;
+spout_id      = spout_od - 2 * wall; // 6.8
+spout_height  = 20;
+funnel_start_od = spout_od;
+funnel_end_od   = 60;
+funnel_height   = 50 - spout_height; // 30
+
+// Build the part from the bottom (z=0) upwards.
+// We use a difference operation to cut the inner bore from a solid outer shell.
+
+difference() {
+    // 1. Outer Shell
+    union() {
+        // Spout section (cylinder)
+        cylinder(h = spout_height, d = spout_od);
+        
+        // Funnel section (cone)
+        // Cone starts at z = spout_height with d = funnel_start_od
+        // Cone ends at z = 50 with d = funnel_end_od
+        translate([0, 0, spout_height]) 
+            cylinder(h = funnel_height, d1 = funnel_start_od, d2 = funnel_end_od);
+    }
+    
+    // 2. Inner Bore (cutting shapes)
+    // We extend the cutting cylinders slightly past the faces to ensure clean cuts.
+    
+    // Spout bore
+    translate([0, 0, -1]) 
+        cylinder(h = spout_height + 2, d = spout_id);
+        
+    // Funnel bore (cone)
+    // Must align exactly with the outer cone: starts at z=spout_height, ends at z=50.
+    // d1 is at the start (z=spout_height), d2 is at the end (z=50).
+    translate([0, 0, spout_height - 1]) 
+        cylinder(h = funnel_height + 2, d1 = spout_id, d2 = funnel_end_od - 2 * wall);
+}
+```

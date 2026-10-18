@@ -1,0 +1,156 @@
+// 96-Well PCR Tube Rack
+// Designed for FDM 3D printing.
+// Orientation: Rests on XY plane at Z=0, builds upward.
+// Centred on origin in X and Y.
+
+// --- Dimensions (mm) ---
+// Block dimensions
+$block_length = 127.76;
+$block_width  = 85.48;
+$block_height = 20;
+
+// Hole specifications
+$hole_diameter = 6.2;
+$hole_spacing_x = 9.0;
+$hole_spacing_y = 9.0;
+$hole_count_x = 12;
+$hole_count_y = 8;
+
+// Grid positioning (from left/back edge)
+$offset_x = 14.38;
+$offset_y = 11.24;
+
+// Chamfer specifications
+$chamfer_angle = 45;
+$chamfer_leg = 5;
+
+// Quality settings
+$fn = 64;
+
+// --- Calculations ---
+// Calculate total grid size based on spacing and count
+$total_grid_x = ($hole_spacing_x * ($hole_count_x - 1));
+$total_grid_y = ($hole_spacing_y * ($hole_count_y - 1));
+
+// Calculate block dimensions required to centre the grid
+// Grid extends (offset + spacing + offset) from edges
+$grid_width_needed = $offset_x + $total_grid_x + $offset_x;
+$grid_height_needed = $offset_y + $total_grid_y + $offset_y;
+
+// Calculate offsets to centre the block on the origin
+$center_x = ($block_length - $grid_width_needed) / 2;
+$center_y = ($block_width - $grid_height_needed) / 2;
+
+// --- Main Block ---
+difference() {
+    // Create the main block
+    cube([
+        $block_length,
+        $block_width,
+        $block_height
+    ]);
+
+    // --- Cut Holes ---
+    // Loop through columns (X) and rows (Y)
+    for (col = [0 : $hole_count_x - 1]) {
+        for (row = [0 : $hole_count_y - 1]) {
+            // Calculate position of current hole relative to grid start
+            $pos_x = $offset_x + (col * $hole_spacing_x);
+            $pos_y = $offset_y + (row * $hole_spacing_y);
+            
+            // Translate to global coordinates (centered on origin)
+            $pos_x += $center_x;
+            $pos_y += $center_y;
+            
+            // Cut the hole (extend slightly past bottom to ensure clean cut)
+            translate([
+                $pos_x - ($hole_diameter/2),
+                $pos_y - ($hole_diameter/2),
+                -0.1
+            ])
+            cylinder(
+                h = $block_height + 0.1,
+                d = $hole_diameter,
+                $fn = 64
+            );
+        }
+    }
+
+    // --- Cut Chamfer ---
+    // Chamfer at A1 corner (top-left-back in standard plate notation, 
+    // but here defined as top-left-back relative to the block's local coords).
+    // In our centered model:
+    // Left edge is at -block_length/2
+    // Back edge is at -block_width/2
+    // Top edge is at block_height/2
+    
+    // We need to cut a 45 deg chamfer on the vertical edge at the intersection of:
+    // X = -block_length/2 + $offset_x (Left side of grid)
+    // Y = -block_width/2 + $offset_y (Back side of grid)
+    
+    // Define the corner plane
+    $corner_x = -$block_length/2 + $offset_x;
+    $corner_y = -$block_width/2 + $offset_y;
+    
+    // The chamfer is a pyramid cut on the vertical edge.
+    // We construct a cutting shape that is the original block minus the chamfer volume.
+    // Easier approach: Create a "chamfer block" that is slightly larger than the main block
+    // but with the corner cut, then difference it.
+    
+    // Define the chamfer plane equation: x + y = constant (for 45 deg)
+    // The leg length is 5mm.
+    // The cut starts at the vertical edge.
+    // The cut removes material where x < corner_x + leg AND y < corner_y + leg (relative to corner)
+    // Actually, for a 45 deg chamfer on a vertical edge:
+    // The cut surface is defined by x + y = (corner_x + corner_y) + leg * sqrt(2) ?
+    // No, simpler: The cut removes the corner cube of size leg x leg x height? No, that's a 90 deg cut.
+    // A 45 deg chamfer on a vertical edge means the face is at 45 degrees to the side faces.
+    // The intersection of the cut plane with the top face is a line.
+    // The intersection with the side faces are lines of length 'leg'.
+    
+    // Let's build the cutting shape explicitly.
+    // We want to remove the corner defined by:
+    // x < $corner_x + $chamfer_leg
+    // y < $corner_y + $chamfer_leg
+    // z > $block_height - $chamfer_leg (since tan(45)=1, height removed = leg)
+    
+    // The cutting shape is a pyramid-like frustum or a specific polyhedron.
+    // Let's use a polyhedron to cut the corner.
+    // Vertices of the cut volume to be removed:
+    // 1. Top-Left-Back corner of the block: ($corner_x, $corner_y, $block_height)
+    // 2. Point on Left face: ($corner_x - $chamfer_leg, $corner_y, $block_height)
+    // 3. Point on Back face: ($corner_x, $corner_y - $chamfer_leg, $block_height)
+    // 4. Point on Top face (intersection): ($corner_x - $chamfer_leg, $corner_y - $chamfer_leg, $block_height)
+    // Wait, if the leg is 5mm on the vertical edge, the cut goes 5mm along X and 5mm along Y.
+    // The height of the cut at the corner is 0.
+    // The height of the cut at the far end of the leg (on the top face) is 5mm * sqrt(2)?
+    // No, standard chamfer: The distance from the edge to the cut plane along the face is L.
+    // The height removed at the corner is 0.
+    // The height removed at the point (L, L) on the top face is L * sqrt(2)?
+    // Actually, usually "45 degree chamfer with 5mm legs" means the cut removes a triangular prism shape if viewed from top?
+    // Let's assume the standard interpretation: The cut plane passes through points:
+    // P1: ($corner_x - $chamfer_leg, $corner_y, $block_height)
+    // P2: ($corner_x, $corner_y - $chamfer_leg, $block_height)
+    // P3: ($corner_x, $corner_y, $block_height - $chamfer_leg * sqrt(2)) -- This makes the angle 45 with the top face?
+    
+    // Re-reading: "45-degree chamfer with 5 mm legs off the vertical edge".
+    // This usually implies the cut removes a volume such that the distance from the original edge to the new edge along the side face is 5mm.
+    // Since it's 45 degrees, the height of the cut at the corner of the top face is 5mm.
+    // The cut plane equation: x + y = C.
+    // At the corner ($corner_x, $corner_y), height is 0.
+    // At ($corner_x - 5, $corner_y), height is 5.
+    // At ($corner_x, $corner_y - 5), height is 5.
+    // So the cut volume is a pyramid with apex at ($corner_x, $corner_y, $block_height) and base on the top face?
+    // No, the apex is at the corner of the block. The base is the cut surface.
+    // The volume to remove is bounded by:
+    // x = $corner_x - 5
+    // y = $corner_y - 5
+    // z = $block_height - 5 (at the corner of the top face)
+    // And the slanted plane connecting ($corner_x-5, $corner_y, $block_height) to ($corner_x, $corner_y, $block_height-5).
+    
+    // Let's define the cutting polyhedron.
+    // Points to define the "hole" in the block:
+    // Top face of cut:
+    // A: ($corner_x - 5, $corner_y, $block_height)
+    // B: ($corner_x, $corner_y - 5, $block_height)
+    // C:

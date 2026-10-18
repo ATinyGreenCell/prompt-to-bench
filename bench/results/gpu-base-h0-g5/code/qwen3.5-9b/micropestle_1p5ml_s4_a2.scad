@@ -1,0 +1,74 @@
+$fn = 128;
+
+// --- Dimensions ---
+// Handle
+d_handle = 8;
+h_handle = 45;
+z_handle_start = 0;
+z_handle_end = 45;
+
+// Cone
+d_cone_bottom = 8;
+d_cone_top = 3;
+h_cone = 17; // 62 - 45
+z_cone_start = 45;
+z_cone_end = 62;
+
+// Tip (Sphere)
+d_tip = 3;
+z_tip_center = 62;
+
+// Grooves
+n_grooves = 4;
+w_groove = 2; // Width in Z
+d_groove = 1; // Depth
+z_grooves = [10, 15, 20, 25]; // Center Z positions
+
+// --- Main Body Construction ---
+// We build the solid body first, then subtract the grooves.
+// The body consists of a cylinder, a cone, and a sphere.
+
+difference() {
+    union() {
+        // 1. Handle Cylinder
+        // From z=0 to z=45, diameter 8
+        translate([0, 0, z_handle_start])
+            cylinder(h = h_handle, d = d_handle, center = false);
+
+        // 2. Cone (Frustum)
+        // From z=45 to z=62, tapering from 8mm to 3mm
+        // Constructed using linear_extrude with a polygon profile
+        // Profile: Bottom radius 4, Top radius 1.5, Height 17
+        translate([0, 0, z_cone_start])
+            linear_extrude(height = h_cone, center = false)
+                polygon(points = [
+                    [-d_cone_bottom/2, 0], [d_cone_bottom/2, 0], // Bottom edge
+                    [d_cone_top/2, h_cone], [-d_cone_top/2, h_cone] // Top edge
+                ]);
+
+        // 3. Tip Sphere
+        // 3 mm diameter sphere centred at z = 62
+        translate([0, 0, z_tip_center])
+            sphere(d = d_tip);
+    }
+
+    // --- Cut Grooves ---
+    // Four circumferential grooves into the handle
+    // Each 2 mm wide (in Z) and 1 mm deep
+    for (i = [0:3]) {
+        z_pos = z_grooves[i];
+        
+        // Calculate rotation angle for the 4 grooves (90 degrees apart)
+        angle = i * 90;
+        
+        // We need to cut a slot into the side of the cylinder.
+        // The slot is 1mm deep (radius) and 2mm wide (Z).
+        // We position the cutter at the surface of the cylinder (radius 4)
+        // and rotate it around the Y-axis to cut into the side.
+        
+        translate([0, 0, z_pos])
+            rotate([0, angle, 0]) // Rotate around Y to orient the cut
+                translate([d_handle/2, 0, 0]) // Move to the surface of the cylinder
+                    cylinder(h = w_groove, d = d_groove, center = false);
+    }
+}

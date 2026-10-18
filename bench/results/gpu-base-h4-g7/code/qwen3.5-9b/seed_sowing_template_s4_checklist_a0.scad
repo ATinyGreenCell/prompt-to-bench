@@ -1,0 +1,50 @@
+// Sowing template for 90mm Petri dish - flat disc with grid of holes and orientation notch.
+
+// Dimensions
+DISH_DIAMETER = 90;
+DISC_DIAMETER = 85;
+THICKNESS     = 2;
+HOLE_COUNT    = 7;
+HOLE_DIAMETER = 3;
+HOLE_SPACING  = 9;
+NOTCH_WIDTH   = 10;
+NOTCH_DEPTH   = 4;
+
+$fn = 64;
+
+// Calculate grid positions
+// Grid is 7x7, centred on origin.
+// Positions are (i - (n-1)/2) * spacing
+module grid_holes() {
+    for (i = [0 : HOLE_COUNT - 1]) {
+        for (j = [0 : HOLE_COUNT - 1]) {
+            let(x = (i - (HOLE_COUNT - 1) / 2) * HOLE_SPACING) {
+                let(y = (j - (HOLE_COUNT - 1) / 2) * HOLE_SPACING) {
+                    translate([x, y, 0]) cylinder(h = THICKNESS + 1, d = HOLE_DIAMETER);
+                }
+            }
+        }
+    }
+}
+
+difference() {
+    // Main disc body, centred on X/Y, sitting on Z=0
+    translate([-DISC_DIAMETER / 2, -DISC_DIAMETER / 2, 0]) 
+        cube([DISC_DIAMETER, DISC_DIAMETER, THICKNESS]);
+    
+    // Cut holes
+    grid_holes();
+    
+    // Cut orientation notch on +Y side
+    // Notch is 10mm wide (X) and 4mm deep (Y)
+    // Centred on Y axis, so it spans from -5 to +5 in X
+    // It cuts into the disc from the rim inwards
+    // The disc radius is 42.5. The notch starts at Y = 42.5 - 4 = 38.5
+    // The notch extends to Y = 42.5
+    translate([0, DISC_DIAMETER / 2 - NOTCH_DEPTH, 0]) {
+        // Create a rectangular prism that cuts the notch
+        // Width = NOTCH_WIDTH, Depth = NOTCH_DEPTH, Height = THICKNESS + buffer
+        translate([-NOTCH_WIDTH / 2, 0, 0]) 
+            cube([NOTCH_WIDTH, NOTCH_DEPTH, THICKNESS + 1]);
+    }
+}

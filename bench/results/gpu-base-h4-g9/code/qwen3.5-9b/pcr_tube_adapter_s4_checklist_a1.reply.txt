@@ -1,0 +1,85 @@
+The specification requires the sleeve body to rise from the collar to **z = 21.5**. The report shows the total height is **23.00 mm** (1.5 mm collar + 21.5 mm body + 0.01 mm cut extension). While the geometry is correct, the bounding box height includes the small extension used for the cut operation, making the printed part slightly taller than the specified 21.5 mm if the cut extension is printed. To ensure the part strictly adheres to the "rises to z = 21.5" constraint without relying on invisible cut extensions affecting the final dimension, I will adjust the cut cylinder height to match the exact target height (21.5) rather than adding an extension, as the main body cylinder already defines the outer shape correctly up to that point.
+
+Wait, looking closer at the logic:
+1.  **Collar**: z=0 to z=1.5. Diameter 13.
+2.  **Body**: Rises from collar to z=21.5. This implies the body starts at z=1.5 and ends at z=21.5.
+    *   Total height = 21.5 mm.
+    *   Body OD = 10.8.
+3.  **Bore**: 6.2 mm diameter, full height.
+
+The previous code:
+*   Main cylinder: h = 23.0 (1.5 + 21.5 + 0.01). This creates a part 23.01 mm tall.
+*   The spec says "rises ... to z = 21.5". This implies the top of the part is at 21.5.
+*   The previous code made the part taller than 21.5.
+
+Correction: The main cylinder height should be exactly 21.5 mm. The cut for the bore should extend slightly past 21.5 to ensure a clean hole, but the outer shell must stop at 21.5.
+
+Revised Plan:
+1.  Main cylinder: h = 21.5, d = 13.
+2.  Bore cylinder: h = 21.5 + 0.01 (to cut through), d = 6.2.
+3.  Step cut: We need to remove material from z=0 to z=1.5 where the diameter is 10.8.
+    *   Current code: `cylinder(h = collar_t + 0.01, d = body_od)`. This cuts from z=0 to z=1.501. This is correct for creating the step.
+    *   However, the main cylinder was `h = total_h` where `total_h = collar_t + body_h`. If `body_h` is 21.5, then `total_h` is 23.0.
+    *   The spec says "rises from the collar to z = 21.5". Since the collar is 0 to 1.5, the body occupies 1.5 to 21.5. The total height is 21.5.
+    *   The previous code calculated `total_h = 1.5 + 21.5 = 23.0`. This was the error. The body height *is* the distance from the top of the collar to the top of the body? Or is "body, 10.8 mm in outer diameter, rises from the collar to z = 21.5" defining the absolute coordinate?
+    *   "Collar ... lies on the bed (z = 0 to 1.5)".
+    *   "Sleeve body ... rises from the collar to z = 21.5".
+    *   This means the top of the part is at z=21.5.
+    *   Therefore, the total height of the cylinder is 21.5.
+    *   The previous code used `total_h = 23.0`, which is wrong.
+
+Let's fix the height variable.
+`body_h` in the prompt description "rises ... to z = 21.5" likely refers to the absolute Z coordinate of the top, not the height of the body segment itself (which would be 20.0 mm).
+Wait, re-reading: "sleeve body, 10.8 mm in outer diameter, rises from the collar to z = 21.5".
+If the collar is 0-1.5, and the body goes to 21.5, the body segment height is 20.0 mm.
+The previous code assumed `body_h` was the height of the body segment (21.5) and added it to the collar (1.5) to get 23.0.
+If the user meant the body segment is 21.5 mm tall, the top would be at 23.0.
+But the user explicitly said "to z = 21.5".
+So the top is at 21.5.
+The collar is 1.5 mm thick.
+The body segment height is 21.5 - 1.5 = 20.0 mm.
+The previous code used `body_h = 21.5` as the segment height, resulting in a total height of 23.0.
+I need to change the main cylinder height to 21.5.
+
+Also, the cut for the bore needs to go through the whole thing. If the part is 21.5 tall, the bore cut should be slightly taller (e.g., 21.51) to ensure the hole is open at the top.
+
+Corrected Logic:
+1.  Collar OD: 13. Height: 1.5.
+2.  Body OD: 10.8. Top Z: 21.5.
+3.  Bore: 6.2. Full height.
+
+Code changes:
+*   Remove `total_h` calculation that sums them. Set main cylinder height directly to 21.5.
+*   Ensure the bore cut is slightly taller than 21.5.
+*   Ensure the step cut (collar to body transition) is correct. The step cut removes the collar material down to the body diameter. It should run from z=0 to z=1.5 (plus epsilon).
+
+```openscad
+// PCR Tube Adapter Sleeve - fits 0.2mL tubes into 1.5mL rack holes.
+// Print orientation: Collar on bed (z=0 to 1.5), body rises to z=21.5.
+
+// Dimensions
+collar_od = 13;
+collar_t  = 1.5;
+body_od   = 10.8;
+top_z     = 21.5;
+bore_d    = 6.2;
+
+$fn = 64;
+
+difference() {
+    // Main body: Cylinder from z=0 to z=top_z (21.5)
+    translate([0, 0, 0]) 
+        cylinder(h = top_z, d = collar_od);
+    
+    // Cut out the bore through the entire height
+    // Extend slightly past top_z to ensure clean hole at the top
+    translate([0, 0, -1]) 
+        cylinder(h = top_z + 0.01, d = bore_d);
+    
+    // Cut out the collar area to create the step down to the body OD
+    // The collar sits on the bed (z=0 to 1.5). We cut a cylinder from z=0 to z=1.5
+    // with diameter = body_od. We extend slightly past the collar top (1.5) to ensure the step is clean.
+    translate([0, 0, -1]) 
+        cylinder(h = collar_t + 0.01, d = body_od);
+}
+```

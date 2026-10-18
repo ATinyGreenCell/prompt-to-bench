@@ -1,0 +1,57 @@
+// 96-well PCR tube rack (0.2 mL) - ANSI/SLAS footprint
+// Print orientation: base on XY plane, builds up +Z
+
+// ---- Block dimensions ----
+block_len   = 127.76;   // X length (mm)
+block_wid   = 85.48;    // Y width (mm)
+block_ht    = 20;       // Z height (mm)
+
+// ---- Holes ----
+hole_d      = 6.2;      // hole diameter (mm)
+hole_nx     = 12;       // columns along X
+hole_ny     = 8;        // rows along Y
+hole_pitch  = 9.0;      // centre-to-centre spacing (mm)
+hole_x0     = 14.38;    // first hole X from left edge (mm)
+hole_y0     = 11.24;    // first hole Y from back edge (mm)
+
+// ---- Chamfer (orientation mark at A1 corner) ----
+chamf_leg   = 5;        // chamfer leg length (mm)
+chamf_angle = 45;       // chamfer angle (deg)
+
+// ---- Misc ----
+eps         = 0.5;      // cutter overshoot past faces (mm)
+$fn         = 64;
+
+// Derived: grid centre offsets (so grid is centred on block)
+grid_xc = (hole_nx - 1) * hole_pitch / 2;   // 99.0 mm
+grid_yc = (hole_ny - 1) * hole_pitch / 2;   // 63.0 mm
+
+module rack_body() {
+    translate([-block_len/2, -block_wid/2, 0])
+        cube([block_len, block_wid, block_ht]);
+}
+
+module hole_grid() {
+    for (i = [0 : hole_nx - 1])
+        for (j = [0 : hole_ny - 1])
+            translate([hole_x0 - grid_xc + i * hole_pitch,
+                       hole_y0 - grid_yc + j * hole_pitch,
+                       -eps])
+                cylinder(d = hole_d, h = block_ht + 2 * eps);
+}
+
+module a1_chamfer() {
+    // 45-degree chamfer on the vertical edge at A1 (top-left-back corner)
+    // extended above the top face along the same slant, keeping the 5 mm leg
+    translate([hole_x0 - grid_xc, -block_wid/2, block_ht])
+        rotate([90, 0, 0])
+            linear_extrude(height = block_wid + 2 * eps, center = true)
+                polygon([[-chamf_leg - eps, -chamf_leg - eps],
+                         [ chamf_leg + eps, -chamf_leg - eps]]);
+}
+
+difference() {
+    rack_body();
+    hole_grid();
+    a1_chamfer();
+}

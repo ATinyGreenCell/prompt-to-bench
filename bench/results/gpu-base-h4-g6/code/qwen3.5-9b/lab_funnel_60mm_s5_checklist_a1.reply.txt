@@ -1,0 +1,41 @@
+```openscad
+// Lab Funnel - A straight spout with a conical funnel on top.
+// Printed upright (wide opening at top), resting on XY plane at z=0.
+
+// Dimensions
+spout_od   = 10;      // Outer diameter of the straight spout
+spout_id   = 6.8;     // Inner diameter of the spout (spout_od - 2*wall)
+spout_len  = 20;      // Length of the straight spout (z=0 to z=20)
+funnel_h   = 30;      // Height of the conical part (z=20 to z=50)
+funnel_od  = 60;      // Outer diameter at the top rim
+funnel_id  = 34;      // Inner diameter at the top rim (funnel_od - 2*wall)
+wall       = 1.6;     // Wall thickness everywhere
+
+// Derived values
+funnel_base_od = spout_od; // Outer diameter at the junction (z=20)
+funnel_base_id = spout_id; // Inner diameter at the junction (z=20)
+
+$fn = 64;
+
+difference() {
+    // Create the outer solid using rotate_extrude
+    // Profile: Radius vs Height
+    rotate_extrude($fn = 64) {
+        polygon([
+            [spout_od / 2, 0],
+            [spout_od / 2, spout_len],
+            [funnel_od / 2, spout_len + funnel_h]
+        ]);
+    }
+    
+    // Create the inner void (bore) using rotate_extrude
+    // Profile: Radius vs Height
+    rotate_extrude($fn = 64) {
+        polygon([
+            [spout_id / 2, 0],
+            [spout_id / 2, spout_len],
+            [funnel_id / 2, spout_len + funnel_h]
+        ]);
+    }
+}
+```

@@ -1,0 +1,47 @@
+// Two-part enclosure for small electronics board
+// Print orientation: both parts flat on the bed, side by side on X
+
+// ---- Box ----
+box_x = 70;    // outer length (X)
+box_y = 50;    // outer width (Y)
+box_z = 30;    // outer height (Z)
+wall = 2;      // wall thickness (sides and end); floor is 2 mm thick
+open_top = 0.2;  // small floor overhang so the open top has no coplanar faces
+
+// ---- Lid ----
+lid_x = 65.6;  // outer length of lid (X)
+lid_y = 45.6;  // outer width of lid (Y)
+lip_h = 4;     // height of the lip that slides into the box opening
+plate_t = 2;   // thickness of the lid plate below the lip
+
+// ---- Layout ----
+gap = 10;      // clear gap between the two parts
+lid_x0 = box_x + gap;  // lid starts this far along X
+
+$fn = 64;
+
+module box() {
+    // Open-top box: sides and end walls extend into the top face by open_top
+    hull() {
+        translate([-box_x/2, -box_y/2, 0])
+            cube([box_x, box_y, box_z - wall]);
+        translate([-box_x/2 - open_top, -box_y/2 - open_top, wall])
+            cube([box_x + 2*open_top, box_y + 2*open_top, wall]);
+    }
+}
+
+module lid() {
+    // Plate with a rectangular lip on top, centred on the plate
+    translate([lid_x0, 0, 0])
+        linear_extrude(height = plate_t)
+            polygon([[-lid_x/2, -lid_y/2], [lid_x/2, -lid_y/2],
+                     [lid_x/2, lid_y/2], [-lid_x/2, lid_y/2]]);
+    translate([lid_x0, 0, plate_t])
+        cube([lid_x, lid_y, lip_h]);
+}
+
+union() {
+    box();
+    translate([0, 0, gap])
+        lid();
+}

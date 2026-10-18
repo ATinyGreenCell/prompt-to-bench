@@ -1,0 +1,46 @@
+```openscad
+// Mini horizontal gel-electrophoresis buffer tank
+// Print orientation: base on XY plane, builds up +Z
+
+$fn = 64;
+
+// ---- Tank dimensions ----
+tank_x = 120;   // outer length (X)
+tank_y = 70;    // outer width (Y)
+tank_z = 40;    // outer height (Z)
+
+// ---- Wall thickness ----
+wall = 3;       // side wall thickness (X and Y)
+floor = 3;      // floor thickness (Z)
+
+// ---- Platform dimensions ----
+plat_len = 60;  // platform length along X
+plat_top_z = 13; // platform top height (z = floor + 10)
+
+// ---- Hole dimensions ----
+hole_d = 2;     // electrode wire hole diameter
+hole_y = 0;     // hole Y position
+hole_z = 30;    // hole Z position
+
+// ---- Derived ----
+inner_x = tank_x - 2 * wall;   // 114
+inner_y = tank_y - 2 * wall;   // 64
+inner_floor_z = floor;         // 3
+platform_h = plat_top_z - inner_floor_z; // 10
+
+difference() {
+    // Tank body (open top)
+    translate([-tank_x / 2, -tank_y / 2, 0])
+        cube([tank_x, tank_y, tank_z]);
+
+    // Raised platform in the middle (full inner width)
+    translate([-inner_x / 2, -inner_y / 2, inner_floor_z])
+        cube([plat_len, inner_y, platform_h]);
+
+    // Horizontal electrode holes through each end wall along X
+    for (sx = [-1, 1])
+        translate([sx > 0 ? wall : -tank_x + wall, hole_y, hole_z])
+            rotate([0, 90, 0])
+                cylinder(d = hole_d, h = tank_y + 2 * wall, center = true);
+}
+```

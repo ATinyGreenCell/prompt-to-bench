@@ -1,0 +1,79 @@
+// Two-part enclosure for electronics board (Box + Lid)
+// Part 1: Box (70x50x30, 2mm walls, 2mm floor, open top)
+// Part 2: Lid (70x50 plate with 65.6x45.6 hollow lip, 0.2mm clearance)
+// Orientation: Both rest on XY plane (Z=0). Lid is on +X side.
+
+// Dimensions
+BOX_X  = 70;
+BOX_Y  = 50;
+BOX_Z  = 30;
+WALL   = 2;
+FLOOR  = 2;
+
+LID_PLATE_X = 70;
+LID_PLATE_Y = 50;
+LID_PLATE_T = 2;
+
+LIP_OUT_X  = 65.6;
+LIP_OUT_Y  = 45.6;
+LIP_WALL_T = 1.5;
+LIP_H      = 4;
+
+// Gap between parts
+GAP = 10;
+
+$fn = 64;
+
+// --- Part 1: The Box ---
+// Constructed by extruding a 2D profile with a hole for the opening.
+// Profile: Outer rect 70x50, Inner rect (opening) 66x46 at bottom.
+// Thickness: 2mm.
+
+module box() {
+    // Base block
+    translate([0, 0, 0]) 
+        cube([BOX_X, BOX_Y, BOX_Z]);
+    
+    // Cut the top opening
+    // The opening is a hole through the top, but the floor remains.
+    // Hole dimensions: (BOX_X - 2*WALL) x (BOX_Y - 2*WALL)
+    // Hole depth: BOX_Z - FLOOR
+    translate([WALL, WALL, BOX_Z - FLOOR])
+        cube([BOX_X - 2 * WALL, BOX_Y - 2 * WALL, FLOOR]);
+}
+
+// --- Part 2: The Lid ---
+// A plate 70x50x2 with a hollow lip on top.
+// The lip is a rectangular tube: Outer 65.6x45.6, Wall 1.5mm, Height 4mm.
+// Lip sits on top of the plate.
+
+module lid() {
+    // Main plate
+    translate([0, 0, 0])
+        cube([LID_PLATE_X, LID_PLATE_Y, LID_PLATE_T]);
+    
+    // Lip
+    // Lip outer dimensions: 65.6 x 45.6
+    // Lip wall thickness: 1.5
+    // Lip height: 4
+    // Position: Centred on the plate.
+    // Plate is 70x50. Lip is 65.6x45.6.
+    // Offset X = (70 - 65.6) / 2 = 2.2
+    // Offset Y = (50 - 45.6) / 2 = 2.2
+    
+    lip_offset_x = (LID_PLATE_X - LIP_OUT_X) / 2;
+    lip_offset_y = (LID_PLATE_Y - LIP_OUT_Y) / 2;
+    
+    // Calculate inner dimensions for the hollow lip
+    lip_in_x = LIP_OUT_X - 2 * LIP_WALL_T;
+    lip_in_y = LIP_OUT_Y - 2 * LIP_WALL_T;
+    
+    // Create the lip using difference to make it hollow
+    difference() {
+        // Outer block of the lip
+        translate([lip_offset_x, lip_offset_y, LID_PLATE_T])
+            cube([LIP_OUT_X, LIP_OUT_Y, LIP_WALL_T + LIP_H]);
+        
+        // Inner hole of the lip (cutting through the lip height)
+        // The hole goes through the lip thickness (LIP_WALL_T + LIP_H)
+        translate([lip_offset_x

@@ -1,0 +1,53 @@
+The specification requires the part to lie on the bed at `z = 0`. The report shows the lowest point is at `z = 1.50`, meaning the part is floating 1.5 mm above the bed. This violates the print orientation rule and the user's specific instruction that the collar lies on the bed.
+
+Here is the comparison:
+
+*   **Collar Thickness (1.5 mm):** Report shows height from z=0 to z=1.5 is occupied by the collar geometry. OK.
+*   **Collar Outer Diameter (13 mm):** Report shows outer diameter of the top section (z=0 to 1.5) is 13.00 mm. OK.
+*   **Body Outer Diameter (10.8 mm):** Report shows outer diameter of the section above the collar is 10.80 mm. OK.
+*   **Body Height (10.8 mm OD to z=21.5):** The spec says the body rises from the collar to z=21.5. Since the collar is 1.5 mm thick, the body height should be 20.0 mm. The report shows the total height is 23.00 mm (z=1.5 to z=23.0). This implies the body height in the code was 21.5 mm instead of 20.0 mm. WRONG.
+*   **Bore Diameter (6.2 mm):** Report shows hole diameter is 6.20 mm. OK.
+*   **Bore Position (Full height):** Report shows the hole runs through the entire part. OK.
+*   **Bed Contact (z=0):** Report shows lowest point at z=1.50. WRONG (Part is not resting on the bed).
+
+**Correction Plan:**
+1.  Translate the entire part down by 1.5 mm so the collar sits on z=0.
+2.  Adjust the body height variable to ensure the top of the part is exactly at z=21.5 (Total height = 21.5 mm).
+
+```openscad
+// PCR Tube Adapter Sleeve - fits 0.2mL tubes into 1.5mL rack holes.
+// Print orientation: Collar on bed (z=0 to 1.5), body rises to z=21.5.
+
+// Dimensions
+collar_od = 13;      // Collar outer diameter
+collar_t  = 1.5;     // Collar thickness (height)
+body_od   = 10.8;    // Sleeve body outer diameter
+body_h    = 20.0;    // Sleeve body height (Total height 21.5 - Collar 1.5)
+bore_d    = 6.2;     // Bore diameter
+
+// Derived dimensions
+total_height = collar_t + body_h; // Must equal 21.5
+
+// Ensure smooth rendering for cylindrical surfaces
+$fn = 96;
+
+module adapter() {
+    difference() {
+        // 1. Main Body Cylinder (Outer Shell)
+        // Starts at z=0, goes up to total_height
+        cylinder(h = total_height, d = body_od);
+
+        // 2. Collar (Outer Ring)
+        // Starts at z=0, goes up to collar_t
+        // We subtract this from the main body to create the step down
+        cylinder(h = collar_t, d = collar_od);
+
+        // 3. Bore (Inner Hole)
+        // Runs through the full height of the part
+        translate([0, 0, -1]) cylinder(h = total_height + 2, d = bore_d);
+    }
+}
+
+// Translate the whole part down so the collar sits on the bed (z=0)
+translate([0, 0, -collar_t]) adapter();
+```

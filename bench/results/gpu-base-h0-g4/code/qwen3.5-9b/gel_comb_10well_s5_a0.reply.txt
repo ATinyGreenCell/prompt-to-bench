@@ -1,0 +1,68 @@
+```openscad
+// 10-well Agarose Gel Comb
+// Designed for FDM printing, lying flat on the XY plane (Z=0).
+
+// --- Dimensions ---
+// Spine dimensions
+$spine_length = 70;   // mm (X)
+$spine_width = 12;    // mm (Y)
+$plate_thickness = 1.5; // mm (Z)
+
+// Tooth dimensions
+$num_teeth = 10;
+$tooth_width = 5.0;   // mm (X)
+$tooth_length = 12;   // mm (Y) (extends from spine edge)
+$tooth_gap = 1.5;     // mm (X)
+
+// --- Calculations ---
+// Total width of the tooth row
+$total_tooth_width = $num_teeth * $tooth_width;
+// Total width of the gaps
+$total_gap_width = ($num_teeth - 1) * $tooth_gap;
+// Total width of the tooth assembly
+$tooth_assembly_width = $total_tooth_width + $total_gap_width;
+
+// Centering offset in X to align the tooth row with the spine
+// Spine is centered at X=0. Tooth assembly must also be centered at X=0.
+$center_offset = ($spine_length / 2) - ($tooth_assembly_width / 2);
+
+// Y position: Teeth hang in -Y direction from the spine edge.
+// Spine extends from Y = -($spine_width/2) to Y = +($spine_width/2).
+// Teeth start at Y = -($spine_width/2) and extend further negative.
+$tooth_start_y = -($spine_width / 2);
+
+// --- Main Body ---
+// Create the spine (back bar)
+difference() {
+    // Main block including spine and teeth area
+    union() {
+        // Spine
+        translate([0, 0, 0]) 
+            cube([$spine_length, $spine_width, $plate_thickness]);
+        
+        // Teeth block (will be cut out later, but we build the positive volume first)
+        // We construct the teeth as a single block to subtract from the main plate
+        // This block sits on top of the spine and extends in -Y
+        translate([$center_offset, $tooth_start_y, 0])
+            cube([$tooth_assembly_width, $tooth_length, $plate_thickness]);
+    }
+    
+    // Cut out the teeth
+    // We iterate through each tooth to create the wells
+    for (i = [0 : $num_teeth - 1]) {
+        // Calculate X position for current tooth
+        // Start at the left edge of the assembly, add width and gaps
+        $current_x = $center_offset + ($i * ($tooth_width + $tooth_gap)) + ($tooth_width / 2);
+        
+        // Calculate Y position for current tooth
+        // Start at the spine edge, extend by tooth length
+        $current_y = $tooth_start_y + ($tooth_length / 2);
+        
+        // Define the tooth volume to remove
+        // Width = tooth_width, Length = tooth_length, Height = plate_thickness
+        // Extend slightly in Z to ensure clean cut (Rule 5)
+        translate([$current_x, $current_y, 0.01])
+            cube([$tooth_width, $tooth_length, $plate_thickness + 0.01]);
+    }
+}
+```

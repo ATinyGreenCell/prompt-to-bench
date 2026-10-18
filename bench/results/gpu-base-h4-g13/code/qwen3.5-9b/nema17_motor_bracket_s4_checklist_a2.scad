@@ -1,0 +1,97 @@
+// L-shaped mounting bracket for NEMA 17 stepper motor.
+// Base plate: 50 x 45 x 5 mm. Motor plate: 50 x 5 x 50 mm.
+// Includes M4 mounting holes, motor boss hole, M3 screw holes, and triangular gussets.
+
+// Base plate dimensions
+base_x = 50;
+base_y = 45;
+base_z = 5;
+
+// Motor plate dimensions
+motor_x = 50;
+motor_y = 5;
+motor_z = 50;
+
+// Hole dimensions
+m4_hole_d = 4.5;
+m3_hole_d = 3.4;
+boss_hole_d = 23;
+
+// Gusset dimensions
+gusset_thickness = 5;
+gusset_leg_y = 20;
+gusset_leg_z = 20;
+
+// Hole positions
+hole1_x = -17;
+hole1_y = 30;
+hole2_x = 17;
+hole2_y = 30;
+
+boss_x = 0;
+boss_z = 28;
+
+// Gusset positions (flush with left and right edges)
+gusset_left_x_start = -25;
+gusset_left_x_end = -20;
+gusset_right_x_start = 20;
+gusset_right_x_end = 25;
+
+$fn = 64;
+
+// Create the main L-shaped body
+difference() {
+    union() {
+        // Base plate
+        translate([-base_x / 2, 0, 0]) cube([base_x, base_y, base_z]);
+        
+        // Motor plate (standing on the back edge of the base)
+        // Back edge is at y = base_y = 45.
+        translate([-motor_x / 2, base_y, 0]) cube([motor_x, motor_y, motor_z]);
+        
+        // Gussets (triangular prisms in YZ plane, extruded along X)
+        // Left Gusset
+        translate([gusset_left_x_start, 0, 0]) 
+            linear_extrude(gusset_left_x_end - gusset_left_x_start)
+                polygon([
+                    [0, 0],      // (y=0, z=0) - bottom left
+                    [gusset_leg_y, 0], // (y=20, z=0) - bottom right
+                    [0, gusset_leg_z]  // (y=0, z=20) - top left (right angle at 0,0)
+                ]);
+        
+        // Right Gusset
+        translate([gusset_right_x_start, 0, 0]) 
+            linear_extrude(gusset_right_x_end - gusset_right_x_start)
+                polygon([
+                    [0, 0],      // (y=0, z=0) - bottom left
+                    [gusset_leg_y, 0], // (y=20, z=0) - bottom right
+                    [0, gusset_leg_z]  // (y=0, z=20) - top left (right angle at 0,0)
+                ]);
+    }
+    
+    // Cut M4 holes in base plate
+    for (i = [0 : 1]) {
+        translate([
+            i == 0 ? hole1_x : hole2_x,
+            hole1_y,
+            0
+        ]) cylinder(h = base_z + 1, d = m4_hole_d);
+    }
+    
+    // Cut Motor Boss Hole
+    translate([boss_x, 0, boss_z]) cylinder(h = motor_y + 1, d = boss_hole_d);
+    
+    // Cut M3 screw holes in motor plate
+    // Pattern: 31 mm square centred on boss hole (x=0, z=28)
+    // Square corners relative to center: +/- 15.5 mm
+    offset_x = 15.5;
+    offset_z = 15.5;
+    
+    for (sx = [-1, 1], sz = [-1, 1]) {
+        translate([
+            boss_x + sx * offset_x,
+            0,
+            boss_z + sz * offset_z
+        ]) cylinder(h = motor_y + 1, d = m3_hole_d);
+    }
+}

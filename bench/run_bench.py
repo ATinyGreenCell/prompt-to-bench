@@ -11,6 +11,9 @@ Every (model, task, sample) is one conversation:
              (up to --max-repairs times). Feedback never contains the hidden checks:
                report  - OpenSCAD messages, or the generic scadreport geometry report
                generic - OpenSCAD messages, or "it does not match the spec, try again"
+               checklist - report, plus the error messages turned into instructions: common causes of a
+                         parser error, a request to list each specified value beside the report's before
+                         rewriting, and a warning when the file came back unchanged (harness search, §6.4)
 Results are appended to bench/results/<run>/results.jsonl (one line per conversation),
 so an interrupted run can simply be restarted. Generated files go to .../code/.
 
@@ -53,6 +56,15 @@ urllib.request.install_opener(_ua_opener)
 FENCE = re.compile(r"```[ \t]*+([A-Za-z0-9_+-]*+)[^\n]*+\n(.*?)```", re.S)  # possessive: linear on long lines
 SCAD_HINT = re.compile(r"\b(cube|cylinder|difference|union|module|linear_extrude|rotate_extrude|polygon)\s*\(")
 ASK = "Reply with the complete corrected file in a single ```openscad code block."
+# --feedback checklist only (the default report feedback is unchanged)
+SYNTAX_HINTS = ("Common causes: syntax from Python or C that OpenSCAD does not have (a list comprehension is "
+                "[for (i = [0 : n - 1]) expression]; there is no continue, break, while, return or +=; a function "
+                "is function f(x) = expression;), a missing ; or } just before the line named, a 2D shape (square, "
+                "circle, polygon) used without linear_extrude or rotate_extrude, or a module that is not built in. ")
+CHECKLIST = ("Check the part against the specification before you write the file. In plain text, without code, list "
+             "every size, count, spacing and position the specification gives, each with the value the report shows "
+             "for it (or \"not shown\"), and mark each line OK or WRONG. Then change the code for every WRONG line. ")
+UNCHANGED = "Your last file was identical to the one before it, so it built the same part again: change it this time. "
 
 
 # --------------------------------------------------------------------------- code extraction
@@ -294,17 +306,22 @@ def make_backend(name, temperature, seed, num_predict=2048, think=False, num_ctx
 
 # --------------------------------------------------------------------------- one conversation
 
-def feedback_message(kind, render_res, report_text, how):
+def feedback_message(kind, render_res, report_text, how, unchanged=False):
     if how == "none":
         return "I could not find any OpenSCAD code in your reply. " + ASK
+    again = UNCHANGED if kind == "checklist" and unchanged else ""
     if not render_res["ok"]:
         msgs = "\n".join(keep_messages(render_res["messages"], 15)) or render_res["log"][-800:]
+        hints = SYNTAX_HINTS if kind == "checklist" else ""
         return ("OpenSCAD could not build a printable part from your file. Its messages were:\n"
-                f"{msgs}\nFix the problem. " + ASK)
+                f"{msgs}\n{hints}{again}Fix the problem. " + ASK)
     if kind == "report":
         return ("Your file rendered. This is a measurement report of the part it produces:\n\n"
                 f"{report_text}\n\nCompare every number in the report with the specification. "
                 "Find what does not match and fix it. " + ASK)
+    if kind == "checklist":
+        return ("Your file rendered. This is a measurement report of the part it produces:\n\n"
+                f"{report_text}\n\n{CHECKLIST}{again}" + ASK)
     return ("Your file rendered, but the part does not match the specification. "
             "Re-read the specification carefully and fix the design. " + ASK)
 
@@ -351,7 +368,7 @@ def run_one(backend, system, task, ref, args, code_dir, tag):
                 rr["messages"].append(f"ERROR: mesh analysis failed: {e}")
                 rec["render"]["ok"] = False
                 rec["render"]["messages"].append(f"ERROR: mesh analysis failed: {e}")
-            if result is not None and args.feedback == "report" and not result["passed"]:
+            if result is not None and args.feedback in ("report", "checklist") and not result["passed"]:
                 try:  # a failed report must not undo a verdict: the model then gets the generic feedback
                     report_text = format_report(rr, analyse(mesh))
                 except Exception as e:  # noqa: BLE001
@@ -364,8 +381,10 @@ def run_one(backend, system, task, ref, args, code_dir, tag):
         attempts.append(rec)
         if rec["passed"] or a == args.max_repairs:
             break
-        kind = "generic" if args.feedback == "report" and rr["ok"] and report_text is None else args.feedback
-        user = feedback_message(kind, rr, report_text, how)
+        kind = ("generic" if args.feedback in ("report", "checklist") and rr["ok"] and report_text is None
+                else args.feedback)
+        unchanged = len(attempts) > 1 and rec["code_sha1"] is not None and rec["code_sha1"] == attempts[-2]["code_sha1"]
+        user = feedback_message(kind, rr, report_text, how, unchanged)
         rec["feedback"] = user
     return attempts
 
@@ -379,7 +398,7 @@ def main():
     ap.add_argument("--tasks", nargs="*", help="task ids (default: all)")
     ap.add_argument("--samples", type=int, default=1)
     ap.add_argument("--max-repairs", type=int, default=2)
-    ap.add_argument("--feedback", choices=["report", "generic"], default="report")
+    ap.add_argument("--feedback", choices=["report", "generic", "checklist"], default="report")
     ap.add_argument("--temperature", type=float, default=0.2)
     ap.add_argument("--prompts", default=None, help="YAML with translated prompts {lang: {task_id: prompt}}")
     ap.add_argument("--lang", default="en")

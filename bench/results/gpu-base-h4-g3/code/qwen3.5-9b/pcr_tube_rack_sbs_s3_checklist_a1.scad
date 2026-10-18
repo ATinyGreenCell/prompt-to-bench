@@ -1,0 +1,93 @@
+// 96-Well PCR Tube Rack - ANSI/SLAS footprint with chamfered orientation mark.
+// Dimensions in mm.
+
+// Block dimensions
+L     = 127.76;
+W     = 85.48;
+H     = 20;
+
+// Grid parameters
+n_rows = 8;
+n_cols = 12;
+pitch_x = 9.0;
+pitch_y = 9.0;
+
+// Hole parameters
+hole_d = 6.2;
+hole_r = hole_d / 2;
+
+// Orientation chamfer
+chamfer_leg = 5;
+
+// Start positions based on user specification
+start_x = 14.38;
+start_y = 11.24;
+
+$fn = 64;
+
+difference() {
+    // Main block
+    translate([0, 0, 0]) cube([L, W, H]);
+
+    // Holes
+    for (r = [0 : n_rows - 1]) {
+        for (c = [0 : n_cols - 1]) {
+            // Calculate position
+            cx = start_x + c * pitch_x;
+            cy = start_y + r * pitch_y;
+            
+            // Cut hole (extend slightly past Z=H to ensure clean cut)
+            translate([cx, cy, 0]) cylinder(h = H + 0.1, d = hole_d);
+        }
+    }
+
+    // Orientation chamfer at A1 corner (bottom-left in XY).
+    // We remove a pyramid defined by the corner (0,0,0) to (0,0,H) and the chamfer plane.
+    // The chamfer plane cuts the top face (Z=H) at x+y = chamfer_leg.
+    // The cut goes down to the apex at (0,0, H - chamfer_leg).
+    
+    // Define the pyramid vertices to subtract.
+    // Apex (bottom point): [0, 0, H - chamfer_leg]
+    // Base vertices on top face Z=H:
+    // [0, 0, H], [chamfer_leg, 0, H], [0, chamfer_leg, H]
+    // Wait, a pyramid with a square base has 5 vertices.
+    // Base vertices:
+    // V1: [0, 0, H] (The corner of the block)
+    // V2: [chamfer_leg, 0, H]
+    // V3: [chamfer_leg, chamfer_leg, H] (This point is on the plane x+y=2*leg? No.)
+    // Let's define the plane x + y = chamfer_leg.
+    // Intersection with Z=H plane is the line segment from (chamfer_leg, 0, H) to (0, chamfer_leg, H).
+    // The region to remove is the triangle formed by (0,0,H), (chamfer_leg, 0, H), (0, chamfer_leg, H).
+    // The apex is (0,0, H - chamfer_leg).
+    // So the pyramid has 4 vertices:
+    // 1. [0, 0, H - chamfer_leg]
+    // 2. [0, 0, H]
+    // 3. [chamfer_leg, 0, H]
+    // 4. [0, chamfer_leg, H]
+    
+    // However, polyhedron requires a closed surface.
+    // We are subtracting this shape from the cube.
+    // The vertices of the shape to subtract are:
+    // [0, 0, H - chamfer_leg], [0, 0, H], [chamfer_leg, 0, H], [0, chamfer_leg, H].
+    // This forms a tetrahedron (triangular pyramid).
+    // Faces:
+    // 1. Base (on Z=H): Triangle [0,0,H], [chamfer_leg,0,H], [0,chamfer_leg,H].
+    // 2. Side 1: [0,0,H], [chamfer_leg,0,H], [0,0,H-leg].
+    // 3. Side 2: [0,0,H], [0,chamfer_leg,H], [0,0,H-leg].
+    // 4. Side 3: [chamfer_leg,0,H], [0,chamfer_leg,H], [0,0,H-leg].
+    
+    polyhedron(
+        points = [
+            [0, 0, H - chamfer_leg],
+            [0, 0, H],
+            [chamfer_leg, 0, H],
+            [0, chamfer_leg, H]
+        ],
+        faces = [
+            [0, 1, 2], // Base on top face
+            [0, 2, 3], // Side face 1
+            [0, 3, 1], // Side face 2
+            [2, 3, 1]  // Side face 3 (apex to edge)
+        ]
+    );
+}

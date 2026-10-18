@@ -1,0 +1,47 @@
+```openscad
+// Two-part enclosure for small electronics board
+// Print orientation: both parts flat on bed, lid upside down
+
+$fn = 64;
+
+// ---- Dimensions (mm) ----
+box_x      = 70;    // outer length of box
+box_y      = 50;    // outer width of box
+box_z      = 30;    // outer height of box
+wall       = 2;     // wall thickness
+floor      = 2;     // floor thickness
+lip_t      = 1.5;   // lip thickness
+lip_h      = 4;     // lip height
+lip_x      = 65.6;  // outer lip length
+lip_y      = 45.6;  // outer lip width
+gap        = 10;    // gap between box and lid
+clearance  = 0.2;   // clearance between lip and box opening
+
+// ---- Derived ----
+lip_d     = lip_x - 2 * clearance;  // lip inner size (X)
+lip_w     = lip_y - 2 * clearance;  // lip inner size (Y)
+lip_top_z = floor + box_z + lip_t;  // top of lip
+overlap   = 0.01;                   // small overlap for clean union
+
+module box() {
+    difference() {
+        translate([-box_x / 2, -box_y / 2, 0])
+            cube([box_x, box_y, box_z]);
+        translate([-box_x / 2 + clearance, -box_y / 2 + clearance, floor])
+            cube([box_x - 2 * clearance, box_y - 2 * clearance, box_z - floor]);
+    }
+}
+
+module lid() {
+    union() {
+        translate([-lip_x / 2, -lip_y / 2, 0])
+            cube([lip_x, lip_y, lip_t]);
+        translate([-lip_d / 2, -lip_w / 2, lip_t])
+            cube([lip_d, lip_w, lip_h]);
+    }
+}
+
+box();
+translate([gap, 0, 0])
+    lid();
+```

@@ -1,0 +1,106 @@
+// Replacement Knob for Hotplate Stirrer (6mm D-shaft)
+// Units: mm
+// Orientation: Printed with D-flat side facing the hotplate (Z=0), building upward.
+
+// --- Dimensions ---
+$fn = 128; // High resolution for smooth curves and precise D-shape
+
+// Knob Body
+D_KNOB = 30;      // Outer diameter
+H_KNOB = 15;      // Total height
+R_KNOB = D_KNOB / 2;
+
+// Shaft Bore (D-shape)
+SHAFT_D = 6.2;    // Full diameter of the circle part
+SHAFT_H = 12;     // Depth of the bore from bottom
+SHAFT_FLAT = 4.7; // Distance from flat side to opposite arc (defines the D)
+
+// Grooves (Outside)
+N_GROOVES = 18;   // Number of vertical grooves
+D_GROOVE = 2;     // Diameter of the half-cylinder groove
+H_GROOVE = H_KNOB; // Full height
+
+// Pointer (Top)
+W_POINTER = 1.5;  // Width of the pointer groove
+D_POINTER = 1;    // Depth of the pointer groove
+
+// --- Helper Functions ---
+
+// Function to create a D-shape profile
+// Returns a polygon representing the cross-section of the D-shaft
+function get_d_profile() = [
+    // Start at bottom center of flat side
+    [0, 0],
+    // Go right along the flat side to the edge of the circle
+    [SHAFT_D / 2, 0],
+    // Draw the semi-circle arc
+    for (i = [0 : 1 : 360])
+        [
+            SHAFT_D / 2 + (SHAFT_D / 2) * cos(i),
+            (SHAFT_D / 2) * sin(i)
+        ],
+    // Close loop back to start
+    [0, 0]
+];
+
+// Function to create a D-shape with a specific flat offset
+// We need to position the D-shape such that the flat is on the left (negative X)
+// and the distance from flat to opposite side is SHAFT_FLAT.
+// The radius of the circle part is SHAFT_D / 2.
+// The distance from the center of the circle to the flat edge is (SHAFT_D - SHAFT_FLAT) / 2.
+function get_d_shaft_profile() = [
+    // Bottom of the flat side
+    [-(SHAFT_D - SHAFT_FLAT) / 2, 0],
+    // Top of the flat side
+    [-(SHAFT_D - SHAFT_FLAT) / 2, SHAFT_D],
+    // Top of the arc
+    [-(SHAFT_D - SHAFT_FLAT) / 2, SHAFT_D],
+    // Draw the semi-circle arc (right side)
+    for (i = [0 : 1 : 360])
+        [
+            -(SHAFT_D - SHAFT_FLAT) / 2 + (SHAFT_D / 2) * cos(i),
+            SHAFT_D - (SHAFT_D / 2) * sin(i)
+        ],
+    // Bottom of the arc
+    [-(SHAFT_D - SHAFT_FLAT) / 2, 0]
+];
+
+// --- Main Construction ---
+
+difference() {
+    // 1. Main Knob Body
+    // Cylinder centered at origin, but we will translate it to sit on Z=0
+    // Radius = D_KNOB / 2
+    translate([0, 0, 0])
+    cylinder(h = H_KNOB, r = R_KNOB, $fn = $fn);
+
+    // 2. D-Shaped Blind Bore
+    // We extrude the D-profile along the Z-axis, then translate it to the center of the knob
+    // and push it up by (H_KNOB - SHAFT_H) so it stops at the correct depth.
+    translate([0, 0, H_KNOB - SHAFT_H])
+    linear_extrude(height = SHAFT_H, center = true)
+    get_d_shaft_profile();
+
+    // 3. Vertical Grip Grooves
+    // 18 evenly spaced half-cylinders on the outside surface.
+    // They run from Z=0 to Z=H_KNOB.
+    for (i = [0 : 1 : N_GROOVES - 1]) {
+        angle = (i / (N_GROOVES - 1)) * 360;
+        translate([R_KNOB, 0, 0])
+        rotate([0, 0, angle])
+        translate([0, 0, 0])
+        rotate([90, 0, 0]) // Rotate half-cylinder to lie on the surface
+        cylinder(h = H_GROOVE, r = D_GROOVE / 2, $fn = $fn);
+    }
+
+    // 4. Top Pointer Groove
+    // Runs from center to outer edge on the same side as the D-flat (negative X side).
+    // It is a slot: 1.5mm wide, 1mm deep.
+    // We create a rectangular prism that cuts into the top face.
+    // Position: Centered on X=0, Y=0, Z=H_KNOB.
+    // Extends down by D_POINTER.
+    // Width is W_POINTER.
+    // Length is R_KNOB (from center to edge).
+    translate([0, 0, H_KNOB - D_POINTER])
+    cube([W_POINTER, R_KNOB * 2, D_POINTER], center = true);
+}

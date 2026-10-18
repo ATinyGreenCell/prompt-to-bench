@@ -1,0 +1,100 @@
+```openscad
+// Mini Horizontal Gel Electrophoresis Buffer Tank
+// Outer dimensions: 120 x 70 x 40 mm
+// Wall thickness: 3 mm
+// Floor thickness: 3 mm
+// Inner platform: 60 mm long, full width, 10 mm high above inner floor
+
+$fn = 64;
+
+// Outer Dimensions
+X_OUT = 120;
+Y_OUT = 70;
+Z_OUT = 40;
+
+// Thicknesses
+wall_thick = 3;
+floor_thick = 3;
+
+// Inner Dimensions (calculated from outer and thicknesses)
+X_IN = X_OUT - 2 * wall_thick;
+Y_IN = Y_OUT - 2 * wall_thick;
+Z_IN = Z_OUT - floor_thick; // Open top, so height is just Z_OUT - floor
+
+// Platform Dimensions
+plat_len = 60;
+plat_width = Y_IN;
+plat_height = 10; // Height above inner floor
+
+// Electrode Hole Dimensions
+hole_d = 2;
+hole_y = 0;
+hole_z = 30;
+
+// Helper to create the main tank shell
+module tank_shell() {
+    // Calculate inner Z position of the floor (bottom of tank)
+    z_floor = 0;
+    
+    // Calculate inner X and Y positions (centered)
+    x_in_start = (X_OUT - X_IN) / 2;
+    y_in_start = (Y_OUT - Y_IN) / 2;
+    
+    // Calculate platform Z position relative to bottom
+    z_plat_bottom = floor_thick;
+    z_plat_top = z_plat_bottom + plat_height;
+    
+    // Platform X position (centered)
+    x_plat_start = (X_OUT - plat_len) / 2;
+    
+    // Build the solid tank with the platform inside
+    union() {
+        // 1. The main outer block (including floor)
+        translate([0, 0, 0]) 
+            cube([X_OUT, Y_OUT, Z_OUT]);
+        
+        // 2. Cut out the inner volume (walls and empty space)
+        // We subtract the inner box, but we must be careful not to cut the platform
+        // Strategy: Subtract the inner volume in two parts or use a complex difference.
+        // Easier approach: Build the walls and floor as positive geometry, then subtract the empty space.
+        
+        // Let's rebuild using positive geometry for the tank body to ensure clean walls
+        // Floor
+        translate([x_in_start, y_in_start, 0]) 
+            cube([X_IN, Y_IN, floor_thick]);
+            
+        // Side Walls (Left, Right, Front, Back)
+        // Left Wall (at x_in_start)
+        translate([x_in_start, y_in_start, floor_thick]) 
+            cube([wall_thick, Y_IN, Z_IN]);
+            
+        // Right Wall (at x_out - wall_thick)
+        translate([X_OUT - wall_thick, y_in_start, floor_thick]) 
+            cube([wall_thick, Y_IN, Z_IN]);
+            
+        // Front Wall (at y_in_start)
+        translate([x_in_start, y_in_start, floor_thick]) 
+            cube([X_IN, wall_thick, Z_IN]);
+            
+        // Back Wall (at y_out - wall_thick)
+        translate([x_in_start, Y_OUT - wall_thick, floor_thick]) 
+            cube([X_IN, wall_thick, Z_IN]);
+            
+        // 3. The Raised Platform
+        translate([x_plat_start, y_in_start, z_plat_bottom]) 
+            cube([plat_len, plat_width, plat_height]);
+    }
+    
+    // Now subtract the electrode holes
+    // Hole 1: Left end wall
+    translate([x_in_start + wall_thick/2, hole_y, hole_z]) 
+        cylinder(h = X_IN, d = hole_d);
+        
+    // Hole 2: Right end wall
+    translate([X_OUT - wall_thick - hole_d/2, hole_y, hole_z]) 
+        cylinder(h = X_IN, d = hole_d);
+}
+
+// Generate the part
+tank_shell();
+```

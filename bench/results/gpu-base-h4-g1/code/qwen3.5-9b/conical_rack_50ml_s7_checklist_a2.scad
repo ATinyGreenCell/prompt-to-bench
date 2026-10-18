@@ -1,0 +1,52 @@
+// Rack for six 50 mL conical (Falcon-type) tubes.
+// Print orientation: Flat plate on bed (z=0), walls rising to z=70.
+// After printing, flip over so walls stand on the bed and tubes hang down.
+
+// Plate dimensions
+L     = 130; // Length (X)
+W     = 90;  // Width (Y)
+t_plate = 4; // Plate thickness (Z)
+
+// Hole specifications
+n_rows = 2; // Rows along Y
+n_cols = 3; // Columns along X
+hole_d = 30.5; // Hole diameter
+pitch_x = 40; // Centre-to-centre spacing X
+pitch_y = 40; // Centre-to-centre spacing Y
+
+// Wall specifications
+wall_h = 70; // Wall height (from plate top)
+wall_t = 4;  // Wall thickness (Y)
+
+// Derived positions (centred on origin)
+// X positions: -40, 0, 40 (3 holes with 40mm pitch centred)
+// Y positions: -20, 20 (2 holes with 40mm pitch centred)
+
+// Generate hole coordinates using list comprehension
+hole_x = [for (i = [0 : n_cols - 1]) (i - (n_cols - 1) / 2) * pitch_x];
+hole_y = [for (i = [0 : n_rows - 1]) (i - (n_rows - 1) / 2) * pitch_y];
+
+$fn = 64;
+
+difference() {
+    // 1. The main flat plate
+    translate([-L / 2, -W / 2, 0]) 
+        cube([L, W, t_plate]);
+
+    // 2. The two long side walls
+    // Left wall (at Y = -W/2 + wall_t/2)
+    translate([-L / 2, -W / 2 + wall_t / 2, 0]) 
+        cube([L, wall_t, wall_h]);
+    
+    // Right wall (at Y = W/2 - wall_t/2)
+    translate([-L / 2, W / 2 - wall_t / 2, 0]) 
+        cube([L, wall_t, wall_h]);
+
+    // 3. The through-holes
+    for (x = hole_x) {
+        for (y = hole_y) {
+            translate([x, y, 0]) 
+                cylinder(h = t_plate + wall_h + 2, d = hole_d); // Extend past walls to ensure clean cut
+        }
+    }
+}

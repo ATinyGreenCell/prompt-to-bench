@@ -1,0 +1,94 @@
+The measurement report reveals two critical issues compared to the specification:
+
+1.  **Z-Position (Bed Contact):** The specification requires the part to lie on the bed at `z = 0`. The report shows the lowest point is at `z = -1.00`. This is because the `cylinder` command with `center=true` places the center of the cylinder at the origin, meaning the bottom face is at `z = -thickness/2`. The fix is to remove `center=true` and translate the cylinder down by `-thickness/2` (or simply rely on the default bottom-at-origin behavior if we adjust the height, but explicit translation is safer for clarity).
+2.  **Notch Depth:** The specification asks for a notch "4 mm deep (Y, measured in from the rim)". The report shows the notch is not cutting deep enough or is positioned incorrectly relative to the rim.
+    *   Rim Radius = 42.5 mm.
+    *   Notch Depth = 4 mm.
+    *   The cut should start at Y = 42.5 - 4 = 38.5 mm and go to Y = 42.5 mm.
+    *   In the previous code, the cut was placed at `translate([0, 42.5 - $NOTCH_DEPTH, ...])`. This places the *front* face of the cut at Y=38.5. However, the cut shape was a cube of height 4mm. Since the cut starts at Y=38.5 and extends 4mm in the +Y direction, it ends at Y=42.5. This logic seems correct for the *start* position, but let's re-verify the "depth" interpretation.
+    *   "4 mm deep... measured in from the rim": This means the material removed is 4mm wide along the Y-axis, starting from the outer edge.
+    *   Previous Code: `translate([0, 38.5, ...])` with a cube of size `[10, 4, 2]`. This removes material from Y=38.5 to Y=42.5. This is correct.
+    *   Wait, the report says "flat downward-facing areas at z = -0.0, 1.0". This confirms the Z issue.
+    *   Let's re-read the notch description carefully: "Cut a rectangular orientation notch... 4 mm deep (Y, measured in from the rim)".
+    *   If the rim is at Y=42.5, and we cut 4mm in, the cut occupies Y=[38.5, 42.5].
+    *   The previous code did exactly this. Why did the user ask to fix it?
+    *   Ah, looking at the report again: "z=1.50: 1 solid region... 0 holes". This implies the top surface is at Z=1.5 relative to the lowest point (-1.0), so absolute Z=1.0. The bottom is at -1.0.
+    *   The primary error is definitely the Z-offset. The part must sit on Z=0.
+    *   Is there a secondary error? The report says "outline: circle d=84.98". The spec says 85mm. The 0.02mm difference is due to the `0.01` overhang on the cut cylinders. This is acceptable and expected per Rule 5 ("extend 0.01-1 mm past the faces").
+    *   Let's double check the notch logic. If I translate by `42.5 - 4 = 38.5`, the cube occupies Y from 38.5 to 42.5. This is 4mm deep. Correct.
+    *   Wait, is the notch centered on the Y axis? "centred on the Y axis". Yes, X range is -5 to +5. Correct.
+    *   So the only real error is the Z-offset. The part is floating 1mm below the bed.
+
+**Correction Plan:**
+1.  Remove `center = true` from the main cylinder.
+2.  Translate the main cylinder by `[0, 0, -$TEMPLATE_THICKNESS/2]` to ensure the bottom face is at Z=0.
+3.  Ensure all cut shapes (holes and notch) extend slightly below Z=0 (e.g., `-thickness/2 - 0.01`) to ensure a clean cut through the bottom face.
+
+```openscad
+$fn = 128;
+
+// --- Dimensions ---
+// Petri dish inner diameter reference
+$DISH_DIAMETER = 90;
+
+// Template base dimensions
+$TEMPLATE_DIAMETER = 85;
+$TEMPLATE_THICKNESS = 2;
+
+// Grid dimensions
+$GRID_ROWS = 7;
+$GRID_COLS = 7;
+$HOLE_DIAMETER = 3;
+$HOLE_SPACING = 9;
+
+// Notch dimensions
+$NOTCH_WIDTH = 10;
+$NOTCH_DEPTH = 4;
+
+// --- Calculations ---
+// Calculate grid offset to center the 7x7 grid on the disc
+$GRID_OFFSET = (($GRID_ROWS - 1) * $HOLE_SPACING) / 2;
+
+// --- Main Body ---
+difference() {
+    // Outer disc
+    // Removed 'center=true' and added translation to ensure bottom is at Z=0
+    translate([0, 0, -$TEMPLATE_THICKNESS/2]) {
+        cylinder(
+            h = $TEMPLATE_THICKNESS,
+            d = $TEMPLATE_DIAMETER,
+            center = false
+        );
+    }
+    
+    // Cut the 7x7 grid of holes
+    for (x = [-$GRID_OFFSET : $HOLE_SPACING : $GRID_OFFSET]) {
+        for (y = [-$GRID_OFFSET : $HOLE_SPACING : $GRID_OFFSET]) {
+            translate([x, y, -$TEMPLATE_THICKNESS/2 - 0.01]) {
+                cylinder(
+                    h = $TEMPLATE_THICKNESS + 0.01,
+                    d = $HOLE_DIAMETER,
+                    center = false
+                );
+            }
+        }
+    }
+    
+    // Cut the orientation notch on the +Y side
+    // The notch is 10mm wide (X) and 4mm deep (Y)
+    // It is centered on the Y axis, so it spans from -5 to +5 in X
+    // It cuts into the rim from the outside in.
+    // Rim radius is 85/2 = 42.5mm.
+    // Notch starts at Y = 42.5 - 4 = 38.5mm and goes to Y = 42.5mm.
+    
+    translate([0, 42.5 - $NOTCH_DEPTH, -$TEMPLATE_THICKNESS/2 - 0.01]) {
+        // The notch is a rectangular prism cutting into the disc
+        // Width = 10mm, Depth = 4mm, Thickness = 2mm
+        cube([
+            $NOTCH_WIDTH, 
+            $NOTCH_DEPTH, 
+            $TEMPLATE_THICKNESS + 0.01
+        ]);
+    }
+}
+```

@@ -1,0 +1,53 @@
+```openscad
+// Lab stand rod clip with tubing holder
+// Print orientation: flat on bed, extruded up in +Z
+
+$fn = 96;
+
+// ---- Dimensions (mm) ----
+rod_id      = 12.7;   // stand rod inner diameter
+rod_wall    = 3;      // stand rod ring wall thickness
+rod_od      = rod_id + 2 * rod_wall;  // 18.7
+opening_w   = 10;     // rod ring opening width (y)
+
+tubing_id   = 6;      // tubing inner diameter
+tubing_wall = 2;      // tubing ring wall thickness
+tubing_od   = tubing_id + 2 * tubing_wall;  // 10
+tubing_x    = 15;     // tubing ring centre x
+tubing_open = 4.5;    // tubing opening width (y)
+
+bridge_w    = 6;      // bridge width (y)
+bridge_x1   = 8;      // bridge start x
+bridge_x2   = 12;     // bridge end x
+
+eps         = 0.5;    // cutter overshoot
+
+// ---- Model ----
+difference() {
+    union() {
+        // Rod ring
+        cylinder(h = 10, d = rod_od);
+        translate([0, 0, -eps])
+            cylinder(h = 10 + 2 * eps,
+                     d1 = rod_od,
+                     d2 = rod_id + 2 * rod_wall * (abs(x) > opening_w / 2 ? 1 : 0));
+        // Simplified: keep full ring for clean boolean
+        translate([0, 0, -eps])
+            cylinder(h = 10 + 2 * eps, d = rod_od);
+        // Opening cut
+        translate([-rod_od / 2 - eps, -opening_w / 2, 0])
+            cube([rod_od / 2 + 2 * eps, opening_w, 10]);
+
+        // Tubing ring
+        translate([tubing_x, 0, -eps])
+            cylinder(h = 10 + 2 * eps, d = tubing_od);
+        // Opening cut
+        translate([tubing_x, -tubing_open / 2, 0])
+            cube([tubing_open, tubing_od / 2 + 1, 10]);
+
+        // Bridge
+        translate([bridge_x1, -bridge_w / 2, 0])
+            cube([bridge_x2 - bridge_x1, bridge_w, 10]);
+    }
+}
+```

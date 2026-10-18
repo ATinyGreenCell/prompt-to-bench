@@ -1,0 +1,83 @@
+// Snap-on Clip for Lab Stand Rod and Tubing
+// Orientation: Flat on XY plane, building upward (+Z)
+// Units: Millimetres
+
+// --- Dimensions ---
+// Rod Ring
+$rod_inner_d = 12.7;   // Inner diameter for 1/2" rod
+$rod_wall = 3;         // Wall thickness
+$rod_outer_d = $rod_inner_d + 2 * $rod_wall; // 18.7 mm
+$rod_height = 10;      // Extrusion height (Z)
+$rod_cut_width = 10;   // Width of opening on -X side (x < 0)
+
+// Tubing Ring
+$tube_inner_d = 6;     // Inner diameter
+$tube_wall = 2;        // Wall thickness
+$tube_outer_d = $tube_inner_d + 2 * $tube_wall; // 10 mm
+$tube_x_pos = 15;      // Center X position
+$tube_cut_width = 4.5; // Width of opening on +X side (x > 15)
+
+// Bridge
+$bridge_x_start = 8;   // Start X
+$bridge_x_end = 12;    // End X
+$bridge_width_x = $bridge_x_end - $bridge_x_start; // 4 mm
+$bridge_height_y = 6;  // Height in Y (-3 to +3)
+$bridge_z = $rod_height;
+
+// --- Configuration ---
+$fn = 128;             // High resolution for smooth curves
+
+// --- Main Construction ---
+// Strategy: Create a solid block for the bridge, then subtract the two rings.
+// This ensures the rings have their internal holes (for the rod/tube) and side cutouts,
+// while the bridge connects them.
+
+difference() {
+    // 1. The Solid Bridge
+    translate([$bridge_x_start, -$bridge_height_y/2, 0]) {
+        cube([
+            $bridge_width_x, 
+            $bridge_height_y, 
+            $bridge_z
+        ]);
+    }
+    
+    // 2. Subtract Rod Ring
+    // The ring is defined as: Outer Cylinder - Inner Hole - Side Cutout
+    translate([0, 0, 0]) {
+        difference() {
+            // Outer Shell
+            cylinder(h = $bridge_z, d = $rod_outer_d, center = [0, 0, $bridge_z/2]);
+            
+            // Inner Hole (for rod)
+            cylinder(h = $bridge_z, d = $rod_inner_d, center = [0, 0, $bridge_z/2]);
+            
+            // Side Cutout (x < 0, -5 < y < 5)
+            // We subtract a block that covers this region.
+            // X range: -infinity to 0. We use -20 to 0.
+            // Y range: -5 to 5. We use -6 to 6.
+            translate([-20, -6, 0]) {
+                cube([20, 12, $bridge_z + 0.1]);
+            }
+        }
+    }
+    
+    // 3. Subtract Tubing Ring
+    // The ring is defined as: Outer Cylinder - Inner Hole - Side Cutout
+    translate([$tube_x_pos, 0, 0]) {
+        difference() {
+            // Outer Shell
+            cylinder(h = $bridge_z, d = $tube_outer_d, center = [0, 0, $bridge_z/2]);
+            
+            // Inner Hole (for tubing)
+            cylinder(h = $bridge_z, d = $tube_inner_d, center = [0, 0, $bridge_z/2]);
+            
+            // Side Cutout (x > 15, -2.25 < y < 2.25)
+            // In local coords (centered at 15): x > 0, -2.25 < y < 2.25.
+            // We subtract a block covering x > 0.
+            translate([0, -3, 0]) {
+                cube([20, 6, $bridge_z + 0.1]);
+            }
+        }
+    }
+}

@@ -1,0 +1,87 @@
+// Lab Funnel Design (Corrected)
+// Units: millimetres
+// Orientation: Upright, wide opening at top, resting on XY plane at z=0.
+
+// Global settings
+$fn = 128; // High resolution for smooth curves
+
+// Dimensions
+// Spout (Tube)
+spout_outer_diameter = 10;
+spout_inner_diameter = 6.8; // 10 - 2*1.6
+spout_length = 20;
+spout_wall_thickness = 1.6;
+
+// Cone (Funnel)
+cone_bottom_diameter = 10; // Matches spout outer diameter
+cone_top_diameter = 60;
+cone_bottom_z = 20; // Start of cone
+cone_top_z = 50;    // End of cone (rim)
+cone_wall_thickness = 1.6;
+
+// Calculated Cone Dimensions
+cone_bottom_radius = cone_bottom_diameter / 2;
+cone_top_radius = cone_top_diameter / 2;
+cone_height = cone_top_z - cone_bottom_z;
+
+// Inner dimensions at the junction (z=20)
+// The inner bore continues from the spout (6.8mm)
+inner_bore_diameter = spout_inner_diameter;
+inner_bore_radius = inner_bore_diameter / 2;
+
+// Inner dimensions at the top rim (z=50)
+// Outer is 60mm, wall is 1.6mm, so inner is 60 - 2*1.6 = 56.8mm
+inner_top_diameter = cone_top_diameter - (2 * cone_wall_thickness);
+inner_top_radius = inner_top_diameter / 2;
+
+// Main Body Construction
+// We build the solid using rotate_extrude to ensure a watertight volume.
+// We define the profile in the XZ plane (rotated around Z).
+// The profile starts at X=0 (center), goes to Outer Radius, then back to Inner Radius.
+
+union() {
+    // We construct the hollow shape by subtracting the inner void from the outer solid.
+    // However, rotate_extrude works best on a single closed loop or a solid profile.
+    // To make a hollow tube/cone easily, we extrude the outer profile and subtract the inner profile.
+    
+    // 1. Outer Shell
+    difference() {
+        // Outer Solid
+        rotate_extrude(angle = 360) {
+            // Profile: From center (0) to outer radius at bottom, then to outer radius at top.
+            // We need to define the path in X (radius) vs Z (height).
+            // Since rotate_extrude extrudes along the Z axis of the profile plane, 
+            // we define points as [x, z].
+            
+            // Start at bottom center (0, 0)
+            // Go up to bottom outer radius (cone_bottom_radius, 0)
+            // Go up the cone wall to top outer radius (cone_top_radius, cone_height)
+            // Go down to top center (0, cone_height)
+            
+            polygon(points = [
+                [0, 0],
+                [cone_bottom_radius, 0],
+                [cone_top_radius, cone_height],
+                [0, cone_height]
+            ]);
+        }
+        
+        // Inner Void (Hole)
+        // The inner void is a cylinder from z=0 to z=20, then a cone from z=20 to z=50.
+        // We must subtract this void to create the bore.
+        rotate_extrude(angle = 360) {
+            // Inner Profile:
+            // Start at bottom center (0, 0)
+            // Go up to inner radius at bottom (inner_bore_radius, 0)
+            // Go up the inner cone wall to inner radius at top (inner_top_radius, cone_height)
+            // Go down to top center (0, cone_height)
+            
+            polygon(points = [
+                [0, 0],
+                [inner_bore_radius, 0],
+                [inner_top_radius, cone_height],
+                [0, cone_height]
+            ]);
+        }
+    }
+}

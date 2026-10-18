@@ -1,0 +1,91 @@
+```openscad
+// Pestle for 1.5 mL microcentrifuge tube - standing upright on XY plane.
+// Dimensions in mm.
+
+// Handle
+h_d    = 8;      // Handle diameter
+h_len  = 45;     // Handle length (z=0 to z=45)
+
+// Cone
+c_d_top = 8;     // Cone top diameter (at z=45)
+c_d_bot = 3;     // Cone bottom diameter (at z=62)
+c_len  = 17;     // Cone length (62 - 45)
+
+// Tip
+tip_r  = 1.5;    // Tip radius (3 mm diameter)
+tip_z  = 62;     // Tip center Z
+
+// Grooves
+g_w    = 2;      // Groove width (Z)
+g_d    = 1;      // Groove depth
+g_locs = [10, 15, 20, 25]; // Z positions of groove centers
+
+$fn = 64;
+
+// Main body construction
+// 1. Handle cylinder
+// 2. Cone (using difference to cut the taper from a larger cylinder or using a custom shape)
+//    Since we need a specific taper, we can build it by extruding a polygon or using a cylinder with d1/d2.
+//    A cylinder with d1 and d2 works perfectly for a cone.
+// 3. Tip sphere
+
+// We will build the positive volume first, then subtract grooves.
+
+// Handle
+translate([0, 0, 0])
+    cylinder(h = h_len, d = h_d);
+
+// Cone: from z=45 to z=62. Top d=8, Bot d=3.
+// Cylinder parameters: d1 (top), d2 (bottom), h (height).
+// Note: cylinder aligns d1 to the top face (higher Z) and d2 to the bottom face (lower Z).
+translate([0, 0, 45])
+    cylinder(h = c_len, d1 = c_d_top, d2 = c_d_bot);
+
+// Tip: Sphere centered at z=62.
+translate([0, 0, tip_z])
+    sphere(r = tip_r);
+
+// Grooves: Cut into the handle.
+// Handle is from z=0 to z=45.
+// Grooves are 2mm wide, 1mm deep, centered at specified Zs.
+// We use difference() to cut them.
+// To ensure clean cuts, we extend the cutting cylinder slightly past the handle faces.
+
+difference() {
+    // The main body is already defined above. 
+    // We need to wrap the body in a difference block to cut the grooves.
+    // However, OpenSCAD doesn't allow reusing the previous union directly inside a new difference 
+    // without re-defining the geometry or using a module. 
+    // Let's re-define the body inside the difference for clarity and correctness.
+    
+    union() {
+        translate([0, 0, 0])
+            cylinder(h = h_len, d = h_d);
+        
+        translate([0, 0, 45])
+            cylinder(h = c_len, d1 = c_d_top, d2 = c_d_bot);
+        
+        translate([0, 0, tip_z])
+            sphere(r = tip_r);
+    }
+    
+    // Cut grooves
+    for (z = g_locs) {
+        // Groove center at z
+        // Width in Z is g_w. Extent is z - g_w/2 to z + g_w/2.
+        // Depth is g_d. We cut from the surface (z=0) downwards? 
+        // No, the handle is a cylinder. We cut a hole through the Z-axis of the cylinder.
+        // The handle axis is Z. The grooves are circumferential.
+        // So we cut a cylinder along the X-axis (or Y-axis) passing through the handle.
+        
+        // Groove geometry:
+        // Axis of cut cylinder: X-axis (to cut around the Z-axis of the pestle).
+        // Position: y = 0, z = z.
+        // Radius of cut cylinder: h_d/2 + g_d (to go deep enough).
+        // Length of cut cylinder: g_w + 0.1 (slightly wider than groove width).
+        
+        translate([0, 0, z])
+            cylinder(h = g_w + 0.1, d = h_d + g_d + 0.1);
+    }
+}
+```

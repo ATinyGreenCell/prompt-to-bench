@@ -1,0 +1,91 @@
+```openscad
+// Snap-on clip for lab stand rod and tubing.
+// Printed flat: 10 mm tall extrusion (Z) of a 2-D profile in the XY plane.
+// Orientation: Rests on XY plane at z=0, builds upward. Centred on origin.
+
+// Rod dimensions
+rod_id = 12.7;      // Inner diameter of rod ring
+rod_wall = 3;       // Wall thickness of rod ring
+rod_od = rod_id + 2 * rod_wall; // Outer diameter of rod ring (18.7)
+
+// Tubing dimensions
+tube_id = 6;        // Inner diameter of tubing ring
+tube_wall = 2;      // Wall thickness of tubing ring
+tube_od = tube_id + 2 * tube_wall; // Outer diameter of tubing ring (10)
+
+// Bridge dimensions
+bridge_x_start = 8; // Start X of bridge
+bridge_x_end = 12;  // End X of bridge
+bridge_y = 6;       // Width of bridge in Y
+
+// Cutout dimensions
+cutout_rod_width = 10; // Width of cutout on rod ring (-X side)
+cutout_tube_width = 4.5; // Width of cutout on tubing ring (+X side)
+
+// Extrusion height
+height = 10;
+
+$fn = 64;
+
+// We will build the 2D profile as a union of three shapes (Rod Ring, Tubing Ring, Bridge)
+// and then subtract the cutouts from this union.
+// All shapes are defined in the XY plane.
+
+// 1. Rod Ring (Full Ring)
+// Center (0,0), OD = 18.7, ID = 12.7.
+// We create this as a difference of two circles extruded, or a polygon.
+// Using difference of circles is easier to define.
+module rod_ring_full() {
+    difference() {
+        // Outer circle
+        translate([0, 0, 0]) cylinder(h = height, d = rod_od);
+        // Inner circle
+        translate([0, 0, 0]) cylinder(h = height, d = rod_id);
+    }
+}
+
+// 2. Tubing Ring (Full Ring)
+// Center (15,0), OD = 10, ID = 6.
+module tube_ring_full() {
+    difference() {
+        // Outer circle
+        translate([15, 0, 0]) cylinder(h = height, d = tube_od);
+        // Inner circle
+        translate([15, 0, 0]) cylinder(h = height, d = tube_id);
+    }
+}
+
+// 3. Bridge
+// Rectangle from x=8 to x=12, y=-3 to y=3, height=10.
+module bridge() {
+    translate([bridge_x_start, -bridge_y / 2, 0]) cube([bridge_x_end - bridge_x_start, bridge_y, height]);
+}
+
+// 4. Cutouts (to be subtracted)
+// Rod Cutout: x < 0, -5 < y < 5.
+// This is a rectangle from x=-5 to x=0, y=-5 to y=5.
+// We need to ensure it doesn't cut into the inner hole of the rod ring.
+// Rod inner radius = 6.35. Cutout goes to x=0. Safe.
+module rod_cutout() {
+    translate([-cutout_rod_width / 2, -cutout_rod_width / 2, 0]) cube([cutout_rod_width, cutout_rod_width, height]);
+}
+
+// Tubing Cutout: x > 15, -2.25 < y < 2.25.
+// This is a rectangle from x=15 to x=19.5, y=-2.25 to y=2.25.
+// Tubing inner radius = 3. Center at 15. Inner edge at 12. Outer edge at 17.
+// Cutout starts at 15, so it cuts into the ring material. Safe.
+module tube_cutout() {
+    translate([15, -cutout_tube_width / 2, 0]) cube([cutout_tube_width, cutout_tube_width, height]);
+}
+
+// Main assembly
+difference() {
+    union() {
+        rod_ring_full();
+        tube_ring_full();
+        bridge();
+    }
+    rod_cutout();
+    tube_cutout();
+}
+```

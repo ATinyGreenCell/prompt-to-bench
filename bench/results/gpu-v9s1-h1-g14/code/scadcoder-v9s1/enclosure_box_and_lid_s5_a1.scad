@@ -1,0 +1,56 @@
+// Two-part enclosure for small electronics board
+// Print orientation: both parts on the bed, lid on +X side of box
+
+// ---- Box ----
+box_x = 70;      // outer length (X)
+box_y = 50;      // outer width (Y)
+box_z = 30;      // outer height (Z)
+wall = 2;        // wall thickness
+floor = 2;       // floor thickness
+
+// ---- Lid ----
+lip_w = 65.6;    // lip outer length (X)
+lip_d = 45.6;    // lip outer width (Y)
+lip_h = 4;       // lip height (Z)
+lip_t = 1.5;     // lip wall thickness
+
+// ---- Misc ----
+eps = 0.5;       // cutter overshoot
+gap = 10;        // gap between parts
+
+$fn = 64;
+
+// Derived
+inner_x = box_x - 2 * wall;
+inner_y = box_y - 2 * wall;
+lip_d2  = lip_d + 2 * wall;   // lip outer width includes side walls
+
+module box() {
+    difference() {
+        translate([-box_x / 2, -box_y / 2, 0])
+            cube([box_x, box_y, box_z]);
+        translate([-inner_x / 2, -inner_y / 2, floor])
+            cube([inner_x, inner_y, box_z - floor + eps]);
+    }
+}
+
+module lid() {
+    translate([0, 0, -lip_h])
+        difference() {
+            union() {
+                // Plate
+                translate([-box_x / 2, -box_y / 2, 0])
+                    cube([box_x, box_y, 2]);
+                // Lip
+                translate([-lip_w / 2, -lip_d2 / 2, 0])
+                    cube([lip_w, lip_d2, lip_t]);
+            }
+            // Cutout for board
+            translate([-inner_x / 2, -inner_y / 2, 0])
+                cube([inner_x, inner_y, 2 + eps]);
+        }
+}
+
+box();
+translate([gap, 0, 0])
+    lid();

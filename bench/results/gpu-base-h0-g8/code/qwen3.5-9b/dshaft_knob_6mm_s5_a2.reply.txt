@@ -1,0 +1,91 @@
+```openscad
+// Replacement Knob for Hotplate Stirrer (6mm D-shaft)
+// Units: mm
+// Orientation: Printed with D-flat side facing the hotplate (Z=0), building upward.
+
+// --- Dimensions ---
+$fn = 128; // High resolution for smooth curves and precise D-shape
+
+// Knob Body
+D_KNOB = 30;      // Outer diameter
+H_KNOB = 15;      // Total height
+R_KNOB = D_KNOB / 2;
+
+// Shaft Bore (D-shape)
+SHAFT_D = 6.2;    // Full diameter of the circle part
+SHAFT_H = 12;     // Depth of the bore from bottom
+SHAFT_FLAT = 4.7; // Distance from flat side to opposite arc (defines the D)
+
+// Grooves (Outside)
+N_GROOVES = 18;   // Number of vertical grooves
+D_GROOVE = 2;     // Diameter of the half-cylinder groove
+H_GROOVE = H_KNOB; // Full height
+
+// Pointer (Top)
+W_POINTER = 1.5;  // Width of the pointer groove
+D_POINTER = 1;    // Depth of the pointer groove
+
+// --- Main Construction ---
+
+difference() {
+    // 1. Main Knob Body
+    // Cylinder centered at origin, sitting on Z=0
+    translate([0, 0, 0])
+    cylinder(h = H_KNOB, r = R_KNOB, $fn = $fn);
+
+    // 2. D-Shaped Blind Bore
+    // We create the D-shape void by subtracting two shapes:
+    // A. A cylinder representing the circular part of the D.
+    // B. A rectangular prism representing the flat part of the D.
+    
+    // Calculate geometry for the D-shape
+    // Radius of the circle part
+    R_SHAFT = SHAFT_D / 2;
+    // Distance from center of circle to the flat edge
+    // Total width = 4.7. Half width = 2.35.
+    // Offset = Radius - Half Width = 3.1 - 2.35 = 0.75
+    OFFSET_FLAT = R_SHAFT - (SHAFT_FLAT / 2);
+    
+    // The flat side is on the negative X side.
+    // The rectangle extends from x = -OFFSET_FLAT to x = -OFFSET_FLAT - SHAFT_FLAT.
+    // Center of the rectangle in X:
+    X_RECT_CENTER = -OFFSET_FLAT - (SHAFT_FLAT / 2);
+    
+    // Subtract Circular Part
+    translate([0, 0, H_KNOB - SHAFT_H])
+    cylinder(h = SHAFT_H, r = R_SHAFT, $fn = $fn);
+    
+    // Subtract Flat Part (Rectangular Prism)
+    // Width = SHAFT_FLAT, Height = SHAFT_D, Depth = SHAFT_H
+    translate([X_RECT_CENTER, 0, H_KNOB - SHAFT_H])
+    cube([SHAFT_FLAT, SHAFT_D, SHAFT_H], center = true);
+
+    // 3. Vertical Grip Grooves
+    // 18 evenly spaced half-cylinders on the outside surface.
+    // They run from Z=0 to Z=H_KNOB.
+    for (i = [0 : 1 : N_GROOVES - 1]) {
+        angle = (i / (N_GROOVES - 1)) * 360;
+        translate([R_KNOB, 0, 0])
+        rotate([0, 0, angle])
+        translate([0, 0, 0])
+        rotate([90, 0, 0]) // Rotate half-cylinder to lie on the surface
+        cylinder(h = H_GROOVE, r = D_GROOVE / 2, $fn = $fn);
+    }
+
+    // 4. Top Pointer Groove
+    // Runs from center to outer edge on the same side as the D-flat (negative X side).
+    // It is a slot: 1.5mm wide, 1mm deep.
+    // We create a rectangular prism that cuts into the top face.
+    // Position: Centered on Y=0. 
+    // The slot runs from center (x=0) to edge (x=15).
+    // To align with the flat side, the center of the slot width should be at x = -OFFSET_FLAT.
+    // Length of the slot = R_KNOB (from center to edge).
+    // We subtract a block of size [W_POINTER, R_KNOB, D_POINTER].
+    // Center of this block in X should be -OFFSET_FLAT.
+    // Center of this block in Y should be 0.
+    // Center of this block in Z should be H_KNOB - D_POINTER/2.
+    
+    translate([-OFFSET_FLAT, 0, H_KNOB - D_POINTER/2])
+    cube([W_POINTER, R_KNOB, D_POINTER], center = true);
+}
+```

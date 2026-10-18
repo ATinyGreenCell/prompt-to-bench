@@ -1,0 +1,65 @@
+```openscad
+// Rack for six 50 mL conical (Falcon-type) tubes.
+// Print orientation: Flat plate on bed (z=0), walls rising to z=70.
+// After printing, flip over so walls stand on the bed and tubes hang down.
+
+// Plate dimensions
+L     = 130; // Length (X)
+W     = 90;  // Width (Y)
+t_plate = 4; // Plate thickness (Z)
+
+// Hole specifications
+n_rows = 2; // Rows along Y
+n_cols = 3; // Columns along X
+hole_d = 30.5; // Hole diameter
+pitch_x = 40; // Centre-to-centre spacing X
+pitch_y = 40; // Centre-to-centre spacing Y
+
+// Wall specifications
+wall_h = 70; // Wall height (from plate top)
+wall_t = 4;  // Wall thickness (Y)
+
+// Derived positions (centred on origin)
+// X positions: -65, -20, 20, 65 (Wait, 3 holes with 40mm pitch centred)
+// Let's calculate X positions for 3 holes:
+// Indices: 0, 1, 2. Centre index is 1.
+// Pos = (i - (n_cols-1)/2) * pitch_x
+// i=0: (0 - 1) * 40 = -40
+// i=1: (1 - 1) * 40 = 0
+// i=2: (2 - 1) * 40 = 40
+// Total span = 80mm. Plate is 130mm. Margins = (130-80)/2 = 25mm. Correct.
+
+// Y positions: -40, 40 (2 holes with 40mm pitch centred)
+// i=0: (0 - 0.5) * 40 = -20
+// i=1: (1 - 0.5) * 40 = 20
+// Total span = 40mm. Plate is 90mm. Margins = (90-40)/2 = 25mm. Correct.
+
+// Generate hole coordinates
+hole_x = [for (i = [0 : n_cols - 1]) (i - (n_cols - 1) / 2) * pitch_x];
+hole_y = [for (i = [0 : n_rows - 1]) (i - (n_rows - 1) / 2) * pitch_y];
+
+$fn = 64;
+
+difference() {
+    // 1. The main flat plate
+    translate([-L / 2, -W / 2, 0]) 
+        cube([L, W, t_plate]);
+
+    // 2. The two long side walls
+    // Left wall (at Y = -W/2 + wall_t/2)
+    translate([-L / 2, -W / 2 + wall_t / 2, 0]) 
+        cube([L, wall_t, wall_h]);
+    
+    // Right wall (at Y = W/2 - wall_t/2)
+    translate([-L / 2, W / 2 - wall_t / 2, 0]) 
+        cube([L, wall_t, wall_h]);
+
+    // 3. The through-holes
+    for (x = hole_x) {
+        for (y = hole_y) {
+            translate([x, y, 0]) 
+                cylinder(h = t_plate + wall_h + 2, d = hole_d); // Extend past walls to ensure clean cut
+        }
+    }
+}
+```

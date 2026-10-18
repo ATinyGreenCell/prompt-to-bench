@@ -1,0 +1,43 @@
+// Pestle for grinding tissue inside a 1.5 mL microcentrifuge tube
+// Printed standing upright (z = 0 at the bottom)
+
+// ---------------- Parameters ----------------
+handle_d      = 8;    // handle diameter (mm), z = 0 to 45
+handle_h      = 45;   // handle height (mm)
+cone_d_bottom = 8;    // cone diameter at z = handle_h (mm)
+cone_d_top    = 3;    // cone diameter at z = 62 (mm)
+cone_top_z    = 62;   // cone top height (mm)
+tip_d         = 3;    // tip sphere diameter (mm)
+tip_z         = 62;   // tip sphere centre height (mm)
+groove_count  = 4;    // number of circumferential grooves
+groove_w      = 2;    // groove width in Z (mm)
+groove_depth  = 1;    // groove depth (mm)
+groove_z      = [10, 15, 20, 25]; // groove centre heights (mm)
+eps           = 0.5;  // overshoot for clean boolean cuts (mm)
+
+$fn = 96;
+
+// ---------------- Model ----------------
+difference() {
+    union() {
+        // (1) Cylindrical handle
+        cylinder(d = handle_d, h = handle_h);
+
+        // (2) Tapering cone (8 mm -> 3 mm)
+        translate([0, 0, cone_top_z - cone_h])
+            cylinder(d1 = cone_d_top, d2 = cone_d_bottom, h = cone_h);
+
+        // (3) Rounded tip: 3 mm sphere centred at z = 62
+        translate([0, 0, tip_z - tip_r])
+            sphere(d = tip_d);
+    }
+
+    // Grip grooves, each extending past the top face
+    for (z = groove_z)
+        translate([0, 0, z - groove_w / 2])
+            cylinder(d = handle_d + 2 * eps, h = groove_w + eps);
+}
+
+// ---------------- Derived values ----------------
+cone_h = cone_top_z - handle_h;   // cone height (17 mm)
+tip_r  = tip_d / 2;               // tip radius (1.5 mm)

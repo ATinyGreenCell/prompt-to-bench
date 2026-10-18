@@ -1,0 +1,48 @@
+// Microscope slide drying rack - solid base with 10 parallel slots for standing slides.
+
+// Base dimensions
+L_base = 90;
+W_base = 45;
+H_base = 20;
+
+// Slide dimensions (standard 75x25x1 mm)
+slide_len = 75;
+slide_w   = 25;
+slide_thk = 1;
+
+// Slot dimensions
+slot_len = 77;
+slot_w   = 1.6;
+slot_deep = 10;
+
+// Spacing
+slot_spacing = 3.5;
+
+// Derived positions
+// Center the group of 10 slots in Y (total width = 9 * 3.5 + 1.6 = 34.1 mm)
+// Center offset from origin: (45 - 34.1) / 2 = 5.45 mm
+y_offset = (W_base - (9 * slot_spacing + slot_w)) / 2;
+
+// Center the slots in X (slot length 77, base length 90)
+// Center offset from origin: (90 - 77) / 2 = 6.5 mm
+x_offset = (L_base - slot_len) / 2;
+
+$fn = 64;
+
+difference() {
+    // Main solid block
+    translate([0, 0, 0]) cube([L_base, W_base, H_base]);
+
+    // Cut 10 slots
+    for (i = [0 : 9]) {
+        // Calculate Y position for this slot
+        // i=0 is the first slot, i=9 is the last
+        // Position = y_offset + i * slot_spacing
+        y_pos = y_offset + i * slot_spacing;
+        
+        // Slot geometry: runs along X, centered at x_offset
+        // Width is along Y, depth is along Z
+        translate([x_offset, y_pos, H_base - slot_deep]) 
+            cube([slot_len, slot_w, slot_deep]);
+    }
+}

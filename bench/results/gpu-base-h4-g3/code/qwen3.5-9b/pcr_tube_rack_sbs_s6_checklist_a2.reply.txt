@@ -1,0 +1,67 @@
+```openscad
+// 96-Well PCR Tube Rack - ANSI/SLAS footprint with chamfered orientation mark.
+// Dimensions in millimetres.
+
+// Overall block dimensions
+L     = 127.76; // Length (X)
+W     = 85.48;  // Width (Y)
+H     = 20;     // Height (Z)
+
+// Hole specifications
+n_rows = 8;     // Rows along Y
+n_cols = 12;    // Columns along X
+hole_d = 6.2;   // Hole diameter
+pitch_x = 9.0;  // Spacing along X
+pitch_y = 9.0;  // Spacing along Y
+
+// Position of first hole (A1) relative to left and back edges
+offset_x = 14.38;
+offset_y = 11.24;
+
+// Chamfer specifications
+chamfer_leg = 5.0;
+chamfer_angle = 45;
+
+$fn = 128;
+
+// Calculate grid start positions to center the grid on the block
+// Grid width = n_cols * pitch_x
+// Grid height = n_rows * pitch_y
+// Start X = (L - Grid width) / 2
+// Start Y = (W - Grid height) / 2
+grid_start_x = (L - n_cols * pitch_x) / 2;
+grid_start_y = (W - n_rows * pitch_y) / 2;
+
+difference() {
+    // Main block
+    translate([0, 0, 0]) cube([L, W, H]);
+
+    // 96 Through-holes
+    for (r = [0 : n_rows - 1]) {
+        for (c = [0 : n_cols - 1]) {
+            // Calculate hole center coordinates
+            cx = grid_start_x + c * pitch_x;
+            cy = grid_start_y + r * pitch_y;
+            
+            translate([cx, cy, 0]) cylinder(h = H + 1, d = hole_d);
+        }
+    }
+
+    // Chamfer at the A1 corner (X=0, Y=0 side)
+    // We need to cut a 45-degree chamfer with 5mm legs.
+    // This removes the corner volume where x < 5 and y < 5.
+    // The cut face is a plane connecting (5,0) and (0,5) at the bottom, extending up.
+    // The shape to subtract is a triangular prism with base vertices (0,0), (5,0), (0,5).
+    
+    // Define the polygon for the triangular base in the XY plane
+    chamfer_poly = [
+        [0, 0],
+        [chamfer_leg, 0],
+        [0, chamfer_leg]
+    ];
+    
+    // Extrude the polygon to create the wedge to subtract
+    // We place it at the corner (0,0)
+    translate([0, 0, 0]) linear_extrude(height = H) polygon(chamfer_poly);
+}
+```

@@ -1,0 +1,68 @@
+// Drying Rack for 10 Microscope Slides
+// Base: 90 x 45 x 20 mm
+// Slots: 10 parallel slots along X, 77mm long, 1.6mm wide, 10mm deep
+// Spacing: 3.5 mm centre-to-centre (Y)
+
+// Base Dimensions
+$base_length = 90;
+$base_width = 45;
+$base_height = 20;
+
+// Slide Dimensions (for verification)
+$slide_length = 75;
+$slide_width = 25;
+$slide_thickness = 1;
+
+// Slot Dimensions
+$num_slots = 10;
+$slot_length = 77;
+$slot_width = 1.6;
+$slot_depth = 10;
+$slot_spacing = 3.5; // Centre-to-centre in Y
+
+// Extrusion quality for curved corners (though slots are rectangular, good practice)
+$fn = 64;
+
+// Calculate slot positions
+// Group is centred on the block in Y.
+// Total width of slot group = (num_slots - 1) * spacing
+// Offset from center to first slot center = (Total width / 2) - (spacing / 2)
+// Actually, simpler: Center of first slot = -( (num_slots-1)*spacing / 2 )
+// Center of last slot = + ( (num_slots-1)*spacing / 2 )
+
+$y_offset_first = -((num_slots - 1) * $slot_spacing / 2);
+
+difference() {
+    // 1. Create the solid base block
+    translate([0, 0, 0])
+    cube([
+        $base_length,
+        $base_width,
+        $base_height
+    ]);
+
+    // 2. Cut the 10 slots
+    // Slots run along X, so we cut a long thin rectangle from the top face downwards.
+    // To ensure clean cuts, we extend the cutting shape slightly past the edges.
+    $cut_extension_x = 0.1;
+    $cut_extension_y = 0.1;
+    $cut_extension_z = 0.1;
+
+    for (i = [0 : num_slots - 1]) {
+        // Calculate Y position for this slot
+        $y_pos = $y_offset_first + (i * $slot_spacing);
+        
+        // Define the cutting volume
+        // The slot is 77mm long. We extend slightly to ensure full depth cut.
+        translate([
+            -$slot_length/2 - $cut_extension_x,
+            $y_pos - $slot_width/2 - $cut_extension_y,
+            -$slot_depth - $cut_extension_z
+        ])
+        cube([
+            $slot_length + 2*$cut_extension_x,
+            $slot_width + 2*$cut_extension_y,
+            $slot_depth + $cut_extension_z
+        ]);
+    }
+}

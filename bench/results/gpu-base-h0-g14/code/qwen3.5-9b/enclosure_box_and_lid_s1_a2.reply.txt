@@ -1,0 +1,106 @@
+The measurement report reveals two critical issues preventing the part from printing correctly as specified:
+
+1.  **Z-Offset Error**: The report states "BED: lowest point at z = -2.00". The specification requires the part to rest on the bed at `z = 0`. The current code centers the box and lid vertically (`center = true`), placing their bottom faces at `z = -15` and `z = -1` respectively.
+2.  **Lid Geometry Error**: The report shows the lid has a height of `6.00` mm (Plate 2mm + Lip 4mm). However, the specification says the lid is a "plate 70 x 50 x 2 mm lying on the bed, with a rectangular lip... 4 mm tall". This implies the lip sits *on top* of the plate, making the total height 6mm, but the *base* must be exactly 70x50x2. The current code creates a block of 65.6x45.6x6. This means the lid is narrower and shorter than the box's footprint, which might be okay for sliding, but the critical issue is the Z-position. The lid needs to sit flat on the bed (Z=0) with the plate thickness defining its base.
+
+**Fixes applied:**
+1.  **Removed `center = true`** from both cubes.
+2.  **Adjusted Z-translations**:
+    *   **Box**: Translated so the bottom face is at `z = 0`. The box height is 30mm, so the center is at `z = 15`.
+    *   **Lid**: Translated so the bottom face (the plate) is at `z = 0`. The lid total height is 6mm (2mm plate + 4mm lip), so the center is at `z = 3`.
+3.  **Verified Dimensions**:
+    *   Box: 70x50x30, resting on Z=0.
+    *   Lid: Base 70x50x2 (implied by the cut logic now that the block is 65.6x45.6x6? Wait, let's re-read the spec carefully).
+    *   *Re-reading Spec*: "Part 2, the lid... a plate 70 x 50 x 2 mm lying on the bed, with a rectangular lip... whose outer size is 65.6 x 45.6 mm".
+    *   *Correction*: The lid base is 70x50. The lip is 65.6x45.6. The lip sits *on top* of the plate.
+    *   My previous code made the *entire* block 65.6x45.6. This was wrong. The block must be 70x50 wide to match the plate, and the lip is a smaller block sitting on top of it.
+    *   *Wait, re-reading again*: "a plate 70 x 50 x 2 mm... with a rectangular lip... whose outer size is 65.6 x 45.6 mm".
+    *   If the plate is 70x50 and the lip is 65.6x45.6, the lip is smaller than the plate. The lip slides into the box. The box opening is 66x46 (inner). The lip is 65.6x45.6. This fits.
+    *   So the Lid Block must be 70x50 wide (the plate) and 6mm tall (2mm plate + 4mm lip). The lip is a smaller block (65.6x45.6x4) sitting on top of the plate (70x50x2).
+    *   *Wait, the user said*: "Place the lid on the +X side of the box." and "printed upside down: a plate 70 x 50 x 2 mm lying on the bed".
+    *   Okay, so the Lid Base is 70x50. The Lip is 65.6x45.6.
+    *   My previous code had the Lid Block as 65.6x45.6. This meant the "plate" part was only 65.6x45.6. This violates the "plate 70 x 50" spec.
+    *   **Correction**: The Lid Block must be 70x50 wide. The Lip is a smaller block centered on top.
+
+**Plan:**
+1.  **Box**: `cube([70, 50, 30])` at `translate([-10, 0, 15])` (Center X at -10 to leave 10mm gap, Center Y at 0, Bottom Z at 0).
+2.  **Lid**:
+    *   Base Plate: 70x50x2.
+    *   Lip: 65.6x45.6x4.
+    *   Total Lid Block: 70x50x6.
+    *   Position: Center X at `10 + 70/2 = 45`. Center Y at 0. Center Z at `6/2 = 3`.
+    *   Cut the hole in the plate (bottom 2mm) to be 66x46 (0.2mm clearance).
+    *   Cut the lip (top 4mm) to be 65.6x45.6.
+
+Let's refine the Lid construction to match the "Plate 70x50" spec exactly.
+The Lid is one piece.
+Block: 70 x 50 x 6.
+Cut 1 (Hole in plate): 66 x 46 x 2 (at bottom).
+Cut 2 (Lip): 65.6 x 45.6 x 4 (at top).
+
+Wait, if I cut a 66x46 hole in a 70x50 plate, the remaining plate is 70x50 with a hole.
+Then I cut a 65.6x45.6x4 block from the top.
+This results in a part that is 70x50 at the bottom, and 65.6x45.6 at the top.
+This matches the description: "plate 70 x 50 ... with a rectangular lip ... outer size 65.6 x 45.6".
+
+Let's re-verify the Box cuts.
+Box Outer: 70x50x30.
+Floor: 2mm.
+Walls: 2mm.
+Inner: (70-4)x(50-4) = 66x46.
+Top cut: Remove the top 2mm of the walls.
+My previous code cut the top 2mm of the walls correctly.
+
+Let's write the corrected code.
+
+```openscad
+// Two-part enclosure for small electronics board
+// Part 1: Box (left)
+// Part 2: Lid (right, printed upside down)
+// Prints together with a 10 mm gap between them.
+
+// --- Dimensions ---
+// Box Outer Dimensions (X x Y x Z)
+$box_outer_x = 70;
+$box_outer_y = 50;
+$box_outer_z = 30;
+
+// Wall and Floor Thickness
+$wall_thickness = 2;
+$floor_thickness = 2;
+
+// Lid Dimensions
+// Plate thickness
+$plate_thickness = 2;
+// Lip dimensions
+$lip_thickness = 1.5; // Not used in final geometry, lip height is 4
+$lip_height = 4;
+// Lip outer size (fits inside box opening)
+$lip_outer_x = 65.6;
+$lip_outer_y = 45.6;
+
+// Clearance
+// Box Inner X = 70 - 2*2 = 66
+// Box Inner Y = 50 - 2 (floor) - 2 (side) = 46
+// Lip Outer X = 65.6 -> Clearance = (66 - 65.6) / 2 = 0.2 mm per side
+// Lip Outer Y = 45.6 -> Clearance = (46 - 45.6) / 2 = 0.2 mm per side
+
+// Gap between parts
+$gap = 10;
+
+// --- Quality Settings ---
+$fn = 64;
+
+// --- Part 1: The Box ---
+// Position: Resting on bed (Z=0).
+// Center X = -($gap/2 + $box_outer_x/2) = -5 - 35 = -40.
+// Center Y = 0.
+// Center Z = $box_outer_z / 2 = 15.
+
+$box_x_pos = -($gap/2 + $box_outer_x/2);
+$box_y_pos = 0;
+$box_z_pos = $box_outer_z / 2;
+
+translate([$box_x_pos, $box_y_pos, $box_z_pos])
+difference() {
+    // Outer Block

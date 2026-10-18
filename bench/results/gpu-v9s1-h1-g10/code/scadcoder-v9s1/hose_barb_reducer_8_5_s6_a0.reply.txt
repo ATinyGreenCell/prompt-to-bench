@@ -1,0 +1,55 @@
+```openscad
+// Hose-barb reducer: 8 mm ID tubing to 5 mm ID tubing
+// Print orientation: standing upright along Z, centred on origin in X/Y
+
+$fn = 96;
+
+// ---- Dimensions (mm) ----
+id_large      = 8;     // inner diameter of 8 mm tubing
+id_small      = 5;     // inner diameter of 5 mm tubing
+bore          = 3;     // through-bore diameter
+barb_h_large  = 10;    // height of each 8 mm barb
+barb_od_large = 9.5;   // outer diameter of 8 mm barb at top
+barb_od_base  = 7.5;   // outer diameter of 8 mm barb at bottom (sawtooth base)
+collar_d      = 12;    // diameter of cylindrical collar
+collar_len    = 5;     // length of collar (z = 20 to 25)
+barb_h_small  = 8;     // height of each 5 mm barb
+barb_od_small = 6.5;   // outer diameter of 5 mm barb at bottom
+barb_od_top   = 5.0;   // outer diameter of 5 mm barb at top
+barb_len      = 8;     // extended length of barbs for insertion
+total_len     = 41;    // overall length (z = 0 to 41)
+
+eps = 0.5;             // cutter overshoot past faces
+
+// ---- Model ----
+difference() {
+    union() {
+        // 8 mm tubing barbs: z = 0 to 20
+        for (i = [0 : 1]) {
+            translate([0, 0, i * barb_h_large])
+                linear_extrude(height = barb_h_large)
+                    polygon([
+                        [barb_od_base / 2, 0],
+                        [barb_od_large / 2, barb_h_large],
+                        [barb_od_base / 2, barb_h_large]
+                    ]);
+        }
+        // Collar: z = 20 to 25
+        translate([0, 0, collar_len])
+            cylinder(d = collar_d, h = collar_len);
+        // 5 mm tubing barbs: z = 25 to 41
+        for (i = [0 : 1]) {
+            translate([0, 0, collar_len + i * barb_h_small])
+                linear_extrude(height = barb_h_small)
+                    polygon([
+                        [barb_od_small / 2, 0],
+                        [barb_od_top / 2, barb_h_small],
+                        [barb_od_small / 2, barb_h_small]
+                    ]);
+        }
+    }
+    // Through-bore along Z
+    translate([0, 0, -eps])
+        cylinder(d = bore, h = total_len + 2 * eps);
+}
+```

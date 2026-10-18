@@ -1,0 +1,30 @@
+{
+ "started": "2026-10-18T14:06:49",
+ "args": {
+  "run": "gpu-base-h0-g0",
+  "models": [
+   "qwen3.5-9b"
+  ],
+  "tasks": [
+   "tube_rack_1p5ml"
+  ],
+  "samples": 8,
+  "max_repairs": 2,
+  "feedback": "report",
+  "temperature": 0.2,
+  "prompts": null,
+  "lang": "en",
+  "system": "bench/prompts/system.md",
+  "render_timeout": 120,
+  "seed_base": 1000,
+  "num_predict": 2048,
+  "think": false,
+  "num_ctx": 8192
+ },
+ "git_commit": "8bb6c603130996a0d38419bbbc3ce7f40ee536df+uncommitted-changes",
+ "host": "enamel",
+ "cpu": "x86_64",
+ "python": "3.14.4",
+ "openscad": "OpenSCAD version 2026.10.01",
+ "ollama": "0.0.0-openai-shim"
+}

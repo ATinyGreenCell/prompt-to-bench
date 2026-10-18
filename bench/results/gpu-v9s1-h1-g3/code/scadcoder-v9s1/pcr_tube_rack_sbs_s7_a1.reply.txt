@@ -1,0 +1,54 @@
+```openscad
+// 96-well PCR tube rack (0.2 mL) - ANSI/SLAS footprint
+// Print orientation: base on XY plane, builds up +Z
+
+// ---- Block dimensions ----
+block_len   = 127.76;   // X length (mm)
+block_wid   = 85.48;    // Y width (mm)
+block_hgt   = 20;       // Z height (mm)
+
+// ---- Holes ----
+hole_d      = 6.2;      // hole diameter (mm)
+hole_n_rows = 8;        // rows along Y
+hole_n_cols = 12;       // columns along X
+hole_pitch  = 9.0;      // centre-to-centre spacing (mm)
+hole_x0     = 14.38;    // first hole X from left edge (mm)
+hole_y0     = 11.24;    // first hole Y from back edge (mm)
+
+// ---- Chamfer (orientation mark at A1 corner) ----
+chamf_leg   = 5;        // chamfer leg length (mm)
+chamf_angle = 45;       // chamfer angle (deg)
+
+// ---- Misc ----
+eps         = 0.5;      // cutter overshoot past faces (mm)
+$fn         = 64;
+
+// Derived
+grid_x0 = hole_x0;
+grid_y0 = hole_y0;
+
+difference() {
+    // Main block
+    translate([-block_len/2, -block_wid/2, 0])
+        cube([block_len, block_wid, block_hgt]);
+
+    // 96 through-holes
+    for (i = [0 : hole_n_cols - 1])
+        for (j = [0 : hole_n_rows - 1])
+            translate([grid_x0 + (i - (hole_n_cols - 1)/2)*hole_pitch,
+                       grid_y0 + (j - (hole_n_rows - 1)/2)*hole_pitch,
+                       -eps])
+                cylinder(d = hole_d, h = block_hgt + 2*eps);
+
+    // 45-degree chamfer at A1 corner (top edge, outer corner)
+    // rotate([90,0,0]) puts the 2D (x,y) plane onto XZ, y = Z
+    translate([hole_x0 - chamf_leg, hole_y0 - chamf_leg, block_hgt])
+        rotate([90, 0, 0])
+            linear_extrude(height = chamf_leg)
+                polygon(points = [
+                    [0, 0],
+                    [chamf_leg, 0],
+                    [0, chamf_leg]
+                ]);
+}
+```

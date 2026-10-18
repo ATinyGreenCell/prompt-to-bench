@@ -1,0 +1,61 @@
+The specification requires the rack to be printed upside down and flipped over. In the print orientation (z=0 on bed), the flat plate is at the bottom, and the walls rise from the top of the plate to z=70. After flipping, the walls sit on the bed, and the tubes hang down through the holes.
+
+**Measurement Report Analysis:**
+
+1.  **Plate Dimensions (130 x 90 mm, 4 mm thick):**
+    *   Spec: 130 mm (X) by 90 mm (Y) and 4 mm thick.
+    *   Report: X 130.00 | Y 90.00 | Z 0.00..4.00 (implied by wall start).
+    *   Status: OK.
+
+2.  **Hole Count and Size:**
+    *   Spec: Six through-holes, 30.5 mm in diameter.
+    *   Report: 2 holes shown at z=2.00 and z=3.70 (total 6 implied by grid). Diameter reported as 30.48 mm (due to $fn$ approximation, effectively 30.5).
+    *   Status: OK.
+
+3.  **Hole Grid Layout:**
+    *   Spec: 2 rows (along Y) of 3 (along X), 40 mm centre-to-centre in both directions, centred on the plate.
+    *   Report: 1 x 2 grid (X x Y) with pitch 40.00. Wait, the report says "1 x 2 grid (X x Y)". This implies 1 column in X and 2 rows in Y? Or is it reporting the unique positions found?
+    *   Let's re-evaluate the code logic.
+    *   Code: `x_offset = (6 / 2 - 0.5) * 40 = 2.5 * 40 = 100`. `y_offset = (2 / 2 - 0.5) * 40 = 0.5 * 40 = 20`.
+    *   Positions generated: `[100, 20], [100, -20], [-100, 20], [-100, -20], [0, 20], [0, -20]`.
+    *   X-coordinates: -100, 0, 100. Spacing: 100 mm.
+    *   Y-coordinates: -20, 20. Spacing: 40 mm.
+    *   Spec requires: 3 along X (spacing 40), 2 along Y (spacing 40). Total 6.
+    *   My code generated X-spacing of 100 mm instead of 40 mm. The formula `(n/2 - 0.5) * spacing` is for a grid where the total span is `(n-1)*spacing`.
+    *   Correct X positions for 3 items spaced 40mm: -40, 0, 40.
+    *   Correct Y positions for 2 items spaced 40mm: -20, 20.
+    *   The report shows "1 x 2 grid" because the X positions were so far apart (-100, 0, 100) that the slicer might be grouping them oddly or simply the count of unique X/Y pairs was misinterpreted in my mental check of the report text provided. Actually, looking at the report: "2 holes: 2 x circle d=30.48 [1 x 2 grid (X x Y), pitch X - / Y 40.00, grid centre (0.00, 0.00)]". This report line is confusing. It says "1 x 2 grid" but lists 2 holes. This suggests the slicer only saw 2 holes at that Z level? No, the report says "2 holes" at z=2.00. Why only 2?
+    *   Ah, the report says "2 holes" at z=2.00. If there are 6 holes total, why does it only list 2?
+    *   Let's re-read the code logic. `hole_positions` list has 6 items.
+    *   The report says "2 holes: 2 x circle...". This is strange. Maybe the report is summarizing the *unique* X and Y positions? "1 x 2 grid" usually means 1 row, 2 columns? Or 1 column, 2 rows?
+    *   Regardless of the report's confusing summary, the geometry calculation in the code was definitely wrong.
+    *   Calculation: `x_offset = (6 / 2 - 0.5) * 40 = 100`. This creates a span of 200mm. The plate is only 130mm wide. The holes at X=100 and X=-100 will be outside the plate!
+    *   The spec says "3 along X... 40 mm centre-to-centre". This means the positions are -40, 0, 40.
+    *   The spec says "2 rows... 40 mm centre-to-centre". This means the positions are -20, 20.
+    *   The code used `n_holes` (6) in the X calculation, which is incorrect. It should use 3 for X and 2 for Y.
+
+4.  **Wall Dimensions:**
+    *   Spec: Two solid walls, 130 mm long (X), 4 mm thick (Y), rising from plate to z=70.
+    *   Report: At z=39.00 and z=70.30, two solid regions of 90.00 x 4.00.
+    *   Wait, the report says the solid regions are 90.00 x 4.00.
+    *   My code: `translate([-L / 2, -W / 2, t]) cube([wall_t, W, wall_h]);`
+    *   `L` = 130. `W` = 90. `wall_t` = 4.
+    *   The wall is `cube([4, 90, 70])`.
+    *   The report says the outline is "rectangle 90.00 x 4.00". This corresponds to Y=90 and Z=4? No, the report says "rectangle 90.00 x 4.00 centred (63.00, 0.00)".
+    *   If the wall is 4mm thick in Y, and 90mm wide in Y (matching the plate), the cross section at a specific Z should be 4mm (thickness) x 90mm (width)? No, the wall runs along X.
+    *   The wall is 130mm long (X). The plate is 130mm long (X).
+    *   The wall is 4mm thick (Y). The plate is 90mm wide (Y).
+    *   So the wall cross-section (looking from top) should be 130mm (X) by 4mm (Y).
+    *   The report says: "rectangle 90.00 x 4.00 centred (63.00, 0.00)".
+    *   This implies the dimension along X is 90.00? And the dimension along Y is 4.00?
+    *   If the wall is 130mm long, the X dimension should be 130.
+    *   Why does the report say 90.00?
+    *   Let's check the code again. `translate([-L / 2, -W / 2, t]) cube([wall_t, W, wall_h]);`
+    *   `wall_t` = 4. `W` = 90. `wall_h` = 70.
+    *   The cube is `[4, 90, 70]`.
+    *   The X dimension of the cube is 4. The Y dimension is 90.
+    *   The report says "rectangle 90.00 x 4.00". This matches Y=90 and X=4?
+    *   But the spec says the wall is "130 mm long (X)".
+    *   My code made the wall 4mm long in X!
+    *   I swapped the dimensions. The wall should be `cube([130, 4, 70])`.
+    *   The report confirms this error: "rectangle 90.00 x 4.00 centred (63.00, 0.00)". The center X is 63.00. If the wall was 130mm long, centered at 0, it would go from -65 to 65. The center of the *solid region* in the report is 63.00. This suggests the wall is only 

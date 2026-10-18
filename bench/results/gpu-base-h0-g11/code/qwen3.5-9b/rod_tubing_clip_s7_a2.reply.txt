@@ -1,0 +1,88 @@
+The previous report shows that the holes are now present (d=12.69 and d=6.00), but the **Bounding Box X range** is still incorrect (`-9.35 .. 20.00`).
+
+**Analysis of the Error:**
+1.  **Specification:**
+    *   Rod Ring Center: $x=0$. Outer Diameter: $18.7$ mm.
+    *   Rod Opening: Starts at $x=0$ (since it's the -X side of the ring) and goes left. The opening width is $10$ mm.
+    *   Expected Left Edge: The ring starts at $x = -9.35$ (half of 18.7). The opening removes material from $x=0$ to $x=-5$. The solid material should exist from $x=-9.35$ to $x=0$.
+    *   Wait, the specification says: "a 10 mm wide opening cut out of its -X side (everything with x < 0 and -5 < y < 5 is removed)".
+    *   If the ring is centered at 0 with OD 18.7, the left edge is at $x = -9.35$. The opening removes everything with $x < 0$. So the solid part on the left should stop at $x = -9.35$.
+    *   **However**, the report says the bounding box goes to **-9.35**. This matches the outer edge of the ring.
+    *   Let's check the right side.
+    *   Tubing Ring Center: $x=15$. Outer Diameter: $10$ mm.
+    *   Expected Right Edge: $15 + 5 = 20$.
+    *   Report Right Edge: **20.00**. This matches.
+    *   So the Bounding Box X `-9.35 .. 20.00` is actually **correct** based on the dimensions provided ($18.7/2 = 9.35$ and $15 + 10/2 = 20$).
+
+2.  **Re-evaluating the "Error":**
+    *   Why did I think it was wrong? The previous report had "0 holes" and a huge volume. The current report has the correct holes and volume.
+    *   Let's look at the **Z-slices**.
+    *   **z=0.50**: Shows 2 holes. Correct.
+    *   **z=7.50**: Shows **1 hole** (d=6.00). The rod hole (d=12.69) is **missing**.
+    *   **z=9.50**: Shows **1 hole** (d=6.00). The rod hole is **missing**.
+    *   **Conclusion:** The rod ring's inner hole is being cut off at the top (around z=7 or z=8). This suggests the `difference` operation for the rod ring's inner hole is failing or the geometry is intersecting incorrectly near the top edge.
+    *   In OpenSCAD, when using `difference` with `cylinder` and `cube`, if the `cube` (the cut) does not fully encompass the `cylinder` (the hole) in the Z-direction, the hole might not appear at the very top or bottom slices if the intersection logic is tricky, or more likely, the `cube` cut for the opening is interfering with the hole creation logic if not ordered correctly or if the `cube` is too tall/short.
+    *   Actually, a common issue in OpenSCAD with `difference` and multiple shapes is that the order matters, but usually, it's robust. However, the fact that the hole disappears at z=7.5 suggests the **Rod Ring's inner cylinder** might be getting clipped by the **Opening Cut Cube**.
+    *   The opening cut is defined as `translate([-($rod_outer_diameter/2) - 0.5, 0, $clip_height/2]) cube([... $clip_height + 0.5 ...])`.
+    *   The inner cylinder is `translate($rod_center) cylinder(h = $clip_height, d = $rod_diameter, ...)`.
+    *   The opening cut is a rectangular prism. It cuts through the ring. Does it accidentally cut into the inner hole space?
+    *   The opening is at $x < 0$. The inner hole is at $x^2 + y^2 < 6.35^2$.
+    *   The opening cut removes a block from $x = -9.85$ to $x = -0.85$ (approx).
+    *   The inner hole is a cylinder.
+    *   If the `cube` cut extends into the region where the inner hole exists, it might be "eating" the top/bottom of the hole if the Z-extent of the cube doesn't perfectly align or if there's a rendering artifact.
+    *   Wait, the cube height is `$clip_height + 0.5` (10.5). The cylinder height is `$clip_height` (10). The cube should cover it.
+    *   **Hypothesis:** The issue is likely that the `difference` is not handling the intersection of the "Inner Hole Cylinder" and the "Opening Cut Cube" correctly at the boundaries, causing the hole to vanish at the top slices.
+    *   **Fix:** To ensure the hole is clean and present all the way to the top, we should ensure the inner hole cylinder is defined *before* the opening cut, and perhaps add a tiny bit of clearance to the Z-height of the inner hole cylinder to ensure it's fully rendered before the cut interacts with it, or simply re-order to be safe.
+    *   Actually, a more robust way to model a ring with a notch is to define the ring as a single `difference` of the outer cylinder and the inner cylinder, and then perform the notch cut. The current code does this.
+    *   Let's look at the Z-slice data again. At z=7.5, the rod hole is gone. This means at z=7.5, the cross-section of the rod ring is solid (or the hole is closed).
+    *   This happens if the `difference` logic fails to subtract the inner cylinder at that specific Z level due to the presence of the notch cut.
+    *   **Solution:** Increase the Z-height of the inner hole cylinder slightly (e.g., `$clip_height + 0.1`) to ensure it is fully subtracted before the notch cut potentially interferes, or ensure the notch cut doesn't intersect the inner cylinder's volume in a way that confuses the boolean.
+    *   Actually, the simplest fix for "holes disappearing at the top" in OpenSCAD boolean operations is often to make the subtracting shape slightly larger in the dimension where the issue occurs.
+    *   Let's modify the `rod_ring` module:
+        1.  Make the inner hole cylinder slightly taller (`$clip_height + 0.1`).
+        2.  Make the opening cut cube slightly taller (`$clip_height + 0.5` is already there, maybe increase to `1`).
+    *   Also, let's double check the **Tubing Ring**. At z=7.5, the tubing hole (d=6) is present. So the tubing ring is fine. The issue is isolated to the Rod Ring.
+
+    **Refined Fix for Rod Ring:**
+    The inner hole cylinder needs to be slightly taller than the outer cylinder to ensure the boolean subtraction works correctly at the very top edge, especially when combined with the notch cut.
+
+    Let's update the code.
+
+```openscad
+// Snap-on Clip for Lab Stand Rod and Tubing (Corrected)
+// Orientation: Flat on XY plane, building up in +Z.
+// Units: Millimetres.
+
+// --- Dimensions ---
+// Rod Stand Dimensions
+$rod_diameter = 12.7;
+$rod_wall_thickness = 3;
+$rod_outer_diameter = $rod_diameter + 2 * $rod_wall_thickness; // 18.7
+$rod_center = [0, 0];
+
+// Tubing Dimensions
+$tubing_diameter = 6;
+$tubing_wall_thickness = 2;
+$tubing_outer_diameter = $tubing_diameter + 2 * $tubing_wall_thickness; // 10
+$tubing_center = [15, 0];
+
+// Clip Geometry
+$clip_height = 10;
+$bridge_width_x = 4; // Distance between x=8 and x=12
+$bridge_width_y = 6;
+$opening_width_rod = 10;
+$opening_width_tubing = 4.5;
+
+// Extrusion settings
+$fn = 64;
+
+module rod_ring() {
+    // Rod ring: 12.7mm ID, 3mm wall, centred at origin.
+    // Opening cut: x < 0 and -5 < y < 5.
+    
+    difference() {
+        // 1. Create the full outer ring (OD = 18.7)
+        translate($rod_center)
+        cylinder(h = $clip_height, d = $rod_outer_diameter, $fn = $fn);
+        
+        // 2

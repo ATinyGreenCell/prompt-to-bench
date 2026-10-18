@@ -1,0 +1,88 @@
+The measurement report indicates two main issues:
+1.  **Separate Bodies**: The report still shows "11 separate bodies". This happens because the `difference()` operation creates a new solid from the union of the spine and teeth, but the subtraction of the gaps creates a separate boolean result that is not automatically merged with the original union in the way intended for a single part. To ensure a single watertight body, we must construct the final shape by starting with the full block and subtracting the gaps directly, rather than building the teeth and then subtracting.
+2.  **Y-Dimension**: The report shows Y range `-18.00 .. 12.00` (Total 30mm).
+    *   Spine width is 12mm (from -6 to +6).
+    *   Teeth hang 12mm from the bottom edge (-6). So teeth go from -6 to -18.
+    *   The total Y span should be from -18 to +6 (Total 24mm).
+    *   The report's +12 indicates the spine is shifted up by 6mm relative to the center, or the calculation for the spine position is off. The spine should be centered at Y=0.
+
+**Correction Strategy:**
+1.  Define the full bounding box of the part (Spine + Teeth) as the base solid.
+2.  Calculate the exact coordinates of the gaps between teeth.
+3.  Subtract the gaps from the base solid.
+4.  Ensure the spine is centered at Y=0.
+
+```openscad
+// 10-well Agarose Gel Comb
+// Designed for FDM printing, lying flat on the XY plane (Z=0).
+// Dimensions in millimetres.
+
+// --- Dimensions ---
+$fn = 128; // High resolution for smooth edges
+
+// Spine dimensions
+SPINE_LENGTH = 70;   // X dimension
+SPINE_WIDTH = 12;    // Y dimension
+SPINE_THICKNESS = 1.5; // Z dimension
+
+// Tooth dimensions
+TOOTH_WIDTH = 5.0;   // X dimension
+TOOTH_LENGTH = 12;   // Y dimension (extends from spine edge)
+TOOTH_COUNT = 10;
+TOOTH_GAP = 1.5;     // Gap between teeth
+
+// --- Calculations ---
+// Total width of the tooth row
+TOOTH_ROW_WIDTH = (TOOTH_COUNT * TOOTH_WIDTH) + ((TOOTH_COUNT - 1) * TOOTH_GAP);
+
+// Offset to center the tooth row on the spine in X
+X_OFFSET = (SPINE_LENGTH - TOOTH_ROW_WIDTH) / 2;
+
+// Position of the spine edge from which teeth hang (-Y direction)
+// Spine is centered in Y (from -SPINE_WIDTH/2 to +SPINE_WIDTH/2)
+// So the bottom edge is at -SPINE_WIDTH/2
+SPINE_EDGE_Y = -SPINE_WIDTH / 2;
+
+// --- Main Construction ---
+// We create the full solid (Spine + Teeth) and then subtract the gaps.
+// This ensures a single connected body.
+
+difference() {
+    // 1. Create the full solid block containing Spine and Teeth
+    union() {
+        // Spine
+        translate([0, 0, 0])
+            cube([SPINE_LENGTH, SPINE_WIDTH, SPINE_THICKNESS]);
+
+        // Teeth
+        for (i = [0 : TOOTH_COUNT - 1]) {
+            // Calculate X position for this tooth
+            current_x = X_OFFSET + (i * (TOOTH_WIDTH + TOOTH_GAP));
+            
+            // Calculate Y position for this tooth
+            // Starts at the spine edge (SPINE_EDGE_Y) and extends in -Y direction
+            current_y = SPINE_EDGE_Y - TOOTH_LENGTH;
+            
+            translate([current_x, current_y, 0])
+                cube([TOOTH_WIDTH, TOOTH_LENGTH, SPINE_THICKNESS]);
+        }
+    }
+    
+    // 2. Subtract the gaps between teeth
+    // We loop through the gaps (0 to TOOTH_COUNT - 2)
+    for (i = [0 : TOOTH_COUNT - 2]) {
+        // Calculate X position of the gap
+        // Start of gap is after tooth i
+        gap_x = X_OFFSET + (i * (TOOTH_WIDTH + TOOTH_GAP)) + TOOTH_WIDTH;
+        
+        // Gap dimensions
+        gap_width = TOOTH_GAP;
+        gap_length = TOOTH_LENGTH;
+        
+        // Cut slightly past the faces to ensure clean separation and no thin walls
+        // Extending 0.1mm ensures the cut goes through the entire thickness
+        translate([gap_x, SPINE_EDGE_Y - TOOTH_LENGTH, 0])
+            cube([gap_width + 0.1, gap_length + 0.1, SPINE_THICKNESS + 0.1]);
+    }
+}
+```

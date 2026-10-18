@@ -1,0 +1,112 @@
+The measurement report confirms that the part is still floating with its lowest point at `z = -1.00` instead of `z = 0`. This is caused by the `difference()` operation: when a cutter (the notch cube) extends slightly past the top face of the main cylinder (by `0.01` mm), the boolean subtraction creates a small "overhang" or floating tip at the top of the notch. Since the cutter is taller than the main cylinder, the resulting solid extends above the main cylinder's top plane, and because the cutter is wider than the cylinder at that specific Y-slice, the subtraction logic can sometimes result in the bounding box extending below the intended base if the geometry isn't perfectly contained, or more likely in this case, the visualizer is interpreting the floating tip as shifting the bounding box center or the user's expectation of "resting on the bed" implies the absolute minimum Z should be 0.
+
+However, the most direct fix to ensure the part rests exactly on `z=0` without any floating artifacts is to construct the part using **union** for the main body and **difference** only for the holes, and then apply the notch cut using a method that doesn't create floating geometry.
+
+A robust way to cut a notch into a cylinder without floating artifacts is to:
+1.  Create the main cylinder.
+2.  Create the notch as a separate block.
+3.  Use `difference()` on the *union* of the cylinder and the notch? No, that adds the notch.
+4.  Correct approach: The notch is a void. We need to subtract the notch volume from the cylinder.
+    *   The issue with the previous code is that the notch cutter was `h = 2.01`. The cylinder is `h = 2`. The difference operation removes the cylinder where the cutter exists. If the cutter is taller, it removes nothing extra, but the resulting mesh might have a tiny floating island if the cutter is wider than the cylinder at the top edge.
+    *   Actually, the simplest fix to guarantee `min_z = 0` is to ensure the cutter for the notch is *exactly* the height of the cylinder, or slightly less, and rely on the `difference` to clean up the edges. But the rule says "extend 0.01-1 mm past the faces".
+    *   Let's re-evaluate the floating tip. If I have a cylinder of height 2, and I subtract a cube of height 2.01, the result is a cylinder with a chunk taken out. The top of the chunk is at Z=2.01? No, the cylinder only exists up to Z=2. The subtraction happens only where both exist. So the result should be flat at Z=2.
+    *   Why is the report showing `Z -1.00 .. 1.00`? This implies the cylinder is centered at Z=0. If the cylinder is `h=2` and centered, it goes from -1 to 1.
+    *   **The Specification says:** "lying on the bed... builds upward (+Z)... rests on the bed".
+    *   **My Code:** `translate([0, 0, 0]) cylinder(h=2, ...)`.
+    *   **OpenSCAD Default:** `cylinder` is centered by default unless `center=false`.
+    *   **Correction:** I must use `center=false` (or `center=[0,0,0]` explicitly if the version defaults to true, but standard is `center=true` by default in recent versions, wait. In OpenSCAD, `cylinder()` defaults to `center=true`. If I want it to start at 0, I must set `center=false` or translate it by `h/2`).
+    *   In the previous code: `translate([0, 0, 0]) cylinder(h=2, center=true)`. This creates a cylinder from Z=-1 to Z=1.
+    *   To make it rest on Z=0, I need to translate it up by 1mm, OR set `center=false`.
+    *   Let's use `center=false` and `translate([0,0,1])` to be explicit and safe, or just `translate([0,0,1])` with `center=true` (which is the default).
+    *   Wait, the rule says "Put every dimension in a named variable". I should calculate the offset.
+    *   Let's set `cylinder(center=false)` and translate it by `h/2`.
+
+Let's refine the plan:
+1.  Define `TEMPLATE_THICKNESS = 2`.
+2.  Define `Z_OFFSET = TEMPLATE_THICKNESS / 2`.
+3.  Create the cylinder with `center=false` and translate it by `[0, 0, Z_OFFSET]`. This puts the bottom at Z=0.
+4.  The holes and notch cutters must be positioned relative to this new base.
+    *   Holes: `translate([x, y, Z_OFFSET])` (since they go through the whole thickness).
+    *   Notch: The notch is on the side. Its Z range is also `0` to `2`. The cutter should be `translate([0, Y_pos, Z_OFFSET])` with height `2`.
+
+Let's re-verify the "extend past faces" rule.
+If the main body is Z=0 to Z=2.
+The hole cutter must extend past Z=2. So `h = 2 + 0.1`. Position Z = `1 + 0.05`? No, if `center=false`, the cylinder is at Z=0. The top is at Z=2. The cutter should be `translate([x, y, 0])` with `h=2.1`. This ensures it cuts through the top.
+The notch cutter: Main body side is at X=42.5. Notch is on the +Y side. The notch is a rectangular void.
+The notch cutter should be `translate([0, Y_pos, 0])` with `h=2.1`. This ensures it cuts through the top and bottom.
+
+Let's write the corrected code.
+
+```openscad
+$fn = 128;
+
+// --- Dimensions ---
+// Template base dimensions
+$TEMPLATE_DIAMETER = 85;
+$TEMPLATE_THICKNESS = 2;
+
+// Grid dimensions
+$GRID_ROWS = 7;
+$GRID_COLS = 7;
+$HOLE_DIAMETER = 3;
+$HOLE_SPACING = 9;
+
+// Notch dimensions (on +Y side)
+$NOTCH_WIDTH = 10;  // X dimension
+$NOTCH_DEPTH = 4;   // Y dimension (in from rim)
+
+// --- Calculations ---
+// Calculate grid offset to center the 7x7 grid
+$GRID_OFFSET = (($GRID_ROWS - 1) * $HOLE_SPACING) / 2;
+
+// Calculate notch position relative to center
+$TEMPLATE_RADIUS = $TEMPLATE_DIAMETER / 2;
+$NOTCH_Y_POS = $TEMPLATE_RADIUS - $NOTCH_DEPTH;
+
+// Z-offset to ensure the part rests on the bed at Z=0
+// Cylinder is centered by default, so we translate it up by half its height.
+$Z_OFFSET = $TEMPLATE_THICKNESS / 2;
+
+// --- Main Body ---
+difference() {
+    // Create the main disc starting at z=0
+    // Translate up by half height so bottom is at 0, top is at 2
+    translate([0, 0, $Z_OFFSET])
+        cylinder(
+            h = $TEMPLATE_THICKNESS,
+            d = $TEMPLATE_DIAMETER,
+            center = false
+        );
+
+    // --- Cut Holes ---
+    for (r = [0 : $GRID_ROWS - 1]) {
+        for (c = [0 : $GRID_COLS - 1]) {
+            // Calculate current hole position
+            x = (c - ($GRID_COLS - 1) / 2) * $HOLE_SPACING;
+            y = (r - ($GRID_ROWS - 1) / 2) * $HOLE_SPACING;
+            
+            // Cutter extends past the top face (Z=2)
+            translate([x, y, 0])
+                cylinder(
+                    h = $TEMPLATE_THICKNESS + 0.1,
+                    d = $HOLE_DIAMETER,
+                    center = false
+                );
+        }
+    }
+
+    // --- Cut Notch ---
+    // The notch is a rectangular cut on the side face.
+    // Position: Y = $NOTCH_Y_POS.
+    // X range: -($NOTCH_WIDTH/2) to +($NOTCH_WIDTH/2).
+    // Z range: 0 to 2.
+    // We extend the cutter slightly past the top and bottom faces to ensure a clean cut.
+    
+    translate([0, $NOTCH_Y_POS, 0])
+        cube([
+            $NOTCH_WIDTH + 0.1, // Extend slightly past X edges
+            $NOTCH_DEPTH + 0.1, // Extend slightly past Y edges
+            $TEMPLATE_THICKNESS + 0.1 // Extend slightly past Z edges (top and bottom)
+        ]);
+}
+```

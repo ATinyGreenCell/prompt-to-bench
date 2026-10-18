@@ -1,0 +1,110 @@
+// Buffer Tank for Mini Horizontal Gel Electrophoresis
+// Dimensions in millimetres
+
+// Outer Dimensions
+$w_outer = 120; // Width (X)
+$d_outer = 70;  // Depth (Y)
+$h_outer = 40;  // Height (Z)
+
+// Wall and Floor Thickness
+$w_thick = 3;   // Wall thickness
+$f_thick = 3;   // Floor thickness
+
+// Platform Dimensions
+$p_len = 60;    // Platform length (X)
+$p_wid = $d_outer - 2*$w_thick; // Platform width (Y) - spans full inner width
+$p_h = 10;      // Platform height above inner floor
+
+// Hole Dimensions
+$h_dia = 2;     // Hole diameter
+$h_y = 0;       // Hole Y position
+$h_z = 30;      // Hole Z position
+
+// Configuration
+$fn = 64;       // Facet count for smooth curves
+
+// Derived Dimensions
+$w_inner = $w_outer - 2*$w_thick;
+$d_inner = $d_outer - 2*$w_thick;
+$h_inner = $h_outer - $f_thick;
+
+// Calculate platform Z positions
+// Platform sits on the inner floor (z = $f_thick)
+$p_z_base = $f_thick;
+$p_z_top = $p_z_base + $p_h;
+
+// Calculate hole X positions
+// Holes are at the ends of the inner width, centered vertically on the hole line
+hole_x_left = $w_thick + ($w_inner/2) - ($h_dia/2);
+hole_x_right = $w_thick + ($w_inner/2) + ($h_dia/2);
+
+module buffer_tank() {
+    // 1. Create the main tank body (Open top)
+    // Outer Block
+    outer_block = translate([0, 0, 0]) 
+        cube([$w_outer, $d_outer, $h_outer], center=false);
+    
+    // Inner Void (to create walls and floor)
+    // The void starts at z = $f_thick (floor thickness)
+    // The void extends up to z = $h_outer (open top)
+    inner_void = translate([
+        $w_thick, 
+        $w_thick, 
+        $f_thick
+    ]) 
+        cube([$w_inner, $d_inner, $h_outer - $f_thick], center=false);
+    
+    // Main Tank Shell
+    tank_shell = difference() {
+        outer_block;
+        inner_void;
+    };
+    
+    // 2. Create the central platform
+    // The platform sits on the inner floor (z = $f_thick)
+    // It is 60mm long, centered in X.
+    // Width is full inner width.
+    // Height is 10mm.
+    
+    platform = translate([
+        ($w_outer - $p_len)/2, // Center X
+        $w_thick,              // Align with inner wall Y
+        $p_z_base              // Base Z
+    ]) 
+        cube([$p_len, $p_wid, $p_h], center=false);
+    
+    // 3. Create the electrode holes
+    // We subtract cylinders from the tank_shell.
+    // Holes extend slightly past Z boundaries to ensure clean cut.
+    
+    // Cylinder 1 (Left)
+    hole_cyl_1 = translate([
+        hole_x_left,
+        $h_y,
+        $h_z - 0.5
+    ]) 
+        cylinder(h=$w_outer + 1, r=$h_dia/2, $fn=$fn);
+        
+    // Cylinder 2 (Right)
+    hole_cyl_2 = translate([
+        hole_x_right,
+        $h_y,
+        $h_z - 0.5
+    ]) 
+        cylinder(h=$w_outer + 1, r=$h_dia/2, $fn=$fn);
+    
+    // Final Assembly
+    difference() {
+        // Start with the tank shell
+        tank_shell;
+        
+        // Subtract the platform (it's solid)
+        platform;
+        
+        // Subtract the holes (extend slightly past boundaries to ensure clean cut)
+        hole_cyl_1;
+        hole_cyl_2;
+    }
+}
+
+buffer_tank();

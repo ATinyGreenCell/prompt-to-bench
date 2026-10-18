@@ -1,0 +1,95 @@
+// Straight hose-barb reducer - joins 8mm ID tubing to 5mm ID tubing.
+// Prints upright along Z, centered on origin in X and Y.
+
+$fn = 128;
+
+// Dimensions
+z_start_8mm = 0;
+z_end_8mm   = 20;
+z_start_coll = 20;
+z_end_coll  = 25;
+z_start_5mm = 25;
+z_end_5mm   = 41;
+
+bore_d = 3;
+
+// Barb 8mm specs
+barb_8_height = 10;
+barb_8_bottom_d = 7.5;
+barb_8_top_d    = 9.5;
+barb_8_step_d   = 7.5;
+
+// Barb 5mm specs
+barb_5_height = 8;
+barb_5_bottom_d = 6.5;
+barb_5_top_d    = 5.0;
+barb_5_step_d   = 6.5;
+
+// Collar specs
+collar_d = 12;
+collar_h = z_end_coll - z_start_coll;
+
+// Construct the full profile for rotate_extrude.
+// The polygon must be a closed loop: [r, z] pairs.
+// We start at the bottom (z=0), go up to the top (z=41), then close the loop back to z=0.
+
+// 1. 8mm Section (z=0 to 20)
+// Two stacked barbs.
+// Barb 1 (0-10): r grows 3.75 -> 4.75.
+// Step at z=10: r drops to 3.75.
+// Barb 2 (10-20): r grows 3.75 -> 4.75.
+// End of section at z=20, r=4.75.
+// We need to connect this to the collar (r=6).
+// So we add a point at z=20, r=6 to bridge the gap.
+
+// 2. Collar Section (z=20 to 25)
+// Cylinder d=12 (r=6).
+// Start z=20, r=6. End z=25, r=6.
+
+// 3. 5mm Section (z=25 to 41)
+// Two stacked barbs.
+// Barb 1 (25-33): r shrinks 3.25 -> 2.5.
+// Step at z=33: r grows to 3.25.
+// Barb 2 (33-41): r shrinks 3.25 -> 2.5.
+// End of section at z=41, r=2.5.
+// We need to close the loop back to the start (z=0, r=3.75).
+// So we add a point at z=41, r=3.75.
+
+// Profile Points [radius, z]
+// Start at bottom of 8mm section
+p1 = [3.75, 0];
+// Top of first 8mm barb
+p2 = [4.75, 10];
+// Step down to start of second 8mm barb
+p3 = [3.75, 10];
+// Top of second 8mm barb
+p4 = [4.75, 20];
+// Bridge to collar (r=6)
+p5 = [6, 20];
+// Top of collar
+p6 = [6, 25];
+// Bridge to first 5mm barb (r=3.25)
+p7 = [3.25, 25];
+// Top of first 5mm barb
+p8 = [2.5, 33];
+// Step out to start of second 5mm barb
+p9 = [3.25, 33];
+// Top of second 5mm barb
+p10 = [2.5, 41];
+// Close loop back to bottom (r=3.75)
+p11 = [3.75, 41];
+
+// Combine into a single list
+profile = [
+    p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11
+];
+
+difference() {
+    // Main body
+    rotate_extrude($fn = 128) 
+        polygon(profile);
+    
+    // Bore
+    translate([0, 0, -1]) 
+        cylinder(h = 42, d = bore_d);
+}

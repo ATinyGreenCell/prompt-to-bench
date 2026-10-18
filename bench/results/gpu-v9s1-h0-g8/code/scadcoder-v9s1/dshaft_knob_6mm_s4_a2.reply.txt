@@ -1,0 +1,56 @@
+```openscad
+// Replacement knob for a hotplate stirrer with a 6 mm D-shaft
+// Print orientation: bottom face (with D-bore) on the bed at z = 0
+
+// ---------------- Parameters ----------------
+knob_d      = 30;    // knob outer diameter (mm)
+knob_h      = 15;    // knob height (mm)
+
+bore_d      = 6.2;   // D-bore diameter (mm)
+bore_depth  = 12;    // D-bore depth from bottom face (mm)
+bore_flat   = 4.7;   // distance from D-bore flat to opposite side of circle (mm)
+
+groove_n    = 18;    // number of vertical grip grooves
+groove_d    = 2;     // grip groove diameter (mm)
+
+pointer_w   = 1.5;   // pointer groove width (mm)
+pointer_d   = 1;     // pointer groove depth (mm)
+
+eps         = 0.5;   // overshoot for clean boolean cuts (mm)
+
+$fn = 96;            // circle resolution
+
+// ---------------- Derived ----------------
+bore_r = bore_d / 2;
+// x = -bore_r + (bore_flat - bore_r) = bore_flat/2 - bore_r/2
+// puts the flat on the -X side, extending to +X by bore_flat
+bore_l = bore_flat / 2 - bore_r / 2;
+
+// ---------------- Model ----------------
+difference() {
+    // Main body, centred in XY, resting on z = 0
+    cylinder(d = knob_d, h = knob_h);
+
+    // D-shaped blind bore from the bottom face
+    translate([0, 0, eps])
+        hull() {
+            translate([bore_l, 0, 0])
+                cylinder(d = bore_flat, h = bore_depth + eps);
+            translate([0, -bore_r, 0])
+                cylinder(d = bore_r, h = bore_depth + eps);
+            translate([0, bore_r, 0])
+                cylinder(d = bore_r, h = bore_depth + eps);
+        }
+
+    // 18 evenly spaced vertical grip grooves, full height, centred on the surface
+    for (i = [0 : groove_n - 1])
+        rotate([0, 0, i * 360 / groove_n])
+            translate([knob_d / 2, 0, -eps])
+                cylinder(d = groove_d, h = knob_h + 2 * eps, $fn = 64);
+
+    // Pointer groove on the top face, same side as the D-bore flat (-X)
+    translate([0, 0, knob_h - pointer_d])
+        linear_extrude(height = pointer_w)
+            circle(d = knob_d, $fn = 96);
+}
+```

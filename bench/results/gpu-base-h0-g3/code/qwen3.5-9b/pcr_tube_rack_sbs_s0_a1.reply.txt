@@ -1,0 +1,107 @@
+```openscad
+// 96-Well PCR Tube Rack (ANSI/SLAS Footprint)
+// Designed for FDM 3D printing.
+// Orientation: Rests on XY plane at Z=0, builds upward.
+// Centred on origin in X and Y.
+
+// --- Dimensions (mm) ---
+// Block Dimensions
+$block_length = 127.76;
+$block_width  = 85.48;
+$block_height = 20;
+
+// Hole Specifications
+$hole_diameter = 6.2;
+$hole_spacing_x = 9.0; // Column spacing (along X)
+$hole_spacing_y = 9.0; // Row spacing (along Y)
+$hole_count_x = 12;    // Columns
+$hole_count_y = 8;     // Rows
+
+// Grid Positioning (Distance from edge to first hole centre)
+$offset_x = 14.38;
+$offset_y = 11.24;
+
+// Chamfer Specifications (Orientation Mark)
+$chamfer_leg = 5;
+$chamfer_angle = 45;
+
+// --- Configuration ---
+$fn = 128; // High resolution for smooth holes and chamfers
+
+// --- Main Module ---
+module pcr_rack() {
+    // Define the main block
+    block = cube([
+        $block_length,
+        $block_width,
+        $block_height
+    ]);
+
+    // Calculate grid parameters
+    $total_grid_x = ($hole_spacing_x * ($hole_count_x - 1)) + (2 * $offset_x);
+    $total_grid_y = ($hole_spacing_y * ($hole_count_y - 1)) + (2 * $offset_y);
+    
+    $block_cx = $block_length / 2;
+    $block_cy = $block_width / 2;
+    
+    $grid_cx = $block_cx - ($total_grid_x / 2);
+    $grid_cy = $block_cy - ($total_grid_y / 2);
+    
+    // Chamfer start position (A1 corner)
+    $chamfer_start_x = $grid_cx - $offset_x;
+    $chamfer_start_y = $grid_cy - $offset_y;
+
+    // --- Build ---
+    difference() {
+        // 1. Main Block
+        translate([0, 0, 0]) {
+            block;
+        }
+        
+        // 2. Chamfer Cut
+        // We create a wedge shape and translate it to the corner.
+        // The wedge is defined in a local coordinate system where the corner is (0,0,0).
+        // It extends +X and +Y.
+        chamfer_wedge = linear_extrude(height = $block_height, center = false) {
+            polygon(points = [
+                [0, 0],
+                [$chamfer_leg, 0],
+                [$chamfer_leg, $chamfer_leg],
+                [0, $chamfer_leg]
+            ], 
+            convexity = 3
+            );
+        };
+        
+        translate([
+            $chamfer_start_x, 
+            $chamfer_start_y, 
+            0
+        ]) {
+            chamfer_wedge;
+        }
+        
+        // 3. Holes
+        // Loop through columns (X) and rows (Y)
+        for (col = [0 : $hole_count_x - 1]) {
+            for (row = [0 : $hole_count_y - 1]) {
+                // Calculate hole position
+                hole_x = $grid_cx + ($hole_spacing_x * col);
+                hole_y = $grid_cy + ($hole_spacing_y * row);
+                
+                // Cut the hole
+                translate([hole_x, hole_y, 0]) {
+                    cylinder(
+                        h = $block_height,
+                        r = $hole_diameter / 2,
+                        $fn = $fn
+                    );
+                }
+            }
+        }
+    }
+}
+
+// Render the part
+pcr_rack();
+```

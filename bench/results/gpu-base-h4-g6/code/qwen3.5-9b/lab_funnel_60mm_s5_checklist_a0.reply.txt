@@ -1,0 +1,45 @@
+```openscad
+// Lab Funnel - A straight spout with a conical funnel on top.
+// Printed upright (wide opening at top), resting on XY plane at z=0.
+
+// Dimensions
+spout_od   = 10;      // Outer diameter of the straight spout
+spout_id   = 6.8;     // Inner diameter of the spout (spout_od - 2*wall)
+spout_len  = 20;      // Length of the straight spout (z=0 to z=20)
+funnel_h   = 30;      // Height of the conical part (z=20 to z=50)
+funnel_od  = 60;      // Outer diameter at the top rim
+funnel_id  = 34;      // Inner diameter at the top rim (funnel_od - 2*wall)
+wall       = 1.6;     // Wall thickness everywhere
+
+// Derived values
+funnel_base_od = spout_od; // Outer diameter at the junction (z=20)
+funnel_base_id = spout_id; // Inner diameter at the junction (z=20)
+
+$fn = 64;
+
+// Define the 2D profile for the outer surface (radius vs height)
+// We use rotate_extrude to create the solid.
+// The profile starts at the bottom of the spout (z=0) and goes to the top rim (z=50).
+// X = radius, Y = height.
+
+outer_profile = [
+    [spout_od / 2, 0],           // Bottom of spout
+    [spout_od / 2, spout_len],   // Top of spout (junction)
+    [funnel_od / 2, spout_len + funnel_h] // Top rim
+];
+
+// Define the 2D profile for the inner surface (bore)
+inner_profile = [
+    [spout_id / 2, 0],           // Bottom of spout
+    [spout_id / 2, spout_len],   // Top of spout (junction)
+    [funnel_id / 2, spout_len + funnel_h] // Top rim
+];
+
+difference() {
+    // Create the outer solid
+    rotate_extrude($fn = 64) outer_profile;
+    
+    // Create the inner void (bore)
+    rotate_extrude($fn = 64) inner_profile;
+}
+```

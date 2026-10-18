@@ -1,0 +1,102 @@
+The measurement report indicates that the holes are not being cut through the block. The report shows "0 holes" at all Z-levels, meaning the `difference()` operation is not removing material as expected.
+
+**Analysis of the Error:**
+In the previous code, the cylinder cutting shapes were translated to negative Z coordinates (e.g., `translate([x, y, -cut_depth])`). However, the main block is defined from `z=0` to `z=30`.
+When you translate a cylinder down by 25mm (to `z=-25` to `z=0`), it sits exactly on the bottom face of the block. In OpenSCAD, if a cutting shape is exactly coplanar with the face of the object being cut, the intersection might be degenerate or fail to register as a removal depending on the version and tolerance, or simply because the cylinder's volume does not overlap with the block's volume (the cylinder is at `z<0`, the block is at `z>=0`). They only touch at `z=0`, so no subtraction occurs.
+
+**Fix:**
+The cutting cylinders must extend *into* the block. Since the block starts at `z=0` and goes up to `z=30`, the cylinders must start at `z=0` and go down to `z=-25` (or slightly more to ensure clean cuts).
+Wait, if the block is `z=0` to `z=30`, and I want to cut a hole 25mm deep:
+- The hole should go from the top surface (`z=30`) down to `z=5`.
+- In the `difference()` block, the main object is the cube `z=0..30`.
+- The cutter must overlap with this cube.
+- If I place the cylinder at `z=30` with height 25, it occupies `z=5` to `z=30`. This perfectly overlaps the top 25mm of the block.
+- The previous code placed the cylinder at `z=-25` to `z=0`. This is completely outside the block's volume (`0` to `30`), so nothing gets cut.
+
+**Correction Plan:**
+1. Keep the block at `z=0` to `z=30`.
+2. Move the cutting cylinders to start at `z=30` (the top surface) and extend downwards to `z=5` (25mm depth).
+3. Ensure the cutter extends slightly past `z=5` (e.g., to `z=4.99` or just use `z=5` with a tiny overlap logic, but simpler is to make the cylinder height 25.01 and start at 30, ending at 4.99).
+4. Actually, the simplest robust way: Translate the cylinder so its top is at `z=30`. Set height to `25 + epsilon`.
+
+Let's re-verify the coordinates.
+Block: `translate([0,0,0]) cube([106, 72, 30])` -> Occupies `z` in `[0, 30]`.
+Cutter: Needs to remove material from `z=30` down to `z=5`.
+Cylinder Top: `z=30`.
+Cylinder Bottom: `z=5`.
+Height: `25`.
+To ensure clean cut (Rule 5), let's make height `25.01`.
+Position: `translate([x, y, 30])`.
+This cylinder occupies `z` in `[4.99, 30.01]`.
+Intersection with block `[0, 30]` is `[4.99, 30]`. This works perfectly.
+
+```openscad
+// Bench Rack for 1.5 mL Microcentrifuge Tubes
+// Designed for FDM printing. Rests on XY plane at Z=0.
+
+// --- Dimensions ---
+// Block dimensions
+$block_length = 106; // X
+$block_width  = 72;  // Y
+$block_height = 30;  // Z
+
+// Hole grid configuration
+$hole_count_x = 6;   // Holes along X
+$hole_count_y = 4;   // Holes along Y
+$hole_spacing = 16;  // Centre-to-centre spacing (X and Y)
+
+// Hole dimensions
+$hole_diameter = 11.2; // mm
+$hole_depth    = 25;   // mm (open top, closed bottom)
+$floor_height  = 5;    // mm (solid floor thickness)
+
+// Print settings
+$fn = 64; // Smoothness for holes
+
+// --- Main Block ---
+difference() {
+    // 1. The solid rectangular block
+    // Defined from Z=0 to Z=30
+    cube([
+        $block_length,
+        $block_width,
+        $block_height
+    ]);
+
+    // 2. The holes
+    // We subtract cylinders. 
+    // To cut a hole 25mm deep starting from the top (Z=30) down to Z=5:
+    // The cylinder must start at Z=30 and extend downwards.
+    // We add 0.01mm to the height to ensure the cutter extends past the bottom of the hole 
+    // to avoid coplanar faces (Rule 5).
+    $cut_height = $hole_depth + 0.01; 
+    
+    for (i = [0 : $hole_count_x - 1]) {
+        for (j = [0 : $hole_count_y - 1]) {
+            // Calculate position for current hole
+            // Grid is centered on the block
+            $x_pos = -($block_length / 2) + ($hole_spacing * ($hole_count_x - 1)) / 2 + (i * $hole_spacing);
+            $y_pos = -($block_width / 2) + ($hole_spacing * ($hole_count_y - 1)) / 2 + (j * $hole_spacing);
+            
+            // Cylinder parameters
+            $r = $hole_diameter / 2;
+            
+            // Translate to position. 
+            // Top of cylinder is at Z = $block_height (30).
+            // Cylinder extends down by $cut_height.
+            translate([
+                $x_pos,
+                $y_pos,
+                $block_height
+            ]) {
+                cylinder(
+                    h = $cut_height,
+                    r1 = $r,
+                    r2 = $r,
+                    $fn = $fn
+                );
+            }
+        }
+    }
+}
+```

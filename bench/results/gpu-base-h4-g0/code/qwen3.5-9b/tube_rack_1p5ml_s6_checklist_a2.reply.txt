@@ -1,0 +1,101 @@
+The previous file was identical because the specification did not explicitly mention the need for a solid floor at the bottom of the holes, but the user's prompt said "closed at the bottom, leaving a 5 mm solid floor". The previous code *did* create a solid floor (Z=0 to Z=5), but the volume calculation (228,960 mm³) suggests the holes might not be cutting all the way through as intended or the floor thickness is different than expected.
+
+Let's re-calculate the expected volume to verify the geometry:
+1.  **Total Block Volume:** $106 \times 72 \times 30 = 228,960 \text{ mm}^3$.
+2.  **Hole Volume:**
+    *   Radius $r = 11.2 / 2 = 5.6 \text{ mm}$.
+    *   Depth $h = 25 \text{ mm}$.
+    *   Area of one hole = $\pi \times 5.6^2 \approx 98.52 \text{ mm}^2$.
+    *   Volume of one hole = $98.52 \times 25 \approx 2,463 \text{ mm}^3$.
+    *   Total holes = 24.
+    *   Total removed volume = $24 \times 2,463 \approx 59,112 \text{ mm}^3$.
+3.  **Expected Final Volume:** $228,960 - 59,112 = 169,848 \text{ mm}^3$.
+
+The report shows a volume of **228,960 mm³**, which is exactly the volume of the solid block with **no holes removed**. This indicates that the `difference()` operation is failing to cut the holes.
+
+**Why is it failing?**
+In OpenSCAD, `difference()` works by subtracting shapes that exist in the same coordinate space.
+*   The block is defined from $Z=0$ to $Z=30$.
+*   The holes are cylinders defined starting at $Z=30$ (top) and going down 25mm (to $Z=5$).
+*   However, the `cylinder()` primitive in OpenSCAD is a solid that extends from its base ($Z=0$ relative to its origin) upwards by height $h$.
+*   In the code: `translate([x, y, H]) cylinder(h = hole_depth, d = hole_d);`
+    *   This places the base of the cylinder at $Z=30$.
+    *   It extends upwards to $Z=30+25 = 55$.
+    *   The block only exists up to $Z=30$.
+    *   Therefore, the cylinder and the block do not overlap in 3D space (they touch at the boundary $Z=30$ but do not intersect).
+    *   Since they don't intersect, `difference()` does nothing.
+
+**Correction:**
+The cylinder must be defined such that it overlaps with the block.
+Option A: Define the cylinder from $Z=0$ to $Z=25$ (bottom-up) and translate it to sit on the floor.
+Option B: Define the cylinder from $Z=0$ to $Z=25$ (bottom-up) and translate it to sit at the top, but invert the logic or use a different translation.
+Actually, the simplest fix for "holes from top down" is to define the cylinder starting at $Z=0$ with height 25, and then translate it so its *top* is at $Z=30$.
+If a cylinder has height 25 and sits on $Z=0$, its top is at $Z=25$. We need the top to be at $Z=30$. So we translate it up by 5mm.
+Wait, let's re-evaluate.
+Block: $Z \in [0, 30]$.
+Hole: Needs to occupy $Z \in [5, 30]$.
+If I define a cylinder with height 25, and I want it to occupy $Z \in [5, 30]$, I should place its base at $Z=5$.
+So: `translate([x, y, 5]) cylinder(h = 25, d = hole_d);`
+This cylinder occupies $Z \in [5, 30]$. The block occupies $Z \in [0, 30]$. They overlap perfectly in the hole region. The difference will work.
+
+Let's verify the "5 mm solid floor" requirement.
+Block bottom is $Z=0$.
+Hole starts at $Z=5$.
+Space between $Z=0$ and $Z=5$ remains solid. This matches the spec.
+
+**Verification of other parameters:**
+*   Dimensions: 106, 72, 30. (OK)
+*   Grid: 4 rows, 6 cols, 16mm pitch. (OK)
+*   Hole diameter: 11.2. (OK)
+*   Hole depth: 25. (OK)
+*   Floor: 5mm. (OK)
+
+The previous code failed because the hole cylinders were placed *above* the block instead of *inside* it.
+
+```openscad
+// Bench rack for 1.5 mL microcentrifuge tubes.
+// Solid block with a grid of vertical holes.
+// Orientation: Rests on XY plane at Z=0, builds upward.
+
+// Block dimensions
+L     = 106;   // Length (X)
+W     = 72;    // Width (Y)
+H     = 30;    // Height (Z)
+
+// Grid configuration
+n_rows = 4;    // Rows along Y
+n_cols = 6;    // Columns along X
+pitch_x = 16;  // Centre-to-centre spacing X
+pitch_y = 16;  // Centre-to-centre spacing Y
+
+// Hole dimensions
+hole_d = 11.2; // Diameter
+hole_depth = 25; // Depth from top
+
+// Derived values
+floor_thickness = H - hole_depth; // 5 mm
+hole_radius = hole_d / 2;
+
+// Calculate grid positions centred on the block
+// Formula: (i - (n - 1) / 2) * pitch
+// We generate two lists: one for X positions (columns) and one for Y positions (rows)
+x_positions = [for (i = [0 : n_cols - 1]) (i - (n_cols - 1) / 2) * pitch_x];
+y_positions = [for (i = [0 : n_rows - 1]) (i - (n_rows - 1) / 2) * pitch_y];
+
+$fn = 64;
+
+difference() {
+    // Main solid block
+    translate([-L / 2, -W / 2, 0]) cube([L, W, H]);
+    
+    // Cut out all holes
+    // The cylinder is defined from Z=0 upwards. 
+    // To create a hole from the top (Z=H) down to Z=floor_thickness,
+    // we place the cylinder's base at Z=floor_thickness.
+    for (x = x_positions) {
+        for (y = y_positions) {
+            translate([x, y, floor_thickness]) cylinder(h = hole_depth, d = hole_d);
+        }
+    }
+}
+```

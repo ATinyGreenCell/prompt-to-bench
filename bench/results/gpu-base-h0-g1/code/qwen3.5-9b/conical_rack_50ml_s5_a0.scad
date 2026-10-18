@@ -1,0 +1,110 @@
+// Rack for six 50 mL conical (Falcon-type) tubes
+// Print orientation: Upside down. Flat plate on bed (Z=0).
+// After printing, flip over so walls stand on bed and tubes insert from top.
+
+// --- Dimensions (mm) ---
+// Plate dimensions
+$plate_length_X = 130;
+$plate_width_Y = 90;
+$plate_thickness = 4;
+
+// Hole specifications
+$hole_diameter = 30.5;
+$hole_count = 6;
+$hole_rows_Y = 2;
+$hole_cols_X = 3;
+$hole_spacing_X = 40;
+$hole_spacing_Y = 40;
+
+// Wall specifications
+$wall_length_X = 130;
+$wall_thickness_Y = 4;
+$wall_height_Z = 70; // Total height from bed to top of wall
+
+// --- Derived Variables ---
+// Center the plate on the origin
+$center_X = 0;
+$center_Y = 0;
+
+// Calculate hole positions
+// Rows are along Y, Cols are along X
+// Spacing is center-to-center. 
+// First row Y = -($plate_width_Y/2) + ($hole_spacing_Y/2)
+// Actually, simpler: distribute evenly.
+// Total span Y = ($hole_rows_Y - 1) * $hole_spacing_Y
+// Offset Y = ($plate_width_Y - Total span Y) / 2
+$hole_span_Y = ($hole_rows_Y - 1) * $hole_spacing_Y;
+$hole_offset_Y = ($plate_width_Y - $hole_span_Y) / 2;
+
+$hole_span_X = ($hole_cols_X - 1) * $hole_spacing_X;
+$hole_offset_X = ($plate_length_X - $hole_span_X) / 2;
+
+// --- Main Module ---
+module tube_rack() {
+    // Set global resolution for curved holes
+    $fn = 64;
+
+    // 1. The Base Plate
+    // Lies on Z=0 to Z=$plate_thickness
+    plate = cube([
+        $plate_length_X, 
+        $plate_width_Y, 
+        $plate_thickness
+    ]);
+
+    // 2. The Two Side Walls
+    // Rise from Z=$plate_thickness to Z=$wall_height_Z
+    // Located at Y = +/- ($plate_width_Y / 2) - ($wall_thickness_Y / 2)
+    // Length is $plate_length_X
+    
+    wall_height = $wall_height_Z - $plate_thickness;
+    wall_y_pos = ($plate_width_Y / 2) - ($wall_thickness_Y / 2);
+
+    // Create the two walls
+    wall1 = translate([0, wall_y_pos, 0]) 
+            cube([$wall_length_X, $wall_thickness_Y, $wall_height]);
+    
+    wall2 = translate([0, -wall_y_pos, 0]) 
+            cube([$wall_length_X, $wall_thickness_Y, $wall_height]);
+
+    // 3. The Holes
+    // We need to subtract cylinders. 
+    // To ensure clean cuts, we extend the cutting cylinder slightly past the plate thickness
+    // and slightly past the wall tops if they were blocking, but here walls are solid.
+    // The holes go all the way through the plate.
+    // We extend Z slightly to ensure the cut goes through the full thickness of the plate.
+    cut_z_extension = 0.5; 
+    
+    for (r = [0 : $hole_rows_Y - 1]) {
+        for (c = [0 : $hole_cols_X - 1]) {
+            // Calculate position
+            pos_x = $hole_offset_X + c * $hole_spacing_X;
+            pos_y = $hole_offset_Y + r * $hole_spacing_Y;
+            
+            // Create the cutting cylinder
+            // Radius
+            r_val = $hole_diameter / 2;
+            
+            // Cylinder extends through the plate and a bit more to ensure clean cut
+            // Z range: 0 to $plate_thickness + cut_z_extension
+            hole = cylinder(
+                h = $plate_thickness + cut_z_extension,
+                r1 = r_val,
+                r2 = r_val,
+                center = [pos_x, pos_y, $plate_thickness/2]
+            );
+            
+            difference() {
+                union() {
+                    plate;
+                    wall1;
+                    wall2;
+                }
+                translate([pos_x, pos_y, 0]) hole;
+            }
+        }
+    }
+}
+
+// Execute the design
+tube_rack();

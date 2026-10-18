@@ -1,0 +1,166 @@
+// 96-Well PCR Tube Rack (ANSI/SLAS Footprint)
+// Designed for FDM 3D printing.
+// Orientation: Rests on XY plane at Z=0, builds upward.
+// Centred on origin in X and Y.
+
+// --- Dimensions (mm) ---
+// Block Dimensions
+$block_length = 127.76;
+$block_width  = 85.48;
+$block_height = 20;
+
+// Hole Specifications
+$hole_diameter = 6.2;
+$hole_spacing_x = 9.0;
+$hole_spacing_y = 9.0;
+$hole_count_x = 12;
+$hole_count_y = 8;
+
+// Grid Positioning (Distance from edge to first hole centre)
+$offset_x = 14.38;
+$offset_y = 11.24;
+
+// Chamfer Specifications (Orientation Mark at A1 corner)
+$chamfer_leg = 5;
+
+// --- Configuration ---
+$fn = 100; // High resolution for smooth holes and chamfers
+
+// --- Main Block ---
+difference() {
+    // 1. Create the main block
+    block = cube([
+        $block_length,
+        $block_width,
+        $block_height
+    ], center = false);
+    
+    // 2. Cut the 96 holes
+    // We iterate through X (columns) and Y (rows)
+    for (col = [0 : $hole_count_x - 1]) {
+        for (row = [0 : $hole_count_y - 1]) {
+            // Calculate position of current hole centre
+            // X position: offset + col * spacing
+            pos_x = $offset_x + (col * $hole_spacing_x);
+            // Y position: offset + row * spacing
+            pos_y = $offset_y + (row * $hole_spacing_y);
+            
+            // Create hole cylinder
+            hole = cylinder(
+                h = $block_height + 1, // Extend slightly past top/bottom for clean cut
+                r = $hole_diameter / 2,
+                center = [pos_x, pos_y, $block_height / 2]
+            );
+            
+            difference() {
+                block;
+                hole;
+            }
+        }
+    }
+    
+    // 3. Cut the Chamfer at the A1 corner
+    // A1 is the first hole (col=0, row=0).
+    // Coordinates of A1 centre relative to block's local origin (min X, min Y):
+    $a1_x = $offset_x;
+    $a1_y = $offset_y;
+    
+    // The block is centred on the origin.
+    // Block min X = -$block_length / 2
+    // Block min Y = -$block_width / 2
+    // The corner of the block corresponding to A1 is at:
+    $corner_x = -($block_length / 2) + $offset_x;
+    $corner_y = -($block_width / 2) + $offset_y;
+    
+    // Define the polygon for the chamfer cut.
+    // We want to remove the corner triangle defined by the chamfer leg.
+    // The cut line connects ($corner_x - $chamfer_leg, $corner_y) and ($corner_x, $corner_y - $chamfer_leg).
+    // We extend the cut slightly past the faces to ensure a clean removal.
+    $cut_extend = 0.5;
+    
+    // Vertices of the polygon to subtract (in XY plane):
+    // P1: Start of cut on left edge
+    $p1_x = $corner_x - $chamfer_leg - $cut_extend;
+    $p1_y = $corner_y;
+    
+    // P2: End of cut on bottom edge
+    $p2_x = $corner_x;
+    $p2_y = $corner_y - $chamfer_leg - $cut_extend;
+    
+    // P3: Corner point (original vertex)
+    $p3_x = $corner_x;
+    $p3_y = $corner_y;
+    
+    // P4: Point on left edge further down (to cover the full height of the chamfer wedge)
+    // Actually, the chamfer is a plane cutting through the block.
+    // The polygon representing the material to be removed is a trapezoid or triangle extruded.
+    // Let's define the polygon vertices that encompass the corner to be removed.
+    // We need to cover the area from the cut line out to the block boundaries.
+    
+    // Vertices:
+    // 1. ($corner_x - $chamfer_leg - $cut_extend, $corner_y)
+    // 2. ($corner_x - $chamfer_leg - $cut_extend, $corner_y - $block_height) // Down to bottom face
+    // 3. ($corner_x, $corner_y - $block_height) // Corner of bottom face
+    // 4. ($corner_x, $corner_y - $chamfer_leg - $cut_extend) // Up along bottom face
+    // 5. ($corner_x, $corner_y) // Original corner
+    // 6. ($corner_x - $chamfer_leg - $cut_extend, $corner_y) // Back to start
+    
+    // Wait, the chamfer is a 45 degree cut. The material removed is a triangular prism.
+    // The base of the prism in XY is a triangle with vertices:
+    // A: ($corner_x - $chamfer_leg, $corner_y)
+    // B: ($corner_x, $corner_y - $chamfer_leg)
+    // C: ($corner_x, $corner_y)
+    // We need to extend this triangle slightly to ensure the cut goes all the way through.
+    
+    // Let's define the polygon vertices for the cut:
+    // P1: ($corner_x - $chamfer_leg - $cut_extend, $corner_y)
+    // P2: ($corner_x - $chamfer_leg - $cut_extend, $corner_y - $block_height)
+    // P3: ($corner_x, $corner_y - $block_height)
+    // P4: ($corner_x, $corner_y - $chamfer_leg - $cut_extend)
+    // P5: ($corner_x, $corner_y)
+    // P6: ($corner_x - $chamfer_leg - $cut_extend, $corner_y)
+    
+    // This polygon covers the corner and extends to the faces.
+    // However, the chamfer face itself is planar. The polygon above creates a stepped cut if not careful.
+    // But since we are doing a difference, any polygon that covers the volume to be removed works.
+    // The volume to be removed is bounded by:
+    // X = $corner_x - $chamfer_leg (for Y > $corner_y - $chamfer_leg)
+    // Y = $corner_y - $chamfer_leg (for X > $corner_x - $chamfer_leg)
+    // And the diagonal X + Y = constant.
+    
+    // Let's simplify. We create a polygon that is the union of the chamfer triangle and the extensions to the faces.
+    // Vertices:
+    // 1. ($corner_x - $chamfer_leg - $cut_extend, $corner_y)
+    // 2. ($corner_x - $chamfer_leg - $cut_extend, $corner_y - $block_height)
+    // 3. ($corner_x, $corner_y - $block_height)
+    // 4. ($corner_x, $corner_y - $chamfer_leg - $cut_extend)
+    // 5. ($corner_x, $corner_y)
+    // 6. ($corner_x - $chamfer_leg - $cut_extend, $corner_y)
+    
+    // This polygon effectively removes the corner.
+    
+    chamfer_cut = polygon([
+        [$p1_x, $p1_y],
+        [$p1_x, $corner_y - $block_height],
+        [$corner_x, $corner_y - $block_height],
+        [$corner_x, $p2_y],
+        [$corner_x, $p3_y], // $p3_y is $corner_y
+        [$p1_x, $p1_y]
+    ]);
+    
+    // Extrude the polygon through the Z height of the block
+    translate([0, 0, 0])
+    linear_extrude(height = $block_height)
+    chamfer_cut;
+    
+    // Note: The chamfer_cut polygon is defined in the local coordinate system of the block.
+    // We need to translate it to the correct position.
+    // The polygon vertices defined above are relative to the corner ($corner_x, $corner_y).
+    // Wait, the polygon definition above uses absolute coordinates.
+    // Let's re-verify the coordinates.
+    // $corner_x is the absolute X of the corner.
+    // $corner_y is the absolute Y of the corner.
+    // The polygon vertices are absolute.
+    // So we just need to translate the polygon to the corner position?
+    // No, the vertices are already absolute.
+    // But the polygon command

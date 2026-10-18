@@ -1,0 +1,53 @@
+```openscad
+// Snap-on tubing clip for a 12.7 mm lab stand rod
+// Print orientation: flat on bed, extruded up in +Z
+
+$fn = 96;
+
+// ---- Dimensions (mm) ----
+rod_id      = 12.7;   // stand rod inner diameter
+rod_wall    = 3;      // stand rod ring wall thickness
+rod_od      = rod_id + 2 * rod_wall;  // 18.7
+opening_w   = 10;     // rod ring -X opening width
+opening_h   = 10;     // rod ring opening height (y)
+
+tube_id     = 6;      // tubing inner diameter
+tube_wall   = 2;      // tubing ring wall thickness
+tube_od     = tube_id + 2 * tube_wall;  // 10
+tube_x      = 15;     // tubing ring centre x
+tube_open_w = 4.5;    // tubing ring +X opening width
+tube_open_h = tube_open_w / 2;  // opening half-height (y)
+
+bridge_w    = 6;      // bridge width (x)
+bridge_y    = 6;      // bridge height (y)
+bridge_x0   = 8;      // bridge start x
+bridge_x1   = 12;     // bridge end x
+
+eps         = 0.5;    // cutter overshoot past faces
+h           = 10;     // extrusion height (Z)
+
+// ---- 2-D Profile ----
+profile = union(
+    // Rod ring with -X opening
+    difference() {
+        circle(d = rod_od);
+        translate([-rod_od - eps, -opening_h])
+            cube([opening_w + 2 * eps, opening_h, h + 2 * eps]);
+    },
+    // Tubing ring with +X opening
+    difference() {
+        translate([tube_x, 0, 0])
+            circle(d = tube_od);
+        translate([tube_x, -tube_open_h])
+            cube([tube_open_w + 2 * eps, tube_open_h, h + 2 * eps]);
+    },
+    // Solid bridge between the two rings
+    translate([bridge_x0, -bridge_y / 2, 0])
+        cube([bridge_x1 - bridge_x0, bridge_y, h])
+);
+
+// ---- Extrude ----
+translate([0, 0, 0])
+    linear_extrude(height = h)
+        profile;
+```

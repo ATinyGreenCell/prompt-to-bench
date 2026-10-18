@@ -1,0 +1,107 @@
+The issue causing "9 separate bodies" and the incorrect cross-sections at the top is that `linear_extrude` with a polygon creates a solid that includes the interior of the polygon. When you subtract two such solids (one for the outer shell, one for the inner void) that share a boundary, the boolean operation often fails to merge them into a single shell if the geometry isn't perfectly aligned or if the solver treats the overlapping volumes as distinct entities that don't fully cancel out to form a thin wall.
+
+To guarantee a single, watertight shell with the exact dimensions, the most robust method in OpenSCAD is to construct the **outer surface** and the **inner surface** as separate closed manifolds (using `hull` or `difference` of cylinders to create thick-walled tubes) and then perform the boolean difference. However, an even more reliable approach for a funnel shape is to build the **outer solid** as a single continuous object and the **inner void** as a single continuous object, ensuring they are perfectly aligned.
+
+The previous attempt likely failed because the `polygon` extrusion creates a solid that includes the center. When subtracting the inner solid from the outer solid, if the solver doesn't recognize them as perfectly nested, it can leave artifacts.
+
+**The Fix:**
+We will construct the **Outer Body** by taking a large cylinder and a large cone, and then using `difference` to carve out the *entire* interior volume in one go. This ensures the wall thickness is mathematically enforced by the subtraction of the inner void from the outer volume, creating a single manifold.
+
+Wait, the previous code *did* use `difference(union(outer), union(inner))`. Why did it fail?
+The report shows `z=35.00` has "2 solid regions". This implies the boolean operation split the cone into two pieces (left and right) instead of one continuous shell. This happens when the inner void is not perfectly concentric or when the boolean resolution is insufficient to merge the two sides of the wall.
+
+**Correct Strategy:**
+Instead of relying on `linear_extrude` polygons which can be tricky with booleans, we will build the **Outer Shell** using `hull` of two cylinders (one at the bottom, one at the top) or simply by defining the outer volume as a union of a cylinder and a cone, and the **Inner Void** as a union of a cylinder and a cone.
+Actually, the simplest way to get a perfect thin wall in OpenSCAD without complex CSG tricks is to define the **Outer Volume** and the **Inner Volume** explicitly and ensure they are concentric.
+
+Let's try a different construction that is guaranteed to be watertight:
+1.  **Outer Volume**: A cylinder (spout) + a cone (funnel).
+2.  **Inner Volume**: A cylinder (spout bore) + a cone (funnel bore).
+3.  **Result**: `difference(Outer, Inner)`.
+
+The previous code did exactly this. The error "2 solid regions" at z=35 suggests the boolean solver split the cone wall. This often happens if the `linear_extrude` polygon is not perfectly closed or if the `center=false` alignment causes slight misalignments between the extruded shapes and the cylinders.
+
+**Robust Solution:**
+We will use `hull()` to create the outer shape from two cylinders (one at z=0, one at z=50) and `hull()` for the inner shape? No, `hull` creates a convex shape, which won't work for a funnel.
+
+Let's stick to the cylinder/cone union but ensure perfect alignment. The key is to make sure the `linear_extrude` polygon is defined correctly and that the `difference` operation is robust.
+Actually, the most reliable way to print a funnel with a specific wall thickness is to model the **outer surface** as a solid and the **inner surface** as a solid, but ensure the **inner solid** is slightly larger than the theoretical void to prevent zero-thickness issues, OR simply rely on high `$fn`.
+
+Let's re-examine the "2 solid regions" error. This usually means the two halves of the cone wall are not connected. This happens if the inner cone is slightly offset or if the boolean fails to merge the two sides.
+To fix this definitively, we will construct the **Outer Body** as a single solid and the **Inner Body** as a single solid, but we will use `difference` to create the **Outer Body** from a large cylinder and a large cone, and the **Inner Body** from a smaller cylinder and a smaller cone.
+
+Wait, I see the issue in the previous logic. The `linear_extrude` with a polygon creates a solid. If the polygon is not perfectly closed (which it is in the code), or if the `center=false` causes the base to be at z=0 of the extrusion but the translation puts it at z=20, it should be fine.
+
+Let's try a different approach that is known to be watertight for shells: **Construct the outer shell by subtracting a slightly larger inner cylinder/cone from a slightly larger outer cylinder/cone?** No, that's what we did.
+
+Let's try building the **Outer Shell** using `hull` of two cylinders? No.
+
+Okay, let's look at the "2 solid regions" again. At z=35, we are in the cone. The cross section should be an annulus (ring). If it reports "2 solid regions", it means the ring is broken into two separate pieces (left and right). This implies the boolean operation failed to connect the two sides of the wall.
+This happens if the inner void is not perfectly centered or if the geometry is degenerate.
+To fix this, we will ensure the inner and outer shapes are perfectly concentric by using `translate([0,0,z])` consistently.
+
+**Alternative Robust Method:**
+Instead of `linear_extrude` with a polygon, we can use `rotate_extrude` with a profile. This is often more robust for rotational symmetry.
+Profile:
+- Outer: Line from (0, 5) to (30, 30) [Radius vs Height]
+- Inner: Line from (0, 3.4) to (28.4, 30)
+Wait, `rotate_extrude` creates a solid of revolution.
+Outer Profile:
+- Start at z=0, r=5.
+- Go up to z=20, r=5.
+- Go up to z=50, r=30.
+Inner Profile:
+- Start at z=0, r=3.4.
+- Go up to z=20, r=3.4.
+- Go up to z=50, r=28.4.
+
+If we extrude these profiles, we get two solids. Subtracting them should give a perfect shell.
+Why did the polygon method fail? Maybe the polygon points order or the `center=false` interaction with the translation.
+Let's switch to `rotate_extrude`. It is mathematically cleaner for rotational parts.
+
+**Plan:**
+1. Define Outer Profile: A path in the XZ plane (rotated around Z).
+   - Segment 1: (5, 0) to (5, 20) [Spout outer]
+   - Segment 2: (5, 20) to (30, 50) [Cone outer]
+2. Define Inner Profile: A path in the XZ plane.
+   - Segment 1: (3.4, 0) to (3.4, 20) [Spout inner]
+   - Segment 2: (3.4, 20) to (28.4, 50) [Cone inner]
+3. Extrude both profiles.
+4. Subtract Inner from Outer.
+
+This guarantees rotational symmetry and a single connected body.
+
+```openscad
+// Lab Funnel Design - Robust Version
+// Units: millimetres
+// Orientation: Upright, wide opening at top, rests on XY plane at z=0
+
+$fn = 128; // High resolution for smooth curves
+
+// --- Dimensions ---
+// Spout (Tube)
+spout_outer_diameter = 10;
+spout_inner_diameter = 6.8; // 10 - 2*1.6
+spout_length = 20;
+spout_wall_thickness = 1.6;
+
+// Cone (Funnel)
+cone_bottom_outer_diameter = 10; // Matches spout outer
+cone_top_outer_diameter = 60;
+cone_bottom_z = 20; // Start of cone
+cone_top_z = 50;    // End of cone
+cone_wall_thickness = 1.6;
+
+// --- Derived Radii ---
+// Outer Radii
+outer_spout_radius = spout_outer_diameter / 2;
+outer_cone_bottom_radius = cone_bottom_outer_diameter / 2;
+outer_cone_top_radius = cone_top_outer_diameter / 2;
+
+// Inner Radii
+inner_spout_radius = spout_inner_diameter / 2;
+inner_cone_bottom_radius = spout_inner_diameter / 2; // Matches spout inner
+inner_cone_top_radius = (cone_top_outer_diameter / 2) - cone_wall_thickness;
+
+// --- Construction ---
+// We use rotate_extrude to create the solids

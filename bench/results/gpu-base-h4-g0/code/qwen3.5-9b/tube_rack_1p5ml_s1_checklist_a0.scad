@@ -1,0 +1,43 @@
+// Bench rack for 1.5 mL microcentrifuge tubes.
+// Solid block with a grid of deep holes.
+// Orientation: Rests on XY plane at Z=0, builds upward. Centred on origin.
+
+// Block dimensions
+L     = 106; // Length (X)
+W     = 72;  // Width (Y)
+H     = 30;  // Height (Z)
+
+// Grid configuration
+rows  = 4;   // Rows along Y
+cols  = 6;   // Columns along X
+pitch = 16;  // Centre-to-centre spacing
+
+// Hole dimensions
+hole_d = 11.2; // Diameter
+hole_depth = 25; // Depth from top
+floor_thickness = 5; // Solid floor at bottom
+
+// Derived values
+$fn = 64; // Smooth holes
+
+// Calculate grid positions centred on the block
+// X positions: 6 holes, 16mm pitch, centred on L/2
+// Y positions: 4 holes, 16mm pitch, centred on W/2
+x_positions = [for (i = [0 : cols - 1]) (i - (cols - 1) / 2) * pitch];
+y_positions = [for (i = [0 : rows - 1]) (i - (rows - 1) / 2) * pitch];
+
+// Main block
+difference() {
+    // Create the solid block
+    translate([-L / 2, -W / 2, 0]) cube([L, W, H]);
+
+    // Cut the holes
+    // Holes are open at top (Z=H) and closed at bottom (Z=floor_thickness)
+    // We cut cylinders starting from Z=H down to Z=floor_thickness
+    for (x = x_positions) {
+        for (y = y_positions) {
+            translate([x, y, H - hole_depth]) 
+                cylinder(h = hole_depth, d = hole_d);
+        }
+    }
+}

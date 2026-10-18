@@ -1,0 +1,59 @@
+```openscad
+// Bench rack for 1.5 mL microcentrifuge tubes.
+// Solid block with a grid of vertical holes.
+// Orientation: Rests on XY plane at Z=0, builds upward.
+
+// Block dimensions
+L     = 106; // Length (X)
+W     = 72;  // Width (Y)
+H     = 30;  // Height (Z)
+
+// Hole grid parameters
+n_x   = 6;   // Holes along X
+n_y   = 4;   // Holes along Y
+p_x   = 16;  // Pitch X (centre-to-centre)
+p_y   = 16;  // Pitch Y (centre-to-centre)
+
+// Hole dimensions
+hole_d = 11.2; // Diameter
+hole_depth = 25; // Depth from top
+floor_thickness = 5; // Solid floor at bottom
+
+// Derived positions (centred on origin)
+// Grid is centred, so we calculate offset from edge to first hole
+// Total span in X = (n_x - 1) * p_x
+// Total span in Y = (n_y - 1) * p_y
+// Offset from edge = (L - Total span X) / 2
+// Offset from edge = (W - Total span Y) / 2
+
+span_x = (n_x - 1) * p_x;
+span_y = (n_y - 1) * p_y;
+offset_x = (L - span_x) / 2;
+offset_y = (W - span_y) / 2;
+
+$fn = 64;
+
+difference() {
+    // The main block
+    cube([L, W, H]);
+    
+    // Subtract the holes
+    // Each hole is a cylinder extending slightly past the bottom to ensure clean cut
+    for (i = [0 : n_x - 1]) {
+        for (j = [0 : n_y - 1]) {
+            let(
+                x = offset_x + i * p_x,
+                y = offset_y + j * p_y
+            ) {
+                translate([x, y, 0]) {
+                    cylinder(
+                        h = H + 1, // Extend 1mm past bottom
+                        d = hole_d,
+                        center = true
+                    );
+                }
+            }
+        }
+    }
+}
+```

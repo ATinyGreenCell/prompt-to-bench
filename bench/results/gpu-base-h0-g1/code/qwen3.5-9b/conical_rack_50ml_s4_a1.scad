@@ -1,0 +1,80 @@
+The measurement report reveals a critical discrepancy in the geometry of the side walls.
+
+**Analysis of the Error:**
+1.  **Specification:** "Two solid walls... each wall is 130 mm long (X) and 4 mm thick (Y), flush with the plate's long edge".
+    *   Plate Y range: -45 to +45.
+    *   Wall Y range (Left): Should be -49 to -45 (4mm thick).
+    *   Wall Y range (Right): Should be +45 to +49 (4mm thick).
+2.  **Reported Geometry:**
+    *   The report shows two separate bodies, each `130.00 x 43.00 x 4.00`.
+    *   A width of 43.00 mm implies the walls are centered on the plate edges (e.g., -45 to -1.5? No, that doesn't match the math).
+    *   Let's re-calculate the reported width based on the code logic:
+        *   Left Wall Y start: `-45 - 2 = -47`. Y end: `-45 + 2 = -43`. Width = 8mm.
+        *   Wait, the report says `130 x 43`.
+        *   If the wall is `130` long, and the bounding box Y is `43`, and the plate is `90` (Y=0 to 90 in the report's local coords? No, report says Y 0..90).
+        *   Ah, the report says `Y 0.00 .. 90.00`. This confirms the plate is 90mm wide.
+        *   The report says the bodies are `130 x 43`.
+        *   If the wall is 4mm thick, and it sits on the edge (Y=45), it should go from 45 to 49. Width = 4.
+        *   Why is the report saying 43?
+        *   Let's look at the code I wrote: `translate([0, -$plate_width/2 - $wall_thickness/2, 0])`.
+        *   `$plate_width/2` = 45. `$wall_thickness/2` = 2.
+        *   Start Y = -47. End Y = -43. Width = 8.
+        *   The report says `130 x 43`. This is extremely weird. 43 is almost the full width of the plate (90) minus something? Or maybe the report is interpreting the *union* of the plate and wall?
+        *   Wait, the report says "2 separate bodies".
+        *   Body 1: `130 x 43 x 4`. Body 2: `130 x 43 x 4`.
+        *   If the plate is 130x90x4. And I add walls.
+        *   If the walls are 4mm thick, the total Y span should be 90 + 4 + 4 = 98.
+        *   The report says the bounding box is Y 0..90. This means the walls are **inside** the plate width or the calculation is wrong.
+        *   Let's re-read the report carefully: "body sizes... 130.00 x 43.00 x 4.00".
+        *   If the wall is 4mm thick, and the bounding box of the *wall* is 43mm, then the wall is 43mm wide.
+        *   My code: `cube([130, 4, 70])`. The wall should be 4mm wide.
+        *   Why does the report say 43?
+        *   Hypothesis: The `translate` Y coordinate was wrong in my previous attempt, making the wall huge?
+        *   Code: `translate([0, -$plate_width/2 - $wall_thickness/2, 0])`.
+        *   If `$plate_width` = 90. `$plate_width/2` = 45.
+        *   Start = -45 - 2 = -47.
+        *   End = -47 + 4 = -43.
+        *   Width = 8.
+        *   Still not 43.
+        *   Is it possible the user's previous code (which I am simulating fixing) had a typo like `$wall_thickness` being used as a multiplier or something?
+        *   Actually, let's look at the "2 separate bodies" claim.
+        *   If the walls are 4mm thick, and the plate is 90mm wide.
+        *   If I place a 4mm wall at the edge, the total width is 94mm.
+        *   The report says the bounding box is Y 0..90. This implies the walls are **not** extending beyond the plate width in the report's view, OR the report is analyzing the plate only?
+        *   No, the report says "2 separate bodies". The plate is one body. The walls are the other two?
+        *   If the plate is 130x90x4.
+        *   And the walls are 130x4x70.
+        *   The report lists: `130.00 x 43.00 x 4.00`.
+        *   This dimension `43.00` is the killer. It suggests the wall is 43mm wide.
+        *   How could a 4mm wall become 43mm wide?
+        *   Maybe the code was `translate([0, -$plate_width/2 - $wall_thickness/2, 0]) cube([130, $plate_width, ...])`? No, I wrote 4.
+        *   Maybe the code was `translate([0, -$plate_width/2 - $wall_thickness/2, 0]) cube([130, $wall_thickness * 10, ...])`?
+        *   Let's reconsider the "flush with the plate's long edge" instruction.
+        *   Plate Y: -45 to +45.
+        *   Wall Y: -49 to -45 (Left) and +45 to +49 (Right).
+        *   Total Y span: 98.
+        *   The report says Y span is 90.
+        *   This implies the walls are **inside** the plate? i.e., Y: -45 to -41 and +41 to +45?
+        *   If the wall is 4mm thick and inside, the width is 4.
+        *   Why does the report say 43?
+        *   Perhaps the "body sizes" in the report refer to the **Plate** and the **Walls** are somehow merged or misidentified?
+        *   Wait, if the report says "2 separate bodies", and one is `130 x 43 x 4`.
+        *   If the plate is 130x90x4.
+        *   Maybe the "43" is a typo in the report generation logic for this specific scenario?
+        *   OR, did I accidentally use `$plate_width` instead of `$wall_thickness` in the cube dimension?
+        *   Let's assume the standard error: The wall width was set to something large, or the position was wrong.
+        *   If the wall was 43mm wide, the volume would be huge.
+        *   Let's look at the volume: 41,073 mm3.
+        *   Plate: 130 * 90 * 4 = 46,800.
+        *   Walls (if 4mm thick): 2 * 130 * 4 * 70 = 72,800.
+        *   Total ~ 120,000.
+        *   The reported volume is 41,073. This is LESS than the plate alone (46,800).
+        *   This implies the "plate" in the report is actually smaller, or the walls are missing/negative?
+        *   Wait, the report says "2 separate bodies".
+        *   Body 1: 130 x 43 x 4. Vol = 22,060.
+        *   Body 2: 130 x 43 x 4. Vol = 22,060.
+        *   Total = 44,120.
+        *   Plus the holes? The report volume is 41,073.
+        *   44,120 - holes = 41,073.
+        *   Holes volume: 6 * pi * (15.25)^2 * 74 (height) ~ 6 * 730 * 74 ~ 324,000.
+        *   This doesn't add up. The volume is too small.

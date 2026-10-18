@@ -1,0 +1,10 @@
+{
+ "held_out_families": [
+  "frustum_riser",
+  "hinge_leaf",
+  "spoked_wheel",
+  "star_wheel"
+ ],
+ "held_out_prompts": 200,
+ "seed": 20261022
+}
