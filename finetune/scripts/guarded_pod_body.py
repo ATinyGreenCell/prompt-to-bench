@@ -71,18 +71,21 @@ def pinned() -> tuple[str, str]:
 
 
 def body(name: str, gpu: str, image: str, disk: int, idle_min: int, max_hours: float, min_cuda: str,
-         vcpu_per_gpu: int | None) -> dict:
+         vcpu_per_gpu: int | None, dcs: list[str] | None = None) -> dict:
     commit, digest = pinned()
     g = {"id": gpu, "count": 1, "minCudaVersion": min_cuda}
     if vcpu_per_gpu:
         g["minVcpuCountPerGpu"] = vcpu_per_gpu
-    return {
+    b = {
         "name": name, "image": image, "cloud": "SECURE", "gpu": g, "disk": disk,
         "ports": ["22/tcp"], "startSsh": True,
         "env": {"GUARD_URL": f"https://raw.githubusercontent.com/{REPO}/{commit}/{PATH}", "GUARD_SHA256": digest,
                 "IDLE_MIN": str(idle_min), "MAX_HOURS": str(max_hours)},
         "cmd": ["bash", "-c", BOOT],
     }
+    if dcs:
+        b["dataCenterIds"] = dcs
+    return b
 
 
 def main() -> None:
@@ -95,8 +98,11 @@ def main() -> None:
     ap.add_argument("--max-hours", type=float, default=12)
     ap.add_argument("--min-cuda", default="12.8")
     ap.add_argument("--vcpu-per-gpu", type=int, default=None)
+    ap.add_argument("--dc", default="", help="preferred data centers, comma-separated (e.g. US-MO-1,US-GA-2): "
+                    "pushes from the laptop to an EU pod ran at ~50 KB/s (H43); list-data-centers shows stock")
     a = ap.parse_args()
-    print(json.dumps(body(a.name, a.gpu, a.image, a.disk, a.idle_min, a.max_hours, a.min_cuda, a.vcpu_per_gpu),
+    dcs = [d.strip() for d in a.dc.split(",") if d.strip()]
+    print(json.dumps(body(a.name, a.gpu, a.image, a.disk, a.idle_min, a.max_hours, a.min_cuda, a.vcpu_per_gpu, dcs),
                      indent=1))
 
 

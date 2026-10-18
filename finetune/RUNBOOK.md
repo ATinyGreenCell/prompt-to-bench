@@ -219,7 +219,8 @@ points: v2's data peaks at 0.22; same-style-different-part prompts sit at 0.25-0
 ## B7. Never let a pod idle (H32) — every pod guards itself from boot
 **Create every pod with `scripts/guarded_pod_body.py`** (pass its output as create-pod's `body`):
 ```
-python finetune/scripts/guarded_pod_body.py --name <name> --gpu "NVIDIA H100 80GB HBM3" [--idle-min 45 --max-hours 12]
+python finetune/scripts/guarded_pod_body.py --name <name> --gpu "NVIDIA H100 80GB HBM3" [--idle-min 45 --max-hours 12] \
+    [--dc US-MO-1,US-GA-2]     # preferred data centers: laptop-to-pod pushes crawled to an EU pod (H43)
 ```
 Its container command first starts a backstop (a plain sleeper that stops the pod at MAX_HOURS and needs nothing
 downloaded), then downloads `scripts/pod_idle_guard.sh` from this repo pinned to a commit (SHA-256 checked), runs

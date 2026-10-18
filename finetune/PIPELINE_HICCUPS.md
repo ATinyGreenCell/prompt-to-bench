@@ -367,3 +367,11 @@ Two RTX 2000 Ada pods ($0.24/hr), created from `guarded_pod_body.py` bodies (gua
   and the guard's `stop_pod` fell through to GraphQL: `{"podStop":{"id":...,"desiredStatus":"EXITED"}}`, API
   status EXITED. (A first attempt stubbed runpodctl as a shell function; `timeout` execs the binary, so the
   function was bypassed and the primary path stopped that pod instead. Stub on PATH, not in the shell.)
+
+### H43. Laptop-to-pod pushes crawl to some data centers — [x] `guarded_pod_body.py --dc` pins placement
+The v5-seed-1 pod landed in EUR-NO-2 (no data center was requested). `podjob.py push` of the 33 MB training file
+took 11 minutes (~50 KB/s), while the same pod pulled from Hugging Face at 28.7 MB/s and a 300 MB `pull-dir` back
+to the laptop (runpodctl relay) ran in 18 s. The 45 MB push to a US-MO-1 pod minutes later took 3 s. Only the
+laptop-to-pod direction over ssh was slow, so a pod that only downloads would not notice; anything that receives
+data from the laptop should be placed near it. `guarded_pod_body.py --dc US-MO-1,US-GA-2,...` writes create-pod's
+`dataCenterIds` (preferred placement); `list-data-centers` with GPU availability shows which hold the GPU.
