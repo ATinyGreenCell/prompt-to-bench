@@ -1,0 +1,11 @@
+{
+ "attempts": 1348,
+ "scored": 1348,
+ "outcomes": {
+  "fail": 690,
+  "pass": 531,
+  "no_render": 127
+ },
+ "repairs_written": 817,
+ "onpolicy_pass_rate": 0.394
+}

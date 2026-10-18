@@ -1,0 +1,14 @@
+{
+ "repair_prompts": 817,
+ "repairs_scored": 817,
+ "outcomes": {
+  "fail": 692,
+  "pass": 17,
+  "no_render": 108
+ },
+ "changed_file": 322,
+ "change_rate": 0.394,
+ "repair_pass_rate": 0.021,
+ "prompts_solved": 17,
+ "rows_written": 17
+}
