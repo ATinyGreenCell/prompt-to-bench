@@ -1,0 +1,48 @@
+// Two-part enclosure for small electronics board (e.g. Arduino-based temp logger)
+// Print orientation: box standing on the bed, lid on top (overlapping slightly)
+
+$fn = 64;
+
+// ---- Box ----
+box_x = 70;    // outer size in X
+box_y = 50;    // outer size in Y
+box_z = 30;    // outer size in Z
+wall  = 2;     // wall thickness (sides and floor)
+
+// ---- Lid ----
+lip_x   = 65.6;          // outer size of lip in X
+lip_y   = 45.6;          // outer size of lip in Y
+lip_w   = 1.5;           // lip wall thickness
+lip_h   = 4;             // lip height (from plate top)
+plate_t = 2;             // plate thickness
+head    = box_x + 10;    // lid starts this far in +X from box
+
+// ---- Derived ----
+floor_t  = wall;         // floor thickness (2 mm)
+lip_overt = lip_h + wall; // lip top is this far above floor (6 mm)
+eps      = 0.01;         // small overlap to avoid coplanar faces
+
+module box() {
+    difference() {
+        cube([box_x, box_y, box_z]);
+        // open-top cavity
+        translate([wall, wall, floor_t])
+            cube([box_x - 2*wall, box_y - 2*wall, box_z - floor_t + eps]);
+    }
+}
+
+module lid() {
+    union() {
+        // base plate
+        translate([head - lip_x/2, -lip_y/2, 0])
+            cube([lip_x, lip_y, plate_t]);
+        // rectangular lip on top
+        translate([head - lip_x/2, -lip_y/2, plate_t])
+            cube([lip_x, lip_y, lip_w]);
+    }
+}
+
+union() {
+    box();
+    translate([0, 0, -eps]) lid();
+}

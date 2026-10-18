@@ -1,0 +1,51 @@
+// Snap-on tubing clip for a 12.7 mm (1/2 inch) lab stand rod
+// Print orientation: flat on the bed, builds upward in +Z
+
+// ---------- Parameters ----------
+rod_d      = 12.7;   // stand rod diameter
+ring_w     = 3;      // rod ring wall thickness
+opening_w  = 10;     // rod ring opening width (on -X side)
+
+tub_d      = 6;      // tubing ring inner diameter
+tub_x      = 15;     // tubing ring centre X
+tub_w      = 2;      // tubing ring wall thickness
+tub_open   = 4.5;    // tubing ring opening width (on +X side)
+
+bridge_x0  = 8;      // bridge start X
+bridge_x1  = 12;     // bridge end X
+bridge_w   = 6;      // bridge width (Y)
+
+h          = 10;     // clip height (Z)
+eps        = 0.5;    // cutter overshoot
+
+$fn = 96;
+
+// ---------- Model ----------
+difference() {
+    union() {
+        // Rod ring
+        difference() {
+            cylinder(d = rod_d + 2 * ring_w, h = h);
+            // opening: x < 0, -5 < y < 5
+            translate([-eps, -5, -eps])
+                cube([opening_w + 2 * eps, 10, h + 2 * eps]);
+        }
+
+        // Tubing ring
+        difference() {
+            translate([tub_x, 0, 0])
+                cylinder(d = tub_d + 2 * tub_w, h = h);
+            // opening: x > 15, -2.25 < y < 2.25
+            translate([tub_x, 0, -eps])
+                cube([eps + 0.5, tub_open, h + 2 * eps]);
+        }
+
+        // Solid bridge
+        translate([bridge_x0, -bridge_w / 2, 0])
+            cube([bridge_x1 - bridge_x0, bridge_w, h]);
+    }
+
+    // Keep the stand rod hole clear
+    translate([0, 0, -eps])
+        cylinder(d = rod_d, h = h + 2 * eps);
+}

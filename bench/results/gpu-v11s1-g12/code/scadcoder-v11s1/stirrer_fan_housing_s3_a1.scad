@@ -1,0 +1,42 @@
+// DIY magnetic stirrer housing for 80 mm PC case fan
+// Print orientation: top plate on bed (z = 0), walls build upward (+Z)
+// Note: this is the upside-down open box used in practice
+
+// ---------- Dimensions (mm) ----------
+outer_size     = 90;    // outer size of box (X and Y)
+top_plate_t    = 2;     // top plate thickness (z = 0 to 2)
+wall_t         = 2.5;   // wall thickness (z = 2 to 40)
+open_top_z     = 40;    // height of open top edge
+hole_d         = 4.5;   // M4 screw hole diameter
+hole_pattern   = 71.5;  // square pitch of screw holes (X and Y)
+notch_w        = 12;    // power cable notch width
+notch_depth    = 8;     // notch depth from open edge (z = 32 to 40)
+eps            = 0.5;   // cutter overshoot past faces
+
+$fn = 64;
+
+// ---------- Model ----------
+difference() {
+    union() {
+        // Top plate (lies on the bed)
+        translate([-outer_size/2, -outer_size/2, 0])
+            cube([outer_size, outer_size, top_plate_t]);
+
+        // Four walls rising from the plate
+        for (sx = [-1, 1], sy = [-1, 1])
+            translate([sx * (outer_size/2 - wall_t),
+                       sy * (outer_size/2 - wall_t),
+                       top_plate_t])
+                cube([wall_t, wall_t, open_top_z - top_plate_t]);
+    }
+
+    // Screw holes through the top plate on a 71.5 mm square pattern
+    for (x = [-hole_pattern/2, hole_pattern/2])
+        for (y = [-hole_pattern/2, hole_pattern/2])
+            translate([x, y, -eps])
+                cylinder(d = hole_d, h = top_plate_t + 2*eps);
+
+    // Power cable notch cut into one wall (from open edge down to z = 32)
+    translate([-notch_w/2, 0, open_top_z - notch_depth])
+        cube([notch_w, wall_t + eps, notch_depth + eps]);
+}

@@ -1,0 +1,49 @@
+// DIY magnetic stirrer housing for 80 mm PC case fan
+// Print orientation: top plate down on the bed, walls pointing up (+Z)
+// (the part is upside down relative to its use as a stirring cover)
+
+$fn = 64;
+
+// ---- Dimensions (mm) ----
+outer_size     = 90;    // outer size of top plate (X x Y)
+plate_thick    = 2;     // top plate thickness (z = 0 to 2)
+wall_thick     = 2.5;   // wall thickness (z = 2 to 40)
+box_height     = 40;    // height of open top from bed (walls rise to z = 40)
+
+hole_d         = 4.5;   // M4 screw hole diameter
+hole_pattern   = 71.5;  // square pitch of screw holes (X and Y)
+hole_count     = 4;     // number of screw holes
+
+notch_width    = 12;    // power cable notch width (along X)
+notch_depth    = 8;     // notch depth from open edge (z = 32 to 40)
+
+eps            = 0.5;   // overshoot for clean boolean cuts
+
+// ---- Model ----
+difference() {
+    union() {
+        // Top plate (lies flat on the bed)
+        translate([-outer_size/2, -outer_size/2, 0])
+            cube([outer_size, outer_size, plate_thick]);
+
+        // Four vertical walls rising from the plate to z = box_height
+        for (sx = [-1, 1], sy = [-1, 1])
+            translate([sx * (outer_size/2 - wall_thick),
+                       sy * (outer_size/2 - wall_thick),
+                       plate_thick])
+                cube([2 * wall_thick, 2 * wall_thick, box_height - plate_thick]);
+    }
+
+    // Screw holes through the top plate on a centred square pattern
+    for (i = [0 : hole_count - 1]) {
+        x = (i % 2 == 0) ? -hole_pattern/2 : hole_pattern/2;
+        y = (i % 2 == 1) ? -hole_pattern/2 : hole_pattern/2;
+        translate([x, y, -eps])
+            cylinder(d = hole_d, h = plate_thick + 2 * eps);
+    }
+
+    // Power cable notch in one wall: 12 mm wide, centred along the wall,
+    // reaching 8 mm down from the open edge (z = 32 to 40)
+    translate([-notch_width/2, -notch_width/2, box_height - notch_depth])
+        cube([notch_width, notch_width, notch_depth + eps]);
+}

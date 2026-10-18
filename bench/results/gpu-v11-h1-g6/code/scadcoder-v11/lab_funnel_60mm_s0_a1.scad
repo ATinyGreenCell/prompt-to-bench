@@ -1,0 +1,38 @@
+// Small lab funnel, printed upright with the wide opening at the top
+// Units: mm
+
+$fn = 128;
+
+// ---- Spout (tube) ----
+spout_od      = 10;    // outer diameter of spout
+spout_h       = 20;    // spout height (z = 0 to z = 20)
+spout_wall    = 1.6;   // spout wall thickness
+spout_bore    = spout_od - 2 * spout_wall; // bore = 6.8 mm
+
+// ---- Cone ----
+cone_bottom_d = spout_od;          // cone starts at spout outer diameter
+cone_top_d    = 60;                // cone rim diameter
+cone_h        = spout_h;           // cone height (z = 20 to z = 50)
+cone_wall     = 1.6;               // cone wall thickness
+
+// ---- Joinery ----
+eps           = 0.5;               // overlap so no coplanar faces
+merge         = min(eps, spout_wall, cone_wall); // keep walls thick at the join
+
+difference() {
+    union() {
+        // Spout
+        cylinder(d = spout_od, h = spout_h + merge);
+
+        // Cone, slightly extended upward so the rim is exactly at z = 50
+        translate([0, 0, spout_h - merge])
+            cylinder(d1 = cone_bottom_d,
+                     d2 = cone_top_d,
+                     h  = cone_h + merge);
+    }
+
+    // Through-bore from the bottom opening up into the cone
+    // (liquid runs straight through; bore continues past the bottom rim)
+    translate([0, 0, -eps])
+        cylinder(d = spout_bore, h = cone_h + 2 * eps);
+}

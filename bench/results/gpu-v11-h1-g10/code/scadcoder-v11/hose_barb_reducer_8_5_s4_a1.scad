@@ -1,0 +1,44 @@
+// Hose-barb reducer: 8 mm OD barb -> 5 mm OD barb
+// Print orientation: standing on the bed, barbs pointing up (+Z)
+
+$fn = 64;
+
+// ---- Dimensions (mm) ----
+tube_a_d      = 8;    // larger tube outer diameter
+tube_b_d      = 5;    // smaller tube outer diameter
+bore_d        = 3;    // through-bore diameter
+
+barb_a_h      = 20;   // height of the 8 mm barb section
+barb_b_h      = 8;    // height of the 5 mm barb section
+collar_h      = 5;    // height of the 12 mm collar (z = 20..25)
+
+eps           = 0.5;  // cutter overshoot past faces
+
+// ---- Derived ----
+tube_a_r      = tube_a_d / 2;
+tube_b_r      = tube_b_d / 2;
+bore_r        = bore_d / 2;
+collar_d      = 12;
+
+// Total height: 0..20, 20..25, 25..41
+total_h       = barb_a_h + collar_h + barb_b_h;
+
+// ---- Model ----
+difference() {
+    union() {
+        // Lower barb section (z = 0 to 20)
+        cylinder(h = barb_a_h, r = tube_a_r);
+
+        // Collar (z = 20 to 25)
+        translate([0, 0, barb_a_h])
+            cylinder(h = collar_h, d = collar_d);
+
+        // Upper barb section (z = 25 to 41)
+        translate([0, 0, barb_a_h + collar_h])
+            cylinder(h = barb_b_h, r = tube_b_r);
+    }
+
+    // Through-bore along Z
+    translate([0, 0, -eps])
+        cylinder(h = total_h + 2 * eps, r = bore_r);
+}

@@ -1,0 +1,60 @@
+```openscad
+// Hose-barb reducer: 8 mm tubing (barbs) -> 5 mm tubing (barbs)
+// Print orientation: standing upright along Z
+
+$fn = 64;
+
+// ---- 8 mm tubing barbs ----
+barb8_bottom_d = 7.5;    // outer diameter at bottom of barbs
+barb8_top_d    = 9.5;    // outer diameter at top of barbs
+barb8_count    = 2;      // number of barbs (stacked)
+barb8_height   = 10;     // barb height (z = 0 to 10, per barb)
+
+// ---- Collar ----
+collar_d       = 12;     // collar diameter
+collar_h       = 5;      // collar height (z = 20 to 25)
+
+// ---- 5 mm tubing barbs ----
+barb5_bottom_d = 6.5;    // outer diameter at bottom of barbs
+barb5_top_d    = 5.0;    // outer diameter at top of barbs
+barb5_count    = 2;      // number of barbs (stacked)
+barb5_height   = 8;      // barb height (z = 30 to 38, per barb)
+
+// ---- Through bore ----
+bore_d         = 3;      // full-length bore diameter
+
+// ---- Derived ----
+z0             = 0;      // start of barbs
+z8             = barb8_height;  // end of 8 mm barbs
+zcollar        = z8 + collar_h;     // end of collar
+z5             = zcollar + barb5_height; // end of 5 mm barbs
+eps            = 0.5;    // cutter overshoot
+
+total_h        = z5;
+
+difference() {
+    union() {
+        // 8 mm barbs: sawtooth profile, stacked
+        for (i = [0 : barb8_count - 1]) {
+            translate([0, 0, z0 + i * barb8_height / (barb8_count + 1)])
+                cylinder(h = barb8_height / (barb8_count + 1),
+                         d = barb8_bottom_d + (i + 1) * (barb8_top_d - barb8_bottom_d) / (barb8_count + 1));
+        }
+
+        // Collar
+        translate([0, 0, z8])
+            cylinder(h = collar_h, d = collar_d);
+
+        // 5 mm barbs: tapered profile, stacked
+        for (i = [0 : barb5_count - 1]) {
+            translate([0, 0, zcollar + i * barb5_height / (barb5_count + 1)])
+                cylinder(h = barb5_height / (barb5_count + 1),
+                         d = barb5_bottom_d + (i + 1) * (barb5_top_d - barb5_bottom_d) / (barb5_count + 1));
+        }
+    }
+
+    // Full-length bore
+    translate([0, 0, -eps])
+        cylinder(h = total_h + 2 * eps, d = bore_d);
+}
+```

@@ -1,0 +1,51 @@
+// Straight hose-barb reducer: 8 mm tubing (barbs) -> 5 mm tubing (barbs)
+// Print orientation: standing upright along Z, centred on origin in X/Y
+
+$fn = 64;
+
+// ---- Dimensions (mm) ----
+small_id      = 8;    // inner diameter of larger tubing
+large_id      = 5;    // inner diameter of smaller tubing
+bore          = 3;    // through-bore diameter
+barb_count    = 2;    // number of barbs per section (stacked)
+lower_z       = 20;   // height of lower barb section
+collar_z      = 5;    // height of cylindrical collar
+upper_z       = 16;   // height of upper barb section (8 mm tall each)
+total_h       = lower_z + collar_z + upper_z;  // 41 mm overall
+
+eps           = 0.5;  // overshoot for clean boolean cuts
+
+// ---- Derived ----
+pitch = (total_h - collar_z) / barb_count;  // centre-to-centre barb spacing
+
+module barb_r(radial_size, z0, z1) {
+    // Outer diameter grows/shrinks linearly from bottom to top,
+    // then steps straight back to the bottom diameter (sawtooth profile)
+    hull() {
+        for (s = [0, 1])
+            translate([0, 0, z0 + s * z1])
+                cylinder(h = z1, d = radial_size + (s == 1 ? 2 * eps : 0));
+    }
+}
+
+difference() {
+    union() {
+        // Lower section: 8 mm tubing barbs
+        for (i = [0 : barb_count - 1])
+            translate([0, 0, i * pitch])
+                barb_r(7.5 + 2 * eps, 0, lower_z);
+
+        // Collar
+        translate([0, 0, lower_z])
+            cylinder(h = collar_z, d = 12);
+
+        // Upper section: 5 mm tubing barbs
+        for (i = [0 : barb_count - 1])
+            translate([0, 0, lower_z + collar_z + i * pitch])
+                barb_r(6.5 - 2 * eps, 0, upper_z);
+    }
+
+    // Through bore
+    translate([0, 0, -eps])
+        cylinder(h = total_h + 2 * eps, d = bore);
+}

@@ -1,0 +1,30 @@
+// 10-well comb for agarose gel casting
+// Print orientation: flat on bed, teeth pointing down (-Y)
+
+// ---- Dimensions (mm) ----
+plate_t      = 1.5;   // plate thickness (Z)
+spine_l      = 70;    // spine length (X)
+spine_w      = 12;    // spine width (Y)
+tooth_w      = 5.0;   // tooth width (X)
+tooth_l      = 12;    // tooth length (Y)
+tooth_count  = 10;    // number of teeth
+gap          = 1.5;   // gap between teeth (X)
+embed        = 0.5;   // tooth overlap into spine for a clean union
+
+$fn = 64;
+
+// ---- Derived ----
+pitch   = tooth_w + gap;                 // centre-to-centre spacing
+x_start = -(tooth_count - 1) * pitch / 2; // first tooth centre (row centred)
+
+// ---- Model ----
+union() {
+    // Spine (back bar)
+    translate([-spine_l / 2, -spine_w / 2, 0])
+        cube([spine_l, spine_w, plate_t]);
+
+    // Teeth hanging in -Y
+    for (i = [0 : tooth_count - 1])
+        translate([x_start + i * pitch, -tooth_l, 0])
+            cube([tooth_w, tooth_l + embed, plate_t]);
+}

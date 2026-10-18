@@ -1,0 +1,64 @@
+```openscad
+// Straight hose-barb reducer: 8 mm ID tubing (barbs) to 5 mm ID tubing (barbs)
+// Print orientation: standing upright along Z, centred on origin in X/Y
+
+$fn = 96;
+
+// ---- Dimensions (mm) ----
+t8_id      = 8;    // inner diameter of 8 mm tubing
+t5_id      = 5;    // inner diameter of 5 mm tubing
+bore       = 3;    // through-bore diameter
+z8_base    = 0;    // bottom of 8 mm barbs
+z8_top     = 20;   // top of 8 mm barbs / bottom of collar
+zcollar    = 25;   // top of collar / bottom of 5 mm barbs
+z5_top     = 41;   // top of 5 mm barbs
+eps        = 0.5;  // cutter overshoot
+
+// ---- 8 mm barbs ----
+n_barbs    = 2;    // stacked barbs
+d8_bottom  = 7.5;  // outer diameter at bottom of barb
+d8_top     = 9.5;  // outer diameter at top of barb
+h8         = 10;   // barb height
+
+// ---- Collar ----
+dcollar    = 12;   // collar diameter
+
+// ---- 5 mm barbs ----
+d5_bottom  = 6.5;  // outer diameter at bottom of barb
+d5_top     = 5.0;  // outer diameter at top of barb
+h5         = 8;    // barb height
+
+// ---- Model ----
+difference() {
+    union() {
+        // 8 mm barbs
+        for (i = [0 : n_barbs - 1])
+            translate([0, 0, z8_base + i * h8])
+                linear_extrude(height = h8)
+                    polygon([
+                        [-d8_bottom / 2, 0],
+                        [ d8_top / 2, 0],
+                        [ d8_top / 2, h8],
+                        [-d8_bottom / 2, h8]
+                    ]);
+
+        // Collar
+        cylinder(d = dcollar, h = zcollar - z8_top);
+
+        // 5 mm barbs
+        for (i = [0 : n_barbs - 1])
+            translate([0, 0, zcollar + i * h5])
+                linear_extrude(height = h5)
+                    polygon([
+                        [-d5_bottom / 2, 0],
+                        [ d5_top / 2, 0],
+                        [ d5_top / 2, h5],
+                        [-d5_bottom / 2, h5]
+                    ]);
+    }
+
+    // Through bore
+    translate([0, 0, -eps])
+        cylinder(d = bore, h = z5_top + 2 * eps);
+}
+```

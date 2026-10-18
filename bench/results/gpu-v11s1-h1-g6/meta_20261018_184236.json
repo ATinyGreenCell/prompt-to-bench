@@ -1,0 +1,30 @@
+{
+ "started": "2026-10-18T18:42:35",
+ "args": {
+  "run": "gpu-v11s1-h1-g6",
+  "models": [
+   "scadcoder-v11s1"
+  ],
+  "tasks": [
+   "lab_funnel_60mm"
+  ],
+  "samples": 8,
+  "max_repairs": 2,
+  "feedback": "report",
+  "temperature": 0.2,
+  "prompts": null,
+  "lang": "en",
+  "system": "bench/prompts/system_idioms.md",
+  "render_timeout": 120,
+  "seed_base": 1000,
+  "num_predict": 2048,
+  "think": false,
+  "num_ctx": 8192
+ },
+ "git_commit": "e8a1d3ad48035452a4410ebffb68c294778d1309",
+ "host": "enamel",
+ "cpu": "x86_64",
+ "python": "3.14.4",
+ "openscad": "OpenSCAD version 2026.10.01",
+ "ollama": "0.0.0-openai-shim"
+}

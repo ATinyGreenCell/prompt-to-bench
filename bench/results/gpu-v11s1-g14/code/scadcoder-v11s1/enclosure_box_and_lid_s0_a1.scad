@@ -1,0 +1,41 @@
+// Two-part enclosure for small electronics board
+// Print orientation: box standing on bed (z = 0), lid on top, printed upside down
+
+// ---------------- Parameters ----------------
+box_x      = 70;    // box outer length (X)
+box_y      = 50;    // box outer width (Y)
+box_z      = 30;    // box outer height (Z)
+box_wall   = 2;     // box wall thickness
+box_floor  = 2;     // box floor thickness
+
+gap        = 10;    // gap between box and lid
+
+lip_x      = 65.6;  // lid lip outer length (X)
+lip_y      = 45.6;  // lid lip outer width (Y)
+lip_t      = 1.5;   // lid lip thickness
+lip_h      = 4;     // lid lip height
+
+eps        = 0.5;   // cutter overshoot
+
+$fn = 64;
+
+// ---------------- Derived ----------------
+box_inner_x = box_x - 2 * box_wall;
+box_inner_y = box_y - 2 * box_wall;
+box_inner_z = box_z - box_floor;   // open-top cavity height
+
+// ---------------- Model ----------------
+difference() {
+    union() {
+        // Box body (includes floor, open top)
+        cube([box_x, box_y, box_z]);
+
+        // Lid: plate + lip, printed upside down (lip on top)
+        translate([box_x + gap, 0, 0])
+            cube([lip_x, lip_y, lip_t + lip_h]);
+    }
+
+    // Open-top cavity cutter (extends above top face)
+    translate([box_inner_x / 2, box_inner_y / 2, box_floor])
+        cube([box_inner_x, box_inner_y, box_inner_z + eps]);
+}

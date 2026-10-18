@@ -1,0 +1,58 @@
+```openscad
+// Two-part enclosure for small electronics board (e.g. Arduino-based logger)
+// Print orientation: box standing on the bed, lid flat on top
+
+// ---------------- Parameters ----------------
+box_x      = 70;    // box outer length (X)
+box_y      = 50;    // box outer width (Y)
+box_z      = 30;    // box outer height (Z)
+box_wall   = 2;     // box wall thickness
+box_floor  = 2;     // box floor thickness
+
+gap        = 10;    // gap between box and lid (X direction)
+
+lip_x      = 65.6;  // lid lip outer length (X)
+lip_y      = 45.6;  // lid lip outer width (Y)
+lip_w      = 1.5;   // lid lip thickness (Z)
+lip_h      = 4;     // lid lip height
+
+eps        = 0.5;   // overlap / cutter extension
+
+$fn = 64;
+
+// ---------------- Modules ----------------
+module box() {
+    difference() {
+        union() {
+            // walls
+            for (dx = [-1, 1], dy = [-1, 1])
+                translate([dx > 0 ? box_wall : 0, dy > 0 ? box_y - box_wall : 0, 0])
+                    cube([box_x - 2 * box_wall, box_y - 2 * box_wall, box_z]);
+            // floor
+            translate([0, 0, box_floor])
+                cube([box_x, box_y, box_z - box_floor]);
+        }
+        // open-top cutter
+        translate([box_wall, box_wall, box_z - eps])
+            cube([box_x - 2 * box_wall, box_y - 2 * box_wall, box_z + 2 * eps]);
+    }
+}
+
+module lid() {
+    union() {
+        // plate
+        translate([0, 0, box_z])
+            cube([box_x, box_y, lip_w]);
+        // lip
+        translate([-lip_x / 2, -lip_y / 2, box_z])
+            cube([lip_x, lip_y, lip_h + eps]);
+    }
+}
+
+// ---------------- Assembly ----------------
+union() {
+    box();
+    translate([box_x + gap, 0, 0])
+        lid();
+}
+```

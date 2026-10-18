@@ -1,0 +1,47 @@
+```openscad
+// Hotplate stirrer knob - D-shaft adapter
+// Print orientation: flat bottom on bed (z = 0), bore opens downward
+
+$fn = 96;
+
+// --- Dimensions (mm) ---
+shaft_d        = 6.0;    // D-shaft diameter
+knob_d         = 30.0;   // knob outer diameter
+knob_h         = 15.0;   // knob height
+bore_depth     = 12.0;   // D-bore depth from bottom face
+bore_circle_d  = 6.2;    // D-bore circle diameter
+bore_flat_d    = 4.7;    // flat side diameter (flat to opposite side)
+groove_count   = 18;     // grip groove count
+groove_d       = 2.0;    // grip groove diameter
+pointer_w      = 1.5;    // pointer groove width
+pointer_d      = 1.0;    // pointer groove depth
+eps            = 0.5;    // cut overshoot
+
+// Derived
+bore_r = bore_circle_d / 2;
+// D-bore: circle centred on -X, flat on +X side
+function bore_area() =
+    let(a = bore_r * 2, b = bore_r)
+    hull() [for (s = [0, 1]) rotate([0, 0, s * 90]) circle(d = b)];
+
+difference() {
+    // Main body
+    cylinder(d = knob_d, h = knob_h);
+
+    // D-bore (extends below bottom face)
+    translate([0, 0, -eps])
+        linear_extrude(height = bore_depth + eps)
+            rotate([90, 0, 0]) circle(d = bore_r, $fn = 64);
+
+    // Grip grooves
+    for (i = [0 : groove_count - 1])
+        rotate([0, 0, i * 360 / groove_count])
+            translate([knob_d / 2, 0, -eps])
+                cylinder(d = groove_d, h = knob_h + 2 * eps);
+
+    // Pointer groove
+    translate([0, 0, knob_h - pointer_d])
+        rotate([90, 0, 0])
+            cylinder(d = pointer_w, h = pointer_d + eps);
+}
+```

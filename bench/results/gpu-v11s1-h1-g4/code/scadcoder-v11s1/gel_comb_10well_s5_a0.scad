@@ -1,0 +1,35 @@
+// 10-well agarose gel comb, printed lying flat
+// Units: mm
+
+// ---- Plate ----
+plate_t = 1.5;      // plate thickness (Z)
+
+// ---- Spine ----
+spine_len = 70;     // spine length (X)
+spine_w   = 12;     // spine width (Y)
+
+// ---- Teeth ----
+n_teeth     = 10;   // number of teeth
+tooth_w     = 5.0;  // tooth width (X)
+tooth_len   = 12;   // tooth length (Y)
+tooth_pitch = 1.5;  // gap between neighbouring teeth (X)
+overhang    = 0.5;  // tooth extension past spine top face
+
+// ---- Derived ----
+total_len   = spine_len + (n_teeth - 1) * tooth_pitch;  // 70 + 9*1.5 = 83.5
+x_start     = -spine_len / 2;
+
+$fn = 64;
+
+union() {
+    // Spine
+    translate([x_start, -spine_w / 2, 0])
+        cube([spine_len, spine_w, plate_t]);
+
+    // Teeth
+    for (i = [0 : n_teeth - 1]) {
+        translate([x_start + i * tooth_pitch + tooth_w / 2 - (n_teeth - 1) * tooth_pitch / 2,
+                   -tooth_len / 2, 0])
+            cube([tooth_w, tooth_len, plate_t + overhang]);
+    }
+}

@@ -1,0 +1,47 @@
+```openscad
+// DIY magnetic stirrer housing (print orientation: top plate down, box open upward)
+// Units: mm
+
+$fn = 64;
+
+// ---- Dimensions ----
+plate_t      = 2;     // top plate thickness (z = 0 to 2)
+wall_t       = 2.5;   // wall thickness (z = 2 to 40)
+box_h        = 40;    // overall height
+outer_x      = 90;    // outer size in X
+outer_y      = 90;    // outer size in Y
+screw_d      = 4.5;   // M4 screw hole diameter
+screw_pitch  = 71.5;  // square pattern diagonal between screw holes
+notch_w      = 12;    // cable notch width
+notch_depth  = 8;     // notch depth from open edge (z = 32 to 40)
+
+// ---- Derived ----
+inner_x = outer_x - 2 * wall_t;
+inner_y = outer_y - 2 * wall_t;
+notch_z0 = box_h - notch_depth;   // bottom of notch (z = 32)
+
+// ---- Model ----
+difference() {
+    union() {
+        // Top plate (lies on the bed)
+        translate([-outer_x / 2, -outer_y / 2, 0])
+            cube([outer_x, outer_y, plate_t]);
+
+        // Four walls rising from the plate
+        for (sx = [-1, 1], sy = [-1, 1])
+            translate([sx * (outer_x / 2 - wall_t), sy * (outer_y / 2 - wall_t), plate_t])
+                cube([2 * wall_t, 2 * wall_t, wall_t]);  // z = 2 to 40
+    }
+
+    // Screw holes through the top plate on a 71.5 mm square pattern
+    for (i = [0 : 3]) {
+        a = atan2([0, outer_x, outer_y, -outer_x][i], [outer_y, 0, -outer_x, outer_x][i]);
+        translate([cos(a) * screw_pitch / sqrt(2), sin(a) * screw_pitch / sqrt(2), -1])
+            cylinder(d = screw_d, h = plate_t + 2);
+    }
+
+    // Cable notch in one wall: 12 mm wide, centred along the wall
+    translate([-inner_x / 2 + notch_w / 2, -inner_y / 2 + notch_w / 2, notch_z0])
+        cube([notch_w, inner_y - notch_w + 1, notch_depth]);
+}
+```

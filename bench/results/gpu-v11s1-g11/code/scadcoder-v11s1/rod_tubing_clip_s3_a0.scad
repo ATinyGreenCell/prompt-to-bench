@@ -1,0 +1,55 @@
+// Tubing clip for 12.7 mm lab stand rod
+// Print orientation: flat on bed, extruded in +Z
+
+$fn = 96;
+
+// ---- Dimensions (mm) ----
+rod_d      = 12.7;   // rod diameter
+ring_w     = 3;      // rod ring wall
+rod_od     = rod_d + 2*ring_w; // rod ring outer diameter (18.7)
+rod_h      = 10;     // clip height (Z)
+
+tub_d      = 6;      // tubing inner diameter
+tub_w      = 2;      // tubing wall
+tub_od     = tub_d + 2*tub_w; // tubing outer diameter (10)
+tub_x      = 15;     // tubing ring centre X
+tub_h      = 10;     // clip height (Z)
+
+opening_w  = 10;     // rod ring opening width (-X side)
+open_x     = -15;    // opening centre X
+open_y     = 0;      // opening centre Y
+
+tub_open_w = 4.5;    // tubing opening width (+X side)
+tub_open_x = 15;     // tubing opening centre X
+tub_open_y = 0;      // tubing opening centre Y
+
+bridge_x1  = 8;      // bridge start X
+bridge_x2  = 12;     // bridge end X
+bridge_w   = 6;      // bridge width (Y)
+
+eps        = 0.5;    // cutter overshoot
+
+// ---- Model ----
+difference() {
+    union() {
+        // Rod ring
+        difference() {
+            cylinder(d = rod_od, h = rod_h);
+            translate([open_x, open_y, -eps])
+                cube([opening_w, opening_w, rod_h + 2*eps]);
+        }
+        // Tubing ring
+        translate([tub_x, 0, 0])
+            difference() {
+                cylinder(d = tub_od, h = tub_h);
+                translate([0, tub_open_y, -eps])
+                    cube([tub_open_w, tub_open_w, tub_h + 2*eps]);
+            }
+        // Bridge
+        translate([bridge_x1, -bridge_w/2, 0])
+            cube([bridge_x2 - bridge_x1, bridge_w, rod_h]);
+    }
+    // Rod (snap fit)
+    translate([0, 0, -eps])
+        cylinder(d = rod_d, h = rod_h + 2*eps);
+}

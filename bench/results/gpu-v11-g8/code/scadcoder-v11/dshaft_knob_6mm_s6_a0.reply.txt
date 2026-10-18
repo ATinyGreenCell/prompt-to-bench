@@ -1,0 +1,41 @@
+```openscad
+// Hotplate stirrer knob for a 6 mm D-shaft
+// Print orientation: bottom face (with D-bore opening) on the bed at z = 0
+
+// ---------- Parameters ----------
+knob_d        = 30;    // knob outer diameter
+knob_h        = 15;    // knob height
+shaft_d       = 6;     // D-shaft diameter
+bore_depth    = 12;    // depth of D-blind bore from bottom face
+bore_w        = 4.7;   // width of D-bore (flat side to opposite side)
+groove_count  = 18;    // number of vertical grip grooves
+groove_d      = 2;     // diameter of grip groove cylinder
+pointer_w     = 1.5;   // pointer groove width
+pointer_d     = 1;     // pointer groove depth
+eps           = 0.5;   // overcut for clean boolean differences
+$fn           = 96;    // curve resolution
+
+// ---------- Derived ----------
+bore_r = bore_d = bore_w / 2 + (shaft_d - bore_w) / 2;  // D-bore radius (centred on shaft axis)
+
+// ---------- Model ----------
+difference() {
+    // Main body
+    cylinder(d = knob_d, h = knob_h);
+
+    // D-shaped blind bore, axis along Z, centred on shaft axis
+    translate([0, 0, -eps])
+        cylinder(r = bore_r, h = bore_depth + eps, $fn = 64);
+
+    // Vertical grip grooves along the full height
+    for (i = [0 : groove_count - 1])
+        rotate([0, 0, i * 360 / groove_count])
+            translate([knob_d / 2, 0, -eps])
+                cylinder(d = groove_d, h = knob_h + 2 * eps, $fn = 64);
+
+    // Pointer groove on the top face, centred on the +X axis
+    translate([0, 0, knob_h - pointer_d])
+        linear_extrude(height = pointer_d + eps)
+            polygon([[-pointer_w / 2, 0], [pointer_w / 2, 0], [0, -pointer_w / 2]]);
+}
+```

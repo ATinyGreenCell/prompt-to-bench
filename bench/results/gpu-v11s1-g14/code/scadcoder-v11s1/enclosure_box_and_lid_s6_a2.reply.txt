@@ -1,0 +1,44 @@
+```openscad
+// Two-part enclosure for small electronics board (e.g., Arduino-based logger)
+// Print orientation: box standing on the bed, lid on top (overhangs OK)
+
+$fn = 64;
+
+// ---- Box (Part 1) ----
+box_x   = 70;    // outer length (X)
+box_y   = 50;    // outer width (Y)
+box_z   = 30;    // outer height (Z)
+box_w   = 2;     // wall thickness (X and Y)
+box_f   = 2;     // floor thickness (Z)
+
+// ---- Lid (Part 2) ----
+lip_x   = 65.6;  // outer length of lip (X)
+lip_y   = 45.6;  // outer width of lip (Y)
+lip_w   = 1.5;   // lip wall thickness (Z)
+lip_h   = 4;     // lip height above plate (Z)
+plate_t = 2;     // plate thickness (Z)
+
+// ---- Misc ----
+gap     = 10;    // gap between box and lid (X)
+eps     = 0.5;   // cutter overshoot
+
+difference() {
+    union() {
+        // Box body (hollow)
+        translate([-box_x/2, -box_y/2, 0])
+            cube([box_x, box_y, box_z]);
+
+        // Lid plate
+        translate([box_x + gap, -box_y/2, box_z - plate_t])
+            cube([box_x, box_y, plate_t]);
+
+        // Lip on top of plate (overhangs into box opening)
+        translate([box_x + gap, -lip_y/2, box_z - plate_t])
+            cube([lip_x, lip_y, lip_w]);
+    }
+
+    // Box cavity (open top, extends above lid so the opening is clean)
+    translate([-box_x/2 + eps, -box_y/2 + eps, box_f])
+        cube([box_x - 2*eps, box_y - 2*eps, plate_t + lip_w + 0.01]);
+}
+```

@@ -1,0 +1,40 @@
+// 96-well PCR tube rack (0.2 mL) - microplate footprint
+// Print orientation: base on XY plane, holes through in Z
+
+// ---- Dimensions (mm) ----
+plate_length   = 127.76;  // X
+plate_width    = 85.48;   // Y
+plate_height   = 20;      // Z
+hole_d         = 6.2;     // tube hole diameter
+hole_pitch     = 9.0;     // centre-to-centre spacing
+hole_count_x   = 12;      // columns along X
+hole_count_y   = 8;       // rows along Y
+chamfer_leg    = 5;       // 45-degree chamfer leg length
+chamfer_start  = 14.38;   // A1 centre offset from left edge
+chamfer_rear   = 11.24;   // A1 centre offset from back edge
+eps            = 0.5;     // cutter overshoot past faces
+
+$fn = 64;
+
+difference() {
+    // Main block, centred in X/Y, resting on z = 0
+    translate([-plate_length/2, -plate_width/2, 0])
+        cube([plate_length, plate_width, plate_height]);
+
+    // Tube holes, grid centred on the block
+    for (i = [0 : hole_count_x - 1])
+        for (j = [0 : hole_count_y - 1])
+            translate([(i - (hole_count_x - 1)/2) * hole_pitch,
+                       (j - (hole_count_y - 1)/2) * hole_pitch,
+                       -eps])
+                cylinder(d = hole_d, h = plate_height + 2*eps);
+
+    // 45-degree chamfer at the A1 corner (orientation mark)
+    translate([-chamfer_start, -chamfer_rear, 0])
+        linear_extrude(height = plate_height)
+            polygon([
+                [0, 0],
+                [chamfer_leg, 0],
+                [0, chamfer_leg]
+            ]);
+}

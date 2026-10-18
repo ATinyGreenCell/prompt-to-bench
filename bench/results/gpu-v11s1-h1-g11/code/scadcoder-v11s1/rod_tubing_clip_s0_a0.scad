@@ -1,0 +1,40 @@
+// Tubing clip for 12.7 mm lab stand rod
+// Print orientation: flat on bed, extrusion along +Z
+
+$fn = 96;
+
+// ---- Dimensions (mm) ----
+rod_d      = 12.7;   // rod diameter
+ring_w     = 3;      // rod ring wall
+rod_od     = rod_d + 2*ring_w; // rod ring outer diameter (18.7)
+opening_w  = 10;     // rod ring opening width (-X side)
+
+tube_d     = 6;      // tubing inner diameter
+tube_w     = 2;      // tubing wall
+tube_od    = tube_d + 2*tube_w; // tubing outer diameter (10)
+tube_open  = 4.5;    // tubing opening width (+X side)
+
+bridge_w   = 6;      // bridge width (Y)
+bridge_x0  = 8;      // bridge start (X)
+bridge_x1  = 12;     // bridge end (X)
+
+eps        = 0.5;    // cut overshoot
+
+// ---- Model ----
+difference() {
+    union() {
+        // Rod ring
+        cylinder(d = rod_od, h = 10);
+        // Tubing ring
+        translate([15, 0, 0]) cylinder(d = tube_od, h = 10);
+        // Bridge
+        translate([bridge_x0, -bridge_w/2, 0])
+            cube([bridge_x1 - bridge_x0, bridge_w, 10]);
+    }
+    // Rod opening
+    translate([-rod_od/2 - eps, -opening_w/2, 0])
+        cube([opening_w + 2*eps, opening_w, 10]);
+    // Tubing opening
+    translate([15 + eps, -tube_open/2, 0])
+        cube([tube_open + 2*eps, tube_open, 10]);
+}

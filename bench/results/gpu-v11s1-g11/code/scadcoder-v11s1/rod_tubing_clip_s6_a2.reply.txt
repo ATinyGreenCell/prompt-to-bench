@@ -1,0 +1,51 @@
+```openscad
+// Snap-on tubing clip for a 12.7 mm lab stand rod
+// Print orientation: flat on the bed, extrusion builds up in +Z
+
+// ---------------- Parameters ----------------
+clip_height      = 10;    // extrusion height (Z)
+rod_d            = 12.7;  // stand rod diameter (1/2 inch)
+rod_ring_w       = 3;     // rod ring wall thickness
+rod_ring_od      = rod_d + 2*rod_ring_w; // rod ring outer diameter (18.7)
+rod_ring_id      = rod_d; // rod ring inner diameter (12.7)
+
+tubing_d         = 6;     // tubing inner diameter
+tubing_w         = 2;     // tubing ring wall thickness
+tubing_od        = tubing_d + 2*tubing_w; // tubing outer diameter (10)
+tubing_id        = tubing_d; // tubing inner diameter (6)
+tubing_x         = 15;    // tubing ring centre X
+tubing_y         = 0;     // tubing ring centre Y
+
+bridge_x0        = 8;     // bridge start (X)
+bridge_x1        = 12;    // bridge end (X)
+bridge_w         = 6;     // bridge width (Y)
+
+eps              = 0.5;   // cutter overshoot past faces
+
+$fn = 96;
+
+// ---------------- Profile ----------------
+profile = union() {
+    // Rod ring, centred at origin, opening on -X side
+    difference() {
+        cylinder(d = rod_ring_od, h = clip_height);
+        translate([-eps, -5, 0]) cube([rod_ring_id + 2*eps, 10, clip_height]);
+    }
+
+    // Tubing ring, centred at x = 15, y = 0, opening on +X side
+    difference() {
+        translate([tubing_x, tubing_y, 0])
+            cylinder(d = tubing_od, h = clip_height);
+        translate([tubing_x, tubing_y, -eps])
+            cube([clip_height + 2*eps, tubing_od, clip_height]);
+    }
+
+    // Solid bridge between x = 8 and x = 12
+    translate([bridge_x0, -bridge_w/2, 0])
+        cube([bridge_x1 - bridge_x0, bridge_w, clip_height]);
+};
+
+// ---------------- Part ----------------
+linear_extrude(height = clip_height)
+    rotate([90, 0, 0]) profile;
+```

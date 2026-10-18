@@ -1,0 +1,46 @@
+```openscad
+// 96-well PCR tube rack (0.2 mL) - microplate footprint
+// Print orientation: base on XY plane, holes through full height
+
+// ---- Block dimensions ----
+block_len   = 127.76;   // X length (mm)
+block_wid   = 85.48;    // Y width (mm)
+block_h     = 20;       // Z height (mm)
+
+// ---- Hole pattern ----
+hole_d      = 6.2;      // hole diameter (mm)
+hole_count  = 96;       // total holes (8 x 12)
+pitch       = 9.0;      // centre-to-centre spacing (mm)
+rows        = 8;        // rows along Y
+cols        = 12;       // columns along X
+
+// ---- First hole position (A1) ----
+a1_x        = 14.38;    // distance from left edge (mm)
+a1_y        = 11.24;    // distance from back edge (mm)
+
+// ---- Chamfer ----
+chamfer     = 5;        // 45-degree chamfer leg length (mm)
+
+// ---- Misc ----
+eps         = 0.5;      // cutter overshoot past faces
+$fn         = 64;
+
+difference() {
+    // Main block, centred in X/Y, sitting on z = 0
+    translate([-block_len/2, -block_wid/2, 0])
+        cube([block_len, block_wid, block_h]);
+
+    // Hole grid
+    for (i = [0 : cols - 1])
+        for (j = [0 : rows - 1])
+            translate([(i - (cols - 1)/2) * pitch + a1_x,
+                       (j - (rows - 1)/2) * pitch + a1_y,
+                       -eps])
+                cylinder(d = hole_d, h = block_h + 2*eps);
+
+    // Chamfer at A1 corner (x = a1_x, y = a1_y)
+    translate([a1_x - chamfer, a1_y - chamfer, 0])
+        rotate([45, 0, 0])
+            cube([chamfer, chamfer, block_h]);
+}
+```

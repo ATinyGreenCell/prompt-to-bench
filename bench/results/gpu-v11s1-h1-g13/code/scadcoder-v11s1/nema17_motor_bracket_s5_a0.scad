@@ -1,0 +1,71 @@
+// L-shaped mounting bracket for NEMA 17 stepper motor (e.g. syringe pump)
+// Print orientation: base plate on bed, motor plate builds upward (+Z)
+
+$fn = 64;
+
+// ---- Base plate ----
+base_x = 25;              // plate spans x = -25 .. 25
+base_y = 45;              // plate spans y = 0 .. 45
+base_t = 5;               // plate thickness (z = 0 .. 5)
+
+// ---- Motor plate ----
+motor_x = 25;             // plate spans x = -25 .. 25
+motor_y = 5;              // plate spans y = 0 .. 5
+motor_h = 50;             // plate height (z = 0 .. 50)
+
+// ---- Boss hole (motor centring boss) ----
+boss_d = 23;              // hole diameter
+boss_x = 0;               // hole centre x
+boss_z = 28;              // hole centre z
+
+// ---- Screw holes (M3, on square pattern) ----
+screw_d = 3.4;            // hole diameter
+screw_n = 4;              // number of holes
+screw_p = 31;             // square pitch (centred on boss hole)
+
+// ---- Gussets ----
+gusset_t = 5;             // gusset thickness (X)
+gusset_leg = 20;          // right-triangle legs along +Y and +Z
+gusset_y0 = 5;            // right-angle corner y
+gusset_z0 = 5;            // right-angle corner z
+
+// ---- Misc ----
+eps = 0.5;                // cutter overshoot past faces
+
+difference() {
+    union() {
+        // Base plate
+        translate([-base_x, 0, 0])
+            cube([2 * base_x, base_y, base_t]);
+
+        // Motor plate (overlaps base slightly for a clean union)
+        translate([-motor_x, 0, 0])
+            cube([2 * motor_x, motor_y, motor_h]);
+
+        // Gusset: left edge (x = -25 .. -20)
+        translate([-base_x - gusset_t, gusset_y0, gusset_z0])
+            cube([gusset_t, gusset_leg, gusset_leg]);
+
+        // Gusset: right edge (x = 20 .. 25)
+        translate([base_x - gusset_t, gusset_y0, gusset_z0])
+            cube([gusset_t, gusset_leg, gusset_leg]);
+    }
+
+    // Base plate through-holes (M4)
+    for (sx = [-1, 1], sy = 30)
+        translate([sx * 17, sy, -eps])
+            cylinder(d = 4.5, h = base_t + 2 * eps);
+
+    // Boss hole (along Y)
+    translate([boss_x, 0, boss_z])
+        rotate([90, 0, 0])
+            cylinder(d = boss_d, h = motor_y + 2 * eps, center = true);
+
+    // Screw holes (along Y)
+    for (i = [0 : screw_n - 1]) {
+        x = (i - (screw_n - 1) / 2) * screw_p;
+        translate([x, 0, -eps])
+            rotate([90, 0, 0])
+                cylinder(d = screw_d, h = motor_y + 2 * eps, center = true);
+    }
+}

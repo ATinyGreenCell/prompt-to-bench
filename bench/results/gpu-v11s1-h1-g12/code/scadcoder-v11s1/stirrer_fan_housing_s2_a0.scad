@@ -1,0 +1,50 @@
+// DIY magnetic stirrer housing for an 80 mm PC case fan
+// Print orientation: top plate on the bed (z = 0), walls build upward (+Z)
+// Note: this is the "upside-down" open-box position the part is used in
+
+// ---------------- Parameters ----------------
+outer_size   = 90;    // outer size of top plate and box (X x Y), mm
+plate_t      = 2;     // top plate thickness, mm (z = 0 to 2)
+wall_t       = 2.5;   // wall thickness, mm (z = 2 to 40)
+box_h        = 40;    // overall height of box from bed, mm
+hole_d       = 4.5;   // M4 screw clearance hole diameter, mm
+hole_count   = 4;     // number of screw holes
+hole_pitch   = 71.5;  // centre-to-centre spacing of holes (square pattern), mm
+notch_w      = 12;    // power cable notch width, mm
+notch_depth  = 8;     // power cable notch depth from open edge, mm
+eps          = 0.5;   // cutter overshoot past faces, mm
+
+$fn = 64;
+
+// ---------------- Derived ----------------
+inner_x = outer_size - 2 * wall_t;   // inner opening width (X)
+inner_y = outer_size - 2 * wall_t;   // inner opening depth (Y)
+
+// ---------------- Model ----------------
+difference() {
+    union() {
+        // Top plate, centred in X/Y, sitting on z = 0
+        translate([-outer_size / 2, -outer_size / 2, 0])
+            cube([outer_size, outer_size, plate_t]);
+
+        // Four walls rising from the plate to z = box_h
+        for (sx = [-1, 1], sy = [-1, 1])
+            translate([sx * (outer_size / 2 - wall_t / 2),
+                       sy * (outer_size / 2 - wall_t / 2),
+                       plate_t - 0.01])
+                cube([wall_t, wall_t, box_h - plate_t + 0.01]);
+    }
+
+    // Screw holes through the top plate on a square pattern
+    for (i = [0 : hole_count - 1]) {
+        x = (i - (hole_count - 1) / 2) * hole_pitch;
+        translate([x, x, -eps])
+            cylinder(d = hole_d, h = plate_t + 2 * eps);
+    }
+
+    // Power-cable notch in one wall: 12 mm wide, centred along the wall,
+    // reaching 8 mm down from the open edge (z = 32 to z = 40)
+    translate([-inner_x / 2 + notch_w / 2, -inner_y / 2 + notch_w / 2,
+               box_h - notch_depth])
+        cube([notch_w, notch_w, notch_depth + eps]);
+}

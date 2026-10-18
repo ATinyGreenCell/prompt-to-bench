@@ -1,0 +1,23 @@
+```openscad
+// Lab funnel - printed upright, wide opening at top
+// Spout: z = 0 to 20 (10 mm OD, 6.8 mm bore)
+// Cone:  z = 20 to 50 (10 mm OD at base, 60 mm OD at rim, 1.6 mm wall)
+
+$fn = 128;
+wall = 1.6;
+bore = 10 - 2 * wall;     // 6.8 mm bore
+eps  = 0.5;               // overlap for clean booleans
+
+difference() {
+    union() {
+        // Spout
+        cylinder(h = 20, d = 10);
+        // Cone (starts slightly inside spout to fuse)
+        translate([0, 0, 19.5])
+            cylinder(h = 30.5, d1 = 10, d2 = 60);
+    }
+    // Through-bore from bottom up to just below rim
+    translate([0, 0, -eps])
+        cylinder(h = 49.5, d = bore);
+}
+```

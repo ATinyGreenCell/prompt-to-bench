@@ -116,6 +116,8 @@ Table 8 (GPU tier, 8 samples per task; in-family / held-out split of the 16 task
 | `scadcoder-qwen3.5-9b-v9` | v5 + 869 of v5's own failed attempts, each with its report and the reference file, x2 (`build_v9.py`, MASK_EARLIER=1) | 2/8 · 0/8 | 3/16 |
 | `scadcoder-qwen3.5-9b-v9-seed1` | v9's data and settings, seed 1 instead of 0 (a replicate: `SEED=1`) | 4/8 · 1/8 | 3/16 |
 | `scadcoder-qwen3.5-9b-v10` | v9 + 211 of v9's own passing repairs on batch C, x2 (rejection sampling over repair turns; `build_v10.py`, MASK_EARLIER=1) | 3/8 · 1/8 | 1/16 |
+| `scadcoder-qwen3.5-9b-v11` | v9 + batch C for ten of its families: 474 distilled pairs and 421 of v9 seed 1's own failed attempts with report and reference, x2; four families held out (`build_v11.py`, MASK_EARLIER=1) | 3/8 · 1/8 | - |
+| `scadcoder-qwen3.5-9b-v11-seed1` | v11's data and settings, seed 1 instead of 0 (a replicate: `SEED=1`) | 4/8 · 1/8 | - |
 
 The stock base passes 2/8 · 1/8 with thinking off. Every fine-tune renders 88-99% of first attempts but rarely changes
 its file after feedback (6-15% of repair turns through v8, vs 84% for the base), except those trained on their own
@@ -127,8 +129,12 @@ new descriptions from 14 families, 13 of them unseen, `rft/onpolicy/`) both v9 r
 feedback and fixed 2.1-3.5% of failures, against 14-17% and 0.1-0.3% for both v5 runs. A better prompt instead of
 training (`bench/harness_search.py`: OpenSCAD idioms, two worked examples, checklist feedback) lifted the stock base
 from 2 to 6 tasks in eight samples on the GPU (5 in-family, 1 held out), but added nothing reliable to v9 seed 1
-(paper Tables 9-10). Next: `build_v11.py` (v9's data + batch C for ten families, as plain examples and as v9 seed 1's
-own failures; four families held out), trained with seeds 0 and 1. On the box itself (one sample per task, the box's
+(paper Tables 9-10). v11 (`build_v11.py`: v9's data + batch C for ten families, as plain examples and as v9 seed 1's
+own failures; four families held out), trained with seeds 0 and 1, passed 4 and 5 tasks (both with the held-out slide
+rack), won 3 passes by repair in each run and changed its file after 42-44% of feedback - no clear gain over v9's better
+run (5 tasks, 3 wins, 43%). On
+the four held-out families its first attempts passed 1.5-2.5% (v5's and v9's runs 0.2-3.8%) and its two runs fixed 1
+and 14 of ~390 failures (`scripts/heldout_c_stats.py`, paper Table 11). On the box itself (one sample per task, the box's
 own quantised build, imported by URL with `scripts/box_import.py`) v5 passed the slide rack, the gel comb and the
 PCR-tube adapter, all on the first attempt; v1 and v2 had passed none. With eight samples on the box v5 passed 6/16 (4 in-family, 2 held out:
 the hose-barb reducer and the slide rack), against 5/16 on the GPU (`bench/results/box-v5-k8/`). v9 passed 3/16 on the box at one sample (the 1.5 mL rack, the slide

@@ -1,0 +1,59 @@
+```openscad
+// Hose-barb reducer: 8 mm ID -> 5 mm ID
+// Print orientation: standing upright along +Z
+
+$fn = 64;
+
+// ---- Dimensions (mm) ----
+id_8     = 8.0;   // 8 mm tubing inner diameter
+id_5     = 5.0;   // 5 mm tubing inner diameter
+bore     = 3.0;   // through-bore diameter
+base_d   = 7.5;   // barb outer diameter at bottom (8 mm side)
+top_d    = 9.5;   // barb outer diameter at top (8 mm side)
+len_8    = 20;    // height of 8 mm tubing section
+collar_d = 12.0;  // collar diameter (z = 20 to 25)
+len_5    = 16;    // height of 5 mm tubing section (z = 25 to 41)
+eps      = 0.5;   // cutter overshoot
+
+// ---- Derived ----
+total_h = len_8 + 5 + len_5;   // 41 mm overall height
+
+// ---- Model ----
+difference() {
+    union() {
+        // 8 mm tubing barbs (sawtooth profile)
+        for (z = [0, len_8])
+            translate([0, 0, z])
+                linear_extrude(height = len_8)
+                    polygon([
+                        [-base_d/2, z],
+                        [ base_d/2, z],
+                        [ base_d/2, z + len_8],
+                        [top_d/2, z + len_8],
+                        [-top_d/2, z + len_8],
+                        [-base_d/2, z + len_8]
+                    ]);
+
+        // Collar
+        translate([0, 0, len_8])
+            cylinder(d = collar_d, h = 5);
+
+        // 5 mm tubing barbs (tapered, stepped profile)
+        for (z = [len_8 + 5, total_h - len_5])
+            translate([0, 0, z])
+                linear_extrude(height = len_5)
+                    polygon([
+                        [-base_d/2, z],
+                        [ base_d/2, z],
+                        [ base_d/2, z - len_5],
+                        [top_d/2, z - len_5],
+                        [-top_d/2, z - len_5],
+                        [-base_d/2, z - len_5]
+                    ]);
+    }
+
+    // Through-bore
+    translate([0, 0, -eps])
+        cylinder(d = bore, h = total_h + 2*eps);
+}
+```

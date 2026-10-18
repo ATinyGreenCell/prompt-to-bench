@@ -1,0 +1,37 @@
+// Sowing template for a 90 mm Petri dish
+// Print orientation: flat on bed, z = 0 upward
+
+$fn = 128;
+
+// --- Disc ---
+disc_d      = 85;   // disc diameter
+disc_t      = 2;    // disc thickness
+
+// --- Hole grid ---
+hole_n      = 7;    // holes per row/column
+hole_d      = 3;    // hole diameter
+hole_pitch  = 9;    // centre-to-centre spacing
+
+// --- Notch ---
+notch_w     = 10;   // notch width (X)
+notch_d     = 4;    // notch depth from rim (Y)
+
+// --- Cutting overlap ---
+eps         = 0.5;  // extension past cut faces
+
+difference() {
+    // Base disc
+    cylinder(d = disc_d, h = disc_t);
+
+    // Hole grid, centred
+    for (i = [0 : hole_n - 1])
+        for (j = [0 : hole_n - 1])
+            translate([(i - (hole_n - 1) / 2) * hole_pitch,
+                       (j - (hole_n - 1) / 2) * hole_pitch,
+                       -eps])
+                cylinder(d = hole_d, h = disc_t + 2 * eps);
+
+    // Orientation notch on +Y side, centred on Y axis
+    translate([-notch_w / 2, 0, -eps])
+        cube([notch_w, disc_t / 2 + eps, disc_t + 2 * eps]);
+}

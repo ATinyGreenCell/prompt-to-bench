@@ -1,0 +1,57 @@
+// Two-part enclosure for a small electronics board (e.g. Arduino-based logger)
+// Print orientation: box standing on the bed, lid plate flat on the bed.
+// The file renders to two separate solid bodies with no overlapping material.
+
+// ---------------- Parameters ----------------
+box_x      = 70;    // box outer size in X (mm)
+box_y      = 50;    // box outer size in Y (mm)
+box_z      = 30;    // box outer size in Z (mm)
+box_wall   = 2;     // box wall thickness (mm)
+box_floor  = 2;     // box floor thickness (mm)
+
+lip_x      = 65.6;  // lip outer size in X (mm)
+lip_y      = 45.6;  // lip outer size in Y (mm)
+lip_t      = 1.5;   // lip wall thickness (mm)
+lip_h      = 4;     // lip height above plate (mm)
+lip_clear  = 0.2;   // clearance between lip inner wall and box opening (mm)
+
+eps        = 0.5;   // cutter overshoot past faces (mm)
+
+$fn = 64;
+
+// Derived dimensions
+box_inner_x = box_x - 2*box_wall;   // 66
+box_inner_y = box_y - 2*box_wall;   // 46
+plate_t     = 2;                    // lid plate thickness (mm)
+
+// Lip inner size = box opening - clearance on each side
+lip_inner_x = box_inner_x - 2*lip_clear;   // 65.6
+lip_inner_y = box_inner_y - 2*lip_clear;   // 45.6
+
+// ---------------- Model ----------------
+union() {
+    // Part 1: Box, open top
+    difference() {
+        cube([box_x, box_y, box_z]);
+        translate([0, 0, box_z - box_wall])
+            cube([box_inner_x, box_inner_y, box_wall + eps]);
+    }
+
+    // Part 2: Lid plate with sliding lip, printed upside down
+    union() {
+        // Base plate
+        translate([box_x/2 - 32.8, box_y/2 - 25, 0])
+            cube([lip_x, lip_y, plate_t]);
+
+        // Lip: solid block whose top face is the ceiling;
+        // the hollowed interior overlaps the plate slightly for a clean union.
+        translate([box_x/2 - lip_inner_x/2, box_y/2 - lip_inner_y/2,
+                   plate_t - 0.01])
+            difference() {
+                cube([lip_inner_x + 2*lip_clear, lip_inner_y + 2*lip_clear,
+                      lip_h + 0.01]);
+                translate([0, 0, plate_t])
+                    cube([lip_inner_x, lip_inner_y, lip_t]);
+            }
+    }
+}

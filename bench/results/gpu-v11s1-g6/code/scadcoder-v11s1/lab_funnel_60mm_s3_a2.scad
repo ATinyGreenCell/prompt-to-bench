@@ -1,0 +1,34 @@
+// Small lab funnel, printed upright (wide opening at top)
+// All dimensions in mm
+
+// ---- Parameters ----
+spout_od      = 10;    // spout outer diameter
+spout_len     = 20;    // spout length (z = 0 to 20)
+cone_bottom_d = 10;    // cone outer diameter at z = 20
+cone_top_d    = 60;    // cone outer diameter at rim (z = 50)
+rim_z         = 50;    // rim height
+wall          = 1.6;   // wall thickness everywhere
+
+eps = 0.5;             // overshoot for clean boolean cuts
+$fn = 128;             // smoothness of curved surfaces
+
+// ---- Derived ----
+spout_id = spout_od - 2 * wall;   // spout bore = 6.8 mm
+cone_h   = rim_z - spout_len;     // cone height = 30 mm
+
+// ---- Model ----
+difference() {
+    union() {
+        // Spout (cylinder) from z = 0 to z = 20
+        translate([0, 0, 0])
+            cylinder(d = spout_od, h = spout_len);
+
+        // Cone from z = 20 to z = 50
+        translate([0, 0, spout_len])
+            cylinder(d1 = cone_bottom_d, d2 = cone_top_d, h = cone_h);
+    }
+
+    // Through-bore: starts inside spout wall, runs straight through cone
+    translate([0, 0, -eps])
+        cylinder(d = spout_id, h = rim_z + 2 * eps);
+}

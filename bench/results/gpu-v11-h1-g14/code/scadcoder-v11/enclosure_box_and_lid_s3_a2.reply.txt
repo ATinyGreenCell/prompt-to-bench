@@ -1,0 +1,56 @@
+```openscad
+// Two-part enclosure for a small electronics board (e.g. Arduino-based temperature logger)
+// Print orientation: box standing on the bed, lid printed upside down on the +X side
+
+// ---------- Parameters ----------
+box_x      = 70;    // box outer size in X (mm)
+box_y      = 50;    // box outer size in Y (mm)
+box_z      = 30;    // box outer size in Z (mm)
+box_wall   = 2;     // box wall thickness (mm)
+box_floor  = 2;     // box floor thickness (mm)
+
+lip_x      = 65.6;  // lip outer size in X (mm)
+lip_y      = 45.6;  // lip outer size in Y (mm)
+lip_t      = 1.5;   // lip wall thickness (mm)
+lip_h      = 4;     // lip height above plate (mm)
+
+eps        = 0.5;   // cutter overshoot past faces (mm)
+gap        = 10;    // gap between box and lid on the bed (mm)
+
+$fn = 64;
+
+// ---------- Derived ----------
+box_h = box_z - box_wall;              // 28 mm open top height
+lip_x2 = lip_x + 2 * box_wall;         // 74 mm (lip outer + walls on each side)
+lip_y2 = lip_y + 2 * box_wall;         // 54 mm (lip outer + walls on each side)
+
+// ---------- Model ----------
+union() {
+    // Box: outer block with hollow body, open top
+    translate([-box_x / 2, -box_y / 2, 0])
+        cube([box_x, box_y, box_h]);
+
+    translate([-box_x / 2, -box_y / 2, box_floor])
+        difference() {
+            cube([box_x - 2 * box_wall, box_y - 2 * box_wall, box_h - box_floor]);
+            translate([-box_x / 2 - eps, -box_y / 2 - eps, -eps])
+                cube([box_x - 2 * box_wall + 2 * eps, box_y - 2 * box_wall + 2 * eps, box_h - box_floor + eps]);
+        }
+    // (solid shell with open top)
+    translate([-box_x / 2, -box_y / 2, 0])
+        cube([box_x, box_y, box_wall]);
+}
+
+// Lid: plate lying on the bed with a rectangular lip on top, centred on the plate
+translate([box_x / 2 + gap, -box_y / 2, 0])
+    union() {
+        translate([0, 0, 0])
+            cube([lip_x2, lip_y2, 0]);   // plate (zero thickness, outline)
+
+        translate([0, 0, 0])
+            cube([lip_x2, lip_y2, lip_h]);   // lip block
+
+        translate([0, 0, lip_h])
+            cube([lip_x, lip_y, lip_t]);         // wall, 0.2 mm clearance on each side
+    }
+```

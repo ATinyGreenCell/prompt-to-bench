@@ -1,0 +1,54 @@
+```openscad
+// Hose-barb reducer: 8 mm tubing (barbed) to 5 mm tubing (barbed)
+// Print orientation: standing upright along Z
+
+$fn = 64;
+
+// ---- 8 mm tubing section (barbed) ----
+tubing_od_8 = 8;            // tubing outer diameter
+barb_count_8 = 2;           // number of barbs
+barb_height_8 = 10;         // barb height from top of tubing
+barb_od_8 = 9.5;            // barb outer diameter (slightly larger)
+
+// ---- Collar section ----
+collar_od = 12;             // collar outer diameter
+collar_h = 5;               // collar height
+
+// ---- 5 mm tubing section (barbed) ----
+tubing_od_5 = 5;            // tubing outer diameter
+barb_count_5 = 2;           // number of barbs
+barb_height_5 = 8;          // barb height from top of tubing
+barb_od_5 = 6.5;            // barb outer diameter (slightly larger)
+
+// ---- Misc ----
+eps = 0.5;                  // overlap for clean booleans
+
+total_h = tubing_od_8 + barb_height_8 + collar_h + tubing_od_5 + barb_height_5;
+
+difference() {
+    union() {
+        // Tubing body
+        cylinder(h = tubing_od_8, d = tubing_od_8);
+
+        // Barbs for 8 mm tubing
+        for (i = [0 : barb_count_8 - 1])
+            rotate([0, 0, i * 180 / barb_count_8])
+                translate([0, -barb_od_8 / 2, tubing_od_8 / 2])
+                    cylinder(h = barb_height_8, d = barb_od_8);
+
+        // Collar
+        translate([0, 0, tubing_od_8 + barb_height_8 - eps])
+            cylinder(h = collar_h + eps, d = collar_od);
+
+        // Barbs for 5 mm tubing
+        for (i = [0 : barb_count_5 - 1])
+            rotate([0, 0, i * 180 / barb_count_5])
+                translate([0, -barb_od_5 / 2, total_h - barb_height_5])
+                    cylinder(h = barb_height_5, d = barb_od_5);
+    }
+
+    // Through bore
+    translate([0, 0, -eps])
+        cylinder(h = total_h + 2 * eps, d = 3);
+}
+```

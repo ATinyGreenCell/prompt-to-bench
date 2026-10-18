@@ -1,0 +1,59 @@
+// Hose-barb reducer: 8 mm tubing -> 5 mm tubing
+// Print orientation: standing upright along +Z
+
+$fn = 64;
+
+// ---- Dimensions (mm) ----
+tube8_id      = 8;    // inner diameter of 8 mm tubing
+tube5_id      = 5;    // inner diameter of 5 mm tubing
+bore          = 3;    // through-bore diameter
+
+length8       = 20;   // 8 mm tubing section height (z = 0 to 20)
+collar        = 5;    // collar height (z = 20 to 25)
+length5       = 16;   // 5 mm tubing section height (z = 25 to 41)
+
+odb8          = 9.5;  // outer diameter of 8 mm barbs (top of sawtooth)
+od5           = 6.5;  // outer diameter of 5 mm barbs (bottom of sawtooth)
+
+overlap       = 0.5;  // overlap between stacked barbs
+eps           = 0.5;  // cutter overshoot
+
+// ---- Model ----
+difference() {
+    union() {
+        // 8 mm tubing section: two stacked barbs
+        for (i = [0, 1])
+            translate([0, 0, i * (length8 - overlap)])
+                barb(odb8, length8 - overlap, eps);
+
+        // Collar
+        translate([0, 0, length8])
+            cylinder(d = 12, h = collar);
+
+        // 5 mm tubing section: two stacked barbs
+        for (i = [0, 1])
+            translate([0, 0, length8 + collar + i * (length5 - overlap)])
+                barb(od5, length5 - overlap, eps);
+    }
+
+    // Through bore
+    translate([0, 0, -eps])
+        cylinder(d = bore, h = length8 + collar + length5 + 2 * eps);
+}
+
+// Barb profile: cylinder with a sawtooth outer surface
+module barb(od, h, eps) {
+    difference() {
+        cylinder(d = od, h = h);
+
+        // Sawtooth growth along +Z, then step back
+        translate([0, 0, eps])
+            linear_extrude(height = h - 2 * eps)
+                polygon([
+                    [-od / 2, eps],
+                    [od / 2, eps],
+                    [(od + 2 * eps) / 2, h - eps],
+                    [-(od + 2 * eps) / 2, h - eps]
+                ]);
+    }
+}

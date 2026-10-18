@@ -1,0 +1,55 @@
+// Replacement knob for hotplate stirrer with D-shaft
+// Print orientation: bottom face (with D-bore opening) on the bed at z = 0
+
+// ---------------- Parameters ----------------
+knob_d        = 30;    // knob outer diameter
+knob_h        = 15;    // knob height
+shaft_d       = 6;     // D-shaft diameter (reference only)
+
+bore_d        = 6.2;   // D-blind bore diameter
+bore_depth    = 12;    // blind bore depth from bottom face
+bore_flat     = bore_d * 0.75; // distance from flat to opposite side (4.7 mm)
+
+groove_count  = 18;    // number of vertical grip grooves
+groove_d      = 2;     // groove diameter (half-cylinder)
+groove_len    = knob_h;// groove runs full height
+
+pointer_w     = 1.5;   // pointer groove width
+pointer_d     = 1;     // pointer groove depth
+pointer_side  = -1;    // side of D flat (-1) or (1)
+
+eps           = 0.5;   // overcut for clean differences
+$fn           = 96;    // curve resolution
+
+// ---------------- Model ----------------
+difference() {
+    // Main body
+    cylinder(d = knob_d, h = knob_h);
+
+    // D-blind bore, centred on origin in XY
+    translate([0, 0, -eps])
+        hull() {
+            // Circle seen from +Y (curved side)
+            rotate([0, 90, 0])
+                cylinder(d = bore_d, h = bore_depth + 2 * eps);
+            // Flat side along -X
+            translate([0, -bore_flat, -eps])
+                cube([bore_depth + 2 * eps, bore_flat, bore_depth + 2 * eps]);
+        }
+
+    // Vertical grip grooves around the outside
+    for (i = [0 : groove_count - 1]) {
+        rotate([0, 0, i * 360 / groove_count])
+            translate([knob_d / 2 - groove_d / 2, -groove_d / 2, 0])
+                cylinder(d = groove_d, h = groove_len);
+    }
+
+    // Pointer groove from centre to outer edge, on the flat side
+    if (pointer_side < 0)
+        translate([0, -pointer_w / 2, knob_h - pointer_d])
+            cube([knob_d / 2 + eps, pointer_w, pointer_d + eps]);
+    else
+        rotate([0, 180, 0])
+            translate([0, -pointer_w / 2, knob_h - pointer_d])
+                cube([knob_d / 2 + eps, pointer_w, pointer_d + eps]);
+}

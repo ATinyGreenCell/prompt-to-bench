@@ -1,0 +1,85 @@
+// L-shaped mounting bracket for NEMA 17 stepper motor
+// Print orientation: base plate on bed (z = 0), motor plate builds upward (+Z)
+// Positioned per user coordinates (x -25 to 25, y 0 to 45), not centred
+
+// ---------------- Parameters ----------------
+base_x0      = -25;   // base plate x start
+base_x1      = 25;    // base plate x end
+base_y0      = 0;     // base plate y start
+base_y1      = 45;    // base plate y end
+base_z0      = 0;     // base plate z start
+base_z1      = 5;     // base plate z end
+
+hole_m4_x1   = -17;   // M4 hole 1 x position
+hole_m4_y1   = 30;    // M4 hole 1 y position
+hole_m4_x2   = 17;    // M4 hole 2 x position
+hole_m4_y2   = 30;    // M4 hole 2 y position
+hole_m4      = 4.5;   // M4 hole diameter
+
+motor_x0     = -25;   // motor plate x start
+motor_x1     = 25;    // motor plate x end
+motor_y0     = 0;     // motor plate y start
+motor_y1     = 5;     // motor plate y end
+motor_z0     = 0;     // motor plate z start (on base top)
+motor_z1     = 50;    // motor plate z end
+
+boss_hole    = 23;    // motor centring boss hole diameter
+boss_hole_x  = 0;     // boss hole centre x
+boss_hole_z  = 28;    // boss hole centre z
+
+screw_hole   = 3.4;   // M3 screw hole diameter
+screw_pitch  = 31;    // square pattern side length
+screw_count  = 4;     // number of screw holes
+
+gusset_t     = 5;     // gusset thickness (X)
+gusset_leg   = 20;    // right triangle leg length (Y and Z)
+gusset_x0    = -25;   // left gusset x start
+gusset_x1    = -20;   // left gusset x end
+gusset_x2    = 20;    // right gusset x start
+gusset_x3    = 25;    // right gusset x end
+
+eps          = 0.5;   // cutter overshoot past faces
+
+$fn = 64;
+
+// ---------------- Model ----------------
+difference() {
+    union() {
+        // Base plate
+        translate([base_x0, base_y0, base_z0])
+            cube([base_x1 - base_x0, base_y1 - base_y0, base_z1 - base_z0]);
+
+        // Vertical motor plate, standing on the back edge of the base
+        translate([motor_x0, motor_y0, motor_z0])
+            cube([motor_x1 - motor_x0, motor_y1 - motor_y0, motor_z1 - motor_z0]);
+
+        // Triangular gussets, flush with left and right edges
+        for (sx = [-1, 1])
+            translate([sx * gusset_x0, gusset_leg_leg(), gusset_leg_leg()])
+                cube([gusset_t, gusset_leg, gusset_leg]);
+    }
+
+    // Base plate through-holes (M4)
+    for (x = [hole_m4_x1, hole_m4_x2])
+        for (y = [hole_m4_y1, hole_m4_y2])
+            translate([x, y, -eps])
+                cylinder(d = hole_m4, h = base_z1 + 2 * eps);
+
+    // Motor plate boss hole (along Y)
+    translate([boss_hole_x, 0, boss_hole_z])
+        rotate([90, 0, 0])
+            cylinder(d = boss_hole, h = motor_y1 - motor_y0 + 2 * eps, center = true);
+
+    // M3 screw holes on square pattern, centred on boss hole
+    for (i = [0 : screw_count - 1])
+        for (j = [0 : screw_count - 1]) {
+            x = -screw_pitch / 2 + (i - (screw_count - 1) / 2) * screw_pitch;
+            y = -screw_pitch / 2 + (j - (screw_count - 1) / 2) * screw_pitch;
+            translate([x, y, -eps])
+                cylinder(d = screw_hole, h = motor_z1 - motor_z0 + 2 * eps);
+        }
+}
+
+// Helper: returns leg length for triangle at y = 5, z = 5 (right angle corner)
+// Positioned so the gusset spans 20 mm along +Y and 20 mm along +Z
+function gusset_leg_leg() = gusset_leg;

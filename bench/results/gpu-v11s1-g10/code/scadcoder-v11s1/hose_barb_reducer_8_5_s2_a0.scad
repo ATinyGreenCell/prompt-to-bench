@@ -1,0 +1,50 @@
+// Hose-barb reducer: 8 mm ID -> 5 mm ID
+// Print orientation: standing upright along +Z
+
+$fn = 64;
+
+// ---- Dimensions (mm) ----
+id_8     = 8;    // inner diameter of 8 mm tubing
+id_5     = 5;    // inner diameter of 5 mm tubing
+bore     = 3;    // through-bore diameter
+length_8 = 20;   // height of 8 mm tubing section
+length_c = 5;    // height of collar section
+length_5 = 16;   // height of 5 mm tubing section (z = 25 to z = 41)
+eps      = 0.5;  // overlap for clean boolean cuts
+
+// ---- Derived ----
+od_8_top = 9.5;  // outer diameter at top of 8 mm barbs
+od_5_bot = 6.5;  // outer diameter at bottom of 5 mm barbs
+
+module hose_barb(id, height, od_top, od_bot) {
+    // Sawtooth profile in XZ, extruded around Z axis
+    rotate([90, 0, 0])
+        linear_extrude(height = height)
+            polygon(points = [
+                [od_bot/2, 0],
+                [od_top/2, height],
+                [od_bot/2, height]
+            ]);
+}
+
+difference() {
+    union() {
+        // 8 mm tubing section: two identical barbs, stacked
+        for (z = [0, length_8/2])
+            translate([0, 0, z])
+                hose_barb(id_8, length_8/2, od_8_top, 7.5);
+
+        // Collar
+        translate([0, 0, length_8])
+            cylinder(h = length_c, d = 12);
+
+        // 5 mm tubing section: two identical barbs, stacked
+        for (z = [length_8 + length_c, length_8 + length_c + length_5/2])
+            translate([0, 0, z])
+                hose_barb(id_5, length_5/2, od_5_bot, 5);
+    }
+
+    // Through-bore
+    translate([0, 0, -eps])
+        cylinder(h = length_8 + length_c + length_5 + 2*eps, d = bore);
+}

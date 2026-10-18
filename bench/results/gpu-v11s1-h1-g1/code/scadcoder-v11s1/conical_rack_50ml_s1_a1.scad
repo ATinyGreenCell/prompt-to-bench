@@ -1,0 +1,46 @@
+// Rack for six 50 mL conical (Falcon-type) tubes
+// Print orientation: flat plate down, walls up. Flip after printing.
+
+$fn = 64;
+
+// ---- Plate ----
+plate_x = 130;      // plate length (X)
+plate_y = 90;       // plate width (Y)
+plate_t = 4;        // plate thickness (Z)
+
+// ---- Holes ----
+hole_d     = 30.5;  // hole diameter
+hole_nx    = 3;     // holes along X
+hole_ny    = 2;     // holes along Y
+hole_pitch = 40;    // centre-to-centre spacing (both directions)
+
+// ---- Walls ----
+wall_len = 130;     // wall length along X
+wall_t   = 4;       // wall thickness along Y
+wall_h   = 70;      // wall height above plate (Z)
+
+// ---- Misc ----
+eps = 0.5;          // cutter overshoot
+
+difference() {
+    union() {
+        // Base plate
+        translate([-plate_x/2, -plate_y/2, 0])
+            cube([plate_x, plate_y, plate_t]);
+
+        // Long-edge walls
+        for (sx = [-1, 1])
+            translate([sx * (plate_x/2 - wall_len/2),
+                       (sx > 0) ? -0.01 : plate_y,
+                       0])
+                cube([wall_len, wall_t, wall_h]);
+    }
+
+    // Through-holes
+    for (i = [0 : hole_nx - 1])
+        for (j = [0 : hole_ny - 1])
+            translate([(i - (hole_nx - 1)/2) * hole_pitch,
+                       (j - (hole_ny - 1)/2) * hole_pitch,
+                       -eps])
+                cylinder(d = hole_d, h = plate_t + 2*eps);
+}

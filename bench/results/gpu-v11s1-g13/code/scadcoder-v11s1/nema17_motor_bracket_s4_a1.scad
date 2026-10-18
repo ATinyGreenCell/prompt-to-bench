@@ -1,0 +1,58 @@
+// L-shaped mounting bracket for NEMA 17 stepper motor (syringe pump)
+// Print orientation: base plate flat on bed, motor plate building up in +Z
+
+$fn = 64;
+
+// ---- Base plate ----
+base_x0 = -25;      // plate length in X
+base_y0 = 0;        // plate start in Y
+base_y1 = 45;       // plate end in Y
+base_t  = 5;        // plate thickness (Z)
+hole_d  = 4.5;      // M4 through-hole diameter
+hole_x  = 17;       // hole centre offset from origin in X (+/-)
+hole_y  = 30;       // hole centre offset from origin in Y
+
+// ---- Motor plate ----
+motor_w   = 25;     // plate width in X
+motor_h   = 50;     // plate height in Z
+boss_d    = 23;     // motor centring boss hole diameter
+boss_z    = 28;     // boss hole centre height
+screw_d   = 3.4;    // M3 screw hole diameter
+screw_n   = 4;      // number of screw holes
+screw_p   = 31;     // square pattern pitch
+gusset_t  = 5;      // gusset thickness (X)
+gusset_l  = 20;     // gusset leg length (Y and Z)
+
+eps = 0.5;          // cutter overshoot
+
+difference() {
+    union() {
+        // Base plate with M4 holes
+        translate([base_x0, base_y0, 0])
+            cube([base_x0 + base_w, base_y1 - base_y0, base_t]);
+        for (sx = [-1, 1])
+            translate([sx * hole_x, hole_y, -eps])
+                cylinder(d = hole_d, h = base_t + 2 * eps);
+
+        // Motor plate standing on the back edge of the base
+        translate([-motor_w / 2, 0, 0])
+            cube([motor_w, motor_h, base_t + motor_h]);
+
+        // Triangular gussets flush with left and right edges
+        for (sx = [-1, 1])
+            translate([sx > 0 ? 20 : -25, 0, 0])
+                cube([gusset_t, gusset_l, gusset_l]);
+    }
+
+    // Boss hole for motor centring
+    translate([0, 0, boss_z])
+        cylinder(d = boss_d, h = motor_w + 2 * eps, $fn = 64);
+
+    // M3 screw holes on 31 mm square pattern
+    for (i = [0 : screw_n - 1]) {
+        x = (i % 2 - 0.5) * screw_p;
+        y = (i / 2 - 0.25) * screw_p;
+        translate([x, y, -eps])
+            cylinder(d = screw_d, h = base_t + motor_h + 2 * eps);
+    }
+}

@@ -1,0 +1,62 @@
+```openscad
+// L-shaped mounting bracket for NEMA 17 stepper motor
+// Print orientation: base plate on bed, motor plate builds upward (+Z)
+
+$fn = 96;
+
+// ---- Base plate ----
+base_x = 25;      // plate length in X
+base_y = 45;      // plate length in Y
+base_t = 5;       // plate thickness (Z)
+
+// ---- Motor plate ----
+motor_h = 50;     // motor plate height (Z)
+motor_d = 23;     // boss hole diameter
+motor_x = 25;     // motor plate length in X (extends from base edge)
+
+// ---- Screw holes ----
+screw_m3 = 3.4;   // M3 hole diameter
+screw_m4 = 4.5;   // M4 hole diameter
+screw_pat = 31;   // square pattern size (centre to centre)
+
+// ---- Gussets ----
+gusset_t = 5;     // gusset thickness (X)
+gusset_l = 20;    // gusset leg length (Y and Z)
+
+// ---- Cut overlap ----
+eps = 0.5;        // extension of cutters past faces
+
+difference() {
+    union() {
+        // Base plate
+        translate([-base_x, 0, 0])
+            cube([2 * base_x, base_y, base_t]);
+
+        // Motor plate, standing on the back edge of the base
+        translate([-base_x + eps, 0, 0])
+            cube([motor_x, base_y, motor_h]);
+
+        // Left gusset: right triangle in YZ, corners at (x=-20, y=0, z=0),
+        // (x=-20, y=20, z=0), (x=-20, y=0, z=20)
+        translate([-20, 0, 0])
+            rotate([90, 0, 0])
+                linear_extrude(height = gusset_l)
+                    polygon([[0, 0], [gusset_l, 0], [0, gusset_l]]);
+    }
+
+    // Base plate through-holes (M4)
+    for (sx = [-1, 1])
+        translate([sx * (base_x - 8), base_y * 0.66, -eps])
+            cylinder(d = screw_m4, h = base_t + 2 * eps);
+
+    // Boss hole for motor centring
+    translate([-base_x + motor_x / 2, 0, base_t - eps])
+        cylinder(d = motor_d, h = motor_h + 2 * eps);
+
+    // M3 screw holes on a square pattern, centred on the boss hole
+    for (a = [0, 90, 180, 270])
+        rotate([0, 0, a])
+            translate([screw_pat / 2, 0, -eps])
+                cylinder(d = screw_m3, h = motor_h + 2 * eps);
+}
+```

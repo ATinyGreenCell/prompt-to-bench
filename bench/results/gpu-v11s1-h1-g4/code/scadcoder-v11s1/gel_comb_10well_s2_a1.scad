@@ -1,0 +1,27 @@
+// 10-well agarose gel comb
+// Print orientation: flat on bed, teeth pointing down (-Y)
+
+plate_t     = 1.5;   // plate thickness (Z)
+spine_l     = 70;    // spine length (X)
+spine_w     = 12;    // spine width (Y)
+tooth_w     = 5.0;   // tooth width (X)
+tooth_l     = 12;    // tooth length (Y)
+tooth_count = 10;    // number of teeth
+gap         = 1.5;   // gap between teeth (X)
+
+pitch      = tooth_w + gap;          // centre-to-centre spacing
+x_start    = -(tooth_count - 1) * pitch / 2;  // first tooth centre
+overlap    = 0.5;                    // tooth embed into spine for a clean union
+
+union() {
+    // Spine (back bar)
+    translate([-spine_l / 2, -spine_w / 2, 0])
+        cube([spine_l, spine_w, plate_t]);
+
+    // Teeth
+    for (i = [0 : tooth_count - 1])
+        translate([x_start + i * pitch - tooth_w / 2,
+                   -spine_w / 2 - overlap,
+                   0])
+            cube([tooth_w, tooth_l + overlap, plate_t]);
+}

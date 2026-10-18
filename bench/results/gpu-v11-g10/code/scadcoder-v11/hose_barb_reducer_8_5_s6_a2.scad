@@ -1,0 +1,58 @@
+// Hose-barb reducer: 8 mm (split) to 5 mm (split) silicone tubing
+// Print orientation: standing upright along Z
+
+$fn = 64;
+
+// ---- Dimensions (mm) ----
+tube8_od      = 9.5;   // 8 mm tubing outer diameter (split)
+tube8_id      = 7.5;   // 8 mm tubing inner diameter (split)
+tube5_od      = 5.0;   // 5 mm tubing outer diameter (split)
+tube5_id      = 3.0;   // 5 mm tubing inner diameter (split)
+bore          = 3;     // through-bore diameter
+collar_od     = 12;    // collar outer diameter
+collar_id     = 9.5;   // collar inner diameter
+collar_h      = 5;     // collar height
+barb8_h       = 10;    // 8 mm barb height
+barb5_h       = 8;     // 5 mm barb height
+eps           = 0.5;   // cutter overshoot
+
+z_8           = 20;    // 8 mm section height
+z_5           = z_8 + collar_h;   // top of 5 mm section (25)
+z_top         = z_5 + max(barb5_h, barb8_h); // 41
+
+// ---- Model ----
+difference() {
+    union() {
+        // 8 mm split tubing
+        for (a = [0, 180])
+            rotate([0, 0, a])
+                translate([0, -tube8_id/2, 0])
+                    cylinder(h = z_8, d = tube8_od);
+
+        // Collar
+        translate([0, 0, z_8 - 0.01])
+            cylinder(h = collar_h + 0.01, d = collar_od);
+
+        // 5 mm split tubing
+        for (a = [0, 180])
+            rotate([0, 0, a])
+                translate([0, -tube5_id/2, z_5])
+                    cylinder(h = barb5_h, d = tube5_od);
+    }
+
+    // Cutters
+    translate([0, 0, -eps])
+        cylinder(h = z_top + 2*eps, d = bore);
+
+    // 8 mm groove
+    for (a = [0, 180])
+        rotate([0, 0, a])
+            translate([0, -tube8_id/2 - eps, 0])
+                cylinder(h = z_8, d = tube8_id + 2*eps);
+
+    // 5 mm groove
+    for (a = [0, 180])
+        rotate([0, 0, a])
+            translate([0, -tube5_id/2 - eps, z_5])
+                cylinder(h = barb5_h, d = tube5_id + 2*eps);
+}

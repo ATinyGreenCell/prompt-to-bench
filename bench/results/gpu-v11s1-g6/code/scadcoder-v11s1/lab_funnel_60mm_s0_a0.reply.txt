@@ -1,0 +1,31 @@
+```openscad
+// Small lab funnel - printed upright, wide opening at the top
+// All dimensions in mm
+
+// ---- Parameters ----
+spout_od      = 10;    // spout outer diameter
+spout_h       = 20;    // spout height (z = 0 to 20)
+cone_od_top   = 60;    // cone outer diameter at rim (z = 50)
+cone_od_bot   = 10;    // cone outer diameter at base (z = 20)
+wall          = 1.6;   // wall thickness everywhere
+cut_extra     = 0.5;   // overshoot for clean boolean cuts
+$fn           = 128;   // curve resolution
+
+// ---- Derived ----
+spout_id = spout_od - 2 * wall;   // 6.8 mm bore
+cone_h   = 50 - 20;              // 30 mm cone height
+
+// ---- Model ----
+difference() {
+    union() {
+        // Spout
+        cylinder(d = spout_od, h = spout_h);
+        // Cone (slightly overlapping spout to fuse solids)
+        translate([0, 0, spout_h - 0.01])
+            cylinder(d1 = cone_od_bot, d2 = cone_od_top, h = cone_h + 0.01);
+    }
+    // Through-bore: spout bore extended above rim and below z = 0
+    translate([0, 0, -1])
+        cylinder(d = spout_id, h = spout_h + cone_h + 2);
+}
+```

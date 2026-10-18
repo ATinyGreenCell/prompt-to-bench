@@ -1,0 +1,52 @@
+// Tubing clip for 12.7 mm lab stand rod
+// Print orientation: flat on bed, builds up in +Z
+
+// ---------- Parameters ----------
+ring_od      = 18.7;   // rod ring outer diameter
+ring_id      = 12.7;   // rod ring inner diameter
+ring_wall    = 3;      // rod ring wall thickness
+ring_open    = 10;     // rod ring opening width (along -X)
+
+tube_od      = 8;      // tubing ring outer diameter
+tube_id      = 6;      // tubing ring inner diameter
+tube_wall    = 2;      // tubing ring wall thickness
+tube_open    = 4.5;    // tubing ring opening width (along +X)
+
+bridge_x0    = 8;      // bridge start (X)
+bridge_x1    = 12;     // bridge end (X)
+bridge_w     = 6;      // bridge width (Y)
+
+eps          = 0.5;    // cutter overshoot
+$fn          = 96;     // curve resolution
+
+// ---------- Derived ----------
+ring_r = ring_od / 2;
+tube_r = tube_od / 2;
+
+// ---------- Profile (in XY) ----------
+profile = union() {
+    // Rod ring
+    difference() {
+        cylinder(h = 0, r = ring_r);
+        // opening: x < 0 and -5 < y < 5
+        translate([-ring_r - eps, -5, 0])
+            cube([ring_open + 2 * eps, 10, 0]);
+    }
+
+    // Tubing ring
+    translate([15, 0, 0])
+        difference() {
+            cylinder(h = 0, r = tube_r);
+            // opening: x > 15 and -2.25 < y < 2.25
+            translate([tube_r, -tube_open / 2, 0])
+                cube([tube_open + 2 * eps, 4.5, 0]);
+        }
+
+    // Solid bridge
+    translate([bridge_x0, -bridge_w / 2, 0])
+        cube([bridge_x1 - bridge_x0, bridge_w, 0]);
+};
+
+// ---------- Part ----------
+linear_extrude(height = 10)
+    profile;

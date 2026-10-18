@@ -1,0 +1,50 @@
+// Two-part enclosure for small electronics board
+// Print orientation: box on bed (z = 0), lid on +X side, both build upward
+
+// ---------- Parameters ----------
+box_x      = 70;    // box outer size in X (mm)
+box_y      = 50;    // box outer size in Y (mm)
+box_z      = 30;    // box outer size in Z (mm)
+box_wall   = 2;     // box wall thickness (mm)
+box_floor  = 2;     // box floor thickness (mm)
+
+lip_x      = 65.6;  // lip outer size in X (mm)
+lip_y      = 45.6;  // lip outer size in Y (mm)
+lip_wall   = 1.5;   // lip wall thickness (mm)
+lip_h      = 4;     // lip height above plate (mm)
+
+plate_x    = 70;    // plate size in X (mm)
+plate_y    = 50;    // plate size in Y (mm)
+plate_t    = 2;     // plate thickness (mm)
+
+gap        = 10;    // gap between box and lid (mm)
+
+eps        = 0.5;   // cutter overshoot past faces (mm)
+
+$fn = 64;
+
+// ---------- Derived ----------
+box_inner_x = box_x - 2 * box_wall;
+box_inner_y = box_y - 2 * box_wall;
+box_open_h  = box_z - box_floor;   // open-top cavity height
+
+// ---------- Model ----------
+union() {
+    // Part 1: box, open top
+    difference() {
+        cube([box_x, box_y, box_z]);
+        translate([box_wall, box_wall, box_floor])
+            cube([box_inner_x, box_inner_y, box_open_h + eps]);
+    }
+
+    // Part 2: lid, printed upside down
+    translate([box_x + gap, -plate_y / 2, 0]) {
+        // base plate
+        cube([plate_x, plate_y, plate_t]);
+        // rectangular lip on top of plate
+        cube([lip_x, lip_y, lip_h]);
+        // lip wall (outer size 65.6 x 45.6, slides into opening with 0.2 mm clearance)
+        translate([-lip_x / 2 - 0.2, -lip_y / 2 - 0.2, plate_t])
+            cube([lip_x + 0.4, lip_y + 0.4, lip_wall]);
+    }
+}

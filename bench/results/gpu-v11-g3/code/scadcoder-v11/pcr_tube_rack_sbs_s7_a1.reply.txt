@@ -1,0 +1,42 @@
+```openscad
+// 96-well PCR tube rack (0.2 mL) - microplate footprint
+// Print orientation: base on XY plane, holes through in Z
+
+// ---- Dimensions (mm) ----
+plate_length   = 127.76;  // X
+plate_width    = 85.48;   // Y
+plate_height   = 20;      // Z
+hole_d         = 6.2;     // tube hole diameter
+hole_pitch     = 9;       // centre-to-centre spacing
+hole_count_x   = 12;      // columns along X
+hole_count_y   = 8;       // rows along Y
+chamfer_leg    = 5;       // 45-degree chamfer leg length
+chamfer_start_x = 14.38; // first hole offset from left edge
+chamfer_start_y = 11.24; // first hole offset from back edge
+overcut        = 0.5;     // cutter extension past faces
+
+$fn = 64;
+
+difference() {
+    // Main block, centred in X/Y, resting on z = 0
+    translate([-plate_length/2, -plate_width/2, 0])
+        cube([plate_length, plate_width, plate_height]);
+
+    // Tube holes, grid centred on block
+    for (i = [0 : hole_count_x - 1])
+        for (j = [0 : hole_count_y - 1])
+            translate([(i - (hole_count_x - 1)/2) * hole_pitch + chamfer_start_x,
+                       (j - (hole_count_y - 1)/2) * hole_pitch + chamfer_start_y,
+                       -overcut])
+                cylinder(d = hole_d, h = plate_height + 2*overcut);
+
+    // Orientation chamfer at A1 corner (45-degree bevel, extended above)
+    translate([chamfer_start_x - chamfer_leg, chamfer_start_y - chamfer_leg,
+               plate_height - chamfer_leg])
+        rotate([90, 0, 0])
+            linear_extrude(height = chamfer_leg + overcut)
+                polygon([[-chamfer_leg, -chamfer_leg],
+                         [ chamfer_leg, -chamfer_leg],
+                         [ chamfer_leg,  chamfer_leg]]);
+}
+```

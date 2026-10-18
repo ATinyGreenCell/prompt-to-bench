@@ -14,7 +14,6 @@ Deterministic.
 
 usage: ~/printpaper/.venv/bin/python -I finetune/scripts/build_v11.py
 """
-import glob
 import json
 import pathlib
 import random
@@ -24,10 +23,9 @@ OP = FT / "rft" / "onpolicy"
 SEED = 20261022
 
 family = {}
-for f in glob.glob(str(FT / "rft" / "distill" / "prompts_clean_c_shard*.jsonl")):
-    for line in open(f):
-        d = json.loads(line)
-        family[d["user"].strip()] = d["family"]
+for line in open(FT / "rft" / "distill" / "prompts_clean_c.jsonl"):
+    d = json.loads(line)
+    family[d["user"].strip()] = d["family"]
 user = lambda msgs: next(m["content"] for m in msgs if m["role"] == "user").strip()  # noqa: E731
 prompts = [json.loads(line) for line in open(OP / "prompts_c.jsonl")]
 families = sorted({family[user(p["messages"])] for p in prompts})

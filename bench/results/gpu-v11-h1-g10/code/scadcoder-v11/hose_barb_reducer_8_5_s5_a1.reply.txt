@@ -1,0 +1,51 @@
+```openscad
+// Hose-barb reducer: 8 mm OD barb -> 5 mm OD barb
+// Print orientation: standing upright along Z
+
+$fn = 64;
+
+// ---- Dimensions (mm) ----
+barb_od        = 8;    // inner tubing outer diameter
+tip_od         = 5;    // tip tubing outer diameter
+bore           = 3;    // through-bore diameter
+barb_length    = 20;   // barb length (z = 0 to 20)
+collar_height  = 5;    // collar height (z = 20 to 25)
+lower_barb_len = 8;    // lower barb length (z = 25 to 33)
+upper_barb_len = 8;    // upper barb length (z = 33 to 41)
+overlap        = 0.5;  // overlap for clean booleans
+
+// ---- Model ----
+difference() {
+    union() {
+        // Lower barb: sawtooth profile, rotated onto Z
+        translate([0, 0, 0])
+            rotate([90, 0, 0])
+                linear_extrude(height = barb_length + overlap)
+                    polygon([
+                        [0, 0],
+                        [lower_barb_len + overlap, lower_barb_len + overlap],
+                        [lower_barb_len + overlap, 0],
+                        [0, lower_barb_len]
+                    ]);
+
+        // Collar
+        translate([0, 0, barb_length])
+            cylinder(height = collar_height, d = tip_od + 2 * overlap);
+
+        // Upper barb: sawtooth profile, rotated onto Z
+        translate([0, 0, barb_length + collar_height])
+            rotate([90, 0, 0])
+                linear_extrude(height = upper_barb_len + overlap)
+                    polygon([
+                        [0, 0],
+                        [upper_barb_len + overlap, upper_barb_len + overlap],
+                        [upper_barb_len + overlap, 0],
+                        [0, upper_barb_len]
+                    ]);
+    }
+
+    // Through-bore
+    translate([0, 0, -overlap])
+        cylinder(height = barb_length + collar_height + 2 * overlap, d = bore);
+}
+```

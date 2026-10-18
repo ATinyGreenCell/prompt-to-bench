@@ -24,7 +24,6 @@ from __future__ import annotations
 
 import argparse
 import collections
-import glob
 import hashlib
 import json
 import os
@@ -48,17 +47,16 @@ import run_bench  # noqa: E402  (reads OLLAMA_HOST)
 def cmd_subset(a) -> None:
     """A stratified batch-C subset: --per-family descriptions from each family, with the reference measured."""
     family = {}
-    for f in glob.glob(os.path.join(ROOT, "finetune", "rft", "distill", "prompts_clean_c_shard*.jsonl")):
-        for line in open(f):
-            d = json.loads(line)
-            family[d["user"].strip()] = d["family"]
+    for line in open(os.path.join(ROOT, "finetune", "rft", "distill", "prompts_clean_c.jsonl")):
+        d = json.loads(line)
+        family[d["user"].strip()] = d["family"]
     by = collections.defaultdict(list)
     for line in open(a.prompts):
         p = json.loads(line)
         user = onpolicy_repairs.user_of(p["messages"])
         by[family.get(user.strip(), "?")].append({"id": p["id"], "user": user, "ref": p["ref"]})
     if "?" in by:
-        raise SystemExit(f"{len(by['?'])} descriptions have no family in prompts_clean_c_shard*.jsonl")
+        raise SystemExit(f"{len(by['?'])} descriptions have no family in prompts_clean_c.jsonl")
     rng = random.Random(a.seed)
     items = [{**x, "family": k} for k in sorted(by) for x in rng.sample(by[k], min(a.per_family, len(by[k])))]
     with ProcessPoolExecutor(a.workers) as ex:

@@ -1,0 +1,59 @@
+```openscad
+// Two-part enclosure for a small electronics board (e.g. Arduino-based temperature logger)
+// Print orientation: both parts flat on the bed (XY plane), building up in +Z
+// Print side by side along X with a 10 mm gap between them
+
+// ---------------- Parameters ----------------
+box_x            = 70;    // box outer size in X (mm)
+box_y            = 50;    // box outer size in Y (mm)
+box_z            = 30;    // box outer size in Z (mm)
+box_wall         = 2;     // box wall thickness (mm)
+box_floor        = 2;     // box floor thickness (mm)
+
+lid_x            = 70;    // lid plate size in X (mm)
+lid_y            = 50;    // lid plate size in Y (mm)
+lid_wall         = 1.5;   // lid lip wall thickness (mm)
+lip_height       = 4;     // lid lip height above plate (mm)
+lip_outer_x      = 65.6;  // lip outer size in X (mm)
+lip_outer_y      = 45.6;  // lip outer size in Y (mm)
+lip_clearance    = 0.2;   // clearance between lip inner/outer edges (mm)
+
+gap              = 10;    // gap between box and lid on the bed (mm)
+
+eps              = 0.5;   // overcut for clean boolean differences (mm)
+
+$fn = 64;
+
+// ---------------- Derived ----------------
+box_inner_x = box_x - 2 * box_wall;   // 66 mm
+box_inner_y = box_y - 2 * box_wall;   // 46 mm
+box_inner_z = box_z - box_floor;      // 28 mm open top
+
+lip_wall_t  = lip_outer_x - box_inner_x; // 65.6 - 66 = -0.4 -> check!
+// The lip wall would be 0.4 mm short of the inner wall.
+// Increase lip_outer_x by the clearance on each side to keep the 0.2 clearance.
+lip_outer_x = box_inner_x - lip_clearance * 2; // 65.6 mm
+lip_outer_y = box_inner_y - lip_clearance * 2; // 45.6 mm
+
+// ---------------- Model ----------------
+union() {
+    // Part 1: Box
+    difference() {
+        translate([-box_x / 2, -box_y / 2, 0])
+            cube([box_x, box_y, box_z]);
+        // Hollow out (open top)
+        translate([-box_inner_x / 2, -box_inner_y / 2, box_floor])
+            cube([box_inner_x, box_inner_y, box_inner_z + eps]);
+    }
+
+    // Part 2: Lid (printed upside down, so lip is on top)
+    translate([box_x / 2 + gap, -lid_y / 2, 0]) {
+        // Base plate
+        translate([-lid_x / 2, -lid_y / 2, 0])
+            cube([lid_x, lid_y, 2]);
+        // Lip
+        translate([-lip_outer_x / 2, -lip_outer_y / 2, 2])
+            cube([lip_outer_x, lip_outer_y, lip_height]);
+    }
+}
+```

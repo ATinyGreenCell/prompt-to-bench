@@ -1,0 +1,55 @@
+```openscad
+// DIY magnetic stirrer housing for 80 mm PC case fan
+// Print orientation: top plate on bed (z = 0), open box upward (+Z)
+
+// ---------------- Parameters ----------------
+outer_size    = 90;    // outer size of top plate and box (X x Y)
+plate_thick   = 2;     // top plate thickness (z = 0 to 2)
+wall_thick    = 2.5;   // wall thickness (z = 2 to 40)
+box_height    = 40;    // overall height of box (z = 0 to 40)
+
+screw_d       = 4.5;   // M4 screw hole diameter
+screw_pitch   = 71.5;  // square pattern centre-to-centre spacing
+screw_count   = 4;     // number of screw holes
+
+notch_width   = 12;    // power cable notch width
+notch_depth   = 8;     // notch depth from open edge (z = 32 to 40)
+
+eps           = 0.5;   // cutter overshoot past faces
+$fn           = 64;    // curve resolution
+
+// ---------------- Derived ----------------
+total_thick   = plate_thick + wall_thick;   // 4.5 mm bottom + walls
+notch_z0      = box_height - notch_depth;   // z = 32 (notch floor)
+
+// ---------------- Model ----------------
+difference() {
+    union() {
+        // Top plate (lies on the bed)
+        translate([-outer_size/2, -outer_size/2, 0])
+            cube([outer_size, outer_size, plate_thick]);
+
+        // Four walls rising from the plate to the open top
+        for (a = [0, 90, 180, 270])
+            rotate([0, 0, a])
+                translate([-(outer_size/2 - wall_thick),
+                           -wall_thick/2,
+                           plate_thick])
+                    cube([outer_size - 2*wall_thick,
+                          wall_thick,
+                          box_height - plate_thick]);
+    }
+
+    // Screw holes through the top plate on a centred square pattern
+    for (i = [0 : screw_count - 1]) {
+        x = (i % 2 - 0.5) * screw_pitch;
+        y = (i / 2 - 0.25) * screw_pitch;
+        translate([x, y, -eps])
+            cylinder(d = screw_d, h = plate_thick + 2*eps);
+    }
+
+    // Power cable notch in one wall (z = 32 to 40)
+    translate([-notch_width/2, -outer_size/2, notch_z0])
+        cube([notch_width, outer_size + 2*eps, notch_depth + eps]);
+}
+```

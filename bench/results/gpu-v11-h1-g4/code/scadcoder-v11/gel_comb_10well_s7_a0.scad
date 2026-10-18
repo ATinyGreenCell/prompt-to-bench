@@ -1,0 +1,50 @@
+// 10-well agarose gel comb, printed lying flat
+// Units: mm. Comb thickness (Z) = 1.5 mm.
+
+// ---- Spine (back bar) ----
+spine_length = 70;    // X length of spine
+spine_width  = 12;    // Y width of spine
+
+// ---- Teeth ----
+teeth_count   = 10;   // number of wells/teeth
+teeth_width   = 5.0;  // tooth width along X
+teeth_length  = 12;   // tooth length along Y (hanging from spine)
+teeth_gap     = 1.5;  // gap between neighbouring teeth along X
+
+// ---- Derived ----
+pitch      = teeth_width + teeth_gap;            // centre-to-centre spacing
+row_offset = (teeth_count - 1) * pitch / 2;      // shift so row is centred
+overcut    = 0.5;                                 // cutter overshoot past faces
+
+$fn = 64;
+
+// 2D outline of the plate seen from above (spine + teeth)
+plate_outline = concat(
+    [[-spine_length / 2, -spine_width / 2],
+     [ spine_length / 2, -spine_width / 2]],
+    [for (i = [0 : teeth_count - 1])
+        each [[-teeth_width / 2 - row_offset + i * pitch,
+               -teeth_length],
+              [ teeth_width / 2 - row_offset + i * pitch,
+               -teeth_length]]]
+);
+
+module plate_t() {
+    // Plate thickness along Z, centred on origin in X/Y
+    translate([0, 0, -plate_outline[0][1] / 2])
+        linear_extrude(height = abs(plate_outline[0][1]) + 1.5)
+            polygon(points = plate_outline);
+}
+
+difference() {
+    plate_t();
+
+    // Cut out the well cavities (through the full plate)
+    for (i = [0 : teeth_count - 1])
+        translate([-teeth_width / 2 - row_offset + i * pitch,
+                   -teeth_length,
+                   -overcut])
+            cube([teeth_width + overcut,
+                  teeth_length + overcut,
+                  plate_outline[0][1] / 2 + overcut]);
+}

@@ -1,0 +1,44 @@
+// Two-part enclosure for small electronics board
+// Print orientation: box standing on bed, lid plate flat on bed
+
+// ---------- Parameters ----------
+box_x      = 70;    // box outer length (X)
+box_y      = 50;    // box outer width (Y)
+box_z      = 30;    // box outer height (Z)
+box_wall   = 2;     // box wall thickness
+box_floor  = 2;     // box floor thickness
+
+lip_t      = 1.5;   // lip wall thickness
+lip_h      = 4;     // lip height above plate
+lip_x      = 65.6;  // lip outer length (X)
+lip_y      = 45.6;  // lip outer width (Y)
+
+eps        = 0.5;   // cutter overshoot
+gap        = 10;    // gap between parts
+$fn        = 64;
+
+// ---------- Derived ----------
+box_inner_x = box_x - 2*box_wall;
+box_inner_y = box_y - 2*box_wall;
+plate_t     = 2;    // lid plate thickness
+
+// ---------- Model ----------
+union() {
+    // Box
+    difference() {
+        translate([-box_x/2, -box_y/2, 0])
+            cube([box_x, box_y, box_z]);
+        translate([-box_inner_x/2, -box_inner_y/2, box_z - box_wall])
+            cube([box_inner_x, box_inner_y, box_wall + eps]);
+    }
+
+    // Lid
+    translate([box_x/2 + gap, -box_y/2, 0]) {
+        // Plate
+        translate([-lip_x/2, -lip_y/2, 0])
+            cube([lip_x, lip_y, plate_t]);
+        // Lip
+        translate([-lip_x/2, -lip_y/2, plate_t])
+            cube([lip_x, lip_y, lip_h]);
+    }
+}

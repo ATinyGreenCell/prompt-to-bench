@@ -1,0 +1,56 @@
+// Hose-barb reducer: 8 mm ID -> 5 mm ID
+// Print orientation: standing upright along +Z
+
+// ---- Parameters ----
+eps      = 0.5;   // overcut for clean differences
+$fn      = 96;    // smoothness of curved surfaces
+
+tube_d1  = 8;     // inner diameter of large tubing
+tube_d2  = 5;     // inner diameter of small tubing
+bore     = 3;     // through-bore diameter
+
+base_h   = 20;    // height of first barb section
+collar_d = 12;    // diameter of joining collar
+collar_h = 5;     // height of collar
+
+top_h    = 8;     // height of second barb section
+total_l  = base_h + collar_h + top_h;  // 41 mm overall length
+
+// ---- Derived ----
+wd1 = tube_d1 + 0.5;   // outer diameter of first barbs (grows to 9.5)
+wd2 = tube_d2 + 0.5;   // outer diameter of top barbs (shrinks from 6.5)
+
+// ---- Model ----
+difference() {
+    union() {
+        // Sawtooth barbs for 8 mm tubing (z = 0 .. 20)
+        for (s = [-1, 1])
+            translate([0, 0, s * base_h / 2])
+                linear_extrude(height = base_h)
+                    polygon([
+                        [wd1 / 2, base_h / 2],
+                        [wd1 / 2, -base_h / 2],
+                        [(wd1 - 0.5) / 2, -base_h / 2],
+                        [(wd1 - 0.5) / 2, base_h / 2]
+                    ]);
+
+        // Cylindrical collar (z = 20 .. 25)
+        translate([0, 0, base_h])
+            cylinder(d = collar_d, h = collar_h);
+
+        // Sawtooth barbs for 5 mm tubing (z = 25 .. 41)
+        for (s = [-1, 1])
+            translate([0, 0, base_h + collar_h + s * top_h / 2])
+                linear_extrude(height = top_h)
+                    polygon([
+                        [wd2 / 2, -top_h / 2],
+                        [(wd2 - 0.5) / 2, -top_h / 2],
+                        [(wd2 - 0.5) / 2, top_h / 2],
+                        [wd2 / 2, top_h / 2]
+                    ]);
+    }
+
+    // Full-length bore through the part
+    translate([0, 0, -eps])
+        cylinder(d = bore, h = total_l + 2 * eps);
+}

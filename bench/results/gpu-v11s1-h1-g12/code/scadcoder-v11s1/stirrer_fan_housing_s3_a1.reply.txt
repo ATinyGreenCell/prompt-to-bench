@@ -1,0 +1,42 @@
+```openscad
+// DIY magnetic stirrer housing - 80 mm PC case fan adapter
+// Print orientation: top plate down on bed, open box up (+Z)
+
+$fn = 64;
+
+// ---- Dimensions (mm) ----
+outer_size    = 90;    // outer X and Y
+top_plate_t   = 2;     // top plate thickness (z = 0 to 2)
+wall_t        = 2.5;   // wall thickness
+box_h         = 40;    // open top height (z = 0 to 40)
+screw_d       = 4.5;   // M4 screw hole diameter
+screw_pitch   = 71.5;  // square pattern side for screw holes
+notch_w       = 12;    // cable notch width
+notch_depth   = 8;     // cable notch depth from open edge (z = 32 to 40)
+eps           = 0.5;   // cutter overshoot
+
+difference() {
+    union() {
+        // Top plate
+        translate([-outer_size/2, -outer_size/2, 0])
+            cube([outer_size, outer_size, top_plate_t]);
+
+        // Four walls from top plate up to open top
+        for (sx = [-1, 1], sy = [-1, 1])
+            translate([sx * (outer_size/2 - wall_t), sy * (outer_size/2 - wall_t), top_plate_t])
+                cube([2 * wall_t, 2 * wall_t, box_h - top_plate_t]);
+    }
+
+    // Screw holes through top plate on 71.5 mm square pattern
+    for (i = [0 : 3]) {
+        x = (i - 1.5) * screw_pitch;
+        y = (i % 2 - 0.5) * screw_pitch;
+        translate([x, y, -eps])
+            cylinder(d = screw_d, h = top_plate_t + 2 * eps);
+    }
+
+    // Cable notch in one wall, 12 mm wide, reaching 8 mm down from open edge
+    translate([outer_size/2 - wall_t - notch_w/2, -notch_w/2, box_h - notch_depth])
+        cube([notch_w, notch_w, notch_depth + eps]);
+}
+```

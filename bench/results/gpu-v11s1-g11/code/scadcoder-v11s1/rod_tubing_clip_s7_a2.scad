@@ -1,0 +1,43 @@
+// Snap-on tubing clip for 12.7 mm stand rod
+// Print orientation: flat on bed, extruded up in +Z
+
+$fn = 96;
+
+// ---- Dimensions (mm) ----
+rod_d      = 12.7;   // stand rod diameter
+ring_w     = 3;      // rod ring wall thickness
+ring_od    = rod_d + 2*ring_w;  // rod ring outer diameter (18.7)
+open_w     = 10;     // rod ring opening width (-X side)
+
+tubing_id  = 6;      // tubing inner diameter
+tubing_w   = 2;      // tubing ring wall thickness
+tubing_od  = tubing_id + 2*tubing_w;  // tubing outer diameter (10)
+tubing_x   = 15;     // tubing ring centre X
+open_t     = 4.5;    // tubing opening width (+X side)
+
+bridge_x0  = 8;      // bridge start X
+bridge_x1  = 12;     // bridge end X
+bridge_w   = 6;      // bridge width (Y)
+
+h          = 10;     // extrusion height
+eps        = 0.5;    // cutter overshoot
+
+// ---- Model ----
+difference() {
+    union() {
+        // Rod ring
+        cylinder(d = ring_od, h = h);
+        // Tubing ring
+        translate([tubing_x, 0, 0])
+            cylinder(d = tubing_od, h = h);
+        // Bridge
+        translate([bridge_x0, -bridge_w/2, 0])
+            cube([bridge_x1 - bridge_x0, bridge_w, h]);
+    }
+    // Rod ring opening (-X side)
+    translate([-ring_od/2 - eps, -open_w/2, -eps])
+        cube([ring_od/2 + eps, open_w, h + 2*eps]);
+    // Tubing opening (+X side)
+    translate([tubing_x, -open_t/2, -eps])
+        cube([ring_od/2 + eps, open_t, h + 2*eps]);
+}

@@ -1,0 +1,41 @@
+// Hotplate stirrer knob - D-shaft adapter with grip grooves
+// Print orientation: flat bottom on bed (z = 0), bore opens downward
+
+$fn = 96;
+
+// ---- Dimensions (mm) ----
+shaft_d      = 6;     // D-shaft diameter
+knob_d       = 30;    // knob outer diameter
+knob_h       = 15;    // knob height
+bore_depth   = 12;    // blind bore depth from bottom face
+bore_flat    = 4.7;   // D-bore flat side length
+groove_count = 18;    // vertical grip grooves around outside
+groove_d     = 2;     // groove diameter (half-cylinder)
+pointer_w    = 1.5;   // top pointer groove width
+pointer_l    = 1;     // top pointer groove depth
+eps          = 0.5;   // cut overshoot past faces
+
+// ---- Model ----
+difference() {
+    // Main body
+    cylinder(d = knob_d, h = knob_h);
+
+    // D-bore from bottom face
+    translate([0, 0, -eps])
+        hull() {
+            cylinder(d = bore_flat, h = bore_depth + eps);
+            translate([bore_flat / 2, -bore_flat / 2, 0])
+                rotate([90, 0, 0])
+                    cylinder(d = bore_flat, h = bore_depth + eps);
+        }
+
+    // Vertical grip grooves
+    for (i = [0 : groove_count - 1])
+        rotate([0, 0, i * 360 / groove_count])
+            translate([knob_d / 2, 0, 0])
+                cylinder(d = groove_d, h = knob_h, $fn = 64);
+
+    // Top pointer groove
+    translate([0, -pointer_w / 2, knob_h - pointer_l])
+        cube([knob_d, pointer_w, pointer_l + eps]);
+}

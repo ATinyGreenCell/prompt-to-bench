@@ -1,0 +1,58 @@
+// L-shaped mounting bracket for NEMA 17 stepper motor
+// Print orientation: base plate flat on bed, motor plate standing up
+
+$fn = 96;
+
+// ---- Base plate ----
+base_x = 50;      // X span (centered)
+base_y = 45;      // Y span
+base_t = 5;       // plate thickness
+
+// ---- Motor plate ----
+motor_x = 50;     // X span (centered)
+motor_y = 5;      // Y span
+motor_h = 50;     // height in Z
+
+// ---- Boss hole ----
+boss_d = 23;      // motor centring boss hole diameter
+boss_z = 28;      // hole centre height
+
+// ---- Screw holes ----
+screw_d = 3.4;    // M3 screw hole diameter
+screw_p = 31;     // square pattern side length
+
+// ---- Gussets ----
+gusset_t = 5;     // gusset thickness
+gusset_l = 20;    // leg length along Y and Z
+gusset_x = 5;     // horizontal offset from plate edges
+
+// ---- Misc ----
+eps = 0.5;        // overshoot for clean cuts
+
+difference() {
+    union() {
+        // Base plate
+        translate([-base_x/2, -base_y/2, 0])
+            cube([base_x, base_y, base_t]);
+
+        // Motor plate
+        translate([-motor_x/2, 0, 0])
+            cube([motor_x, motor_y, motor_h]);
+
+        // Gussets
+        for (sx = [-1, 1])
+            translate([sx > 0 ? motor_x/2 - gusset_x : -motor_x/2, 0, 0])
+                rotate([90, 0, 0])
+                    cube([gusset_l, gusset_t, gusset_l]);
+    }
+
+    // Boss hole
+    translate([0, 0, boss_z])
+        cylinder(d = boss_d, h = motor_y + 2*eps, center = true);
+
+    // Screw holes
+    for (a = [0, 90, 180, 270])
+        rotate([0, 0, a])
+            translate([screw_p/2, 0, -eps])
+                cylinder(d = screw_d, h = motor_h + 2*eps);
+}

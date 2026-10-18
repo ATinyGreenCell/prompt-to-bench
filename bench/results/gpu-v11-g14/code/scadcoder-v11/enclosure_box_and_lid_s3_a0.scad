@@ -1,0 +1,59 @@
+// Two-part enclosure for a small electronics board (e.g. Arduino-based logger)
+// Print orientation: box stands on the bed (z = 0), lid plate lies flat on the bed.
+// The file renders to two separate solid bodies with a 10 mm gap between them.
+
+// ---------------- Parameters ----------------
+box_x      = 70;    // box outer size in X (mm)
+box_y      = 50;    // box outer size in Y (mm)
+box_z      = 30;    // box outer size in Z (mm)
+box_wall   = 2;     // box wall thickness (mm)
+box_floor  = 2;     // box floor thickness (mm)
+
+lip_x      = 65.6;  // lip outer size in X (mm)
+lip_y      = 45.6;  // lip outer size in Y (mm)
+lip_t      = 1.5;   // lip wall thickness (mm)
+lip_h      = 4;     // lip height above plate (mm)
+lip_clear  = 0.2;   // clearance between lip inner wall and box opening (mm)
+
+eps        = 0.5;   // cutter overshoot past faces (mm)
+gap        = 10;    // gap between the two parts along X (mm)
+
+$fn = 64;
+
+// ---------------- Derived ----------------
+box_inner_x = box_x - 2 * box_wall;   // 66 mm
+box_inner_y = box_y - 2 * box_wall;   // 46 mm
+box_h       = box_z - box_floor;      // 28 mm (open top)
+
+// Lid plate thickness is not explicitly given; use a reasonable value.
+plate_t = 2;
+
+// Check: lip inner size = outer - 2*wall = 63.6 x 43.6
+// Box opening   = inner = 66 x 46
+// The lip is therefore 2 mm smaller in each direction: 0.2 mm clearance.
+pitch_x = lip_x + 2 * lip_clear;       // 66 mm = box_inner_x
+pitch_y = lip_y + 2 * lip_clear;       // 46 mm = box_inner_y
+
+// ---------------- Model ----------------
+union() {
+    // Part 1: Box
+    difference() {
+        translate([-box_x / 2, -box_y / 2, 0])
+            cube([box_x, box_y, box_z]);
+        // Open top: cut away everything above the floor
+        translate([-box_inner_x / 2, -box_inner_y / 2, box_floor])
+            cube([box_inner_x, box_inner_y, box_h + eps]);
+    }
+
+    // Part 2: Lid (printed upside down, so the lip points up +Z)
+    translate([box_x / 2 + gap, -box_y / 2, 0])
+        union() {
+            // Base plate
+            translate([-lip_x / 2, -lip_y / 2, 0])
+                cube([lip_x, lip_y, plate_t]);
+
+            // Rectangular lip: wall thick in X, height in Z, full Y
+            translate([-pitch_x / 2, -lip_y / 2, plate_t])
+                cube([pitch_x, lip_y, lip_h]);
+        }
+}

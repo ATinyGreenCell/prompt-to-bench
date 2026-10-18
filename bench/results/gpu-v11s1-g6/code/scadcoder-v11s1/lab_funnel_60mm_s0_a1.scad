@@ -1,0 +1,33 @@
+// Small lab funnel, printed upright (wide opening at the top)
+// Units: mm
+
+// ---------------- Parameters ----------------
+spout_od      = 10;    // spout outer diameter
+spout_len     = 20;    // spout length (z = 0 to z = 20)
+cone_top_d    = 60;    // cone outer diameter at the rim (z = 50)
+cone_bottom_d = 10;    // cone outer diameter where it meets the spout (z = 20)
+wall          = 1.6;   // wall thickness everywhere
+overlap       = 0.5;   // spout extends this far into the cone for a solid union
+$fn           = 128;   // facet count for round features
+
+// Derived values
+spout_id = spout_od - 2 * wall;           // spout bore diameter (6.8 mm)
+cone_h   = 50 - 20;                       // cone height (30 mm)
+// Cone outer diameter at the overlap height (z = spout_len - overlap)
+cone_overlap_d = cone_bottom_d - (overlap / cone_h) * (cone_bottom_d - cone_top_d);
+
+// ---------------- Model ----------------
+difference() {
+    union() {
+        // Straight spout tube (z = 0 to z = 20)
+        cylinder(d = spout_od, h = spout_len);
+
+        // Cone: overlap height 0..30 maps to global z = 20..50
+        translate([0, 0, spout_len - overlap])
+            cylinder(d1 = cone_overlap_d, d2 = cone_top_d, h = cone_h + overlap);
+    }
+
+    // Through-bore: the spout bore runs the full height (z = 0 to z = 50)
+    translate([0, 0, -1])
+        cylinder(d = spout_id, h = 51);
+}

@@ -1,0 +1,40 @@
+// Two-part enclosure for small electronics board (e.g., Arduino-based logger)
+// Print orientation: box on the bed (z = 0), lid on top (+X side), both build upward
+
+// ---------------- Parameters ----------------
+box_x      = 70;    // box outer size in X (mm)
+box_y      = 50;    // box outer size in Y (mm)
+box_z      = 30;    // box outer size in Z (mm)
+box_wall   = 2;     // box wall thickness (mm)
+box_floor  = 2;     // box floor thickness (mm)
+
+lip_x      = 65.6;  // lip outer size in X (mm)
+lip_y      = 45.6;  // lip outer size in Y (mm)
+lip_t      = 1.5;   // lip wall thickness (mm)
+lip_h      = 4;     // lip height (mm)
+
+gap        = 10;    // gap between box and lid (mm)
+
+eps        = 0.5;   // cutter overshoot past faces (mm)
+
+$fn = 64;
+
+// ---------------- Derived ----------------
+box_inner_x = box_x - 2 * box_wall;
+box_inner_y = box_y - 2 * box_wall;
+lip_outer_x = lip_x;
+lip_outer_y = lip_y;
+
+// ---------------- Model ----------------
+union() {
+    // Part 1: Box, open top
+    difference() {
+        cube([box_x, box_y, box_z]);
+        translate([box_wall, box_wall, box_floor])
+            cube([box_inner_x, box_inner_y, box_z - box_floor + eps]);
+    }
+
+    // Part 2: Lid, printed upside down (plate on bed, lip on top)
+    translate([box_x + gap, -lip_outer_y / 2, 0])
+        cube([lip_outer_x, lip_outer_y, lip_t + lip_h]);
+}
