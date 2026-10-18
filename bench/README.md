@@ -21,6 +21,7 @@ Sixteen biology-lab parts, described in words and numbers. A model writes OpenSC
 | [`finetune_table.py`](finetune_table.py) | the paper's Table 8: fine-tunes on the in-family / held-out split of the 16 tasks |
 | [`repair_stats.py`](repair_stats.py) | how a model uses feedback: file changed, score rose, passes won by repair (§6.4) |
 | [`self_consistency.py`](self_consistency.py) | picks one of k samples by agreement of the rendered parts' size and volume, no hidden checks (§6.4) |
+| [`spec_select.py`](spec_select.py) | picks one of k samples by checking each rendered part against the numbers in its own request (sizes, hole diameters, counts), agreement as a tie-breaker; no hidden checks (§6.4) |
 | [`harness_search.py`](harness_search.py) | compares harnesses (system prompt x feedback) on batch-C descriptions, scored against their reference files, never the 16 tasks (§6.4, Table 9) |
 | [`ollama_openai_shim.py`](ollama_openai_shim.py) | an Ollama-API front for an OpenAI-compatible server (vLLM), so `run_bench.py` can drive GPU-served models unchanged |
 | `run_main_local.sh`, `run_lang.sh` | the exact commands used for the paper |
