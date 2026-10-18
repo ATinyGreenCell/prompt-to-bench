@@ -322,8 +322,8 @@ Two RTX 2000 Ada pods ($0.24/hr) created with `guarded_pod_body.py` (guard pinne
   injected key; the new `runpodctl pod stop` syntax does not exist in 1.14 (kept as a fallback, with GraphQL);
   the self-test now reads the pod's knobs from PID 1 too.
 Not covered by the pod itself: a pod created some other way (console) without the guard - covered by the
-session-start `list-pods` check and by Claude's allow rule to terminate; the GraphQL fallback path is untested
-(the first path always worked).
+session-start `list-pods` check and by Claude's allow rule to terminate; the GraphQL fallback path was untested
+(the first path always worked) - tested in H42.
 
 ### H41. `hf` is not on a fresh runpod/pytorch pod — [x] download after the pip install, or via the library
 - **Symptom:** `hf download ...` started in parallel with `pip install vllm` died at once: `hf: command not found`
@@ -361,3 +361,9 @@ Two RTX 2000 Ada pods ($0.24/hr), created from `guarded_pod_body.py` bodies (gua
   `wait` polling until its 6 h timeout; a command line equal to the heredoc terminator truncated cmd.sh; scp and
   receive timeouts raised tracebacks. All fixed and covered above.
 - `pod_train_vlm.sh` no longer prints "will bill until terminated by hand" on pods guarded from boot.
+- **The new boot, on a third pod (guard pinned to bcc3a62):** guard armed 4 s after create, its file's SHA-256 equal
+  to the pin; the backstop sleeper (`sleep 1800` for MAX_HOURS 0.5), the supervisor and the guard all running.
+- **GraphQL stop path (H40's open item):** with a stub `runpodctl` first on PATH, both runpodctl syntaxes failed
+  and the guard's `stop_pod` fell through to GraphQL: `{"podStop":{"id":...,"desiredStatus":"EXITED"}}`, API
+  status EXITED. (A first attempt stubbed runpodctl as a shell function; `timeout` execs the binary, so the
+  function was bypassed and the primary path stopped that pod instead. Stub on PATH, not in the shell.)
