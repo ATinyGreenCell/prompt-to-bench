@@ -1,0 +1,48 @@
+// Two-part enclosure for a small electronics board (e.g. Arduino-based temperature logger)
+// Print orientation: both parts rest on the bed (z = 0), side by side, with a 10 mm gap.
+// The lid is printed upside down: a flat plate with a rectangular lip that slides into the box.
+// This file prints the two parts as one solid, with a small overlap (0.01 mm) so they fuse.
+
+// ---------------- Parameters ----------------
+box_x      = 70;    // box outer length (X)
+box_y      = 50;    // box outer width (Y)
+box_h      = 30;    // box outer height (Z)
+wall       = 2;     // box wall thickness
+floor      = 2;     // box floor thickness
+lip_t      = 1.5;   // lip wall thickness
+lip_h      = 4;     // lip height above plate
+lip_x      = 65.6;  // lip outer length (X)
+lip_y      = 45.6;  // lip outer width (Y)
+clearance  = 0.2;   // clearance between lip outer size and box opening
+eps        = 0.01;  // overlap so the two parts fuse into one solid
+
+$fn = 64;
+
+// ---------------- Derived ----------------
+// Box internal dimensions (opening at the top)
+box_in_x = box_x - 2 * wall;   // 66 mm
+box_in_y = box_y - 2 * wall;   // 46 mm
+
+// Lip wall thickness + clearance, used to check the slide fit
+lip_wt = lip_t + clearance;    // 1.7 mm
+
+// ---------------- Model ----------------
+union() {
+    // Part 1: Box, open top, centred in X/Y, sitting on z = 0
+    translate([-box_x / 2, -box_y / 2, 0])
+        cube([box_x, box_y, box_h - floor]);   // floor under the cavity
+
+    // Part 2: Lid, printed upside down
+    //   - Base plate: 70 x 50 x 2 mm
+    //   - Rectangular lip on top of the plate: 65.6 x 45.6 x 1.5 mm, centred
+    // The lip slides into the box opening with 0.2 mm clearance on each side.
+    translate([box_x / 2 + 10 + eps, -box_y / 2, 0])
+        cube([box_x, box_y, floor + lip_h]);                  // base plate + full lip height
+        translate([0, 0, floor])                               // cut the lip pocket into the plate
+            difference() {
+                cube([box_in_x + 2 * clearance, box_in_y + 2 * clearance, lip_h + eps]);
+                translate([-clearance, -clearance, 0])
+                    cube([box_in_x + 2 * clearance, box_in_y + 2 * clearance, lip_h + eps]);
+            }
+    }
+}

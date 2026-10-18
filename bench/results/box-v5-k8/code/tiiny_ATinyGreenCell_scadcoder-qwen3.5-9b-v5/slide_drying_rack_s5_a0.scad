@@ -1,0 +1,30 @@
+// Slide drying rack
+// Print orientation: base block on the bed, slots open upward (+Z)
+
+// ---- Block ----
+block_l = 90;      // block length along X
+block_w = 45;      // block width along Y
+block_h = 20;      // block height along Z
+
+// ---- Slots ----
+slot_n     = 10;   // number of slots
+slot_len   = 77;   // slot length along X
+slot_w     = 1.6;  // slot width along Y
+slot_d     = 10;   // slot depth into block
+slot_pitch = 3.5;  // centre-to-centre spacing in Y
+eps        = 0.5;  // overcut past faces
+
+$fn = 64;
+
+difference() {
+    // Base block, centred in X/Y, sitting on z = 0
+    translate([-block_l/2, -block_w/2, 0])
+        cube([block_l, block_w, block_h]);
+
+    // Parallel slots, centred group in X and Y
+    for (i = [0 : slot_n - 1]) {
+        y = (i - (slot_n - 1)/2) * slot_pitch;
+        translate([-slot_len/2, y - slot_w/2, block_h - slot_d])
+            cube([slot_len, slot_w, slot_d + eps]);
+    }
+}

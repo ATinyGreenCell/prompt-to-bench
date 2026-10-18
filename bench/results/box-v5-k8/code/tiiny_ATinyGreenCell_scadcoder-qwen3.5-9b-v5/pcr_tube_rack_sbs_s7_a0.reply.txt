@@ -1,0 +1,50 @@
+```openscad
+// 96-well PCR tube rack (0.2 mL, ANSI/SLAS footprint)
+// Print orientation: flat on bed, wells facing up
+
+// ---- Block ----
+block_l = 127.76;   // length along X
+block_w = 85.48;    // width along Y
+block_h = 20;       // height along Z
+
+// ---- Wells ----
+well_n     = 96;    // number of wells (8 x 12)
+well_d     = 6.2;   // well diameter
+well_pitch = 9.0;   // centre-to-centre spacing
+well_x0    = 14.38; // first well offset from left
+well_y0    = 11.24; // first well offset from back
+
+// ---- Chamfer ----
+chamf_leg  = 5;     // chamfer leg length
+chamf_ang  = 45;    // chamfer angle (degrees)
+
+// ---- Misc ----
+eps = 0.5;          // cutter overshoot
+$fn = 96;
+
+difference() {
+    // Main block, centred in XY, resting on z = 0
+    translate([-block_l/2, -block_w/2, 0])
+        cube([block_l, block_w, block_h]);
+
+    // Well grid
+    for (i = [0 : well_n - 1]) {
+        x = well_x0 + i % 12 * well_pitch;
+        y = well_y0 + floor(i / 12) * well_pitch;
+        translate([x - well_d/2, y - well_d/2, -eps])
+            cylinder(d = well_d, h = block_h + 2 * eps);
+    }
+
+    // Orientation chamfer at A1 corner
+    translate([well_x0 - well_d/2, well_y0 - well_d/2, 0])
+        chamfer_blk();
+}
+
+// Chamfer block: 5 mm legs along X and Y, 45-degree roof
+module chamfer_blk() {
+    s = chamf_leg;
+    translate([0, 0, -eps])
+        linear_extrude(height = block_h + 2 * eps)
+            polygon([[-s, -s], [-s, s], [s, s], [s, -s]]);
+}
+```

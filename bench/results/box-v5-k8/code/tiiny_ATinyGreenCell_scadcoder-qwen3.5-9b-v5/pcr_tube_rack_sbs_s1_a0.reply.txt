@@ -1,0 +1,52 @@
+```openscad
+// 96 PCR tube (0.2 mL) rack - ANSI/SLAS microplate footprint
+// Print orientation: base on XY plane, building up +Z
+
+// ---- Block dimensions ----
+block_len   = 127.76;   // length along X
+block_wid   = 85.48;    // width along Y
+block_ht    = 20;       // height along Z
+
+// ---- Hole pattern ----
+hole_count  = 96;       // total holes (8 rows x 12 columns)
+hole_d      = 6.2;      // hole diameter
+hole_pitch  = 9.0;      // centre-to-centre spacing
+hole_x0     = 14.38;    // first hole offset from left edge
+hole_y0     = 11.24;    // first hole offset from back edge
+
+// ---- Chamfer ----
+chamfer_leg = 5;        // chamfer leg length
+chamfer_ang = 45;       // chamfer angle (degrees)
+
+// ---- Misc ----
+eps         = 0.5;      // cutter overshoot past faces
+$fn         = 64;       // curve resolution
+
+// Derived
+grid_x = (hole_count % 12 == 0) ? 12 : 13;  // columns along X
+grid_y = (hole_count / grid_x);              // rows along Y
+x1 = block_len - hole_x0 - hole_pitch * (grid_x - 2);  // last column X
+y1 = block_wid - hole_y0 - hole_pitch * (grid_y - 2);   // last row Y
+
+difference() {
+    // Main block, centred in X/Y, resting on z = 0
+    translate([-block_len/2, -block_wid/2, 0])
+        cube([block_len, block_wid, block_ht]);
+
+    // Through-holes
+    for (i = [0 : hole_count - 1]) {
+        x = hole_x0 + hole_pitch * i % 12;
+        y = hole_y0 + hole_pitch * (i / 12);
+        translate([x - eps, y - eps, -eps])
+            cylinder(d = hole_d, h = block_ht + 2*eps);
+    }
+
+    // Orientation chamfer at A1 corner, 45 degrees with 5 mm legs
+    translate([hole_x0 - eps, block_wid - hole_y0 - eps, -eps])
+        translate([0, 0, block_ht])          // lift to top face
+        translate([chamfer_leg, 0, 0])
+        cylinder(r = chamfer_leg / cos(chamfer_ang),
+                 h  = chamfer_leg * tan(chamfer_ang),
+                 $fn = 64);
+}
+```

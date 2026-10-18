@@ -1,0 +1,36 @@
+// DIY magnetic stirrer housing (print orientation: upside-down open box)
+// Units: mm. Walls 2.5 mm thick. Top plate 2 mm thick.
+
+// ---------- Parameters ----------
+box_outer_x   = 90;    // outer length in X
+box_outer_y   = 90;    // outer width in Y
+wall_thick    = 2.5;   // wall thickness
+top_thick     = 2;     // top plate thickness
+open_height   = 40 - 2  = 38; // height of open box (top at z=40)
+screw_hole    = 4.5;   // M4 screw hole diameter
+screw_pitch   = 71.5;  // square hole pattern side
+notch_w       = 12;    // cable notch width
+notch_depth   = 8;     // notch depth from open edge
+eps           = 0.5;   // cutter overshoot past faces
+$fn           = 96;    // curve resolution
+
+// ---------- Model ----------
+difference() {
+    // Solid outer block (z = 0 to 40)
+    translate([-box_outer_x/2, -box_outer_y/2, 0])
+        cube([box_outer_x, box_outer_y, 40]);
+
+    // Open top: cut out the box interior, leaving the top plate (z = 0 to 2)
+    translate([-box_outer_x/2, -box_outer_y/2, 38])
+        cube([box_outer_x, box_outer_y, wall_thick + eps]);
+
+    // Screw holes through the top plate on a centred square pattern
+    for (sx = [-1, 1], sy = [-1, 1])
+        translate([sx * screw_pitch/2, sy * screw_pitch/2, -eps])
+            cylinder(d = screw_hole, h = top_thick + 2 * eps);
+
+    // Cable notch in one wall: 12 mm wide, centred along the wall,
+    // reaching 8 mm down from the open edge (z = 32 to z = 40)
+    translate([-box_outer_x/2 + notch_w/2, -box_outer_y/2, 32])
+        cube([notch_w, box_outer_y, notch_depth + eps]);
+}

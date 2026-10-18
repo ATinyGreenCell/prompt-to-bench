@@ -1,0 +1,43 @@
+```openscad
+// Tubing reducer: two barbs per end, a collar, and a through bore
+// Print orientation: standing upright along +Z
+
+// ---------------- Parameters ----------------
+reducer_length   = 41;   // total length of the part (mm)
+barb_height_8    = 10;   // height of each 8 mm tubing barb (mm)
+barb_height_5    = 8;     // height of each 5 mm tubing barb (mm)
+barb_d8_bottom   = 7.5;  // outer diameter of 8 mm barb at bottom (mm)
+barb_d8_top      = 9.5;  // outer diameter of 8 mm barb at top (mm)
+barb_d5_bottom   = 6.5;  // outer diameter of 5 mm barb at bottom (mm)
+barb_d5_top      = 5.0;  // outer diameter of 5 mm barb at top (mm)
+collar_d         = 12;   // diameter of the central collar (mm)
+bore_d           = 3;    // diameter of the straight through bore (mm)
+eps              = 0.5;  // overshoot for clean boolean cuts (mm)
+
+$fn = 96;  // curve resolution
+
+// ---------------- Model ----------------
+difference() {
+    union() {
+        // 8 mm tubing end: two stacked barbs with sawtooth profile
+        for (i = [0, 1]) {
+            translate([0, 0, i * barb_height_8])
+                cylinder(h = barb_height_8, d1 = barb_d8_bottom, d2 = barb_d8_top);
+        }
+
+        // Central collar: cylinder over the full 20 - 25 mm range
+        translate([0, 0, 20])
+            cylinder(h = 5, d = collar_d);
+
+        // 5 mm tubing end: two stacked barbs, shrinking profile
+        for (i = [0, 1]) {
+            translate([0, 0, 25 + i * barb_height_5])
+                cylinder(h = barb_height_5, d1 = barb_d5_bottom, d2 = barb_d5_top);
+        }
+    }
+
+    // Through bore along Z, extending past both end faces
+    translate([0, 0, -eps])
+        cylinder(h = reducer_length + 2 * eps, d = bore_d);
+}
+```

@@ -1,0 +1,36 @@
+// Bench rack for 1.5 mL microcentrifuge tubes
+// Print orientation: base on XY plane, holes open upward (+Z)
+
+// ---------- Block ----------
+block_l = 106;      // block length along X (mm)
+block_w = 72;       // block width along Y (mm)
+block_h = 30;       // block height along Z (mm)
+
+// ---------- Holes ----------
+hole_n_x     = 6;   // holes along X (per row)
+hole_n_y     = 4;   // rows along Y
+hole_pitch   = 16;  // centre-to-centre spacing, both directions (mm)
+hole_d       = 11.2;// hole diameter (mm)
+hole_depth   = 25;  // hole depth from top face (mm)
+floor_t      = block_h - hole_depth; // solid floor thickness = 5 mm
+
+// ---------- Misc ----------
+eps = 0.5;          // cutter overshoot past faces (mm)
+$fn = 96;           // circle resolution
+
+// X positions of holes, centred on block
+function hole_x(i) = (i - (hole_n_x + 1) / 2) * hole_pitch;
+// Y positions of rows, centred on block
+function hole_y(j) = (j - (hole_n_y + 1) / 2) * hole_pitch;
+
+difference() {
+    // Main block, centred in X/Y, resting on z = 0
+    translate([-block_l / 2, -block_w / 2, 0])
+        cube([block_l, block_w, block_h]);
+
+    // Vertical holes, open at top, closed at bottom
+    for (i = [0 : hole_n_x - 1])
+        for (j = [0 : hole_n_y - 1])
+            translate([hole_x(i), hole_y(j), floor_t])
+                cylinder(d = hole_d, h = hole_depth + eps);
+}

@@ -117,4 +117,5 @@ Table 8 (GPU tier, 8 samples per task; in-family / held-out split of the 16 task
 The stock base passes 2/8 · 1/8 with thinking off. Every fine-tune renders 88-99% of first attempts but rarely changes
 its file after feedback (6-15% of repair turns through v8, vs 84% for the base; v9, trained on its own failures, 27%). On the box itself (one sample per task, the box's
 own quantised build, imported by URL with `scripts/box_import.py`) v5 passed the slide rack, the gel comb and the
-PCR-tube adapter, all on the first attempt; v1 and v2 had passed none.
+PCR-tube adapter, all on the first attempt; v1 and v2 had passed none. With eight samples on the box v5 passed 6/16 (4 in-family, 2 held out:
+the hose-barb reducer and the slide rack), against 5/16 on the GPU (`bench/results/box-v5-k8/`).

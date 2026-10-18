@@ -1,0 +1,46 @@
+// Tubing and stand rod snap-on clip
+// Print orientation: flat on bed, z = 0 up to z = 10
+
+// ---------------- Parameters ----------------
+stand_d      = 12.7;   // stand rod diameter
+stand_wall   = 3;       // stand ring wall thickness
+stand_open   = 10;      // stand ring opening width (x < 0, -5 < y < 5)
+
+tub_d        = 6;       // tubing inner diameter
+tub_wall     = 2;       // tubing ring wall thickness
+tub_x        = 15;      // tubing ring centre X
+tub_open     = 4.5;     // tubing ring opening width (+X side)
+
+bridge_w     = 6;       // bridge width (Y)
+bridge_x0    = 8;       // bridge start X
+bridge_x1    = 12;      // bridge end X
+
+eps          = 0.5;     // cutter overshoot past faces
+$fn          = 96;      // curve resolution
+
+// ---------------- Derived ----------------
+stand_d_out  = stand_d + 2 * stand_wall;   // 18.7 mm
+tub_d_out    = tub_d + 2 * tub_wall;       // 10 mm
+
+// ---------------- Model ----------------
+difference() {
+    union() {
+        // Stand ring
+        cylinder(d = stand_d_out, h = 10);
+
+        // Tubing ring
+        translate([tub_x, 0, 0])
+            cylinder(d = tub_d_out, h = 10);
+
+        // Solid bridge between rings
+        translate([bridge_x0, -bridge_w / 2, 0])
+            cube([bridge_x1 - bridge_x0, bridge_w, 10]);
+    }
+
+    // Openings cut through the full height
+    translate([-stand_open / 2, -5, -eps])
+        cube([stand_open, 10, 10 + 2 * eps]);   // stand opening
+
+    translate([tub_x + tub_open / 2, -tub_open / 2, -eps])
+        cube([tub_open, tub_d_out + 2 * eps, 10 + 2 * eps]);   // tubing opening
+}

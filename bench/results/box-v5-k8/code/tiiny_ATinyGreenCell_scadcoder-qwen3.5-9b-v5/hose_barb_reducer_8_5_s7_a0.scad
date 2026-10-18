@@ -1,0 +1,54 @@
+// Hose-barb reducer: joins 8 mm ID silicone tubing to 5 mm ID silicone tubing
+// Print orientation: standing upright along +Z, base on XY plane (z = 0)
+// Bore: 3 mm through full length
+// Note: The two tubing barbs do not touch each other along Z.
+
+// ---------------- Parameters ----------------
+reducer_id      = 8;    // inner diameter of the larger (8 mm) tubing
+reducer_id2     = 5;    // inner diameter of the smaller (5 mm) tubing
+bore            = 3;    // through-bore diameter
+barb_height1    = 10;   // height of each 8 mm tubing barb
+barb_height2    = 8;    // height of each 5 mm tubing barb
+barb_d1_bottom  = 7.5;  // outer diameter of 8 mm barb at its bottom
+barb_d1_top     = 9.5;  // outer diameter of 8 mm barb at its top
+barb_d2_bottom  = 6.5;  // outer diameter of 5 mm barb at its bottom
+barb_d2_top     = 5.0;  // outer diameter of 5 mm barb at its top
+collar_d        = 12;   // diameter of the cylindrical collar between the two stacks
+eps             = 0.5;  // overcut so cutting shapes pass beyond the faces they cut
+
+$fn = 96;               // smoothness of curved surfaces
+
+// ---------------- Derived ----------------
+// Lengths of the stack sections
+stack1_len = 20;         // z = 0 to z = 20: two 8 mm barbs
+stack2_len = 16;         // z = 25 to z = 41: two 5 mm barbs
+collar_len = 5;          // z = 20 to z = 25: collar
+
+// Barb outer diameters at a given height, using linear growth/shrinkage
+function barb_d1(h) = barb_d1_bottom + (barb_d1_top - barb_d1_bottom) * h / barb_height1;
+function barb_d2(h) = barb_d2_bottom + (barb_d2_top - barb_d2_bottom) * h / barb_height2;
+
+// ---------------- Model ----------------
+difference() {
+    union() {
+        // Stack 1: two identical 8 mm tubing barbs, stacked z = 0 to z = 20
+        for (i = [0, 1]) {
+            translate([0, 0, i * barb_height1])
+                cylinder(h = barb_height1, d = barb_d1(barb_height1 / 2));
+        }
+
+        // Collar: cylinder of 12 mm diameter, z = 20 to z = 25
+        translate([0, 0, stack1_len])
+            cylinder(h = collar_len, d = collar_d);
+
+        // Stack 2: two identical 5 mm tubing barbs, stacked z = 25 to z = 41
+        for (i = [0, 1]) {
+            translate([0, 0, stack1_len + collar_len + i * barb_height2])
+                cylinder(h = barb_height2, d = barb_d2(barb_height2 / 2));
+        }
+    }
+
+    // Through-bore: 3 mm diameter, full length (z = 0 to z = 41)
+    translate([0, 0, -eps])
+        cylinder(h = stack1_len + collar_len + stack2_len + 2 * eps, d = bore);
+}

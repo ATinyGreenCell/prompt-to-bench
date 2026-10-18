@@ -1,0 +1,58 @@
+// Tubing hose-barb reducer: joins 8 mm ID silicone tubing to 5 mm ID silicone tubing
+// Print orientation: standing upright along +Z, resting on z = 0
+// Units: mm. Rotational symmetry about Z axis.
+
+// ---------------- Parameters ----------------
+// Barbs for 8 mm tubing (z = 0 .. 20)
+barb_8_h      = 10;   // barb height
+barb_8_d0     = 7.5;  // outer diameter at bottom of barb
+barb_8_d1     = 9.5;  // outer diameter at top of barb
+barb_8_pitch  = 10;   // centre-to-centre stack spacing
+
+// Collar (z = 20 .. 25)
+collar_d      = 12;    // collar outer diameter
+collar_t      = 5;     // collar thickness (z = 20 to 25)
+
+// Barbs for 5 mm tubing (z = 25 .. 41)
+barb_5_h      = 8;     // barb height
+barb_5_d0     = 6.5;   // outer diameter at bottom of barb
+barb_5_d1     = 4.5;   // outer diameter at top of barb
+barb_5_pitch  = 10;    // centre-to-centre stack spacing
+
+// Bore running straight through full length
+bore_d        = 3;     // through-bore diameter
+
+// ---------------- Helpers ----------------
+// Sawtooth profile for a hose barb: cone from d0 to d1 over height h,
+// then a flat step back to d0 over the same height.
+module barb(d0, d1, h) {
+    $fn = 64;
+    difference() {
+        union() {
+            // Conical part (diameter grows from d0 to d1)
+            cylinder(h = h, d1 = d0, d2 = d1 + 2 * (h / 10));
+            // Flat top step back to d0
+            cylinder(h = h, d1 = d1 + 2 * (h / 10), d2 = d0);
+        }
+        // Through-bore (extended past faces to avoid coplanar surfaces)
+        translate([0, 0, -1])
+            cylinder(h = h + 2, d = bore_d);
+    }
+}
+
+// ---------------- Model ----------------
+union() {
+    // 8 mm tubing barbs, stacked, z = 0 to 20
+    for (i = [0 : 1])
+        translate([0, 0, i * barb_8_pitch])
+            barb(barb_8_d0, barb_8_d1, barb_8_h);
+
+    // Cylindrical collar, z = 20 to 25
+    translate([0, 0, 20])
+        cylinder(h = collar_t, d = collar_d);
+
+    // 5 mm tubing barbs, stacked, z = 25 to 41
+    for (i = [0 : 1])
+        translate([0, 0, 25 + i * barb_5_pitch])
+            barb(barb_5_d0, barb_5_d1, barb_5_h);
+}

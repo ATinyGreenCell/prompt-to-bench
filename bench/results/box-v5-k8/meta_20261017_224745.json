@@ -1,0 +1,28 @@
+{
+ "started": "2026-10-17T22:47:45",
+ "args": {
+  "run": "box-v5-k8",
+  "models": [
+   "tiiny/ATinyGreenCell/scadcoder-qwen3.5-9b-v5"
+  ],
+  "tasks": null,
+  "samples": 8,
+  "max_repairs": 2,
+  "feedback": "report",
+  "temperature": 0.2,
+  "prompts": null,
+  "lang": "en",
+  "system": "bench/prompts/system.md",
+  "render_timeout": 120,
+  "seed_base": 1000,
+  "num_predict": 2048,
+  "think": false,
+  "num_ctx": 8192
+ },
+ "git_commit": "3fb7c7b912e32ed9a0e6ebe1bb1620406eaff518",
+ "host": "enamel",
+ "cpu": "x86_64",
+ "python": "3.14.4",
+ "openscad": "OpenSCAD version 2026.10.01",
+ "ollama": "0.30.11"
+}

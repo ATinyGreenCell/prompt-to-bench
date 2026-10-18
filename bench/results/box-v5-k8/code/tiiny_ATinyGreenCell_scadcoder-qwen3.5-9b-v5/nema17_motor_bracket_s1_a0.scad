@@ -1,0 +1,64 @@
+// NEMA 17 stepper motor L-shaped mounting bracket
+// Print orientation: base plate on the bed, vertical plate builds upward (+Z)
+
+// ---------------- Parameters ----------------
+plate_x      = 50;     // base plate length along X (mm)
+plate_y      = 45;     // base plate width along Y (mm)
+plate_t      = 5;      // base plate thickness along Z (mm)
+
+hole_m4_x    = 17;     // M4 through-hole offset from centre in X (mm)
+hole_m4_y    = 30;     // M4 through-hole Y position (mm)
+
+plate_z      = 50;     // vertical motor plate height (mm)
+boss_d       = 23;     // motor centring boss hole diameter (mm)
+boss_x       = 0;      // boss hole centre X (mm)
+boss_z       = 28;     // boss hole centre Z (mm)
+
+screw_d      = 3.4;    // M3 screw hole diameter (mm)
+screw_pitch  = 31;     // M3 screw hole square pattern size (mm)
+
+gusset_t     = 5;      // gusset thickness along X (mm)
+gusset_y     = 20;     // gusset leg along +Y (mm)
+gusset_z     = 20;     // gusset leg along +Z (mm)
+
+eps          = 0.5;    // cutter overshoot past faces (mm)
+
+$fn = 96;
+
+// ---------------- Model ----------------
+difference() {
+    union() {
+        // Base plate
+        translate([-plate_x/2, 0, 0])
+            cube([plate_x, plate_y, plate_t]);
+
+        // Vertical motor plate
+        translate([-plate_x/2, 0, 0])
+            cube([plate_x, 5, plate_z]);
+
+        // Gussets, flush with left and right edges
+        for (sx = [-1, 1])
+            translate([sx > 0 ? plate_x/2 - gusset_t : -plate_x/2, 0, 0])
+                cube([gusset_t, gusset_y, gusset_z]);
+    }
+
+    // Through-holes
+    translate([-hole_m4_x, hole_m4_y, -eps])
+        cylinder(d = 4.5, h = plate_t + 2*eps);
+
+    translate([hole_m4_x, hole_m4_y, -eps])
+        cylinder(d = 4.5, h = plate_t + 2*eps);
+
+    // Motor centring boss hole
+    translate([boss_x, 2.5, boss_z])
+        cylinder(d = boss_d, h = plate_t + 2*eps);
+
+    // M3 screw holes on square pattern
+    for (i = [0:3])
+        translate([
+            (i % 2 == 0) ? -screw_pitch/2 : screw_pitch/2,
+            (i / 2) * screw_pitch,
+            plate_z * 0.75
+        ])
+            cylinder(d = screw_d, h = plate_t + 2*eps);
+}
