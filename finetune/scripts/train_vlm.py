@@ -43,6 +43,8 @@ def main() -> None:
                          "on single-turn data), so multi-turn repair data adds no flawed targets")
     ap.add_argument("--out", default="out_vlm")
     ap.add_argument("--drop-over-max", action="store_true", help="drop examples over --max-seq instead of aborting (for a hard model context cap)")
+    ap.add_argument("--seed", type=int, default=0,
+                    help="LoRA init + data order (the default 0 is what every Table 8 model used; another value replicates a run)")
     ap.add_argument("--smoke", action="store_true")
     a = ap.parse_args()
     os.makedirs(a.out, exist_ok=True)
@@ -66,8 +68,8 @@ def main() -> None:
     model = FastVisionModel.get_peft_model(
         model, finetune_vision_layers=False, finetune_language_layers=True,
         finetune_attention_modules=True, finetune_mlp_modules=True,
-        r=a.rank, lora_alpha=a.rank, lora_dropout=a.lora_dropout, bias="none", random_state=0)
-    print("PEFT ready (language layers only)", flush=True)
+        r=a.rank, lora_alpha=a.rank, lora_dropout=a.lora_dropout, bias="none", random_state=a.seed)
+    print(f"PEFT ready (language layers only), seed {a.seed}", flush=True)
 
     raw = [json.loads(l) for l in open(a.data) if l.strip()]
     if a.smoke:
@@ -171,7 +173,7 @@ def main() -> None:
     cfg = SFTConfig(per_device_train_batch_size=a.batch, gradient_accumulation_steps=a.accum,
                     num_train_epochs=a.epochs, max_steps=(2 if a.smoke else -1),
                     learning_rate=a.lr, warmup_ratio=0.05, logging_steps=10, optim="adamw_8bit",
-                    weight_decay=0.01, lr_scheduler_type="cosine", seed=0, bf16=True, save_strategy="no",
+                    weight_decay=0.01, lr_scheduler_type="cosine", seed=a.seed, bf16=True, save_strategy="no",
                     output_dir=a.out, report_to="none", remove_unused_columns=False,
                     dataset_kwargs={"skip_prepare_dataset": True}, max_seq_length=a.max_seq)
     trainer = SFTTrainer(model=model, tokenizer=tok, train_dataset=ds,
