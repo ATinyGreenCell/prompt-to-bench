@@ -306,3 +306,21 @@ Format: **Symptom → Impact → Root cause → Fix** (check when the fix is in 
   key: `POST api.tiiny/api/v1/models/import/inspect {hf_url}` (returns `import_support.base_model_id/toolkit_id`,
   storage needs, LoRA detection), then a streamed `POST /api/v1/models/import`. Leave empty fields out of the body
   (the app's JSON.stringify drops undefined ones). Run inspect-only first; `--go` imports. v5 and v6 went in this way.
+
+### H40. Idle-guard audit (2026-10-17) — [x] tested end to end on real pods
+Two RTX 2000 Ada pods ($0.24/hr) created with `guarded_pod_body.py` (guard pinned to commit 7160fb0, SHA-256 checked):
+- **Boot:** both guards armed 3-7 s after create, before the API even reported a runtime; SSH worked (the image's
+  `/start.sh` still ran after the custom command).
+- **Self-test:** pod id + pod-scoped key read from PID 1; GPU telemetry; cgroup CPU; `runpodctl stop pod` present.
+- **Busy signals:** a `pip install` process, a CPU burner (seen as 0.99-1.00 cores via cgroup; the host's
+  /proc/stat would have shown nothing on a 224-CPU host) and KEEP_ALIVE each held the pod; a phase change
+  counted at most one idle minute.
+- **Idle stop:** warning at 3 of 4 idle minutes, stop at 4: `runpodctl stop pod -> rc=0 ... pod stopped`,
+  connection dropped 1 s later, API status EXITED.
+- **Hard cap:** MAX_HOURS 0.1 stopped a pod at age 361 s *while a CPU burner ran*; API status EXITED.
+- Found and fixed on the way: runpodctl in this image has no config file but still stops the pod with the
+  injected key; the new `runpodctl pod stop` syntax does not exist in 1.14 (kept as a fallback, with GraphQL);
+  the self-test now reads the pod's knobs from PID 1 too.
+Not covered by the pod itself: a pod created some other way (console) without the guard - covered by the
+session-start `list-pods` check and by Claude's allow rule to terminate; the GraphQL fallback path is untested
+(the first path always worked).

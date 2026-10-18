@@ -1,0 +1,82 @@
+#!/usr/bin/env python3
+"""Print a RunPod create-pod body (REST v2 / the MCP's create-pod) for a pod that guards itself from boot.
+
+The container's command is replaced by a short bash line that downloads pod_idle_guard.sh from this repo -
+pinned to a commit and checked against its SHA-256, so what runs is exactly the audited file - starts it in
+the background, then execs the image's own /start.sh (sshd, PUBLIC_KEY, ...). The image's ENTRYPOINT is
+kept. So the guard runs from the pod's first minute, before any of our scripts, and again after a container
+restart: a pod that is never used, or whose job finished and was never collected, stops itself after
+IDLE_MIN idle minutes, and no pod outlives MAX_HOURS (pod_idle_guard.sh; RUNBOOK B7). If the download or the
+checksum fails the pod still boots and the failure is logged to /workspace/idle_guard.log.
+
+Every pod for this project is created through this body:
+
+    python finetune/scripts/guarded_pod_body.py --name scadcoder-v9 --gpu "NVIDIA H100 80GB HBM3" > body.json
+
+The pinned commit defaults to the newest pushed commit that touched pod_idle_guard.sh (it must be on
+origin, or the download 404s); the checksum is computed from that commit's file.
+"""
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import pathlib
+import subprocess
+
+HERE = pathlib.Path(__file__).resolve().parent
+ROOT = HERE.parent.parent
+REPO = "ATinyGreenCell/prompt-to-bench"
+PATH = "finetune/scripts/pod_idle_guard.sh"
+BOOT = ('G=/usr/local/bin/pod_idle_guard.sh; '
+        'for i in 1 2 3 4 5; do curl -fsSL --max-time 20 "$GUARD_URL" -o "$G" && break; sleep 10; done; '
+        'if [ -s "$G" ] && echo "$GUARD_SHA256  $G" | sha256sum -c --status -; then '
+        '(setsid nohup bash "$G" >> /workspace/idle_guard.log 2>&1 < /dev/null &); '
+        'else echo "$(date -u +%FT%TZ) GUARD NOT STARTED: download or checksum failed" >> /workspace/idle_guard.log; fi; '
+        'exec /start.sh')
+
+
+def git(*args: str) -> str:
+    return subprocess.run(["git", "-C", str(ROOT), *args], capture_output=True, text=True, check=True).stdout.strip()
+
+
+def pinned() -> tuple[str, str]:
+    """(commit, sha256) of the newest commit on origin/main that touched the guard."""
+    git("fetch", "-q", "origin", "main")
+    commit = git("log", "-1", "--format=%H", "origin/main", "--", PATH)
+    blob = subprocess.run(["git", "-C", str(ROOT), "show", f"{commit}:{PATH}"], capture_output=True, check=True).stdout
+    return commit, hashlib.sha256(blob).hexdigest()
+
+
+def body(name: str, gpu: str, image: str, disk: int, idle_min: int, max_hours: float, min_cuda: str,
+         vcpu_per_gpu: int | None) -> dict:
+    commit, digest = pinned()
+    g = {"id": gpu, "count": 1, "minCudaVersion": min_cuda}
+    if vcpu_per_gpu:
+        g["minVcpuCountPerGpu"] = vcpu_per_gpu
+    return {
+        "name": name, "image": image, "cloud": "SECURE", "gpu": g, "disk": disk,
+        "ports": ["22/tcp"], "startSsh": True,
+        "env": {"GUARD_URL": f"https://raw.githubusercontent.com/{REPO}/{commit}/{PATH}", "GUARD_SHA256": digest,
+                "IDLE_MIN": str(idle_min), "MAX_HOURS": str(max_hours)},
+        "cmd": ["bash", "-c", BOOT],
+    }
+
+
+def main() -> None:
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--name", required=True)
+    ap.add_argument("--gpu", required=True, help='catalog GPU id, e.g. "NVIDIA H100 80GB HBM3"')
+    ap.add_argument("--image", default="runpod/pytorch:1.0.2-cu1281-torch280-ubuntu2404")
+    ap.add_argument("--disk", type=int, default=100)
+    ap.add_argument("--idle-min", type=int, default=45)
+    ap.add_argument("--max-hours", type=float, default=12)
+    ap.add_argument("--min-cuda", default="12.8")
+    ap.add_argument("--vcpu-per-gpu", type=int, default=None)
+    a = ap.parse_args()
+    print(json.dumps(body(a.name, a.gpu, a.image, a.disk, a.idle_min, a.max_hours, a.min_cuda, a.vcpu_per_gpu),
+                     indent=1))
+
+
+if __name__ == "__main__":
+    main()

@@ -27,6 +27,14 @@
 # From boot: finetune/scripts/guarded_pod_body.py builds a create-pod body that starts this guard before
 # the image's own /start.sh, so every pod is guarded from its first second (RUNBOOK B7).
 set -u
+# An SSH shell carries none of the container's environment: take RunPod's variables and the guard's own
+# knobs (set at pod creation by guarded_pod_body.py) from PID 1 wherever this shell lacks them.
+while IFS='=' read -r k v; do
+  case "$k" in
+    RUNPOD_POD_ID|RUNPOD_API_KEY|IDLE_MIN|MAX_HOURS|GPU_PCT|CPU_CORES|NET_KBPS)
+      [ -z "${!k:-}" ] && export "$k=$v" ;;
+  esac
+done < <(tr '\0' '\n' < /proc/1/environ 2>/dev/null)
 IDLE_MIN=${IDLE_MIN:-45}
 MAX_HOURS=${MAX_HOURS:-12}
 GPU_PCT=${GPU_PCT:-5}
@@ -38,11 +46,6 @@ STATE=${GUARD_STATE:-/workspace/.idle_guard_state}
 BUSY_RE=${BUSY_RE:-'train_vlm|train_lora|rft_generate|pip install|hf download|hf upload|huggingface-cli'}
 log(){ echo "$(date -u +%FT%TZ) $*"; }
 
-if [ -z "${RUNPOD_POD_ID:-}" ] || [ -z "${RUNPOD_API_KEY:-}" ]; then
-  while IFS='=' read -r k v; do
-    case "$k" in RUNPOD_POD_ID|RUNPOD_API_KEY) export "$k=$v" ;; esac
-  done < <(tr '\0' '\n' < /proc/1/environ 2>/dev/null)
-fi
 
 # ---------------------------------------------------------------- measurements
 net_bytes(){ awk 'NR>2 && $1 !~ /^lo:/ {sub(/:/," "); rx+=$2; tx+=$10} END {print rx+tx+0}' /proc/net/dev; }

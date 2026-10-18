@@ -216,9 +216,20 @@ Any new training prompt is gated against the 16 eval prompts before training:
 `finetune/rft/distill/gen_prompts_clean.py` (max token Jaccard 0.40, part types that are not eval tasks). Reference
 points: v2's data peaks at 0.22; same-style-different-part prompts sit at 0.25-0.40; paraphrases of a task 0.55+.
 
-## B7. Never let a pod idle (H32)
-`pod_train_vlm.sh` starts `scripts/pod_idle_guard.sh` on the pod when it was sent along: it stops the pod after
-45 minutes with no GPU use, no work process and no network transfer (IDLE_MIN to change; `touch /workspace/KEEP_ALIVE`
-to hold it). It uses the pod-scoped key RunPod injects, so it works even if the laptop session dies. A stop clears the
-container disk, so retrieve the merged model within those 45 minutes. For a pod used only to serve (vLLM, B5), start
-the guard by hand: `setsid nohup bash pod_idle_guard.sh > /workspace/idle_guard.log 2>&1 &`.
+## B7. Never let a pod idle (H32) — every pod guards itself from boot
+**Create every pod with `scripts/guarded_pod_body.py`** (pass its output as create-pod's `body`):
+```
+python finetune/scripts/guarded_pod_body.py --name <name> --gpu "NVIDIA H100 80GB HBM3" [--idle-min 45 --max-hours 12]
+```
+Its container command downloads `scripts/pod_idle_guard.sh` from this repo pinned to a commit (SHA-256 checked),
+starts it, then execs the image's own `/start.sh`, so the guard runs from the pod's first minute and after any
+container restart. The guard stops the pod when (a) for IDLE_MIN minutes the GPU is below 5%, the container uses
+under 0.5 cores (cgroup accounting), no training/pip/HF-transfer process runs and the network is quiet, or (b)
+the pod is older than MAX_HOURS - whatever it is doing. `touch /workspace/KEEP_ALIVE` holds it against (a) only.
+A stop clears the container disk: retrieve the merged model within IDLE_MIN of the run ending.
+Check a pod: `bash /usr/local/bin/pod_idle_guard.sh --self-test`, `cat /workspace/.idle_guard_state`,
+`/workspace/idle_guard.log`. `pod_train_vlm.sh` also starts the guard if `pod_idle_guard.sh` sits beside it
+(older pods). Backstops beyond the pod: Claude may stop/terminate any pod (allow rules for `delete-pod` and
+`pod-action` in ~/.claude/settings.json), checks `list-pods` at the start of every session, and every chain
+ends by terminating its pod; on the account, keep auto-pay off so the prepaid balance is a hard ceiling (at $0
+RunPod stops every pod) and set a low-balance email alert.
