@@ -15,6 +15,15 @@ set -euo pipefail
 cd "$(dirname "$0")"
 export PIP_BREAK_SYSTEM_PACKAGES=1   # H26: the runpod/pytorch image python is PEP-668 externally-managed
 
+# H32: stop this pod by itself once it sits idle (run finished and nobody retrieved it, a chain died).
+# Sent alongside this script; no laptop credentials needed (RunPod injects a pod-scoped key).
+if [ -f pod_idle_guard.sh ]; then
+  (setsid nohup bash pod_idle_guard.sh >> /workspace/idle_guard.log 2>&1 < /dev/null &)
+  echo "== idle guard armed (IDLE_MIN=${IDLE_MIN:-45}); touch /workspace/KEEP_ALIVE to hold the pod =="
+else
+  echo "== WARNING: pod_idle_guard.sh not sent - this pod will bill until terminated by hand =="
+fi
+
 echo "== GPU =="
 nvidia-smi --query-gpu=name,memory.total,driver_version --format=csv,noheader || true
 

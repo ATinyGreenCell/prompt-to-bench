@@ -159,7 +159,7 @@ trained on-device). Proven end-to-end 2026-10-16 (paper §6.4). Footguns: PIPELI
 ## B1. Train (RunPod A40 ≈ $0.59/hr; ~5 h for 3 epochs ≈ $3)
 Pod: image `runpod/pytorch:1.0.2-cu1281-torch280-ubuntu2404`, `gpu.minCudaVersion 12.8`, disk ≥ 100 GB.
 ```
-cd finetune && runpodctl send data/train.jsonl scripts/train_vlm.py scripts/pod_train_vlm.sh
+cd finetune && runpodctl send data/train.jsonl scripts/train_vlm.py scripts/pod_train_vlm.sh scripts/pod_idle_guard.sh
 # pod: runpodctl receive <code>
 SMOKE=1 bash pod_train_vlm.sh    # validate: VISION_PRESERVED + a sane s/it (H23), then:
 bash pod_train_vlm.sh            # full run -> out_vlm/merged16 (bf16 safetensors, vision preserved)
@@ -215,3 +215,10 @@ takes ~20 min.
 Any new training prompt is gated against the 16 eval prompts before training:
 `finetune/rft/distill/gen_prompts_clean.py` (max token Jaccard 0.40, part types that are not eval tasks). Reference
 points: v2's data peaks at 0.22; same-style-different-part prompts sit at 0.25-0.40; paraphrases of a task 0.55+.
+
+## B7. Never let a pod idle (H32)
+`pod_train_vlm.sh` starts `scripts/pod_idle_guard.sh` on the pod when it was sent along: it stops the pod after
+45 minutes with no GPU use, no work process and no network transfer (IDLE_MIN to change; `touch /workspace/KEEP_ALIVE`
+to hold it). It uses the pod-scoped key RunPod injects, so it works even if the laptop session dies. A stop clears the
+container disk, so retrieve the merged model within those 45 minutes. For a pod used only to serve (vLLM, B5), start
+the guard by hand: `setsid nohup bash pod_idle_guard.sh > /workspace/idle_guard.log 2>&1 &`.
