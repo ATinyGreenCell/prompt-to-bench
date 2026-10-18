@@ -1,0 +1,58 @@
+```openscad
+// Snap-on tubing clip for a 12.7 mm (1/2 inch) lab stand rod
+// Printed flat: extrusion of 2-D profile in XY plane, 10 mm tall (Z)
+// Units: mm
+
+$fn = 96;
+
+// ---------------- Parameters ----------------
+clip_height      = 10;    // extrusion height (Z)
+rod_d            = 12.7;  // stand rod inner diameter
+rod_wall         = 3;     // rod ring wall thickness
+rod_outer        = rod_d + 2 * rod_wall;  // rod ring outer diameter (18.7)
+
+opening_w        = 10;    // rod ring opening width (cut from -X side)
+opening_h        = 5;     // rod ring opening height (y range)
+
+tubing_d         = 6;     // tubing inner diameter
+tubing_wall      = 2;     // tubing ring wall thickness
+tubing_outer     = tubing_d + 2 * tubing_wall;  // tubing ring outer diameter (10)
+
+tubing_x         = 15;    // tubing ring centre X
+tubing_opening   = 4.5;   // tubing ring opening width (from +X side)
+tubing_opening_h = tubing_opening / 2;      // tubing opening half-height (y)
+
+bridge_w         = 6;     // bridge width in Y
+bridge_x1        = 8;     // bridge start X
+bridge_x2        = 12;    // bridge end X
+
+eps              = 0.5;   // cutter overshoot past faces
+
+// ---------------- Profile ----------------
+profile = union() {
+    // Rod ring with -X opening
+    difference() {
+        translate([0, 0, 0])
+            cylinder(d = rod_outer, h = eps);
+        translate([-rod_outer / 2 - eps, -opening_h, 0])
+            cube([opening_w + eps, opening_h, eps]);
+    }
+
+    // Tubing ring with +X opening
+    translate([tubing_x, 0, 0])
+        difference() {
+            cylinder(d = tubing_outer, h = eps);
+            translate([tubing_x - eps, -tubing_opening_h, 0])
+                cube([tubing_opening + eps, tubing_opening_h * 2, eps]);
+        }
+
+    // Solid bridge between the two rings
+    translate([bridge_x1, -bridge_w / 2, 0])
+        cube([bridge_x2 - bridge_x1, bridge_w, eps]);
+};
+
+// ---------------- Part ----------------
+translate([0, 0, 0])
+    linear_extrude(height = clip_height)
+        profile;
+```

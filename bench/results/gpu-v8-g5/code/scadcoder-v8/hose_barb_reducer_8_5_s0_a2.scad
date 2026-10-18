@@ -1,0 +1,54 @@
+// Straight hose-barb reducer: 8 mm tubing (z = 0..20) -> 5 mm tubing (z = 25..41)
+// Print orientation: standing upright along +Z, centred on origin in X/Y
+
+$fn = 96;
+
+// ---- Dimensions (mm) ----
+tube_d1      = 8;    // first tubing inner diameter
+tube_d2      = 5;    // second tubing inner diameter
+bore_d       = 3;    // through-bore diameter
+barb_h1      = 10;   // first barb height
+barb_od1_bot = 7.5;  // first barb outer diameter at bottom
+barb_od1_top = 9.5;  // first barb outer diameter at top
+collar_d     = 12;   // collar diameter (z = 20..25)
+barb_h2      = 8;    // second barb height
+barb_od2_bot = 6.5;  // second barb outer diameter at bottom
+barb_od2_top = 5.0;  // second barb outer diameter at top
+eps          = 0.5;  // overshoot for clean cuts
+
+total_len    = 41;   // overall length (z = 0..41)
+
+// ---- Model ----
+difference() {
+    union() {
+        // z = 0..20: two identical barbs for 8 mm tubing, stacked
+        for (s = [-1, 1])
+            translate([0, 0, s * (barb_h1 / 2)])
+                linear_extrude(height = barb_h1)
+                    polygon(points = [
+                        [-barb_od1_bot / 2, 0],
+                        [ barb_od1_top / 2, 0],
+                        [ barb_od1_top / 2, -barb_h1 / 2],
+                        [-barb_od1_bot / 2, -barb_h1 / 2]
+                    ]);
+
+        // z = 20..25: cylindrical collar
+        translate([0, 0, 20])
+            cylinder(d = collar_d, h = 5);
+
+        // z = 25..41: two identical barbs for 5 mm tubing, stacked
+        for (s = [-1, 1])
+            translate([0, 0, 25 + s * (barb_h2 / 2)])
+                linear_extrude(height = barb_h2)
+                    polygon(points = [
+                        [-barb_od2_bot / 2, 0],
+                        [ barb_od2_top / 2, 0],
+                        [ barb_od2_top / 2, -barb_h2 / 2],
+                        [-barb_od2_bot / 2, -barb_h2 / 2]
+                    ]);
+    }
+
+    // through-bore along Z, extending past both end faces
+    translate([0, 0, -eps])
+        cylinder(d = bore_d, h = total_len + 2 * eps);
+}

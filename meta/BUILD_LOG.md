@@ -15202,3 +15202,640 @@ Committing the paper update with the v5 and v6 results, after a secret scan.
 
 </details>
 
+Pushed. Recording the final results in memory, then back to monitoring v8.
+
+<details><summary>1 tool call(s)</summary>
+
+- `Bash` Save final results to memory; check v8 — `python3 - <<'EOF' …`
+
+</details>
+
+v8 has been training since 19:37 and should be benched by about 21:40. Arming a monitor on its chain.
+
+<details><summary>1 tool call(s)</summary>
+
+- `Monitor` description=v8 chain: trained, received, uploaded, serving, bench done, , timeout_ms=1800000, command=cd [scratch] && tail -n 0 -F chainlog_v8.txt 2>/dev/null | g
+
+</details>
+
+While v8 trains, I'm checking whether `finetune/README.md` documents the box-model line, since collaborators will look there first.
+
+<details><summary>4 tool call(s)</summary>
+
+- `Bash` Check finetune README coverage of box models — `grep -n "^#\|box\|Qwen3.5\|HF\|huggingface" finetune/README.md | head -30`
+- `Bash` Read the top of finetune README — `sed -n 1,40p finetune/README.md`
+- `Bash` Update finetune README for box models and data hygiene — `python3 - <<'EOF' …`
+- `Bash` Commit finetune README update and push — `git add finetune/README.md && git commit -q -m "finetune/README: the box is a deployment target; disjoint means the wording too; box-model t …`
+
+</details>
+
+Pushed. Checking v8's training.
+
+<details><summary>2 tool call(s)</summary>
+
+- `Bash` Check v8 training progress and mask check — `ssh -i ~/.ssh/runpod_ft -p 10824 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=20 -o LogLevel=ERROR [email]  …`
+- `Bash` Wait for v8 MASK_CHECK result — `until ssh -i ~/.ssh/runpod_ft -p 10824 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=20 -o LogLevel=ERROR [e …`
+
+</details>
+
+v8's mask check passed (flawed turn [0], final turn [159]), so its training is set. Here's where things stand.
+
+**What's done (all pushed to `main`):**
+- **v3 is contaminated.** The previous session's distilled training prompts paraphrased 8 of the 16 benchmark tasks. On a GPU bench, v3 passed 5 of those 8 and only 1 of the other 8. That's now disclosed in the paper with a fixed in-family / held-out split.
+- **Clean rounds trained and benched:** v4 through v7, plus the base model and v1/v2, all at 8 samples per task. Table 8 is in README §6.4, with the Abstract and Conclusion updated.
+
+| Model | Pass@8, in-family half | Pass@8, held-out half |
+|---|---|---|
+| Stock base | 2/8 | 1/8 |
+| v2 | 1/8 | 0/8 |
+| v4 (held-out data) | 2/8 | 0/8 |
+| **v5** (+ report repairs) | 3/8 | **2/8** (slide rack 7/8, 96-hole PCR rack 1/8) |
+| **v6** (+ more held-out part types) | **5/8** | 0/8 |
+| v7 (1 epoch) | 3/8 | 0/8 |
+
+- **v5 gives the first clean held-out passes.** No other model passed the 96-hole PCR rack.
+- **v6 matches contaminated v3's 5/8** on the first half without ever seeing those tasks' wording.
+- **The fine-tunes ignore feedback.** After a failed attempt they rewrite the file only 6–15% of the time, against 84% for the base, so none of their passes came from repair.
+
+**Still running:** v8 (v6's data plus the report repairs) on H100 `o1817j3ry7jk3a`, $3.99/hr. It trains until about 21:15 and then benches on that same pod. I'll terminate it once its results are in.
+
+**Pods:** the two earlier H100s and the old A40 are terminated (the A40 delete went through this time). RunPod billing read showed $22.66 for today and $34.20 over Oct 15–17; today should end near $35 once v8 finishes.
+
+**Needs you:**
+- **The box:** it has returned HTTP 502 on every model call for 6+ hours. Please power-cycle it when you're back.
+- **Importing onto the box:** v3–v7 are on HF and box-importable. `finetune/scripts/box_import.py` should import them without the app; I couldn't test it while the box was down.
+- **Rotate tokens:** the HF write token and the box API key pasted in an earlier session were sitting in the uncommitted build log. They never reached git; I fixed the exporter's redaction, but both are still worth rotating.
+- **Before a formal weights release:** check Anthropic's terms on training models with Claude outputs, since part of the data is Opus-distilled.
+
+<details><summary>2 tool call(s)</summary>
+
+- `Bash` Check v8 training progress — `ssh -i ~/.ssh/runpod_ft -p 10824 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=20 -o LogLevel=ERROR [email]  …`
+- `Bash` Read v8 step counter — `ssh -i ~/.ssh/runpod_ft -p 10824 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=20 -o LogLevel=ERROR [email]  …`
+
+</details>
+
+v8 is at step 724 of 4,515, about 80 minutes left (done ~21:30, results ~22:00). Re-arming the monitor.
+
+<details><summary>1 tool call(s)</summary>
+
+- `Monitor` description=v8 chain: trained, received, uploaded, serving, bench done, , timeout_ms=1800000, command=cd [scratch] && tail -n 0 -F chainlog_v8.txt 2>/dev/null | g
+
+</details>
+
+The monitor is re-armed. v8 is training normally (loss 0.069 at epoch 0.47), and the bench, upload and pod shutdown follow automatically. I'll report when its numbers land, around 22:00.
+
+<details><summary>2 tool call(s)</summary>
+
+- `Bash` Check v8 training progress — `ssh -i ~/.ssh/runpod_ft -p 10824 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=20 -o LogLevel=ERROR [email]  …`
+- `Monitor` description=v8 chain: trained, received, uploaded, serving, bench done, , timeout_ms=1800000, command=cd [scratch] && tail -n 0 -F chainlog_v8.txt 2>/dev/null | g
+
+</details>
+
+v8 is at step 2,117 of 4,515 with no errors; training finishes around 21:30. The monitor is re-armed.
+
+<details><summary>2 tool call(s)</summary>
+
+- `Bash` Check v8 training progress — `ssh -i ~/.ssh/runpod_ft -p 10824 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=20 -o LogLevel=ERROR [email]  …`
+- `Monitor` description=v8 chain: trained, received, uploaded, serving, bench done, , timeout_ms=1800000, command=cd [scratch] && tail -n 0 -F chainlog_v8.txt 2>/dev/null | g
+
+</details>
+
+v8 is at step 3,480 of 4,515, about 24 minutes left. The ship, upload, vLLM install and bench follow on the same pod.
+
+### 🧑 01:15 UTC
+
+> box is power cycled, import v5 and v6. also lets make it so if any pod idles long we shut it down. wasted money for no reason on a permission i already gave. how much did we spend now?
+
+Box first, since the imports take longest; then spend, then the idle watchdog.
+
+<details><summary>5 tool call(s)</summary>
+
+- `mcp__plugin_runpod_runpod__list-billing`
+- `mcp__tiiny__tiiny_status`
+- `Bash` Watch for the box backend to come up (30 min) — `~/printpaper/.venv/bin/python -I [scratch] 1800`
+- `Skill` skill=update-config, args=Add permission allow rules so RunPod pod termination/stop vi
+- `Bash` Read the user-level Claude settings file — `ls -la ~/.claude/settings.json ~/.claude/settings.local.json 2>&1 | head; cat ~/.claude/settings.json 2>/dev/null`
+
+</details>
+
+The user-level settings have no allow list yet, so I'll add one next to `defaultMode`. That way it applies wherever you use RunPod.
+
+<details><summary>7 tool call(s)</summary>
+
+- `Edit` ~/.claude/settings.json
+- `Bash` Validate settings JSON and show permissions — `jq -e '.permissions' ~/.claude/settings.json`
+- `Read` ~/.claude/settings.json
+- `Edit` ~/.claude/settings.json
+- `Bash` Validate settings JSON after edit — `jq -e '.permissions' ~/.claude/settings.json && jq -e 'keys | length' ~/.claude/settings.json`
+- `ToolSearch` query=select:mcp__plugin_runpod_runpod__lookup-concept,mcp__plugin, max_results=2
+- `Bash` Check runpodctl config presence and commands — `ls -la ~/.runpod/ 2>/dev/null | awk '{print $1, $5, $9}'; which runpodctl; runpodctl --help 2>&1 | sed -n 1,40p | grep -iE "^\s+(get|stop|re …`
+
+</details>
+
+### 🧑 01:17 UTC
+
+> what shall i copy paste so thats the case?
+
+<details><summary>2 tool call(s)</summary>
+
+- `mcp__plugin_runpod_runpod__search-concepts`
+- `Write` ~/printpaper/finetune/scripts/pod_idle_guard.sh
+
+</details>
+
+The guard script is written. Now checking that the running v8 pod exposes what it needs: the pod ID, a key, and `runpodctl`. I'm printing variable names only, never values.
+
+<details><summary>1 tool call(s)</summary>
+
+- `Bash` Check pod env var names and runpodctl presence — `ssh -i ~/.ssh/runpod_ft -p 10824 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=20 -o LogLevel=ERROR [email]  …`
+
+</details>
+
+The pod-scoped key is in the container's own environment, but not in SSH sessions, so the guard will load it from there when it's missing. v8 is at step 3,865 of 4,515.
+
+<details><summary>1 tool call(s)</summary>
+
+- `Edit` ~/printpaper/finetune/scripts/pod_idle_guard.sh
+
+</details>
+
+That duplicate-guard check can race against its own forked subshells. Replacing it with a `flock` lock.
+
+<details><summary>2 tool call(s)</summary>
+
+- `Edit` ~/printpaper/finetune/scripts/pod_idle_guard.sh
+- `Bash` Deploy guard to v8 pod; verify lock and env — `bash -n finetune/scripts/pod_idle_guard.sh && echo SYNTAX_OK && scp -q -i ~/.ssh/runpod_ft -P 10824 -o StrictHostKeyChecking=no -o UserKnown …`
+
+</details>
+
+The guard is armed on the v8 pod. It found the pod ID by itself, and the lock blocks a second copy. Next I'm making every future training pod start it automatically, and noting it in the RUNBOOK.
+
+<details><summary>1 tool call(s)</summary>
+
+- `Bash` Auto-start guard in training script; document it — `python3 - <<'EOF' …`
+
+</details>
+
+The guard is wired in. Now the box: checking whether its backend has come up since your power cycle.
+
+<details><summary>6 tool call(s)</summary>
+
+- `Bash` Probe the box's services after power cycle — `for v in openai.api.tiiny p8800.api.tiiny api.tiiny; do printf "%s: " $v; curl -s --max-time 8 -o /dev/null -w "%{http_code}\n" -H "Host: $v …`
+- `Bash` Arm chain to import v5/v6 when the box is up — `cat > [scratch] <<'EOF' …`
+- `Edit` ~/printpaper/finetune/scripts/pod_idle_guard.sh
+- `Edit` ~/printpaper/finetune/scripts/pod_idle_guard.sh
+- `Bash` Redeploy the fixed guard to the v8 pod — `bash -n finetune/scripts/pod_idle_guard.sh && scp -q -i ~/.ssh/runpod_ft -P 10824 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/nul …`
+- `Bash` Inspect guard state on the v8 pod — `ssh -i ~/.ssh/runpod_ft -p 10824 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=20 -o LogLevel=ERROR [email]  …`
+
+</details>
+
+The old guard is stopped and the fixed version is waiting as `.new`. Moving it into place and starting it.
+
+<details><summary>1 tool call(s)</summary>
+
+- `Bash` Install and start the fixed guard on v8 pod — `ssh -i ~/.ssh/runpod_ft -p 10824 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=20 -o LogLevel=ERROR [email]  …`
+
+</details>
+
+### 🧑 01:21 UTC
+
+> also did the power cycle work?
+
+The fixed guard is running on the v8 pod: one instance, and vLLM is no longer in its busy list. (The exit code 1 is just `grep -c` finding no "vllm", which is the point.) Committing the guard work.
+
+<details><summary>1 tool call(s)</summary>
+
+- `Bash` Commit idle guard and push — `git add finetune/scripts/pod_idle_guard.sh finetune/scripts/pod_train_vlm.sh finetune/RUNBOOK.md && git commit -q -m "Pod idle guard: a pod  …`
+
+</details>
+
+Checking right now rather than repeating my last reading:
+
+<details><summary>2 tool call(s)</summary>
+
+- `Bash` Re-check box services after the power cycle — `for v in openai.api.tiiny p8800.api.tiiny api.tiiny; do printf "%-18s %s\n" "$v" "$(curl -s --max-time 8 -o /dev/null -w "%{http_code}" -H " …`
+- `Bash` Confirm the v8 chain is still running — `tail -2 [scratch] | cut -c1-120; P="chain_v""8"; echo "v8 chain alive: $(pgrep -fc "$P")"`
+
+</details>
+
+The power cycle didn't work: the box answers on the network, but every model service still returns **502**, same as all afternoon. So the v5/v6 imports haven't run.
+
+**Box imports:** `finetune/scripts/box_import.py` is ready (untested, since the box has been down). I tried to arm a job that would import v5 and v6 automatically once the box recovers, but the safety check blocked it as "self-modification". Once the box answers, tell me and I'll run the import directly, or use the app: Model Store → Import Model with these links:
+- `https://huggingface.co/ATinyGreenCell/scadcoder-qwen3.5-9b-v5`
+- `https://huggingface.co/ATinyGreenCell/scadcoder-qwen3.5-9b-v6`
+
+**Idle shutdown:** done and pushed. Each training pod now runs a small guard that stops the pod after 45 minutes with no GPU use, no training/download process and no network traffic. It uses the key RunPod puts inside every pod, so it works even if my session dies. Two things to know:
+- Stopping a pod wipes it, so a trained model that wasn't copied off within 45 minutes is lost.
+- `touch /workspace/KEEP_ALIVE` on a pod holds it.
+
+The guard is already running on the v8 pod.
+
+**Permission:** paste this into the prompt, or add the same two rules via `/permissions` → Allow:
+```
+! jq '.permissions.allow = (((.permissions.allow // []) + ["mcp__plugin_runpod_runpod__delete-pod","mcp__plugin_runpod_runpod__pod-action"]) | unique)' ~/.claude/settings.json > ~/.claude/settings.json.new && mv ~/.claude/settings.json.new ~/.claude/settings.json && jq .permissions ~/.claude/settings.json
+```
+
+**Spend:** $51.04 on RunPod in total (Oct 15–18), about $39.50 of it today; the ceiling is $112.59.
+
+**v8 (v6's data plus the repair conversations):** training is about 11 minutes from done on H100 `o1817j3ry7jk3a` ($3.99/hr). Its bench runs on the same pod right after, and I'll terminate the pod when the numbers are in. If I can't, its guard stops it once it has been idle 45 minutes.
+
+### 🧑 01:23 UTC
+
+> okay i tried to power cycle again
+
+Checking the box now; if it's still booting I'll watch it for the next few minutes.
+
+<details><summary>1 tool call(s)</summary>
+
+- `Bash` Probe box services after second power cycle — `for v in openai.api.tiiny p8800.api.tiiny; do printf "%-18s %s\n" "$v" "$(curl -s --max-time 8 -o /dev/null -w "%{http_code}" -H "Host: $v"  …`
+
+</details>
+
+Still 502, but it was only just powered back on. Watching it every 20 seconds for up to 15 minutes; I'll be notified the moment anything changes.
+
+<details><summary>1 tool call(s)</summary>
+
+- `Monitor` description=box model services status after second power cycle (emits on, timeout_ms=900000, command=prev=""; start=$(date +%s); while true; do a=$(curl -s --max
+
+</details>
+
+Still 502 just after your second power cycle (01:23 UTC). The box is back on the network, and its model services may need a few minutes to start. A watcher is checking every 20 seconds for up to 15 minutes, and I'll tell you the moment they answer. If they do, I'll start the v5 and v6 imports straight away.
+
+No change yet: the box is reachable, but both model services still return 502. Still watching.
+
+### 🧑 01:24 UTC
+
+> ah i had to login on tiinyOS app
+
+That could be the gate: the backend may wait for the app to log in. Checking now.
+
+<details><summary>2 tool call(s)</summary>
+
+- `Bash` Check box services and imported models — `for v in openai.api.tiiny p8800.api.tiiny; do printf "%-18s %s\n" "$v" "$(curl -s --max-time 8 -o /dev/null -w "%{http_code}" -H "Host: $v"  …`
+- `Bash` Find the box's working route and addresses — `cat ~/.cache/tiinykit/route.json 2>/dev/null | python3 -c "import sys,json; d=json.load(sys.stdin); print({k:d[k] for k in d if k!='history' …`
+
+</details>
+
+The services now return 401, meaning they're up and only asking for the key that my bare probe doesn't send. Running the import inspection for v5 first; it's read-only and shows what the box expects.
+
+<details><summary>3 tool call(s)</summary>
+
+- `Bash` Inspect v5 import on the box (no import yet) — `timeout 120 .venv/bin/python -I finetune/scripts/box_import.py https://huggingface.co/ATinyGreenCell/scadcoder-qwen3.5-9b-v5 --name scadcode …`
+- `Bash` Show the first part of the inspection JSON — `timeout 120 .venv/bin/python -I finetune/scripts/box_import.py https://huggingface.co/ATinyGreenCell/scadcoder-qwen3.5-9b-v5 --name scadcode …`
+- `Edit` ~/printpaper/finetune/scripts/box_import.py
+
+</details>
+
+Starting the imports now: v5 then v6, one after the other, each streaming progress until the box finishes downloading it.
+
+<details><summary>1 tool call(s)</summary>
+
+- `Bash` Import v5 then v6 onto the box via the app API — `for M in v5 v6; do echo "=== $M $(date +%T)"; .venv/bin/python -I finetune/scripts/box_import.py https://huggingface.co/ATinyGreenCell/scadc …`
+
+</details>
+
+Import submitted. Stopping the box watcher, then confirming the box actually accepted it and shows v5 downloading.
+
+<details><summary>4 tool call(s)</summary>
+
+- `TaskStop` task_id=by0tvnety
+- `Bash` Confirm v5 import shows up on the box — `.venv/bin/python -I - <<'PY' …`
+- `Bash` Document box login fix and API import; push — `python3 - <<'EOF' …`
+- `Bash` Update memory with box login and guard lessons — `python3 - <<'EOF' …`
+
+</details>
+
+Memory updated. A quick look at v8 before I summarise:
+
+<details><summary>1 tool call(s)</summary>
+
+- `Bash` Check v8 training status — `tail -3 [scratch] | cut -c1-160; ssh -i ~/.ssh/runpod_ft -p 10824 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTime …`
+
+</details>
+
+Logging into the TiinyOS app is what fixed the box: the power cycles alone changed nothing, and within a minute of your login the model services came up. I've written that down so I ask for the app login after any box restart next time.
+
+**v5 and v6 are importing.** I did it through the app's own API, with no clicks in the app. The box accepted v5 and is downloading it (5% at last check; about 19 GB, then a conversion step). v6 starts automatically when v5 finishes. Your v1 and v2 are still on the box. It also reports 310 GiB free, so storage was never the problem.
+
+Once both have converted, I can load them and run the benchmark on the box itself, which is the paper's main setup. Table 8 so far is GPU-only.
+
+**Still running:**
+- **v8 training:** at step 4,228 of 4,515 (about 8 minutes left) on H100 `o1817j3ry7jk3a`. It benches on the same pod afterwards, and its idle guard stops it 45 minutes after it goes quiet if I can't terminate it first.
+- **Permission rule:** still yours to paste (the `! jq …` line above) if you want me to terminate pods without being blocked.
+
+### 🧑 01:30 UTC
+
+> <bash-input> jq '.permissions.allow = (((.permissions.allow // []) + ["mcp__plugin_runpod_runpod__delete-pod","mcp__plugin_runpod_runpod__pod-action"]) | unique)' ~/.claude/settings.json >
+>   ~/.claude/settings.json.new && mv ~/.claude/settings.json.new ~/.claude/settings.json && jq .permissions ~/.claude/settings.json</bash-input>
+
+### 🧑 01:30 UTC
+
+> <bash-stdout></bash-stdout><bash-stderr>/bin/bash: eval: line 1: syntax error near unexpected token `newline'
+> /bin/bash: eval: line 1: ` jq '.permissions.allow = (((.permissions.allow // []) + ["mcp__plugin_runpod_runpod__delete-pod","mcp__plugin_runpod_runpod__pod-action"]) | unique)' ~/.claude/settings.json &gt;'
+> </bash-stderr>
+
+The paste broke across two lines (a newline landed right after the `>`), so bash saw a syntax error and nothing ran. Your settings file wasn't touched. Here's a shorter version that's less likely to wrap, plus a no-paste alternative.
+
+<details><summary>1 tool call(s)</summary>
+
+- `Write` [scratch]
+
+</details>
+
+Nothing changed from the broken paste. Pick either of these:
+
+**Option 1, a short paste.** I put the same command in a script; this runs it (it also keeps a backup of your settings as `settings.json.bak`):
+
+```
+! bash [scratch]
+```
+
+It should print a `permissions` block with the two rules under `"allow"`.
+
+**Option 2, no pasting.** Type `/permissions`, go to **Allow**, add a rule, and enter each of these:
+- `mcp__plugin_runpod_runpod__delete-pod`
+- `mcp__plugin_runpod_runpod__pod-action`
+
+### 🧑 01:30 UTC
+
+> ! bash [scratch]
+
+That reached me as an ordinary chat message, so the script didn't run. There's a space before the `!`, and the `!` has to be the very first character for the prompt to run it as a shell command. I can't run it for you, because changing my own permissions is exactly what the safety check blocks.
+
+Please re-enter it starting with `!`, no space in front:
+
+```
+! bash [scratch]
+```
+
+When it runs, you'll see the output directly: a `permissions` block listing the two RunPod rules under `"allow"`.
+
+### 🧑 01:31 UTC
+
+> <bash-input> bash [scratch]
+
+### 🧑 01:31 UTC
+
+> <bash-stdout>{
+>   "defaultMode": "auto",
+>   "allow": [
+>     "mcp__plugin_runpod_runpod__delete-pod",
+>     "mcp__plugin_runpod_runpod__pod-action"
+>   ]
+> }</bash-stdout><bash-stderr></bash-stderr>
+
+Both rules are in. From now on I can stop or terminate RunPod pods without being blocked, including ones from earlier sessions. Your old settings are saved as `~/.claude/settings.json.bak`.
+
+Quick status check on v8 and the box imports:
+
+<details><summary>2 tool call(s)</summary>
+
+- `Bash` Check v8 chain and box import progress — `tail -3 [scratch] | cut -c1-200; cd ~/printpaper && .venv/bin/python -I - <<'PY' …`
+- `Monitor` description=v8 chain (trained/received/bench/TERMINATE) and box imports , timeout_ms=1800000, command=cd [scratch] && (tail -n 0 -F scratchpad/chainlog_v8.txt 2>/
+
+</details>
+
+The permission rules are in, so I can now stop or terminate RunPod pods without being blocked.
+
+**Box:** v5 has downloaded and is converting (30%). v6 imports right after. Once both are ready I'll load them and run the benchmark on the box itself, so Table 8 gets real box numbers next to the GPU ones.
+
+**v8:** training is finishing on H100 `o1817j3ry7jk3a`. It ships to the laptop and HF, then benches on the same pod. I'll terminate the pod the moment its results are in; the idle guard is the backstop.
+
+**Spend:** $51.04 on RunPod in total (about $39.50 today), plus a little more for v8.
+
+A monitor is watching both jobs and I'll report the results.
+
+### 🧑 01:32 UTC
+
+> how much of that was idle?
+
+About **$6.40 of today's ~$39.50** went to idle pods, roughly 16%. Billing doesn't separate idle from busy time, so this is reconstructed from each pod's log timestamps and hourly rate:
+
+| Pod | Idle time | Cost | Why |
+|---|---|---|---|
+| A40 (v3 pod, $0.59/hr) | 3 h 37 m | $2.13 | Early morning, previous session: a helper agent watched the wrong SSH address and never started training |
+| A40 | 4 h 25 m | $2.61 | Training finished at 09:02, then nothing collected it. The previous session's watcher died when the laptop rebooted |
+| A40 | ~1 h 30 m | $0.90 | This session: model copied off at 13:33, delete blocked by the permission check, until I put the pod to work at ~15:05 |
+| A40 | ~32 m | $0.31 | Gaps between benchmark runs. 16 minutes of that was my own scripting bug (a process check matching itself) |
+| H100 #1 ($3.99/hr) | ~2 m | $0.13 | Between copying v5 off and terminating |
+| H100 #2 ($3.99/hr) | ~5 m | $0.33 | Between v7 and v6, and before terminating |
+| **Total** | **~10.3 h** | **~$6.40** | |
+
+The blocked permission itself cost about $0.90. The bigger waste, about $4.75, came from the previous session's failures: a stuck helper, then a dead watcher leaving a finished pod running.
+
+Both of those are now covered:
+- **Idle guard:** each training pod stops itself after 45 idle minutes, even if my session dies.
+- **Permission:** with your new allow rules, I can terminate leftover pods right away.
+
+The three H100s, which were most of today's spend, idled about 7 minutes in total.
+
+### 🧑 01:33 UTC
+
+> how edge cased, hardened, and audited was all this? i want it to NEVER happen again.
+
+Honest answer: **not very.** The guard was written in about 20 minutes. I checked its syntax and two startup behaviours: it finds the pod ID, and it refuses to run twice. What I never tested:
+- **The stop itself.** I haven't confirmed that `runpodctl stop pod` works from inside a pod with the injected key, or even that it's the right syntax for that runpodctl version.
+- **The idle detection, end to end.**
+- **CPU-only work.** It would stop a pod doing a long CPU-only job.
+- **Coverage.** It only protects pods where it's explicitly started; a container restart or a pod created any other way is unguarded.
+- **A backstop.** If the guard itself dies, nothing catches it.
+
+So it's not "never". To get there I'll build layers and test each one on a real, cheap pod, including actually stopping it. First, checking whether RunPod has a native auto-stop I can stack underneath.
+
+<details><summary>7 tool call(s)</summary>
+
+- `mcp__plugin_runpod_runpod__search-concepts`
+- `mcp__plugin_runpod_runpod__lookup-concept`
+- `Bash` Inspect pod init command and runpodctl stop syntax — `ssh -i ~/.ssh/runpod_ft -p 10824 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=20 -o LogLevel=ERROR [email]  …`
+- `Bash` Inspect container cgroup CPU accounting — `ssh -i ~/.ssh/runpod_ft -p 10824 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=20 -o LogLevel=ERROR [email]  …`
+- `Write` ~/printpaper/finetune/scripts/pod_idle_guard.sh
+- `Edit` ~/printpaper/finetune/scripts/pod_idle_guard.sh
+- `Bash` Syntax-check and lint the hardened guard — `bash -n finetune/scripts/pod_idle_guard.sh && echo SYNTAX_OK; command -v shellcheck >/dev/null && shellcheck -S warning finetune/scripts/pod …`
+
+</details>
+
+No shellcheck installed. I'll add it to the project venv (a pip package that bundles the binary) so the guard gets properly linted.
+
+<details><summary>1 tool call(s)</summary>
+
+- `Bash` Install shellcheck in venv and lint the guard — `.venv/bin/pip install -q shellcheck-py 2>&1 | tail -1; .venv/bin/shellcheck -S warning finetune/scripts/pod_idle_guard.sh; echo "shellcheck  …`
+
+</details>
+
+Clean at warning level. Running the stricter info/style pass too:
+
+<details><summary>2 tool call(s)</summary>
+
+- `Bash` Lint the guard at info level — `.venv/bin/shellcheck -S info finetune/scripts/pod_idle_guard.sh | grep -E "^In |SC[0-9]+" | head -20; echo "exit ${PIPESTATUS[0]}"`
+- `Bash` Show the flagged line — `sed -n 89p finetune/scripts/pod_idle_guard.sh`
+
+</details>
+
+That's only the self-test's display line: harmless, but also subtly wrong. If `runpodctl` were missing it would print an empty string instead of "absent". Rewriting it as a plain if/elif.
+
+<details><summary>5 tool call(s)</summary>
+
+- `Edit` ~/printpaper/finetune/scripts/pod_idle_guard.sh
+- `Bash` Re-lint the guard at info level — `bash -n finetune/scripts/pod_idle_guard.sh && .venv/bin/shellcheck -S info finetune/scripts/pod_idle_guard.sh; echo "shellcheck exit $?"`
+- `Write` ~/printpaper/finetune/scripts/guarded_pod_body.py
+- `mcp__plugin_runpod_runpod__get-capacity`
+- `Bash` Build guarded create-pod bodies for the test — `.venv/bin/python -I finetune/scripts/guarded_pod_body.py --name guardtest-idle --gpu "NVIDIA RTX 2000 Ada Generation" --disk 20 --idle-min 4 …`
+
+</details>
+
+The packed guard is about 4.9 KB, which fits easily in an environment variable. Printing the full bodies so I can pass them to `create-pod` exactly.
+
+<details><summary>6 tool call(s)</summary>
+
+- `Bash` Print the full idle-test pod body — `cat [scratch] echo; echo ----; python3 -c " …`
+- `Bash` Commit and push the hardened guard; get its SHA — `git add finetune/scripts/pod_idle_guard.sh && git commit -q -m "Pod idle guard, hardened: container CPU, hard lifetime cap, three stop paths …`
+- `Write` ~/printpaper/finetune/scripts/guarded_pod_body.py
+- `Bash` Build pinned-URL body and verify the download hash — `.venv/bin/python -I finetune/scripts/guarded_pod_body.py --name guardtest-idle --gpu "NVIDIA RTX 2000 Ada Generation" --disk 20 --idle-min 4 …`
+- `mcp__plugin_runpod_runpod__create-pod`
+- `mcp__plugin_runpod_runpod__create-pod`
+
+</details>
+
+Both test pods are created: `wcsn1noy9e0jyr` (idle test) and `vk8jmw5rewrpbl` (cap test), $0.24/hr each. Waiting for their SSH addresses.
+
+<details><summary>2 tool call(s)</summary>
+
+- `mcp__plugin_runpod_runpod__get-pod`
+- `mcp__plugin_runpod_runpod__get-pod`
+
+</details>
+
+Both pods are still pulling their image, so no runtime yet. Meanwhile I'm updating the RUNBOOK: the boot-time guard becomes the standard way to create pods.
+
+<details><summary>2 tool call(s)</summary>
+
+- `Bash` Rewrite RUNBOOK B7 for boot-time guarded pods — `python3 - <<'EOF' …`
+- `mcp__plugin_runpod_runpod__get-pod`
+
+</details>
+
+Still pulling the image. Meanwhile, checking on v8 and the box imports:
+
+<details><summary>4 tool call(s)</summary>
+
+- `Bash` Check v8 chain and box import status — `tail -4 [scratch] | cut -c1-250; cd ~/printpaper && .venv/bin/python -I - <<'PY' …`
+- `mcp__plugin_runpod_runpod__get-pod`
+- `Bash` Verify boot guard and self-test on cap pod — `ssh -i ~/.ssh/runpod_ft -p 19063 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=30 -o LogLevel=ERROR [email]  …`
+- `Bash` Stream cap-test guard log until the pod stops — `timeout 600 ssh -i ~/.ssh/runpod_ft -p 19063 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=30 -o ServerAlive …`
+
+</details>
+
+While the cap test runs, checking whether the idle-test pod is up.
+
+<details><summary>4 tool call(s)</summary>
+
+- `mcp__plugin_runpod_runpod__get-pod`
+- `Bash` Self-test idle pod and launch the phase test — `ssh -i ~/.ssh/runpod_ft -p 26486 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=30 -o LogLevel=ERROR [email]  …`
+- `Bash` Stream idle-test guard log until the pod stops — `timeout 1200 ssh -i ~/.ssh/runpod_ft -p 26486 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ConnectTimeout=30 -o ServerAliv …`
+- `Bash` Load guard knobs from PID 1 env; re-lint — `python3 - <<'EOF' …`
+
+</details>
+
+Lint is clean. The cap test should have fired by now, so I'm reading the captured log:
+
+<details><summary>3 tool call(s)</summary>
+
+- `Bash` Read the cap-test guard log capture — `date -u +%T; cat [scratch] | grep -v "^updated" | tail -15; echo ...; grep "^updated" [scratch] | tail -3`
+- `Bash` Wait for cap pod stop; show final guard log — `until grep -q "ssh ended" [scratch] do sleep 5; done; grep -v "^updated\|^$\|==>" [scratch] | tail -8`
+- `mcp__plugin_runpod_runpod__get-pod`
+
+</details>
+
+Verified: RunPod reports the cap-test pod as `EXITED`. The guard stopped it from the inside with no help from me, even while it was busy. Terminating the stopped test pod to clean up (I created it):
+
+<details><summary>7 tool call(s)</summary>
+
+- `mcp__plugin_runpod_runpod__delete-pod`
+- `Bash` Read idle-test progress so far — `date -u +%T; grep -v "^updated\|^$\|==>" [scratch] | tail -12; echo ...; grep "^updated" [scratch] | tail -6`
+- `Bash` Wait for idle-test stop; show full guard timeline — `until grep -q "ssh ended" [scratch] do sleep 5; done; grep -v "^updated\|^$\|==>\|truncated" [scratch] | tail -12; echo ...; grep "^updated" …`
+- `mcp__plugin_runpod_runpod__get-pod`
+- `mcp__plugin_runpod_runpod__delete-pod`
+- `mcp__plugin_runpod_runpod__list-pods`
+- `Bash` Record audit, commit guard work, verify new pin — `cat >> finetune/PIPELINE_HICCUPS.md <<'EOF' …`
+
+</details>
+
+The builder now pins to the new commit. Checking that the pinned download and checksum match what's on GitHub:
+
+<details><summary>1 tool call(s)</summary>
+
+- `Bash` Verify the new pinned guard hash — `curl -fsSL --max-time 20 "https://raw.githubusercontent.com/ATinyGreenCell/prompt-to-bench/f6d738c9642415f8b497b4cc70341e20cbccb454/finetune …`
+
+</details>
+
+It matches. Recording the new rule in memory: every pod gets created through the guarded builder.
+
+<details><summary>1 tool call(s)</summary>
+
+- `Bash` Record the guarded-pod rule in memory — `python3 - <<'EOF' …`
+
+</details>
+
+The protection is now built, tested on real pods, and pushed. When you asked, it was a 20-minute script with the stop never tested. Now:
+
+**What's in place now:**
+1. **Every pod guards itself from boot.** I create all pods through `guarded_pod_body.py`. Each pod downloads the guard from your repo at startup, pinned to an exact commit and checksum, and runs it before anything else, including after a restart. It stops the pod after 45 idle minutes: no GPU use, no CPU use, no training or download process, quiet network.
+2. **Hard lifetime cap.** No pod outlives 12 hours, even if it's busy, so a runaway job can't bill forever.
+3. **I can clean up.** Your allow rules let me terminate any pod. I check for leftover pods at the start of every session, and every chain ends by terminating its pod.
+
+**How it was tested:** two real pods at $0.24/hr, about $0.10 in total, both stopped by the guard on its own and then terminated.
+- **Startup:** the guard started 3–7 seconds after the pod was created, and SSH still worked.
+- **Busy work:** a fake install process, a CPU burner and the `KEEP_ALIVE` file each kept the pod running.
+- **Idle stop:** it warned at 3 minutes and stopped the pod at exactly 4 (the test setting). RunPod confirmed the pod as stopped.
+- **Hard cap:** it stopped a pod at 6 minutes (the test setting) while that pod was busy, also confirmed by RunPod.
+- **Bugs found and fixed along the way:** a CPU check that would have read the 224-CPU host instead of the pod, a stop command syntax that varies by version, and the self-test not seeing the pod's settings.
+
+Against today's incidents: the stuck helper (3.6 h) and the uncollected pod (4.4 h) would each have been cut to 45 minutes. The blocked delete would now just go through.
+
+**What's still not covered, honestly:**
+- **A pod created outside this flow,** for example by hand in the RunPod console, has no guard. Only my session-start check would catch it. I can add a laptop timer as a backstop, but it needs your RunPod API key, so you'd run one install command. Want it?
+- **If GitHub is unreachable when a pod boots,** the guard doesn't start. The pod logs that, and the session check is the backstop.
+- **A stop wipes the pod's disk.** A model not copied off within 45 minutes is lost. My chains copy within minutes, so this is a deliberate trade.
+- **Two account settings only you can change in the RunPod console:** keep auto-pay off, so your prepaid balance is a hard ceiling (RunPod stops every pod at $0), and set a low-balance email alert.
+
+**Elsewhere:**
+- **v8** is benchmarking now, and I'll terminate its pod when it finishes.
+- **The box** has v5 fully imported, and v6 is importing.
+
+The box import job finished. Checking that both models are fully converted:
+
+<details><summary>5 tool call(s)</summary>
+
+- `Bash` Check box import results for v5 and v6 — `tail -12 [scratch] | cut -c1-200; cd ~/printpaper && .venv/bin/python -I - <<'PY' …`
+- `Bash` Load v5 onto the box NPU — `timeout 900 .venv/bin/python -I - <<'PY' …`
+- `Bash` Validate the v8 bench results before terminating — `.venv/bin/python -I bench/sample_stats.py gpu-v8 2>&1 | tail -18; grep -h -iE "InfraError|Traceback|error" [scratch] | head -5; tail -3 [scr …`
+- `mcp__plugin_runpod_runpod__delete-pod`
+- `mcp__plugin_runpod_runpod__list-pods`
+
+</details>
+
+**List-pods is now empty: no RunPod spend from here.** Next is the box bench. The bridge didn't list v5, so checking how it runs and whether it's caching an old model list from when the box was down.
+
+<details><summary>2 tool call(s)</summary>
+
+- `Bash` Inspect the tiinykit bridge service and its model list — `systemctl --user list-units --all 2>/dev/null | grep -iE "tiiny|bridge" | head; curl -s --max-time 10 http://127.0.0.1:11435/api/tags | pyth …`
+- `Bash` Bench v5 then v6 on the box, 1-sample protocol — `for M in v5 v6; do …`
+
+</details>
+
+While the box bench runs, adding v8 to the paper: a row in Table 8 and one sentence in the findings. Also cleaning up the dead tunnel to the terminated v8 pod.
+
+<details><summary>1 tool call(s)</summary>
+
+- `Bash` Add v8 row and sentence to README Table 8 — `P1="ssh -N -L 18000"; pkill -f "[s]sh -N -L 18000:" ; python3 - <<'EOF' …`
+
+</details>
+
+Table 8 now includes v8. Adding it to the box-model table in `finetune/README.md` as well, then committing with v8's results after a secret scan.
+
+<details><summary>1 tool call(s)</summary>
+
+- `Bash` Commit v8 results and table; push — `python3 - <<'EOF' …`
+
+</details>
+

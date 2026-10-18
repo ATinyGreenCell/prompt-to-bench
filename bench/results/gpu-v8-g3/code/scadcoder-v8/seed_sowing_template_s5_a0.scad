@@ -1,0 +1,37 @@
+// Petri dish sowing template - flat disc with a 7x7 hole grid and a rim notch for orientation
+// Units: mm. Print orientation: flat on bed, z = 0 up to disc thickness.
+
+// ---------- Parameters ----------
+disc_d        = 85;    // disc outer diameter
+disc_h        = 2;     // disc thickness (Z)
+hole_d        = 3;     // through-hole diameter
+hole_count_x  = 7;     // holes along X
+hole_count_y  = 7;     // holes along Y
+hole_pitch    = 9;     // centre-to-centre spacing (X and Y)
+notch_w       = 10;    // orientation notch width (X)
+notch_depth   = 4;     // orientation notch depth from rim (Y, +Y side)
+eps           = 0.5;   // cutter overshoot past faces
+$fn           = 128;   // circle resolution
+
+// ---------- Derived ----------
+grid_x0 = -(hole_count_x - 1) * hole_pitch / 2;  // first hole X
+grid_y0 = -(hole_count_y - 1) * hole_pitch / 2;  // first hole Y
+notch_r = disc_d / 2 - notch_depth;              // notch inner radius (Y)
+
+// ---------- Model ----------
+difference() {
+    // Main disc
+    cylinder(d = disc_d, h = disc_h);
+
+    // Hole grid
+    for (i = [0 : hole_count_x - 1])
+        for (j = [0 : hole_count_y - 1])
+            translate([grid_x0 + i * hole_pitch,
+                       grid_y0 + j * hole_pitch,
+                       -eps])
+                cylinder(d = hole_d, h = disc_h + 2 * eps);
+
+    // Rectangular orientation notch on the +Y rim side, centred on Y
+    translate([0, notch_r, -eps])
+        cube([notch_w, notch_depth + eps, disc_h + 2 * eps]);
+}

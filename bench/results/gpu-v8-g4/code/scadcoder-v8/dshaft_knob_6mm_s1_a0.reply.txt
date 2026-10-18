@@ -1,0 +1,53 @@
+```openscad
+// Replacement knob for a hotplate stirrer with a 6 mm D-shaft
+// Print orientation: bottom face (with D-bore) on the bed at z = 0
+
+// ---------------- Parameters ----------------
+knob_d        = 30;    // knob outer diameter
+knob_h        = 15;    // knob height
+shaft_d       = 6.2;   // D-shaft diameter (bore circle diameter)
+bore_depth    = 12;    // blind bore depth from bottom face
+bore_flat     = 4.7;   // distance from D-flat to opposite side of circle
+groove_count  = 18;    // number of vertical grip grooves
+groove_d      = 2;     // groove diameter (half-cylinder)
+pointer_w     = 1.5;   // pointer groove width
+pointer_depth = 1;     // pointer groove depth
+eps           = 0.5;   // overcut so cutting faces are not coplanar
+
+$fn = 96;
+
+// ---------------- Model ----------------
+difference() {
+    // Main body
+    cylinder(d = knob_d, h = knob_h);
+
+    // D-shaped blind bore from the bottom face
+    translate([0, 0, -eps])
+        linear_extrude(height = bore_depth + eps)
+            circle(d = shaft_d);
+    // Flat on the D: remove the segment above the 4.7 mm chord
+    translate([0, 0, bore_depth])
+        linear_extrude(height = eps)
+            polygon([
+                [-(shaft_d / 2), 0],
+                [ shaft_d / 2, 0],
+                [ bore_flat / 2, -pointer_depth]
+            ]);
+
+    // Vertical grip grooves around the outside, full height
+    for (i = [0 : groove_count - 1])
+        rotate([0, 0, i * 360 / groove_count])
+            translate([knob_d / 2, 0, -eps])
+                cylinder(d = groove_d, h = knob_h + 2 * eps, $fn = 16);
+
+    // Pointer groove on the top face, from centre to outer edge
+    translate([0, 0, knob_h - pointer_depth])
+        linear_extrude(height = eps + 0.01)
+            polygon([
+                [0, 0],
+                [knob_d / 2, 0],
+                [knob_d / 2 - pointer_w / 2, -pointer_depth],
+                [-(knob_d / 2 - pointer_w / 2), -pointer_depth]
+            ]);
+}
+```

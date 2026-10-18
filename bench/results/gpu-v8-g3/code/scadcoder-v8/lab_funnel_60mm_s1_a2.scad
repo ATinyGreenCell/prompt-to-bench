@@ -1,0 +1,32 @@
+// Small lab funnel - printed upright, open top and bottom
+// Units: mm. Wall thickness 1.6 mm throughout.
+
+$fn = 96;
+
+// ---- Dimensions ----
+spout_od      = 10;    // spout outer diameter (z = 0 to 20)
+spout_len     = 20;    // spout length (z = 0 to 20)
+cone_bottom_d = 10;    // cone outer diameter at spout junction (z = 20)
+cone_top_d    = 60;    // cone rim outer diameter (z = 50)
+wall          = 1.6;   // wall thickness everywhere
+eps           = 0.5;   // cutter overshoot past faces
+
+// ---- Derived ----
+spout_id = spout_od - 2 * wall;   // 6.8 mm bore
+cone_h   = cone_top_d - cone_bottom_d; // 50 mm cone height (slope 1:1)
+
+difference() {
+    union() {
+        // Spout (tube)
+        cylinder(d = spout_od, h = spout_len);
+        // Cone on top of spout
+        translate([0, 0, spout_len])
+            cylinder(d = [cone_bottom_d, cone_top_d], h = cone_h);
+    }
+    // Bottom outlet cutter (through spout tip)
+    translate([0, 0, -eps])
+        cylinder(d = spout_id, h = spout_len + 2 * eps);
+    // Top rim cutter (open top, no lip)
+    translate([0, 0, spout_len + cone_h])
+        cylinder(d = cone_top_d - 2 * wall, h = eps);
+}

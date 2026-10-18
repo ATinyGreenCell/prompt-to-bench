@@ -1,0 +1,54 @@
+// Hose-barb reducer: 8 mm tubing (bottom) -> 5 mm tubing (top)
+// Print orientation: standing upright along +Z, centred on origin in X/Y
+
+$fn = 96;
+
+// ---- Dimensions (mm) ----
+tube_d1      = 8;    // lower tubing inner diameter
+tube_d2      = 5;    // upper tubing inner diameter
+bore_d       = 3;    // through-bore diameter
+barb_h1      = 10;   // lower barbs height
+barb_od1_bot = 7.5;  // lower barbs outer diameter at bottom
+barb_od1_top = 9.5;  // lower barbs outer diameter at top
+collar_d     = 12;   // collar diameter (z = 20..25)
+barb_h2      = 8;    // upper barbs height
+barb_od2_bot = 6.5;  // upper barbs outer diameter at bottom
+barb_od2_top = 5.0;  // upper barbs outer diameter at top
+eps          = 0.5;  // overshoot for clean cuts
+
+total_len = 41;      // overall length (z = 0..41)
+
+// ---- Model ----
+difference() {
+    union() {
+        // Lower section: two stacked barbs for 8 mm tubing
+        for (s = [-1, 1])
+            translate([0, 0, s * (barb_h1 / 2)])
+                linear_extrude(height = eps)
+                    polygon(points = [
+                        [0, barb_od1_bot],
+                        [barb_od1_top, barb_od1_top],
+                        [barb_od1_top, -barb_od1_top],
+                        [0, -barb_od1_bot]
+                    ]);
+
+        // Collar
+        translate([0, 0, 20])
+            cylinder(d = collar_d, h = 5);
+
+        // Upper section: two stacked barbs for 5 mm tubing
+        for (s = [-1, 1])
+            translate([0, 0, s * (barb_h2 / 2) + 25])
+                linear_extrude(height = eps)
+                    polygon(points = [
+                        [0, barb_od2_bot],
+                        [barb_od2_top, barb_od2_top],
+                        [barb_od2_top, -barb_od2_top],
+                        [0, -barb_od2_bot]
+                    ]);
+    }
+
+    // Through-bore
+    translate([0, 0, -eps])
+        cylinder(d = bore_d, h = total_len + 2 * eps);
+}

@@ -111,6 +111,7 @@ Table 8 (GPU tier, 8 samples per task; in-family / held-out split of the 16 task
 | `scadcoder-qwen3.5-9b-v5` | v4 + 1,500 multi-turn report repairs (`build_v5.py`, MASK_EARLIER=1) | 3/8 · **2/8** |
 | `scadcoder-qwen3.5-9b-v6` | v4 + 700 more held-out distilled, 14 more families (`build_v6.py --base v4`) | **5/8** · 0/8 |
 | `scadcoder-qwen3.5-9b-v7-1ep` | v4's data, 1 epoch | 3/8 · 0/8 |
+| `scadcoder-qwen3.5-9b-v8` | v6 + the 1,500 report repairs (`v8_train`, MASK_EARLIER=1) | 3/8 · 1/8 |
 
 The stock base passes 2/8 · 1/8 with thinking off. Every fine-tune renders 88-99% of first attempts but rarely changes
 its file after feedback (6-15% of repair turns, vs 84% for the base).

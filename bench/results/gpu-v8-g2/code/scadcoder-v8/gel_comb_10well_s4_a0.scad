@@ -1,0 +1,33 @@
+// 10-well comb for casting agarose gels
+// Printed lying flat: plate on bed (z = 0), teeth hang in -Y direction
+
+// ---------- Parameters ----------
+plate_t      = 1.5;    // plate thickness (Z)
+spine_len    = 70;     // spine length along X
+spine_w      = 12;     // spine width along Y
+tooth_count  = 10;     // number of teeth
+tooth_w      = 5.0;    // tooth width along X
+tooth_len    = 12;     // tooth length along Y
+gap          = 1.5;    // gap between neighbouring teeth (X)
+eps          = 0.5;    // cutter overshoot past faces
+
+$fn = 64;
+
+// ---------- Derived ----------
+pitch   = tooth_w + gap;               // centre-to-centre spacing
+x_start = -(tooth_count - 1) * pitch / 2; // first tooth centre (row centred on spine)
+total_w = tooth_count * tooth_w + (tooth_count - 1) * gap; // row width in X
+
+// ---------- Model ----------
+union() {
+    // Spine (back bar)
+    translate([-spine_len / 2, -spine_w / 2, 0])
+        cube([spine_len, spine_w, plate_t]);
+
+    // Teeth
+    for (i = [0 : tooth_count - 1])
+        translate([x_start + i * pitch - tooth_w / 2,
+                   -spine_w / 2 - tooth_len,
+                   0])
+            cube([tooth_w, tooth_len, plate_t]);
+}

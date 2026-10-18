@@ -1,0 +1,48 @@
+```openscad
+// Two-part enclosure for a small electronics board (e.g. Arduino-based temperature logger)
+// Print orientation: both parts rest on the bed (z = 0), build upward, side by side on the bed.
+// The lid is printed upside down: a flat plate on the bed with a lip that drops into the box.
+
+// ---------------- Parameters ----------------
+box_x      = 70;    // box outer length (X)
+box_y      = 50;    // box outer width (Y)
+box_z      = 30;    // box outer height (Z)
+box_wall   = 2;     // box wall thickness (sides and floor)
+box_floor  = 2;     // box floor thickness (separate from side walls per the given dimensions)
+
+lip_t      = 1.5;   // lip wall thickness
+lip_h      = 4;     // lip height above the plate it crowns
+lip_x      = 65.6;  // outer lip length (X); clearance per side = (box_x - lip_x) / 2 = 2.2 mm
+lip_y      = 45.6;  // outer lip width (Y); clearance per side = (box_y - lip_y) / 2 = 2.2 mm
+
+plate_t    = 2;     // lid plate thickness (the flat base lying on the bed)
+
+gap        = 10;    // bed gap between the two parts (inner edges in X)
+
+eps        = 0.5;   // cutter overshoot past faces
+
+$fn = 64;
+
+// ---------------- Model ----------------
+union() {
+    // Part 1: open-top box
+    translate([-box_x / 2, -box_y / 2, 0])
+        linear_extrude(height = box_z - box_floor)
+            hull() {
+                translate([-box_x / 2, -box_y / 2]) square([box_x, box_y]);   // floor
+                translate([-box_x / 2 + box_wall, -box_y / 2 + box_wall])
+                    square([box_x - 2 * box_wall, box_y - 2 * box_wall]);   // open top
+            }
+
+    // Part 2: lid, printed upside down
+    translate([-(box_x - lip_x) / 2 + gap, -(box_y - lip_y) / 2, 0])
+        union() {
+            // base plate
+            translate([-lip_x / 2, -lip_y / 2])
+                square([lip_x, lip_y]);
+            // lip (wall) on top of the plate
+            translate([-lip_x / 2, -lip_y / 2, plate_t])
+                cube([lip_x, lip_y, lip_h]);
+        }
+}
+```

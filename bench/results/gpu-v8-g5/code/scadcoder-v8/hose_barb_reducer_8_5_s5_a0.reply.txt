@@ -1,0 +1,55 @@
+```openscad
+// Hose-barb reducer: 8 mm tubing -> 5 mm tubing
+// Print orientation: standing upright along +Z
+
+$fn = 96;
+
+// --- Dimensions (mm) ---
+bore        = 3;     // through-bore diameter
+barb_8_h    = 10;    // height of each 8 mm barb
+barb_8_d0   = 7.5;   // 8 mm barb outer diameter at bottom
+barb_8_d1   = 9.5;   // 8 mm barb outer diameter at top
+barb_8_n    = 2;     // number of 8 mm barbs (stacked)
+collar_d    = 12;    // cylindrical collar diameter
+collar_h    = 5;     // collar height (z = 20 to 25)
+barb_5_h    = 8;     // height of each 5 mm barb
+barb_5_d0   = 6.5;   // 5 mm barb outer diameter at bottom
+barb_5_d1   = 5.0;   // 5 mm barb outer diameter at top
+barb_5_n    = 2;     // number of 5 mm barbs (stacked)
+eps         = 0.5;   // overshoot for clean cuts
+
+total_h = barb_8_n * barb_8_h + collar_h + barb_5_n * barb_5_h; // 41 mm
+
+// --- Model ---
+difference() {
+    union() {
+        // 8 mm barbs: sawtooth profile, stacked
+        for (i = [0 : barb_8_n - 1])
+            translate([0, 0, i * barb_8_h])
+                linear_extrude(height = barb_8_h)
+                    polygon(points = [
+                        [0, barb_8_d0],
+                        [0, barb_8_d1],
+                        [barb_8_d0, barb_8_d1]
+                    ]);
+
+        // Collar
+        translate([0, 0, barb_8_n * barb_8_h])
+            cylinder(d = collar_d, h = collar_h);
+
+        // 5 mm barbs: shrinking profile, stacked
+        for (i = [0 : barb_5_n - 1])
+            translate([0, 0, barb_8_n * barb_8_h + collar_h + i * barb_5_h])
+                linear_extrude(height = barb_5_h)
+                    polygon(points = [
+                        [0, barb_5_d0],
+                        [0, barb_5_d1],
+                        [barb_5_d0, barb_5_d1]
+                    ]);
+    }
+
+    // Through-bore
+    translate([0, 0, -eps])
+        cylinder(d = bore, h = total_h + 2 * eps);
+}
+```

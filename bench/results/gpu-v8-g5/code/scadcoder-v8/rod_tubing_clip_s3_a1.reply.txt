@@ -1,0 +1,55 @@
+```openscad
+// Snap-on tubing clip for a 12.7 mm (1/2 inch) lab stand rod
+// Printed flat: extrusion of 2-D profile in XY plane, 10 mm tall (Z)
+// Units: mm
+
+$fn = 96;
+
+// ---- Rod ring ----
+rod_id     = 12.7;   // rod inner diameter
+rod_wall   = 3;      // rod ring wall thickness
+rod_od     = rod_id + 2 * rod_wall;  // 18.7 mm outer diameter
+rod_h      = 10;     // extrusion height (Z)
+
+// ---- Rod opening ----
+rod_open_w = 10;     // opening width (X)
+rod_open_y = 5;      // opening half-height in Y (-5 < y < 5)
+
+// ---- Tubing ring ----
+tube_id    = 6;      // tubing inner diameter
+tube_wall  = 2;      // tubing ring wall thickness
+tube_od    = tube_id + 2 * tube_wall; // 10 mm outer diameter
+tube_x     = 15;     // tubing ring centre X
+tube_h     = rod_h;  // extrusion height (Z)
+
+// ---- Tubing opening ----
+tube_open_w = 4.5;   // opening width (X)
+tube_open_y = tube_open_w / 2; // 2.25 mm half-height in Y
+
+// ---- Bridge ----
+bridge_w   = 6;      // bridge width in Y
+bridge_x0  = 8;      // bridge start X
+bridge_x1  = 12;     // bridge end X
+
+// ---- Cutting overlap ----
+eps = 0.5;           // extension past cut faces
+
+difference() {
+    union() {
+        // Rod ring
+        cylinder(d = rod_od, h = rod_h);
+        // Tubing ring
+        translate([tube_x, 0, 0])
+            cylinder(d = tube_od, h = tube_h);
+        // Bridge between x = 8 and x = 12
+        translate([bridge_x0, -bridge_w / 2, 0])
+            cube([bridge_x1 - bridge_x0, bridge_w, rod_h]);
+    }
+    // Rod opening: x < 0 and -5 < y < 5
+    translate([0, -rod_open_y, -eps])
+        cube([rod_open_w + eps, 2 * rod_open_y, rod_h + 2 * eps]);
+    // Tubing opening: x > 15 and -2.25 < y < 2.25
+    translate([tube_x, -tube_open_y, -eps])
+        cube([eps + rod_h + tube_x, 2 * tube_open_y, rod_h + 2 * eps]);
+}
+```

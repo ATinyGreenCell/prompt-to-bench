@@ -1,0 +1,57 @@
+```openscad
+// Hose-barb reducer: 8 mm ID -> 5 mm ID
+// Print orientation: standing upright along +Z
+
+$fn = 96;
+
+// ---- Dimensions (mm) ----
+reducer_id      = 8;     // main bore (8 mm tubing)
+collar_d        = 12;    // collar outer diameter
+collar_h        = 5;     // collar height (z = 20..25)
+small_id        = 5;     // small end bore (5 mm tubing)
+small_barb_h    = 8;     // small barb height
+small_barb_od   = 6.5;   // small barb outer diameter (bottom)
+small_barb_tip  = 5.0;   // small barb tip outer diameter (top)
+overlap         = 0.5;   // barb overlap into collar for a clean union
+
+// ---- Model ----
+union() {
+    // Main bore through full length
+    translate([0, 0, -1])
+        cylinder(h = 45, d = reducer_id);
+
+    // Collar (z = 20..25)
+    translate([0, 0, 20])
+        cylinder(h = collar_h, d = collar_d);
+
+    // 8 mm tubing barbs (z = 0..20)
+    for (z = [0, 10])
+        translate([0, 0, z])
+            linear_extrude(height = small_barb_h + overlap)
+                polygon(points = [
+                    [-small_barb_od / 2, 0],
+                    [ small_barb_od / 2, 0],
+                    [ small_barb_od / 2, small_barb_h],
+                    [ small_barb_tip / 2, small_barb_h],
+                    [ small_barb_tip / 2, 0],
+                    [-small_barb_tip / 2, 0],
+                    [-small_barb_od / 2, small_barb_h],
+                    [-small_barb_od / 2, 0]
+                ]);
+
+    // 5 mm tubing barbs (z = 25..41)
+    for (z = [25, 35])
+        translate([0, 0, z])
+            linear_extrude(height = small_barb_h + overlap)
+                polygon(points = [
+                    [-small_barb_od / 2, 0],
+                    [ small_barb_od / 2, 0],
+                    [ small_barb_od / 2, small_barb_h],
+                    [ small_barb_tip / 2, small_barb_h],
+                    [ small_barb_tip / 2, 0],
+                    [-small_barb_tip / 2, 0],
+                    [-small_barb_od / 2, small_barb_h],
+                    [-small_barb_od / 2, 0]
+                ]);
+}
+```
