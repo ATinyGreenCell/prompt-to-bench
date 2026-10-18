@@ -1,0 +1,61 @@
+// Hose-barb reducer: joins 8 mm and 5 mm silicone tubing
+// Print orientation: standing upright along +Z
+
+// ---------- Parameters ----------
+t8_d      = 8;     // 8 mm tubing inner diameter
+t5_d      = 5;     // 5 mm tubing inner diameter
+bore_d    = 3;     // through-bore diameter
+z0        = 0;     // start of 8 mm section
+z1        = 20;    // start of collar
+z2        = 25;    // start of 5 mm section
+z3        = 41;    // end of part
+barb_h8   = 10;    // 8 mm barb height
+barb_h5   = 8;     // 5 mm barb height
+od8_bot   = 7.5;   // 8 mm barb outer diameter at bottom
+od8_top   = 9.5;   // 8 mm barb outer diameter at top
+od5_bot   = 6.5;   // 5 mm barb outer diameter at bottom
+od5_top   = 5.0;   // 5 mm barb outer diameter at top
+collar_d  = 12;    // collar diameter
+eps       = 0.5;   // cutter overshoot
+
+$fn = 96;
+
+// ---------- Model ----------
+difference() {
+    union() {
+        // 8 mm section (z = 0..20): two stacked sawtooth barbs
+        for (s = [-1, 1])
+            translate([0, 0, z0 + s * barb_h8 / 2])
+                linear_extrude(barb_h8)
+                    polygon([[-od8_bot / 2, -od8_bot / 2],
+                             [-od8_bot / 2, od8_bot / 2],
+                             [od8_top / 2, od8_top / 2],
+                             [od8_top / 2, -od8_top / 2]]);
+
+        // Collar (z = 20..25)
+        translate([0, 0, z1])
+            cylinder(d = collar_d, h = z2 - z1);
+
+        // 5 mm section (z = 25..41): two stacked sawtooth barbs
+        for (s = [-1, 1])
+            translate([0, 0, z2 + s * barb_h5 / 2])
+                linear_extrude(barb_h5)
+                    polygon([[-od5_bot / 2, -od5_bot / 2],
+                             [-od5_bot / 2, od5_bot / 2],
+                             [od5_top / 2, od5_top / 2],
+                             [od5_top / 2, -od5_top / 2]]);
+    }
+
+    // Cutters
+    translate([0, 0, -eps])
+        cylinder(d = bore_d, h = z3 - z0 + 2 * eps);
+
+    for (s = [-1, 1]) {
+        // 8 mm tubing cutters
+        translate([0, 0, z0 + s * barb_h8 / 2 - 0.01])
+            cylinder(d = t8_d + 0.4, h = barb_h8 + 0.02);
+        // 5 mm tubing cutters
+        translate([0, 0, z2 + s * barb_h5 / 2 - 0.01])
+            cylinder(d = t5_d + 0.4, h = barb_h5 + 0.02);
+    }
+}

@@ -1,0 +1,44 @@
+```openscad
+// Stand rod and tubing clip - prints flat as a 2-D profile in the XY plane
+// Units: mm. $fn = 96 for the ring circles.
+
+// ---------------- Parameters ----------------
+ring_d        = 12.7;   // stand rod ring inner diameter
+wall_r        = 3;      // stand rod ring wall thickness
+opening_w     = 10;     // stand rod ring opening width (along -X)
+opening_y     = 5;      // stand rod ring opening half-height (y limit)
+
+tubing_d      = 6;      // tubing ring inner diameter
+tubing_wall   = 2;      // tubing ring wall thickness
+tubing_x      = 15;     // tubing ring centre X position
+tubing_open_w = 4.5;    // tubing ring opening width (along +X)
+tubing_open_h = 2.25;   // tubing ring opening half-height (y limit)
+
+bridge_x1     = 8;      // bridge start X
+bridge_x2     = 12;     // bridge end X
+bridge_w      = 6;      // bridge width (Y)
+
+eps           = 0.5;    // cutter overshoot past faces
+height        = 10;     // extrusion height (Z)
+
+// ---------------- Derived ----------------
+outer_d = ring_d + 2 * wall_r;   // stand rod ring outer diameter
+
+// ---------------- Model ----------------
+difference() {
+    // Stand rod ring, centred at origin
+    cylinder(d = outer_d, h = height, $fn = 96);
+    translate([-eps, -opening_y, 0])
+        cube([opening_w + 2 * eps, 2 * opening_y, height]);
+
+    // Tubing ring, centred at x = 15, y = 0
+    translate([tubing_x, 0, 0])
+        cylinder(d = tubing_d + 2 * tubing_wall, h = height, $fn = 96);
+    translate([tubing_x + tubing_open_w / 2, -tubing_open_h, 0])
+        cube([tubing_open_w, 2 * tubing_open_h, height]);
+
+    // Solid bridge joining the two rings (y = -3 to +3, x = 8 to 12)
+    translate([bridge_x1, -bridge_w / 2, 0])
+        cube([bridge_x2 - bridge_x1 + eps, bridge_w, height]);
+}
+```

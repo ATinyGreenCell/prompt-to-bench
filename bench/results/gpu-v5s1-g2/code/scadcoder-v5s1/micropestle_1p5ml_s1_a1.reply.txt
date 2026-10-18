@@ -1,0 +1,39 @@
+```openscad
+// Pestle for grinding tissue in a 1.5 mL microcentrifuge tube
+// Print orientation: standing upright, handle on the bed (z = 0)
+
+// ---------------- Parameters ----------------
+handle_d      = 8;     // handle diameter (mm)
+handle_h      = 45;    // handle height (mm), z = 0 to 45
+cone_start_d  = 8;     // cone diameter at z = handle_h (mm)
+cone_end_d    = 3;     // cone diameter at cone tip (mm)
+cone_tip_z    = 62;    // cone tip height (mm)
+tip_d         = 3;     // rounded tip diameter (mm)
+tip_centre_z  = 62;    // rounded tip sphere centre (mm)
+groove_w      = 2;     // groove width (mm), measured in Z
+groove_depth  = 1;     // groove depth (mm), removed from outer surface
+groove_z      = [10, 15, 20, 25]; // groove centre heights (mm)
+eps           = 0.5;   // overshoot for clean boolean cuts (mm)
+$fn           = 96;    // curve resolution
+
+// ---------------- Model ----------------
+difference() {
+    union() {
+        // (1) Cylindrical handle
+        cylinder(d = handle_d, h = handle_h);
+
+        // (2) Tapering cone: 8 mm at z = 45 to 3 mm at z = 62
+        translate([0, 0, handle_h])
+            cylinder(d1 = cone_start_d, d2 = cone_end_d, h = cone_tip_z - handle_h);
+
+        // (3) Rounded tip: 3 mm diameter sphere centred at z = 62
+        translate([0, 0, tip_centre_z])
+            sphere(d = tip_d);
+    }
+
+    // Circumferential grooves in the handle for grip
+    for (z = groove_z)
+        translate([0, 0, z - eps])
+            cylinder(d = handle_d + 2 * groove_depth, h = groove_w + 2 * eps);
+}
+```

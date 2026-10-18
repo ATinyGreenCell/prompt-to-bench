@@ -1,0 +1,40 @@
+// Hose-barb reducer: joins 8 mm and 5 mm silicone tubing
+// Print orientation: standing upright along +Z
+
+$fn = 64;
+
+// ---- Dimensions (mm) ----
+t1      = 8;     // larger tubing inner diameter
+t2      = 5;     // smaller tubing inner diameter
+bore    = 3;     // through-bore diameter
+h1      = 20;    // height of first barb section (z = 0..20)
+d1_bot  = 7.5;   // outer diameter of barb at bottom
+d1_top  = 9.5;   // outer diameter of barb at top
+c       = 12;    // collar diameter
+h2      = 8;     // height of second barb section (z = 25..41)
+d2_bot  = 6.5;   // outer diameter of second barb at bottom
+d2_top  = 5.0;   // outer diameter of second barb at top
+eps     = 0.5;   // overshoot for clean cuts
+
+// ---- Derived ----
+x1 = (d1_bot + d1_top) / 2;   // average barb diameter section 1
+x2 = (d2_bot + d2_top) / 2;   // average barb diameter section 2
+y1 = d1_bot - bore / 2;       // lower wall thickness section 1
+y2 = d2_bot - bore / 2;       // lower wall thickness section 2
+
+// ---- Model ----
+union() {
+    // Section 1: two stacked barbs for 8 mm tubing
+    for (s = [-1, 1])
+        translate([0, 0, s * h1 / 2 - eps])
+            linear_extrude(h1 + 2 * eps)
+                circle(d = d1_bot, $fn = 64);
+    // Section 2: collar
+    translate([0, 0, h1 + c / 2 - eps])
+        cylinder(d = c, h = c + 2 * eps, $fn = 64);
+    // Section 3: two stacked barbs for 5 mm tubing
+    for (s = [-1, 1])
+        translate([0, 0, h1 + c + s * h2 / 2 - eps])
+            linear_extrude(h2 + 2 * eps)
+                circle(d = d2_bot, $fn = 64);
+}

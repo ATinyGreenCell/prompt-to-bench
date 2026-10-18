@@ -1,0 +1,32 @@
+// Microscope slide drying rack
+// Units: mm
+
+// ---- Block ----
+block_l = 90;      // block length (X)
+block_w = 45;      // block width (Y)
+block_h = 20;      // block height (Z)
+
+// ---- Slots ----
+slot_n     = 10;   // number of slots
+slot_len   = 77;   // slot length along X
+slot_w     = 1.6;  // slot width along Y
+slot_d     = 10;   // slot depth from top face
+slot_pitch = 3.5;  // centre-to-centre spacing along Y
+
+// ---- Cut clearance ----
+eps = 0.5;         // overshoot past top face
+
+$fn = 64;
+
+difference() {
+    // Base block, centred in X/Y, resting on z = 0
+    translate([-block_l/2, -block_w/2, 0])
+        cube([block_l, block_w, block_h]);
+
+    // Row of parallel slots, centred on the block
+    for (i = [0 : slot_n - 1]) {
+        y = (i - (slot_n - 1)/2) * slot_pitch;
+        translate([-slot_len/2, y, block_h - slot_d])
+            cube([slot_len, slot_w, slot_d + eps]);
+    }
+}

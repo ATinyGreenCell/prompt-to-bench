@@ -109,13 +109,16 @@ Table 8 (GPU tier, 8 samples per task; in-family / held-out split of the 16 task
 | `scadcoder-qwen3.5-9b-v3` | v2 + 269 RFT + 336 distilled that paraphrase 8 tasks (**in-family**) | 5/8 · 1/8 | - |
 | `scadcoder-qwen3.5-9b-v4` | v2 + 269 RFT + 680 held-out distilled (`build_v4.py`) | 2/8 · 0/8 | - |
 | `scadcoder-qwen3.5-9b-v5` | v4 + 1,500 multi-turn report repairs (`build_v5.py`, MASK_EARLIER=1) | 3/8 · **2/8** | **3/16** |
+| `scadcoder-qwen3.5-9b-v5-seed1` | v5's data and settings, seed 1 instead of 0 (a replicate: `SEED=1`) | 3/8 · 0/8 | - |
 | `scadcoder-qwen3.5-9b-v6` | v4 + 700 more held-out distilled, 14 more families (`build_v6.py --base v4`) | **5/8** · 0/8 | 1/16 |
 | `scadcoder-qwen3.5-9b-v7-1ep` | v4's data, 1 epoch | 3/8 · 0/8 | - |
 | `scadcoder-qwen3.5-9b-v8` | v6 + the 1,500 report repairs (`v8_train`, MASK_EARLIER=1) | 3/8 · 1/8 | - |
 | `scadcoder-qwen3.5-9b-v9` | v5 + 869 of v5's own failed attempts, each with its report and the reference file, x2 (`build_v9.py`, MASK_EARLIER=1) | 2/8 · 0/8 | 3/16 |
 
 The stock base passes 2/8 · 1/8 with thinking off. Every fine-tune renders 88-99% of first attempts but rarely changes
-its file after feedback (6-15% of repair turns through v8, vs 84% for the base; v9, trained on its own failures, 27%). On the box itself (one sample per task, the box's
+its file after feedback (6-15% of repair turns through v8, vs 84% for the base; v9, trained on its own failures, 27%).
+The training run itself moves these numbers: v5 retrained with seed 1 passed 3 tasks instead of 5, neither held-out one
+(the slide rack went from 7/8 samples to 0/8), and changed its file after 8% of feedback messages instead of 15%. On the box itself (one sample per task, the box's
 own quantised build, imported by URL with `scripts/box_import.py`) v5 passed the slide rack, the gel comb and the
 PCR-tube adapter, all on the first attempt; v1 and v2 had passed none. With eight samples on the box v5 passed 6/16 (4 in-family, 2 held out:
 the hose-barb reducer and the slide rack), against 5/16 on the GPU (`bench/results/box-v5-k8/`). v9 passed 3/16 on the box at one sample (the 1.5 mL rack, the slide

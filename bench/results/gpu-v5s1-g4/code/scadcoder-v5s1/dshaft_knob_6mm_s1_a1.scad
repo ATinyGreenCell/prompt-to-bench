@@ -1,0 +1,30 @@
+// Hotplate stirrer knob - D-shaft knob with grip grooves and a pointer groove, printed
+// with the D-flat side down on the bed. NOVEL general part.
+//
+
+shaft_d   = 6;
+knob_d    = 30;
+knob_h    = 15;
+bore_len  = 12;
+bore_d    = 6.2;
+bore_flat = 4.7;
+grooves   = 18;
+groove_d  = 2;
+pointer_w = 1.5;
+pointer_d = 1;
+
+$fn = 96;
+
+difference() {
+    cylinder(h = knob_h, d = knob_d);
+    translate([0, 0, 0])
+        rotate([0, 90, 0])
+            cylinder(h = bore_len, d = bore_d, $fn = 64);
+    for (i = [0 : grooves - 1])
+        rotate([0, 0, i * 360 / grooves])
+            translate([knob_d / 2, 0, 0])
+                cylinder(h = knob_h, d = groove_d, $fn = 16);
+    translate([0, 0, knob_h - pointer_d])
+        rotate([0, 90, 0])
+            cylinder(h = pointer_w, d = knob_d - 2 * pointer_d, $fn = 64);
+}

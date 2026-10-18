@@ -1,0 +1,40 @@
+// Mini horizontal gel-electrophoresis box - buffer tank
+// Print orientation: tank rests on XY plane, builds up +Z
+
+$fn = 64;
+
+// ---- Tank ----
+tank_x = 120;      // outer length (X)
+tank_y = 70;       // outer width (Y)
+tank_z = 40;       // outer height (Z)
+wall   = 3;        // wall thickness
+floor  = 3;        // floor thickness
+
+// ---- Platform ----
+plat_x = 60;       // platform length in X (centred)
+plat_y = tank_y - 2*wall;  // spans full inner width
+plat_top = floor + 10;  // top of platform, 10 mm above inner floor
+
+// ---- Holes ----
+hole_d = 2;        // electrode wire hole diameter
+hole_y = 0;        // hole Y position
+hole_z = 30;       // hole Z position
+
+// ---- Misc ----
+eps = 0.5;         // cutter overshoot past faces
+
+difference() {
+    // Tank body
+    translate([-tank_x/2, -tank_y/2, 0])
+        cube([tank_x, tank_y, tank_z]);
+
+    // Raised platform (solid, no cut through walls)
+    translate([-plat_x/2, 0, plat_top - wall])
+        cube([plat_x, plat_y, wall + eps]);
+
+    // Horizontal electrode holes through end walls
+    for (sx = [-1, 1])
+        translate([sx > 0 ? tank_x/2 - eps : -tank_x/2 - eps, hole_y, hole_z])
+            rotate([0, 90, 0])
+                cylinder(d = hole_d, h = tank_z + 2*eps);
+}

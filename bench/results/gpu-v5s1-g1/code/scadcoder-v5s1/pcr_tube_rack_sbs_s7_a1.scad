@@ -1,0 +1,48 @@
+// 96-well PCR tube rack (0.2 mL, standard microplate footprint)
+// Print orientation: base on XY plane, building up +Z
+
+// ---------- Block ----------
+block_l = 127.76;   // block length along X
+block_w = 85.48;    // block width along Y
+block_h = 20;       // block height along Z
+
+// ---------- Holes ----------
+hole_d     = 6.2;   // hole diameter
+hole_nx    = 12;    // holes along X (columns)
+hole_ny    = 8;     // holes along Y (rows)
+hole_pitch = 9.0;   // centre-to-centre spacing
+hole_x0    = 14.38; // centre of A1 from left edge
+hole_y0    = 11.24; // centre of A1 from back edge
+
+// ---------- Chamfer ----------
+chamf_leg  = 5;     // chamfer leg length
+chamf_ang  = 45;    // chamfer angle (degrees)
+
+// ---------- Misc ----------
+eps        = 0.5;   // cutter overshoot past faces
+$fn        = 96;    // curve resolution
+
+// Derived
+chamf_h = chamf_leg / tan(chamf_ang);  // height of 45 deg chamfer
+
+difference() {
+    // Main block, centred in X/Y, sitting on z = 0
+    translate([-block_l/2, -block_w/2, 0])
+        cube([block_l, block_w, block_h]);
+
+    // Hole grid
+    for (i = [0 : hole_nx - 1])
+        for (j = [0 : hole_ny - 1])
+            translate([hole_x0 + i * hole_pitch - hole_d/2,
+                       hole_y0 + j * hole_pitch - hole_d/2,
+                       -eps])
+                cylinder(d = hole_d, h = block_h + 2*eps);
+
+    // Orientation chamfer at A1 corner (vertical edge, 45 deg)
+    translate([hole_x0 - chamf_leg, hole_y0 - chamf_leg, 0])
+        linear_extrude(height = block_h - chamf_h + 0.01)
+            polygon([[-chamf_leg, -chamf_leg],
+                     [-chamf_leg, block_w/2 - chamf_leg],
+                     [block_l/2 - chamf_leg, block_w/2 - chamf_leg],
+                     [block_l/2 - chamf_leg, -chamf_leg]]);
+}

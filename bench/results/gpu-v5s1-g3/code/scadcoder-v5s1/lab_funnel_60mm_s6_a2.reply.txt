@@ -1,0 +1,34 @@
+```openscad
+// Lab funnel - printed upright, open at top and bottom
+// Units: mm
+
+$fn = 64;
+
+// Spout
+spout_d     = 10;    // outer diameter
+spout_bore  = 6.8;   // bore diameter (wall 1.6)
+spout_h     = 20;    // length
+
+// Cone
+cone_d1     = 10;    // diameter at z = 20
+cone_d2     = 60;    // rim diameter at z = 50
+cone_h      = 30;    // height of cone (50 - 20)
+
+// Cut clearance
+eps         = 0.5;   // extension past faces
+
+union() {
+    // Spout tube
+    difference() {
+        cylinder(d = spout_d, h = spout_h);
+        translate([0, 0, -eps]) cylinder(d = spout_bore, h = spout_h + 2 * eps);
+    }
+
+    // Cone (hollow, open top and bottom)
+    difference() {
+        cylinder(d1 = cone_d1, d2 = cone_d2, h = cone_h);
+        translate([0, 0, -eps])
+            cylinder(d1 = cone_d1 - spout_bore, d2 = cone_d2 - spout_bore, h = cone_h + 2 * eps);
+    }
+}
+```

@@ -1,0 +1,54 @@
+```openscad
+// Hose-barb reducer: joins 8 mm and 5 mm silicone tubing
+// Print orientation: standing upright along +Z
+
+$fn = 64;
+
+// ---- Dimensions (mm) ----
+tube_d1      = 8;     // larger tubing inner diameter
+tube_d2      = 5;     // smaller tubing inner diameter
+bore         = 3;     // through-bore diameter
+length_d1    = 20;    // height of 8 mm tubing section
+length_d2    = 16;    // height of 5 mm tubing section (z = 25 to z = 41)
+collar_d     = 12;    // cylindrical collar diameter
+barb_d1_bot  = 7.5;   // barb outer diameter at bottom (8 mm tubing)
+barb_d1_top  = 9.5;   // barb outer diameter at top of 8 mm tubing barbs
+barb_d2_bot  = 6.5;   // barb outer diameter at bottom (5 mm tubing)
+barb_d2_top  = 5.0;   // barb outer diameter at top of 5 mm tubing barbs
+eps          = 0.5;   // cutter overshoot past faces
+
+// ---- Derived ----
+z_start_d2   = length_d1 + collar_d;   // z = 25, start of 5 mm tubing section
+barb_d1_avg  = (barb_d1_bot + barb_d1_top) / 2;
+
+// ---- Model ----
+union() {
+    // Section 1: z = 0 to 20, two stacked barbs for 8 mm tubing
+    for (s = [-1, 1])
+        translate([0, 0, s * length_d1 / 2 - 1])
+            linear_extrude(height = length_d1 + 2)
+                union() {
+                    cylinder(d = barb_d1_bot);
+                    translate([0, 0, s * length_d1 / 2 - 1])
+                        cylinder(d = barb_d1_top, h = eps);
+                }
+
+    // Section 2: z = 20 to 25, cylindrical collar
+    translate([0, 0, length_d1])
+        cylinder(d = collar_d, h = collar_d);
+
+    // Section 3: z = 25 to 41, two stacked barbs for 5 mm tubing
+    for (s = [-1, 1])
+        translate([0, 0, z_start_d2 + s * length_d2 / 2 - 1])
+            linear_extrude(height = length_d2 + 2)
+                union() {
+                    cylinder(d = barb_d2_bot);
+                    translate([0, 0, z_start_d2 + s * length_d2 / 2 - 1])
+                        cylinder(d = barb_d2_top, h = eps);
+                }
+
+    // Through-bore
+    translate([0, 0, -eps])
+        cylinder(d = bore, h = length_d1 + collar_d + length_d2 + 2 * eps);
+}
+```

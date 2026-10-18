@@ -1,0 +1,30 @@
+// Lab funnel - printed upright, open at top and bottom
+// Spout: 10 mm outer diameter, z = 0 to 20
+// Cone: widens from 10 mm (z = 20) to 60 mm (z = 50)
+// Wall thickness: 1.6 mm everywhere
+
+// ---------- Parameters ----------
+spout_d        = 10;     // spout outer diameter
+spout_bore     = spout_d - 2 * 1.6;  // spout bore (6.8 mm)
+spout_h        = 20;     // spout height
+cone_top_d     = 60;     // cone rim outer diameter
+cone_bottom_d  = spout_d;  // cone base outer diameter (matches spout)
+cone_h         = 50 - spout_h;  // cone height (30 mm)
+wall           = 1.6;    // wall thickness
+eps            = 0.5;    // cutter overshoot past faces
+
+$fn = 96;
+
+// ---------- Model ----------
+difference() {
+    union() {
+        // Spout (tube)
+        cylinder(d = spout_d, h = spout_h);
+        // Cone
+        cylinder(d1 = cone_bottom_d, d2 = cone_top_d, h = cone_h);
+    }
+    // Through-bore: spout bore up to z = 20, then expanding bore through cone
+    translate([0, 0, -eps])
+        linear_extrude(height = spout_h + cone_h + 2 * eps)
+            circle(d = spout_bore);
+}

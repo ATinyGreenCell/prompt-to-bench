@@ -1,0 +1,43 @@
+// Stand rod and tubing clip - prints flat as a 2-D profile in the XY plane
+// Units: mm. $fn = 64 for curved shapes.
+
+// ---------------- Parameters ----------------
+ring_d        = 12.7;   // stand rod ring inner diameter
+ring_wall     = 3;      // stand rod ring wall thickness
+ring_outer    = ring_d + 2 * ring_wall; // stand rod ring outer diameter (18.7)
+ring_open_w   = 10;     // stand rod ring opening width on -X side
+ring_open_y   = 5;      // stand rod ring opening extends y = -5 to +5
+
+tub_d         = 6;      // tubing ring inner diameter
+tub_wall      = 2;      // tubing ring wall thickness
+tub_outer     = tub_d + 2 * tub_wall;   // tubing ring outer diameter (10)
+tub_open_w    = 4.5;    // tubing ring opening width on +X side
+tub_open_y    = 2.25;   // tubing ring opening extends y = -2.25 to +2.25
+
+bridge_x0     = 8;      // bridge start (X)
+bridge_x1     = 12;     // bridge end (X)
+bridge_w      = bridge_x1 - bridge_x0;  // bridge width (Y) = 4 mm (check!)
+
+eps           = 0.5;    // cutter overshoot past faces
+
+$fn = 64;
+
+// ---------------- Model ----------------
+difference() {
+    union() {
+        // Stand rod ring
+        cylinder(d = ring_outer, h = 1, $fn = 64);
+        // Tubing ring
+        translate([15, 0, 0])
+            cylinder(d = tub_outer, h = 1, $fn = 64);
+        // Solid bridge between x = 8 and x = 12
+        translate([bridge_x0, -bridge_w / 2, 0])
+            cube([bridge_w, bridge_w, 1]);
+    }
+    // Stand rod opening: x < 0, -5 < y < 5
+    translate([-ring_open_w / 2 - eps, -ring_open_y, -eps])
+        cube([ring_open_w + 2 * eps, 2 * ring_open_y, 1 + 2 * eps]);
+    // Tubing opening: x > 15, -2.25 < y < 2.25
+    translate([15, -tub_open_y, -eps])
+        cube([tub_open_w + 2 * eps, 2 * tub_open_y, 1 + 2 * eps]);
+}
