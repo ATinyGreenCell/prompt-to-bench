@@ -1,0 +1,50 @@
+```openscad
+// Two-part enclosure for a small electronics board (e.g. Arduino-based temperature logger)
+// Print orientation: box on the bed, lid on the +X side of the box, both resting on XY (z = 0)
+
+// ---------------- Parameters ----------------
+box_x      = 70;    // box outer length (X)
+box_y      = 50;    // box outer width (Y)
+box_z      = 30;    // box outer height (Z)
+box_wall   = 2;     // box wall thickness (sides and floor)
+
+lip_t      = 1.5;   // lid lip thickness (X)
+lip_h      = 4;     // lid lip height (Z)
+lip_x      = 65.6;  // lid lip outer length (X)
+lip_y      = 45.6;  // lid lip outer width (Y)
+lip_wall   = 1.5;   // lid lip wall thickness
+
+eps        = 0.5;   // cutter overshoot past faces
+
+$fn = 64;
+
+// ---------------- Derived ----------------
+box_fitting_x = box_x - 2 * box_wall;   // 66
+box_fitting_y = box_y - 2 * box_wall;   // 46
+lip_clear     = 0.2;                    // clearance of lip inside box opening
+
+// ---------------- Model ----------------
+union() {
+    // Box: outer block with open top (floor, front, back, left, right walls)
+    difference() {
+        translate([-box_x / 2, -box_y / 2, 0])
+            cube([box_x, box_y, box_z]);
+        // Open top cut, extended past the top face
+        translate([-box_x / 2, -box_y / 2, box_z - eps])
+            cube([box_x, box_y, eps]);
+    }
+
+    // Lid: plate on the bed with a rectangular lip on top, centred on the plate
+    // The lip is a solid block of size [lip_x, lip_y, lip_h] with a [lip_wall] border;
+    // its inner opening is [lip_x - 2 * lip_wall, lip_y - 2 * lip_wall],
+    // which gives 0.2 mm clearance on each side relative to the box opening.
+    translate([(box_x - lip_x) / 2, -lip_y / 2, 0])
+        linear_extrude(height = lip_h)
+            polygon([
+                [-lip_x / 2, -lip_y / 2],
+                [ lip_x / 2, -lip_y / 2],
+                [ lip_x / 2,  lip_y / 2],
+                [-lip_x / 2,  lip_y / 2]
+            ]);
+}
+```

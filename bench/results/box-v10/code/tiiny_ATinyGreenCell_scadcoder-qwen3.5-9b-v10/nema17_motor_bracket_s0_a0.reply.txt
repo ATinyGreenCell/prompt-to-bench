@@ -1,0 +1,62 @@
+```openscad
+// L-shaped mounting bracket for NEMA 17 stepper motor (syringe pump)
+// Print orientation: base plate on bed, motor plate building up in +Z
+
+// ---------- Parameters ----------
+base_x      = 50;    // base plate length in X (mm)
+base_y      = 45;    // base plate width in Y (mm)
+base_z      = 5;     // base plate thickness (mm)
+
+motor_x     = 50;    // motor plate length in X (mm)
+motor_y     = 5;     // motor plate width in Y (mm)
+motor_z     = 50;    // motor plate height (mm)
+
+hole_boss   = 23;    // motor boss hole diameter (mm)
+hole_screw  = 3.4;   // M3 screw hole diameter (mm)
+hole_count  = 4;     // number of screw holes
+hole_pitch  = 31;    // screw hole pattern size (mm x mm)
+
+gusset_t    = 5;     // gusset thickness (mm)
+gusset_leg  = 20;    // gusset leg length (mm)
+
+eps         = 0.5;   // cutter overshoot past faces (mm)
+
+$fn = 96;
+
+// ---------- Model ----------
+union() {
+    // Base plate with two M4 through-holes
+    difference() {
+        translate([-base_x/2, 0, 0])
+            cube([base_x, base_y, base_z]);
+
+        for (h = [30, -30])
+            translate([h * 17 / 2, 30, -eps])
+                cylinder(d = 4.5, h = base_z + 2 * eps);
+    }
+
+    // Motor plate with boss hole and four M3 screw holes
+    difference() {
+        translate([-motor_x/2, 0, 0])
+            cube([motor_x, motor_y, motor_z]);
+
+        translate([0, -eps, 28])
+            rotate([90, 0, 0])
+                cylinder(d = hole_boss, h = motor_y + 2 * eps);
+
+        for (i = [0 : hole_count - 1]) {
+            x = -hole_pitch / 2 + (i - (hole_count - 1) / 2) * hole_pitch / (hole_count - 1);
+            y = -hole_pitch / 2 + (i - (hole_count - 1) / 2) * hole_pitch / (hole_count - 1);
+            translate([x, y, -eps])
+                cylinder(d = hole_screw, h = motor_z + 2 * eps);
+        }
+    }
+
+    // Gussets on left and right edges (right-angle corner at y = 5, z = 5)
+    for (sx = [-1, 1])
+        translate([sx > 0 ? 20 : -25, 5, 5])
+            rotate([90, 0, 0])
+                linear_extrude(height = gusset_t)
+                    polygon(points = [0, 0, gusset_leg, 0, 0, gusset_leg]);
+}
+```

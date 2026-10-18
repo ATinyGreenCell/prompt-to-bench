@@ -1,0 +1,43 @@
+```openscad
+// Bench rack for 1.5 mL microcentrifuge tubes
+// Print orientation: base on XY plane, holes open upward (+Z)
+
+// ---------------- Parameters ----------------
+block_len    = 106;   // block length along X (mm)
+block_wid    = 72;    // block width along Y (mm)
+block_h      = 30;    // block height along Z (mm)
+
+hole_d       = 11.2;  // tube hole diameter (mm)
+hole_depth   = 25;    // tube hole depth from top (mm)
+hole_floor   = block_h - hole_depth; // remaining floor thickness = 5 mm
+
+hole_count   = 24;    // total number of tube holes
+hole_rows    = 4;     // number of holes along Y (rows)
+hole_cols    = 6;     // number of holes along X (columns)
+
+pitch_x      = 16;    // centre-to-centre spacing along X (mm)
+pitch_y      = 16;    // centre-to-centre spacing along Y (mm)
+
+eps          = 0.5;   // overshoot for clean boolean cuts (mm)
+
+$fn = 64;             // circle resolution
+
+// ---------------- Derived ----------------
+first_x = -(hole_cols - 1) * pitch_x / 2;  // first hole X centre
+first_y = -(hole_rows - 1) * pitch_y / 2;  // first hole Y centre
+
+// ---------------- Model ----------------
+difference() {
+    // Main block, centred in X/Y, resting on z = 0
+    translate([-block_len / 2, -block_wid / 2, 0])
+        cube([block_len, block_wid, block_h]);
+
+    // Tube holes: for each hole, a cylinder from top down to the floor
+    for (i = [0 : hole_count - 1]) {
+        translate([first_x + i * pitch_x,
+                   first_y + i % hole_rows * pitch_y,
+                   hole_floor])
+            cylinder(d = hole_d, h = hole_depth + eps);
+    }
+}
+```

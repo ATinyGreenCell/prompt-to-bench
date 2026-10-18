@@ -1,0 +1,54 @@
+```openscad
+// Straight hose-barb reducer: 8 mm tubing to 5 mm tubing
+// Print orientation: standing upright along +Z, centred on the origin in X/Y.
+// The two barbs at each end are stacked (one above the other) and may overlap slightly.
+
+$fn = 96;
+
+// ---------------- Dimensions (mm) ----------------
+reducer_id      = 8;    // inner diameter of the 8 mm tubing
+reducer_od      = 5;    // inner diameter of the 5 mm tubing
+barb_count      = 2;    // number of barbs at each end (stacked)
+barb_height_8   = 10;   // height of each 8 mm barb, from z = 0 to z = 20
+barb_od_start_8 = 7.5;  // outer diameter of the 8 mm barbs at their bottom
+barb_od_end_8   = 9.5;  // outer diameter of the 8 mm barbs at their top
+barb_height_5   = 8;    // height of each 5 mm barb, from z = 25 to z = 41
+barb_od_start_5 = 6.5;  // outer diameter of the 5 mm barbs at their bottom
+barb_od_end_5   = 5.0;  // outer diameter of the 5 mm barbs at their top
+collar_od       = 12;   // outer diameter of the cylindrical collar (z = 20 to 25)
+eps             = 0.5;   // overshoot so cutters pass through faces
+
+// Derived
+reducer_length  = 41;   // overall length along Z
+overlap         = 0.5;  // how far the stacked barbs overlap each other
+
+// ---------------- Model ----------------
+union() {
+    // 8 mm tubing end: two barbs, stacked, from z = 0 to z = 20
+    for (i = [0 : barb_count - 1]) {
+        translate([0, 0, i * (barb_height_8 + overlap)])
+            linear_extrude(height = barb_height_8 + overlap)
+                circle(d = barb_od_start_8 + (barb_od_end_8 - barb_od_start_8) *
+                       (i - 0.5 + 0.5 / barb_count));
+    }
+
+    // Cylindrical collar from z = 20 to z = 25
+    translate([0, 0, 20])
+        cylinder(h = 5, d = collar_od);
+
+    // 5 mm tubing end: two barbs, stacked, from z = 25 to z = 41
+    for (i = [0 : barb_count - 1]) {
+        translate([0, 0, 25 + i * (barb_height_5 + overlap)])
+            linear_extrude(height = barb_height_5 + overlap)
+                circle(d = barb_od_start_5 + (barb_od_end_5 - barb_od_start_5) *
+                       (i - 0.5 + 0.5 / barb_count));
+    }
+}
+
+// ---------------- Bore ----------------
+// A 3 mm bore runs straight through the full length of the part
+translate([0, 0, -eps])
+    rotate_extrude()
+        translate([0, -1.5, 0])
+            cube([reducer_length + 2 * eps, 3, 1]);
+```
