@@ -1,0 +1,43 @@
+// DIY magnetic stirrer housing (print orientation: upside down)
+// Units: mm
+
+// ---- Parameters ----
+fan_d      = 80;    // fan diameter
+outer_x    = 90;    // outer size in X
+outer_y    = 90;    // outer size in Y
+wall       = 2.5;   // wall thickness
+top_t      = 2;     // top plate thickness (z = 0 to 2)
+box_h      = 40;    // height of open box (top of walls at z = 40)
+screw_d    = 4.5;   // M4 screw hole diameter
+screw_pitch = 71.5; // square pattern size for screw holes
+notch_w    = 12;    // cable notch width
+notch_h    = 8;     // cable notch depth from open edge (z = 32 to 40)
+eps        = 0.5;   // cutter overshoot
+
+$fn = 96;
+
+// ---- Model ----
+difference() {
+    // Main body: top plate + four walls
+    union() {
+        // Top plate
+        translate([-outer_x/2, -outer_y/2, 0])
+            cube([outer_x, outer_y, top_t]);
+        // Walls (open top at z = box_h)
+        for (dx = [-1, 1], dy = [-1, 1])
+            translate([dx > 0 ? outer_x/2 - wall : -outer_x/2,
+                       dy > 0 ? outer_y/2 - wall : -outer_y/2,
+                       0])
+                cube([wall, outer_y - 2*wall, box_h]);
+    }
+
+    // Screw holes through top plate
+    for (x = [-screw_pitch/2, screw_pitch/2],
+           y = [-screw_pitch/2, screw_pitch/2])
+        translate([x, y, -eps])
+            cylinder(d = screw_d, h = top_t + 2*eps);
+
+    // Cable notch in one wall (from z = box_h - notch_h to box_h)
+    translate([-outer_x/2 - eps, -outer_y/2 - eps, box_h - notch_h])
+        cube([outer_x + 2*eps, outer_y + 2*eps, notch_h + eps]);
+}

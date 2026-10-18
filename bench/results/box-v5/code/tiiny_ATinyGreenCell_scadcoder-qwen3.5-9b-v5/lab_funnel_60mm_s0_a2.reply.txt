@@ -1,0 +1,41 @@
+```openscad
+// Funnel with spout - printed upright, wide opening at the top
+// Units: mm. Wall thickness: 1.6 mm throughout.
+
+// ---- Parameters ----
+spout_d        = 10;   // spout outer diameter
+spout_bore     = 6.8;  // spout bore (10 - 2*1.6)
+spout_h        = 20;   // spout height (z = 0 to 20)
+cone_top_d     = 60;   // cone rim outer diameter at z = 50
+cone_bottom_d  = 10;   // cone base outer diameter at z = 20 (matches spout)
+cone_h         = 30;   // cone height (z = 20 to 50)
+wall           = 1.6;  // wall thickness
+eps            = 0.5;  // cutter overshoot past faces
+$fn            = 96;   // curve resolution
+
+// ---- Derived ----
+cone_rim_r     = cone_top_d / 2;   // rim radius at z = 50
+cone_base_r    = cone_bottom_d / 2; // base radius at z = 20
+spout_r        = spout_d / 2;
+spout_bore_r   = spout_bore / 2;
+
+// ---- Model ----
+union() {
+    // Spout: tube from z = 0 to 20
+    difference() {
+        cylinder(d = spout_d, h = spout_h);
+        translate([0, 0, -eps])
+            cylinder(d = spout_bore, h = spout_h + 2 * eps);
+    }
+
+    // Cone: widens from 10 mm at z = 20 to 60 mm at z = 50
+    difference() {
+        // Cone shell: outer surface minus an inner cone, leaving a constant 1.6 mm wall
+        linear_extrude(height = cone_h)
+            circle(r1 = cone_base_r, r2 = cone_rim_r);
+        translate([0, 0, spout_h - eps])
+            linear_extrude(height = cone_h + 2 * eps)
+                circle(r1 = cone_base_r - wall, r2 = cone_rim_r - wall);
+    }
+}
+```

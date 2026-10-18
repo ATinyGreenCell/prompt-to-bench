@@ -1,0 +1,48 @@
+```openscad
+// 96-well PCR tube rack (0.2 mL, microplate footprint)
+// Print orientation: base on XY plane, builds upward in +Z
+
+// ---- Block dimensions ----
+block_len   = 127.76;   // length along X (mm)
+block_wid   = 85.48;    // width along Y (mm)
+block_ht    = 20;       // height along Z (mm)
+
+// ---- Hole grid ----
+hole_count  = 96;       // number of tube holes
+hole_d      = 6.2;      // hole diameter (mm)
+hole_pitch  = 9.0;      // centre-to-centre spacing (mm)
+rows        = 8;        // rows along Y
+cols        = 12;       // columns along X
+first_x     = 14.38;    // X of first hole (A1) from left edge (mm)
+first_y     = 11.24;    // Y of first hole (A1) from back edge (mm)
+
+// ---- Chamfer ----
+chamfer     = 45;       // chamfer angle (deg)
+chamfer_leg = 5;        // chamfer leg length (mm)
+
+// ---- Misc ----
+eps         = 0.5;      // cutter overshoot past faces (mm)
+$fn         = 64;       // circle resolution
+
+// Offset for grid so A1 is at the given coordinates
+grid_x0 = -first_x;
+grid_y0 = block_wid / 2 - first_y;
+
+difference() {
+    // Main block
+    translate([0, 0, 0])
+        cube([block_len, block_wid, block_ht]);
+
+    // Tube holes
+    for (i = [0 : cols - 1])
+        for (j = [0 : rows - 1])
+            translate([grid_x0 + i * hole_pitch,
+                       grid_y0 + j * hole_pitch,
+                       -eps])
+                cylinder(d = hole_d, h = block_ht + 2 * eps);
+
+    // Orientation chamfer at A1 corner (right-angle, 45 deg)
+    translate([0, block_wid - chamfer_leg, 0])
+        cube([chamfer_leg, chamfer_leg, block_ht]);
+}
+```

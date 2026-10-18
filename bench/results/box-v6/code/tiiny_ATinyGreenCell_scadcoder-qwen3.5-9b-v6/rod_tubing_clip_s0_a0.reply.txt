@@ -1,0 +1,46 @@
+```openscad
+// Snap-on clip for tubing next to a 12.7 mm (1/2 inch) lab stand rod
+// Print orientation: flat on the bed, extruded along +Z
+
+$fn = 96;
+
+// ---- Dimensions (mm) ----
+rod_id        = 12.7;   // stand rod inner diameter
+ring_w        = 3;      // rod ring wall thickness
+ring_od       = rod_id + 2 * ring_w;  // 18.7 mm outer diameter
+ring_opening  = 10;     // width of the cut-out on the -X side
+
+tubing_id     = 6;      // tubing ring inner diameter
+tubing_w      = 2;      // tubing ring wall thickness
+tubing_od     = tubing_id + 2 * tubing_w;  // 10 mm outer diameter
+tubing_x      = 15;     // tubing ring centre X
+tubing_open   = 4.5;    // width of the +X side cut-out
+
+bridge_w      = 6;      // bridge width along Y
+bridge_x0     = 8;      // bridge start X
+bridge_x1     = 12;     // bridge end X
+
+eps           = 0.5;    // overcut for clean boolean differences
+
+// ---- Model ----
+difference() {
+    union() {
+        // Rod ring
+        cylinder(h = 10, d = ring_od);
+        // Rod ring opening (removes everything with x < 0 and -5 < y < 5)
+        translate([0, -5, 0])
+            cube([ring_opening + eps, 10 + 2 * eps, 10]);
+
+        // Tubing ring
+        translate([tubing_x, 0, 0])
+            cylinder(h = 10, d = tubing_od);
+        // Tubing ring opening (removes x > 15 and -2.25 < y < 2.25)
+        translate([tubing_x, -tubing_open / 2, 0])
+            cube([tubing_open + eps, 10 + 2 * eps, 10]);
+
+        // Solid bridge between x = 8 and x = 12
+        translate([bridge_x0, -bridge_w / 2, 0])
+            cube([bridge_x1 - bridge_x0 + eps, bridge_w, 10]);
+    }
+}
+```

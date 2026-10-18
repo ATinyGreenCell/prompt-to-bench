@@ -1,0 +1,72 @@
+// L-shaped mounting bracket for NEMA 17 stepper motor
+// Print orientation: base plate on bed, vertical plate builds up in +Z
+
+// ---- Base plate ----
+base_x = -25;      // plate spans x = -25 to 25
+base_y = 45;       // plate spans y = 0 to 45
+base_z = 5;        // plate thickness
+
+// ---- Motor plate ----
+motor_x = -25;     // plate spans x = -25 to 25
+motor_y = 5;       // plate spans y = 0 to 5
+motor_z = 50;      // plate height (z = 0 to 50)
+
+// ---- Boss hole ----
+boss_d = 23;       // motor centring boss hole diameter
+boss_x = 0;        // hole centre x
+boss_z = 28;       // hole centre z
+
+// ---- Screw holes ----
+screw_d = 3.4;     // M3 screw hole diameter
+screw_p = 31;      // square pattern side length
+screw_h = 4.5;     // screw hole depth
+
+// ---- Gussets ----
+gusset_t = 5;      // gusset thickness (along X)
+gusset_y = 5;      // gusset leg length along Y
+gusset_z = 5;      // gusset leg length along Z
+gusset_x = -20;    // left gusset spans x = -25 to -20
+
+// ---- Misc ----
+eps = 0.5;         // cutter overshoot past faces
+$fn = 96;          // curve resolution
+
+difference() {
+    union() {
+        // Base plate with M4 through-holes
+        translate([base_x, 0, 0])
+            cube([base_x - base_x, base_y, base_z]);
+        for (sx = [-17, 17])
+            translate([sx, 30, 0])
+                cylinder(d = 4.5, h = base_z + eps);
+
+        // Vertical motor plate
+        translate([motor_x, 0, 0])
+            cube([motor_x - motor_x, motor_y, motor_z]);
+    }
+
+    // Boss hole cut along Y
+    translate([boss_x, 0, boss_z])
+        rotate([90, 0, 0])
+            cylinder(d = boss_d, h = motor_y + 2 * eps);
+
+    // M3 screw holes on square pattern centred on boss hole
+    for (i = [0 : 3]) {
+        r = screw_p / 2;
+        a = i * 90;
+        translate([boss_x + r * cos(a), 0, boss_z + screw_h])
+            rotate([90, 0, 0])
+                cylinder(d = screw_d, h = motor_y + eps);
+    }
+
+    // Gussets flush with left and right edges
+    for (sx = [-25, 25])
+        translate([sx, 0, 0])
+            rotate([90, 0, 0])
+                linear_extrude(height = gusset_t)
+                    polygon(points = [
+                        [gusset_y, gusset_z],
+                        [gusset_y + eps, gusset_z],
+                        [gusset_y + eps, gusset_z + gusset_z]
+                    ]);
+}

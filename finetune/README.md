@@ -102,16 +102,18 @@ run with iterations.
 All public on Hugging Face under `ATinyGreenCell/`, box-importable (`scripts/box_import_fix.py`). Results: paper §6.4,
 Table 8 (GPU tier, 8 samples per task; in-family / held-out split of the 16 tasks).
 
-| Repo | Training data | Pass@8, in-family / held out |
-|---|---|---|
-| `scadcoder-qwen3.5-9b` (v1) | `data/train.jsonl` (7,238), 1 epoch, rank 16 | 1/8 · 0/8 |
-| `scadcoder-qwen3.5-9b-3ep` (v2) | same, 3 epochs, rank 32 | 1/8 · 0/8 |
-| `scadcoder-qwen3.5-9b-v3` | v2 + 269 RFT + 336 distilled that paraphrase 8 tasks (**in-family**) | 5/8 · 1/8 |
-| `scadcoder-qwen3.5-9b-v4` | v2 + 269 RFT + 680 held-out distilled (`build_v4.py`) | 2/8 · 0/8 |
-| `scadcoder-qwen3.5-9b-v5` | v4 + 1,500 multi-turn report repairs (`build_v5.py`, MASK_EARLIER=1) | 3/8 · **2/8** |
-| `scadcoder-qwen3.5-9b-v6` | v4 + 700 more held-out distilled, 14 more families (`build_v6.py --base v4`) | **5/8** · 0/8 |
-| `scadcoder-qwen3.5-9b-v7-1ep` | v4's data, 1 epoch | 3/8 · 0/8 |
-| `scadcoder-qwen3.5-9b-v8` | v6 + the 1,500 report repairs (`v8_train`, MASK_EARLIER=1) | 3/8 · 1/8 |
+| Repo | Training data | Pass@8, in-family / held out | On the box, 1 sample |
+|---|---|---|---|
+| `scadcoder-qwen3.5-9b` (v1) | `data/train.jsonl` (7,238), 1 epoch, rank 16 | 1/8 · 0/8 | 0/16 |
+| `scadcoder-qwen3.5-9b-3ep` (v2) | same, 3 epochs, rank 32 | 1/8 · 0/8 | 0/16 |
+| `scadcoder-qwen3.5-9b-v3` | v2 + 269 RFT + 336 distilled that paraphrase 8 tasks (**in-family**) | 5/8 · 1/8 | - |
+| `scadcoder-qwen3.5-9b-v4` | v2 + 269 RFT + 680 held-out distilled (`build_v4.py`) | 2/8 · 0/8 | - |
+| `scadcoder-qwen3.5-9b-v5` | v4 + 1,500 multi-turn report repairs (`build_v5.py`, MASK_EARLIER=1) | 3/8 · **2/8** | **3/16** |
+| `scadcoder-qwen3.5-9b-v6` | v4 + 700 more held-out distilled, 14 more families (`build_v6.py --base v4`) | **5/8** · 0/8 | 1/16 |
+| `scadcoder-qwen3.5-9b-v7-1ep` | v4's data, 1 epoch | 3/8 · 0/8 | - |
+| `scadcoder-qwen3.5-9b-v8` | v6 + the 1,500 report repairs (`v8_train`, MASK_EARLIER=1) | 3/8 · 1/8 | - |
 
 The stock base passes 2/8 · 1/8 with thinking off. Every fine-tune renders 88-99% of first attempts but rarely changes
-its file after feedback (6-15% of repair turns, vs 84% for the base).
+its file after feedback (6-15% of repair turns, vs 84% for the base). On the box itself (one sample per task, the box's
+own quantised build, imported by URL with `scripts/box_import.py`) v5 passed the slide rack, the gel comb and the
+PCR-tube adapter, all on the first attempt; v1 and v2 had passed none.
