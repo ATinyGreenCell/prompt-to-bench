@@ -20292,3 +20292,222 @@ Dashboard refreshed at 01:31 (version 163); next refresh at 02:01. The sweep's Q
 
 Dashboard refreshed at 02:02 (version 164); next refresh at 02:32. The sweep's Qwen3.5 35B-A3B thinking-on run is at 8 of 16 tasks.
 
+<details><summary>1 tool call(s)</summary>
+
+- `Bash` Rebuild the dashboard data and check the 9B row — `D=[scratch] cd $D && ~/printpaper/.venv/bin/python -I ~/tiny/bench/20261014-sweep/scripts/dashboard_data.py $D/bench.json 2>&1 | grep -vE '^ …`
+
+</details>
+
+The laptop 9B row finished at 01:48: all 16 tasks are done. First the dashboard refresh, then I'll check the 9B results.
+
+<details><summary>15 tool call(s)</summary>
+
+- `Artifact` action=publish, url=https://claude.ai/artifact/Sfzc8zQSNTc6dchuQ6ZAyc, file_path=[scratch]
+- `ArtifactData` action=update, url=https://claude.ai/artifact/Sfzc8zQSNTc6dchuQ6ZAyc, collection=datasets
+- `Artifact` action=delete, url=https://claude.ai/artifact/Sfzc8zQSNTc6dchuQ6ZAyc, path=[id]
+- `Bash` Timer for the next dashboard refresh — `sleep 1800; echo "dashboard refresh due $(date +%T)"`
+- `Bash` Check the finished 9B row's records and changed files — `systemctl --user is-active laptop-9b; tail -6 [scratch] | cut -c1-150; python3 -I -c " …`
+- `Bash` Read analyze.py's docstring and find incomplete-run notes — `sed -n 1,40p bench/analyze.py | cut -c1-170; grep -nE "still being completed|being completed|still running|in progress|incomplete" README.md …`
+- `Bash` Find incomplete-9B notes and the auto-filled README blocks — `grep -noE "[^.(]*(still being completed|being completed|complete local|incomplete|partial run|9B run)[^.)]*[.)]" README.md | cut -c1-260 | h …`
+- `Bash` Find how analyze.py selects runs — `grep -nE "tiiny|main-tiiny|think-tiiny|box-|gpu-|glob\.glob|RUN_|runs\b|def load|exclude|startswith\(" bench/analyze.py | cut -c1-180 | head …`
+- `Bash` Read analyze.py's arguments and box-run handling — `sed -n 736,747p bench/analyze.py; sed -n 795,860p bench/analyze.py | cut -c1-170`
+- `Bash` Check missing-run handling and how blocks are replaced — `sed -n 748,760p bench/analyze.py; grep -nE "def replace_block" -A8 bench/analyze.py | head -12; git log --format='%h %s' -3 -- figures/ READ …`
+- `Bash` Check the models table for box rows and the current 9B row — `sed -n '/<!-- AUTO:table-models -->/,/<!-- \/AUTO:table-models -->/p' README.md | grep -ciE "NPU box|tiiny"; sed -n '/<!-- AUTO:table-main - …`
+- `Bash` Regenerate the paper's tables and figures without the box runs — `.venv/bin/python -I bench/analyze.py --box-runs _none --think-runs _none 2>&1 | grep -vE "^\|" | tail -8; git status --short | grep -vE "^\? …`
+- `Bash` Review the regenerated README and summary changes — `git diff README.md bench/results/summary.csv | cut -c1-260`
+- `Bash` Find the scadcoder run and the earlier analyze.py command — `grep -l '"scadcoder"' bench/results/*/results.jsonl 2>/dev/null | head; grep -oE "bench/analyze.py[^\`]{0,120}" meta/BUILD_LOG.md | sort | u …`
+- `Bash` Find analyze.py runs that included the fine-tune — `grep -oE "analyze\.py --runs[^\`|]{0,100}" meta/BUILD_LOG.md | sort | uniq -c | head -5; git log --all --format='%h %s' -S'scadcoder (fine-t …`
+
+</details>
+
+The previous command was `--runs main main-claude ft-scad --box-runs _none --think-runs _none --lang-runs _none`. Rerunning with exactly that, so the only change should be the completed 9B row:
+
+<details><summary>7 tool call(s)</summary>
+
+- `Bash` Regenerate with the paper's run set and review the diff — `.venv/bin/python -I bench/analyze.py --runs main main-claude ft-scad --box-runs _none --think-runs _none --lang-runs _none 2>&1 | grep -vE " …`
+- `Bash` Read the passages that mention the partial 9B run — `grep -nE "still being completed|partial Qwen3.5 9B|complete local" README.md | cut -c1-80; awk 'NR==256 || NR==298 {print NR": "$0}' README. …`
+- `Bash` Read the best-attempt sentence and check the best local attempts — `awk 'NR==299 {print}' README.md; .venv/bin/python -I - <<'PY' …`
+- `Bash` Inspect the 9B tube rack attempt's check results — `.venv/bin/python -I - <<'PY' …`
+- `Bash` Show the tube rack attempt's check details — `.venv/bin/python -I - <<'PY' …`
+- `Bash` Read Table 3's header, slowest models and partial mentions — `sed -n '/<!-- AUTO:table-main -->/,/<!-- \/AUTO:table-main -->/p' README.md | head -4 | cut -c1-260; sed -n '/<!-- AUTO:table-main -->/,/<!- …`
+- `Bash` Rank the best attempt of each off-the-shelf local model — `.venv/bin/python -I - <<'PY' …`
+
+</details>
+
+Confirmed: Gemma 4 E4B's micropestle (0.76) is the best off-the-shelf attempt, and the 9B's tube rack (0.75) is next. Updating the four passages:
+
+<details><summary>4 tool call(s)</summary>
+
+- `Edit` ~/printpaper/README.md
+- `Edit` ~/printpaper/README.md
+- `Edit` ~/printpaper/README.md
+- `Edit` ~/printpaper/README.md
+
+</details>
+
+That on-disk change is the generator's own rewrite, as expected. Next, the Table 3 caption still mentions intervals "for partial rows", and none remain:
+
+<details><summary>5 tool call(s)</summary>
+
+- `Bash` Find the remaining partial-row wording — `grep -noE "Intervals are Wilson 95% intervals over the 16 tasks of a single run[^.]*\." README.md | cut -c1-300; grep -nE "partial|still bei …`
+- `Edit` ~/printpaper/README.md
+- `Bash` Confirm no stale notes remain and the generated tables are stable — `grep -cE "partial rows|still being completed|partial Qwen" README.md; .venv/bin/python -I bench/analyze.py --runs main main-claude ft-scad - …`
+- `Bash` Stage the completed 9B row and scan for secrets — `git add bench/results/main bench/results/summary.csv figures/fig_outcomes_dark.png figures/fig_outcomes_light.png figures/fig_tiers_dark.png …`
+- `Bash` Commit the completed 9B row and push — `git commit -q -F - <<'MSG' && git log --format='%h %s' -1 | cut -c1-160 && git push -q origin main 2>&1 | tail -2 && git status -sb | head - …`
+
+</details>
+
+Pushed as 5244457. Recording in memory the exact generator command, since the default one silently drops the fine-tune's row and pulls in the sweep:
+
+<details><summary>1 tool call(s)</summary>
+
+- `Bash` Save the analyze.py command and 9B completion to memory — `cd ~/.claude/projects/-home-seb-printpaper/memory && python3 - <<'PY' …`
+
+</details>
+
+The laptop Qwen3.5 9B row is finished and in the paper (commit 5244457, pushed). That completes the last laptop model of the main benchmark.
+
+**Result:** it passed none of the 16 tasks, like every other off-the-shelf laptop model. It rendered 1 part on the first try, and 32 of its 48 replies were cut off at the 2,048-token reply cap. At a median of 34 minutes a task and 3.8 tokens/s, it was the slowest local model. Its best attempt, the 1.5 mL tube rack, met 9 of 12 checks: the holes sat too low, cutting through the floor and stopping short of the top.
+
+**What changed in the paper:**
+- Tables 3–6 and two figures were regenerated with the 9B row complete.
+- The "still being completed" and "partial row" notes are gone from the abstract, §6.1, §6.2 and the Table 3 caption.
+
+**Watch-out:** the table generator's default run set would have dropped the fine-tuned scadcoder row from Tables 3–6. It would also have pulled unpublished box-sweep models into the paper. I reran it with the run set used previously, checked that only the 9B rows changed, and saved the correct command to memory.
+
+The laptop is now free. The sweep is on Qwen3.5 35B-A3B with thinking on (12 of 16), and the dashboard refreshes every 30 minutes, next at 03:04.
+
+<details><summary>5 tool call(s)</summary>
+
+- `Bash` Rebuild and scan the dashboard data — `D=[scratch] cd $D && ~/printpaper/.venv/bin/python -I ~/tiny/bench/20261014-sweep/scripts/dashboard_data.py $D/bench.json 2>&1 | grep -vE '^ …`
+- `Artifact` action=publish, url=https://claude.ai/artifact/Sfzc8zQSNTc6dchuQ6ZAyc, file_path=[scratch]
+- `ArtifactData` action=update, url=https://claude.ai/artifact/Sfzc8zQSNTc6dchuQ6ZAyc, collection=datasets
+- `Artifact` action=delete, url=https://claude.ai/artifact/Sfzc8zQSNTc6dchuQ6ZAyc, path=[id]
+- `Bash` Timer for the next dashboard refresh — `sleep 1800; echo "dashboard refresh due $(date +%T)"`
+
+</details>
+
+The dashboard refreshed at 03:05 (version 166), and the next refresh is at 03:35. The sweep's Qwen3.5 35B-A3B run with thinking on is at 15 of 16 tasks.
+
+<details><summary>5 tool call(s)</summary>
+
+- `Bash` Rebuild and scan the dashboard data — `D=[scratch] cd $D && ~/printpaper/.venv/bin/python -I ~/tiny/bench/20261014-sweep/scripts/dashboard_data.py $D/bench.json 2>&1 | grep -vE '^ …`
+- `Artifact` action=publish, url=https://claude.ai/artifact/Sfzc8zQSNTc6dchuQ6ZAyc, file_path=[scratch]
+- `ArtifactData` action=update, url=https://claude.ai/artifact/Sfzc8zQSNTc6dchuQ6ZAyc, collection=datasets
+- `Artifact` action=delete, url=https://claude.ai/artifact/Sfzc8zQSNTc6dchuQ6ZAyc, path=[id]
+- `Bash` Timer for the next dashboard refresh — `sleep 1800; echo "dashboard refresh due $(date +%T)"`
+
+</details>
+
+Dashboard refreshed at 03:35 (version 167). The next refresh is at 04:05.
+
+The sweep finished Qwen3.5 35B-A3B's thinking-on run and is now on gpt-oss-120b with thinking on, at 6 of 16 tasks.
+
+<details><summary>5 tool call(s)</summary>
+
+- `Bash` Rebuild and scan the dashboard data — `D=[scratch] cd $D && ~/printpaper/.venv/bin/python -I ~/tiny/bench/20261014-sweep/scripts/dashboard_data.py $D/bench.json 2>&1 | grep -vE '^ …`
+- `Artifact` action=publish, url=https://claude.ai/artifact/Sfzc8zQSNTc6dchuQ6ZAyc, file_path=[scratch]
+- `ArtifactData` action=update, url=https://claude.ai/artifact/Sfzc8zQSNTc6dchuQ6ZAyc, collection=datasets
+- `Artifact` action=delete, url=https://claude.ai/artifact/Sfzc8zQSNTc6dchuQ6ZAyc, path=[id]
+- `Bash` Timer for the next dashboard refresh — `sleep 1800; echo "dashboard refresh due $(date +%T)"`
+
+</details>
+
+Dashboard refreshed at 04:07 (version 168); next refresh at 04:37. The sweep is running gpt-oss-120b with thinking on, at 10 of 16 tasks.
+
+<details><summary>5 tool call(s)</summary>
+
+- `Bash` Rebuild and scan the dashboard data — `D=[scratch] cd $D && ~/printpaper/.venv/bin/python -I ~/tiny/bench/20261014-sweep/scripts/dashboard_data.py $D/bench.json 2>&1 | grep -vE '^ …`
+- `Artifact` action=publish, url=https://claude.ai/artifact/Sfzc8zQSNTc6dchuQ6ZAyc, file_path=[scratch]
+- `ArtifactData` action=update, url=https://claude.ai/artifact/Sfzc8zQSNTc6dchuQ6ZAyc, collection=datasets
+- `Artifact` action=delete, url=https://claude.ai/artifact/Sfzc8zQSNTc6dchuQ6ZAyc, path=[id]
+- `Bash` Timer for the next dashboard refresh — `sleep 1800; echo "dashboard refresh due $(date +%T)"`
+
+</details>
+
+Dashboard refreshed at 04:38 (version 169); next refresh at 05:08. The sweep is running gpt-oss-120b with thinking on, at 13 of 16 tasks.
+
+<details><summary>5 tool call(s)</summary>
+
+- `Bash` Rebuild and scan the dashboard data — `D=[scratch] cd $D && ~/printpaper/.venv/bin/python -I ~/tiny/bench/20261014-sweep/scripts/dashboard_data.py $D/bench.json 2>&1 | grep -vE '^ …`
+- `Artifact` action=publish, url=https://claude.ai/artifact/Sfzc8zQSNTc6dchuQ6ZAyc, file_path=[scratch]
+- `ArtifactData` action=update, url=https://claude.ai/artifact/Sfzc8zQSNTc6dchuQ6ZAyc, collection=datasets
+- `Artifact` action=delete, url=https://claude.ai/artifact/Sfzc8zQSNTc6dchuQ6ZAyc, path=[id]
+- `Bash` Timer for the next dashboard refresh — `sleep 1800; echo "dashboard refresh due $(date +%T)"`
+
+</details>
+
+Dashboard refreshed at 05:09 (version 170); next refresh at 05:39. gpt-oss-120b's thinking-on run has finished, and the sweep has started its next job: Qwen3 30B-A3B Thinking-2507, 0 of 16 tasks so far.
+
+<details><summary>5 tool call(s)</summary>
+
+- `Bash` Rebuild and scan the dashboard data — `D=[scratch] cd $D && ~/printpaper/.venv/bin/python -I ~/tiny/bench/20261014-sweep/scripts/dashboard_data.py $D/bench.json 2>&1 | grep -vE '^ …`
+- `Artifact` action=publish, url=https://claude.ai/artifact/Sfzc8zQSNTc6dchuQ6ZAyc, file_path=[scratch]
+- `ArtifactData` action=update, url=https://claude.ai/artifact/Sfzc8zQSNTc6dchuQ6ZAyc, collection=datasets
+- `Artifact` action=delete, url=https://claude.ai/artifact/Sfzc8zQSNTc6dchuQ6ZAyc, path=[id]
+- `Bash` Timer for the next dashboard refresh — `sleep 1800; echo "dashboard refresh due $(date +%T)"`
+
+</details>
+
+Dashboard refreshed at 05:41 (version 171); next refresh at 06:11. The sweep is running Qwen3 30B-A3B Thinking-2507 with thinking on, 2 of 16 tasks done.
+
+<details><summary>5 tool call(s)</summary>
+
+- `Bash` Rebuild and scan the dashboard data — `D=[scratch] cd $D && ~/printpaper/.venv/bin/python -I ~/tiny/bench/20261014-sweep/scripts/dashboard_data.py $D/bench.json 2>&1 | grep -vE '^ …`
+- `Artifact` action=publish, url=https://claude.ai/artifact/Sfzc8zQSNTc6dchuQ6ZAyc, file_path=[scratch]
+- `ArtifactData` action=update, url=https://claude.ai/artifact/Sfzc8zQSNTc6dchuQ6ZAyc, collection=datasets
+- `Artifact` action=delete, url=https://claude.ai/artifact/Sfzc8zQSNTc6dchuQ6ZAyc, path=[id]
+- `Bash` Timer for the next dashboard refresh — `sleep 1800; echo "dashboard refresh due $(date +%T)"`
+
+</details>
+
+The dashboard refreshed at 06:11 (version 172); the next refresh is at 06:41. The sweep is running Qwen3 30B-A3B Thinking-2507 with thinking on, 4 of 16 tasks done.
+
+<details><summary>5 tool call(s)</summary>
+
+- `Bash` Rebuild and scan the dashboard data — `D=[scratch] cd $D && ~/printpaper/.venv/bin/python -I ~/tiny/bench/20261014-sweep/scripts/dashboard_data.py $D/bench.json 2>&1 | grep -vE '^ …`
+- `Artifact` action=publish, url=https://claude.ai/artifact/Sfzc8zQSNTc6dchuQ6ZAyc, file_path=[scratch]
+- `ArtifactData` action=update, url=https://claude.ai/artifact/Sfzc8zQSNTc6dchuQ6ZAyc, collection=datasets
+- `Artifact` action=delete, url=https://claude.ai/artifact/Sfzc8zQSNTc6dchuQ6ZAyc, path=[id]
+- `Bash` Timer for the next dashboard refresh — `sleep 1800; echo "dashboard refresh due $(date +%T)"`
+
+</details>
+
+The dashboard refreshed at 06:42 (version 173), and the next refresh is at 07:12. The sweep is running Qwen3 30B-A3B Thinking-2507 with thinking on, 6 of 16 tasks done.
+
+<details><summary>5 tool call(s)</summary>
+
+- `Bash` Rebuild and scan the dashboard data — `D=[scratch] cd $D && ~/printpaper/.venv/bin/python -I ~/tiny/bench/20261014-sweep/scripts/dashboard_data.py $D/bench.json 2>&1 | grep -vE '^ …`
+- `Artifact` action=publish, url=https://claude.ai/artifact/Sfzc8zQSNTc6dchuQ6ZAyc, file_path=[scratch]
+- `ArtifactData` action=update, url=https://claude.ai/artifact/Sfzc8zQSNTc6dchuQ6ZAyc, collection=datasets
+- `Artifact` action=delete, url=https://claude.ai/artifact/Sfzc8zQSNTc6dchuQ6ZAyc, path=[id]
+- `Bash` Timer for the next dashboard refresh — `sleep 1800; echo "dashboard refresh due $(date +%T)"`
+
+</details>
+
+Dashboard refreshed at 07:13 (version 174); next refresh at 07:43. The sweep is running Qwen3 30B-A3B Thinking-2507 with thinking on, now 8 of 16 tasks done.
+
+<details><summary>5 tool call(s)</summary>
+
+- `Bash` Rebuild and scan the dashboard data — `D=[scratch] cd $D && ~/printpaper/.venv/bin/python -I ~/tiny/bench/20261014-sweep/scripts/dashboard_data.py $D/bench.json 2>&1 | grep -vE '^ …`
+- `Artifact` action=publish, url=https://claude.ai/artifact/Sfzc8zQSNTc6dchuQ6ZAyc, file_path=[scratch]
+- `ArtifactData` action=update, url=https://claude.ai/artifact/Sfzc8zQSNTc6dchuQ6ZAyc, collection=datasets
+- `Artifact` action=delete, url=https://claude.ai/artifact/Sfzc8zQSNTc6dchuQ6ZAyc, path=[id]
+- `Bash` Timer for the next dashboard refresh — `sleep 1800; echo "dashboard refresh due $(date +%T)"`
+
+</details>
+
+The dashboard refreshed at 07:43 (version 175), and the next refresh is at 08:13. The sweep is running Qwen3 30B-A3B Thinking-2507 with thinking on, at 10 of 16 tasks.
+
+<details><summary>5 tool call(s)</summary>
+
+- `Bash` Rebuild and scan the dashboard data — `D=[scratch] cd $D && ~/printpaper/.venv/bin/python -I ~/tiny/bench/20261014-sweep/scripts/dashboard_data.py $D/bench.json 2>&1 | grep -vE '^ …`
+- `Artifact` action=publish, url=https://claude.ai/artifact/Sfzc8zQSNTc6dchuQ6ZAyc, file_path=[scratch]
+- `ArtifactData` action=update, url=https://claude.ai/artifact/Sfzc8zQSNTc6dchuQ6ZAyc, collection=datasets
+- `Artifact` action=delete, url=https://claude.ai/artifact/Sfzc8zQSNTc6dchuQ6ZAyc, path=[id]
+- `Bash` Timer for the next dashboard refresh — `sleep 1800; echo "dashboard refresh due $(date +%T)"`
+
+</details>
+
+Dashboard refreshed at 08:14 (version 176); the next refresh is at 08:44. The sweep's Qwen3 30B-A3B Thinking-2507 thinking-on run is at 12 of 16 tasks.
+
