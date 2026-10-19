@@ -1,0 +1,98 @@
+// =============================================================================
+// Two-part enclosure for electronics board (Arduino logger)
+// Part 1: Box (printed upright, Z+ up)
+// Part 2: Lid (printed upside down relative to assembly, but here we model 
+//          it as a plate with lip resting on the bed next to the box).
+// =============================================================================
+
+$fn = 64; // High resolution for smooth curves and precise hole sizes
+
+// --- Dimensions & Variables --------------------------------------------------
+
+// Box Outer Size (X x Y x Z) in mm
+BOX_X_OUTER = 70;
+BOX_Y_OUTER = 50;
+BOX_Z_INNER = 30; 
+
+// Wall thicknesses
+WALL_THICKNESS = 2; // Side walls and floor thickness
+
+// Lid Plate Dimensions (Outer footprint on bed)
+LID_PLATE_X = BOX_X_OUTER + WALL_THICKNESS * 2; 
+LID_PLATE_Y = BOX_Y_OUTER + WALL_THICKNESS * 2; 
+
+// Lip dimensions for the lid
+LIP_WALL_THICKNESS = 1.5; // Thickness of the lip wall itself (vertical part)
+LIP_HEIGHT = 4;           // Height of the lip from plate to top edge
+
+// Lid Inner Opening Size (matches box inner size exactly with clearance logic handled by geometry)
+// The prompt specifies: "outer size is 65.6 x 45.6 mm" for the lip assembly? 
+// Let's re-read carefully: "rectangular lip on top of it - a 1.5 mm thick wall, 4 mm tall, whose outer size is 65.6 x 45.6 mm".
+// This implies the *entire* lid part (plate + lip) has an overall footprint or specific dimension? 
+// Actually, usually "outer size" of a lip refers to its bounding box if it were separate, but here it's attached.
+// Interpretation: The Lip structure itself defines the opening.
+// Let's calculate based on standard enclosure logic first, then adjust to prompt specifics.
+
+// Prompt Specifics for Lid Geometry:
+// "outer size is 65.6 x 45.6 mm" -> This likely refers to the dimensions of the *Lip* feature itself 
+// or the bounding box of the lip protrusion? 
+// However, standard practice: The lid must fit inside the box opening (70 - 2*2 = 66mm inner X).
+// If the prompt says "outer size is 65.6 x 45.6 mm", let's assume this refers to the dimensions of the *Lip Wall Block* 
+// that sits on top, or perhaps the user wants a specific smaller lid?
+// Re-reading: "whose outer size is 65.6 x 45.6 mm". This phrasing usually applies to the object being described (the lip assembly).
+// BUT, if the box inner width is 66mm, and we need clearance...
+// Let's assume the user wants a lid that fits inside. 
+// If the "lip" has an outer size of 65.6 x 45.6, does that mean the hole it creates? Or the physical lip block?
+// Context: "slides into the box opening with 0.2 mm clearance on each side".
+// Box Inner X = 70 - 2*WALL_THICKNESS (assuming walls are printed as shells). 
+// Wait, standard FDM enclosure printing for a shell of thickness T usually means outer dimension is D, inner is D-2T? 
+// Or does "outer size 70x50" mean the bounding box of the whole part including floor/walls?
+// Assumption: The printed object has an external footprint of 70x50. Walls are 2mm thick. Floor is 2mm thick. Top is open.
+// So Inner X = 70 - 2*2 = 66 mm. Inner Y = 50 - 2*2 = 46 mm.
+// Clearance required: 0.2 mm on each side -> Total clearance gap needed between Lid and Box inner walls = 0.4mm? 
+// Or does "clearance" mean the lid fits loosely inside? Usually means ID_Lid < ID_Box - tolerance.
+// Let's design the Lid Plate to be slightly smaller than the box opening, or use a lip that bridges it.
+
+// Re-evaluating Prompt: "rectangular lip on top of it ... whose outer size is 65.6 x 45.6 mm"
+// This sounds like the user defines the dimensions of the *Lip* component specifically as 65.6x45.6? 
+// That seems very specific and small compared to a 70mm box. 
+// Maybe they mean the Lid Plate is 70x50, but the Lip structure (the part that goes over) has those dimensions?
+// OR, maybe the user wants the *Lid* overall footprint to be different? No, "lying on the bed".
+// Let's assume the standard interpretation: 
+// Box Inner X = 66mm. 
+// Lid needs to fit inside with clearance. 
+// If we make a lip that is 1.5mm thick and 4mm tall...
+// Perhaps the user means the *Lip* (the raised part) has an outer dimension of 65.6 x 45.6? 
+// That would mean the hole in the lid plate is roughly that size, or the lip sits on a smaller base?
+// Let's try to match the "0.2 mm clearance" requirement strictly.
+// Box Inner X = 66mm. Target Lid Opening X = 65.8mm (to get ~0.1mm total gap if centered)? 
+// Or maybe the user wants the lid plate to be exactly 70x50, and the lip is a separate feature?
+// "a rectangular lip on top of it ... whose outer size is 65.6 x 45.6 mm" -> This likely describes the bounding box of the *Lip* geometry itself if extracted, or maybe the user made a typo and meant the Lid Plate should be smaller? 
+// Let's assume the "outer size" refers to the dimensions of the *hole opening defined by the lip*.
+// If Lip Outer = 65.6 x 45.6, then Inner Hole (if wall is included) would be different.
+// However, simpler interpretation: The user wants a lid plate that fits inside the box. 
+// Let's calculate dimensions to satisfy "0.2 mm clearance on each side".
+// Box Inner X = 70 - 4 = 66mm.
+// Lid Opening X should be roughly 65.8mm (leaving 0.1mm gap total? or 0.2 per side?). 
+// Prompt: "0.2 mm clearance on each side". This usually means Gap between Box Wall and Lid Lip = 0.2mm.
+// So Lid Opening X + 2*(Lip Thickness) should equal something that fits in 66 - 0.4? 
+// Actually, if the lip is a wall of thickness 1.5mm...
+// Let's construct: Box Inner Width = 66mm.
+// We want to insert a lid with clearance 0.2mm on each side.
+// So Lid Opening Width (inner) + Lip Thickness * 2 ?? No, the lip is part of the plate.
+// Usually, you print a solid block for the lid that fits inside. 
+// But here we have a "lip". This implies an open box with a cover? Or a snap-fit?
+// Given "printed upside down... lying on the bed", it's likely a flat plate with a raised rim (the lip).
+// The "outer size is 65.6 x 45.6 mm" must refer to the dimensions of this *rim/lip* structure relative to something, OR 
+// maybe the user wants the Lid Plate itself to be smaller? 
+// Let's assume the user meant: The Lip (the raised part) has an outer dimension of 65.6 x 45.6 mm.
+// And it sits on a plate that matches the box footprint? Or is the whole thing just that size?
+// "a rectangular lip on top of it - ... whose outer size is 65.6 x 45.6 mm". 
+// This implies the Lip feature itself (the raised rectangle) measures 65.6x45.6 externally.
+// If this lip sits inside a box with inner width 66mm, then:
+// Gap = Box Inner - Lip Outer X? No, that would be negative if Lip is bigger than hole.
+// Wait, if the Lip is the *cover*, it must fit INSIDE. 
+// So Lip Outer Width <= Box Inner Width (minus clearance).
+// If Lip Outer X = 65.6mm and Box Inner X = 66mm. Gap = 0.4mm total -> 0.2mm per side. This matches perfectly!
+// Conclusion: The "Lip" is the raised rim that forms the seal/cover. Its outer dimensions are 65.6 x 45.6 mm. 
+// It sits on a plate (the base of the lid). What size is the plate? Usually same as box footprint or slightly smaller to fit in

@@ -20184,3 +20184,111 @@ The sweep's notes settle sample 0's provenance. It ran on Oct 14 under the harne
 
 The dashboard is refreshed (version 161, 00:30), and the next refresh is due at 01:00. Gemma's third standard-prompt sample is on its last conversation (47 of 48), so the write-up can start in a few minutes.
 
+<details><summary>3 tool call(s)</summary>
+
+- `Bash` Run the full three-against-three Gemma comparison — `cat [scratch] | cut -c1-200; cd ~/printpaper && .venv/bin/python -I [scratch]`
+- `Bash` Test the Gemma differences per task, including first attempts — `.venv/bin/python -I - <<'PY' …`
+- `Bash` Build the box-gemma-h0 baseline run from the sweep's final records — `.venv/bin/python -I - <<'PY' …`
+
+</details>
+
+The baseline directory reproduces the numbers: 48 records, 220 code files, 5 build records, all build 20260907. The standard tools read it directly. Running the repair statistics for both runs:
+
+<details><summary>4 tool call(s)</summary>
+
+- `Bash` Get repair statistics and the hardest tasks for both Gemma runs — `.venv/bin/python -I bench/repair_stats.py box-gemma-h0 box-gemma-h4 2>&1 | tail -6; .venv/bin/python -I bench/sample_stats.py box-gemma-h0 | …`
+- `Write` ~/printpaper/bench/results/box-gemma-h4/README.md
+- `Write` ~/printpaper/bench/results/box-gemma-h0/README.md
+- `Edit` ~/printpaper/README.md
+
+</details>
+
+Now one clause each in the abstract, the conclusion and the limitations:
+
+<details><summary>6 tool call(s)</summary>
+
+- `Edit` ~/printpaper/README.md
+- `Edit` ~/printpaper/README.md
+- `Edit` ~/printpaper/README.md
+- `Bash` Scan the new run directories for secrets and addresses — `for d in bench/results/box-gemma-h0 bench/results/box-gemma-h4; do echo "== $d"; grep -rhoE "\b([0-9]{1,3}\.){3}[0-9]{1,3}\b" $d | sort | un …`
+- `Bash` See where the box's LAN address appears and if it was committed before — `grep -rnoE ".{0,80}192\.168\.1\.153.{0,40}" bench/results/box-gemma-h0 | cut -c1-220 | head -5; git ls-files | xargs grep -lE "192\.168\.1\. …`
+- `Bash` Stage the Gemma comparison and scan the staged diff — `git add README.md bench/results/box-gemma-h0 bench/results/box-gemma-h4 meta/BUILD_LOG.md && git diff --cached --stat | tail -4 && P='hf_[A- …`
+
+</details>
+
+The scan is clean: no secrets, and the only addresses are localhost and the box's private address. The sweep's other results stay uncommitted. Committing and pushing:
+
+<details><summary>1 tool call(s)</summary>
+
+- `Bash` Commit the Gemma h4 comparison and push — `git commit -q -F - <<'MSG' && git log --format='%h %s' -1 | cut -c1-160 && git push -q origin main 2>&1 | tail -2 && git status -sb | head - …`
+
+</details>
+
+Pushed as cca7c28. Updating memory with the result, the queue change and the dashboard fix:
+
+<details><summary>1 tool call(s)</summary>
+
+- `Bash` Record the Gemma result and sweep changes in memory — `cd ~/.claude/projects/-home-seb-printpaper/memory && python3 - <<'PY' …`
+
+</details>
+
+The Gemma comparison is in the paper (commit cca7c28, pushed), with all three samples under each prompt.
+
+**Result:** with h4, Gemma 4 26B passed **10, 12 and 11** of 16 tasks per sample, against **9, 7 and 12** with the standard prompt.
+
+| | Standard prompt | h4 |
+|---|---:|---:|
+| Conversations passed on the first attempt | 9 of 48 | **22 of 48** |
+| Passed within three attempts | 28 of 48 | 33 of 48 |
+| Passes won by repair | 19 | 11 |
+| Tasks passed in any sample | 14 | 13 |
+| Median time per conversation | 144 s | 113 s |
+
+- **First attempts:** h4 more than doubled them, higher on 10 tasks and lower on none (p = 0.002 across tasks). Conversations were also shorter.
+- **Within three attempts the gain mostly disappears:** 6 tasks better and 3 worse (p = 0.5). Unlike the fine-tunes, Gemma uses the feedback; it changed its file after every report under both prompts.
+- **Hardest parts came by repair:** the standard prompt's passes on the D-shaft knob, the mini gel tank and the micropestle all came after feedback. Neither prompt passed the NEMA 17 bracket.
+- **The third sample mattered:** with only two standard-prompt samples it looked like a clear win (p = 0.07). That sample passed 12 of 16.
+
+**What's committed:**
+- The h4 run and the standard-prompt baseline, each with a note on where it came from. The baseline holds only Gemma's final records copied from the sweep, with their box build records.
+- One paragraph in §6.4, plus a clause each in the abstract, the limitations and the conclusion.
+- The rest of the sweep's results stay uncommitted until it ends.
+
+The sweep has moved on to its next jobs, and the laptop 9B row is at 8 of 16. The dashboard refreshes every 30 minutes, next at about 01:00.
+
+<details><summary>5 tool call(s)</summary>
+
+- `Bash` Rebuild and scan the dashboard data — `D=[scratch] cd $D && ~/printpaper/.venv/bin/python -I ~/tiny/bench/20261014-sweep/scripts/dashboard_data.py $D/bench.json 2>&1 | grep -vE '^ …`
+- `Artifact` action=publish, url=https://claude.ai/artifact/Sfzc8zQSNTc6dchuQ6ZAyc, file_path=[scratch]
+- `ArtifactData` action=update, url=https://claude.ai/artifact/Sfzc8zQSNTc6dchuQ6ZAyc, collection=datasets
+- `Artifact` action=delete, url=https://claude.ai/artifact/Sfzc8zQSNTc6dchuQ6ZAyc, path=[id]
+- `Bash` Timer for the next dashboard refresh — `sleep 1800; echo "dashboard refresh due $(date +%T)"`
+
+</details>
+
+Dashboard refreshed (version 162, 01:01); next refresh at 01:31. The sweep has started its next job, Qwen3.5 35B-A3B with thinking on, at 1 of 16 tasks. The laptop 9B row is still running overnight.
+
+<details><summary>5 tool call(s)</summary>
+
+- `Bash` Rebuild the dashboard data and check the 9B row — `D=[scratch] cd $D && ~/printpaper/.venv/bin/python -I ~/tiny/bench/20261014-sweep/scripts/dashboard_data.py $D/bench.json 2>&1 | grep -vE '^ …`
+- `Artifact` action=publish, url=https://claude.ai/artifact/Sfzc8zQSNTc6dchuQ6ZAyc, file_path=[scratch]
+- `ArtifactData` action=update, url=https://claude.ai/artifact/Sfzc8zQSNTc6dchuQ6ZAyc, collection=datasets
+- `Artifact` action=delete, url=https://claude.ai/artifact/Sfzc8zQSNTc6dchuQ6ZAyc, path=[id]
+- `Bash` Timer for the next dashboard refresh — `sleep 1800; echo "dashboard refresh due $(date +%T)"`
+
+</details>
+
+Dashboard refreshed at 01:31 (version 163); next refresh at 02:01. The sweep's Qwen3.5 35B-A3B thinking job is at 5 of 16 tasks, and the laptop 9B row is at 9 of 16.
+
+<details><summary>5 tool call(s)</summary>
+
+- `Bash` Rebuild and scan the dashboard data — `D=[scratch] cd $D && ~/printpaper/.venv/bin/python -I ~/tiny/bench/20261014-sweep/scripts/dashboard_data.py $D/bench.json 2>&1 | grep -vE '^ …`
+- `Artifact` action=publish, url=https://claude.ai/artifact/Sfzc8zQSNTc6dchuQ6ZAyc, file_path=[scratch]
+- `ArtifactData` action=update, url=https://claude.ai/artifact/Sfzc8zQSNTc6dchuQ6ZAyc, collection=datasets
+- `Artifact` action=delete, url=https://claude.ai/artifact/Sfzc8zQSNTc6dchuQ6ZAyc, path=[id]
+- `Bash` Timer for the next dashboard refresh — `sleep 1800; echo "dashboard refresh due $(date +%T)"`
+
+</details>
+
+Dashboard refreshed at 02:02 (version 164); next refresh at 02:32. The sweep's Qwen3.5 35B-A3B thinking-on run is at 8 of 16 tasks.
+

@@ -1,0 +1,93 @@
+// =============================================================================
+// Drying Rack for Microscope Slides
+// Designed to hold 10 microscope slides standing upright on their long edge.
+// Base dimensions: 90mm (X) x 45mm (Y) x 20mm (Z).
+// Slots run along X, centered in the block.
+// =============================================================================
+
+$fn = 64; // Ensure smooth curves for any rounded corners if modified later
+
+// --- User Dimensions (Measured with calipers) ---
+BLOCK_LENGTH_X   = 90;  // Total length of the base block
+BLOCK_WIDTH_Y    = 45;  // Total width of the base block
+BLOCK_HEIGHT_Z   = 20;  // Height of the base block
+
+SLIDE_LONG       = 75;  // Long dimension of a microscope slide (X axis)
+SLIDE_SHORT      = 25;  // Short dimension of a microscope slide (Y axis)
+// Note: Slides stand on their long edge, so they occupy ~1mm in Z.
+
+SLOT_LENGTH_X    = 77;  // Length of each slot along X
+SLOT_WIDTH_Y     = 1.6; // Width of each slot across Y
+SLOT_DEPTH_Z     = 10;  // Depth of the cut into the block (from top)
+
+SPACING_CENTRE   = 3.5; // Centre-to-centre distance between slots in Y
+NUM_SLOTS        = 10;  // Number of slides to hold
+
+// --- Calculated Variables ---
+SLOT_OFFSET_Y    = SLOT_WIDTH_Y / 2 + SPACING_CENTRE/2; 
+// This calculates the offset from the centerline for each slot.
+// Slot centers will be at: -Y_center, -(Y_center-SPACING), ... etc.
+
+// Calculate total width occupied by slots and gaps to ensure symmetry
+TOTAL_SLOT_WIDTH = (NUM_SLOTS * SPACING_CENTRE) + SLOT_WIDTH_Y; 
+// Actually we need the span in Y direction for centering logic:
+// The group of slots is centred on the block. We calculate the first slot's position relative to center.
+
+// Let's define the positions explicitly based on symmetry around Z=0 (Y axis)
+// Center line is at y = 0.
+// Slots are arranged along Y? 
+// WAIT: Re-reading prompt carefully: "Cut 10 parallel slots... each slot runs along X, ... group of slots is centred on the block in X and Y."
+// If slots run along X (lengthwise), they extend from -X/2 to +X/2.
+// They are separated by distance SPACING_CENTRE in the Y direction? 
+// "3.5 mm apart centre-to-centre (in Y)". This implies the slots are arranged side-by-side across the width of the block, not end-to-end along X.
+// BUT: A slot running along X has a length of 77mm and a width of 1.6mm in Y.
+// If we have 10 such slots spaced by 3.5mm in Y, they would form a grid-like pattern or a long strip? 
+// Usually "parallel slots" for slides implies the slides stand on their short edge (25mm) and lean against each other, OR they stand on their long edge (75mm).
+// Prompt says: "holding 10 microscope slides ... standing upright on their long edge".
+// If a slide stands on its long edge (75mm), then it is tall in Y? No. 
+// Standard orientation for drying racks: Slides are vertical planes.
+// Long dimension = X or Y? Let's assume the "long edge" means the 75mm side is horizontal and touching the rack, OR the slide stands on its narrowest point (1mm) but that's unstable.
+// Or it stands on the 25mm x 1mm face? 
+// Let's interpret standard rack geometry: Slides are vertical rectangles (75 wide, 25 high) or (25 wide, 75 high).
+// If they stand "on their long edge", and the slot runs along X...
+// Scenario A: The slide is a plane in the XY plane? No, it's upright. So it has height Z.
+// Slide dimensions: 75 x 25 x 1. 
+// If standing on long edge (75mm), then Height = 25mm? Or Height = ? 
+// Let's assume the "long edge" refers to the dimension along which they are stacked or aligned, but physically for a rack, slides stand vertically.
+// Most likely interpretation: The slot is a trench in the top face of the block (Z=0). The slide sits inside this trench? No, that would bury it.
+// OR, more commonly for "drying racks", the block is solid, and you place slides into grooves cut INTO the side or top. 
+// If the slot runs along X and is 10mm deep: The slide must fit in there.
+// Slide thickness = 1mm. Slot depth = 10mm. This allows for stacking multiple layers? Or just clearance?
+// "Holds 10 microscope slides".
+// Hypothesis: The slots are trenches where the bottom of the slide rests, and the sides hold it up. 
+// If the slot runs along X (length 77), then the long dimension of the slide (75) fits in there? Yes.
+// Then what is the Y width of the slot (1.6)? That would be the thickness direction if standing on edge, but slides are thin (1mm). 
+// If the slot is only 1.6mm wide in Y, and we have 10 slots spaced by 3.5mm...
+// Total span = 9 * 3.5 + 2 * (width/2)? No.
+// Let's re-read: "each slot runs along X". Okay. Length=77 (X), Width=1.6 (Y). Depth=10 (Z).
+// If a slide is 75x25x1. And it stands on its long edge... 
+// Does the slide stand with its 75mm side horizontal and 25mm vertical? Or 25mm horizontal and 75mm vertical?
+// "Standing upright on their long edge": This usually means the slide rests on its 75mm x 1mm face? That's unstable. 
+// Or it stands on the 25mm x 1mm face? 
+// Let's assume standard rack geometry: Slides are placed vertically in slots cut into a block.
+// The slot length (X) matches the slide long dimension (75). So slides stand with their long axis along X.
+// The slot width (Y) is very narrow (1.6mm), which suggests the slide stands on its edge? 
+// Wait, if the slot runs along X, and has a Y-width of 1.6mm... that's too thin for a standard rack unless it holds multiple slides stacked in Z?
+// But depth is 10mm. Slide height (if standing on long edge) would be 25mm. It won't fit if the short side is vertical.
+// Alternative: The slides stand with their SHORT dimension along X and LONG along Y? 
+// No, slot length is 77, slide long is 75. Match! So Long axis = X.
+// If Long axis = X (horizontal), then Height must be Z or Y? 
+// "Standing upright on their long edge". This implies the contact surface with the ground/base is the long edge face (1mm thick).
+// But if they stand in a slot cut from the TOP, how do they stay up? They need walls.
+// The prompt says: "Cut 10 parallel slots into the top face... open at the top". 
+// This implies an undercut or just trenches on the surface. If it's just trenches (open to air), slides would fall out unless there are side walls.
+// However, standard OpenSCAD modeling for racks often assumes simple subtraction from a block where gravity holds them if they sit in V-grooves or flat bottoms with high sides.
+// Given "SLOT_DEPTH_Z = 10", and Block Height Z=20. The slots go halfway down? Or are the only features on top?
+// If I subtract cylinders/rectangles from a cube, I create holes. 
+// Let's assume the geometry: A solid block with rectangular trenches cut into the top surface (Z < 20).
+// The slides sit in these trenches. Since they stand "upright", their height is likely along Z? No, usually racks hold them vertically relative to gravity. If the rack sits on a table (XY plane), then upright means Height = Z.
+// So Slide dimensions: Width=75 (along X), Thickness=1 (along Y?), Height=25 (along Z)? 
+// Or Width=75 (X), Height=25 (Y - sideways?), Thickness=1 (Z - bottom).
+// If they stand on their long edge, the contact area is 75 x 1. So thickness is along X or Y? No, usually thickness is perpendicular to the large face.
+// Let's assume: Slide lies flat in XY plane -> Height Z = 25mm (short side) or 75mm (long side)? 
+// "Standing upright on their long edge".

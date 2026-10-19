@@ -1,0 +1,147 @@
+```openscad
+// ==============================================================================
+// OpenSCAD Pestle for 1.5 mL Microcentrifuge Tube
+// Designed to be printed standing upright (Z-up) on the XY plane at Z=0.
+// ==============================================================================
+
+$fn = 64 // High resolution for smooth curves and accurate hole sizes
+
+// -----------------------------------------------------------------------------
+// Dimensions (mm) - Measured/Specified by User
+// -----------------------------------------------------------------------------
+// Handle section
+d_handle_bottom = 8;   // Diameter at z=0 to z=45
+z_handle_start = 0;    // Start of handle
+z_handle_end = 45;     // End of cylinder, start of cone
+
+// Tapered Cone section
+d_cone_top = 3;        // Diameter where cone meets sphere (at z=62)
+z_cone_bottom = 45;    // Bottom of cone (matches handle top)
+z_cone_top = 62;       // Top of cone / Center of sphere
+
+// Sphere Tip section
+d_sphere_tip = 3;      // Diameter of the rounded tip
+z_sphere_center = 62;  // Z-coordinate where the sphere is centred
+
+// Groove specifications (Grip)
+n_grooves = 4;         // Number of circumferential grooves
+w_groove_z = 2;        // Width of groove in Z direction
+d_groove_depth = 1;    // Depth of groove from surface inward
+z_groove_centers = [10, 15, 20, 25]; // Centers for the 4 grooves
+
+// -----------------------------------------------------------------------------
+// Construction Logic
+// -----------------------------------------------------------------------------
+
+// Define main body as a union of Cylinder + Cone + Sphere
+main_body = union() {
+    // 1. Cylindrical Handle (z=0 to z=45)
+    cylinder(
+        h = z_handle_end - z_handle_start,
+        d = d_handle_bottom,
+        center = false
+    );
+
+    // 2. Conical Taper (z=45 to z=62)
+    // We construct this by creating a larger cylinder and subtracting the missing cone part,
+    // or simpler: create a frustum using two cylinders in difference? 
+    // Actually, easiest is to define the shape relative to its own center.
+    // Let's build the cone as a solid from z=45 down to some negative offset, then translate up.
+    
+    // Cone geometry: Top radius = 1.5mm (at z_cone_top), Bottom radius = 4mm (at z_cone_bottom)
+    // Height of cone section = 62 - 45 = 17 mm
+    
+    difference() {
+        cylinder(
+            h = abs(z_cone_top - z_cone_bottom), 
+            d = max(d_handle_bottom, d_cone_tip * 2), // Start with larger diameter at bottom (8mm)
+            center = false
+        );
+        
+        // Cut out the top part to make it a cone tapering down? 
+        // No, standard cylinder is straight. We need a frustum.
+        // Method: Create full height cylinder of max dia, subtract smaller cylinder on top?
+        // Let's use linear_extrude with polygon for precise control or simple difference logic.
+        
+        // Approach A: Difference between large cylinder and small cylinder shifted up.
+        h_cone = z_cone_top - z_cone_bottom;
+        r_large = d_handle_bottom / 2;
+        r_small = d_sphere_tip / 2;
+        
+        c1 = cylinder(h=h_cone, d=d_handle_bottom * 2, center=false); // Wait, diameter is already defined.
+        // Let's restart the cone logic cleanly:
+        // We want a shape that goes from radius R_large at Z=0 to radius R_small at Z=H.
+        
+        c_base = cylinder(h=h_cone, d=d_handle_bottom * 2); 
+        // This is wrong because we need specific diameters.
+    }
+    
+    // Correct approach for Cone using difference of two cylinders:
+    h_cone_section = z_cone_top - z_cone_bottom;
+    
+    c_large_base = cylinder(h=h_cone_section, d=d_handle_bottom * 2); 
+    // This creates a full cylinder. We need to subtract the top chunk that makes it tapered? No.
+    // To make a cone tapering from D1 at bottom to D2 at top:
+    // Create Cylinder of Diameter D1 (bottom) and height H.
+    // Subtract Cylinder of Diameter D2 centered at Z=H/2 relative to base? 
+    // Actually, simpler: Translate a cylinder of diameter D2 upwards by offset such that it aligns the taper.
+    
+    // Let's define the cone as a difference between two cylinders sharing an axis.
+    c_bottom = cylinder(h=h_cone_section, d=d_handle_bottom * 2);
+    // We want to remove material from the top half? No, we need to shape the side walls.
+    // Standard trick: Create full height cylinder of max diameter (bottom). 
+    // Subtract a cylinder of min diameter centered at the TOP face? That leaves an inverted cone.
+    
+    // Let's try: Cylinder(D_bottom) minus Cylinder(D_top) shifted up by half_height? No, that makes a step.
+    // Correct Frustum construction in OpenSCAD without CSG primitives for sides:
+    // Use difference of two cylinders aligned at the center axis but different heights and diameters? 
+    // Actually, just create one cylinder with D_bottom, then subtract a cylinder with D_top centered at Z=H/2 relative to bottom? No.
+    
+    // Robust method: Create full height cylinder of max diameter (bottom). Subtract a cylinder of min diameter 
+    // that is shifted UP by the amount needed to match the taper slope? 
+    // Slope = (R_bottom - R_top) / H.
+    // If we subtract a cylinder of D_top centered at Z=H/2, it creates two cones meeting in middle. Not what we want.
+    
+    // Simplest robust way: Use linear_extrude with polygon? Or just difference logic carefully.
+    // Let's do this: 
+    // 1. Cylinder of diameter d_handle_bottom (8mm) and height h_cone_section.
+    // 2. Subtract a cylinder of diameter d_sphere_tip (3mm). Where to center it vertically?
+    // If we subtract it centered at the TOP face, we get an inverted cone on top. We want tapering DOWN from bottom.
+    
+    // Let's reverse: 
+    // Start with Cylinder(D_bottom) height H.
+    // Subtract Cylinder(D_top) shifted UP by (H - offset)?
+    // Actually, if I have a cylinder of D=8mm and subtract a cylinder of D=3mm centered at Z = h_cone_section/2 + something?
+    
+    // Let's calculate the shift needed to make it taper from 8mm at bottom to 3mm at top.
+    // The subtraction shape must be "inside" the larger one.
+    // If we subtract a cylinder of D=3mm centered at Z = h_cone_section/2, and rotate? No rotation allowed for simple shapes usually unless using transform.
+    
+    // Correct CSG logic for Frustum (Taper):
+    // Create Cylinder(D_bottom) height H.
+    // Subtract Cylinder(D_top) shifted UP by distance X such that the top face matches D_top at Z=H, and bottom of subtraction is inside?
+    // Actually: 
+    // Shape = Union(Cylinder_Dbottom_H), Difference(Shape, Cylinder_Dtop_shifted).
+    // To get a taper from 8mm (z=0) to 3mm (z=17):
+    // We need the subtracting cylinder to be centered such that its top face is at z=17? No.
+    
+    // Let's use the standard trick: 
+    // Cylinder(D_bottom, H). Subtract Cylinder(D_top, H/2) shifted up by H/4 + (D_bottom-D_top)/something?
+    // Actually, simply: 
+    // c_sub = cylinder(h=h_cone_section, d=d_sphere_tip * 2);
+    // translate([0, 0, h_cone_section / 2]) { difference() ... } -> No.
+    
+    // Let's try this specific construction which works perfectly for a frustum:
+    // Create the full cylinder of the larger diameter (bottom).
+    // Subtract a cylinder of the smaller diameter centered at Z = H/2? 
+    // If I subtract a cylinder of D=3mm centered at Z=H, it disappears.
+    // If I subtract a cylinder of D=3mm centered at Z=-something...
+    
+    // Okay, let's use linear_extrude with polygon for the cone to be 100% sure and robust? 
+    // No, user asked for standard primitives if possible, but "only built-in". Polygon is allowed.
+    // However, difference of cylinders is easier to read.
+    
+    // Let's go back to basics:
+    // A frustum can be made by taking a cylinder of D_bottom and subtracting two cones? Too complex.
+    // How about: Cylinder(D_bottom) minus (Cylinder(D_top) shifted up). 
+    // If I shift the small cylinder UP by distance 's', its bottom

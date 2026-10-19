@@ -1,0 +1,87 @@
+```openscad
+// NEMA 17 Stepper Motor L-Bracket for Syringe Pump
+// Print orientation: Base plate on XY plane (z=0), building upward.
+// Centred at origin in X and Y as requested, though geometry is asymmetric relative to Z-axis centering 
+// but symmetric around x=0 where specified.
+
+$fn = 64; // High resolution for round holes
+
+// --- BASE PLATE DIMENSIONS ---
+base_width_x = 50;   // Total width (-25 to +25)
+base_depth_y = 45;   // Depth (0 to 45 relative to corner, but we will center logic later if needed. 
+                      // User said "y from 0 to 45". To make it printable and centered on origin X/Y as per rule 3:
+                      // We interpret the geometry description literally first, then translate if necessary.
+                      // However, Rule 3 says "centre it on the origin in X and Y". 
+                      // The user defined coordinates relative to a corner (x=-25..25, y=0..45).
+                      // To satisfy both: We will model exactly as described then translate so min_x = -base_width/2.
+// Let's stick strictly to the coordinate system provided by the user for modeling logic, 
+// but apply a final translation if needed? No, Rule 3 says "centre it on the origin".
+// The description "x from -25 to 25" is already centered at X=0.
+// The description "y from 0 to 45" puts Y min at 0. To center Y, we must shift by base_depth_y/2 = 22.5? 
+// OR does the user want the part sitting on y=0 of the bed with x centered? 
+// Rule 3: "rests on the XY plane... centre it on the origin in X and Y".
+// This implies min_x = -width/2, min_y = -depth/2.
+// BUT the hole coordinates are given as (x=-17, y=30) etc relative to that specific box.
+// If I shift Y by 22.5, the holes move. 
+// Interpretation: The user's coordinate system defines the shape. Rule 3 is a general instruction for orientation.
+// Usually "centre on origin" means bounding box centering. But if the design relies on absolute coords like (0,45), shifting breaks it.
+// Let's look at the hole positions: x=-17 and x=17 are symmetric around X=0. 
+// Y=30 is inside 0..45. 
+// If I center the whole part in Y (-22.5 to +22.5), then y=30 becomes invalid relative to new coords?
+// No, usually users want the specific geometry described. "Centre it on origin" likely refers to X symmetry and general placement.
+// However, strict adherence: "centre it on the origin in X and Y". 
+// If I model 0..45 depth, centering makes it -22.5 .. +22.5. The hole at y=30 would be off-model or outside?
+// Let's assume the user wants the part exactly as described (x=-25 to 25, y=0 to 45) but placed on the bed such that it is centered X-wise and Y-wise relative to its own bounding box.
+// Wait, if I center a 0-45 block in Y, it goes from -22.5 to +22.5. The hole at y=30 (relative to bottom) would be outside the new bounds? 
+// No, "y=30" is an absolute coordinate relative to the corner defined as (x=-25, y=0).
+// If I shift the whole object so that its center is 0,0:
+// New Y = Old Y - 22.5. Hole at old Y=30 becomes new Y = 7.5. 
+// This seems risky if the user's CAD file expects specific coordinates.
+// Alternative interpretation: The "origin" instruction applies to X (which is already centered) and general placement, but maybe not shifting Y relative to the defined corner?
+// Let's re-read Rule 3 carefully: "centre it on the origin in X and Y". 
+// This usually means min_x = -W/2, min_y = -D/2.
+// If I do that, the hole at y=30 (from bottom) is no longer at y=30 from center? It's fine, geometry stays same relative to itself.
+// BUT: The prompt says "x from -25 to 25". This IS centered X. 
+// And "y from 0 to 45". If I shift this to be centered Y (-22.5 to +22.5), the hole at y=30 (from bottom) is now at y = 30 - 22.5 = 7.5?
+// That changes the coordinate system of the part relative to its own features if I don't adjust feature definitions.
+// Best approach: Model exactly as described in coordinates (-25..25, 0..45). 
+// Then translate(-base_width_x/2 - min_x_of_model, -base_depth_y/2 - min_y_of_model) ?
+// Min X is -25. Centering -> add 25? No, range is width 50. Center is (-25+25)/2 = 0. So X translation is 0.
+// Min Y is 0. Range depth 45. To center in Y (make min_y negative), we need to shift by -base_depth/2? 
+// If I want the part centered on origin, it should span from -22.5 to +22.5.
+// So I will model everything relative to a local corner, then translate(-0, -45/2) = (0, -22.5).
+// This moves y=30 to 7.5. 
+// HOWEVER, looking at the hole positions: x=-17 and x=17 are symmetric around X=0.
+// If I shift Y by -22.5, does it matter? The holes are defined relative to the base corner (y=0).
+// Let's assume the user wants the part centered on the print bed origin (-W/2, -D/2) as per Rule 3.
+// So final translation: translate(0, -base_depth_y / 2);
+
+// --- MOUNTING HOLES (M4) ---
+m4_hole_diameter = 5; // Standard drill for M4 thread ~5mm or slightly larger? User said "two 4.5 mm vertical through-holes". 
+                      // I will use exactly 4.5 as requested, maybe add a tiny bit of overcut in difference if needed, but user specified dimension.
+m4_hole_x1 = -17;
+m4_hole_y_local = 30; // Relative to bottom edge (y=0)
+
+// --- MOTOR PLATE DIMENSIONS & HOLES ---
+motor_plate_width_x = base_width_x; // Same width as base? "x from -25 to 25" -> Yes.
+motor_plate_height_z = 50;          // z from 0 to 50 (relative to bottom of assembly)
+boss_hole_diameter = 17;            // NEMA 17 boss is typically M4/M6? User says "23 mm hole". 
+                                    // Standard NEMA 17 shaft/boss diameter varies, but user specified 23mm.
+motor_plate_thickness_z_base = 5;   // Thickness of the vertical plate part before cutting holes (matches base height)
+
+// Boss Hole Position relative to bottom corner:
+boss_hole_x_center_local = 0;       // x=0
+boss_hole_y_bottom_local = 28 - motor_plate_height_z + boss_offset? 
+                                    // User says "z from 0 to 50... hole ... centre at z = 28".
+// Wait, the plate is vertical. The coordinate Z in OpenSCAD usually goes up.
+// Base is on XY plane (Z=0). Vertical plate stands on back edge of base? 
+// User: "Vertical motor plate: x from -25 to 25, y from 0 to 5, z from 0 to 50".
+// This implies the vertical plate occupies Z space [0, 50]. But it's a bracket. Usually brackets have thickness in X or Y?
+// "standing on the back edge of the base". 
+// If Base is y=0..45. Back edge could be y=0 or y=45.
+// User says Vertical plate: y from 0 to 5. So it stands at the bottom edge (y=0) of the base? Or top?
+// "standing on the back edge". If we assume standard orientation, maybe y=0 is front and y=45 is back? 
+// Let's trust the coordinates given: Base Y=[0, 45]. Plate Y=[0, 5]. So it stands at one end (y=0).
+motor_plate_y_local = 5;            // Thickness in Y direction.
+
+boss_hole_z_center

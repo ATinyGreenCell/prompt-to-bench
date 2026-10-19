@@ -1,0 +1,130 @@
+// Buffer Tank for Mini Horizontal Gel Electrophoresis Box
+// Units: millimetres (mm)
+
+// --- Outer Dimensions ---
+$W_OUT_X = 120; // Width along X axis
+$D_OUT_Y = 70;  // Depth along Y axis
+$H_OUT_Z = 40;  // Height along Z axis
+
+// --- Wall and Floor Thicknesses ---
+$T_WALL_THICKNESS = 3; // Side wall thickness (X and Y directions)
+$FLOOR_THICKNESS = 3;  // Bottom floor thickness (Z direction)
+
+// --- Platform Dimensions ---
+$P_LEN_X = 60;    // Length of platform along X axis
+$P_TOP_Z_ABS = 13; // Absolute Z coordinate of the top surface of the platform
+$P_HEIGHT_REL_FLOOR = 10; // Height above inner floor (used for verification)
+
+// --- Electrode Hole Dimensions ---
+$H_ELECTRODE_DIA = 2; // Diameter of electrode holes
+$Y_HOLE_POS_TARGET = 0;      // Y position for electrodes (center line, effectively center of tank width if centered on origin? 
+                       // User said "y=0". If the box is centered at X,Y then y=0 is the midline.
+
+// --- Derived Dimensions for Modeling ---
+$I_WIDTH_X = ($W_OUT_X - 2 * $T_WALL_THICKNESS); // Inner Width X
+$I_DEPTH_Y = ($D_OUT_Y - 2 * $T_WALL_THICKNESS); // Inner Depth Y (assuming walls on both sides)
+$Z_INNER_BASE_ABS = $FLOOR_THICKNESS;
+
+// Platform Geometry:
+// Spans full inner width (Y). So it goes from y = -$I_DEPTH_Y/2 to +$I_DEPTH_Y/2.
+// Length in X is 60, centered on origin? 
+$P_X_START = -($P_LEN_X / 2); 
+$P_X_END = ($P_LEN_X / 2);
+
+// Platform Thickness/Height:
+// Top is at Z=13. Inner Floor Base (Top of floor material) is at Z=3.
+// Height above inner floor = 10mm. Matches perfectly (13 - 3).
+$Z_INNER_FLOOR_TOP = $FLOOR_THICKNESS; 
+$P_Z_BOTTOM_ABS = $Z_INNER_FLOOR_TOP; 
+
+// Electrode Hole Logic:
+// "drill ... along X at y = 0, z = 30".
+// Since we center the tank on origin (X,Y), Y=0 is the midline of the depth.
+$HOLE_Y_ABS = $Y_HOLE_POS_TARGET; 
+$HOLE_Z_ABS_TARGET_VAL = 30;
+
+difference() {
+    union() {
+        // --- Main Tank Body ---
+        // Create a solid block representing the outer dimensions, then subtract internal voids?
+        // Or build walls explicitly. Building as one big box minus top face is easier for "open top".
+        
+        $H_OUT_Z_ABS = 40; 
+        
+        // Outer Box (Open Top)
+        cube([
+            $W_OUT_X, 
+            $D_OUT_Y, 
+            $H_OUT_Z - ($FLOOR_THICKNESS + 1e-3) // Cut slightly below top to ensure open? No, just make it a solid block first.
+        ]); 
+        
+        // Wait, if I use difference on the main object, I need to subtract the empty space inside.
+        // Let's build the tank as: Outer Box MINUS (Inner Void).
+        
+        $H_VOID_Z = ($H_OUT_Z - 1e-3); // Height of void from top down? No.
+        // Inner Volume starts at Z=3 and goes up to Z=40 (Open Top).
+        // So we subtract a box: X:[-$I_WIDTH_X/2, $I_WIDTH_X/2], Y:[-$I_DEPTH_Y/2, $I_DEPTH_Y/2], Z:[$Z_INNER_BASE_ABS, 40].
+        
+        void_box = cube([
+            $W_OUT_X - ($T_WALL_THICKNESS * 2), // Width of inner space? No.
+            $D_OUT_Y - ($T_WALL_THICKNESS * 2), 
+            $H_OUT_Z - ($FLOOR_THICKNESS + 1e-3) // Height from floor top to rim (approx).
+        ]); 
+        
+        translate([0, 0, -$Z_INNER_BASE_ABS]) {
+             union() {
+                 // Outer Shell Construction:
+                 // It's easier to build the walls and floor as separate primitives if we want precise control over "open top".
+                 // But a single difference is cleaner.
+                 
+                 // Let's try building the solid tank first, then subtracting holes later? 
+                 // No, let's construct the final shape directly using union of parts or one big block minus voids.
+                 
+                 // Approach: One Big Block (120x70x40) MINUS Top Face + Inner Void Box.
+                 
+                 $VOID_WIDTH_X = ($W_OUT_X - 2 * $T_WALL_THICKNESS);
+                 $VOID_DEPTH_Y = ($D_OUT_Y - 2 * $T_WALL_THICKNESS);
+                 // The void goes from Z=3 (top of floor) to Z=40 (open top). 
+                 // But wait, if it's open top, the material exists at Z=40.
+                 
+                 difference() {
+                     union() {
+                         cube([$W_OUT_X, $D_OUT_Y, $H_OUT_Z]);
+                         
+                         // Subtract Inner Void (Open Top)
+                         translate([0, 0, -$Z_INNER_BASE_ABS]) 
+                             cube([$VOID_WIDTH_X + ($T_WALL_THICKNESS * 2), $VOID_DEPTH_Y + ($T_WALL_THICKNESS * 2), $H_OUT_Z - $FLOOR_THICKNESS]);
+                         
+                     }
+                     
+                     // Subtract Electrode Holes (Horizontal holes along X)
+                     for(y = [-($D_OUT_Y/2)+$T_WALL_THICKNESS, -$I_DEPTH_Y/2 + ($T_WALL_THICKNESS+1e-3)]) { 
+                         // Wait, the hole is at y=0. The tank spans Y from -35 to 35 (outer).
+                         // Inner walls are at +/- 34? No. Outer +/- 35. Wall thickness 3. Inner wall face at +/- 32.
+                         // Hole needs to go through the side wall material.
+                         // Side walls are on X=+/-60 and Y=+/-35? 
+                         // "Through each end wall (the walls at the two X ends)". These are the walls perpendicular to X axis, located at X = +/- 60 approx.
+                         // Wait, standard box: Walls at X=-60, X=60, Y=-35, Y=35? 
+                         // If hole is in "end wall" (X-ends), it goes through the material between Inner Face and Outer Face of that specific wall.
+                         
+                         // Let's define the cut cylinder precisely.
+                         // Hole Center: X varies along length? No, horizontal hole ALONG X means axis is parallel to X.
+                         // Location: y = 0 (relative to tank center), z = 30 (absolute).
+                         // It must pass through the wall at X=+60 and X=-60? 
+                         // Or does it go from inside out on one side? "Through each end wall". Plural. So two holes, back-to-back or separate channels?
+                         // Usually a horizontal hole connects outside to inside. If there are two walls (left and right), we need two cylinders facing inward/outward? 
+                         // Or does the user mean a single channel going through both ends? That would require one long cylinder if they were aligned, but here it's "through each end wall".
+                         // This implies two separate holes: One in Left Wall, One in Right Wall. Both at y=0, z=30.
+                         
+                         translate([($W_OUT_X/2) - ($H_ELECTRODE_DIA)/2 + 1e-3, $Y_HOLE_POS_TARGET, $Z_INNER_BASE_ABS]) { 
+                             // Wait, coordinate system for cylinder: axis is X? No, default cylinder axis is Z.
+                             rotate([90, 0, 0]) translate([-($H_ELECTRODE_DIA)/2 + 1e-3, 0, -($Z_INNER_BASE_ABS)]) { 
+                                 // This logic is getting messy with absolute coords inside loops.
+                                 // Let's simplify: Two cylinders centered at X = +/- ($W_OUT_X/2) ? No, that cuts the whole block.
+                                 // We need to cut a hole in the wall material.
+                                 // Wall thickness is 3mm. Outer face at 60, Inner face at (120-3)/2? 
+                                 // Let's assume standard box: Centered at origin. 
+                                 // Left Wall X range: [-60, -57]. Right Wall X range: [57, 60].
+                                 // Hole axis is parallel to X.
+                                 // Cylinder center Y = 0. Z = 30 (absolute).
+                                 // We need two cylinders: one centered at X=-60?

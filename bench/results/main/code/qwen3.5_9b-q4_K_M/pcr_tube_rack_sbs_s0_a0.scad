@@ -1,0 +1,139 @@
+// OpenSCAD Rack for 96 PCR Tubes (0.2 mL) - ANSI/SLAS Footprint
+// Units: millimetres
+
+// --- Dimensions based on user input and standard specs ---
+$fn = 128; // High resolution for chamfers and holes
+
+// Block dimensions
+W_BLOCK_X = 127.76; // Length (X)
+W_BLOCK_Y = 85.48;  // Width (Y)
+H_BLOCK_Z = 20;     // Height (Z)
+
+// Hole specifications
+N_ROWS = 8;         // Rows along Y axis
+N_COLS = 12;        // Columns along X axis
+D_HOLE = 6.2;       // Diameter of PCR tube holes
+C_SPACING_X = 9.0;  // Centre-to-centre spacing in X
+C_SPACING_Y = 9.0;  // Centre-to-centre spacing in Y
+
+// Grid offset from edges (calculated to centre the grid)
+O_X_LEFT = 14.38;   // Offset of first hole column from left edge
+O_Y_BACK = 11.24;   // Offset of first hole row from back edge
+
+// Chamfer specifications for orientation mark at A1 corner
+CHAMFER_ANGLE = 45;
+CHAMFER_LEG_X = 5;  // Leg length along X axis (implied by angle and Y leg)
+CHAMFER_LEG_Y = CHAMFER_LEG_X * tan(CHAMFER_ANGLE);
+
+// --- Helper function to generate hole positions ---
+// Generates a list of translate vectors for the holes based on grid logic
+generate_holes() {
+    // Calculate total span required for N_COLS items with spacing C_SPACING_X
+    // The first item is at O_X_LEFT. Subsequent are +C_SPACING_X
+    
+    // We will iterate and build the geometry directly to avoid complex list handling in older SCAD versions,
+    // but we can use a loop inside difference().
+
+}
+
+// --- Main Geometry Construction ---
+
+difference() {
+    
+    // 1. Create the main block with chamfer at A1 corner (bottom-left-front relative to standard plate orientation)
+    // The user specified "A1 corner". In microplates, Row A is usually top/back or bottom/front depending on convention.
+    // Given offsets: O_X_LEFT = 14.38 from left edge, O_Y_BACK = 11.24 from back edge.
+    // This implies the grid starts at (O_X_LEFT, O_Y_BACK) relative to a corner defined as (0,0).
+    // Let's define the block origin such that the chamfer is applied to the face containing A1.
+    
+    // To apply a 45 deg chamfer with leg X = 5mm:
+    // We create an extruded polygon or use rotate_extrude/union logic, but simpler for FDM blocks 
+    // is to define the bottom profile and extrude up, OR subtract from a larger block.
+    
+    // Approach: Start with full rectangular prism, then cut chamfer? No, easier to build base shape first.
+    // Let's create the base footprint polygon at Z=0.
+    
+    // The A1 corner is defined by X = O_X_LEFT and Y = W_BLOCK_Y - O_Y_BACK (if back edge is max Y) 
+    // OR Y = O_Y_BACK (if back edge is min Y). 
+    // Standard convention: "Back" usually means the side opposite to where you hold it, often +Y or -Y.
+    // Let's assume standard Cartesian: X right, Y up/back.
+    // Left Edge = x=0. Back Edge = y=W_BLOCK_Y (or 0). 
+    // If O_Y_BACK is distance from "back edge", let's place the block such that back edge is at Y=H and front at Y=0?
+    // Or simpler: Place origin at bottom-left-front corner of the physical object.
+    
+    // Let's assume:
+    // X axis goes Right (0 to W_BLOCK_X)
+    // Y axis goes Backwards/Up (0 to W_BLOCK_Y). 
+    // "Back edge" usually implies the far side in a microscope view, but physically it's just an edge.
+    // If O_Y_BACK is distance from back edge, and we want A1 at that corner:
+    // Let's place the chamfer on the face defined by X=0 (Left) and Y=W_BLOCK_Y (Back).
+    
+    // Actually, to make it robust for printing orientation:
+    // We will define the block centered or aligned. The prompt says "rests on XY plane... centre it on origin".
+    // BUT rule 3 says: "Model the part in the print orientation the user gives: it rests on the XY plane at z = 0 and builds upward (+Z). Unless told otherwise, centre it on the origin in X and Y."
+    
+    // Conflict Resolution: 
+    // User dimensions are absolute (127.76 x 85.48). Offsets are from edges ("from left edge", "from back edge").
+    // If I center the block at (0,0), then "left edge" is not X=0 anymore.
+    // However, usually for a rack file, you want to know where it sits relative to its own geometry. 
+    // But Rule 3 says: "centre it on the origin in X and Y".
+    
+    // Strategy: Center the bounding box of the part at (0,0).
+    // Then calculate hole positions based on that centered coordinate system.
+    
+    half_X = W_BLOCK_X / 2;
+    half_Y = W_BLOCK_Y / 2;
+    
+    // Define corners in this centered system:
+    // Left Edge X_min = -half_X
+    // Right Edge X_max = +half_X
+    // Back Edge Y (let's say positive is back) -> We need to decide which side is "Back". 
+    // Let's assume standard plate orientation where Row A is at the top (+Y).
+    // So "Back edge" corresponds to Y = half_Y.
+    
+    X_A1_centered = -half_X + O_X_LEFT;
+    Y_A1_centered = half_Y - O_Y_BACK; 
+    
+    // Chamfer location: The corner formed by Left Edge (X_min) and Back Edge (Y_max).
+    // We need to cut a chamfer on the vertical face at this corner.
+    
+    // Create Base Block with Chamfer
+    // Method: Extrude a polygon that has the chamfered edge, or subtract from a larger block? 
+    // Easier: Union of a main box and nothing (it's just one piece).
+    // We can define the bottom face as a shape.
+    
+    // Let's create the solid by extruding a 2D profile at Z=0 to Z=H_BLOCK_Z.
+    // The profile needs chamfers on specific edges? No, only "off the vertical edge".
+    // This implies cutting into the side wall.
+    
+    // Profile points for X (Left side): 
+    // Instead of complex polygon math, let's use a large block and subtract nothing yet, then apply difference later?
+    // Better: Construct the main body using `cube` but modify corners with chamfers via boolean operations or custom polygons.
+    // Since we only need ONE corner chamfer (A1), we can build a perfect cube first, 
+    // THEN use `difference()` to cut out that specific wedge from the side?
+    
+    // Wait, if I start with a centered cube:
+    // Cube extends from -half_X to +half_X.
+    // The A1 corner is at (-half_X, half_Y).
+    // We want to remove material near this vertical edge such that we get a 45 deg chamfer.
+    
+    // Let's build the main block first (centered):
+    main_block = cube([W_BLOCK_X, W_BLOCK_Y, H_BLOCK_Z], center=true);
+    
+    // Now cut the chamfer at the specific corner (-half_X, half_Y).
+    // The face is X=-half_X. We want to slice off a wedge defined by:
+    // x >= -half_X + CHAMFER_LEG_X (if cutting along Y) ? 
+    // No, "45-degree chamfer with 5 mm legs". This usually means removing material from the corner edge.
+    // The cut plane passes through (-half_X + leg_x, half_Y) and (-half_X, half_Y - leg_y).
+    
+    // Define the cutting shape for the chamfer:
+    // We are at X = -half_X (Left face), Y near top (+Y direction if back is positive? Let's stick to standard math: Back=+Y).
+    // Corner is (-half_X, half_Y).
+    // Cut plane equation roughly: x + y = constant.
+    
+    // To cut this in OpenSCAD easily without complex CSG trees inside loops:
+    // We can create a "chamfer cutter" shape and subtract it from the main block? 
+    // No, because the chamfer is on the vertical face of an existing cube.
+    // Actually, simplest way to add a chamfer to one corner of a centered box in OpenSCAD:
+    // 1. Create the full box.
+    // 2. Define a plane that cuts

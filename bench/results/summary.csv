@@ -15,4 +15,4 @@ qwen2.5-coder:7b,Qwen2.5-Coder 7B,Qwen2.5-Coder,False,4.7,7.61,Apache-2.0,16,0,0
 scadcoder,"scadcoder (fine-tuned, ours)",Qwen2.5-Coder (fine-tuned),False,4.7,7.61,Apache-2.0,16,0,0,0,14,0.315,5.877,99.343,4.146
 lfm2.5:8b-a1b-q4_K_M,LFM2.5 8B-A1B (MoE),LFM2.5,False,5.2,8.3,LFM Open v1.0 (revenue cap),16,0,0,0,0,0.0,5.112,79.748,20.758
 gemma4:e4b-it-q4_K_M,Gemma 4 E4B,Gemma 4,False,6.6,4.5,Apache-2.0,16,0,0,0,9,0.273,6.128,96.743,11.709
-qwen3.5:9b-q4_K_M,Qwen3.5 9B,Qwen3.5,False,6.6,9.65,Apache-2.0,2,0,0,0,1,0.375,17.207,34.413,4.679
+qwen3.5:9b-q4_K_M,Qwen3.5 9B,Qwen3.5,False,6.6,9.65,Apache-2.0,16,0,0,0,1,0.081,33.676,518.397,3.769

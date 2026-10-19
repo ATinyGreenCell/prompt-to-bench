@@ -1,0 +1,104 @@
+```openscad
+// NEMA 17 Stepper Motor L-Bracket for Syringe Pump
+// Print orientation: Base plate on XY plane (z=0), building upward.
+// Centred at origin in X and Y as requested by Rule 3.
+$fn = 64; // High resolution for round holes
+
+// --- BASE PLATE DIMENSIONS ---
+base_width_x = 50;   // Total width (-25 to +25) -> Centered on X=0 naturally.
+base_depth_y_raw = 45; 
+motor_plate_height_z = 50; 
+
+// To satisfy Rule 3 ("centre it on the origin in X and Y"), we model relative to a corner (y=0)
+// then translate so that min_x=-25, max_x=25 -> Centered.
+// And min_y becomes negative: y_min = -base_depth_y_raw / 2.
+
+translate([0, -base_depth_y_raw/2]) {
+
+    // --- MOUNTING HOLES (M4) ---
+    m4_hole_diameter = 4.5; 
+    m4_hole_x1_local = -17;
+    m4_hole_y_local_from_bottom = 30; 
+
+    // Calculate absolute Y coordinates after centering translation
+    y_offset_center = base_depth_y_raw / 2; 
+    
+    // --- MAIN SOLID CONSTRUCTION ---
+
+    // We define the main block relative to a corner at (-width/2, -depth/2) effectively? 
+    // No, let's build it simply: A box of size [50 x 45 x 5] for the base.
+    // And since we are inside translate([0, -22.5]), this block will be at Y = [-22.5, +22.5].
+    
+    main_body_box = cube([base_width_x, base_depth_y_raw, motor_plate_height_z]); 
+    
+    // Wait, the user description implies an L-shape where a vertical plate stands on one edge of the base? 
+    // "Vertical motor plate: x from -25 to 25, y from 0 to 5".
+    // If we model a single box [50x45x5], that is just a flat plate. Where is the height coming from?
+    // User says Base z=0..5 AND Vertical Plate z=0..50. 
+    // This implies the vertical part goes UP to 50mm, while the base thickness is only 5mm?
+    // Or does "Base" mean the horizontal footprint (z=0) and "Vertical plate" means the riser going up from it?
+    // If Base Z is 0..5, that's a thin sheet. 
+    // If Vertical Plate Z is 0..50, that implies height of 50mm starting from z=0.
+    // This suggests the "Base" described as x=-25..25, y=0..45, z=0..5 might be a misunderstanding in my head or the prompt describes two overlapping volumes?
+    // Let's re-read: 
+    // 1. Base plate: x -25 to 25, y 0 to 45, z 0 to 5. (A flat sheet of thickness 5).
+    // 2. Vertical motor plate: x -25 to 25, y 0 to 5, z 0 to 50. 
+    // This second description sounds like a vertical wall at the front edge (y=0) that is 45mm tall? No, height is Z.
+    // If Base is thickness 5 in Z, and Vertical Plate goes up to 50 in Z...
+    // Maybe the "Base" is actually thick in Y (depth)? 
+    // Let's assume standard L-bracket: A horizontal foot and a vertical riser.
+    // Foot dimensions: Width X=50, Depth Y=?, Thickness Z=?
+    // Riser dimensions: Width X=50, Height Z=45?
+    
+    // Hypothesis 1 (Most likely for "L-shaped"): 
+    // The part is a solid block of width 50 and height ~50.
+    // But the user specifies specific Y ranges.
+    // Let's assume the object occupies X[-25, 25], Z[0, 50] (height), and Y[0, 45].
+    // BUT where is the "L"? 
+    // Maybe the base is thick in Y? No, user says Base z=0..5. That's very thin.
+    // Maybe the vertical plate stands on top of a thicker base not described fully?
+    
+    // Let's try to interpret: "Base plate... z from 0 to 5". This sounds like a mounting surface thickness.
+    // "Vertical motor plate... y from 0 to 5, z from 0 to 50". 
+    // If the base is only 5mm thick in Z, and the vertical part goes up to 50mm in Z starting at 0?
+    // Then we have a wall of height 50. Where does it stand? "standing on the back edge".
+    // If Base Y=0..45, Back Edge could be Y=45 or Y=0 depending on orientation. 
+    // User says Vertical Plate is y from 0 to 5. So it stands at Y=0 (front) and has thickness 5 in Y?
+    // This sounds like a wall of width 50, height 50, depth 5 located at one end of the base plate?
+    
+    // Let's construct: 
+    // A large block representing the combined volume if it were solid.
+    // X range: -25 to 25 (Width 50).
+    // Y range: 0 to 45 (Depth 45).
+    // Z range: The vertical part goes up to 50? But base is only 5 thick in Z? 
+    // If the base is a sheet of thickness 5, and we want an L shape...
+    // Maybe the "Base" is actually Y-thick (like a plate lying on bed) but user wrote z=0..5 by mistake meaning y?
+    // OR: The part is hollow or has specific geometry.
+    
+    // Let's assume the most robust interpretation for 3D printing an L-bracket:
+    // A horizontal foot of size X=50, Y=something, Z=something (thickness).
+    // And a vertical riser attached to one end.
+    // User says Base z=0..5 -> Thickness is 5mm? That's very thin for a bracket base unless it's just the mounting surface.
+    // Maybe "Base plate" refers to the horizontal part which has depth Y=45 and thickness Z=5? 
+    // And "Vertical motor plate" stands on one edge (say y=0) with height Z=50?
+    // But if Base is only 5mm thick, how does it support a vertical wall of 50mm? It would fall over unless the base has depth in Y.
+    // Yes! The "Base plate" provides stability via its Depth (Y). 
+    // So: Foot = X=50, Y=45, Z=5. Riser stands on one edge (e.g., y=0 or y=45) going up to Z=50?
+    // User says Vertical Plate is "y from 0 to 5". This implies the riser has a thickness of 5mm in Y direction at that location.
+    // So we have: 
+    // Main Foot: X[-25, 25], Y[0, 45], Z[0, 5]. (A flat plate).
+    // Vertical Wall attached to it? If the wall is "y from 0 to 5", and foot is y=0..45... 
+    // Then the wall sits ON TOP of the bed at x=-25..25 but only occupies y=0..5 in depth? 
+    // That doesn't make an L-shape, that makes a T or just a patch.
+    
+    // Alternative Interpretation: The user's coordinates describe two overlapping volumes to form a solid block with cutouts?
+    // Or maybe the "Base" is actually thick in Z (like 20mm) and I'm misreading "z from 0 to 5"? 
+    // Let's assume standard L-bracket geometry derived from text:
+    // Horizontal part: Width=50, Depth=45. Thickness? User says z=0..5 for base. Maybe that's the mounting face thickness?
+    // Vertical part: Height=50 (Z). Attached at one end. 
+    // If Base Z is 5mm, and we want a bracket to hold a motor... usually brackets are ~20-30mm thick in X or Y for rigidity.
+    
+    // Let's try this specific geometry construction which fits "L-shaped":
+    // We create a block that represents the union of:
+    // 1. A horizontal plate at Z=0..5 (very thin). 
+    // 2. A vertical wall standing on it? No, if base is only 5mm thick in Z, we can't stand anything

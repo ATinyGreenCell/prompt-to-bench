@@ -1,0 +1,122 @@
+```openscad
+// ==============================================================================
+// OpenSCAD Rack for Six 50 mL Conical Tubes (Falcon-type)
+// 
+// Design Notes:
+// - Printed upside down relative to usage orientation.
+// - After printing, flip over so the two long walls stand on the build plate.
+// - The flat base becomes the top cover when in use.
+// ==============================================================================
+
+$fn = 128 // High resolution for smooth curves and precise hole sizing
+
+// -----------------------------------------------------------------------------
+// Dimensions (mm) based on user input
+// -----------------------------------------------------------------------------
+// Base Plate dimensions
+BASE_X_LEN = 130;   // Length along X axis
+BASE_Y_WID = 90;    // Width along Y axis
+PLATE_THICKNESS = 4;
+
+// Hole specifications for Falcon tubes (approx. OD)
+HOLE_DIAMETER = 30.5; 
+
+// Grid layout
+GRID_SPACING_X = 40; // Centre-to-centre distance in X direction
+GRID_SPACING_Y = 40; // Centre-to-centre distance in Y direction
+
+// Wall specifications
+WALL_TOP_Z_TARGET = 70; // The walls rise to this Z level.
+
+// -----------------------------------------------------------------------------
+// Calculated Variables
+// -----------------------------------------------------------------------------
+PLATE_BOTTOM_Z = 0;
+PLATE_TOP_Z    = PLATE_THICKNESS; 
+
+// Walls rise from the top of the plate (Z=4) up to Z=70.
+WALL_HEIGHT_CALC = WALL_TOP_Z_TARGET - PLATE_TOP_Z;
+
+// Hole positions: 
+// We assume a symmetric grid centered on the origin (X,Y).
+// For 3 columns with spacing S, and symmetry around X=0:
+// Positions are typically at -S/2 * N? No.
+// If we have points x1 < x2 < x3 such that distance(x_i, x_{i+1}) = GRID_SPACING_X.
+// And the set is symmetric about 0 (x_center_of_set = 0).
+// Then positions are: -GRID_SPACING_X/2 * (something)? 
+// Let's try simple integers first to match "centred on plate".
+// If spacing is 40, and we have 3 columns.
+// Option A: Middle column at X=0? Then others at +/- 40. Distance = 40. Symmetric.
+// Option B: Edges aligned with something else? 
+// "Centred on the plate" usually implies the bounding box of holes is centered, or the pattern itself.
+// Given BASE_X_LEN=130 and spacing 40 for 3 items (span ~80), there will be margins.
+// Let's use Option A: X positions at -40, 0, +40. Y positions at -20, +20.
+
+X_POS_1 = -GRID_SPACING_X; // -40
+X_POS_2 = 0;              // 0
+X_POS_3 = GRID_SPACING_X; // +40
+
+Y_POS_1 = -(GRID_SPACING_Y / 2); // -20
+Y_POS_2 = (GRID_SPACING_Y / 2); // +20
+
+// -----------------------------------------------------------------------------
+// Construction Logic
+// -----------------------------------------------------------------------------
+
+difference() {
+    union() {
+        // --- 1. The Base Plate ---
+        cube([BASE_X_LEN, BASE_Y_WID, PLATE_THICKNESS], center=[0,0,-PLATE_THICKNESS/2]);
+        
+        // --- 2. The Side Walls ---
+        // These are printed as extensions of the plate thickness upwards? 
+        // User said: "Two solid walls run along the two long edges... rises from the plate to z = 70".
+        // Since we model Z=0 at bottom, and plate is 4mm thick (Z=0..4).
+        // Walls start at top of plate (Z=4) or do they include the thickness? 
+        // "rises FROM THE PLATE" implies starting from the surface.
+        
+        wall_width = BASE_Y_WID / 2; // Half width to reach edge
+        
+        // Left Wall
+        translate([0, -wall_width + 1e-3, PLATE_THICKNESS]) { 
+            cube([BASE_X_LEN, WALL_HEIGHT_CALC, WALL_TOP_Z_TARGET], center=[0,0,-WALL_HEIGHT_CALC/2]);
+        }
+
+        // Right Wall (Mirror)
+        mirror(y=1) translate([0, -wall_width + 1e-3, PLATE_THICKNESS]) { 
+            cube([BASE_X_LEN, WALL_HEIGHT_CALC, WALL_TOP_Z_TARGET], center=[0,0,-WALL_HEIGHT_CALC/2]);
+        }
+
+    }, // End Union
+    
+    difference() {
+        union() {
+            // --- 3. Cut Holes for Tubes ---
+            // We iterate through the grid positions and subtract cylinders.
+            
+            hole_positions = [
+                [X_POS_1, Y_POS_1], 
+                [X_POS_2, Y_POS_1], 
+                [X_POS_3, Y_POS_1],
+                [X_POS_1, Y_POS_2], 
+                [X_POS_2, Y_POS_2], 
+                [X_POS_3, Y_POS_2]
+            ];
+
+            for (pos = hole_positions) {
+                translate(pos) cylinder(h=PLATE_THICKNESS + 0.5, d=HOLE_DIAMETER); // Extend slightly past plate bottom to ensure clean cut if needed, though difference handles it well with union first. 
+            }
+        }, // End Hole Union
+        
+    } // End Difference (Cutting Holes)
+
+}, // End Main Difference (Plate + Walls - Holes)
+
+
+// Note: The user requested the part rests on XY plane at z=0 in print orientation.
+// My model has Z going from 0 to ~74? 
+// Wait, WALL_TOP_Z_TARGET = 70. Plate is 0-4. Wall height calc was 66. Total max Z = 70.
+// The user said "rises ... to z=70". So the top of the wall is at Z=70.
+// My calculation: PLATE_TOP_Z (4) + WALL_HEIGHT_CALC (66) = 70. Correct.
+
+```

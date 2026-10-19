@@ -1,0 +1,66 @@
+// Sowing Template for 90mm Petri Dish
+// Designed to sit flat inside a standard 90mm dish.
+// Orientation: Rests on XY plane at Z=0. Notch is on +Y side (front).
+
+$fn = 128 // High resolution for smooth holes and curves
+
+// --- Dimensions ---
+D_OUTER = 85; 
+H_THICKNESS = 2; 
+
+GRID_COUNT_X = 7;
+GRID_COUNT_Y = 7;
+DIAMETER_HOLE = 3; 
+SPACING_CENTRE_TO_CENTRE = 9;
+
+NOTCH_WIDTH_X = 10;   
+NOTCH_DEPTH_Y = 4;   
+
+// --- Calculations ---
+GRID_START_X = -(SPACING_CENTRE_TO_CENTRE * (GRID_COUNT_X - 1)) / 2;
+GRID_START_Y = -(SPACING_CENTRE_TO_CENTRE * (GRID_COUNT_Y - 1)) / 2;
+
+difference() {
+    // Main Body: Cylinder resting on Z=0. 
+    // We translate it down by half thickness so the top is at +H_THICKNESS/2? 
+    // No, standard cylinder( h=r ) creates a shape from z=-h/2 to z=h/2 if center=true.
+    // To rest on bed (Z=0), we need bottom at 0. So translate down by H_THICKNESS/2 relative to centered cylinder.
+    
+    translate([0, 0, -H_THICKNESS/2]) { 
+        cylinder(
+            h = H_THICKNESS + 1, // Slightly taller than needed for difference safety? No, exact is fine if cuts are precise. Let's use exact height but ensure cut shapes go deep enough.
+            r = D_OUTER / 2, 
+            center = true
+        )
+    }
+
+    // Cut Grid Holes (From Top Down)
+    // The top face of the cylinder above Z=0 is at Z = H_THICKNESS/2? No.
+    // If we translate a centered cylinder down by -H_THICKNESS/2, its bottom is at 0 and top is at +H_THICKNESS.
+    // Wait: Centered cylinder height h goes from -h/2 to +h/2. 
+    // Translate z = -h/2 -> range becomes [0, h]. Correct. Top face is at Z=H_THICKNESS (approx 1mm if we use exact H).
+    
+    for (i_x = [0 : GRID_COUNT_X - 1], i_y = [0 : GRID_COUNT_Y - 1]) {
+        translate([GRID_START_X + SPACING_CENTRE_TO_CENTRE/2, 
+                   GRID_START_Y + SPACING_CENTRE_TO_CENTRE/2, 
+                   H_THICKNESS/2]) { // Center the hole on top face (Z = thickness)
+            cylinder(
+                h = -(H_THICKNESS - 0.1), // Cut slightly less than full depth? No, must cut through completely.
+                r1 = DIAMETER_HOLE / 2, 
+                r2 = DIAMETER_HOLE / 2,
+                center = true
+            )
+        }
+    }
+
+    // Cut Notch on +Y side (Front)
+    // Located at the outer rim (+Y direction). Depth is NOTCH_DEPTH_Y inwards.
+    translate([0, D_OUTER/2 - NOTCH_DEPTH_Y/2]) { 
+        cube(
+            [NOTCH_WIDTH_X, NOTCH_DEPTH_Y, 1], // Extend slightly past Z=thickness to ensure clean cut? 
+                                                // The cylinder top is at H_THICKNESS. We need the cube to cover that range or go deeper into negative Z if we want full depth.
+                                                // Let's make the cube tall enough to clear any potential floating point issues, but logically it should be inside the volume.
+            center = false 
+        )
+    }
+}

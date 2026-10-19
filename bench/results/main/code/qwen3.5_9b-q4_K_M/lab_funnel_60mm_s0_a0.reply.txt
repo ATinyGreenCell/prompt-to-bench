@@ -1,0 +1,115 @@
+```openscad
+// Lab Funnel Design Parameters
+// All dimensions are in millimeters.
+// The part rests on XY plane (z=0) with spout pointing down/up as requested? 
+// User said: "printed upright", "spout ... runs from z = 0 to z = 20".
+// This implies the narrow end is at Z=0 and widens towards positive Z.
+
+$fn = 128 // High resolution for smooth curves on funnel walls
+
+// Spout (Tube) Dimensions
+d_spout_outer_bottom = 10;   // Outer diameter at z=0
+h_spout_total        = 20;   // Height of straight section
+wall_thickness        = 1.6; // Wall thickness everywhere
+
+// Funnel Cone Dimensions
+z_cone_start         = h_spout_total;      // Z where cone begins (diameter matches spout)
+d_funnel_rim_outer   = 60;                 // Outer diameter at top rim
+h_funnal_section     = z_cone_end - z_cone_start; // Height of conical section
+
+// Derived Dimensions for Hollow Geometry
+i_spout_inner        = d_spout_outer_bottom - (2 * wall_thickness); 
+d_funnel_rim_inner   = d_funnel_rim_outer - (2 * wall_thickness);
+
+// Calculate Z where the cone ends to define geometry clearly
+z_cone_end           = z_cone_start + h_funnal_section; // 50 mm as per prompt logic check?
+// Prompt says: "widens from ... at z=20 to ... at rim at z=50". 
+// So height of cone is 30mm.
+
+h_cone               = d_funnel_rim_outer - d_spout_outer_bottom; // Diameter difference for slope calc if needed, but linear_extrude handles this better with polygon or cylinder scaling?
+// Actually, using a scaled cylinder approach inside union/difference is robust.
+
+// We will build the funnel as two concentric shells: Outer Shell and Inner Shell (Void).
+// This ensures perfect wall thickness everywhere including corners.
+
+// --- OUTER SHELL CONSTRUCTION ---
+outer_base = d_spout_outer_bottom;
+outer_top  = d_funnel_rim_outer;
+
+// Create outer profile for linear_extrude? No, simple union of cylinders/cones is easier with rotate_extrude or just stacking primitives if we use cylinder() with scaling.
+// However, to get a perfect cone in OpenSCAD without complex math inside translate(), 
+// the standard way is using 'cylinder(h=..., $fa=...)'. But that creates straight sides unless scaled? No, cylinder has no taper option directly except via rotate_extrude or difference of cylinders.
+// Best approach for tapered tube: Use a polygon profile rotated around Z axis (rotate_extrude).
+
+outer_profile_points = [
+    d_spout_outer_bottom/2, 0,      // Bottom outer radius at z=0? 
+                              // Wait, rotate_extrude expects x,y coordinates. 
+                              // Let's define the path in XZ plane and extrude around Z (axis of rotation).
+];
+
+// Actually, simpler: Use 'cylinder' with scaling or just construct via difference if we want exact cones.
+// But OpenSCAD doesn't have a native "tapered cylinder" primitive that is easy to parameterize without math.
+// The most robust way for FDM parts with specific Z-heights and diameters at ends:
+// Use 'cylinder' scaled? No, scaling distorts aspect ratio if not careful (though here height/diameter are independent).
+// Let's use the standard trick: A large cylinder minus a smaller cone? 
+// Or better: Define points for rotate_extrude.
+
+outer_path = [
+    // Start at bottom z=0, radius = outer_base/2
+    d_spout_outer_bottom / 2, 0,
+    // End at top z=h_cone_total (50), radius = outer_top/2
+    d_funnel_rim_outer / 2, h_spout_total + h_funnal_section 
+];
+
+// Wait, the prompt says spout is from Z=0 to Z=20. Cone starts at Z=20 and ends at Z=50.
+// So total height = 50.
+h_cone_start_z       = 20;
+z_top                = 50;
+
+outer_path_points   = [
+    d_spout_outer_bottom / 2, 0,      // Radius X, Height Y (we will rotate around Z? No, standard is XY plane extruded. 
+                                       // Let's stick to the prompt: "rests on XY plane at z=0".
+                                       // So we model in XYZ where Z is height.
+                                       // To use linear_extrude with a profile, we need X and Y coordinates of the perimeter? No.
+                                       // rotate_extrude rotates around an axis (usually Z). The input path must be in XY plane.
+                                       // But our object grows along Z. 
+                                       // So we should model the cross-section changing over time? 
+                                       // Standard OpenSCAD way for a tube growing up:
+                                       // Use 'cylinder' with scaling is not enough because it's linear taper.
+                                       // We will use 'difference' of two cylinders/cones or just build the outer shell using rotate_extrude on an XZ profile mapped to XY? 
+                                       // No, let's do this: Create a 2D path in the X-Z plane (conceptually) and extrude around Z axis.
+                                       // But OpenSCAD 'rotate_extrude' takes points [x,y] where y is usually distance along rotation path? 
+                                       // Actually, rotate_extrude rotates a profile defined by x(y). Here our height is z.
+                                       // So we define the profile in X (radius) vs Z (height)? No, rotate_extrude expects Y to be the extrusion direction and X to be radius.
+                                       // Let's swap axes mentally: We will use 'rotate_extrude' where the rotation axis is Z? 
+                                       // If we want a tube along Z, we define points [radius, height] but rotate_extrude rotates around origin (0,0).
+                                       // So if we put radius on X and height on Y, rotating around 0,0 creates a cone from center.
+                                       // We need to offset the rotation axis? 
+                                       // Easier: Just use 'cylinder' for straight parts and difference of cylinders for cones? No, that leaves gaps at corners.
+                                       // Best method: Use 'linear_extrude' with path in XZ plane rotated around Z? No.
+                                       // Let's use the standard "polygon" + "rotate_extrude" where we define points [x,y] and rotate around 0,0. 
+                                       // We want a tube along Y axis (which represents height). Then we rename Y to Z later or just accept it builds up/down.
+                                       // Prompt: "rests on XY plane at z=0". So Height is Z.
+                                       // To use rotate_extrude for a vertical object, we define the profile in X-Y where Y is height? 
+                                       // If we do that, rotating around 0,0 creates an inverted cone or complex shape unless centered.
+                                       // Alternative: Use 'cylinder' with scaling factor (1 + k*height)? No.
+                                       // The most reliable way for a tapered tube in OpenSCAD without external libraries is to use the difference of two cylinders? 
+                                       // Or simply define points and rotate_extrude around Z axis, but we need the profile to be in X-Y plane where Y corresponds to our height (Z).
+                                       // Let's build it: Profile points [radius, z]. Rotate 360 deg. The resulting object will have its long axis along Y? 
+                                       // No, rotate_extrude rotates around Z by default if we pass x,y,z? No, just x,y. It creates a surface of revolution in X-Y plane rotated around origin.
+                                       // If our points are (radius, height), rotating them makes the object grow from center outwards radially and along Y. 
+                                       // So the "height" becomes the radial distance from axis? That's wrong.
+                                       
+// CORRECT APPROACH FOR VERTICAL TUBE:
+// We cannot easily use rotate_extrude for a vertical tube unless we treat Z as one of the rotation axes or transform coordinates.
+// However, OpenSCAD has no direct "tapered cylinder". 
+// The standard trick is to define points [x,y] where x=radius and y=z (height), but then rotate around 0,0? 
+// If I have point (5, 10) and rotate it, the distance from origin changes.
+// Actually, let's use 'cylinder' with scaling for straight parts is not possible directly without math functions which are allowed ($fn etc).
+// Wait, we can define a polygon in XZ plane? No, OpenSCAD primitives work on XY or XYZ blocks.
+// Let's try the difference method: 
+// Outer Shell = Large Cone (or Cylinder) MINUS Inner Void.
+// But to get sharp corners at Z=20 and Z=50, we need exact geometry.
+
+// Strategy: Build using 'difference' of two solids? No, that creates thick walls but hard to control inner radius exactly if outer is tapered.
+// Better: Use 'rotate_extrude' with a path defined in X-Y where

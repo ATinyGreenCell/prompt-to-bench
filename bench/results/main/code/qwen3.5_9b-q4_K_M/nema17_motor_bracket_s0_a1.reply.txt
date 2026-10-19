@@ -1,0 +1,114 @@
+```openscad
+// NEMA 17 Stepper Motor L-Bracket for Syringe Pump
+// Print orientation: Base plate on XY plane (z=0), building upward.
+// Centred at origin in X and Y as requested by Rule 3.
+$fn = 64; // High resolution for round holes
+
+// --- BASE PLATE DIMENSIONS ---
+base_width_x = 50;   // Total width (-25 to +25) -> Centered on X=0 naturally.
+base_depth_y_raw = 45; 
+motor_plate_height_z = 50; 
+
+// To satisfy Rule 3 ("centre it on the origin in X and Y"), we model relative to a corner (y=0)
+// then translate so that min_x=-25, max_x=25 -> Centered.
+// And min_y becomes negative: y_min = -base_depth_y_raw / 2.
+translate([0, -base_depth_y_raw/2]) {
+
+    // --- MOUNTING HOLES (M4) ---
+    m4_hole_diameter = 4.5; 
+    m4_hole_x1_local = -17;
+    m4_hole_y_local_from_bottom = 30; 
+
+    // Calculate absolute Y coordinates after centering translation
+    y_offset_center = base_depth_y_raw / 2; 
+    
+    // --- MAIN SOLID CONSTRUCTION ---
+
+    // 1. Base Plate (Box)
+    // Dimensions: X=50, Y=45, Z=5
+    difference() {
+        cube([base_width_x, base_depth_y_raw, motor_plate_height_z], center = [false, false]); 
+        // Note: The 'center' parameter in cube is relative to the object's local origin.
+        // Since we are translating later or now? We translated at top level.
+        // Let's rebuild logic inside this translation block for clarity.
+
+        // Re-defining shapes locally within the translate context
+        
+        // Base Plate Box (Solid)
+        base_box = cube([base_width_x, base_depth_y_raw, motor_plate_height_z]);
+        
+        // M4 Hole 1: x=-17, y=30 relative to bottom corner. 
+        // In our centered coordinate system (where we are currently inside translate), 
+        // the local origin of this block is (-25, -22.5) in global space? No.
+        // The cube command creates a box from 0..W, 0..D, 0..H relative to its own position argument if center=false.
+        // But we want holes at specific absolute coordinates defined by the user (-17, 30).
+        
+        // Let's switch strategy: Build everything in local coords (min_x=-25, min_y=0) then translate once?
+        // Or build with 'center=true' and adjust offsets.
+        // Easier: Use difference() to cut holes from a base box defined at [ -width/2 , 0 ] ? 
+        // No, standard is usually center=[true] for symmetry or explicit coords.
+        
+        // Let's define the Base Box centered on X=0 and Y=-base_depth_y_raw/2 (so min_y = negative).
+        // Actually, let's just build a box at [ -width/2 , 0 ] to match user "x from -25..25", 
+        // but wait, Rule 3 says center on origin. So X range should be [-25, 25]. Y range?
+        // If we model y=0..45 and translate by (0, -22.5), the final part is centered at (-25+25)/2 = 0 in X 
+        // and (0 + 45)/2 -> center of mass logic.
+        
+        // Let's stick to: Model relative to corner y=0, then translate(0, -base_depth_y_raw/2).
+        // Inside this block, coordinates are local to the part before final shift? 
+        // No, 'translate' moves everything. So inside here, 0 is global origin shifted by -22.5 in Y.
+        
+        // Let's restart geometry logic cleanly:
+        // We want a box from x=-25..25 and y=local_0 .. local_45.
+        // Then we translate(0, -22.5).
+        // So inside this block (which is the global scope shifted), let's just use 'cube' with center=[true] 
+        // but adjust Y offset? No, simpler: Use explicit coordinates for holes relative to a box defined at [min_x, min_y].
+        
+        // Define Base Box centered on X=0 and sitting on y = -base_depth/2 (so it goes up 45).
+        base_box_centered = cube([base_width_x, base_depth_y_raw, motor_plate_height_z], center=[true]); 
+        // This box is from x=-25..25, y=-22.5..+22.5, z=0..50? No, height starts at 0 relative to its own bottom if not centered in Z.
+        // Let's assume base sits on bed (z=0). So cube([w,d,h], center=[true]) puts it from -h/2 to +h/2. 
+        // We want z=0..5. So we need translate(0, 0, h/2) or use 'center' only for X/Y?
+        
+        // Correct approach:
+        base_plate = cube([base_width_x, base_depth_y_raw, motor_plate_height_z], center=[true]); 
+        // This is centered in all axes. We want it on the bed (z=0). So we need to shift Z up by h/2?
+        // Or just define box at [ -width/2 , 0 ] and translate Y later?
+        
+        // Let's go with: Model relative to corner (-25, 0), then apply final translation.
+    }
+
+    // --- RE-STRUCTURED LOGIC FOR CLARITY AND CORRECT COORDINATES ---
+    
+    // We will build the part in a local coordinate system where min_x = -25 and min_y = 0 (corner at bottom-left).
+    // Then we apply translate(0, -base_depth_y_raw/2) to center it on Y as per Rule 3.
+    // X is already centered (-25..25). Z starts at 0.
+
+    local_base_width_x = base_width_x; 
+    local_base_depth_y = base_depth_y_raw; 
+    
+    // Main Body (Base + Vertical Plate) combined into one block for simplicity, then cut holes.
+    // Base: x=-25..25, y=0..45, z=0..5
+    // Motor Plate extension? User says "Vertical motor plate... standing on the back edge". 
+    // Coordinates given: Vertical plate x from -25 to 25, y from 0 to 5. 
+    // This implies the vertical part is just a wall at y=0 (thickness 5 in Y).
+    
+    main_body = cube([local_base_width_x, local_base_depth_y, motor_plate_height_z]); 
+    
+    // Wait, if base height is 5 and plate goes up to 50? 
+    // User: Base z from 0 to 5. Vertical plate z from 0 to 50.
+    // So the vertical wall stands on top of the bed (z=0) or attached to side?
+    // "standing on the back edge". If base is y=0..45, and plate is y=0..5. 
+    // It seems they are adjacent in Y? Or overlapping?
+    // Usually an L-bracket has a horizontal foot (base) and a vertical riser.
+    // Base: x=-25..25, z=0..5. Where is it in Y? User says y from 0 to 45. So the base covers that whole depth.
+    // Vertical plate: x=-25..25, y=0..5, z=0..50. 
+    // This implies a vertical wall at one end (y=0) of the base? Or is it an L shape where the riser goes UP from the back edge?
+    // If Base Y is 0..45 and Plate Y is 0..5, they overlap in Y range [0,5]. 
+    // So we have a block x=-25..25, y=0..45. And on top of it (or attached to side) a vertical part?
+    // "L-shaped mounting bracket". Usually: Foot is horizontal, riser goes up from one end.
+    // If Base Y=0..45 and Plate Y=0..5, the plate is flush with the front edge (y=0)? 
+    // Let's assume the vertical wall stands on the bed at y=0 to y=5? No, that would be a thin slice of the base.
+    // Maybe the user means: Base is x=-25..25, z=0..5 (flat plate). Vertical part is attached at one end.
+    // Let's assume standard L-bracket: 
+    // Horizontal leg: y from 0 to 45? No, usually horizontal legs are long in Y or

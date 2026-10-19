@@ -1,0 +1,159 @@
+// DIY Magnetic Stirrer Housing based on 80mm PC Fan
+// Print Orientation: Upside-down. Top plate is at Z=0, walls rise to Z=40.
+// Outer dimensions are defined by the top plate size + wall thickness logic 
+// or explicitly as requested for outer bounds where applicable.
+
+$fn = 64; // High resolution for smooth curves if needed (though mostly rectangular)
+
+// --- Dimensions from User Request ---
+// Top Plate Thickness
+t_top_plate = 2; 
+
+// Wall Height and Total Box Height
+h_wall_total = 40; 
+w_wall_thickness = 2.5; 
+
+// Outer Size of the housing footprint (X x Y)
+d_outer_x = 90;
+d_outer_y = 90;
+
+// Fan Mounting Hole Pattern for Screws
+screw_hole_diameter = 4.5; // M4 screw hole size
+pattern_size_square = 71.5; // Distance between centers of the square pattern
+
+// Cable Notch Dimensions (on one wall)
+notch_width = 12;
+notch_depth_from_top_edge = 8; 
+// The notch reaches from z=32 to z=40, which matches: h_wall_total - notch_depth_from_top_edge = 40 - 8 = 32.
+
+// --- Derived Dimensions for Modeling ---
+// Inner dimensions of the box (Outer - 2*Wall Thickness)
+d_inner_x = d_outer_x - (w_wall_thickness * 2);
+d_inner_y = d_outer_y - (w_wall_thickness * 2);
+
+// Center offset for the screw pattern relative to the outer edge? 
+// The prompt says "centred on the plate". Usually, this means centered in X and Y.
+// However, standard PC fans have holes at specific offsets from corners. 
+// Given "71.5 mm square pattern centred on the plate", we assume a symmetric 4-hole layout 
+// where the center of the group is (0,0).
+
+offset_x = pattern_size_square / 2;
+offset_y = pattern_size_square / 2;
+
+
+module build_stirrer_housing() {
+    // Start with the solid block representing the outer envelope minus internal voids
+    
+    union() {
+        // --- Top Plate (Base) ---
+        // Located at Z=0 to Z=t_top_plate
+        translate([0, 0, -t_top_plate]) 
+            cube([d_outer_x + w_wall_thickness*2, d_outer_y + w_wall_thickness*2, t_top_plate], center=false);
+
+        // Note: The prompt asks for outer size 90x90. 
+        // If we build a solid block of (Outer+WallThickness) and then cut walls later, it's easier.
+        // Let's define the main body as a large cube that encompasses everything, 
+        // then subtract voids to create walls and holes.
+
+    }
+
+    difference() {
+        
+        // 1. Main Solid Block
+        // Dimensions: Outer X + Left/Right Walls = Total Width? 
+        // Actually, simpler approach: Create the outer bounding box of the finished part including walls,
+        // then subtract internal cavities and holes.
+        
+        translate([0, 0, -t_top_plate])
+            cube([d_outer_x + w_wall_thickness*2, d_outer_y + w_wall_thickness*2, h_wall_total], center=false);
+
+        // --- Cutouts for Walls (Creating the Open Box) ---
+        // We need to remove material from:
+        // 1. Front Wall (Y = -Outer/2) -> Remove strip of width w_wall_thickness at Y > -(d_outer_y/2 + wall_thick?) 
+        //    Wait, let's define coordinates carefully.
+        
+        // Center is (0,0). Outer edges are +/- d_outer_x/2 and +/- d_outer_y/2.
+        // Wall thickness extends OUTWARDS from the inner volume? Or INWARDS to outer dimensions?
+        // "Outer size is 90x90". This usually means the footprint on the table is 90x90 including walls.
+        
+        let(outer_half_x = d_outer_x / 2, 
+            outer_half_y = d_outer_y / 2)
+
+        // Cut Front Wall (Positive Y side of inner box? No, we want open top).
+        // Let's assume the "Open Box" means there is no lid. The walls go up to Z=40 and stop at the top edge.
+        
+        // We need to remove material from:
+        // - Front Wall (Y > outer_half_y) -> Remove a slice of thickness w_wall_thickness? 
+        //   Actually, if Outer Size is 90x90, then the walls are part of that 90x90.
+        
+        // Strategy: Create a solid block of size [d_outer_x + wall_thick*2] to allow for easy subtraction?
+        // No, let's stick to exact outer dimensions and subtract "voids" inside/outside appropriately.
+        
+        // Let's redefine the base cube to be exactly the Outer Dimensions at Z=0 plane, 
+        // but we need walls rising UP from it.
+        // If the top plate is 90x90 (outer), then the inner cavity is smaller.
+        
+        // Correct Geometry Construction:
+        // Base Cube = [d_outer_x + w_wall_thickness*2] width? No.
+        // Let's assume the "Outer Size" refers to the maximum extent of the part including walls.
+        // So we start with a block that covers the outer footprint plus wall thicknesses on all sides 
+        // so we can subtract them, OR we build from inside out.
+        
+        // Easier method: Build the solid shell directly using difference and specific cuts.
+        
+        // Base Block (Solid): Outer dimensions + extra buffer for walls? 
+        // Let's assume the user wants a part that sits on 90x90 footprint including walls.
+        // So we start with a block of size [d_outer_x, d_outer_y] at Z=0 and extend height to h_wall_total+t_top_plate?
+        
+        // Re-reading: "2 mm thick top plate lies on the bed... four walls rise from it".
+        // This implies the top plate is continuous. The walls are attached to its edges or inside/outside?
+        // Standard interpretation: Top plate is 90x90 outer dimension. Walls go up from the perimeter.
+        
+        let(base_x = d_outer_x, base_y = d_outer_y)
+
+        translate([0, 0, -t_top_plate]) 
+            cube([base_x + w_wall_thickness*2, base_y + w_wall_thickness*2, h_wall_total], center=false); 
+        
+        // Wait, if I start with (90+5)*2 size and cut down to 90x90 outer, that works.
+        
+    }
+
+    difference() {
+        union() {
+            // --- Construct the Base Block including Wall Thickness Buffer ---
+            translate([0, 0, -t_top_plate]) 
+                cube([d_outer_x + w_wall_thickness*2, d_outer_y + w_wall_thickness*2, h_wall_total], center=false);
+
+            // --- Cut Internal Cavity (The Open Box) ---
+            // Inner dimensions: Outer - 2*WallThickness on each side?
+            // If the top plate is solid 90x90 outer, and walls are attached to it...
+            // Usually "Outer size 90x90" means the bounding box of the whole object.
+            
+            let(inner_x = d_outer_x - w_wall_thickness*2)
+            let(inner_y = d_outer_y - w_wall_thickness*2)
+
+            translate([-(inner_x/2), -(inner_y/2)]) 
+                cube([inner_x, inner_y, h_wall_total], center=false); // This creates the empty space inside? No.
+                
+        }
+        
+        // Let's restart the geometry logic for clarity to ensure no errors:
+        // 1. Create a solid block representing the "Outer Envelope" including walls thicknesses on all sides 
+        //    so we can subtract them later, OR create the top plate and add walls?
+        //    Adding walls is safer for topology.
+        
+        union() {
+            // Top Plate (Solid 90x90) at Z=0 to Z=2
+            translate([0, 0, -t_top_plate]) 
+                cube([d_outer_x, d_outer_y, t_top_plate], center=false);
+
+            // Four Walls rising from the top plate edges.
+            // Wall Height = h_wall_total (since they rise FROM z=t_top_plate? Or does "rise to z=40" mean total height?)
+            // Prompt: "2 mm thick top plate... four walls, 2.5 mm thick, rise from it to z = 40".
+            // This implies the TOP of the wall is at Z=40. The bottom of the wall sits on Top Plate (Z=2).
+            
+            let(wall_height_from_plate = h_wall_total - t_top_plate)
+
+            // Front Wall (+Y side)
+            translate([-(d_outer_x/2), d_outer_y/2 + w_wall_thickness/2, 0]) 
+                cube([w_wall_thickness*2, wall_height_from_plate, wall_height_from_plate

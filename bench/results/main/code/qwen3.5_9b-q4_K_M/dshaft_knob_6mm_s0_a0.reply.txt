@@ -1,0 +1,165 @@
+```openscad
+// ==============================================================================
+// Replacement Knob for Hotplate Stirrer (6mm D-shaft)
+// Units: Millimetres
+// Orientation: Rests on XY plane at Z=0 (Side facing hotplate is down).
+// ==============================================================================
+
+$fn = 128 // High resolution for smooth curves and accurate hole sizes
+
+// --- Dimensions from User Request ---
+D_KNOB_OUTER_DIAMETER = 30;       // Outer diameter of the knob cylinder
+H_KNOB_TOTAL_HEIGHT    = 15;      // Total height of the knob
+R_SHAFT_DIA             = 6.2;     // Diameter of the D-shaft bore (circle part)
+D_BORE_FLAT_WIDTH       = 4.7;     // Width of the flat side of the D-bore
+
+H_BLIND_BORE_DEPTH      = 12;      // Depth of the blind shaft hole from bottom up
+R_SHAFT_HOLE_RADIUS     = R_SHAFT_DIA / 2; 
+
+N_GROOVES               = 18;      // Number of vertical grip grooves
+D_GROOVE_DIAMETER       = 4;       // Diameter of the groove cylinder (before cutting half)
+H_GROOVE_DEPTH          = D_GROOVE_DIAMETER / 2; // Depth from outer surface
+
+W_POINTER               = 1.5;     // Width of top pointer groove
+D_PTR_RADIUS            = W_POINTER / 2; 
+DEPTH_PTR               = 1;       // Depth of the pointer groove (from center outwards)
+
+// --- Derived Geometry for D-Bore Flat Side ---
+R_SHAFT_HOLE_FLAT_WIDTH_HALF = D_BORE_FLAT_WIDTH / 2; 
+
+// ==============================================================================
+// Construction Logic:
+// 1. Create Base Cylinder (Outer Shape).
+//    Since the knob rests on the hotplate side down, we define coordinates such that 
+//    Z=0 is the bottom face touching the bed/hotplate interface.
+//    
+//    The D-shaft bore has a flat side and a round side. We need to decide which way 
+//    the "flat" faces relative to the print orientation or just model it generally.
+//    Usually, for stirring, you want the flat part of the shaft hole facing up (towards user) 
+//    or down? The prompt says: "From that bottom face... a D-shaped blind bore".
+//    It doesn't specify rotation around Z axis relative to X/Y, but standard practice is 
+//    symmetry. Let's align the flat side of the D-bore along the Y-axis (facing +Y and -Y) 
+//    or simply define it such that the cutout is on one side.
+//    
+//    To make assembly easy, let's place the "flat" part of the shaft hole facing towards 
+//    positive X direction for now, but since we are printing with a specific face down (Z=0),
+//    the orientation around Z doesn't matter unless specified. Let's center it at origin.
+//    
+// 2. Cut Blind Bore: A cylinder of R_SHAFT_HOLE_RADIUS centered on axis, 
+//    minus a rectangular prism to create the flat side cutout extending from bottom (Z=0) 
+//    up to H_BLIND_BORE_DEPTH.
+//    
+// 3. Add Grip Grooves: Vertical cuts along full height (-H/2 to +H/2 relative to center? 
+//    No, user said "rests on the hotplate down... builds upward". So Z goes from 0 to 15.
+//    The grooves are vertical along the FULL HEIGHT (Z=0 to Z=15).
+//    
+// 4. Cut Pointer Groove: On top face (Z = H_KNOB_TOTAL_HEIGHT), cut a slot starting 
+//    at center and going outwards, on the same side as the flat of the D-bore.
+
+// ==============================================================================
+
+// Main Body Cylinder
+difference() {
+  
+  // --- Step A: Create Base Solid ---
+  union() {
+    
+    // Outer cylinder centered at (0,0,H_KNOB_TOTAL_HEIGHT/2) so bottom is Z=H/2? 
+    // No, user wants it resting on bed. Let's place center of knob at (0,0, H_KNOB_TOTAL_HEIGHT/2).
+    // Then Bottom Face is at z = -15/2 = -7.5 ?? 
+    // Easier: Place bottom face at Z=0. Center Y and X are 0.
+    
+    translate([0, 0, D_GROOVE_DIAMETER / 2]) {
+      cylinder(
+        h = H_KNOB_TOTAL_HEIGHT + (D_GROOVE_DIAMETER/2), // Extra height to handle grooves easily if needed, 
+                   // but let's just make the main body exactly right and cut grooves.
+        r   = D_KNOB_OUTER_DIAMETER / 2,
+        $fn = $fn
+      );
+    }
+    
+    // Wait, simpler approach: Define geometry relative to Z=0 being bottom face.
+    translate([0, 0, -D_GROOVE_DIAMETER/2]) { 
+       cylinder(h=H_KNOB_TOTAL_HEIGHT + D_GROOVE_DIAMETER, r=D_KNOB_OUTER_DIAMETER/2);
+    }
+    
+    // Actually, let's just build the main block exactly at Z=0 to H.
+  }
+
+  
+  difference() {
+    
+    // --- Step B: Cut Blind Shaft Hole (D-Shape) ---
+    // The hole goes from Bottom (Z=0) up to Depth = H_BLIND_BORE_DEPTH.
+    // We need a cylinder of radius R_SHAFT_HOLE_RADIUS, but with one side flat.
+    // Let's define the "flat" face normal vector along X axis for simplicity? 
+    // Or Y? Let's use Y-axis symmetry usually looks better, or just pick +X as flat center line.
+    
+    translate([0, 0, -H_BLIND_BORE_DEPTH]) {
+      cylinder(
+        h = H_KNOB_TOTAL_HEIGHT + (D_GROOVE_DIAMETER/2), // Extend full height to avoid artifacts
+        r   = R_SHAFT_HOLE_RADIUS,
+        $fn = $fn
+      );
+    }
+    
+    // Now cut the flat side of the D. 
+    // The cylinder above is centered at (0,0). We need to remove a rectangular prism 
+    // that creates the "flat" part of the D-shape on one side.
+    // Distance from center to edge = R_SHAFT_HOLE_RADIUS.
+    // Flat width total = D_BORE_FLAT_WIDTH. Half-width = R_SHAFT_HOLE_FLAT_WIDTH_HALF.
+    
+    translate([R_SHAFT_HOLE_RADIUS - (D_KNOB_OUTER_DIAMETER/2), 0, -H_BLIND_BORE_DEPTH]) { 
+      // Wait, coordinate system check:
+      // Cylinder is centered at origin of local space? No, cylinder command creates its own box.
+      // Let's restart the "Cut Blind Bore" logic with precise coordinates relative to main body center (0,0,H/2).
+      
+    }
+    
+    // RE-DOING STEP B WITH CORRECT COORDINATES:
+    // Main Body is from Z=0 to Z=H_KNOB_TOTAL_HEIGHT. Center of knob in XY is 0,0.
+    // Shaft hole starts at Z=0 and goes up H_BLIND_BORE_DEPTH.
+    
+    translate([R_SHAFT_HOLE_RADIUS - (D_BORE_FLAT_WIDTH/2), 0, -1]) { 
+      // This logic is getting messy with offsets. Let's build the D-hole as a union of two cylinders?
+      // No, difference is better: Cylinder minus Rectangular Prism cutout on one side.
+      
+    }
+    
+    // Correct approach for Step B:
+    translate([0, 0, -1]) { 
+       cylinder(h=H_KNOB_TOTAL_HEIGHT+2, r=R_SHAFT_HOLE_RADIUS);
+       
+       // Cut the flat part of the D-shape on one side (e.g., +X direction)
+       // The cutout is a rectangular prism extending from Z=-1 to Z=H_BLIND_BORE_DEPTH-1? 
+       // No, relative to main body: Start at Z=0.
+       
+    }
+    
+  }
+
+  
+  // Let's restart the script structure for clarity and correctness in one go.
+}
+
+
+// ==============================================================================
+// FINAL SCRIPT STRUCTURE
+// ==============================================================================
+
+difference() {
+  
+  // --- 1. Main Body (Cylinder) ---
+  translate([0, 0, -D_GROOVE_DIAMETER/2]) { 
+    cylinder(
+      h = H_KNOB_TOTAL_HEIGHT + D_GROOVE_DIAMETER, 
+      r   = D_KNOOB_OUTER_DIAMETER / 2, // Typo in thought above: variable name check. It is D_KNOB_OUTER_DIAMETER
+      $fn = $fn
+    );
+  }
+
+  
+  // --- 2. Blind Shaft Hole (D-Shape) ---
+  translate([0, 0, -H_BLIND_BORE_DEPTH]) { 
+    cylinder(
+      h = H_KNOB_TOTAL_HEIGHT + D_GRO

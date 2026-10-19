@@ -1,0 +1,82 @@
+```openscad
+// DIY Magnetic Stirrer Housing based on 80mm PC Fan
+// Print Orientation: Upside-down. Top plate is at Z=0, walls rise to Z=40.
+// Outer dimensions are defined by the top plate size + wall thickness logic 
+// or explicitly as requested for outer bounds where applicable.
+
+$fn = 64; // High resolution for smooth curves if needed (though mostly rectangular)
+
+// --- Dimensions from User Request ---
+// Top Plate Thickness
+t_top_plate = 2; 
+
+// Wall Height and Total Box Height
+h_wall_total = 40; 
+w_wall_thickness = 2.5; 
+
+// Outer Size of the housing footprint (X x Y) - This includes walls
+d_outer_x = 90;
+d_outer_y = 90;
+
+// Fan Mounting Hole Pattern for Screws
+screw_hole_diameter = 4.5; // M4 screw hole size
+pattern_size_square = 71.5; // Distance between centers of the square pattern
+
+// Cable Notch Dimensions (on one wall)
+notch_width = 12;
+notch_depth_from_top_edge = 8; 
+// The notch reaches from z=32 to z=40, which matches: h_wall_total - notch_depth_from_top_edge = 40 - 8 = 32.
+
+// --- Derived Dimensions for Modeling ---
+// Inner dimensions of the box (Outer - 2*Wall Thickness)
+d_inner_x = d_outer_x - (w_wall_thickness * 2);
+d_inner_y = d_outer_y - (w_wall_thickness * 2);
+
+offset_x = pattern_size_square / 2;
+offset_y = pattern_size_square / 2;
+
+
+module build_stirrer_housing() {
+    difference() {
+        // --- Main Solid Block ---
+        // We create a block that is slightly larger than the final outer dimensions 
+        // to allow for easy subtraction of wall voids, OR we construct it exactly.
+        // Strategy: Construct exact Outer Envelope (90x90 x 42mm) and subtract internal cavities/holes.
+        
+        translate([0, 0, -t_top_plate]) 
+            cube([d_outer_x + w_wall_thickness*2, d_outer_y + w_wall_thickness*2, h_wall_total], center=false);
+
+        // --- Cutouts for Walls (Creating the Open Box) ---
+        // We need to remove material from:
+        // 1. Front Wall Void (+Y side of inner box? No, we want open top).
+        
+        let(outer_half_x = d_outer_x / 2 + w_wall_thickness/2) 
+            outer_half_y_val = d_outer_y / 2 + w_wall_thickness/2
+        
+        // Cut Internal Cavity (The Open Box Volume)
+        translate([-(d_inner_x/2), -(d_inner_y/2)]) 
+            cube([d_inner_x, d_inner_y, h_wall_total], center=false);
+
+        // --- Screw Holes in Top Plate ---
+        for(i = [0:1]) {
+            for(j = [0:1]) {
+                translate([(i==0)?-offset_x:offset_x, (j==0)?-offset_y:offset_y]) 
+                    cylinder(h=t_top_plate+0.05, d=screw_hole_diameter); // +0.05 to ensure clean cut
+            }
+        }
+
+        // --- Cable Notch in One Wall ---
+        // Let's put the notch on the Front wall (Positive Y side of the inner cavity)
+        // The wall is at y = d_inner_y/2. 
+        // We need a hole 12mm wide, centered along that wall edge? 
+        // "centred along the wall" usually means centered in X relative to the wall's width or center of box?
+        // Assuming centered on the face (X=0).
+        
+        translate([-(d_inner_x/2) + notch_width/2 - w_wall_thickness, d_inner_y/2]) 
+            cube([notch_width, 1, notch_depth_from_top_edge], center=false);
+
+    }
+}
+
+build_stirrer_housing();
+```

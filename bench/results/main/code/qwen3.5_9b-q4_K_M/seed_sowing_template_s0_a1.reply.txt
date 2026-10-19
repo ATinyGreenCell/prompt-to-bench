@@ -1,0 +1,65 @@
+```openscad
+// Sowing Template for 90mm Petri Dish
+// Designed to sit flat inside a standard 90mm dish.
+// Orientation: Rests on XY plane at Z=0. Notch is on +Y side (front).
+
+$fn = 128 // High resolution for smooth holes and curves
+
+// --- Dimensions ---
+// Outer diameter of the disc base
+D_OUTER = 85; 
+// Thickness of the disc
+H_THICKNESS = 2; 
+
+// Grid parameters
+GRID_COUNT_X = 7;
+GRID_COUNT_Y = 7;
+DIAMETER_HOLE = 3; // Diameter of each sowing hole
+SPACING_CENTRE_TO_CENTRE = 9;
+
+// Notch dimensions (on the +Y side)
+NOTCH_WIDTH_X = 10;   // Width along X axis
+NOTCH_DEPTH_Y = 4;    // Depth measured inwards from the outer rim along Y
+
+// --- Calculations ---
+// Calculate grid offset to center the grid on the disc origin. 
+// The loop will generate coordinates relative to a starting point, so we calculate the start position.
+GRID_START_X = -(SPACING_CENTRE_TO_CENTRE * (GRID_COUNT_X - 1)) / 2;
+GRID_START_Y = -(SPACING_CENTRE_TO_CENTRE * (GRID_COUNT_Y - 1)) / 2;
+
+difference() {
+    // 1. Create the solid base disc (cylinder) resting on Z=0
+    translate([0, 0, H_THICKNESS/2]) { 
+        cylinder(
+            h = H_THICKNESS + 1, // Add small buffer to ensure clean cut in difference operations if needed later
+            r = D_OUTER / 2, 
+            center = true
+        )
+    }
+
+    // 2. Cut the Grid of Holes (From Top Down)
+    for (i_x = [0 : GRID_COUNT_X - 1], i_y = [0 : GRID_COUNT_Y - 1]) {
+        translate([GRID_START_X + SPACING_CENTRE_TO_CENTRE/2, 
+                   GRID_START_Y + SPACING_CENTRE_TO_CENTRE/2, 
+                   H_THICKNESS/2]) { // Center the hole on top face (Z = thickness)
+            cylinder(
+                h = -(H_THICKNESS + 0.1), // Negative height to cut through from top down into the solid
+                r1 = DIAMETER_HOLE / 2, 
+                r2 = DIAMETER_HOLE / 2,
+                center = true
+            )
+        }
+    }
+
+    // 3. Cut the Orientation Notch on the +Y side
+    // The notch is centered along X=0 (symmetric) and located at the outer rim (+Y).
+    // We cut a rectangular prism from the top face inwards towards Z = -H_THICKNESS/2
+    
+    translate([0, D_OUTER/2 - NOTCH_DEPTH_Y/2 + H_THICKNESS/2]) { 
+        cube(
+            [NOTCH_WIDTH_X, NOTCH_DEPTH_Y, 1.5], // Extend slightly past the bottom to ensure full depth cut
+            center = false 
+        )
+    }
+}
+```

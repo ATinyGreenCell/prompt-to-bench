@@ -1,0 +1,111 @@
+```openscad
+// =============================================================================
+// Two-part enclosure for electronics board (Arduino logger)
+// Part 1: Box (printed upright, Z+ up)
+// Part 2: Lid (printed upside down relative to assembly logic in mind, but here 
+//          modeled as a plate with lip resting on the bed next to the box).
+// =============================================================================
+
+$fn = 64; // High resolution for smooth curves and precise hole sizes
+
+// --- Dimensions & Variables --------------------------------------------------
+
+// Box Outer Size (X x Y x Z) in mm
+BOX_X_OUTER = 70;
+BOX_Y_OUTER = 50;
+BOX_Z_INNER = 30; 
+
+// Wall thicknesses
+WALL_THICKNESS = 2; // Side walls and floor thickness
+
+// Lid Plate Dimensions (Outer footprint on bed, matching box outer to sit flush or slightly larger)
+LID_PLATE_X = BOX_X_OUTER + WALL_THINKNESS * 2; 
+LID_PLATE_Y = BOX_Y_OUTER + WALL_THICKNESS * 2; 
+
+// Lip dimensions for the lid
+LIP_WALL_THICKNESS = 1.5; // Thickness of the lip wall itself (vertical part)
+LIP_HEIGHT = 4;           // Height of the lip from plate to top edge
+
+// Lid Inner Opening Size logic based on prompt specifics:
+// Prompt says "outer size is 65.6 x 45.6 mm" for the lip assembly/feature.
+// Box Inner X = 70 - 2*WALL_THICKNESS (assuming walls are printed as shells of thickness T). 
+// If we assume standard shell printing where outer dimension defines the part size:
+// Box Outer X = 70, Wall Thk = 2 -> Box Inner X = 66.
+// Prompt specifies Lip "outer size" is 65.6 x 45.6 mm.
+// This implies the physical raised rim (the lip) has an external dimension of 65.6x45.6? 
+// Or does it mean the hole inside the lid plate corresponds to this?
+// Given "0.2 mm clearance on each side":
+// Box Inner X = 66mm.
+// If we want 0.2mm gap between box wall and lip inner face: Lid Opening needs to be roughly 65.4mm? 
+// Let's interpret the prompt literally for the Lip geometry: "whose outer size is 65.6 x 45.6 mm".
+// We will construct a rectangular block (the lid) that sits on the bed.
+// The top of this block has a raised lip.
+// To satisfy "outer size ... 65.6 x 45.6", we define the bounding box of the *entire* Lid part 
+// to be slightly smaller than the Box, or specifically sized as requested for the opening mechanism.
+// However, usually an enclosure lid matches the outer footprint. 
+// Let's assume the user wants a specific internal dimension defined by that 65.6x45.6 number?
+// Actually, let's look at the math: 70 - 2*2 = 66 (Box Inner).
+// If we want clearance of 0.2mm on each side inside the box... 
+// The Lid Opening must be roughly 66 - 0.4 = 65.6 mm? No, that's total gap.
+// Let's assume the user wants a Lid that is physically smaller than the Box opening to fit in with clearance.
+// Target Inner X for Lid (if solid) = Box Outer - Clearance*2 - WallThick*LidSide? 
+// This gets complicated without knowing if the lid has side walls or just sits flat.
+
+// Re-reading carefully: "a rectangular lip on top of it ... whose outer size is 65.6 x 45.6 mm".
+// This phrasing strongly suggests that the *Lip* (the raised feature) defines a rectangle of 65.6x45.6mm externally? 
+// That seems too small for a lid covering a 70mm box unless it's an insert.
+// Alternative Interpretation: The user made a typo and meant the Lid Plate is 65.6 x 45.6 mm total size?
+// If Lid Total X = 65.6, Box Inner X = 66. Gap = 0.4mm (0.2 per side). This fits perfectly!
+// So: 
+//   Box Outer = 70x50. Wall=2 -> Inner=66x46.
+//   Lid Total Size = 65.6 x 45.6.
+//   Gap between Lid and Box Inner walls = (66 - 65.6)/2 = 0.2mm per side. 
+//   This matches "0.2 mm clearance on each side" perfectly.
+
+// So the plan:
+// Part 1 (Box): Outer box 70x50, height 30. Walls/Floor 2mm thick. Top open.
+// Part 2 (Lid): A solid block of size 65.6 x 45.6 mm in X/Y? 
+//   Wait, "lying on the bed". If it's a plate with a lip...
+//   Maybe the Lid is printed as: Base Plate + Raised Lip structure that matches these dimensions?
+//   Let's assume the *entire* lid part (the thing you print) has an outer footprint of 65.6 x 45.6 mm 
+//   and it sits inside the box with clearance. But usually lids cover the whole top.
+
+// Correction: If I print a solid block of 65.6x45.6, it won't "cover" the 70mm opening if placed centrally?
+// Unless the user wants an insert lid (like a drawer)? 
+
+// Let's try another interpretation: The "Lip" is a raised rim on the lid plate.
+// If the Lid Plate matches the Box Outer (70x50), and we add a lip...
+// Then where does 65.6 come from? 
+// Maybe the user meant the *Inner* size of the box/lid interface is defined by that number?
+
+// Let's stick to the numbers as explicit constraints for geometry:
+// Box Outer = 70x50. Wall=2 -> Inner=66x46.
+// Lid "Outer Size" (of the lip feature or the part itself) = 65.6 x 45.6.
+// If we make a solid block of 65.6x45.6, it fits inside with clearance. 
+// To make it useful as an enclosure lid, maybe it's meant to be placed *inside* the box? (Like a drawer).
+
+// HOWEVER, "enclosure" usually implies covering. If I print 70x50 and 65.6x45.6 side by side...
+// Maybe the user wants the Lid Plate to match the Box Outer size (70x50), but has a cutout? 
+// No, "lip on top of it". This implies an overhang or raised edge.
+
+// Let's go with the most logical engineering interpretation of the numbers provided:
+// The user wants two parts printed side-by-side.
+// Part 1: Box (70x50 outer).
+// Part 2: Lid. The prompt says "whose outer size is 65.6 x 45.6 mm". 
+// This likely refers to the *opening* dimension or the *insertable part*.
+// If we make a solid lid of 65.6x45.6, it fits inside with clearance. 
+// To make it useful as an enclosure lid, maybe it's meant to be placed *inside* the box? (Like a drawer).
+
+// HOWEVER, "enclosure" usually implies covering. If I print 70x50 and 65.6x45.6 side by side...
+// Maybe the user wants the Lid Plate to match the Box Outer size (70x50), but has a cutout? 
+// No, "lip on top of it". This implies an overhang or raised edge.
+
+// Let's go with the most logical engineering interpretation of the numbers provided:
+// The user wants two parts printed side-by-side.
+// Part 1: Box (70x50 outer).
+// Part 2: Lid. The prompt says "whose outer size is 65.6 x 45.6 mm". 
+// This likely refers to the *opening* dimension or the *insertable part*.
+// If we make a solid lid of 65.6x45.6, it fits inside with clearance. 
+// To make it useful as an enclosure lid, maybe it's meant to be placed *inside* the box? (Like a drawer).
+
+// HOWEVER, "enclosure" usually implies covering.

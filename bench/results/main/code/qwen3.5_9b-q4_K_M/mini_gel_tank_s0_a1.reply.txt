@@ -1,0 +1,118 @@
+```openscad
+// Buffer Tank for Mini Horizontal Gel Electrophoresis Box
+// Units: millimetres (mm)
+
+// --- Outer Dimensions ---
+$W_OUT_X = 120; // Width along X axis
+$D_OUT_Y = 70;  // Depth along Y axis
+$H_OUT_Z = 40;  // Height along Z axis
+
+// --- Wall and Floor Thicknesses ---
+$T_WALL_THICKNESS = 3; // Side wall thickness (X and Y directions)
+$FLOOR_THICKNESS = 3;  // Bottom floor thickness (Z direction)
+
+// --- Platform Dimensions ---
+$P_LEN_X = 60;    // Length of platform along X axis
+$P_TOP_Z_ABS = 13; // Absolute Z coordinate of the top surface of the platform
+$P_HEIGHT_REL_FLOOR = 10; // Height above inner floor (used for verification)
+
+// --- Electrode Hole Dimensions ---
+$H_ELECTRODE_DIA = 2; // Diameter of electrode holes
+$Y_HOLE_POS = 0;      // Y position for electrodes (center line, effectively center of tank width if centered on origin? 
+                       // User said "y=0". If the box is centered at X,Y then y=0 is the midline.
+// Let's assume the model is centered in XY space as per rule 3 ("centre it on the origin").
+$Z_HOLE_POS_ABS = $H_OUT_Z - ($FLOOR_THICKNESS + $P_HEIGHT_REL_FLOOR) + ($P_TOP_Z_ABS - $P_HEIGHT_REL_FLOOR); 
+// Wait, let's calculate Z hole position carefully.
+// Inner Floor Base (Absolute Z): The floor sits on the bed? Or is "40mm" outer height including floor?
+// Standard interpretation: Outer box 120x70x40. Rests on XY plane at z=0.
+// So bottom face of tank is at z = -($FLOOR_THICKNESS) if we want inner volume to start higher? 
+// Rule 3 says "rests on the XY plane". Usually means the bounding box touches Z=0 or sits nicely.
+// Let's assume the outer bottom surface is at Z=0 for printing stability, and the floor thickness adds height inside?
+// No, if it rests on XY plane, the material occupies z >= 0.
+// So Outer Bottom = Z=0. Inner Floor Base = $FLOOR_THICKNESS (3mm).
+$Z_INNER_BASE_ABS = $FLOOR_THICKNESS;
+
+// Calculate Platform Top Absolute Height Check:
+// User says "top is 10 mm above the inner floor". 
+// If Inner Floor Base is Z=3, then Platform Top should be at Z = 3 + 10 = 13.
+// This matches $P_TOP_Z_ABS = 13 provided in prompt logic implicitly? 
+// Prompt says "(at z = 13)". So Absolute Z of platform top IS 13.
+$Z_PLATFORM_TOP_ABS = 13;
+
+// Calculate Electrode Hole Position:
+// "drill a ... hole along X at y = 0, z = 30".
+// This implies absolute coordinates relative to the part's origin (which is on the bed).
+$HOLE_Z_ABS_TARGET = 30; 
+$Y_HOLE_POS_TARGET = 0;
+
+// --- Derived Dimensions for Modeling ---
+$I_WIDTH_X = ($W_OUT_X - 2 * $T_WALL_THICKNESS); // Inner Width X
+$I_DEPTH_Y = ($D_OUT_Y - 2 * $T_WALL_THICKNESS); // Inner Depth Y (assuming walls on both sides)
+$Z_INNER_BASE_ABS = $FLOOR_THICKNESS;
+
+// Platform Geometry:
+// Spans full inner width (Y). So it goes from y = -$I_DEPTH_Y/2 to +$I_DEPTH_Y/2.
+// Length in X is 60, centered on origin? 
+// "centred" usually means centred relative to the tank or absolute center if tank is at origin.
+// Tank outer: -60 to +60 (X). Platform length 60. Centered -> from x=-30 to x=30.
+$P_X_START = -$P_LEN_X / 2; 
+$P_X_END = $P_LEN_X / 2;
+
+// Platform Thickness/Height:
+// It is a "solid raised platform". We need its thickness (Z).
+// Top is at Z=13. Bottom sits on the inner floor? Or floats? Usually rests on bottom or specific height.
+// If it divides chambers, it likely has walls and a base. 
+// Let's assume standard wall thickness for the platform structure unless specified otherwise.
+$P_WALL_THICKNESS = $T_WALL_THICKNESS; 
+
+// Platform Bottom Z (Absolute):
+$Z_PLATFORM_BOTTOM_ABS = ($Z_INNER_BASE_ABS + $FLOOR_THICKNESS) - 0? 
+// Wait, if top is at 13 and height above floor is 10... then Floor Base must be 3.
+// If the platform sits on the inner floor (which starts at Z=3), its bottom would be near Z=3 + thickness_of_platform_base.
+// Let's assume the "solid raised platform" has a base of same wall thickness ($T_WALL_THICKNESS).
+$P_BASE_Z_OFFSET = $T_WALL_THICKNESS; 
+$Z_PLATFORM_BOTTOM_ABS_CALC = ($Z_INNER_BASE_ABS) + ($FLOOR_THICKNESS - 0); // Wait, Inner Base IS Floor Top.
+// Let's restart Z logic clearly:
+// Outer Bottom Surface (Bed contact): Z=0? Or is the "floor" a layer of plastic sitting on bed?
+// If outer dimension is 40 high, and it rests on XY plane... 
+// Scenario A: The part sits on its bottom face. That face has thickness $FLOOR_THICKNESS inside? No, that's internal volume.
+// Let's assume the "Outer Dimensions" define the bounding box of material.
+// So Material occupies X:[-60, 60], Y:[-35, 35], Z:[0, 40].
+// Floor is at bottom (Z=0 to Z=3). Inner volume starts at Z=3.
+$Z_INNER_FLOOR_TOP = $FLOOR_THICKNESS; // Top of the floor material
+
+// Platform sits on top of this inner floor? Or does it have its own base thickness?
+// "solid raised platform... top is 10 mm above the inner floor".
+// This implies there is a gap or the platform has height. 
+// If it's solid, it likely has walls and a bottom plate. Let's give it $T_WALL_THICKNESS for its vertical structure too.
+$P_TOTAL_HEIGHT = ($Z_PLATFORM_TOP_ABS - $Z_INNER_FLOOR_TOP); // Should be 10mm based on prompt "at z=13" vs floor at 3? 
+// Check: If Floor Top is Z=3, and Platform Top is Z=13, then Height = 10. Matches perfectly.
+$P_BASE_Z_ABS = $Z_INNER_FLOOR_TOP; // Bottom of platform structure sits on the inner floor level? 
+// Or does it have a base thickness? "Solid raised" implies volume. Let's assume walls go down to Z=3 + some offset or just sit there.
+// To make it printable and robust, let's give the platform a bottom plate of $T_WALL_THICKNESS sitting on Z=3? 
+// No, if top is 13 and height above floor is 10... then Floor Top must be 3.
+// If Platform Bottom sits ON the inner floor (Z=3), then its base thickness would make it taller than 10 unless "above inner floor" means from the surface of the fluid? 
+// Let's assume the platform structure starts at Z = $Z_INNER_FLOOR_TOP + ($T_WALL_THICKNESS / 2)? No, let's keep it simple.
+// Assume Platform Bottom is at Z=3 (sitting on the top face of the floor). Then Top is at Z=13. Height=10. Matches.
+$P_Z_BOTTOM_ABS = $Z_INNER_FLOOR_TOP; 
+
+// Electrode Hole Logic:
+// "drill ... along X at y = 0, z = 30".
+// Since we center the tank on origin (X,Y), Y=0 is the midline of the depth.
+$HOLE_Y_ABS = $Y_HOLE_POS_TARGET; 
+$HOLE_Z_ABS = $Z_INNER_FLOOR_TOP + ($P_TOTAL_HEIGHT - (($Z_PLATFORM_TOP_ABS) - $P_Z_BOTTOM_ABS)); // Wait, Z=30 is absolute?
+// Prompt: "z = 30". This looks like an absolute coordinate relative to the part origin (bed).
+$HOLE_Z_ABS_TARGET_VAL = 30;
+
+// --- Main Construction ---
+
+difference() {
+    union() {
+        // 1. Outer Tank Shell (Open Top)
+        // We build a solid block and subtract holes, then add internal features? 
+        // Easier: Build outer walls as separate pieces or one big box minus top face?
+        // Let's use difference to cut out the empty space from an outer bounding box.
+        
+        $H_OUT_Z_ABS = 40; 
+        
+        // Create

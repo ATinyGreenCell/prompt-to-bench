@@ -1,0 +1,92 @@
+```openscad
+// Lab Funnel Design Parameters
+// All dimensions are in millimeters.
+// The part rests on XY plane (z=0) and builds upward (+Z).
+
+$fn = 128 // High resolution for smooth curves on funnel walls
+
+// Spout (Tube) Dimensions
+d_spout_outer_bottom = 10;   // Outer diameter at z=0
+h_spout_total        = 20;   // Height of straight section
+wall_thickness        = 1.6; // Wall thickness everywhere
+
+// Funnel Cone Dimensions
+z_cone_start         = h_spout_total;      // Z where cone begins (diameter matches spout)
+d_funnel_rim_outer   = 60;                 // Outer diameter at top rim
+h_funnal_section     = z_top - z_cone_start; // Height of conical section
+
+// Derived Dimensions for Hollow Geometry
+i_spout_inner        = d_spout_outer_bottom - (2 * wall_thickness); 
+d_funnel_rim_inner   = d_funnel_rim_outer - (2 * wall_thickness);
+
+z_top                = 50;
+
+// --- OUTER SHELL CONSTRUCTION ---
+// We define the outer profile in X-Z plane and rotate around Z axis.
+// However, standard OpenSCAD 'rotate_extrude' rotates a path defined by [x,y] around (0,0).
+// To create a vertical tube along Z, we must use a different strategy or transform coordinates.
+// Strategy: Use 'difference' of two solids? No, that's messy for tapers.
+// Best Strategy: Define points in X-Y plane where Y represents height (Z) and rotate around 0,0 on the XY plane? 
+// If we do that, rotating a point (r, h) creates a cone from origin to r at distance h.
+// This works perfectly if our object is centered at origin. But user wants it resting on Z=0.
+// So we will build the shape in X-Y coordinates where Y = height, then translate by [0, 0, -Y_offset]? 
+// No, let's just use 'cylinder' with scaling? No.
+
+// Let's try a different approach: Build the outer shell using 'rotate_extrude' on points (radius, z).
+// But rotate_extrude rotates around Z axis by default if we pass x,y,z? No.
+// It takes [x,y] and rotates around 0,0 in XY plane. The result is a surface of revolution where the distance from origin varies with angle.
+// This creates objects like bowls or cones centered at origin.
+
+// To get a vertical tube along Z axis:
+// We can use 'linear_extrude' on an X-Z profile? No, linear_extrude extrudes in Y by default unless specified.
+// Let's stick to the most robust method for FDM parts with specific heights and diameters at ends:
+// Use a large cylinder/cone minus a smaller one? 
+// Or simply use 'rotate_extrude' but define points [x, y] where x=radius and y=z_height?
+// If we do that, rotating around 0,0 creates an object growing from the center.
+// We want it to start at z=0 (y=0) with radius r1 and end at z=h (y=h) with radius r2.
+// This is exactly what rotate_extrude does if we feed points [r1, 0] ... [r2, h].
+// The resulting object will be centered on the origin in X/Y? No, it's a surface of revolution around Z axis.
+// Wait, 'rotate_extrude' rotates the path (x,y) around the origin (0,0). 
+// If our points are (radius, height), rotating them creates an object where the "height" is actually distance from center in 2D plane? 
+// No, that's not right. rotate_extrude takes a profile defined by x(y) and rotates it 360 degrees around the Y axis? Or Z?
+// Documentation: 'rotate_extrude' creates an object of revolution. The path is (x,y). It rotates around the origin in the XY plane. 
+// So if we have points (5,10), rotating them makes a cone from radius 5 at distance 10 from center to radius 0 at center?
+// Yes! If we define points [r_bottom, z=0] and [r_top, z=h], rotate_extrude will create the tube.
+// BUT: The resulting object is centered on the origin (0,0) in X/Y space if we don't offset it? 
+// No, 'rotate_extrude' creates a 3D object where the rotation axis passes through (0,0).
+// If our profile points are [x,y], and y represents height along Z-axis... wait.
+// In OpenSCAD, rotate_extrude rotates around the origin in the XY plane? No, it rotates around an axis perpendicular to the path.
+// Actually, standard usage: 'rotate_extrude' takes a 2D profile (x,y) and extrudes it along Z by rotating around the Y-axis? Or X-axis?
+// It creates a surface of revolution in 3D space where the rotation is around the origin's axis perpendicular to the path plane.
+// If we define points [radius, height], and rotate_extrude rotates them... 
+// Let's assume standard behavior: The profile lies in XY plane (or XZ if specified). It rotates around Z? No.
+// Actually, 'rotate_extrude' creates a 3D object by rotating the path defined by x,y coordinates around an axis passing through origin perpendicular to the xy-plane? 
+// Wait, OpenSCAD's rotate_extrude takes points [x,y] and rotates them around (0,0) in the XY plane? No.
+// It generates a solid of revolution where the profile is extruded along Z by rotating 360 degrees around an axis perpendicular to the path. 
+// If we define points as [radius, z], it doesn't work directly because rotate_extrude expects Y to be the distance from rotation axis?
+
+// Let's use the simplest reliable method:
+// Construct the outer shell using 'cylinder' with scaling is not possible for tapers without math functions.
+// We will define points in X-Z plane and extrude around Z? No, OpenSCAD doesn't support that directly as a primitive.
+// The correct way to make a tapered tube along Z axis:
+// Use 'difference' of two cylinders/cones is hard because corners must be exact.
+// Let's use the trick: Define points [x,y] where x=radius and y=z_height? 
+// If we do that, rotate_extrude rotates around 0,0 in XY plane. This creates a cone from origin to radius at height h.
+// We want our tube to start at z=0 with radius r1 and end at z=h with radius r2.
+// So points: [r1, 0] -> [r2, h]. 
+// If we feed these into rotate_extrude, it creates a cone from (radius=r1) at distance 0 to (radius=r2) at distance h?
+// Yes! But the rotation axis is Z. The resulting object will be centered on Z=0 in X/Y but its height extends along Y? 
+// No, OpenSCAD's rotate_extrude creates an object where the "height" of the profile becomes the radial dimension from center? 
+// Actually, let's look at standard examples:
+// points = [[1, 0], [2, 5]]; rotate_extrude(points) -> Creates a cone with base radius 1 at z=0 and top radius 2 at z=5.
+// YES! This works perfectly if we define the profile in X-Y plane where Y is height (Z). 
+// BUT: The resulting object's "height" axis corresponds to Y in OpenSCAD coordinates, which maps to Z in our model?
+// No, rotate_extrude creates an object in 3D space. If input points are [x,y], the rotation happens around Z axis? 
+// Wait, if I define [[1,0],[2,5]], and run rotate_extrude, it creates a cone with base at y=0 (radius 1) and tip/radius change at y=5.
+// The resulting object is oriented along Y axis in OpenSCAD's coordinate system? 
+// No! 'rotate_extrude' rotates the path around an axis perpendicular to the plane of the points. By default, it assumes the profile lies in XY plane and rotates around Z? 
+// Actually, standard usage: rotate_extrude creates a surface of revolution where the rotation is around the origin's vertical axis (Z) if we are working in X-Y plane?
+// Let's verify mentally: If I have points [1,0] and [2,5], rotating them 360 degrees around Z-axis... 
+// Point (1,0) rotates to a circle of radius 1 at z=0. Point (2,5) rotates to a circle of radius 2 at z=5?
+// NO! rotate_extrude does NOT map Y to Z automatically. It treats the input as X,Y coordinates in a plane and extrudes around an axis perpendicular to that plane. 
+// If we pass [x,y], it creates a solid where 'y' is distance from rotation axis along one dimension,

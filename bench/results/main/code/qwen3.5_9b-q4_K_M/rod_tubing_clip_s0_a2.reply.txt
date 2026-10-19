@@ -1,0 +1,85 @@
+```openscad
+// OpenSCAD Snap-on Clip for Lab Stand Rod & Tubing
+// Units: Millimetres
+// Orientation: Flat on XY plane, building up in +Z (Extrusion height = 10mm)
+
+$fn = 64; // Ensure smooth curves and accurate hole sizes
+
+// --- Dimensions based on user description ---
+
+// Main Extrusion Height
+H_EXTRUDE = 10; 
+
+// Rod Ring Parameters
+D_ROD_INNER = 12.7;   // Inner diameter for the lab stand rod (1/2 inch)
+W_ROD_WALL = 3;       // Wall thickness of the ring
+R_OD_OUTER = D_ROD_INNER + 2 * W_ROD_WALL; // Calculated outer diameter: 18.7
+
+// Rod Ring Opening Parameters (-X side cutout)
+Y_CUTOUT_HALF_WIDTH_ROD = 5;   // Half width of opening in Y direction (Total 10mm)
+
+// Tubing Ring Parameters
+D_TUBE_INNER = 6;           // Inner diameter for tubing
+W_TUBE_WALL = 2;            // Wall thickness of the ring
+R_TD_OUTER = D_TUBE_INNER + 2 * W_TUBE_WALL; // Calculated outer diameter: 10mm
+
+// Tubing Ring Position & Opening Parameters (+X side cutout)
+C_X_TUBING = 15;            // Center X position for tubing ring
+Y_CUTOUT_HALF_WIDTH_TUBE_EXPLICIT = 2.25; 
+
+// Bridge Parameters (Solid connector)
+X_BRIDGE_LEFT = 8;          // Left edge of bridge
+X_BRIDGE_RIGHT = 12;        // Right edge of bridge
+W_BRIDGE_Y = 6;             // Width in Y direction
+
+
+difference() {
+    
+    union() {
+        
+        // --- Part A: The Rod Ring (with -X opening) ---
+        R_ROD_OUTER_HALF = R_OD_OUTER / 2;
+        R_ROD_INNER_HALF = D_ROD_INNER / 2;
+
+        rod_ring_part = difference() {
+            union() {
+                // Full outer circle for the ring
+                circle(r=R_ROD_OUTER_HALF, center=[0,0]); 
+            }
+            
+            // Subtract Inner Hole (The hole for the stand rod)
+            circle(r=R_ROD_INNER_HALF, center=[0,0], $fn=64);
+            
+            // Subtract The Gap on the Left Side (-X side)
+            // Defined as: x < 0 AND -5 < y < 5. 
+            rect_gap_rod = polygon([
+                [-R_ROD_OUTER_HALF, -Y_CUTOUT_HALF_WIDTH_ROD], 
+                [0, -Y_CUTOUT_HALF_WIDTH_ROD], 
+                [0, Y_CUTOUT_HALF_WIDTH_ROD], 
+                [-R_ROD_OUTER_HALF, Y_CUTOUT_HALF_WIDTH_ROD]
+            ]);
+
+            difference() {
+                 // Subtract the gap rectangle from the ring shape
+                 rect_gap_rod; 
+            }
+        };
+
+
+        // --- Part B: The Tubing Ring (with +X opening) ---
+        R_OUT_TUBE = R_TD_OUTER / 2;       // Outer radius of tubing ring
+        R_IN_TUBE = D_TUBE_INNER / 2;      // Inner radius of tubing ring
+
+        tube_ring_part = difference() {
+            union() {
+                circle(r=R_OUT_TUBE, center=[C_X_TUBING, 0]); 
+            }
+            
+            // Subtract Inner Hole (The hole for the tubing)
+            circle(r=R_IN_TUBE, center=[C_X_TUBING, 0], $fn=64);
+            
+            // Subtract The Gap on the Right Side (+X side)
+            // Defined as: x > C_X_TUBING and -2.25 < y < 2.25
+            rect_gap_tube = polygon([
+                [C_X_TUBING, -Y_CUTOUT_HALF_WIDTH_TUBE_EXPLICIT], 
+                [R_OUT

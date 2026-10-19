@@ -1,0 +1,168 @@
+```openscad
+// OpenSCAD Snap-on Clip for Lab Stand Rod & Tubing
+// Units: Millimetres
+// Orientation: Flat on XY plane, building up in +Z (Extrusion height = 10mm)
+
+$fn = 64; // Ensure smooth curves and accurate hole sizes
+
+// --- Dimensions based on user description ---
+
+// Main Extrusion Height
+H_EXTRUDE = 10; 
+
+// Rod Ring Parameters
+D_ROD_INNER = 12.7;   // Inner diameter for the lab stand rod (1/2 inch)
+W_ROD_WALL = 3;       // Wall thickness of the ring
+R_OD_OUTER = D_ROD_INNER + 2 * W_ROD_WALL; // Calculated outer diameter: 18.7
+
+// Rod Ring Opening Parameters (-X side cutout)
+Y_CUTOUT_HALF_WIDTH_ROD = 5;   // Half width of opening in Y direction (Total 10mm)
+
+// Tubing Ring Parameters
+D_TUBE_INNER = 6;           // Inner diameter for tubing
+W_TUBE_WALL = 2;            // Wall thickness of the ring
+R_TD_OUTER = D_TUBE_INNER + 2 * W_TUBE_WALL; // Calculated outer diameter: 10mm
+
+// Tubing Ring Position & Opening Parameters (+X side cutout)
+C_X_TUBING = 15;            // Center X position for tubing ring
+Y_CUTOUT_HALF_WIDTH_TUBE_EXPLICIT = 2.25; 
+// The opening is defined by x > C_X_TUBING and -Y < y < Y
+
+// Bridge Parameters (Solid connector)
+X_BRIDGE_LEFT = 8;          // Left edge of bridge
+X_BRIDGE_RIGHT = 12;        // Right edge of bridge
+W_BRIDGE_Y = 6;             // Width in Y direction
+
+
+difference() {
+    
+    union() {
+        
+        // --- Part A: The Rod Ring (with -X opening) ---
+        R_ROD_OUTER_HALF = R_OD_OUTER / 2;
+        R_ROD_INNER_HALF = D_ROD_INNER / 2;
+
+        rod_ring_part = difference() {
+            union() {
+                // Full outer circle for the ring
+                circle(r=R_ROD_OUTER_HALF, center=[0,0]); 
+            }
+            
+            // Subtract Inner Hole (The hole for the stand rod)
+            circle(r=R_ROD_INNER_HALF, center=[0,0], $fn=64);
+            
+            // Subtract The Gap on the Left Side (-X side)
+            // Defined as: x < 0 AND -5 < y < 5. 
+            rect_gap_rod = polygon([
+                [-R_ROD_OUTER_HALF, -Y_CUTOUT_HALF_WIDTH_ROD], 
+                [0, -Y_CUTOUT_HALF_WIDTH_ROD], 
+                [0, Y_CUTOUT_HALF_WIDTH_ROD], 
+                [-R_ROD_OUTER_HALF, Y_CUTOUT_HALF_WIDTH_ROD]
+            ]);
+
+            difference() {
+                 // Subtract the gap rectangle from the ring shape
+                 rect_gap_rod; 
+            }
+        };
+
+
+        // --- Part B: The Tubing Ring (with +X opening) ---
+        R_OUT_TUBE = R_TD_OUTER / 2;       // Outer radius of tubing ring
+        R_IN_TUBE = D_TUBE_INNER / 2;      // Inner radius of tubing ring
+
+        tube_ring_part = difference() {
+            union() {
+                circle(r=R_OUT_TUBE, center=[C_X_TUBING, 0]); 
+            }
+            
+            // Subtract Inner Hole (The hole for the tubing)
+            circle(r=R_IN_TUBE, center=[C_X_TUBING, 0], $fn=64);
+            
+            // Subtract The Gap on the Right Side (+X side)
+            // Defined as: x > C_X_TUBING and -2.25 < y < 2.25
+            rect_gap_tube = polygon([
+                [C_X_TUBING, -Y_CUTOUT_HALF_WIDTH_TUBE_EXPLICIT], 
+                [R_OUT_TUBE + (C_X_TUBING), -Y_CUTOUT_HALF_WIDTH_TUBE_EXPLICIT], // Extend past outer edge to ensure cut
+                [R_OUT_TUBE + (C_X_TUBING), Y_CUTOUT_HALF_WIDTH_TUBE_EXPLICIT], 
+                [C_X_TUBING, Y_CUTOUT_HALF_WIDTH_TUBE_EXPLICIT]
+            ]);
+
+            difference() {
+                 rect_gap_tube; 
+            }
+        };
+
+
+        // --- Part C: The Solid Bridge ---
+        bridge_part = cube([X_BRIDGE_RIGHT - X_BRIDGE_LEFT, W_BRIDGE_Y, H_EXTRUDE], center=[0, 0]);
+        
+    }
+
+    // Subtract the extruded profile from a bounding box to create thickness? 
+    // No, standard practice for "flat print" is just unioning the shapes and then difference with an empty space if needed.
+    // But usually, we want the object itself. The logic above creates hollow rings in 2D.
+    // To make it a solid printable part that snaps on, we need to extrude this profile UPWARDS (Z).
+    
+    union() {
+        translate([0, 0, -H_EXTRUDE/2]) {
+            difference() {
+                cube([R_OD_OUTER + R_TD_OUTER*1.5, W_BRIDGE_Y * 3, H_EXTRUDE], center=[0,0]); // Bounding box
+                
+                union() {
+                    rod_ring_part;
+                    tube_ring_part;
+                    
+                    // The bridge is just the space between x=8 and x=12 that connects them.
+                    // In a difference operation where we subtract holes from a solid block:
+                    // We need to define the "void" shapes inside our bounding box.
+                    
+                    // Void 1: Rod Ring Hole (Inner) + Gap Left
+                    void_rod_inner = cylinder(h=H_EXTRUDE, r=R_ROD_INNER_HALF, center=[0,0]);
+                    void_rod_gap = cube([R_OD_OUTER_HALF - R_ROD_INNER_HALF/2 * 1.5, Y_CUTOUT_HALF_WIDTH_ROD*2 + 0.1, H_EXTRUDE], center=[-R_OD_OUTER_HALF+R_ROD_INNER_HALF/2, 0]); // Approximate gap logic is tricky in difference without exact coords
+                    
+                    // Let's switch strategy: Build the solid profile using Union of primitives and Difference for holes directly on a large cube.
+                }
+            }
+        }
+    }
+}
+
+// --- REWRITTEN LOGIC FOR ROBUSTNESS ---
+// Strategy: Create one big bounding box, then subtract specific void shapes defined by cylinders/polygons extruded in Z.
+
+difference() {
+    
+    // 1. The Main Block (Bounding Box)
+    // Width needs to cover Rod Ring + Tubing Ring + Bridge
+    max_x = C_X_TUBING + R_TD_OUTER; 
+    min_x = -R_OD_OUTER_HALF;
+    total_width = max_x - min_x;
+    
+    cube([total_width, W_BRIDGE_Y * 2.5, H_EXTRUDE], center=[0,0]);
+
+    // --- Void Shapes (Subtract these from the block) ---
+    
+    // A. Rod Ring Inner Hole
+    cylinder(h=H_EXTRUDE, r=D_ROD_INNER/2, center=[0,0]);
+
+    // B. Tubing Ring Inner Hole
+    translate([C_X_TUBING, 0]) {
+        cylinder(h=H_EXTRUDE, r=D_TUBE_INNER/2);
+    }
+
+    // C. Rod Ring Gap (Left Side)
+    // Region: x < 0 AND -5 < y < 5 within the ring thickness bounds? 
+    // The prompt says "everything with x < 0 and ... is removed". This implies removing material from the block in that region, effectively creating a slot through the rod wall.
+    translate([min_x + R_OD_OUTER_HALF/2 - (R_OD_OUTER_HALF), 0]) { // Shift to align roughly? No.
+        // Let's define coordinates relative to origin for clarity.
+        // Gap is at x < 0, y between -5 and 5.
+        // We need a shape that covers the ring wall in this area.
+        cube([R_OD_OUTER_HALF + R_ROD_INNER_HALF/2 * 1.5, Y_CUTOUT_HALF_WIDTH_ROD*2 + 0.1, H_EXTRUDE], center=[-R_OD_OUTER_HALF - (R_OD_OUTER_HALF), 0]); 
+    }
+    
+    // Better approach for the gap: Define a polygon extrusion or simple cube that overlaps the ring wall at x<0.
+    translate([min_x + R_ROD_INNER_HALF, 0]) { // Start inside the inner hole? No, start where the rod material is.
+        // Rod outer radius = ~9.35. Inner = 6.35. 
+        // We want to remove a chunk at x < 0.
+        cube([R_OD_OUTER_HALF - R_ROD_INNER_HALF/2 * 1.5, Y_CUTOUT_HALF
