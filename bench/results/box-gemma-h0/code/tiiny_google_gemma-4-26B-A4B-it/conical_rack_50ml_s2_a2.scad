@@ -1,0 +1,72 @@
+// --- Dimensions (mm) ---
+plate_width = 130;          // X dimension of the base plate
+plate_depth = 90;           // Y dimension of the base plate
+plate_thickness = 4;        // Z thickness of the base plate
+wall_height = 70;           // Height of the side walls from the plate
+wall_thickness = 4;         // Thickness of the side walls
+hole_diameter = 30.5;       // Diameter of the tube holes
+hole_spacing_x = 40;        // Center-to-center distance along X
+hole_spacing_y = 40;        // Center-to-center distance along Y
+num_holes_x = 3;            // Number of holes along X axis
+num_holes_y = 2;            // Number of holes along Y axis
+
+/* 
+   CORRECTION LOG:
+   The previous report showed:
+   1. Bounding Box X: -65 to 130 (size 195). This was caused by a double translation.
+      The code had a translate() wrapping a difference() that already contained 
+      a translate().
+   2. Bounding Box Y: -45 to 90 (size 135). Same issue as above.
+   3. The holes were not centered on the plate correctly due to the coordinate 
+      mismatch between the plate's local origin and the global origin.
+   
+   FIX:
+   - I have simplified the structure. 
+   - The entire part is built relative to its own local origin (0,0,0) at the 
+     corner of the plate.
+   - Then, a single 'translate' is applied to the entire 'difference' block 
+     to center the part on the X and Y axes as per Rule 4.
+   - This ensures the bounding box is exactly 130x90 and the holes are 
+     perfectly centered.
+*/
+
+$fn = 64;
+
+// Rule 4: Centre the part on the origin in X and Y
+translate([-plate_width/2, -plate_depth/2, 0]) {
+    difference() {
+        // --- The Solid Part ---
+        union() {
+            // 1. The Base Plate (z=0 to 4)
+            cube([plate_width, plate_depth, plate_thickness]);
+
+            // 2. The Two Side Walls (z=4 to 74)
+            // Wall 1: Flush with one long edge (Y=0)
+            translate([0, 0, plate_thickness])
+                cube([plate_width, wall_thickness, wall_height]);
+                
+            // Wall 2: Flush with the other long edge (Y=90-4=86)
+            translate([0, plate_depth - wall_thickness, plate_thickness])
+                cube([plate_width, wall_thickness, wall_height]);
+        }
+
+        // --- The Holes ---
+        // Holes are centered on the plate.
+        // Plate center is (plate_width/2, plate_depth/2).
+        for (i = [0 : num_holes_x - 1]) {
+            for (j = [0 : num_holes_y - 1]) {
+                // Calculate offsets from the center of the plate
+                x_offset = (i - (num_holes_x - 1) / 2.0) * hole_spacing_x;
+                y_offset = (j - (num_holes_y - 1) / 2.0) * hole_spacing_y;
+                
+                // Absolute positions relative to the plate corner (0,0)
+                x_pos = (plate_width / 2) + x_offset;
+                y_pos = (plate_depth / 2) + y_offset;
+                
+                // Rule 5: Extend cutting shape 0.01-1mm past faces
+                translate([x_pos, y_pos, -1])
+                    cylinder(h = plate_thickness + 2, d = hole_diameter);
+            }
+        }
+    }
+}

@@ -1,0 +1,52 @@
+// Microscope Slide Drying Rack
+// Designed for 10 slides (75x25x1mm) standing on long edge.
+
+// Block dimensions
+L_block = 90.0;    // Length (X)
+W_block = 45.0;    // Width (Y)
+H_block = 20.0;    // Height (Z)
+
+// Slot dimensions
+L_slot = 77.0;     // Slot length (X)
+W_slot = 1.6;      // Slot width (Y)
+D_slot = 10.0;     // Slot depth (Z)
+N_slots = 10;      // Number of slots
+P_slots = 3.5;     // Pitch (center-to-center distance in Y)
+
+$fn = 64;
+
+// Calculate the starting Y position to center the group of slots
+// The total width occupied by the slots from center of first to center of last is (N-1) * P
+// The offset from the center of the block to the center of the first slot is:
+// (Total_Width_of_group / 2) - (W_slot / 2) is not quite right for centering.
+// To center a group of N items with pitch P:
+// The distance from the center of the middle of the group to the center of the first slot is:
+// (N-1) * P / 2.
+// However, we want the group to be centered. 
+// The center of the first slot will be at: -( (N-1) * P / 2 )
+// The center of the last slot will be at: +( (N-1) * P / 2 )
+
+module rack() {
+    difference() {
+        // The main base block
+        translate([-L_block/2, -W_block/2, 0])
+            cube([L_block, W_block, H_block]);
+
+        // The slots
+        for (i = [0 : N_slots - 1]) {
+            // Calculate Y position for this slot to ensure the group is centered
+            // Center of first slot: -(N-1)*P/2
+            // Center of i-th slot: -(N-1)*P/2 + i*P
+            y_pos = (-(N_slots - 1) * P_slots / 2) + (i * P_slots);
+            
+            // We translate the slot so its center is at (0, y_pos, H_block - D_slot)
+            // But since we are cutting from the top, we use a cube and translate it.
+            // To ensure a clean cut, we extend the slot slightly in Z and X.
+            translate([-L_slot/2 - 1, y_pos - W_slot/2, H_block - D_slot + 0.01])
+                cube([L_slot + 2, W_slot, D_slot + 0.01]);
+        }
+    }
+}
+
+// Render the part
+rack();

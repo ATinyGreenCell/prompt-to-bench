@@ -1,0 +1,96 @@
+```openscad
+// --- Parameters ---
+
+// Box Dimensions
+box_width = 70;          // X dimension of box
+box_depth = 50;          // Y dimension of box
+box_height = 30;         // Z dimension of box
+box_wall_thick = 2;      // Thickness of walls
+box_floor_thick = 2;     // Thickness of bottom floor
+
+// Lid Dimensions
+lid_plate_width = 70;    // X dimension of lid plate
+lid_plate_depth = 50;    // Y dimension of lid plate
+lid_plate_thick = 2;     // Z thickness of lid plate
+lid_lip_thick = 1.5;     // Thickness of the retaining lip
+lid_lip_height = 4;      // Height of the lip above the plate
+lid_clearance = 0.2;     // Clearance per side (0.4mm total reduction)
+
+// Layout
+gap = 10;                // Gap between parts for printing
+$fn = 64;                // Smoothness for curves
+
+// --- Part 1: The Box ---
+// Positioned at origin, resting on XY plane
+module box() {
+    difference() {
+        // Outer shape
+        cube([box_width, box_depth, box_height]);
+        
+        // Inner cavity
+        translate([box_wall_thick, box_wall_thick, box_floor_thick]) {
+            cube([
+                box_width - (2 * box_wall_thick), 
+                box_depth - (2 * box_wall_thick), 
+                box_height // Extend to top to ensure open top
+            ]);
+        }
+    }
+}
+
+// --- Part 2: The Lid ---
+// Printed upside down (lip pointing down towards bed)
+// Positioned on the +X side of the box
+module lid() {
+    // We model the lid such that the plate is at Z=0 and the lip is at Z < 0
+    // However, to follow "printed upside down: a plate... with a lip on top",
+    // we will model it as requested and the user can flip it, 
+    // but for a standard "upside down" print where the plate is on the bed:
+    
+    union() {
+        // The Plate (Bottom layer)
+        cube([lid_plate_width, lid_plate_depth, lid_plate_thick]);
+        
+        // The Lip (The part that slides into the box)
+        // To print "upside down" with the plate on the bed, the lip must be 
+        // modeled extending downwards from the plate.
+        translate([
+            (lid_plate_width - (65.6)) / 2, 
+            (lid_plate_depth - (45.6)) / 2, 
+            -lid_lip_height
+        ]) {
+            difference() {
+                // Outer boundary of lip
+                cube([65.6, 45.6, lid_lip_height + 0.01]);
+                
+                // Inner cavity of lip (to allow sliding)
+                // We subtract the lip thickness from the outer dimensions
+                translate([lid_lip_thick, lid_lip_thick, -0.01]) {
+                    cube([
+                        65.6 - (2 * lid_lip_thick), 
+                        45.6 - (2 * lid_lip_thick), 
+                        lid_lip_height + 0.02
+                    ]);
+                }
+            }
+        }
+    }
+}
+
+// --- Assembly / Layout ---
+
+// Part 1: Box
+translate([0, 0, 0]) {
+    box();
+}
+
+// Part 2: Lid
+// Placed on +X side with a gap. 
+// Since the lid is "printed upside down", we rotate it 180 deg on X axis
+// so the plate sits on the bed and the lip points down.
+translate([box_width + gap, 0, 0]) {
+    rotate([180, 0, 0]) {
+        lid();
+    }
+}
+```

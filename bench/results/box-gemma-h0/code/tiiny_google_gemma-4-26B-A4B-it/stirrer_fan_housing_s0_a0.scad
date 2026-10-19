@@ -1,0 +1,122 @@
+// --- Dimensions (mm) ---
+outer_width = 90;          // Outer width and length of the box
+outer_length = 90;         // Outer length and width of the box
+wall_thickness = 2.5;       // Thickness of the four vertical walls
+top_plate_thickness = 2;    // Thickness of the stirring surface (bottom of the box)
+total_height = 40;         // Total height of the housing
+screw_hole_diameter = 4.5;  // Diameter for M4 screw holes
+screw_pattern_size = 71.5; // Distance between screw holes (center-to-center)
+notch_width = 12;          // Width of the cable notch
+notch_depth = 8;           // Depth of the notch from the open top
+notch_height = 8;          // Height of the notch (from z=32 to z=40)
+
+// --- Constants ---
+$fn = 64;
+
+// --- Modeling ---
+
+// The part is printed upside down.
+// The top plate (stirring surface) is at Z = 0 to Z = top_plate_thickness.
+// The walls rise from Z = top_plate_thickness to Z = total_height.
+
+module stirrer_housing() {
+    difference() {
+        // Main Body (The solid block)
+        union() {
+            // The top plate (resting on bed)
+            cube([outer_width, outer_length, top_plate_thickness], center = true);
+            
+            // The four walls
+            translate([0, 0, top_plate_thickness + (total_height - top_plate_thickness) / 2])
+            cube([outer_width, outer_length, total_height - top_plate_thickness], center = true);
+        }
+
+        // 1. Hollow out the inside to create the box cavity
+        // We subtract a smaller cube from the center
+        // We extend the subtraction slightly to ensure a clean cut through the top plate
+        translate([0, 0, -0.01]) // Ensure it cuts through the bottom plate
+        cube([outer_width - 2 * wall_thickness, outer_length - 2 * wall_thickness, total_height], center = true);
+
+        // 2. Screw holes for the fan
+        // Pattern is 71.5mm square, centered.
+        // We use a loop to place the 4 holes.
+        // We extend the Z dimension to ensure they cut through the plate.
+        for (x = [-screw_pattern_size/2, screw_pattern_size/2]) {
+            for (y = [-screw_pattern_size/2, screw_pattern_size/2]) {
+                translate([x, y, -1])
+                cylinder(d = screw_hole_diameter, h = top_plate_thickness + 2);
+            }
+        }
+
+        // 3. Cable notch
+        // Located in one wall, centered along the wall, 
+        // reaching 8mm down from the open edge (z=32 to z=40).
+        // Since the part is printed upside down, the "open edge" is at Z = 40.
+        // The notch is at the top of the printed object.
+        // In our coordinate system, the top of the object is at Z = 40.
+        // The notch is between Z = 32 and Z = 40.
+        // We place it on the wall at X = outer_width/2.
+        translate([outer_width/2, 0, total_height - (notch_height/2)])
+        cube([notch_width, notch_depth + 1, notch_height], center = true);
+        
+        // Note: The notch logic above is slightly simplified. 
+        // Let's refine the notch to be exactly on one wall.
+        // The notch is 12mm wide, centered on the wall, 8mm deep from the top.
+        // The wall is at X = 45. The notch is centered at Y=0.
+        // The notch width is along Y. The notch depth is along X.
+        // The notch height is along Z.
+        
+        // Re-calculating notch:
+        // Center of notch is at X = outer_width/2, Y = 0, Z = total_height - 4
+        // Notch dimensions: width (Y) = 12, depth (X) = wall_thickness + 1, height (Z) = 8
+        translate([outer_width/2, 0, total_height - 4])
+        cube([wall_thickness + 2, notch_width, notch_height], center = true);
+    }
+}
+
+// Render the part
+// The part is centered on XY. 
+// The top plate is at Z=0 to Z=2.
+// To achieve this, we translate the whole object so the bottom of the plate is at Z=0.
+// Since the module is centered, we shift it up by (total_height/2) - (top_plate_thickness/2) 
+// No, the module is centered on Z. The plate is at the bottom of the module.
+// Let's adjust the module to be built from Z=0 upwards.
+
+module stirrer_housing_final() {
+    // We build the object starting from Z=0
+    difference() {
+        // The solid outer shell
+        union() {
+            // Top plate (on bed)
+            cube([outer_width, outer_length, top_plate_thickness]);
+            
+            // Walls
+            translate([wall_thickness, wall_thickness, top_plate_thickness])
+            cube([outer_width - 2*wall_thickness, outer_length - 2*wall_thickness, total_height - top_plate_thickness]);
+        }
+
+        // The hollow interior
+        translate([wall_thickness, wall_thickness, top_plate_thickness + 0.01])
+        cube([outer_width - 2*wall_thickness, outer_length - 2*wall_thickness, total_height]);
+
+        // Screw holes (through the plate)
+        for (x = [-screw_pattern_size/2, screw_pattern_size/2]) {
+            for (y = [-screw_pattern_size/2, screw_pattern_size/2]) {
+                translate([outer_width/2 + x, outer_length/2 + y, -1])
+                cylinder(d = screw_hole_diameter, h = top_plate_thickness + 2);
+            }
+        }
+
+        // Cable notch
+        // "In one wall, cut a notch... 12mm wide, centered along the wall, 
+        // reaching 8mm down from the open edge (from z=32 to z=40)"
+        // The open edge is at Z = 40.
+        // The notch is 12mm wide (along Y), 8mm deep (along X), 8mm high (along Z).
+        translate([outer_width, outer_length/2, total_height - 4])
+        cube([wall_thickness + 2, notch_width, notch_height], center = true);
+    }
+}
+
+// Center the model on XY and place it on the bed
+translate([-outer_width/2, -outer_length/2, 0])
+stirrer_housing_final();

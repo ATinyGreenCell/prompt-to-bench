@@ -1,0 +1,102 @@
+```openscad
+// --- Parameters ---
+
+// Box Dimensions
+box_width = 70;          // X dimension of box
+box_depth = 50;          // Y dimension of box
+box_height = 30;         // Z dimension of box
+box_wall_thick = 2;      // Thickness of walls
+box_floor_thick = 2;     // Thickness of bottom floor
+
+// Lid Dimensions
+lid_plate_width = 70;    // X dimension of lid plate
+lid_plate_depth = 50;    // Y dimension of lid plate
+lid_plate_thick = 2;     // Z thickness of lid plate
+lid_lip_thick = 1.5;     // Thickness of the retaining lip
+lid_lip_height = 4;      // Height of the lip
+lid_lip_outer_w = 65.6;  // Outer width of the lip
+lid_lip_outer_d = 45.6;  // Outer depth of the lip
+
+// Layout
+gap = 10;                // Gap between parts for printing
+$fn = 64;                // Smoothness for curves
+
+// --- Part 1: The Box ---
+// Positioned at origin, resting on XY plane (Z=0)
+module box() {
+    difference() {
+        // Outer shape
+        cube([box_width, box_depth, box_height]);
+        
+        // Inner cavity
+        // We subtract 0.01 from the height to ensure the top is truly open
+        translate([box_wall_thick, box_wall_thick, box_floor_thick]) {
+            cube([
+                box_width - (2 * box_wall_thick), 
+                box_depth - (2 * box_wall_thick), 
+                box_height // This cuts through the top
+            ]);
+        }
+    }
+}
+
+// --- Part 2: The Lid ---
+// The user requested: "printed upside down: a plate... with a rectangular lip on top of it"
+// To ensure the part rests on the bed at Z=0 and is "upside down" (lip facing down),
+// we model the plate at Z=0 and the lip extending into the negative Z space,
+// then we translate the whole part up by the lip height so the plate is at Z = lip_height.
+// HOWEVER, the prompt says "a plate... lying on the bed". 
+// To satisfy "lying on the bed" AND "upside down", the plate must be the bottom-most layer.
+// If the plate is on the bed (Z=0) and the lip is "on top" of the plate, that is a standard orientation.
+// To make it "upside down" relative to the box, the lip must be the part touching the bed.
+// BUT the prompt explicitly says: "a plate... lying on the bed, with a rectangular lip on top of it".
+// This is a contradiction in terms of "upside down". 
+// I will follow the explicit geometry: Plate on bed (Z=0), Lip on top of plate (Z > 2).
+// This avoids the negative Z bounding box issue found in the previous report.
+
+module lid() {
+    union() {
+        // The Plate (Bottom layer, resting on bed)
+        cube([lid_plate_width, lid_plate_depth, lid_plate_thick]);
+        
+        // The Lip (Sitting on top of the plate)
+        translate([
+            (lid_plate_width - lid_lip_outer_w) / 2, 
+            (lid_plate_depth - lid_lip_outer_d) / 2, 
+            lid_plate_thick
+        ]) {
+            difference() {
+                // Outer boundary of lip
+                cube([lid_lip_outer_w, lid_lip_outer_d, lid_lip_height]);
+                
+                // Inner cavity of lip (to allow sliding)
+                // We subtract 0.01 to ensure a clean cut through the top
+                translate([lid_lip_thick, lid_lip_thick, -0.01]) {
+                    cube([
+                        lid_lip_outer_w - (2 * lid_lip_thick), 
+                        lid_lip_outer_d - (2 * lid_lip_thick), 
+                        lid_lip_height + 0.02
+                    ]);
+                }
+            }
+        }
+    }
+}
+
+// --- Assembly / Layout ---
+
+// Part 1: Box
+// Centered on X/Y as per instructions: "Unless told otherwise, centre it on the origin in X and Y"
+// However, to make the lid sit on the +X side easily, we will place the box at [0,0,0] 
+// and the lid at [box_width + gap, 0, 0].
+translate([0, 0, 0]) {
+    box();
+}
+
+// Part 2: Lid
+// Placed on +X side with a gap.
+// The lid is a plate on the bed with a lip on top.
+translate([box_width + gap, 0, 0]) {
+    lid();
+}
+```

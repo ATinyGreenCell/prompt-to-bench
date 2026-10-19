@@ -1,0 +1,59 @@
+```openscad
+// 96-well PCR tube rack (0.2 mL)
+// Corrected to respect specific A1 hole positioning and proper chamfer.
+
+// --- Dimensions ---
+L = 127.76;          // Length (X)
+W = 85.48;           // Width (Y)
+H = 20.0;            // Height (Z)
+hole_d = 6.2;        // Diameter of PCR tube holes
+rows = 8;            // Number of rows (Y)
+cols = 12;           // Number of columns (X)
+spacing = 9.0;       // Center-to-center spacing
+inset_x = 14.38;     // Distance from left edge to first hole center (A1)
+inset_y = 11.24;     // Distance from back edge to first hole center (A1)
+chamfer_leg = 5.0;   // Length of the 45-degree chamfer legs
+
+$fn = 64;
+
+module rack() {
+    difference() {
+        // Main Block
+        // We translate the cube so that the corner (-L/2, -W/2) is at the origin for easier math,
+        // but the user wants it centered on the origin in X and Y.
+        // So we use the standard centering:
+        translate([-L/2, -W/2, 0])
+            cube([L, W, H]);
+
+        // 96 Vertical Through-Holes
+        // The first hole (A1) is at (inset_x, inset_y) relative to the corner (-L/2, -W/2).
+        for (i = [0 : cols - 1]) {
+            for (j = [0 : rows - 1]) {
+                // Calculate position relative to the block center
+                // Corner is at -L/2, -W/2. 
+                // Hole center = Corner + offset + (index * spacing)
+                pos_x = (-L/2) + inset_x + (i * spacing);
+                pos_y = (-W/2) + inset_y + (j * spacing);
+                
+                translate([pos_x, pos_y, -0.01])
+                    cylinder(h = H + 0.02, d = hole_d);
+            }
+        }
+
+        // Orientation Chamfer: A 45-degree cut on the corner edge.
+        // This cuts the corner such that the new face connects 
+        // (X=-L/2+5, Y=-W/2) and (X=-L/2, Y=-W/2+5).
+        // We use a 2D polygon extruded in Z to subtract this wedge.
+        translate([-L/2 - 1, -W/2 - 1, -1])
+        linear_extrude(height = H + 2)
+        polygon(points=[
+            [0, 0], 
+            [chamfer_leg, 0], 
+            [0, chamfer_leg]
+        ]);
+    }
+}
+
+// Render the part
+rack();
+```

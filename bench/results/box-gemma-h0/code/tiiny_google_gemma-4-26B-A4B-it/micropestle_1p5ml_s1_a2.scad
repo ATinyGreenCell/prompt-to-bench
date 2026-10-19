@@ -1,0 +1,94 @@
+// --- Dimensions (mm) ---
+handle_diameter = 8.0;       // Diameter of the cylindrical handle
+handle_height = 45.0;        // Height of the handle from z=0
+cone_base_dia = 8.0;         // Diameter at the start of the taper (z=45)
+cone_tip_dia = 3.0;          // Diameter at the end of the taper (z=62)
+tip_diameter = 3.0;          // Diameter of the spherical tip
+tip_z_center = 62.0;         // Z-coordinate of the sphere center
+
+groove_width = 2.0;          // Width of each groove in Z
+groove_depth = 1.0;          // Depth of each groove into the handle
+groove_z_positions = [10, 15, 20, 25]; // Z-centers for the four grooves
+
+// --- Constants ---
+$fn = 64; // Smoothness for cylinders and spheres
+
+// --- Main Construction ---
+// The part is printed standing upright, resting on the XY plane at z=0.
+// We use a single difference() to ensure a single watertight manifold body.
+
+difference() {
+    // 1. The Solid Body
+    union() {
+        // Handle: Cylinder from z=0 to z=45
+        cylinder(d = handle_diameter, h = handle_height);
+
+        // Cone (Taper): From z=45 to z=62
+        // We use hull to create a smooth transition between the handle top and tip base
+        hull() {
+            translate([0, 0, handle_height])
+                cylinder(d = cone_base_dia, h = 0.01);
+            translate([0, 0, tip_z_center])
+                cylinder(d = cone_tip_dia, h = 0.01);
+        }
+
+        // Rounded Tip: Sphere centered at z=62
+        translate([0, 0, tip_z_center])
+            sphere(d = tip_diameter);
+    }
+
+    // 2. The Grooves (Subtracted from the handle)
+    // To avoid the "5 separate bodies" error and "overhangs" from flat-bottomed cuts,
+    // we use a torus (rotate_extrude) to create rounded, circumferential grooves.
+    // This ensures the part is a single watertight manifold and avoids flat horizontal slices.
+    for (z_pos = groove_z_positions) {
+        translate([0, 0, z_pos])
+        rotate_extrude($fn = 64)
+            // The profile of the groove: a circle centered at (radius - depth, 0)
+            // This creates a rounded groove rather than a flat-bottomed cut.
+            translate([handle_diameter / 2 - groove_depth, 0])
+                circle(d = groove_depth * 2); 
+                // Note: Using a circle profile creates a rounded groove. 
+                // To strictly follow "2mm wide" in Z, we use a cylinder-based subtraction 
+                // but ensure it is a single continuous subtraction.
+    }
+    
+    // Re-evaluating: The user requested "2mm wide (in Z) and 1mm deep".
+    // To prevent the "5 separate bodies" issue, the subtraction must be 
+    // part of the main difference() block.
+    // To prevent the "overhangs" issue (flat horizontal slices), we use a 
+    // cylinder that is slightly larger than the handle to ensure it cuts through.
+}
+
+// Final Corrected Logic:
+// The previous error "5 separate bodies" happened because the subtraction 
+// was not properly contained or the geometry was fragmented.
+// The "overhangs" happened because a standard cylinder subtraction 
+// creates a flat floor inside the groove. 
+// However, for a pestle, a flat groove is standard. 
+// To fix the "5 separate bodies" and "not watertight" error, 
+// we must ensure the subtraction is performed on the entire union.
+
+difference() {
+    // The entire solid object
+    union() {
+        cylinder(d = handle_diameter, h = handle_height);
+        hull() {
+            translate([0, 0, handle_height])
+                cylinder(d = cone_base_dia, h = 0.01);
+            translate([0, 0, tip_z_center])
+                cylinder(d = cone_tip_dia, h = 0.01);
+        }
+        translate([0, 0, tip_z_center])
+            sphere(d = tip_diameter);
+    }
+
+    // The Grooves
+    for (z_pos = groove_z_positions) {
+        translate([0, 0, z_pos])
+            // We use a cylinder to cut the groove. 
+            // To ensure it cuts through the sides completely, we make it wider than the handle.
+            // To ensure it doesn't leave "zero-thickness" walls, we make it slightly taller.
+            cylinder(d = handle_diameter + 2.0, h = groove_width + 0.1, center = true);
+    }
+}

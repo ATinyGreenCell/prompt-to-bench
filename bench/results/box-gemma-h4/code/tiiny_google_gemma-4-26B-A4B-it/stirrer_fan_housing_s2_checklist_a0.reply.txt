@@ -1,0 +1,55 @@
+```openscad
+// DIY Magnetic Stirrer Housing for 80mm Fan
+// Printed upside-down: Top plate sits on the bed (Z=0)
+
+// --- Dimensions ---
+outer_size = 90.0;    // Outer width and length (mm)
+top_thick  = 2.0;     // Thickness of the top plate (mm)
+wall_thick = 2.5;     // Thickness of the four walls (mm)
+total_h    = 40.0;    // Total height of the box (mm)
+hole_dia   = 4.5;     // Diameter for M4 screw holes (mm)
+hole_pat   = 71.5;    // Square pattern for fan mounting holes (mm)
+notch_w    = 12.0;    // Width of the cable notch (mm)
+notch_d    = 8.0;     // Depth of the notch from the open edge (mm)
+
+$fn = 64;
+
+// --- Modeling ---
+
+// The part is modeled upside-down as requested.
+// The top plate is at Z = [0, top_thick]
+// The walls rise from Z = top_thick to Z = total_h
+
+difference() {
+    // Main Body: The solid block representing the walls and top plate
+    union() {
+        // The top plate
+        translate([-outer_size/2, -outer_size/2, 0])
+            cube([outer_size, outer_size, top_thick]);
+        
+        // The four walls
+        translate([-outer_size/2, -outer_size/2, top_thick])
+            cube([outer_size, outer_size, total_h - top_thick]);
+    }
+
+    // 1. Hollow out the inside to create the box cavity
+    // We subtract a smaller cube from the center
+    translate([-(outer_size - 2*wall_thick)/2, -(outer_size - 2*wall_thick)/2, top_thick + 0.01])
+        cube([outer_size - 2*wall_thick, outer_size - 2*wall_thick, total_h]);
+
+    // 2. Drill the four M4 screw holes through the top plate
+    for (sx = [-1, 1], sy = [-1, 1]) {
+        translate([sx * hole_pat/2, sy * hole_pat/2, -1])
+            cylinder(h = top_thick + 2, d = hole_dia);
+    }
+
+    // 3. Cable notch in one wall
+    // The notch is centered along one wall, reaching 8mm down from the open edge (Z=40).
+    // So the notch exists from Z = (40 - 8) = 32 to Z = 40.
+    // Since we are subtracting from the solid, we place it on the wall.
+    // We'll place it on the wall located at Y = outer_size/2.
+    translate([-notch_w/2, outer_size/2 - wall_thick, total_h - notch_d])
+        cube([notch_w, wall_thick + 1, notch_d + 0.01]);
+}
+
+```

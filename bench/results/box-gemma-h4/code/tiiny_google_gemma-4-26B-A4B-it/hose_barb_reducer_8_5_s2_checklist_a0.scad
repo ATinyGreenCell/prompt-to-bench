@@ -1,0 +1,62 @@
+// Straight hose-barb reducer
+// Designed for 8mm and 5mm ID silicone tubing with a 3mm central bore.
+
+// --- Dimensions ---
+bore_d = 3.0;           // Central bore diameter
+total_h = 41.0;         // Total height of the part
+
+// 8mm side (z = 0 to 20)
+barb8_h = 10.0;         // Height of one 8mm barb
+barb8_d_base = 7.5;     // Bottom diameter of 8mm barb
+barb8_d_top = 9.5;      // Top diameter of 8mm barb
+
+// Collar (z = 20 to 25)
+collar_h = 5.0;         // Height of the transition collar
+collar_d = 12.0;        // Diameter of the transition collar
+
+// 5mm side (z = 25 to 41)
+barb5_h = 8.0;          // Height of one 5mm barb
+barb5_d_base = 6.5;     // Bottom diameter of 5mm barb
+barb5_d_top = 5.0;      // Top diameter of 5mm barb
+
+$fn = 64;
+
+// --- Modules ---
+
+// A single barb module using a cone-like profile (frustum)
+// This uses a polygon in rotate_extrude to create the specific sawtooth profile
+module barb_profile(h, d_bottom, d_top) {
+    rotate_extrude() {
+        polygon(points = [
+            [d_bottom / 2, 0],
+            [d_top / 2, h],
+            [d_bottom / 2, h] // The "step back" to the base diameter
+        ]);
+    }
+}
+
+// --- Main Construction ---
+
+difference() {
+    union() {
+        // 8mm Barb Section (z = 0 to 20)
+        // Two barbs of 10mm each
+        rotate([0, 0, 0]) barb_profile(barb8_h, barb8_d_base, barb8_d_top);
+        rotate([0, 0, barb8_h]) barb_profile(barb8_h, barb8_d_base, barb8_d_top);
+
+        // Transition Collar (z = 20 to 25)
+        translate([0, 0, 20]) 
+            cylinder(h = collar_h, d = collar_d);
+
+        // 5mm Barb Section (z = 25 to 41)
+        // Two barbs of 8mm each
+        // Note: The user specified z=25 to 41 (16mm total) for two 8mm barbs.
+        rotate([0, 0, 25]) barb_profile(barb5_h, barb5_d_base, barb5_d_top);
+        rotate([0, 0, 25 + barb5_h]) barb_profile(barb5_h, barb5_d_base, barb5_d_top);
+    }
+
+    // Central Bore (runs through full length)
+    // We extend the cylinder slightly beyond the bounds to ensure a clean cut
+    translate([0, 0, -1]) 
+        cylinder(h = total_h + 2, d = bore_d);
+}

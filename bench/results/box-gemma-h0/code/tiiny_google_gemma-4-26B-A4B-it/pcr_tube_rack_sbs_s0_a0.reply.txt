@@ -1,0 +1,98 @@
+```openscad
+// PCR Tube Rack (96-well)
+// Designed for 0.2 mL tubes with ANSI/SLAS footprint
+
+// --- Dimensions ---
+block_x = 127.76;      // Total length (X)
+block_y = 85.48;       // Total width (Y)
+block_z = 20.00;       // Total height (Z)
+
+hole_dia = 6.2;        // Diameter of PCR tube holes
+hole_spacing = 9.0;    // Center-to-center spacing (pitch)
+rows = 8;              // Number of rows (Y direction)
+cols = 12;             // Number of columns (X direction)
+
+// Offset of first hole center from the edges
+offset_x = 14.38;      // Distance from left edge to A1 center
+offset_y = 11.24;      // Distance from back edge to A1 center
+
+// Chamfer dimensions (Orientation Mark)
+chamfer_leg = 5.0;     // Length of the chamfer along the edges
+
+// Resolution
+$fn = 64;
+
+// --- Implementation ---
+
+// The part is built in the print orientation: rests on XY plane at Z=0
+module pcr_rack() {
+    difference() {
+        // Main Block
+        cube([block_x, block_y, block_z]);
+
+        // 1. The 96 Vertical Through-Holes
+        // We iterate through columns (X) and rows (Y)
+        // Note: In OpenSCAD, Y increases "up" the screen, 
+        // but the user defines offset from "back edge". 
+        // We will treat Y=0 as the "back" edge.
+        for (c = [0 : cols - 1]) {
+            for (r = [0 : rows - 1]) {
+                translate([offset_x + (c * hole_spacing), offset_y + (r * hole_spacing), -0.5])
+                    cylinder(d = hole_dia, h = block_z + 1);
+            }
+        }
+
+        // 2. The 45-degree Chamfer at the A1 corner
+        // The A1 corner is at (0,0) relative to the block edges.
+        // We use a polygon to create a chamfer shape and extrude it.
+        // To ensure a clean cut, we create a large wedge and subtract it.
+        translate([-1, -1, -1]) // Extend slightly to ensure clean cut
+        rotate([0, 0, 0])
+        difference() {
+            // Create a large enough shape to cover the corner
+            cube([chamfer_leg * 2, chamfer_leg * 2, block_z + 2]);
+            
+            // The actual chamfer geometry (45 degrees)
+            // We use a hull of two lines to create the wedge
+            hull() {
+                // Point far from corner
+                translate([chamfer_leg * 2, 0, 0])
+                    cube([0.1, 0.1, block_z + 2]);
+                translate([0, chamfer_leg * 2, 0])
+                    cube([0.1, 0.1, block_z + 2]);
+                // Point at the corner
+                translate([0, 0, 0])
+                    cube([0.1, 0.1, block_z + 2]);
+            }
+            // This logic is complex for a simple chamfer, 
+            // let's use a simpler approach: a wedge shape.
+        }
+        
+        // Re-defining Chamfer for clarity:
+        // We create a wedge that cuts the corner (0,0,0)
+        // The chamfer is on the vertical edge.
+        // A 45-degree chamfer with 5mm legs means the cut goes from (5,0) to (0,5)
+        translate([-0.5, -0.5, -0.5])
+        rotate([0, 0, 0])
+        difference() {
+            // Large block to ensure intersection
+            cube([chamfer_leg + 1, chamfer_leg + 1, block_z + 2]);
+            
+            // The wedge to remove
+            // We define the triangle in the XY plane and extrude it
+            rotate([0, 0, 0])
+            linear_extrude(height = block_z + 2)
+            polygon(points=[
+                [0, 0],
+                [chamfer_leg + 0.1, 0],
+                [0, chamfer_leg + 0.1]
+            ]);
+        }
+    }
+}
+
+// Final Render
+// Centering the block on X and Y as requested
+translate([-block_x/2, -block_y/2, 0])
+pcr_rack();
+```

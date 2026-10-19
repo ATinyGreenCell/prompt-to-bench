@@ -1,0 +1,152 @@
+// PCR Tube Rack for 96 tubes (0.2 mL)
+// Designed to ANSI/SLAS footprint with specific hole grid and orientation chamfer.
+
+// --- Dimensions ---
+L = 127.76;       // Length (X)
+W = 85.48;        // Width (Y)
+H = 20.0;         // Height (Z)
+
+hole_d = 6.2;     // Diameter of PCR tube holes
+rows = 8;         // Number of rows (Y)
+cols = 12;        // Number of columns (X)
+spacing = 9.0;    // Center-to-center spacing
+
+// Offset of first hole (A1) from edges
+offset_x = 14.38; // From left edge
+offset_y = 11.24; // From back edge (Note: in OpenSCAD, Y increases "up", 
+                  // so we treat "back" as the maximum Y or minimum Y. 
+                  // Given the grid is centered, we calculate the grid bounds.)
+
+// Chamfer dimensions
+chamfer_leg = 5.0;
+
+$fn = 64;
+
+// --- Geometry Calculation ---
+// The user states the grid is centered on the block.
+// Let's calculate the total grid width and height to ensure centering.
+grid_w = (cols - 1) * spacing;
+grid_h = (rows - 1) * spacing;
+
+// The center of the block is (0,0).
+// The center of the grid is (0,0).
+// The position of the first hole (A1) relative to the center:
+// A1_x = -grid_w / 2
+// A1_y = -grid_h / 2 (assuming A1 is at the "bottom-left" of the grid)
+
+// However, the user provided specific offsets from edges. 
+// Let's check if the offsets align with a centered grid.
+// If A1 is at (14.38, 11.24) from edges, its center is at:
+// x = 14.38 - L/2 = 14.38 - 63.88 = -49.5
+// y = 11.24 - W/2 = 11.24 - 42.74 = -31.5
+// Let's use the provided offsets relative to the edges to define the grid position.
+
+module rack_body() {
+    difference() {
+        // Main block
+        translate([-L/2, -W/2, 0])
+            cube([L, W, H]);
+
+        // 96 PCR Tube Holes
+        for (i = [0 : cols - 1]) {
+            for (j = [0 : rows - 1]) {
+                // Calculate hole position based on offsets from edges
+                // A1 is at (offset_x, offset_y) relative to the corner.
+                // We use the provided offsets to define the starting point.
+                // Since the user says "the grid is centred on the block", 
+                // we will center the grid based on the spacing and count.
+                
+                pos_x = -grid_w/2 + (i * spacing);
+                pos_y = -grid_h/2 + (j * spacing);
+                
+                translate([pos_x, pos_y, -1])
+                    cylinder(h = H + 2, d = hole_d);
+            }
+        }
+
+        // Orientation Chamfer (45-degree, 5mm legs)
+        // Located at the A1 corner. 
+        // A1 position relative to center:
+        a1_x = -grid_w/2;
+        a1_y = -grid_h/2;
+        
+        // The chamfer is on the vertical edge. We create a wedge and subtract it.
+        // We place it at the corner of the block where A1 is located.
+        // The user says "at the A1 corner". This implies the corner of the block 
+        // closest to A1.
+        
+        // Corner closest to A1:
+        corner_x = -L/2;
+        corner_y = -W/2;
+        
+        translate([corner_x, corner_y, 0])
+            rotate([0, 0, 0]) // Orientation is at the corner
+            difference() {
+                // Create a large enough cube to ensure clean cut
+                translate([0, 0, 0])
+                    cube([chamfer_leg * 2, chamfer_leg * 2, H + 2]);
+                
+                // The actual chamfer shape (a 45-degree wedge)
+                // We use a polygon in 2D and extrude it.
+                translate([0, 0, -1])
+                rotate([0, 0, 0])
+                linear_extrude(height = H + 2)
+                polygon(points=[[0,0], [chamfer_leg, 0], [0, chamfer_leg]]);
+            }
+            
+        // To make the chamfer a "cut" on the corner, we use a different approach:
+        // We'll define a wedge that covers the corner.
+    }
+}
+
+// Refined Chamfer Logic:
+// We want to cut the corner of the block.
+module chamfer_cutter() {
+    // A wedge that cuts the corner [ -L/2, -W/2 ]
+    // The wedge is defined by the line x + y = chamfer_leg (if corner was 0,0)
+    // Since corner is (-L/2, -W/2), the line is (x + L/2) + (y + W/2) = chamfer_leg
+    
+    translate([-L/2, -W/2, -1])
+    rotate([0, 0, 0])
+    difference() {
+        // Large block to ensure it cuts through
+        cube([chamfer_leg * 2, chamfer_leg * 2, H + 2]);
+        
+        // The part to keep (the triangle)
+        // We want to keep the part where x+y > chamfer_leg? No.
+        // We want to cut the corner. The corner is at (0,0) in local coords.
+        // We want to remove the triangle (0,0), (chamfer_leg, 0), (0, chamfer_leg).
+        // Wait, the instruction says "Cut a 45-degree chamfer... off the vertical edge".
+        // This means the corner itself is removed.
+        
+        translate([chamfer_leg, chamfer_leg, 0])
+            cube([chamfer_leg, chamfer_leg, H + 2]);
+    }
+}
+
+// Final Assembly
+difference() {
+    // The main block
+    translate([-L/2, -W/2, 0])
+        cube([L, W, H]);
+
+    // The 96 holes
+    for (i = [0 : cols - 1]) {
+        for (j = [0 : rows - 1]) {
+            // Centering the grid:
+            pos_x = -grid_w/2 + (i * spacing);
+            pos_y = -grid_h/2 + (j * spacing);
+            translate([pos_x, pos_y, -1])
+                cylinder(h = H + 2, d = hole_d);
+        }
+    }
+
+    // The Chamfer (Orientation Mark)
+    // We cut the corner at (-L/2, -W/2)
+    // A 45-degree chamfer with 5mm legs means we remove a triangle 
+    // with vertices (-L/2, -W/2), (-L/2 + 5, -W/2), and (-L/2, -W/2 + 5)
+    translate([-L/2, -W/2, -1])
+    rotate([0, 0, 0])
+    linear_extrude(height = H + 2)
+    polygon(points=[[0,0], [chamfer_leg, 0], [0, chamfer_leg]]);
+}

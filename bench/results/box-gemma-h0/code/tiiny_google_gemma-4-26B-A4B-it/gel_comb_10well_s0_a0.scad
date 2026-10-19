@@ -1,0 +1,109 @@
+// 10-well agarose gel comb
+// Designed for FDM printing - printed lying flat on the XY plane
+
+// --- Dimensions (mm) ---
+spine_length = 70.0;      // X dimension of the back bar
+spine_width = 12.0;       // Y dimension of the back bar
+plate_thickness = 1.5;    // Z dimension (height of the part)
+
+tooth_width = 5.0;        // X dimension of each tooth
+tooth_length = 12.0;      // Y dimension of each tooth (extending from spine)
+gap_width = 1.5;          // Y dimension of the space between teeth
+
+num_teeth = 10;           // Number of teeth/wells
+
+// --- Calculations ---
+// Total width required for teeth and gaps:
+// (10 * tooth_width) + (9 * gap_width) = 50 + 13.5 = 63.5 mm
+// Since the spine is 70mm, we will center the tooth array on the spine.
+
+total_teeth_width = (num_teeth * tooth_width) + ((num_teeth - 1) * gap_width);
+start_x = -(total_teeth_width / 2);
+
+// --- Rendering ---
+$fn = 64;
+
+module comb() {
+    difference() {
+        // Main Body (Spine)
+        // We extend the Y slightly to ensure the teeth are fully integrated
+        union() {
+            // The spine plate
+            cube([spine_length, spine_width, plate_thickness], center = true);
+            
+            // The teeth block (the part that creates the wells)
+            // We create a block that extends from the spine in the -Y direction
+            translate([0, -(spine_width/2 + tooth_length/2), 0])
+                cube([total_teeth_width, tooth_length, plate_thickness], center = true);
+        }
+
+        // Subtract the wells (the gaps between teeth)
+        // Note: The user described "teeth that hang from one long edge".
+        // In gel casting, the "teeth" are the solid parts, and the "wells" are the gaps.
+        // To make a comb, we need to cut rectangular holes into the teeth block.
+        
+        // However, based on the prompt: "10 rectangular teeth... 5mm wide, 12mm long".
+        // This implies the teeth are the solid parts. To create wells, we need gaps.
+        // If the teeth are 5mm wide and gaps are 1.5mm, the "wells" are the 1.5mm gaps.
+        // But usually, a comb has solid teeth and the wells are the spaces.
+        // To ensure the part is a single solid object, we define the teeth as the solid 
+        // and the gaps as the voids.
+        
+        // Let's re-read: "10 rectangular teeth... 5mm wide... 12mm long".
+        // To make this a functional comb, the "teeth" are the protrusions, 
+        // and the "wells" are the spaces between them.
+        // To make the teeth solid, we must subtract the gaps from the tooth block.
+        
+        // We will subtract the gaps from the tooth block area.
+        // The tooth block is located from Y = -(spine_width/2 + tooth_length/2) 
+        // to Y = -(spine_width/2).
+        
+        for (i = [0 : num_teeth - 2]) {
+            // Calculate X position for the gap
+            // Gaps are located between teeth.
+            // Tooth 0 is at start_x. Gap 0 is after Tooth 0.
+            // Gap X position = start_x + tooth_width + (i * (tooth_width + gap_width))
+            // Wait, the prompt says "gaps between neighbouring teeth are 1.5mm".
+            // This means the teeth are the solid parts.
+            
+            // Let's model the "teeth block" as a solid rectangle, 
+            // then subtract the gaps to leave the teeth.
+            // Actually, the prompt asks for a "comb". A comb is the solid part.
+            // The "wells" are the spaces.
+            // If the teeth are 5mm wide and gaps are 1.5mm, the total width is 63.5.
+            // The teeth are the solid parts.
+        }
+    }
+}
+
+// Corrected approach:
+// 1. Create the spine.
+// 2. Create the teeth as solid blocks.
+// 3. Union them.
+
+module comb_final() {
+    // The spine
+    translate([0, 0, plate_thickness/2])
+        cube([spine_length, spine_width, plate_thickness], center = true);
+    
+    // The teeth
+    // We place them starting from the edge of the spine (-spine_width/2)
+    // and extending in the -Y direction.
+    for (i = [0 : num_teeth - 1]) {
+        // X position: center the array on X=0
+        // The first tooth starts at start_x
+        // The i-th tooth starts at start_x + i * (tooth_width + gap_width)
+        x_pos = start_x + (i * (tooth_width + gap_width)) + (tooth_width / 2);
+        
+        // Y position: The spine edge is at -spine_width/2. 
+        // The tooth extends from -spine_width/2 to -spine_width/2 - tooth_length.
+        // The center of the tooth in Y is -spine_width/2 - tooth_length/2.
+        y_pos = -(spine_width/2 + tooth_length/2);
+        
+        translate([x_pos, y_pos, plate_thickness/2])
+            cube([tooth_width, tooth_length, plate_thickness], center = true);
+    }
+}
+
+// Execute the model
+comb_final();

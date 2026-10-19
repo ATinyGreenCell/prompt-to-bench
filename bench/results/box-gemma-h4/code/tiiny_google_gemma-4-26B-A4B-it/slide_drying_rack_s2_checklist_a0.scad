@@ -1,0 +1,39 @@
+// Microscope Slide Drying Rack
+// Designed for 10 slides (75x25x1mm) standing on long edge.
+
+// Block dimensions
+L_block = 90.0;    // Length (X)
+W_block = 45.0;    // Width (Y)
+H_block = 20.0;    // Height (Z)
+
+// Slot dimensions
+L_slot = 77.0;     // Slot length (X)
+W_slot = 1.6;      // Slot width (Y)
+D_slot = 10.0;     // Slot depth (Z)
+P_slot = 3.5;      // Slot pitch (center-to-center in Y)
+N_slots = 10;      // Number of slots
+
+$fn = 64;
+
+// Calculate the starting Y position to center the group of slots
+// The centers of the slots are at: -(N-1)/2 * P to +(N-1)/2 * P
+y_offset = (N_slots - 1) * P_slot / 2;
+
+difference() {
+    // The main base block
+    translate([-L_block/2, -W_block/2, 0])
+        cube([L_block, W_block, H_block]);
+
+    // The 10 parallel slots
+    for (i = [0 : N_slots - 1]) {
+        // Calculate Y position for current slot center
+        y_pos = (i * P_slot) - y_offset;
+        
+        // Translate to position the slot
+        // We subtract L_slot/2 to center it on X
+        // We subtract W_slot/2 to center it on Y
+        // We use -0.01 for Z to ensure a clean cut through the top face
+        translate([-L_slot/2, y_pos - W_slot/2, H_block - D_slot + 0.01])
+            cube([L_slot, W_slot, D_slot + 0.01]);
+    }
+}

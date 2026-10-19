@@ -1,0 +1,136 @@
+// NEMA 17 Stepper Motor L-Bracket for Syringe Pump
+// Designed for FDM 3D Printing
+
+// --- Dimensions ---
+// Base Plate
+base_x_min = -25;
+base_x_max = 25;
+base_y_min = 0;
+base_y_max = 45;
+base_z_height = 5;
+
+// Base Plate Holes (M4)
+m4_hole_dia = 4.5;
+m4_hole_x1 = -17;
+m4_hole_x2 = 17;
+m4_hole_y = 30;
+
+// Vertical Motor Plate
+motor_plate_x_min = -25;
+motor_plate_x_max = 25;
+motor_plate_y_max = 5;
+motor_plate_z_max = 50;
+
+// Motor Boss Hole (Centering)
+boss_hole_dia = 23;
+boss_hole_x = 0;
+boss_hole_z = 28;
+
+// Motor Screw Holes (M3)
+m3_hole_dia = 3.4;
+m3_pattern_size = 31;
+m3_offset = m3_pattern_size / 2;
+
+// Gussets
+gusset_thickness = 5;
+gusset_leg_y = 20;
+gusset_leg_z = 20;
+gusset_x_left = -25;
+gusset_x_right = 25;
+
+// Resolution
+$fn = 64;
+
+// --- Construction ---
+
+module base_plate() {
+    difference() {
+        // Main Base Body
+        cube([base_x_max - base_x_min, base_y_max - base_y_min, base_z_height]);
+        
+        // M4 Holes (Vertical through-holes)
+        // We translate to the center of the base plate's local coordinate system
+        // Base is centered on X, but Y starts at 0.
+        translate([m4_hole_x1, m4_hole_y, -1])
+            cylinder(d = m4_hole_dia, h = base_z_height + 2);
+        translate([m4_hole_x2, m4_hole_y, -1])
+            cylinder(d = m4_hole_dia, h = base_z_height + 2);
+    }
+}
+
+module motor_plate() {
+    difference() {
+        // Main Vertical Plate Body
+        cube([motor_plate_x_max - motor_plate_x_min, motor_plate_y_max, motor_plate_z_max]);
+        
+        // Motor Centering Boss Hole (Cylinder along Y axis)
+        translate([boss_hole_x, -1, boss_hole_z])
+            rotate([0, 90, 0])
+            cylinder(d = boss_hole_dia, h = motor_plate_y_max + 2);
+            
+        // M3 Screw Holes (4 holes in a square pattern)
+        // Pattern is centered on the boss hole
+        for (px = [-m3_offset, m3_offset]) {
+            for (pz = [-m3_offset, m3_offset]) {
+                translate([px, -1, boss_hole_z + pz])
+                    rotate([0, 90, 0])
+                    cylinder(d = m3_hole_dia, h = motor_plate_y_max + 2);
+            }
+        }
+    }
+}
+
+module gusset(x_pos) {
+    // A right triangle in YZ plane
+    // Legs: 20mm along Y, 20mm along Z
+    // Right angle corner at y=5, z=5 (relative to global, but plate is at y=0 to 5)
+    // The user says "flush with edges" and "right angle corner at y=5, z=5"
+    // Since the plate is at y=0 to 5, the gusset starts at the junction.
+    
+    translate([x_pos, 5, 5])
+    rotate([0, 0, 0]) // Orientation check
+    linear_extrude(height = gusset_thickness)
+    polygon(points=[
+        [0, 0],
+        [gusset_leg_y, 0],
+        [0, gusset_leg_z]
+    ]);
+}
+
+// --- Final Assembly ---
+
+union() {
+    // 1. Base Plate
+    // Translate to center on X, but Y starts at 0
+    translate([0, 0, 0])
+    base_plate();
+
+    // 2. Vertical Motor Plate
+    // Positioned at the back edge (y=0 to 5)
+    translate([0, 0, 0])
+    motor_plate();
+
+    // 3. Gussets
+    // Left Gusset (x from -25 to -20)
+    // We use the thickness to define the width in X
+    // The gusset is placed at the edge.
+    // Left: x = -25 to -20. Right: x = 20 to 25.
+    
+    // Left Gusset
+    translate([-25, 5, 5])
+    linear_extrude(height = gusset_thickness)
+    polygon(points=[[0,0], [gusset_leg_y, 0], [0, gusset_leg_z]]);
+    
+    // Right Gusset
+    translate([20, 5, 5])
+    linear_extrude(height = gusset_thickness)
+    polygon(points=[[0,0], [gusset_leg_y, 0], [0, gusset_leg_z]]);
+}
+
+// Note: The gusset logic above uses linear_extrude to create the thickness.
+// To ensure they are "flush" with the edges as requested:
+// Left edge is at x=-25. Right edge is at x=25.
+// The code above places the left gusset at x=-25 and the right at x=20.
+// To make them flush with the outer edges:
+// Left: translate([-25, 5, 5]) ... thickness 5 -> covers -25 to -20.
+// Right: translate([20, 5, 5]) ... thickness 5 -> covers 20 to 25.

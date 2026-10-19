@@ -1,0 +1,101 @@
+```openscad
+// --- Dimensions: Box ---
+box_width = 70;          // Outer width (X)
+box_depth = 50;          // Outer depth (Y)
+box_height = 30;        // Outer height (Z)
+box_wall_thick = 2;      // Wall thickness
+box_floor_thick = 2;     // Floor thickness
+
+// --- Dimensions: Lid ---
+lid_plate_w = 70;        // Plate width (X)
+lid_plate_d = 50;        // Plate depth (Y)
+lid_plate_h = 2;         // Plate thickness (Z)
+lid_lip_w = 65.6;        // Lip outer width (X)
+lid_lip_d = 45.6;        // Lip outer depth (Y)
+lid_lip_h = 4;           // Lip height (Z)
+lid_lip_thick = 1.5;     // Lip wall thickness
+
+// --- Layout ---
+gap = 10;                // Gap between parts on print bed
+$fn = 64;                // Smoothness for curves
+
+// --- Part 1: The Box ---
+// Requirement: Rests on XY plane at z = 0 and builds upward (+Z).
+// Centered on X and Y.
+translate([0, 0, 0]) {
+    difference() {
+        // Main outer body
+        cube([box_width, box_depth, box_height]);
+        
+        // Hollow interior
+        // Subtracting from the top down to ensure the floor is exactly box_floor_thick
+        translate([box_wall_thick, box_wall_thick, box_floor_thick])
+            cube([box_width - 2*box_wall_thick, 
+                  box_depth - 2*box_wall_thick, 
+                  box_height]); // Extends past top to ensure clean cut
+    }
+}
+
+// --- Part 2: The Lid ---
+// Requirement: Printed upside down: a plate 70 x 50 x 2 mm lying on the bed, 
+// with a rectangular lip on top of it.
+// Requirement: Place the lid on the +X side of the box.
+// Requirement: Rests on XY plane at z = 0.
+// Centered on X and Y (relative to its own footprint).
+
+// Calculate X offset: 
+// Box is 70mm wide. Box is centered at 0, so its right edge is at X = 70.
+// However, to keep the whole assembly centered or logically placed:
+// We will place the box from X = -35 to 35.
+// The gap is 10mm. So the lid starts at X = 35 + 10 = 45.
+// The lid is 70mm wide, so its center is at 45 + 35 = 80.
+
+translate([box_width + gap, 0, 0]) {
+    // The lid is built "upward" from the bed.
+    // The plate is the first layer (Z=0 to Z=2).
+    // The lip is on top of the plate (Z=2 to Z=6).
+    
+    // 1. The Plate
+    cube([lid_plate_w, lid_plate_d, lid_plate_h]);
+    
+    // 2. The Lip
+    // Centered on the plate.
+    translate([(lid_plate_w - lid_lip_w)/2, (lid_plate_d - lid_lip_d)/2, lid_plate_h])
+    difference() {
+        // Outer volume of the lip
+        cube([lid_lip_w, lid_lip_d, lid_lip_h]);
+        
+        // Inner hollow of the lip
+        // We subtract a slightly larger cube to ensure clean cut through the top
+        translate([lid_lip_thick, lid_lip_thick, -0.01])
+            cube([lid_lip_w - 2*lid_lip_thick, 
+                  lid_lip_d - 2*lid_lip_thick, 
+                  lid_lip_h + 0.02]);
+    }
+}
+
+// Note on centering: 
+// The prompt asks for the box to be centered on the origin in X and Y.
+// To achieve this while keeping the box at Z=0, the box is defined from 0 to 70 
+// and then we must translate it so its center (35, 25) is at (0,0).
+// Let's re-apply the centering to the whole assembly to be safe.
+
+/* 
+   CORRECTED COORDINATE LOGIC:
+   Box: 
+     X: -35 to 35
+     Y: -25 to 25
+     Z: 0 to 30
+   Lid:
+     X: 45 to 115 (Starts at 35 + 10 gap)
+     Y: -25 to 25
+     Z: 0 to 6
+*/
+
+// Resetting the whole file to use the correct centering logic:
+// (The code above is the logic, I will provide the final clean version below)
+```
+
+```openscad
+// --- Dimensions: Box ---
+box

@@ -1,0 +1,88 @@
+The measurement report indicates that the part is currently centered on the Z-axis (ranging from -40 to 0), whereas the rules require the part to rest on the XY plane at $z = 0$ and build upward. Additionally, the electrode holes were incorrectly positioned in the previous iteration due to the coordinate shift.
+
+**Specification Check:**
+- Outer Dimensions: 120 x 70 x 40 mm | Report: 120 x 70 x 40 mm | OK
+- Wall Thickness: 3 mm | Report: 3 mm | OK
+- Floor Thickness: 3 mm | Report: 3 mm | OK
+- Platform Length: 60 mm | Report: 60 mm | OK
+- Platform Width: Full inner width (64 mm) | Report: 64 mm | OK
+- Platform Height: 13 mm above inner floor (Total Z = 16) | Report: 13 mm (relative to floor) | OK
+- Electrode Hole Diameter: 2 mm | Report: 2 mm | OK
+- Electrode Hole Position: Y = 0 (centered on Y), Z = 30 | Report: Y = 0, Z = 30 | OK
+- Electrode Hole Orientation: Horizontal along X | Report: Horizontal along X | OK
+- Part Orientation: Rests on XY plane at z = 0 | Report: Z starts at -40 | WRONG
+
+**Corrections made:**
+1. Removed the `translate([0, 0, -H/2])` from the final assembly to ensure the base of the tank sits at $z = 0$.
+2. Recalculated the Z-offsets for the internal cavity, the platform, and the electrode holes to be relative to the new $z = 0$ base.
+3. Ensured the electrode holes are subtracted from the final unioned body correctly.
+
+```openscad
+// Buffer tank for mini horizontal gel-electrophoresis box
+// Corrected version: Rests on Z=0, centered on XY, correct hole positioning.
+
+// --- Dimensions ---
+L             = 120.0; // Outer Length (X)
+W             = 70.0;  // Outer Width (Y)
+H             = 40.0;  // Outer Height (Z)
+wall          = 3.0;   // Wall thickness
+floor         = 3.0;   // Floor thickness
+platform_len  = 60.0;  // Platform length (X)
+platform_h_rel = 13.0; // Platform height above inner floor
+hole_d        = 2.0;   // Electrode hole diameter
+hole_y_pos    = 0.0;   // Y position of holes (centered)
+hole_z_pos    = 30.0;  // Z position of holes (absolute from Z=0)
+
+$fn = 64;
+
+// --- Calculations ---
+inner_l = L - 2 * wall;
+inner_w = W - 2 * wall;
+
+// --- Modeling ---
+
+// The part must rest on the XY plane at z = 0.
+// We build the tank and then center it on X and Y.
+
+module tank_shell() {
+    difference() {
+        // Main outer block (starts at Z=0)
+        cube([L, W, H]);
+        
+        // Subtract the interior volume
+        // Interior starts at Z = floor
+        translate([wall, wall, floor])
+            cube([inner_l, inner_w, H]);
+            
+        // Electrode holes (Horizontal along X)
+        // Positioned at Y = W/2 (center), Z = hole_z_pos
+        // We use a large cylinder to ensure it pierces the walls.
+        translate([-1, W/2 + hole_y_pos, hole_z_pos])
+            rotate([0, 90, 0])
+                cylinder(h = L + 2, d = hole_d);
+    }
+}
+
+module platform() {
+    // The platform is a solid inside the tank.
+    // It sits on the floor (Z = floor) and goes up to (floor + platform_h_rel)
+    // It is centered in X and spans full inner Y.
+    // In absolute coordinates:
+    // Z_bottom = floor
+    // Z_top = floor + platform_h_rel
+    // X_center = L/2
+    // Y_center = W/2
+    
+    translate([L/2 - platform_len/2, wall, floor])
+        cube([platform_len, inner_w, platform_h_rel]);
+}
+
+// --- Final Assembly ---
+// Center the whole assembly on X and Y, but keep Z at 0.
+translate([-L/2, -W/2, 0]) {
+    union() {
+        tank_shell();
+        platform();
+    }
+}
+```

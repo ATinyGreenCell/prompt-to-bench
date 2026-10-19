@@ -1,0 +1,93 @@
+```openscad
+// Snap-on clip for 12.7mm lab rod and 6mm tubing
+// Designed for FDM printing: printed flat on the XY plane.
+
+// --- Dimensions ---
+rod_id      = 12.7;    // Inner diameter of the rod ring
+rod_wall    = 3.0;     // Wall thickness of the rod ring
+rod_od      = rod_id + 2 * rod_wall; // Outer diameter of the rod ring
+
+rod_gap_w   = 10.0;    // Width of the opening in the rod ring
+rod_gap_h   = 10.0;    // Height of the opening in the rod ring (covers -5 to 5)
+
+tube_id     = 6.0;     // Inner diameter of the tubing ring
+tube_wall   = 2.0;     // Wall thickness of the tubing ring
+tube_od     = tube_id + 2 * tube_wall; // Outer diameter of the tubing ring
+
+tube_gap_w  = 4.5;     // Width of the opening in the tubing ring
+tube_gap_h  = 4.5;     // Height of the opening in the tubing ring (covers -2.25 to 2.25)
+
+tube_offset_x = 15.0;  // X-coordinate of the tubing ring center
+bridge_w_y    = 6.0;   // Width of the bridge in the Y direction
+bridge_x_start = 8.0;   // Start of the bridge in X
+bridge_x_end   = 12.0;  // End of the bridge in X
+
+extrusion_z = 10.0;    // Total height of the part (Z)
+
+$fn = 64;
+
+// --- Geometry Construction ---
+
+module rod_ring() {
+    difference() {
+        // Outer cylinder
+        cylinder(h = extrusion_z, d = rod_od, center = true);
+        // Inner hole
+        cylinder(h = extrusion_z + 2, d = rod_id, center = true);
+        // Snap gap (cut from -X side)
+        // We use a cube to cut the gap. To ensure a clean cut, we make it slightly larger.
+        translate([-rod_od/2 - 1, 0, -extrusion_z/2 - 1])
+            cube([rod_od, rod_gap_w, extrusion_z + 2]);
+    }
+}
+
+module tube_ring() {
+    translate([tube_offset_x, 0, 0])
+    difference() {
+        // Outer cylinder
+        cylinder(h = extrusion_z, d = tube_od, center = true);
+        // Inner hole
+        cylinder(h = extrusion_z + 2, d = tube_id, center = true);
+        // Snap gap (cut from +X side)
+        translate([tube_offset_x + tube_od/2 - tube_gap_w - 1, 0, -extrusion_z/2 - 1])
+            cube([tube_gap_w + 2, tube_gap_h, extrusion_z + 2]);
+    }
+}
+
+module bridge() {
+    // The bridge is a solid block between the two rings.
+    // It is centered on Y, so Y goes from -bridge_w_y/2 to bridge_w_y/2.
+    translate([0, 0, -extrusion_z/2])
+    cube([bridge_x_end - bridge_x_start, bridge_w_y, extrusion_z]);
+}
+
+// --- Final Assembly ---
+
+// We use union for the main body and difference to ensure the gaps are clean.
+// However, the prompt describes the profile as a union of three parts.
+// To ensure the gaps are actually holes through the whole 10mm extrusion:
+
+difference() {
+    // The main body
+    union() {
+        rod_ring();
+        tube_ring();
+        bridge();
+    }
+    
+    // Re-applying the gaps as subtractions to ensure they are through-holes
+    // even if the union/difference logic gets complex with the bridge.
+    
+    // Rod gap subtraction
+    translate([-rod_od/2 - 1, 0, -extrusion_z/2 - 1])
+        cube([rod_od, rod_gap_w, extrusion_z + 2]);
+        
+    // Tube gap subtraction
+    translate([tube_offset_x + tube_od/2 - tube_gap_w - 1, 0, -extrusion_z/2 - 1])
+        cube([tube_gap_w + 2, tube_gap_h, extrusion_z + 2]);
+}
+
+// Note: The bridge is defined as a solid between x=8 and x=12. 
+// Since the rod ring ends at x = -9.35 and tube ring starts at x = 14, 
+// the bridge connects the two.
+```

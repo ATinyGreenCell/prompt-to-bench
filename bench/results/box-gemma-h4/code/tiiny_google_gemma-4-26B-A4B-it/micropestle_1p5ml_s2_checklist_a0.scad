@@ -1,0 +1,73 @@
+// Pestle for 1.5 mL microcentrifuge tube
+// Designed to be printed standing upright on the XY plane.
+
+// --- Dimensions ---
+handle_d     = 8.0;    // Diameter of the cylindrical handle
+handle_h     = 45.0;   // Height of the cylindrical handle
+cone_base_d  = 8.0;    // Diameter of the cone at the base (z=45)
+cone_tip_d   = 3.0;    // Diameter of the cone at the tip (z=62)
+cone_h       = 17.0;   // Height of the cone (62 - 45)
+tip_d        = 3.0;    // Diameter of the spherical tip
+groove_w     = 2.0;    // Width (height in Z) of each groove
+groove_d     = 1.0;    // Depth of each groove into the handle
+groove_centers = [10, 15, 20, 25]; // Z-heights for the grip grooves
+
+$fn = 64;
+
+// --- Geometry Construction ---
+
+// 1. The Handle (Cylinder)
+module handle() {
+    cylinder(h = handle_h, d = handle_d);
+}
+
+// 2. The Tapered Section (Cone)
+module cone_section() {
+    // Using a cylinder with different diameters at top and bottom
+    // We translate it to start at z = 45
+    translate([0, 0, handle_h])
+        cylinder(h = cone_h, d1 = cone_base_d, d2 = cone_tip_d);
+}
+
+// 3. The Rounded Tip (Sphere)
+module rounded_tip() {
+    // Sphere centered at z = 62. 
+    // Since cone_h + handle_h = 17 + 45 = 62, the sphere center is at z=62.
+    translate([0, 0, handle_h + cone_h])
+        sphere(d = tip_d);
+}
+
+// 4. The Grip Grooves (Subtraction)
+module grooves() {
+    for (z_pos = groove_centers) {
+        // Each groove is a ring. We use a torus-like subtraction.
+        // A torus is a circle rotated around an axis.
+        // Here we use a cylinder with a larger diameter to cut the handle.
+        translate([0, 0, z_pos - groove_w/2])
+            difference() {
+                // Outer cylinder to ensure clean cut
+                cylinder(h = groove_w, d = handle_d + 2);
+                // Inner cylinder to create the groove
+                cylinder(h = groove_w + 0.1, d = handle_d - 2 * groove_d);
+            }
+    }
+}
+
+// --- Final Assembly ---
+
+union() {
+    difference() {
+        union() {
+            handle();
+            cone_section();
+            rounded_tip();
+        }
+        // Subtract the grooves from the handle
+        grooves();
+    }
+}
+
+// Note: The sphere is centered at z=62. 
+// The cone ends at z=62. 
+// The sphere has diameter 3, so it extends from z=60.5 to z=63.5.
+// This creates a smooth transition from the cone to the tip.

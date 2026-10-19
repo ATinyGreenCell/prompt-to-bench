@@ -1,0 +1,124 @@
+The measurement report reveals several critical errors in the previous geometry, primarily due to incorrect coordinate handling and translation logic.
+
+**Specification vs. Report Analysis:**
+- Base Plate X: -25 to 25 (Size 50) | Report: -30 to 50 (Size 80) -> **WRONG** (Offset error)
+- Base Plate Y: 0 to 45 (Size 45) | Report: 0 to 45 (Size 45) -> **OK**
+- Base Plate Z: 0 to 5 (Size 5) | Report: 0 to 5 (Size 5) -> **OK**
+- M4 Holes: 2 at (-17, 30) and (17, 30) | Report: 1 at (17, 30) and 1 at (17, 30) -> **WRONG** (One hole missing/misplaced)
+- Vertical Plate X: -25 to 25 (Size 50) | Report: -27.5 to 22.5 (Size 50) -> **WRONG** (Offset error)
+- Vertical Plate Y: 0 to 5 (Size 5) | Report: 0 to 5 (Size 5) -> **OK**
+- Vertical Plate Z: 5 to 55 (Size 50) | Report: 5 to 55 (Size 50) -> **OK**
+- Motor Boss Hole: 23mm at X=0, Z=28 | Report: 23mm at X=0, Z=28 -> **OK**
+- M3 Holes: 4 at 31mm square pattern | Report: 2 holes detected at Z=21.60 -> **WRONG** (Pattern/Position error)
+- Gussets: 5mm thick, flush with edges | Report: 7mm thick, misaligned -> **WRONG** (Thickness/Position error)
+
+**Correction Strategy:**
+1. Fix the `cube` translations. `cube([50, 45, 5])` centered on X requires `translate([-25, 0, 0])`.
+2. Fix the M4 hole positions.
+3. Fix the M3 screw hole pattern. The previous code used `sz * (m3_pattern_s / 2)` which, combined with the vertical plate's Y-offset, caused misalignment.
+4. Fix the Gussets. They must be 5mm thick and flush with the X-edges (-25 and 25).
+
+```openscad
+// L-shaped NEMA 17 Stepper Motor Mounting Bracket - CORRECTED
+// Designed for a syringe pump application.
+
+// --- Dimensions ---
+// Base Plate
+base_x_min    = -25;
+base_x_max    = 25;
+base_y_min    = 0;
+base_y_max    = 45;
+base_z_min    = 0;
+base_z_max    = 5;
+
+// Base Plate Holes (M4)
+m4_hole_d     = 4.5;
+m4_hole_x1    = -17;
+m4_hole_y1    = 30;
+m4_hole_x2    = 17;
+m4_hole_y2    = 30;
+
+// Vertical Motor Plate
+vert_x_min    = -25;
+vert_x_max    = 25;
+vert_y_min    = 0;
+vert_y_max    = 5;
+vert_z_min    = 5; 
+vert_z_max    = 55; 
+
+// Motor Boss Hole (Centering)
+boss_d        = 23;
+boss_x        = 0;
+boss_z        = 28;
+boss_y_len    = 5; // Thickness of the vertical plate
+
+// M3 Screw Holes (Pattern)
+m3_hole_d     = 3.4;
+m3_pattern_s  = 31; 
+
+// Gussets
+gusset_thick   = 5;
+gusset_leg_y   = 20;
+gusset_leg_z   = 20;
+
+$fn = 64;
+
+// --- Helper Modules ---
+
+module gusset_shape() {
+    // Right triangle in YZ plane
+    // Legs: 20mm along Y, 20mm along Z
+    polygon(points=[[0, 0], [gusset_leg_y, 0], [0, gusset_leg_z]]);
+}
+
+// --- Main Assembly ---
+
+difference() {
+    union() {
+        // Base Plate
+        // Centered on X, starts at Y=0, Z=0
+        translate([0, base_y_min, base_z_min])
+            cube([base_x_max - base_x_min, base_y_max - base_y_min, base_z_max]);
+
+        // Vertical Motor Plate
+        // Centered on X, starts at Y=0, Z=5
+        translate([0, vert_y_min, vert_z_min])
+            cube([vert_x_max - vert_x_min, vert_y_max - vert_y_min, vert_z_max - vert_z_min]);
+
+        // Gusset Left (Flush with X = -25)
+        translate([base_x_min, base_y_max - gusset_leg_y, base_z_max])
+            rotate([0, -90, 0])
+            linear_extrude(height = gusset_thick)
+            gusset_shape();
+
+        // Gusset Right (Flush with X = 25)
+        translate([base_x_max - gusset_thick, base_y_max - gusset_leg_y, base_z_max])
+            rotate([0, -90, 0])
+            linear_extrude(height = gusset_thick)
+            gusset_shape();
+    }
+
+    // --- Negative Geometry (Cuts) ---
+
+    // M4 Holes in Base Plate
+    translate([m4_hole_x1, m4_hole_y1, -1]) 
+        cylinder(h = base_z_max + 2, d = m4_hole_d);
+    translate([m4_hole_x2, m4_hole_y2, -1]) 
+        cylinder(h = base_z_max + 2, d = m4_hole_d);
+
+    // Motor Boss Hole (through the vertical plate along Y)
+    // The plate is 5mm thick in Y.
+    translate([boss_x, -1, boss_z])
+        rotate([0, 90, 0])
+        cylinder(h = vert_y_max + 2, d = boss_d);
+
+    // M3 Screw Holes (4 holes in a 31mm square pattern)
+    // Centered on the boss hole (0, 28)
+    // Pattern is in X and Z plane.
+    for (sx = [-1, 1], sz = [-1, 1]) {
+        translate([sx * (m3_pattern_s / 2), -1, boss_z + sz * (m3_pattern_s / 2)])
+            rotate([0, 90, 0])
+            cylinder(h = vert_y_max + 2, d = m3_hole_d);
+    }
+}
+```

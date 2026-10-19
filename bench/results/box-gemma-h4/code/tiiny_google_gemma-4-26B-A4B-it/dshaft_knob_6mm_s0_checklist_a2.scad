@@ -1,0 +1,79 @@
+// Replacement knob for a hotplate stirrer with a 6 mm D-shaft.
+// Designed for FDM printing, resting on the bottom face (z=0).
+
+// --- Dimensions ---
+knob_diameter = 30.0;      // Total diameter of the knob
+knob_height   = 15.0;      // Total height of the knob
+d_shaft_dia    = 6.2;       // Diameter of the circular part of the D-shaft
+d_shaft_width  = 4.7;       // Distance from the flat to the opposite side
+d_shaft_depth  = 12.0;      // Depth of the D-shaft bore into the knob
+
+groove_dia     = 2.0;       // Diameter of the vertical grip grooves
+num_grooves    = 18;        // Number of vertical grip grooves
+
+pointer_width  = 1.5;       // Width of the pointer groove on top
+pointer_depth  = 1.0;       // Depth of the pointer groove
+
+$fn = 64;
+
+// --- Calculations ---
+// Diameter is 6.2, so radius is 3.1.
+// If distance from flat to opposite side is 4.7, 
+// the distance from center to flat is 4.7 - 3.1 = 1.6.
+dist_center_to_flat = 1.6;
+
+// --- Modeling ---
+
+difference() {
+    // 1. Main Knob Body
+    cylinder(h = knob_height, d = knob_diameter);
+
+    // 2. D-shaped Blind Bore
+    // We create the D-shape by subtracting a cylinder and a block.
+    // To ensure the knob remains centered, we subtract the D-shape from the center.
+    translate([0, 0, -0.01]) {
+        // Subtract the circular part
+        cylinder(h = d_shaft_depth + 0.02, d = d_shaft_dia);
+        
+        // Subtract the part that makes it a "D"
+        // The flat is at x = -1.6. We subtract everything from -knob_diameter to -1.6.
+        // We use a large cube to ensure it cuts through the cylinder completely.
+        translate([-knob_diameter, -knob_diameter, -0.01])
+            cube([knob_diameter - dist_center_to_flat, knob_diameter * 2, d_shaft_depth + 0.02]);
+    }
+
+    // 3. Vertical Grip Grooves
+    // 18 evenly spaced vertical grooves around the outside.
+    for (i = [0 : num_grooves - 1]) {
+        angle = i * (360 / num_grooves);
+        rotate([0, 0, angle])
+            // The groove is a half-cylinder centered on the outer surface.
+            // We place the cylinder center at (knob_diameter/2)
+            translate([knob_diameter / 2, 0, 0])
+                rotate([0, 90, 0])
+                    cylinder(h = knob_height + 2, d = groove_dia);
+    }
+
+    // 4. Top Pointer Groove
+    // 1.5mm wide, 1mm deep, runs from center to edge, on the same side as the flat.
+    // The flat is at x = -1.6. We place the groove on the negative X axis.
+    // We use a cylinder for the groove to make it a proper "slot" rather than a block.
+    // Or a thin cylinder/cube. Let's use a thin cylinder for a clean slot.
+    rotate([0, 0, 180]) // Rotate to align with the negative X axis
+    translate([0, 0, knob_height - pointer_depth])
+    rotate([0, 90, 0])
+    cylinder(h = knob_diameter, d = pointer_width);
+    
+    // To ensure the pointer groove is a "slot" from center to edge:
+    // We use a thin cylinder oriented along the X axis.
+    rotate([0, 90, 0])
+    translate([0, 0, knob_height - pointer_depth])
+    cylinder(h = knob_diameter, d = pointer_width);
+    // Wait, the above is messy. Let's use a simple cube for the slot.
+    // The slot is 1.5mm wide (Y), 1mm deep (Z), and runs from center to edge (X).
+    // The flat is at x = -1.6. So the slot is on the negative X side.
+    
+    // Corrected Pointer Groove:
+    translate([-knob_diameter, -pointer_width/2, knob_height - pointer_depth])
+        cube([knob_diameter, pointer_width, pointer_depth + 0.1]);
+}

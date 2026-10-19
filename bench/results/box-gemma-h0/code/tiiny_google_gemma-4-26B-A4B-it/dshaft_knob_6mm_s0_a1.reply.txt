@@ -1,0 +1,116 @@
+```openscad
+// --- Dimensions (mm) ---
+knob_diameter = 30.0;          // Total diameter of the knob
+knob_height = 15.0;            // Total height of the knob
+d_shaft_circle_dia = 6.2;      // Diameter of the circular part of the D-bore
+d_shaft_flat_dist = 4.7;       // Distance from the flat to the opposite side of the D-bore
+d_bore_depth = 12.0;           // Depth of the D-shaped bore
+grip_groove_dia = 2.0;         // Diameter of the half-cylinder grooves
+grip_groove_count = 18;        // Number of vertical grooves
+pointer_width = 1.5;           // Width of the pointer groove
+pointer_depth = 1.0;           // Depth of the pointer groove
+
+// --- Constants ---
+$fn = 64;
+
+// --- Geometry Calculations ---
+// Radius of the shaft circle
+shaft_radius = d_shaft_circle_dia / 2;
+// Distance from the center to the flat face
+// Since flat_to_edge = 4.7 and radius = 3.1, 
+// the distance from center to flat is 4.7 - 3.1 = 1.6mm.
+dist_center_to_flat = d_shaft_flat_dist - shaft_radius;
+
+// --- Main Model ---
+// The knob is printed with the bottom face at Z=0
+difference() {
+    // Main Body
+    cylinder(h = knob_height, d = knob_diameter, center = false);
+
+    // 1. D-shaped Blind Bore
+    // We create the D-shape by subtracting a segment from a cylinder.
+    // The segment is defined by the distance from the center to the flat.
+    translate([0, 0, -0.01]) // Ensure it cuts through the bottom face
+    difference() {
+        cylinder(h = d_bore_depth + 0.01, d = d_shaft_circle_dia);
+        
+        // The cutting block to create the flat
+        // We move it so it removes the portion of the cylinder beyond the flat line.
+        // The flat is located at y = -dist_center_to_flat.
+        // To ensure a clean cut, we make the block wider than the cylinder.
+        translate([-shaft_radius - 1, -shaft_radius - 1, -0.01])
+        cube([shaft_radius + 1 + 1, shaft_radius - dist_center_to_flat + 0.1, d_bore_depth + 0.02]);
+        
+        // Note: The previous version had a logic error in the cube placement 
+        // resulting in an offset hole. This version centers the D-bore on the origin.
+        // The flat is at y = -1.6. The cylinder edge is at y = -3.1.
+        // We subtract a block that covers the area from y = -3.1 to y = -1.6.
+        translate([-shaft_radius - 1, -shaft_radius, -0.01])
+        cube([shaft_radius * 2 + 2, shaft_radius - dist_center_to_flat, d_bore_depth + 0.02]);
+    }
+    
+    // Re-calculating the D-bore subtraction to be perfectly centered:
+    // We want to cut the part of the cylinder where y < -dist_center_to_flat.
+    // Let's use a simpler subtraction:
+    // 1. The cylinder
+    // 2. A block that removes everything below y = -dist_center_to_flat
+    // This is handled by the difference block below.
+
+    // 2. Grip Grooves (Vertical half-cylinders)
+    // "Around the outside, cut 18 evenly spaced vertical grip grooves"
+    for (i = [0 : grip_groove_count - 1]) {
+        rotate([0, 0, i * (360 / grip_groove_count)])
+        translate([knob_diameter/2, 0, -0.01])
+        cylinder(h = knob_height + 0.02, d = grip_groove_dia);
+    }
+
+    // 3. Pointer Groove (Top face)
+    // "On the top face, cut a pointer groove 1.5 mm wide and 1 mm deep 
+    // that runs from the centre to the outer edge, on the same side as the flat of the D."
+    // The flat is at y = -1.6. To be on the "same side", we align the groove along the Y axis.
+    // We use a cube to cut the groove.
+    translate([-pointer_width/2, -knob_diameter/2, knob_height - pointer_depth])
+    cube([pointer_width, knob_diameter, pointer_depth + 0.01]);
+}
+
+// --- Corrected D-Bore Logic Implementation ---
+// To ensure the D-bore is exactly as described and centered:
+// We will use a single difference block for the whole part.
+// I will rewrite the structure to be cleaner and avoid the previous errors.
+
+// REWRITTEN STRUCTURE
+// (The code above is the logic, here is the clean implementation)
+
+/* 
+// RE-IMPLEMENTATION FOR FINAL OUTPUT:
+difference() {
+    // Main Cylinder
+    cylinder(h = knob_height, d = knob_diameter);
+
+    // D-Bore
+    translate([0, 0, -0.01])
+    difference() {
+        cylinder(h = d_bore_depth + 0.01, d = d_shaft_circle_dia);
+        // Subtract a block to create the flat at y = -dist_center_to_flat
+        translate([-shaft_radius - 1, -shaft_radius - 1, -0.01])
+        cube([shaft_radius * 2 + 2, shaft_radius - dist_center_to_flat, d_bore_depth + 0.02]);
+    }
+
+    // Grip Grooves
+    for (i = [0 : grip_groove_count - 1]) {
+        rotate([0, 0, i * (360 / grip_groove_count)])
+        translate([knob_diameter/2, 0, -0.01])
+        cylinder(h = knob_height + 0.02, d = grip_groove_dia);
+    }
+
+    // Pointer Groove
+    translate([-pointer_width/2, -knob_diameter/2, knob_height - pointer_depth])
+    cube([pointer_width, knob_diameter, pointer_depth + 0.01]);
+}
+*/
+
+// Final clean version below:
+```
+
+```openscad
+// --- Dimensions (mm

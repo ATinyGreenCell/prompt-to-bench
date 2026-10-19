@@ -1,0 +1,81 @@
+// --- Dimensions (mm) ---
+plate_width = 130;        // X dimension of the plate
+plate_depth = 90;         // Y dimension of the plate
+plate_thickness = 4;      // Z thickness of the plate
+wall_height = 70;         // Height of the side walls from the plate
+wall_thickness = 4;       // Thickness of the side walls
+
+hole_diameter = 30.5;      // Diameter of the tube holes
+hole_spacing_x = 40;       // Center-to-center distance along X
+hole_spacing_y = 40;       // Center-to-center distance along Y
+num_holes_x = 3;           // Number of holes in X direction
+num_holes_y = 2;           // Number of holes in Y direction
+
+// --- Constants ---
+$fn = 64;
+
+// --- Modeling Logic ---
+// The user specifies the part is printed "upside down" and then flipped.
+// In print orientation: 
+// - Plate is at Z = 0 to 4.
+// - Walls rise from the plate to Z = 70.
+// - This means the "top" of the rack (where tubes sit) is at Z = 70.
+// - When flipped, the walls become the base.
+
+module rack() {
+    // The bounding box report showed Z=74.00. 
+    // This happened because the previous code used (plate_thickness + wall_height) 
+    // for the wall height, but the walls were placed on top of the plate.
+    // To ensure the walls rise FROM the plate to Z=70, the total height 
+    // of the wall object should be 70, and its base should be at Z=4.
+    // However, the prompt says "rises from the plate to z = 70". 
+    // In OpenSCAD, if the plate is 0-4, and the wall rises to 70, 
+    // the wall's total height is 70, and it starts at Z=4.
+    // Let's re-read: "rises from the plate to z = 70". 
+    // This implies the top surface of the wall is at Z=70.
+    
+    difference() {
+        // Main Body: Plate + Walls
+        union() {
+            // The Base Plate
+            cube([plate_width, plate_depth, plate_thickness]);
+            
+            // The Two Long Walls
+            // Wall 1: Along Y=0 edge. Starts at Z=plate_thickness, ends at Z=70.
+            translate([0, 0, plate_thickness])
+                cube([plate_width, wall_thickness, wall_height - plate_thickness + 0.01]);
+            
+            // Wall 2: Along Y=plate_depth edge. Starts at Z=plate_thickness, ends at Z=70.
+            translate([0, plate_depth - wall_thickness, plate_thickness])
+                cube([plate_width, wall_thickness, wall_height - plate_thickness + 0.01]);
+        }
+
+        // The Six Holes
+        // The report showed holes at d=30.48. This is due to floating point 
+        // precision or rounding in the subtraction. We ensure they are 
+        // subtracted through the full thickness.
+        
+        // Center of plate is (plate_width/2, plate_depth/2).
+        // Grid offset calculation:
+        // Total span of holes in X = (num_holes_x - 1) * hole_spacing_x
+        // Total span of holes in Y = (num_holes_y - 1) * hole_spacing_y
+        
+        start_x = (plate_width / 2) - ((num_holes_x - 1) * hole_spacing_x / 2);
+        start_y = (plate_depth / 2) - ((num_holes_y - 1) * hole_spacing_y / 2);
+
+        for (i = [0 : num_holes_x - 1]) {
+            for (j = [0 : num_holes_y - 1]) {
+                translate([
+                    start_x + (i * hole_spacing_x),
+                    start_y + (j * hole_spacing_y),
+                    -1 // Extend slightly below plate
+                ])
+                cylinder(h = plate_thickness + 2, d = hole_diameter);
+            }
+        }
+    }
+}
+
+// Render the part
+// Orientation: Plate on XY plane, walls rising in +Z
+rack();

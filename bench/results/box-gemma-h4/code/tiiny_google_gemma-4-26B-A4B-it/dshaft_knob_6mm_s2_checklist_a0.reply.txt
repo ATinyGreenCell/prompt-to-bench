@@ -1,0 +1,111 @@
+```openscad
+// Replacement knob for a hotplate stirrer with a 6 mm D-shaft.
+// Designed for FDM printing, resting on the bottom face (z=0).
+
+// --- Dimensions ---
+knob_d      = 30.0;    // Diameter of the knob
+knob_h      = 15.0;    // Total height of the knob
+shaft_d     = 6.2;     // Diameter of the D-shaft bore
+shaft_flat_d = 4.7;   // Distance from flat to opposite side of D-shaft
+shaft_depth = 12.0;    // Depth of the blind D-bore
+groove_d    = 2.0;     // Diameter of the grip grooves
+groove_count = 18;     // Number of vertical grip grooves
+pointer_w   = 1.5;     // Width of the pointer groove
+pointer_d   = 1.0;     // Depth of the pointer groove
+
+$fn = 64;
+
+// --- Calculations ---
+// Calculate the distance from center to the flat side for the D-shaft
+// The flat is at x = -shaft_flat_d / 2
+shaft_offset_x = -shaft_flat_d / 2;
+
+// --- Geometry ---
+
+module d_shaft_bore() {
+    // Create the D-shape by intersecting a cylinder with a box (or subtracting a box)
+    // To ensure a clean D-shape, we use a difference between a cylinder and a cube
+    difference() {
+        cylinder(h = shaft_depth + 1, d = shaft_d);
+        // The cube is placed to cut off the side of the cylinder to create the flat
+        // We make it slightly wider than the shaft to ensure a clean cut
+        translate([-shaft_d, shaft_offset_x, -1])
+            cube([shaft_d * 2, shaft_d, shaft_depth + 2]);
+    }
+}
+
+module grip_grooves() {
+    // Vertical grooves around the perimeter
+    for (i = [0 : groove_count - 1]) {
+        angle = i * (360 / groove_count);
+        rotate([0, 0, angle])
+            translate([knob_d / 2, 0, 0])
+                // A half-cylinder centered on the outer surface
+                // We use a cylinder rotated to align with the Z axis
+                cylinder(h = knob_h + 1, d = groove_d);
+    }
+}
+
+module pointer_groove() {
+    // Pointer groove on the top face
+    // It runs from center to edge, 1.5mm wide, 1mm deep
+    // It is aligned with the flat side (which is at -X)
+    rotate([0, 0, 180]) // Rotate to face the flat side
+        translate([0, -pointer_w / 2, knob_h - pointer_d])
+            cube([knob_d / 2 + 1, pointer_w, pointer_d + 0.1]);
+}
+
+// --- Final Assembly ---
+
+difference() {
+    // Main Body
+    cylinder(h = knob_h, d = knob_d);
+    
+    // 1. Subtract the D-shaft bore (blind bore)
+    translate([0, 0, -0.5]) 
+        d_shaft_bore();
+    
+    // 2. Subtract the grip grooves
+    // We use a union/difference approach to ensure they are "cut" into the surface
+    // Since they are centered on the surface, we use a difference
+    // But to make it cleaner, we'll define the body and subtract grooves.
+    // Note: The prompt says "cut 18 grooves", so we subtract them.
+    // We'll use a temporary union for the body and subtract the grooves.
+    
+    // 3. Subtract the pointer groove
+    pointer_groove();
+}
+
+// To implement the "cut" grooves correctly in a single difference block:
+// We must wrap the main body in a union and subtract everything else.
+// However, the grip grooves are "cut" into the outer surface.
+// Let's rewrite the structure for clarity and correctness.
+
+// REWRITTEN ASSEMBLY
+difference() {
+    // The main cylinder
+    cylinder(h = knob_h, d = knob_d);
+    
+    // Subtract D-shaft bore
+    translate([0, 0, -0.5]) d_shaft_bore();
+    
+    // Subtract Grip Grooves
+    // We use a loop to create the cutting shapes
+    for (i = [0 : groove_count - 1]) {
+        angle = i * (360 / groove_count);
+        rotate([0, 0, angle])
+            translate([knob_d / 2, 0, -0.5])
+                cylinder(h = knob_h + 1, d = groove_d);
+    }
+    
+    // Subtract Pointer Groove
+    pointer_groove();
+}
+
+// Note: The code above contains two definitions of the body for logic clarity. 
+// The second one is the actual rendered part.
+// I will clean this up into one single difference block for the final output.
+```
+
+```openscad
+// Replacement knob for a hotplate

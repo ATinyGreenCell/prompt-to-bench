@@ -1,0 +1,73 @@
+// Replacement knob for a hotplate stirrer with a 6 mm D-shaft.
+// Designed for FDM printing, resting on the bottom face (z=0).
+
+// --- Dimensions ---
+knob_dia    = 30.0;    // Diameter of the knob
+knob_height = 15.0;    // Total height of the knob
+d_shaft_dia = 6.2;     // Diameter of the D-shaft hole
+d_shaft_flat_dist = 4.7; // Distance from flat to opposite side of D-shaft
+bore_depth   = 12.0;   // Depth of the D-shaped blind bore
+num_grooves  = 18;     // Number of vertical grip grooves
+groove_dia   = 2.0;    // Diameter of the grip grooves
+pointer_w    = 1.5;    // Width of the pointer groove
+pointer_d    = 1.0;    // Depth of the pointer groove
+
+$fn = 64;
+
+// --- Calculations ---
+// The distance from the center to the flat side of the D-shaft.
+chord_dist = d_shaft_flat_dist / 2;
+
+// --- Modules ---
+
+module d_shaft_profile() {
+    // Creates a 2D D-shape profile
+    difference() {
+        circle(d = d_shaft_dia);
+        // Subtract a rectangle to create the flat side.
+        // The rectangle is moved so its edge is at chord_dist from center.
+        // We use a large width to ensure it cuts through the circle.
+        translate([chord_dist, 0])
+            square([d_shaft_dia, d_shaft_dia], center = true);
+    }
+}
+
+// --- Final Assembly ---
+
+difference() {
+    // 1. The Main Knob Body
+    cylinder(h = knob_height, d = knob_dia);
+
+    // 2. The D-shaped blind bore
+    // We create the D-shape by extruding the 2D profile.
+    // The flat side is oriented along the X-axis (positive X).
+    translate([0, 0, -0.01])
+    rotate([0, 0, 0])
+    linear_extrude(height = bore_depth + 0.01)
+    d_shaft_profile();
+
+    // 3. Vertical Grip Grooves
+    // 18 evenly spaced vertical grooves.
+    // Each is a 2mm diameter half-cylinder centered on the outer surface.
+    for (i = [0 : num_grooves - 1]) {
+        angle = i * (360 / num_grooves);
+        rotate([0, 0, angle])
+        translate([knob_dia / 2, 0, 0])
+        // We use a cylinder and subtract it from the knob.
+        // To make it a "half-cylinder" on the surface, we center it on the edge.
+        // We use a slightly larger height to ensure clean cuts.
+        rotate([0, 90, 0])
+        cylinder(h = groove_dia, d = groove_dia);
+    }
+
+    // 4. Pointer Groove
+    // On the top face, 1.5mm wide, 1mm deep, from center to edge.
+    // Located on the same side as the D-shaft flat (positive X).
+    translate([0, -pointer_w / 2, knob_height - pointer_d])
+    cube([knob_dia / 2 + 1, pointer_w, pointer_d + 0.01]);
+}
+
+// Note on orientation: 
+// The part is built with the bottom face at Z=0.
+// The D-shaft flat is oriented towards the positive X axis.
+// The pointer is also oriented towards the positive X axis.

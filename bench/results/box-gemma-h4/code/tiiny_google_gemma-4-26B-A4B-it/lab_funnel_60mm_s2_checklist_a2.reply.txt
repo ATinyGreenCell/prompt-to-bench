@@ -1,0 +1,77 @@
+The measurement report shows that the part is still only 20mm tall, meaning the conical section is still not being rendered. In OpenSCAD, when using `rotate_extrude()`, the `polygon` points are defined in the 2D plane (radius, height). However, the `polygon` points I provided were being interpreted as `[x, y]` where `y` is the height, but the `rotate_extrude` was being applied to a shape that was not correctly oriented or was being "lost" due to how the `polygon` was defined relative to the `translate`. 
+
+Actually, the error is more fundamental: `rotate_extrude` rotates a 2D shape around the Z-axis. The `polygon` points `[r, z]` are correct, but the `translate([0,0,spout_height])` was applied to the *entire* `rotate_extrude` block, which is correct, but the `polygon` itself must be defined such that its "height" (the second coordinate) is the Z-axis. The previous code failed because the `polygon` was likely being treated as a 2D shape in the XY plane and then rotated, but the `polygon` points `[r, z]` in a `rotate_extrude` context actually represent `[radius, height]`. The issue is that the `polygon` was not being rendered because the `rotate_extrude` was attempting to rotate a shape that didn't have a valid 2D area in the way OpenSCAD expected for that specific transformation.
+
+**Specification Check:**
+- Spout outer diameter: 10 mm | Report: 10.00 mm | OK
+- Spout height: 20 mm | Report: 20.00 mm | OK
+- Funnel top outer diameter: 60 mm | Report: 10.00 mm | WRONG
+- Funnel height: 30 mm (total height 50 mm) | Report: 20.00 mm | WRONG
+- Wall thickness: 1.6 mm | Report: 1.6 mm | OK
+- Spout bore: 6.8 mm | Report: 6.80 mm | OK
+- Top opening: 60 mm | Report: 10.00 mm | WRONG
+- Bottom opening: 10 mm | Report: 10.00 mm | OK
+
+**Correction Strategy:**
+I will rewrite the geometry using a more robust method. Instead of `rotate_extrude` with a `polygon`, I will use a `hull()` between two `cylinder` objects. This is mathematically equivalent to a conical frustum and is much more reliable in OpenSCAD for creating solid volumes.
+
+```openscad
+// Small Lab Funnel - Corrected Version 2
+// Designed for FDM printing: printed upright, spout at bottom.
+
+// --- Dimensions ---
+spout_od      = 10.0;    // Outer diameter of the spout (mm)
+spout_height  = 20.0;    // Height of the spout (mm)
+rim_od        = 60.0;    // Outer diameter at the top rim (mm)
+funnel_height = 30.0;    // Height of the conical section (mm)
+wall_thick    = 1.6;     // Wall thickness (mm)
+
+// --- Derived Dimensions ---
+total_height   = spout_height + funnel_height;
+spout_id       = spout_od - (2 * wall_thick);
+rim_id         = rim_od - (2 * wall_thick);
+
+$fn = 128;
+
+// --- Geometry Construction ---
+
+module funnel_outer() {
+    // Use hull to create the conical frustum smoothly
+    union() {
+        // The spout
+        cylinder(h = spout_height, d = spout_od);
+        
+        // The conical section
+        translate([0, 0, spout_height])
+        hull() {
+            cylinder(h = 0.01, d = spout_od);
+            cylinder(h = funnel_height, d = rim_od);
+        }
+    }
+}
+
+module funnel_inner() {
+    // The hollow part
+    union() {
+        // Spout bore
+        translate([0, 0, -1])
+            cylinder(h = spout_height + 2, d = spout_id);
+        
+        // Conical bore
+        translate([0, 0, spout_height])
+        hull() {
+            cylinder(h = 0.01, d = spout_id);
+            cylinder(h = funnel_height + 1, d = rim_id);
+        }
+    }
+}
+
+// Final Assembly
+difference() {
+    // The solid outer shell
+    funnel_outer();
+    
+    // The hollow interior
+    funnel_inner();
+}
+```

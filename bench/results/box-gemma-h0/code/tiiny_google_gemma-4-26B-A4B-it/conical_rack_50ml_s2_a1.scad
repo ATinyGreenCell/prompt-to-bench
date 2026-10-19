@@ -1,0 +1,119 @@
+// --- Dimensions (mm) ---
+plate_width = 130;          // X dimension of the base plate
+plate_depth = 90;           // Y dimension of the base plate
+plate_thickness = 4;        // Z thickness of the base plate
+wall_height = 70;           // Height of the side walls from the plate
+wall_thickness = 4;         // Thickness of the side walls
+hole_diameter = 30.5;       // Diameter of the tube holes
+hole_spacing_x = 40;        // Center-to-center distance along X
+hole_spacing_y = 40;        // Center-to-center distance along Y
+num_holes_x = 3;            // Number of holes along X axis
+num_holes_y = 2;            // Number of holes along Y axis
+
+/* 
+   CORRECTION LOG:
+   The previous report showed:
+   1. Bounding Box Z: -2.00 to 72.00. This happened because the plate was 
+      centered on Z (center=true), placing the bottom at -2. 
+      Requirement: Plate must be at z=0 to 4.
+   2. The walls were also centered on Z, causing them to start at z=2.
+      Requirement: Walls rise from the plate (z=4 to 70).
+   3. The holes were cut through the centered plate.
+   
+   FIX: 
+   - Remove 'center=true' from the plate and walls.
+   - Position the plate at z=0.
+   - Position the walls starting at z=plate_thickness.
+   - Adjust hole subtraction to align with the new Z-position.
+*/
+
+$fn = 64;
+
+// --- Main Assembly ---
+difference() {
+    // The Solid Part
+    union() {
+        // 1. The Base Plate
+        // Positioned at z=0 to plate_thickness
+        translate([0, 0, 0])
+            cube([plate_width, plate_depth, plate_thickness]);
+
+        // 2. The Two Side Walls
+        // Walls are 130mm long (X) and 4mm thick (Y).
+        // They are flush with the long edges (Y edges).
+        // Plate Y range is 0 to 90. 
+        // Wall 1 at Y = 90 - 4 = 86.
+        // Wall 2 at Y = 0.
+        
+        // Wall 1 (at the far Y edge)
+        translate([0, plate_depth - wall_thickness, plate_thickness])
+            cube([plate_width, wall_thickness, wall_height]);
+            
+        // Wall 2 (at the near Y edge)
+        translate([0, 0, plate_thickness])
+            cube([plate_width, wall_thickness, wall_height]);
+    }
+
+    // The Holes
+    // Holes are centered on the plate.
+    // Plate X center: plate_width/2.
+    // Plate Y center: plate_depth/2.
+    
+    for (i = [0 : num_holes_x - 1]) {
+        for (j = [0 : num_holes_y - 1]) {
+            // Calculate offsets from the center of the plate
+            x_offset = (i - (num_holes_x - 1) / 2.0) * hole_spacing_x;
+            y_offset = (j - (num_holes_y - 1) / 2.0) * hole_spacing_y;
+            
+            // Absolute positions
+            x_pos = (plate_width / 2) + x_offset;
+            y_pos = (plate_depth / 2) + y_offset;
+            
+            translate([x_pos, y_pos, -1]) // Start slightly below z=0
+                // Cylinder height covers plate thickness + extra to ensure clean cut
+                cylinder(h = plate_thickness + 2, d = hole_diameter);
+        }
+    }
+}
+
+// Note: The part is centered on X and Y by default in OpenSCAD 
+// if we use translate([0,0,0]) and cube([W,D,T]).
+// To match the user's "centered on origin" requirement for X and Y:
+// We wrap the whole thing in a translation to center it.
+
+translate([-plate_width/2, -plate_depth/2, 0]) {
+    // The code above is the logic. To ensure the final output is centered 
+    // on X and Y as requested in Rule 4, we apply the translation 
+    // to the entire logic block.
+}
+
+// --- Final Corrected Implementation ---
+// (Redoing the block to ensure strict adherence to Rule 4: "centre it on the origin in X and Y")
+
+translate([-plate_width/2, -plate_depth/2, 0]) {
+    difference() {
+        union() {
+            // Base Plate
+            cube([plate_width, plate_depth, plate_thickness]);
+
+            // Wall 1 (Flush with Y edge)
+            translate([0, plate_depth - wall_thickness, plate_thickness])
+                cube([plate_width, wall_thickness, wall_height]);
+                
+            // Wall 2 (Flush with Y edge)
+            translate([0, 0, plate_thickness])
+                cube([plate_width, wall_thickness, wall_height]);
+        }
+
+        // Holes
+        for (i = [0 : num_holes_x - 1]) {
+            for (j = [0 : num_holes_y - 1]) {
+                x_pos = (plate_width / 2) + (i - (num_holes_x - 1) / 2.0) * hole_spacing_x;
+                y_pos = (plate_depth / 2) + (j - (num_holes_y - 1) / 2.0) * hole_spacing_y;
+                
+                translate([x_pos, y_pos, -1])
+                    cylinder(h = plate_thickness + 2, d = hole_diameter);
+            }
+        }
+    }
+}

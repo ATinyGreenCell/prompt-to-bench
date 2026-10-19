@@ -1,0 +1,78 @@
+The measurement report indicates that the part is being rendered as two separate bodies. This is because the `rotate_extrude` used for the grooves was not properly contained within the `difference()` operation, or the geometry was not properly unified. Additionally, the bounding box shows the part is 63.5 mm tall, which matches the sum of the components (45 + 17 + 1.5 for the sphere radius), but the report shows the sphere is not being treated as part of the main solid.
+
+**Specification Check:**
+- Handle diameter: 8 mm | Report: 8.00 mm | OK
+- Handle height: 45 mm | Report: 45.00 mm (implied by Z range) | OK
+- Cone base diameter: 8 mm | Report: 8.00 mm | OK
+- Cone tip diameter: 3 mm | Report: 3.00 mm | OK
+- Cone height: 17 mm | Report: 17.00 mm | OK
+- Sphere diameter: 3 mm | Report: 3.00 mm | OK
+- Sphere center: z = 62 | Report: z = 62 (45+17) | OK
+- 4 grooves | Report: 4 grooves (implied by Z slices) | OK
+- Groove width: 2 mm | Report: 2.00 mm | OK
+- Groove depth: 1 mm | Report: 1.00 mm | OK
+- Groove Z-positions: 10, 15, 20, 25 | Report: 10, 15, 20, 25 | OK
+- Part is one solid | Report: 2 separate bodies | WRONG
+
+**Correction Strategy:**
+The `rotate_extrude` for the grooves was likely creating a separate object because it wasn't correctly subtracted from the main union. I will wrap the entire main body in a single `union()` and then perform the `difference()` on that union to ensure a single watertight manifold. I will also ensure the sphere is part of the main union.
+
+```openscad
+// Pestle for 1.5 mL microcentrifuge tube
+// Designed to be printed standing upright (Z-axis)
+
+// --- Dimensions ---
+handle_d      = 8.0;    // Diameter of the cylindrical handle
+handle_h      = 45.0;   // Height of the handle
+cone_base_d   = 8.0;    // Diameter at the start of the taper (z=45)
+cone_tip_d    = 3.0;    // Diameter at the end of the taper (z=62)
+cone_h        = 17.0;   // Height of the cone (62 - 45)
+tip_d         = 3.0;    // Diameter of the spherical tip
+tip_radius    = tip_d / 2;
+
+// Grip Groove Dimensions
+groove_width   = 2.0;   // Width of each groove in Z
+groove_depth   = 1.0;   // Depth of the cut into the handle
+groove_centers = [10, 15, 20, 25]; // Z-heights of the groove centers
+
+$fn = 64;
+
+// --- Geometry Construction ---
+
+module main_body() {
+    union() {
+        // 1. Handle
+        cylinder(h = handle_h, d = handle_d);
+        
+        // 2. Tapered Cone
+        translate([0, 0, handle_h])
+        cylinder(h = cone_h, d1 = cone_base_d, d2 = cone_tip_d);
+        
+        // 3. Rounded Tip
+        translate([0, 0, handle_h + cone_h])
+        sphere(d = tip_d);
+    }
+}
+
+module grooves() {
+    // We create the grooves as a single object to subtract
+    for (z_pos = groove_centers) {
+        translate([0, 0, z_pos])
+        rotate([0, 90, 0])
+        // rotate_extrude creates a ring. 
+        // We translate the square away from the center to create the ring shape.
+        // The square's width is the groove width (Z-direction in local coords).
+        // The square's depth is the groove depth.
+        rotate_extrude($fn = 64)
+        translate([handle_d/2 - groove_depth, -groove_width/2])
+        square([groove_depth + 0.1, groove_width]);
+    }
+}
+
+// Final Assembly
+// We take the main body and subtract the grooves from it.
+difference() {
+    main_body();
+    grooves();
+}
+```

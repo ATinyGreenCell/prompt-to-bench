@@ -1,0 +1,76 @@
+```openscad
+// Sowing template for a 90mm Petri dish
+// A flat disc with a 7x7 grid of holes and an orientation notch.
+
+disc_diameter = 85.0;    // Diameter of the main disc
+disc_thickness = 2.0;    // Thickness of the disc
+grid_size = 7;           // Number of holes in X and Y directions
+hole_diameter = 3.0;     // Diameter of the through-holes
+hole_spacing = 9.0;      // Center-to-center spacing of holes
+notch_width = 10.0;      // Width of the orientation notch (X direction)
+notch_depth = 4.0;       // Depth of the orientation notch (Y direction)
+
+$fn = 128;               // High resolution for smooth curves
+
+// Calculate the radius of the disc
+radius = disc_diameter / 2;
+
+// Calculate the offset for the notch (measured from the edge inward)
+// The notch is 4mm deep, so it extends from radius - 4 to radius.
+// To ensure a clean cut, we use the notch_depth variable.
+
+difference() {
+    // The main disc body
+    cylinder(h = disc_thickness, d = disc_diameter);
+
+    // The 7x7 grid of through-holes
+    // We use a loop to create the grid. 
+    // The center of the grid is (0,0).
+    // The index i goes from 0 to 6. 
+    // The position is (i - (grid_size - 1) / 2) * hole_spacing.
+    for (i = [0 : grid_size - 1]) {
+        for (j = [0 : grid_size - 1]) {
+            // Calculate coordinates for the current hole
+            x_pos = (i - (grid_size - 1) / 2) * hole_spacing;
+            y_pos = (j - (grid_size - 1) / 2) * hole_spacing;
+            
+            // Translate to hole position and extend slightly in Z to ensure clean cut
+            translate([x_pos, y_pos, -0.5])
+                cylinder(h = disc_thickness + 1, d = hole_diameter);
+        }
+    }
+
+    // The rectangular orientation notch on the +Y side
+    // The notch is 10mm wide (X) and 4mm deep (Y).
+    // It is centered on the Y axis.
+    // We place it at the edge of the disc.
+    // The notch starts at Y = (radius - notch_depth) and goes to Y = radius + 1.
+    // The X range is [-notch_width/2, notch_width/2].
+    translate([0, radius - notch_depth, -0.5])
+        cube([notch_width, notch_depth + 1, disc_thickness + 1], center = true);
+        
+    // Note: The cube above is centered. To make it a notch at the edge:
+    // We define the notch as a block that intersects the rim.
+    // Let's refine the notch geometry to be a simple subtraction.
+    // The notch is 10mm wide (X), 4mm deep (Y), and spans the full thickness.
+    // We position it so its outer edge is at the disc rim.
+    
+    // Corrected notch:
+    translate([0, radius - (notch_depth / 2), 0])
+        cube([notch_width, notch_depth, disc_thickness + 1], center = true);
+}
+
+// Re-calculating notch logic for clarity:
+// The notch is 10mm wide (X) and 4mm deep (Y).
+// It is centered on the Y axis at the rim.
+// Let's use a simpler approach for the notch:
+// A cube centered at [0, radius - notch_depth/2, disc_thickness/2]
+// with dimensions [notch_width, notch_depth, disc_thickness + 1]
+// This will cut into the disc from the edge.
+
+// Redoing the difference block to ensure notch is exactly as requested:
+// (The code above is slightly messy, let's provide the clean version below)
+```
+
+```openscad
+// Sowing template for a 90

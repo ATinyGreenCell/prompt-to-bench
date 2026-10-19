@@ -1,0 +1,58 @@
+```openscad
+// Small Lab Funnel
+// Printed upright, wide opening at top.
+
+// Dimensions
+spout_od    = 10.0;      // Outer diameter of the spout (mm)
+spout_h     = 20.0;      // Height of the spout (mm)
+rim_od      = 60.0;      // Outer diameter at the top rim (mm)
+funnel_h    = 30.0;      // Height of the conical section (50mm total - 20mm spout)
+wall_thick  = 1.6;       // Wall thickness (mm)
+
+$fn = 100;
+
+// Calculated internal dimensions
+spout_id    = spout_od - (2 * wall_thick);
+rim_id      = rim_od - (2 * wall_thick);
+
+// The total height is spout_h + funnel_h = 50mm
+// The spout goes from z=0 to z=20
+// The cone goes from z=20 to z=50
+
+module funnel_body() {
+    difference() {
+        // Outer Shell
+        union() {
+            // Spout outer cylinder
+            cylinder(h = spout_h, d = spout_od);
+            
+            // Funnel cone outer shape
+            // We use a hull of two cylinders to create the conical transition
+            hull() {
+                translate([0, 0, spout_h]) 
+                    cylinder(h = 0.01, d = spout_od);
+                translate([0, 0, spout_h + funnel_h]) 
+                    cylinder(h = 0.01, d = rim_od);
+            }
+        }
+
+        // Inner Void (The hollow part)
+        union() {
+            // Spout inner hole
+            translate([0, 0, -1]) 
+                cylinder(h = spout_h + 2, d = spout_id);
+            
+            // Funnel inner cone hole
+            hull() {
+                translate([0, 0, spout_h - 0.1]) 
+                    cylinder(h = 0.1, d = spout_id);
+                translate([0, 0, spout_h + funnel_h + 0.1]) 
+                    cylinder(h = 0.1, d = rim_id);
+            }
+        }
+    }
+}
+
+// Render the part
+funnel_body();
+```

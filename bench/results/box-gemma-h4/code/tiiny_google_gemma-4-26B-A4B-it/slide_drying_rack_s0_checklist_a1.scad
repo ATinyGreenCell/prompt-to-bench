@@ -1,0 +1,69 @@
+// Microscope Slide Drying Rack
+// Designed for 10 slides (75x25x1mm) standing on long edge.
+
+// Block dimensions
+L_block = 90.0;    // Length (X)
+W_block = 45.0;    // Width (Y)
+H_block = 20.0;    // Height (Z)
+
+// Slot dimensions
+L_slot = 77.0;     // Slot length (X)
+W_slot = 1.6;      // Slot width (Y)
+D_slot = 10.0;     // Slot depth (Z)
+N_slots = 10;      // Number of slots
+P_slots = 3.5;     // Pitch (center-to-center distance in Y)
+
+$fn = 64;
+
+module rack() {
+    difference() {
+        // The main base block
+        translate([-L_block/2, -W_block/2, 0])
+            cube([L_block, W_block, H_block]);
+
+        // The slots
+        for (i = [0 : N_slots - 1]) {
+            // Calculate Y position for this slot to ensure the group is centered
+            // The center of the i-th slot is: -(N-1)*P/2 + i*P
+            y_pos = (-(N_slots - 1) * P_slots / 2) + (i * P_slots);
+            
+            // To ensure a clean cut, the cutting cube extends slightly 
+            // beyond the boundaries of the block/slot dimensions.
+            // We use L_slot + 2 to ensure it cuts through the X-faces 
+            // if the slot were to be longer, but here we must ensure 
+            // the resulting hole is exactly L_slot.
+            // We achieve this by making the cutting shape slightly larger 
+            // than the target dimension and centering it.
+            
+            translate([0, y_pos, H_block - D_slot + 0.01]) {
+                // We use a cube that is slightly larger in X and Y to ensure 
+                // no zero-thickness walls, but we must be careful not to 
+                // change the actual dimension of the slot.
+                // The slot length is L_slot. We want the hole to be L_slot.
+                // We will use a cube of size [L_slot + 2, W_slot + 2, D_slot + 1]
+                // and translate it so the "inner" part is the correct size.
+                // Actually, the simplest way: make the cube [L_slot + 2, W_slot + 2, D_slot + 1]
+                // and translate it so it is centered on the target slot.
+                // However, the user wants the slot to be 77mm. 
+                // If I cut a 79mm hole, the slot is 79mm.
+                // To get a 77mm hole, the cutting cube must be 77mm wide.
+                // To avoid coplanar faces, we extend the cutting cube in Z.
+                
+                // Correct approach:
+                // The slot is 77mm long. The block is 90mm long.
+                // The slot is centered on X.
+                // The cutting cube should be [77, 1.6, 10.01]
+                // To avoid coplanar faces on the top, we extend Z.
+                // To avoid coplanar faces on the sides (if L_slot was 90), we extend X.
+                // Since L_slot (77) < L_block (90), we don't need to extend X 
+                // to avoid side-wall issues, but we do need to extend Z to avoid top-face issues.
+                
+                translate([-L_slot/2, -W_slot/2, -0.01])
+                    cube([L_slot, W_slot, D_slot + 0.02]);
+            }
+        }
+    }
+}
+
+// Render the part
+rack();

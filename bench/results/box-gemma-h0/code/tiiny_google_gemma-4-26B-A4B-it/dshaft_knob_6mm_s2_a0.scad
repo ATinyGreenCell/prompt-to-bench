@@ -1,0 +1,138 @@
+// --- Dimensions ---
+knob_diameter = 30.0;          // Total diameter of the knob
+knob_height = 15.0;            // Total height of the knob
+shaft_circle_dia = 6.2;        // Diameter of the D-bore circle
+shaft_flat_dist = 4.7;         // Distance from flat to opposite side of D-bore
+bore_depth = 12.0;             // Depth of the D-bore
+num_grooves = 18;              // Number of vertical grip grooves
+groove_dia = 2.0;              // Diameter of the grip grooves
+pointer_width = 1.5;           // Width of the pointer groove
+pointer_depth = 1.0;           // Depth of the pointer groove
+pointer_length = knob_diameter / 2; // Length of pointer from center to edge
+
+// --- Constants ---
+$fn = 64;
+
+// --- Main Construction ---
+difference() {
+    // The main knob body
+    cylinder(h = knob_height, d = knob_diameter, center = false);
+
+    // 1. The D-shaped blind bore
+    // We create the D-shape by subtracting a segment from a cylinder
+    translate([0, 0, -0.01]) // Extend slightly below bed to ensure clean cut
+    difference() {
+        cylinder(h = bore_depth + 0.01, d = shaft_circle_dia);
+        
+        // Subtract a block to create the flat side of the D
+        // The distance from center to flat is shaft_flat_dist / 2
+        // We translate the block so it cuts the edge
+        translate([0, -(shaft_circle_dia/2 + 1), 0])
+        cube([shaft_circle_dia + 2, shaft_flat_dist, bore_depth + 0.02]);
+        
+        // Note: The user specified the distance from flat to opposite side is 4.7mm.
+        // This means the distance from center to flat is 4.7 / 2 = 2.35mm.
+        // Let's refine the subtraction to be precise to the user's measurement.
+    }
+    
+    // Refined D-bore subtraction logic for precision
+    // We use a hull of two circles or a simple subtraction of a large cube
+    // But the most robust way is to subtract a cylinder/cube combo.
+    // Let's re-calculate the subtraction to match "distance from flat to opposite side is 4.7mm"
+    // Center to flat = 4.7 / 2 = 2.35.
+    // Center to edge = 6.2 / 2 = 3.1.
+    // The "cut" happens at y = 2.35 (if flat is at positive y) or y = -2.35.
+    // Let's place the flat at the "back" (negative Y) to align with the pointer.
+    
+    // Re-doing the D-bore subtraction properly:
+    // We will use a second difference block inside the main difference.
+    // However, to keep the code clean, I will use a single difference block.
+    // I will use a helper function/logic for the D-shape.
+}
+
+// Corrected implementation using a single difference block
+// We will rebuild the whole thing to ensure the D-shape is perfect.
+
+module knob_body() {
+    cylinder(h = knob_height, d = knob_diameter);
+}
+
+module d_bore() {
+    // The D-bore is a cylinder with one side sliced off.
+    // The distance from the flat to the opposite side is 4.7mm.
+    // The circle diameter is 6.2mm.
+    // This means the "cut" removes a segment of the circle.
+    // Distance from center to the flat face = (6.2 - 4.7) / 2 = 0.75mm? No.
+    // "distance from the flat to the opposite side of the circle is 4.7 mm"
+    // This means the height of the D-shape is 4.7mm.
+    // The circle diameter is 6.2mm.
+    // The distance from the center to the flat is: 6.2/2 - (6.2 - 4.7) = 3.1 - 1.5 = 1.6mm? No.
+    // Let's use the user's geometry: 
+    // Total height of D = 4.7. Circle diameter = 6.2.
+    // Distance from center to flat = 4.7 / 2 = 2.35mm? No, that would be a centered cut.
+    // If the distance from flat to opposite side is 4.7, and the circle is 6.2,
+    // the flat is 4.7mm away from the edge.
+    // Distance from center to flat = 4.7 - (6.2/2) = 4.7 - 3.1 = 1.6mm.
+    // Wait, if the flat is 1.6mm from center, the distance from flat to opposite side is 1.6 + 3.1 = 4.7. Correct.
+    
+    translate([0, 0, -0.01])
+    difference() {
+        cylinder(h = bore_depth + 0.01, d = shaft_circle_dia);
+        // Subtract a block to create the flat
+        // The flat is at y = -1.6 (if we want the flat to be on the "back" side)
+        // Or y = 1.6. Let's put the flat at y = 1.6 so the pointer (on the same side)
+        // aligns with the flat.
+        translate([-shaft_circle_dia, 1.6, -0.01])
+        cube([shaft_circle_dia * 2, shaft_circle_dia, bore_depth + 0.02]);
+    }
+}
+
+module grip_grooves() {
+    // 18 evenly spaced vertical grooves
+    // 2mm diameter half-cylinder centered on the outer surface
+    for (i = [0 : num_grooves - 1]) {
+        rotate([0, 0, i * (360 / num_grooves)])
+        translate([knob_diameter / 2, 0, 0])
+        cylinder(h = knob_height + 0.1, d = groove_dia);
+    }
+}
+
+module pointer_groove() {
+    // 1.5mm wide, 1mm deep, from center to edge
+    // On the same side as the flat.
+    // The flat is at y = 1.6. The center of the flat is at (0, 1.6).
+    // The pointer should be centered on the flat's axis.
+    translate([0, 1.6 - (pointer_width/2), knob_height - pointer_depth])
+    cube([pointer_width, knob_diameter, pointer_depth + 0.1]);
+}
+
+// --- Final Assembly ---
+// We use a final difference to combine everything.
+difference() {
+    knob_body();
+    
+    // The D-bore
+    translate([0, 0, 0])
+    difference() {
+        cylinder(h = bore_depth + 0.01, d = shaft_circle_dia);
+        // The flat is at y = 1.6 (distance from center to flat is 1.6)
+        // This makes the distance from flat to opposite side: 1.6 + 3.1 = 4.7mm.
+        translate([-shaft_circle_dia, 1.6, -0.01])
+        cube([shaft_circle_dia * 2, shaft_circle_dia, bore_depth + 0.02]);
+    }
+    
+    // The grip grooves (using intersection/difference logic)
+    // We want to subtract the part of the cylinder that is OUTSIDE the knob, 
+    // but the user said "cut 18 grooves... centered on the outer surface".
+    // This means we subtract the half-cylinder.
+    for (i = [0 : num_grooves - 1]) {
+        rotate([0, 0, i * (360 / num_grooves)])
+        translate([knob_diameter / 2, 0, 0])
+        cylinder(h = knob_height + 1, d = groove_dia);
+    }
+    
+    // The pointer groove
+    // It runs from center to outer edge on the same side as the flat.
+    // The flat is at y = 1.6. The center of the flat is (0, 1.6).
+    // The pointer width is 1.5. So x goes from -0.75 to 0.75.
+    // The pointer depth is 1.0. So y goes from (

@@ -1,0 +1,109 @@
+// Rack for six 50 mL conical tubes
+// Designed to be printed upside down (walls at Z=0 to Z=66) 
+// and flipped over to stand on the walls.
+
+// --- Dimensions ---
+plate_x      = 130.0; // Length of the plate (X)
+plate_y      = 90.0;  // Width of the plate (Y)
+plate_z      = 4.0;   // Thickness of the plate (Z)
+
+hole_d       = 30.5;   // Diameter of the tube holes
+hole_spacing = 40.0;   // Center-to-center distance between holes
+
+wall_h       = 70.0;   // Total height of the walls from the base plate
+wall_t       = 4.0;    // Thickness of the side walls
+
+// --- Derived Parameters ---
+// Since the part is printed upside down, the "base" is at Z=0.
+// The walls will be modeled as being attached to the bottom of the plate.
+// The plate itself will be at Z = wall_h to Z = wall_h + plate_z.
+// However, the prompt says: "The plate... lies on the bed (z = 0 to 4)".
+// And "Two solid walls... rise from the plate to z = 70".
+// This implies the plate is the base (Z=0 to 4) and walls go UP to Z=70.
+// BUT the prompt also says: "It is printed upside down and flipped over after printing."
+// If it is printed upside down, the "top" of the walls is at Z=0.
+// To make the logic simple: We will model it in the "standing" orientation 
+// (Plate at Z=0, walls rising to Z=70) and then rotate/translate 
+// so the "printing orientation" is correct.
+
+// Printing orientation: Plate is on the bed (Z=0 to 4). 
+// Walls rise from the plate to Z=70.
+// To print "upside down", we must flip the whole object 180 degrees around X or Y.
+
+$fn = 64;
+
+// Calculate hole positions (centered on plate)
+// 3 holes in X, 2 holes in Y.
+// Spacing is 40mm. 
+// X positions: -40, 0, 40
+// Y positions: -20, 20
+hole_x_coords = [for (i = [0 : 2]) (i - 1) * hole_spacing];
+hole_y_coords = [for (j = [0 : 1]) (j - 0.5) * hole_spacing];
+
+// We model the "Standing" version first:
+module rack_standing() {
+    union() {
+        // The Base Plate
+        translate([-plate_x/2, -plate_y/2, 0])
+            cube([plate_x, plate_y, plate_z]);
+        
+        // The Two Side Walls (along the long edges)
+        // Long edges are X direction (130mm).
+        // Walls are flush with the long edges.
+        // Wall 1 at Y = plate_y/2, Wall 2 at Y = -plate_y/2
+        // Wall thickness is 4mm.
+        
+        // Wall 1
+        translate([-plate_x/2, plate_y/2 - wall_t, plate_z])
+            cube([plate_x, wall_t, wall_h - plate_z]);
+            
+        // Wall 2
+        translate([-plate_x/2, -plate_y/2, plate_z])
+            cube([plate_x, wall_t, wall_h - plate_z]);
+    }
+
+    // The Holes (subtracted from the plate)
+    difference() {
+        // We use a large cylinder to ensure clean cuts through the plate
+        for (x = hole_x_coords) {
+            for (y = hole_y_coords) {
+                translate([x, y, -1])
+                    cylinder(h = plate_z + 2, d = hole_d);
+            }
+        }
+    }
+}
+
+// The prompt asks for the part in "Print Orientation":
+// "A flat plate 130 mm (X) by 90 mm (Y) and 4 mm thick lies on the bed (z = 0 to 4)."
+// "Two solid walls... rise from the plate to z = 70."
+// This describes the "Standing" orientation.
+// "It is printed upside down and flipped over after printing."
+// This means the user will flip the object. 
+// To provide the file in the "Print Orientation" as requested:
+
+// Final Model (Print Orientation: Plate on bed, walls rising up)
+difference() {
+    // The solid part
+    union() {
+        // Plate
+        translate([-plate_x/2, -plate_y/2, 0])
+            cube([plate_x, plate_y, plate_z]);
+        
+        // Wall 1 (Long edge)
+        translate([-plate_x/2, plate_y/2 - wall_t, plate_z])
+            cube([plate_x, wall_t, wall_h - plate_z]);
+            
+        // Wall 2 (Long edge)
+        translate([-plate_x/2, -plate_y/2, plate_z])
+            cube([plate_x, wall_t, wall_h - plate_z]);
+    }
+
+    // The holes
+    for (x = hole_x_coords) {
+        for (y = hole_y_coords) {
+            translate([x, y, -0.5])
+                cylinder(h = plate_z + 1, d = hole_d);
+        }
+    }
+}

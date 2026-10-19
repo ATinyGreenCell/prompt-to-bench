@@ -1,0 +1,54 @@
+```openscad
+// --- Parameters ---
+disc_diameter = 85;          // Diameter of the main disc
+disc_thickness = 2;          // Thickness of the disc
+hole_diameter = 3;           // Diameter of the sowing holes
+grid_size = 7;               // Number of holes in X and Y directions
+hole_spacing = 9;            // Center-to-center distance between holes
+notch_width = 10;            // Width of the orientation notch (X direction)
+notch_depth = 4;             // Depth of the notch from the rim (Y direction)
+
+// --- Constants ---
+$fn = 64;                    // Smoothness for curves
+offset_val = 0.1;            // Small offset for boolean operations
+
+// --- Implementation ---
+
+// The part is built on the XY plane, resting at Z=0
+difference() {
+    // Main Disc Body
+    cylinder(h = disc_thickness, d = disc_diameter, center = false);
+
+    // Orientation Notch
+    // The notch is cut into the rim on the +Y side.
+    // We create a rectangular block and subtract it.
+    // To ensure a clean cut, we make the block slightly larger than the disc.
+    translate([
+        -notch_width/2 - offset_val, 
+        (disc_diameter/2) - notch_depth - offset_val, 
+        -offset_val
+    ])
+    cube([
+        notch_width + (offset_val * 2), 
+        notch_depth + (offset_val * 2), 
+        disc_thickness + (offset_val * 2)
+    ]);
+
+    // Sowing Hole Grid
+    // Calculate the starting position to center the grid
+    // Grid span = (grid_size - 1) * hole_spacing
+    grid_span = (grid_size - 1) * hole_spacing;
+    start_coord = -grid_span / 2;
+
+    for (i = [0 : grid_size - 1]) {
+        for (j = [0 : grid_size - 1]) {
+            translate([
+                start_coord + (i * hole_spacing),
+                start_coord + (j * hole_spacing),
+                -offset_val // Extend slightly below Z=0
+            ])
+            cylinder(h = disc_thickness + (offset_val * 2), d = hole_diameter);
+        }
+    }
+}
+```

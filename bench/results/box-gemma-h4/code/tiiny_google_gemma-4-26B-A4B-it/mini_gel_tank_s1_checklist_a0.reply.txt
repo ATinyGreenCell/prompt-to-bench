@@ -1,0 +1,114 @@
+```openscad
+// Buffer tank for mini horizontal gel-electrophoresis box
+// Designed for FDM 3D printing.
+
+// --- Dimensions ---
+length_outer = 120.0;    // X dimension
+width_outer  = 70.0;     // Y dimension
+height_outer = 40.0;     // Z dimension
+wall_thick   = 3.0;      // Wall and floor thickness
+floor_thick  = 3.0;      // Floor thickness (explicitly requested)
+platform_len = 60.0;      // Length of the central platform in X
+platform_h   = 13.0;      // Height of platform top from the bottom (z=13)
+hole_dia     = 2.0;       // Diameter of electrode wire holes
+hole_y       = 0.0;       // Y position of holes (centered on Y axis)
+hole_z       = 30.0;      // Z position of holes
+
+$fn = 64;
+
+// --- Calculations ---
+inner_x = length_outer - 2 * wall_thick;
+inner_y = width_outer - 2 * wall_thick;
+inner_z = height_outer - floor_thick; // Note: tank is open top, so we build up from floor
+
+// The platform is "solid raised platform" spanning full inner width (Y).
+// It is 60mm long in X, centered.
+// Its top is at z = 13. Since floor is at z=0, platform height is 13.
+
+module tank_body() {
+    difference() {
+        // Main outer block
+        cube([length_outer, width_outer, height_outer]);
+        
+        // Hollow out the interior
+        translate([wall_thick, wall_thick, floor_thick])
+            cube([inner_x, inner_y, height_outer]);
+        
+        // Electrode holes (drilled through X-end walls)
+        // We drill through the entire X axis to ensure clean holes
+        translate([-1, hole_y, hole_z])
+            rotate([0, 90, 0])
+                cylinder(h = length_outer + 2, d = hole_dia);
+    }
+}
+
+module platform() {
+    // The platform is inside the tank. 
+    // It spans full inner width (Y).
+    // It is 60mm long in X, centered.
+    // Top is at z = 13.
+    
+    // Calculate platform Z position relative to the floor (z=0)
+    // The user says "top is 10mm above the inner floor (at z=13)".
+    // This implies the floor is at z=3 (since outer Z is 40 and floor is 3).
+    // However, to keep it simple and robust, we define the platform 
+    // relative to the floor surface.
+    
+    // If top is at z=13 (absolute), and floor is at z=3 (absolute),
+    // then platform height is 10mm.
+    
+    platform_z_start = 3.0; // Floor top surface
+    platform_z_end   = 13.0; // Top surface
+    
+    translate([
+        (length_outer - platform_len) / 2, 
+        wall_thick, 
+        platform_z_start
+    ])
+    cube([platform_len, inner_y, platform_z_end - platform_z_start]);
+}
+
+// --- Assembly ---
+// We use union for the main body and platform, then subtract the holes.
+// To ensure the platform is "solid" and part of the tank, we union them.
+// However, the holes must go through the walls.
+
+union() {
+    tank_body();
+    // We add the platform. Note: The platform is inside the hollowed area.
+    // To make it a single solid, we define the tank as a solid block 
+    // and subtract the hollow space, then add the platform.
+    
+    // Re-structuring for a single solid manifold:
+    // 1. Outer block
+    // 2. Subtract inner void
+    // 3. Add platform
+    // 4. Subtract holes
+}
+
+// Corrected logic for a single manifold:
+difference() {
+    union() {
+        // Main outer shell
+        cube([length_outer, width_outer, height_outer]);
+        
+        // The platform (added as a solid)
+        translate([
+            (length_outer - platform_len) / 2, 
+            wall_thick, 
+            floor_thick
+        ])
+        cube([platform_len, inner_y, 13.0 - floor_thick]);
+    }
+    
+    // Subtract the inner void (the buffer space)
+    translate([wall_thick, wall_thick, floor_thick])
+        cube([inner_x, inner_y, height_outer]);
+    
+    // Subtract the electrode holes
+    translate([-1, hole_y, hole_z])
+        rotate([0, 90, 0])
+            cylinder(h = length_outer + 2, d = hole_dia);
+}
+
+```

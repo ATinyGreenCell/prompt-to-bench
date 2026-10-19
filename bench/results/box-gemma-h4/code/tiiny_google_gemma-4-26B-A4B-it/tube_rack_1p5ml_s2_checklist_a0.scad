@@ -1,0 +1,48 @@
+// 1.5 mL Microcentrifuge Tube Bench Rack
+// A solid block with a grid of 24 holes for microcentrifuge tubes.
+
+// Dimensions
+L = 106;            // Length (X)
+W = 72;             // Width (Y)
+H = 30;             // Height (Z)
+hole_d = 11.2;      // Diameter of the holes
+hole_depth = 25;    // Depth of the holes
+grid_spacing = 16;  // Center-to-center distance between holes
+rows = 4;           // Number of rows (along Y)
+cols = 6;           // Number of columns (along X)
+
+$fn = 64;
+
+// Calculate the starting position for the grid to ensure it is centered
+// The grid is centered on the block, so the first hole is at:
+// -( (number_of_holes - 1) * spacing ) / 2
+offset_x = (cols - 1) * grid_spacing / 2;
+offset_y = (rows - 1) * grid_spacing / 2;
+
+difference() {
+    // The main block
+    translate([-L/2, -W/2, 0]) {
+        cube([L, W, H]);
+    }
+
+    // The grid of holes
+    // We iterate through rows and columns to create the holes
+    for (i = [0 : cols - 1]) {
+        for (j = [0 : rows - 1]) {
+            // Calculate position for this specific hole
+            pos_x = i * grid_spacing - offset_x;
+            pos_y = j * grid_spacing - offset_y;
+            
+            // Translate to the hole position
+            // Holes are open at the top (Z=H) and go down to Z = H - hole_depth
+            // To ensure a clean cut, we extend the cylinder slightly above the top face
+            translate([pos_x, pos_y, H - hole_depth + 0.01]) {
+                cylinder(d = hole_d, h = hole_depth);
+            }
+        }
+    }
+}
+
+// Note on Floor: 
+// The block is 30mm tall. The holes are 25mm deep.
+// 30 - 25 = 5mm solid floor at the bottom, as requested.

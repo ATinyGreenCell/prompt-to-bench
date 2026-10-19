@@ -1,0 +1,89 @@
+The measurement report indicates that the part is being rendered as a solid block with a hollow center, but the platform is not being correctly integrated or the subtraction logic is causing the interior to be treated as a single void. Specifically, the report shows the material area at $z=16.00$ is $1,104\text{ mm}^2$, which corresponds to the area of the walls ($120 \times 70 - 114 \times 64$), meaning the platform (which should be a solid feature at that height) is missing from the slice.
+
+**Specification Check:**
+- Outer dimensions 120 x 70 x 40 mm: OK
+- 3 mm walls: OK
+- 3 mm floor: OK
+- Platform length 60 mm: OK
+- Platform width (full inner width): OK
+- Platform top at z = 13 (10 mm above inner floor): WRONG (Report shows material area at $z=16$ is just the walls, meaning the platform is not present)
+- Electrode holes 2 mm diameter: OK
+- Electrode holes at y = 0 (center): OK
+- Electrode holes at z = 30: OK
+
+**Correction Plan:**
+The previous logic used a `union` of the shell and the platform, then subtracted the hollow interior. However, the hollow interior subtraction was defined as a single cube from `wall_t` to `outer_x - wall_t`. This cube effectively "ate" the platform because the platform was placed inside that same volume. To fix this, the hollow interior must be subtracted in two parts (one for each chamber) or the platform must be added to the shell *before* the hollow part is subtracted, ensuring the platform is not part of the volume being subtracted.
+
+```openscad
+// Buffer tank for mini horizontal gel-electrophoresis box
+// Corrected to ensure the platform is a solid feature within the tank.
+
+// --- Dimensions ---
+outer_x = 120;      // Total length (X)
+outer_y = 70;       // Total width (Y)
+outer_z = 40;       // Total height (Z)
+wall_t  = 3;        // Wall thickness
+floor_t = 3;        // Floor thickness
+
+platform_len = 60;  // Length of the central platform (X)
+platform_h_rel = 10; // Height of platform top above inner floor
+
+hole_d = 2;         // Diameter of electrode wire holes
+hole_y_offset = 0;  // Y-coordinate for holes (relative to center)
+hole_z = 30;        // Z-coordinate for holes
+
+$fn = 64;
+
+// --- Calculations ---
+inner_x_start = wall_t;
+inner_x_end   = outer_x - wall_t;
+inner_y_start = wall_t;
+inner_y_end   = outer_y - wall_t;
+inner_z_start = floor_t;
+
+platform_x_start = (outer_x / 2) - (platform_len / 2);
+platform_x_end   = (outer_x / 2) + (platform_len / 2);
+platform_z_top   = floor_t + platform_h_rel;
+
+module tank_shell() {
+    difference() {
+        // Main outer block
+        cube([outer_x, outer_y, outer_z]);
+        
+        // Hollow out the interior
+        translate([wall_t, wall_t, floor_t])
+            cube([outer_x - 2*wall_t, outer_y - 2*wall_t, outer_z]);
+    }
+}
+
+module platform() {
+    // The platform is a solid block placed inside the tank
+    translate([platform_x_start, wall_t, floor_t])
+        cube([platform_len, outer_y - 2*wall_t, platform_h_rel]);
+}
+
+module electrode_holes() {
+    // Holes through the X-end walls
+    // Center of Y is outer_y / 2
+    // Hole 1 (Left wall)
+    translate([-1, outer_y/2, hole_z])
+        rotate([0, 90, 0])
+            cylinder(h = wall_t + 2, d = hole_d);
+            
+    // Hole 2 (Right wall)
+    translate([outer_x, outer_y/2, hole_z])
+        rotate([0, 90, 0])
+            cylinder(h = wall_t + 2, d = hole_d);
+}
+
+// --- Final Assembly ---
+// We use union to combine the shell and the platform, 
+// then subtract the holes from the combined solid.
+difference() {
+    union() {
+        tank_shell();
+        platform();
+    }
+    electrode_holes();
+}
+```

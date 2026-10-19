@@ -19658,3 +19658,529 @@ While that runs: the agreement-only selector is also quoted per model in that pa
 
 v11 seed 1 on the held-out families: first attempts passed 10 of 400 (2.5%) and 86% built, against v11's 67%. So the lower build rate didn't hold across seeds. Its repairs are being generated on the pod now. I'll delete that pod as soon as the chain says it can go.
 
+<details><summary>2 tool call(s)</summary>
+
+- `Bash` Read the v11 seed-1 waiter output — `cat [scratch] | cut -c1-300; N=[scratch] tail -4 $N/chainlog_v11s1.txt | cut -c1-200`
+- `mcp__plugin_runpod_runpod__get-pod`
+
+</details>
+
+Confirmed `oghgqgytbmxf8b` (scadcoder-v11s1): idle at 0% GPU, with its model on Hugging Face and its outputs on the laptop. Deleting it:
+
+<details><summary>14 tool call(s)</summary>
+
+- `mcp__plugin_runpod_runpod__delete-pod`
+- `mcp__plugin_runpod_runpod__list-pods`
+- `Bash` Check the remaining units and the Gemma run's log — `touch [scratch] date +%T; systemctl --user is-active chain-v11s1 box-gemma-h4 tiiny-sweep laptop-9b; tail -3 [scratch]`
+- `Bash` Find the earlier resampling script — `O=[scratch] ls $O/*.py 2>/dev/null; cat $O/per_task.py 2>/dev/null | head -40`
+- `Bash` Compute the fresh-draw spread for v9 and v11 runs — `.venv/bin/python -I [scratch] gpu-v9 gpu-v9s1 gpu-v11 gpu-v11s1 2>&1 | tail -16`
+- `Bash` Check v11 seed 1's repair stats and the Gemma unit — `N=[scratch] date +%T; systemctl --user is-active chain-v11s1 box-gemma-h4; grep -E "repairs on held-out C|ALL DONE" $N/chainlog_v11s1.txt |  …`
+- `Bash` Wait briefly, then recheck v11 seed 1's chain — `sleep 150; N=[scratch] date +%T; systemctl --user is-active chain-v11s1 box-gemma-h4; grep -E "repairs on held-out C|ALL DONE" $N/chainlog_v …`
+- `Bash` Wait for v11 seed 1's chain to finish — `until ! systemctl --user is-active -q chain-v11s1; do sleep 15; done; N=[scratch] date +%T; grep -E "repairs on held-out C|ALL DONE" $N/chai …`
+- `Bash` Check table numbering, script lists and the reproduction section — `grep -nE "Table 11|17 runs|seventeen" README.md | cut -c1-160; echo ---; grep -nE "build_v10|build_v11|onpolicy_repairs.py|heldout" finetune …`
+- `Bash` Read v11 seed 1's repair stats and the held-out family table — `cat [scratch] | cut -c1-400; cd ~/printpaper && .venv/bin/python -I finetune/scripts/heldout_c_stats.py v5 v5s1 v9 v9s1 v11 v11s1; tail -3 [ …`
+- `Bash` List batch C families and test the seed difference in fixes — `python3 -I -c " …`
+- `Edit` ~/printpaper/README.md
+- `Edit` ~/printpaper/README.md
+- `Edit` ~/printpaper/README.md
+
+</details>
+
+Now the v11 paragraph and Table 11, placed after the v10 paragraph:
+
+<details><summary>4 tool call(s)</summary>
+
+- `Edit` ~/printpaper/README.md
+- `Bash` Read the selector results for all 21 runs — `cat [scratch] | tail -32`
+- `Edit` ~/printpaper/README.md
+- `Edit` ~/printpaper/README.md
+
+</details>
+
+Now the Table 10 rows for v11's two harnesses, the caption, and the sentence on what the harness did for fine-tunes:
+
+<details><summary>2 tool call(s)</summary>
+
+- `Edit` ~/printpaper/README.md
+- `Edit` ~/printpaper/README.md
+
+</details>
+
+Next, any other place that quotes the selector's "about half" or summarizes the fine-tunes:
+
+<details><summary>1 tool call(s)</summary>
+
+- `Bash` Find other selector claims across the READMEs — `grep -nE "about half|a fifth|request-checked|own request|spec_select" README.md bench/README.md finetune/README.md | cut -c1-260`
+
+</details>
+
+The selector's "half" figure appeared only in that paragraph. Now one clause each in the abstract, the scale limitation and the conclusion:
+
+<details><summary>3 tool call(s)</summary>
+
+- `Edit` ~/printpaper/README.md
+- `Edit` ~/printpaper/README.md
+- `Edit` ~/printpaper/README.md
+
+</details>
+
+Now `finetune/README.md`, which lists each model and still calls v11 "next":
+
+<details><summary>3 tool call(s)</summary>
+
+- `Read` ~/printpaper/finetune/README.md
+- `Edit` ~/printpaper/finetune/README.md
+- `Edit` ~/printpaper/finetune/README.md
+
+</details>
+
+Checking whether `finetune/README.md` has a scripts list the new script belongs in, and reviewing the full §6.4 diff:
+
+<details><summary>6 tool call(s)</summary>
+
+- `Bash` Look for a scripts list and review the README diff — `grep -nE "^\| \`(scripts/)?[a-z_0-9]+\.py\`|onpolicy_repairs\.py|onpolicy_generate" finetune/README.md | head -20 | cut -c1-180; echo; git d …`
+- `Bash` Rank batch C families by earlier models' first-attempt pass rate — `.venv/bin/python -I - <<'PY' …`
+- `Bash` Locate the v11 paragraph — `grep -n "^\*\*More kinds of parts, with its own mistakes on them" README.md | cut -c1-20`
+- `Read` ~/printpaper/README.md
+- `Edit` ~/printpaper/README.md
+- `Edit` ~/printpaper/README.md
+
+</details>
+
+The new sentence leaves "except on spoked wheels" attached to the wrong clause. Restructuring it into two sentences:
+
+<details><summary>1 tool call(s)</summary>
+
+- `Edit` ~/printpaper/README.md
+
+</details>
+
+Making the conclusion and `finetune/README.md` match the corrected claim, that v11 did no better than v9's better run:
+
+<details><summary>6 tool call(s)</summary>
+
+- `Edit` ~/printpaper/README.md
+- `Edit` ~/printpaper/finetune/README.md
+- `Edit` ~/printpaper/README.md
+- `Bash` Check which batch-C distill files are tracked or ignored — `git ls-files finetune/rft/distill | sed 's/shard[0-9]/shardN/' | sort | uniq -c; echo ---; ls -la finetune/rft/distill/prompts_clean_c_shard …`
+- `Bash` Find scripts that read the shards and compare shards with the tracked files — `git grep -nE "prompts_clean[a-z_]*shard" -- '*.py' '*.sh' | cut -c1-160; python3 -I -c " …`
+- `Bash` Show the shard-reading code in both scripts — `sed -n 45,64p bench/harness_search.py; echo ---; sed -n 24,31p finetune/scripts/build_v11.py`
+
+</details>
+
+Both scripts only build a description-to-family dictionary from those files, and the dictionaries are identical, so the switch can't change any output. Making the edit in all three scripts:
+
+<details><summary>12 tool call(s)</summary>
+
+- `Bash` Check other uses of glob in the three scripts — `grep -nE "glob\." bench/harness_search.py finetune/scripts/build_v11.py finetune/scripts/heldout_c_stats.py`
+- `Read` ~/printpaper/bench/harness_search.py
+- `Read` ~/printpaper/finetune/scripts/build_v11.py
+- `Edit` ~/printpaper/bench/harness_search.py
+- `Edit` ~/printpaper/bench/harness_search.py
+- `Edit` ~/printpaper/bench/harness_search.py
+- `Edit` ~/printpaper/finetune/scripts/build_v11.py
+- `Edit` ~/printpaper/finetune/scripts/heldout_c_stats.py
+- `Edit` ~/printpaper/finetune/scripts/heldout_c_stats.py
+- `Bash` Verify the three scripts give identical results on the tracked file — `N=[scratch] grep -nE "shard" bench/harness_search.py finetune/scripts/build_v11.py finetune/scripts/heldout_c_stats.py; .venv/bin/python -I  …`
+- `Bash` Check the Gemma run, the sweep and the 9B row — `N=[scratch] date +%T; systemctl --user is-active box-gemma-h4 tiiny-sweep laptop-9b; tail -5 $N/boxlog_gemma_h4.txt | cut -c1-200; ls ~/tiny …`
+- `Bash` Stage the v11 paper update and its results — `git add README.md finetune/README.md bench/harness_search.py finetune/scripts/build_v11.py finetune/scripts/heldout_c_stats.py bench/results …`
+
+</details>
+
+That's 2,987 files. Before scanning, I'll check the staged result directories hold the same file types as committed earlier runs, for example no meshes where earlier runs had none:
+
+<details><summary>1 tool call(s)</summary>
+
+- `Bash` Compare staged file types with an earlier committed run — `echo "staged v11:"; git diff --cached --name-only -- 'bench/results/gpu-v11*' | sed -E 's/.*\.//' | sort | uniq -c; echo "committed v9s1:";  …`
+
+</details>
+
+Same file types as earlier committed runs, about 11 MB. Scanning everything staged, plus the build log, for tokens, keys, emails and IP addresses:
+
+<details><summary>3 tool call(s)</summary>
+
+- `Bash` Scan the staged diff and the build log for secrets and IPs — `P='hf_[A-Za-z0-9]{20,}|rpa_[A-Za-z0-9]{10,}|sk-[A-Za-z0-9_-]{20,}|ghp_[A-Za-z0-9]{20,}|xox[bp]-|Bearer [A-Za-z0-9._-]{10,}|api[_-]?key["'"'" …`
+- `Bash` Check the project memory for commit and push rules — `grep -inE "push|commit" ~/.claude/projects/-home-seb-printpaper/memory/printpaper-project.md | cut -c1-240 | head -12`
+- `Bash` Read the project memory and recent commit history — `sed -n 1,40p ~/.claude/projects/-home-seb-printpaper/memory/printpaper-project.md | cut -c1-260; cd ~/printpaper && git log --format='%h %an …`
+
+</details>
+
+The repo is public, and every recent result was committed straight to main and pushed (main is in sync with origin). Committing v11 the same way:
+
+<details><summary>1 tool call(s)</summary>
+
+- `Bash` Commit the v11 paper update and push — `git add meta/BUILD_LOG.md && git commit -q -F - <<'MSG' && git log --format='%h %s' -1 | cut -c1-160 && git push -q origin main 2>&1 | tail  …`
+
+</details>
+
+Pushed as c0df949. Recording the v11 results in memory:
+
+<details><summary>3 tool call(s)</summary>
+
+- `Bash` Save the v11 results to memory — `cd ~/.claude/projects/-home-seb-printpaper/memory && python3 - <<'PY' …`
+- `Bash` Confirm the memory index and check the Gemma run — `grep -n "v3 in-family" ~/.claude/projects/-home-seb-printpaper/memory/MEMORY.md | cut -c200-500; N=[scratch] date +%T; tail -3 $N/boxlog_gem …`
+- `Bash` Wait for the Gemma run to start benching or stop — `N=[scratch] until grep -qE "benching|FAILED|DONE" $N/boxlog_gemma_h4.txt || ! systemctl --user is-active -q box-gemma-h4; do sleep 20; done; …`
+
+</details>
+
+v11 is finished and in the paper (commit c0df949, pushed). Both pods are deleted and the pod list is empty, so nothing is billing on RunPod.
+
+**What v11 showed** (v9's data plus ten more batch-C part families, with its own failed attempts at them; trained twice):
+
+| | First sample | Tasks passed in 8 samples | File changed after feedback | Passes won by repair |
+|---|---:|---:|---:|---:|
+| v11 | 3/16 | 4 | 42% | 3 |
+| v11 seed 1 | 3/16 | 5 | 44% | 3 |
+
+- **Closest pair of runs so far:** both passed the held-out slide rack and the gel comb, which neither v9 run passed. But neither clearly beat v9's better run (5 tasks, 3 repair wins, 43%).
+- **No real gain on the four held-out part families** (new Table 11). First attempts passed 1.5% and 2.5%, against 0.2–3.8% for v5 and v9; spoked wheels were the one exception. Repairs show how much a seed matters: one run fixed 1 of 394 failures, the other 14 of 390.
+- **The idioms prompt hurt again:** with it both runs passed 3 tasks. That makes three fine-tune runs where the better prompt lowered the score.
+
+**Two corrections in the paper:**
+- **Sample selection:** I reran the request-checked selection rule over all 21 runs. It recovers about two-fifths of the gap between one sample and eight, not half as the paper said, and it gained nothing on v11's four runs. The paragraph now says so.
+- **Reproducibility:** two committed scripts (`build_v11.py` and `harness_search.py`) read untracked copies of a prompt file. They now read the tracked one, and the output is byte-identical.
+
+**Spend:** the last billing read (22:06 UTC) showed $114.88. The two v11 pods ran about 3 hours each at $3.99/hr, so the total comes to about $128 once billing catches up. That leaves about $34 under your $162.59 ceiling.
+
+**Running now:**
+- **Gemma 4 26B with h4 on the box:** it stops the sweep as soon as the current GLM thinking task saves (due around 19:05), then runs for about 2¼ hours. The sweep resumes automatically afterwards.
+- **Laptop 9B row:** running since 18:46, overnight.
+- **Dashboard:** next refresh at 19:19.
+
+<details><summary>2 tool call(s)</summary>
+
+- `Bash` Read the Gemma run's start and the sweep's last lines — `cat [scratch] | cut -c1-260; echo ---; tail -3 ~/tiny/bench/20261014-sweep/sweep.log | cut -c1-200; ls ~/tiny/bench/20261014-sweep/STOP 2>&1 …`
+- `Bash` Wait for the Gemma h4 run to finish and the sweep to resume — `N=[scratch] until ! systemctl --user is-active -q box-gemma-h4; do sleep 60; done; date +%T; tail -8 $N/boxlog_gemma_h4.txt | cut -c1-240; s …`
+
+</details>
+
+Gemma 4 26B is running on the box with the h4 prompt. It started at 19:12, should finish around 21:30, and has a 4½-hour cap. The sweep is paused and restarts automatically when the Gemma run exits, whether it finishes or fails. The handover cost almost nothing: the sweep stopped five seconds after it saved its GLM task.
+
+When the Gemma run finishes, I'll compare its three samples with the sweep's standard-prompt Gemma samples (9 and 7 of 16 so far) and add the result to the paper. Meanwhile the laptop 9B row is running and the dashboard refreshes every 30 minutes, next at 19:19.
+
+The 19:19 dashboard refresh is due. The sweep is paused for the Gemma run, so I'll check how the status line describes that before publishing:
+
+<details><summary>9 tool call(s)</summary>
+
+- `Bash` Rebuild the dashboard data and show its status row — `D=[scratch] cd $D && ~/printpaper/.venv/bin/python -I ~/tiny/bench/20261014-sweep/scripts/dashboard_data.py $D/bench.json 2>&1 | grep -vE '^ …`
+- `Bash` Find how the dashboard derives the sweep state — `grep -nE "sweep_state|finished|paused|STOP|is-active|controller_finished|def status" ~/tiny/bench/20261014-sweep/scripts/dashboard_data.py | …`
+- `Bash` Check the sweep's controller_finished flag and when it is set — `python3 -I -c " …`
+- `Bash` Read the sweep's main loop exit handling — `sed -n 255,290p ~/tiny/bench/20261014-sweep/scripts/sweep.py; grep -nE "controller_started" ~/tiny/bench/20261014-sweep/scripts/sweep.py | h …`
+- `Bash` Find how the dashboard page renders the sweep state — `python3 -I -c " …`
+- `Bash` Read the dashboard's status computation — `sed -n 250,285p ~/tiny/bench/20261014-sweep/scripts/dashboard_data.py`
+- `Read` ~/tiny/bench/20261014-sweep/scripts/dashboard_data.py
+- `Edit` ~/tiny/bench/20261014-sweep/scripts/dashboard_data.py
+- `Bash` Rebuild the dashboard data with the fixed state and rescan it — `D=[scratch] cd $D && ~/printpaper/.venv/bin/python -I ~/tiny/bench/20261014-sweep/scripts/dashboard_data.py $D/bench.json 2>&1 | grep -vE '^ …`
+
+</details>
+
+The status now reads "stopped", which the page shows as "The sweep is paused", and the data scans clean. Publishing:
+
+<details><summary>4 tool call(s)</summary>
+
+- `Artifact` action=publish, url=https://claude.ai/artifact/Sfzc8zQSNTc6dchuQ6ZAyc, file_path=[scratch]
+- `ArtifactData` action=update, url=https://claude.ai/artifact/Sfzc8zQSNTc6dchuQ6ZAyc, collection=datasets
+- `Artifact` action=delete, url=https://claude.ai/artifact/Sfzc8zQSNTc6dchuQ6ZAyc, path=[id]
+- `Bash` Timer for the next dashboard refresh — `sleep 1800; echo "dashboard refresh due $(date +%T)"`
+
+</details>
+
+Dashboard refreshed (version 151). A quick check that the Gemma run is producing results:
+
+<details><summary>1 tool call(s)</summary>
+
+- `Bash` Check the Gemma h4 run's saved conversations — `date +%T; wc -l < bench/results/box-gemma-h4/results.jsonl 2>/dev/null; python3 -I -c " …`
+
+</details>
+
+The sweep's dashboard was about to show the sweep as "finished" during this pause, which was wrong. I fixed the bug in its data script: it now reads "paused" while jobs remain. The refresh is published (version 151, 19:21), and the next one is at 19:51.
+
+The Gemma 4 26B run with the h4 prompt is progressing. Its first four conversations took 9 minutes, and three passed: the 1.5 mL rack, the slide rack and the 96-hole PCR rack. At that pace all 48 conversations finish around 21:00, after which the sweep resumes automatically. I'll compare the result with the sweep's standard-prompt Gemma samples once it's done.
+
+The 19:51 refresh is due. I'll rebuild and scan the data, and check the Gemma run's progress at the same time:
+
+<details><summary>5 tool call(s)</summary>
+
+- `Bash` Rebuild the dashboard data and check Gemma progress — `D=[scratch] cd $D && ~/printpaper/.venv/bin/python -I ~/tiny/bench/20261014-sweep/scripts/dashboard_data.py $D/bench.json 2>&1 | grep -vE '^ …`
+- `Artifact` action=publish, url=https://claude.ai/artifact/Sfzc8zQSNTc6dchuQ6ZAyc, file_path=[scratch]
+- `ArtifactData` action=update, url=https://claude.ai/artifact/Sfzc8zQSNTc6dchuQ6ZAyc, collection=datasets
+- `Artifact` action=delete, url=https://claude.ai/artifact/Sfzc8zQSNTc6dchuQ6ZAyc, path=[id]
+- `Bash` Timer for the next dashboard refresh — `sleep 1800; echo "dashboard refresh due $(date +%T)"`
+
+</details>
+
+Dashboard refreshed (version 152, 19:52). Gemma is a third of the way through. Meanwhile I'll prepare the comparison, starting with the sweep's own standard-prompt Gemma samples task by task:
+
+<details><summary>5 tool call(s)</summary>
+
+- `Bash` Summarize the sweep's standard-prompt Gemma samples — `python3 -I - <<'PY' …`
+- `Bash` Find the paper's mentions of Gemma 4 26B on the box — `grep -nE "Gemma 4 26B|gemma-4-26B|26B-A4B|viability bar" README.md | cut -c1-240 | head -20`
+- `Bash` Find the paper's box-tier and Gemma 4 mentions — `grep -nE "Gemma 4|NPU box|box tier|the box's|on the box" README.md | cut -c1-200 | head -30; echo; grep -rnE "main-tiiny" README.md | cut -c …`
+- `Write` [scratch]
+- `Bash` Test the Gemma comparison on the partial results — `.venv/bin/python -I [scratch]`
+
+</details>
+
+The comparison script works on the partial results. Gemma with h4 has already passed the funnel and the slide rack, which neither standard-prompt sample passed. Two standard-prompt passes, the micropestle and the stirrer housing, haven't come up again yet. Sample 1 has only just started, though, so it's too early to call. I'll run the full comparison when the run finishes, around 21:00, and then ask you how to handle the paper side.
+
+<details><summary>5 tool call(s)</summary>
+
+- `Bash` Rebuild the dashboard data; check Gemma and the 9B row — `D=[scratch] cd $D && ~/printpaper/.venv/bin/python -I ~/tiny/bench/20261014-sweep/scripts/dashboard_data.py $D/bench.json 2>&1 | grep -vE '^ …`
+- `Artifact` action=publish, url=https://claude.ai/artifact/Sfzc8zQSNTc6dchuQ6ZAyc, file_path=[scratch]
+- `ArtifactData` action=update, url=https://claude.ai/artifact/Sfzc8zQSNTc6dchuQ6ZAyc, collection=datasets
+- `Artifact` action=delete, url=https://claude.ai/artifact/Sfzc8zQSNTc6dchuQ6ZAyc, path=[id]
+- `Bash` Timer for the next dashboard refresh — `sleep 1800; echo "dashboard refresh due $(date +%T)"`
+
+</details>
+
+Dashboard refreshed (version 153, 20:23); the next refresh is at 20:53. The Gemma h4 run has 31 of 48 conversations saved and should finish around 21:00. The laptop 9B row is at 6 of 16 tasks.
+
+<details><summary>9 tool call(s)</summary>
+
+- `Bash` Rebuild the dashboard data and check the Gemma run — `D=[scratch] cd $D && ~/printpaper/.venv/bin/python -I ~/tiny/bench/20261014-sweep/scripts/dashboard_data.py $D/bench.json 2>&1 | grep -vE '^ …`
+- `Artifact` action=publish, url=https://claude.ai/artifact/Sfzc8zQSNTc6dchuQ6ZAyc, file_path=[scratch]
+- `ArtifactData` action=update, url=https://claude.ai/artifact/Sfzc8zQSNTc6dchuQ6ZAyc, collection=datasets
+- `Artifact` action=delete, url=https://claude.ai/artifact/Sfzc8zQSNTc6dchuQ6ZAyc, path=[id]
+- `Bash` Timer for the next dashboard refresh — `sleep 1800; echo "dashboard refresh due $(date +%T)"`
+- `Bash` Run the full Gemma h4 against standard-prompt comparison — `.venv/bin/python -I [scratch] echo; tail -6 [scratch] | cut -c1-200`
+- `Bash` List the sweep's open jobs and Gemma 4 26B's place — `python3 -I -c " …`
+- `Bash` Read the paper's viability bar definition — `grep -noE "[^.]*viability bar[^.]*\." README.md | head -3 | cut -c1-400`
+- `Bash` Find the viability bar's definition in section 5.5 — `sed -n '/^### 5.5/,/^## 6/p' README.md | grep -oE "[^.]*(viab|bar|half of|8 of 16|50%)[^.]*\." | head -4 | cut -c1-400`
+
+</details>
+
+The Gemma run is done, and the h4 prompt helped Gemma 4 26B noticeably. The sweep resumed at 20:53, and the box was paused for only 1 hour 41 minutes.
+
+| Gemma 4 26B on the box | Standard prompt (sweep) | h4 prompt |
+|---|---:|---:|
+| Passed per sample | 9, 7 of 16 | 10, 12, 11 of 16 |
+| Tasks passed in any sample | 11/16 (2 samples) | 13/16 (3 samples) |
+| Conversations passed on the first attempt | 6 of 32 (19%) | 22 of 48 (46%) |
+| Passes won by repair | 10 | 11 |
+| Median time per conversation | 142 s | 113 s |
+
+- **Same task and seed compared directly (samples 0 and 1):** h4 won 8 and lost 2. A sign test gives p = 0.11, a consistent direction but not yet significant.
+- **Paper's bar:** with h4, Gemma passed at least half of the 16 tasks in all three samples, against one of two with the standard prompt.
+- **Where it came from:** mostly better first attempts. Every part built, and it newly passed the slide rack (3 of 3 samples) and the funnel (2 of 3).
+- **Still failing:** the D-shaft knob, the NEMA bracket and the mini gel tank (best score 0.85).
+- **Contrast with the fine-tunes:** the prompt was chosen for the untuned 9B, and here it carries over to a stronger untuned model. On the fine-tunes it hurt.
+
+**Two decisions for you:**
+
+1. **Move Gemma's third standard-prompt sample up the sweep's queue?** It's currently behind seven thinking-on jobs, about five days away. Moved up, it runs straight after the current GLM job, around 00:00–00:45 tonight. The comparison would then be three samples against three (48 pairs, same seeds), and the other jobs wait about 40 minutes longer. I recommend it.
+2. **How should this go into the paper?** It needs the sweep's Gemma results as the baseline, and project memory says to ask you before committing sweep results. Choose one:
+   - **(a)** Add it to the prompt section of §6.4 once the third sample is in, committing the Gemma rows from the sweep with it. I recommend this.
+   - **(b)** Write it now with two baseline samples.
+   - **(c)** Hold it until the whole sweep is written up.
+
+Meanwhile the dashboard refreshes every 30 minutes (next at 21:24), and the laptop 9B row is at 6 of 16 tasks.
+
+The 21:24 refresh is due. Your two questions are still open, so I'm leaving the queue and the paper untouched.
+
+<details><summary>5 tool call(s)</summary>
+
+- `Bash` Rebuild and scan the dashboard data — `D=[scratch] cd $D && ~/printpaper/.venv/bin/python -I ~/tiny/bench/20261014-sweep/scripts/dashboard_data.py $D/bench.json 2>&1 | grep -vE '^ …`
+- `Artifact` action=publish, url=https://claude.ai/artifact/Sfzc8zQSNTc6dchuQ6ZAyc, file_path=[scratch]
+- `ArtifactData` action=update, url=https://claude.ai/artifact/Sfzc8zQSNTc6dchuQ6ZAyc, collection=datasets
+- `Artifact` action=delete, url=https://claude.ai/artifact/Sfzc8zQSNTc6dchuQ6ZAyc, path=[id]
+- `Bash` Timer for the next dashboard refresh — `sleep 1800; echo "dashboard refresh due $(date +%T)"`
+
+</details>
+
+The dashboard is refreshed (version 155, 21:24), and the next refresh is at 21:54. The sweep is on GLM-4.7-Flash's thinking job, 13 of 16 tasks done.
+
+Two answers I still need from you:
+1. **Move Gemma's third standard-prompt sample to the front of the sweep queue?** I recommend yes. It only helps if done before the GLM job ends, around midnight: it then runs from about 00:00 to 00:45.
+2. **Paper option:** (a) write it up after that sample, committing Gemma's sweep rows with it (my recommendation); (b) write it now from two samples; or (c) wait until the whole sweep ends.
+
+### 🧑 01:28 UTC
+
+> https://x.com/NFT_Chen/status/2111723258517098599
+> 
+> Interesting
+
+I'll read the post first. X pages usually don't load without JavaScript, so I may need another route.
+
+<details><summary>2 tool call(s)</summary>
+
+- `ToolSearch` query=select:WebFetch, max_results=1
+- `WebFetch` url=https://x.com/NFT_Chen/status/2111723258517098599, prompt=Return the full text of this post (tweet), the author's name
+
+</details>
+
+X blocked the direct fetch (HTTP 402). Trying a public mirror that returns a post's text as JSON:
+
+<details><summary>2 tool call(s)</summary>
+
+- `WebFetch` url=https://api.fxtwitter.com/NFT_Chen/status/211172325851709859, prompt=This is JSON describing a tweet. Return verbatim: the author
+- `WebFetch` url=https://arxiv.org/abs/2610.22192, prompt=Return the paper's title, authors/affiliation, submission da
+
+</details>
+
+It is interesting, and it lines up with your fine-tuning loop. I read the paper's abstract on arXiv because the post is only a summary.
+
+**What it is.** "Terminal-RSI: Recursive Self-Improving Terminal Agents" (Tencent Hunyuan, arXiv 2610.22192, Oct 15). Starting from Qwen3.8-27B, it alternates two steps over five stages (base → RSR-1 → RPR-1 → RSR-2 → RPR-2):
+- **Self-rewrite (RSR):** the model's own trajectories that pass a verifier are rewritten and trained on.
+- **Policy refinement (RPR):** a reinforcement-learning step with a critic carried over between stages and a reward built for multi-turn credit. Strict success outranks bounded partial credit, and later turns are discounted.
+
+Its headline result is 51.7% to 86.5% on Terminal-Bench 2.1.
+
+**How it maps onto our work:**
+- **We ran only the first half.** v4 trained on its own verified successes, v9 on its own failures with the reference, v10 on its own successful repairs. They also rewrite the successes, and they add the RL step we never ran.
+- **Their reward is the one our paper says is missing.** §6.4 ends by saying the next lever is to reward "a changed and better file after feedback". Our checker already gives both signals their reward uses: pass or fail, and the share of hidden checks met. Our repair loop is the multi-turn setting their credit assignment is built for.
+- **Same model family as the box.** Qwen3.8-27B is in the sweep, at 4 of 16 per sample with the standard prompt.
+
+**Reasons for caution:**
+- **The big gain is in the benchmark family they tuned the reward for.** On harder or less familiar sets the gains are small: their long-horizon set goes from 0 to 5 of 46 tasks fully completed, and another benchmark goes from 3% to 6%. That's the same in-family-versus-transfer split our v3 audit found.
+- **The abstract says only "retained" stages were kept.** If they were kept by test score, the reported numbers are partly selected.
+- **The abstract states no compute, no released code and no repeated runs.** Our seed replicates suggest one run per stage can mislead, though their task sets are larger than our 16.
+
+**Could we try the RL half?** I'd hold off for now. The roughly $34 left under your ceiling buys one short H100 run, not the two runs a result would need. Every rollout would also need an OpenSCAD render on the pod, which is CPU-bound. It's a good citation for the next-step sentence in §6.4 and the conclusion, and I can add that if you want.
+
+Still open, and the first one is time-sensitive:
+1. Move Gemma's third standard-prompt sample to the front of the queue? This needs doing before the GLM job ends around midnight.
+2. For the paper, (a), (b) or (c)? My recommendation is (a): write it up once that sample is in.
+
+The 21:54 refresh is due. I'll also save the Terminal-RSI paper to memory as a reference for the next-step discussion.
+
+<details><summary>5 tool call(s)</summary>
+
+- `Bash` Rebuild dashboard data and save the paper reference to memory — `D=[scratch] cd $D && ~/printpaper/.venv/bin/python -I ~/tiny/bench/20261014-sweep/scripts/dashboard_data.py $D/bench.json 2>&1 | grep -vE '^ …`
+- `Artifact` action=publish, url=https://claude.ai/artifact/Sfzc8zQSNTc6dchuQ6ZAyc, file_path=[scratch]
+- `ArtifactData` action=update, url=https://claude.ai/artifact/Sfzc8zQSNTc6dchuQ6ZAyc, collection=datasets
+- `Artifact` action=delete, url=https://claude.ai/artifact/Sfzc8zQSNTc6dchuQ6ZAyc, path=[id]
+- `Bash` Timer for the next dashboard refresh — `sleep 1800; echo "dashboard refresh due $(date +%T)"`
+
+</details>
+
+Dashboard refreshed (version 156, 21:55); the next refresh is at 22:25. I saved the Terminal-RSI paper to memory as a reference. Nothing else has changed: the sweep is still on GLM-4.7-Flash thinking (13 of 16), and the laptop 9B row is still running.
+
+Two decisions are still open:
+1. Move Gemma's third standard-prompt sample to the front of the queue? It has to be done before the current GLM job ends, around midnight, to run tonight.
+2. Paper option (a), (b) or (c)? I recommend (a): write it up once that sample is in.
+
+### 🧑 02:24 UTC
+
+> 1. move to front. 2. a.
+
+Moving Gemma's third standard-prompt sample to the front of the sweep's queue now. The sweep reads the queue only between jobs, so the GLM job keeps running and Gemma goes next. The file is swapped atomically, with a backup:
+
+<details><summary>1 tool call(s)</summary>
+
+- `Bash` Move Gemma's round-3 sample to the front of the sweep queue — `SW=~/tiny/bench/20261014-sweep; cp -p $SW/queue.json [scratch] && python3 -I - "$SW/queue.json" <<'PY' …`
+
+</details>
+
+Gemma's third standard-prompt sample is now first in the queue and runs as soon as the GLM thinking job ends (3 tasks left, about 00:10). The 22:25 dashboard refresh is also due:
+
+<details><summary>8 tool call(s)</summary>
+
+- `Bash` Rebuild and scan the dashboard data — `D=[scratch] cd $D && ~/printpaper/.venv/bin/python -I ~/tiny/bench/20261014-sweep/scripts/dashboard_data.py $D/bench.json 2>&1 | grep -vE '^ …`
+- `Artifact` action=publish, url=https://claude.ai/artifact/Sfzc8zQSNTc6dchuQ6ZAyc, file_path=[scratch]
+- `ArtifactData` action=update, url=https://claude.ai/artifact/Sfzc8zQSNTc6dchuQ6ZAyc, collection=datasets
+- `Artifact` action=delete, url=https://claude.ai/artifact/Sfzc8zQSNTc6dchuQ6ZAyc, path=[id]
+- `Bash` Timer for the next dashboard refresh — `sleep 1800; echo "dashboard refresh due $(date +%T)"`
+- `Bash` Inspect the sweep's results directory layout — `cd ~/printpaper/bench/results/main-tiiny && ls | head -30; echo ---; ls code 2>/dev/null | head -20; echo ---; ls code/* -d 2>/dev/null | gr …`
+- `Bash` Read the box build records for Gemma's sweep passes — `ls box_*gemma* ; python3 -I -c " …`
+- `Bash` Show the catalog and build fields of a Gemma pass record — `python3 -I -c " …`
+
+</details>
+
+The record identifies the build by its store tag: version 20260907, 13,376,695,750 bytes. I'll read the same catalog entry now to confirm the h4 run used the same build:
+
+<details><summary>5 tool call(s)</summary>
+
+- `Bash` Find how the sweep reads the box's model catalog — `grep -nE "catalog" ~/tiny/bench/20261014-sweep/scripts/sweep.py | head -8`
+- `Bash` Read the sweep's provenance code — `sed -n 170,190p ~/tiny/bench/20261014-sweep/scripts/sweep.py`
+- `Bash` Read Gemma's build version from the store and the box — `cd ~/printpaper && timeout 90 .venv/bin/python -I - <<'PY' …`
+- `Bash` Check Gemma records for duplicates and how the stats tools read runs — `python3 -I -c " …`
+- `Bash` Wait for the sweep's third standard-prompt Gemma sample — `until grep -q "job done: main-tiiny|google/gemma-4-26B-A4B-it|3" ~/tiny/bench/20261014-sweep/sweep.log; do sleep 60; done; date +%T; grep -E …`
+
+</details>
+
+The third sample should land around 00:55. Meanwhile I'll prepare the analysis. First, what the h4 run's metadata records about its harness version:
+
+<details><summary>5 tool call(s)</summary>
+
+- `Bash` Read the h4 run's metadata and harness file history — `python3 -I -c " …`
+- `Bash` Check the h4 run's recorded commit and harness changes since — `python3 -I -c " …`
+- `Write` [scratch]
+- `Bash` Run the per-task Gemma comparison on the current data — `.venv/bin/python -I [scratch]`
+- `Bash` Find the paper's mentions of the box sweep and store models — `grep -noE "[^.]*(store model|vendor's store|larger open models|Pocket Lab|sweep)[^.]*\." README.md | cut -c1-300 | head -12`
+
+</details>
+
+Both decisions are carried out.
+
+1. **Queue:** Gemma's third standard-prompt sample is now first in the sweep's queue. It runs as soon as the current GLM thinking job finishes its last two tasks, around 00:10, and should be done by about 00:55. A waiter will alert me when it lands.
+2. **Paper (option a):** everything is ready to write up once that sample is in:
+   - **Baseline:** goes in as its own run directory, `bench/results/box-gemma-h0/`. It holds only Gemma's final standard-prompt records copied from the sweep, with a note saying where they came from. The rest of the sweep stays uncommitted.
+   - **Same build:** the h4 run used the same Gemma build as the sweep's samples (store version 20260907).
+   - **Comparison per task:** the box ignores the seed, so samples can't be paired one to one. With two baseline samples so far, h4 passed more samples on 7 tasks and fewer on 1 (p = 0.07).
+   - **Placement:** a paragraph after the harness results in §6.4, plus a clause each in the abstract, conclusion and limitations.
+
+The dashboard keeps refreshing every 30 minutes, next at 22:56.
+
+<details><summary>5 tool call(s)</summary>
+
+- `Bash` Rebuild and scan the dashboard data — `D=[scratch] cd $D && ~/printpaper/.venv/bin/python -I ~/tiny/bench/20261014-sweep/scripts/dashboard_data.py $D/bench.json 2>&1 | grep -vE '^ …`
+- `Artifact` action=publish, url=https://claude.ai/artifact/Sfzc8zQSNTc6dchuQ6ZAyc, file_path=[scratch]
+- `ArtifactData` action=update, url=https://claude.ai/artifact/Sfzc8zQSNTc6dchuQ6ZAyc, collection=datasets
+- `Artifact` action=delete, url=https://claude.ai/artifact/Sfzc8zQSNTc6dchuQ6ZAyc, path=[id]
+- `Bash` Timer for the next dashboard refresh — `sleep 1800; echo "dashboard refresh due $(date +%T)"`
+
+</details>
+
+The dashboard is refreshed (version 158, 22:57), and the next refresh is at 23:27. The sweep is still on GLM-4.7-Flash's thinking job, 14 of 16 tasks done. Gemma's third standard-prompt sample runs right after it, from about 00:10, and I'll write it up when it lands.
+
+<details><summary>5 tool call(s)</summary>
+
+- `Bash` Rebuild the dashboard data and check the 9B row — `D=[scratch] cd $D && ~/printpaper/.venv/bin/python -I ~/tiny/bench/20261014-sweep/scripts/dashboard_data.py $D/bench.json 2>&1 | grep -vE '^ …`
+- `Artifact` action=publish, url=https://claude.ai/artifact/Sfzc8zQSNTc6dchuQ6ZAyc, file_path=[scratch]
+- `ArtifactData` action=update, url=https://claude.ai/artifact/Sfzc8zQSNTc6dchuQ6ZAyc, collection=datasets
+- `Artifact` action=delete, url=https://claude.ai/artifact/Sfzc8zQSNTc6dchuQ6ZAyc, path=[id]
+- `Bash` Timer for the next dashboard refresh — `sleep 1800; echo "dashboard refresh due $(date +%T)"`
+
+</details>
+
+The dashboard is refreshed (version 159, 23:28); the next refresh is at 23:58. The GLM thinking job is on its last task (15 of 16), so Gemma's third sample should start around midnight. The laptop 9B row is at 8 of 16 tasks.
+
+<details><summary>1 tool call(s)</summary>
+
+- `Bash` Rebuild the dashboard data and check the sweep log — `D=[scratch] cd $D && ~/printpaper/.venv/bin/python -I ~/tiny/bench/20261014-sweep/scripts/dashboard_data.py $D/bench.json 2>&1 | grep -vE '^ …`
+
+</details>
+
+The GLM thinking job finished at 23:55, and Gemma's third standard-prompt sample started at 23:56. It's 1 of 16 conversations in and should finish around 00:37. Publishing the refresh:
+
+<details><summary>4 tool call(s)</summary>
+
+- `Artifact` action=publish, url=https://claude.ai/artifact/Sfzc8zQSNTc6dchuQ6ZAyc, file_path=[scratch]
+- `ArtifactData` action=update, url=https://claude.ai/artifact/Sfzc8zQSNTc6dchuQ6ZAyc, collection=datasets
+- `Artifact` action=delete, url=https://claude.ai/artifact/Sfzc8zQSNTc6dchuQ6ZAyc, path=[id]
+- `Bash` Timer for the next dashboard refresh — `sleep 1800; echo "dashboard refresh due $(date +%T)"`
+
+</details>
+
+Dashboard refreshed (version 160, 23:59). While the third sample runs, I'll read the sweep's notes on its harness history, so the copied baseline's note describes sample 0's provenance accurately:
+
+<details><summary>1 tool call(s)</summary>
+
+- `Bash` Read the sweep's harness history notes and Gemma's pass log — `sed -n '/Harness version/,/gpt-oss reasons/p' ~/printpaper/bench/results/main-tiiny/README.md | head -12; grep -E "gemma-4-26B-A4B-it\|1|gem …`
+
+</details>
+
+The sweep's notes settle sample 0's provenance. It ran on Oct 14 under the harness of commit 7a8ca5d and was rescored with c43e250's final checks. The one conversation whose pass did not survive was rerun under c43e250. Samples 1 and 2 ran under c43e250 throughout. That goes in the baseline's note. The third sample is running (started 23:56, done around 00:37), and the waiter will tell me when it finishes.
+
+<details><summary>5 tool call(s)</summary>
+
+- `Bash` Rebuild the dashboard data and check Gemma's third sample — `D=[scratch] cd $D && ~/printpaper/.venv/bin/python -I ~/tiny/bench/20261014-sweep/scripts/dashboard_data.py $D/bench.json 2>&1 | grep -vE '^ …`
+- `Artifact` action=publish, url=https://claude.ai/artifact/Sfzc8zQSNTc6dchuQ6ZAyc, file_path=[scratch]
+- `ArtifactData` action=update, url=https://claude.ai/artifact/Sfzc8zQSNTc6dchuQ6ZAyc, collection=datasets
+- `Artifact` action=delete, url=https://claude.ai/artifact/Sfzc8zQSNTc6dchuQ6ZAyc, path=[id]
+- `Bash` Timer for the next dashboard refresh — `sleep 1800; echo "dashboard refresh due $(date +%T)"`
+
+</details>
+
+The dashboard is refreshed (version 161, 00:30), and the next refresh is due at 01:00. Gemma's third standard-prompt sample is on its last conversation (47 of 48), so the write-up can start in a few minutes.
+

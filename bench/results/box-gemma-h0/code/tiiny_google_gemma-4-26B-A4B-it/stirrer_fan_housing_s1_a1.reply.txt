@@ -1,0 +1,71 @@
+```openscad
+// --- Dimensions (mm) ---
+outer_width = 90;          // Outer width and length of the box
+outer_depth = 90;          // Outer depth and length of the box
+wall_thickness = 2.5;       // Thickness of the four side walls
+top_plate_thickness = 2;    // Thickness of the top plate (resting on bed)
+total_height = 40;          // Total height of the housing
+screw_hole_diameter = 4.5;  // Diameter for M4 screw holes
+screw_pattern_size = 71.5;  // Distance between screw holes (center to center)
+notch_width = 12;           // Width of the cable notch
+notch_depth = 8;            // Depth of the notch from the open top
+$fn = 64;                   // Smoothness for holes and cylinders
+
+// --- Implementation ---
+
+// The model is printed upside down: 
+// The top plate is at Z = 0 to Z = top_plate_thickness.
+// The walls rise from the plate up to Z = total_height.
+
+module housing() {
+    difference() {
+        // Main Body (The outer shell)
+        union() {
+            // The Top Plate (Base of the box when upright, on bed when printing)
+            cube([outer_width, outer_depth, top_plate_thickness]);
+            
+            // The Four Walls
+            // We use a single cube and subtract the interior to ensure 
+            // the walls are exactly the specified thickness.
+            translate([0, 0, top_plate_thickness])
+            difference() {
+                // Outer volume of the walls
+                cube([outer_width, outer_depth, total_height - top_plate_thickness]);
+                
+                // Hollow out the inside
+                // We subtract a cube that is smaller by 2 * wall_thickness
+                translate([wall_thickness, wall_thickness, -0.01])
+                cube([outer_width - 2 * wall_thickness, outer_depth - 2 * wall_thickness, total_height]);
+            }
+        }
+
+        // Screw Holes (M4)
+        // Positioned on the top plate (Z=0 to Z=2).
+        // Centered on the plate (45, 45).
+        for (i = [-1, 1], j = [-1, 1]) {
+            translate([
+                (outer_width / 2) + (i * screw_pattern_size / 2), 
+                (outer_depth / 2) + (j * screw_pattern_size / 2), 
+                -0.01 // Cut through the bottom of the plate
+            ])
+            cylinder(h = top_plate_thickness + 0.02, d = screw_hole_diameter);
+        }
+
+        // Cable Notch
+        // Located in one wall, centered along the wall, 
+        // reaching 8mm down from the open edge (z = 32 to z = 40).
+        // Since we are printing upside down, the "open edge" is at Z = 40.
+        // The notch is cut from the top of the walls.
+        // We use a slightly wider/deeper cut to ensure no zero-thickness faces.
+        translate([
+            (outer_width / 2) - wall_thickness, // Positioned at the edge of one wall
+            (outer_depth / 2) - (notch_width / 2), 
+            total_height - notch_depth // Starts at Z=32
+        ])
+        cube([wall_thickness + 0.1, notch_width, notch_depth + 0.1]);
+    }
+}
+
+// Render the part
+housing();
+```

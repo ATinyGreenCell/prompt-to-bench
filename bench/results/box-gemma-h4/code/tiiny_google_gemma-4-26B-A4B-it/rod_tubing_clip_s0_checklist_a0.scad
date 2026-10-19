@@ -1,0 +1,82 @@
+// Snap-on clip for 12.7mm rod and 6mm tubing
+// Designed for FDM printing: printed flat on the XY plane.
+
+// --- Dimensions ---
+rod_id      = 12.7;    // Inner diameter of the rod ring
+rod_wall    = 3.0;     // Wall thickness of the rod ring
+rod_od      = rod_id + 2 * rod_wall; // Outer diameter of the rod ring
+
+rod_gap_w   = 10.0;    // Width of the opening in the rod ring
+rod_gap_h   = 10.0;    // Height of the opening in the rod ring (covers Y range)
+
+tube_id     = 6.0;     // Inner diameter of the tubing ring
+tube_wall   = 2.0;     // Wall thickness of the tubing ring
+tube_od     = tube_id + 2 * tube_wall; // Outer diameter of the tubing ring
+
+tube_gap_w  = 4.5;     // Width of the opening in the tubing ring
+tube_gap_h  = 4.5;     // Height of the opening in the tubing ring
+
+bridge_w_y  = 6.0;     // Width of the bridge along the Y axis
+bridge_x_min = 8.0;    // Start of the bridge on X axis
+bridge_x_max = 12.0;   // End of the bridge on X axis
+
+clip_height = 10.0;    // Extrusion height (Z)
+tube_offset_x = 15.0;  // X-coordinate of the tubing ring center
+
+$fn = 64;
+
+// --- Geometry Construction ---
+
+// 1. The Rod Ring Profile (2D)
+module rod_ring_profile() {
+    difference() {
+        circle(d = rod_od);
+        circle(d = rod_id);
+        // Cutout on the -X side: x < 0 and -5 < y < 5
+        // We use a large rectangle to ensure a clean cut
+        translate([-rod_od, -rod_gap_h/2]) 
+            square([rod_od, rod_gap_h]);
+    }
+}
+
+// 2. The Tubing Ring Profile (2D)
+module tube_ring_profile() {
+    difference() {
+        circle(d = tube_od);
+        circle(d = tube_id);
+        // Cutout on the +X side: x > 15 and -2.25 < y < 2.25
+        // Since the circle is centered at (15,0), we translate the cutout
+        translate([tube_offset_x - tube_od/2, -tube_gap_h/2])
+            square([tube_od, tube_gap_h]);
+    }
+}
+
+// 3. The Bridge Profile (2D)
+module bridge_profile() {
+    // A rectangle centered on Y, spanning from bridge_x_min to bridge_x_max
+    // We use a small offset to ensure it doesn't overlap the ring interiors
+    translate([bridge_x_min, -bridge_w_y/2])
+        square([bridge_x_max - bridge_x_min, bridge_w_y]);
+}
+
+// --- Final Assembly ---
+
+union() {
+    // The Rod Ring
+    linear_extrude(height = clip_height) 
+        rod_ring_profile();
+    
+    // The Tubing Ring
+    translate([tube_offset_x, 0])
+        linear_extrude(height = clip_height) 
+            tube_ring_profile();
+            
+    // The Bridge
+    translate([0, 0])
+        linear_extrude(height = clip_height) 
+            bridge_profile();
+}
+
+// Note: The bridge is defined as a solid block between x=8 and x=12.
+// Because the rod ring ends at x = -9.35 and the tubing ring starts at x = 13,
+// the bridge connects the two bodies.

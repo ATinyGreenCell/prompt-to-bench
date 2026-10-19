@@ -1,0 +1,51 @@
+// 96-well PCR tube rack (0.2 mL)
+// Designed for ANSI/SLAS footprint with specific hole grid and orientation chamfer.
+
+// --- Dimensions ---
+L = 127.76;          // Length (X)
+W = 85.48;           // Width (Y)
+H = 20.0;            // Height (Z)
+hole_d = 6.2;        // Diameter of PCR tube holes
+rows = 8;            // Number of rows (Y)
+cols = 12;           // Number of columns (X)
+spacing = 9.0;       // Center-to-center spacing
+inset_x = 14.38;     // Distance from left edge to first hole center
+inset_y = 11.24;     // Distance from back edge to first hole center
+chamfer_leg = 5.0;   // Length of the 45-degree chamfer legs
+
+$fn = 64;
+
+// --- Geometry Calculation ---
+// To center the grid on the block, we calculate the offset from the origin (0,0)
+// The first hole (A1) is at (inset_x, inset_y) relative to the corner.
+// Since the block is centered on XY, the corner is at (-L/2, -W/2).
+// Therefore, the first hole center is at:
+start_x = -L/2 + inset_x;
+start_y = -W/2 + inset_y;
+
+module rack() {
+    difference() {
+        // Main Block
+        translate([-L/2, -W/2, 0])
+            cube([L, W, H]);
+
+        // 96 Vertical Through-Holes
+        for (i = [0 : cols - 1]) {
+            for (j = [0 : rows - 1]) {
+                translate([start_x + i * spacing, start_y + j * spacing, -1])
+                    cylinder(h = H + 2, d = hole_d);
+            }
+        }
+
+        // Orientation Chamfer (45-degree cut at A1 corner)
+        // A1 corner is at (-L/2, -W/2, 0)
+        // We use a wedge shape to cut the corner.
+        // The chamfer is on the vertical edge.
+        translate([-L/2 - 1, -W/2 - 1, 0])
+            rotate([0, -45, 0])
+                cube([chamfer_leg * 1.5, chamfer_leg * 1.5, H + 2]);
+    }
+}
+
+// Render the part
+rack();

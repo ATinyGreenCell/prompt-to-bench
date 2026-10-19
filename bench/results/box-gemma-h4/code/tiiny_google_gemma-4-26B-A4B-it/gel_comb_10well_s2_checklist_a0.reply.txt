@@ -1,0 +1,104 @@
+```openscad
+// 10-well agarose gel comb
+// Designed to be printed lying flat on the XY plane.
+
+// --- Dimensions ---
+spine_l      = 70.0;  // Length of the spine (X)
+spine_w      = 12.0;  // Width of the spine (Y)
+plate_t      = 1.5;   // Thickness of the plate (Z)
+tooth_w      = 5.0;   // Width of each tooth (X)
+tooth_l      = 12.0;  // Length of each tooth (Y)
+gap_w        = 1.5;   // Gap between teeth (X)
+num_teeth    = 10;    // Number of teeth
+
+$fn = 64;
+
+// --- Calculations ---
+// Total width of the tooth array (teeth + gaps)
+// For 10 teeth, there are 9 gaps.
+array_total_w = (num_teeth * tooth_w) + ((num_teeth - 1) * gap_w);
+
+// The teeth hang from one long edge in the -Y direction.
+// The spine is centered on Y=0, so the edge is at Y = -spine_w / 2.
+// The teeth extend from Y = -spine_w / 2 to Y = -spine_w / 2 - tooth_l.
+
+module comb() {
+    difference() {
+        // The main body: Spine + Teeth
+        union() {
+            // The Spine
+            translate([-spine_l/2, -spine_w/2, 0])
+                cube([spine_l, spine_w, plate_t]);
+            
+            // The Teeth
+            // We calculate the starting X position to center the array on the spine.
+            // The loop uses (i - (num_teeth-1)/2) * spacing to center the pattern.
+            for (i = [0 : num_teeth - 1]) {
+                // Calculate X position for this tooth
+                // Spacing is tooth_w + gap_w
+                let (x_offset = (i - (num_teeth - 1) / 2) * (tooth_w + gap_w))
+                translate([x_offset - tooth_w/2, -spine_w/2 - tooth_l, 0])
+                    cube([tooth_w, tooth_l, plate_t]);
+            }
+        }
+
+        // The Wells (the holes/cutouts)
+        // To create the wells, we subtract rectangular prisms from the teeth.
+        // Since the teeth are the "walls", the wells are the spaces between them.
+        // However, the prompt asks for a "comb" where teeth hang from the spine.
+        // In gel electrophoresis, the "teeth" are the solid parts and the "wells" 
+        // are the voids. To make a comb that creates wells, the teeth must be 
+        // the solid parts.
+        // Wait, a "comb" usually refers to the tool that creates the wells.
+        // If the teeth are the solid parts, the wells are the gaps.
+        // To make the teeth "hang" from the spine, the teeth are the protrusions.
+        // To make the wells, we need to subtract the teeth from a solid block, 
+        // OR the teeth themselves are the walls.
+        // Standard interpretation: The teeth are the solid parts that create 
+        // the gaps (wells) in the gel.
+        
+        // To create the wells, we subtract the teeth from a solid block? 
+        // No, the prompt says "it has 10 rectangular teeth". 
+        // This implies the teeth are the features.
+        // To make the teeth "cut" the gel, the teeth must be the solid parts.
+        // But the prompt says "it has a straight spine... and 10 rectangular teeth".
+        // This describes the geometry of the object itself.
+        // If the object is the comb, the teeth are the parts that enter the gel.
+        // The "wells" are the spaces between the teeth.
+        // To make the wells, we need to subtract the teeth from a solid block?
+        // No, the teeth ARE the solid parts. The gaps between them are the wells.
+        // To make the teeth "hang" from the spine, we just build the spine and teeth.
+        // But a comb needs to be a single solid piece.
+        // The "wells" are the spaces between the teeth.
+        // If I just build the spine and teeth, the "wells" are the air between them.
+        // This is only useful if the comb is a solid block and we subtract teeth.
+        // Let's re-read: "it has a straight spine... and 10 rectangular teeth".
+        // This means the object is the union of the spine and the teeth.
+        // The "wells" in the gel are the spaces between the teeth.
+        // To make the teeth "hang" from the spine, the teeth are the solid parts.
+        // This is a standard comb.
+    }
+}
+
+// Final Construction
+// We build the spine and the teeth as a single solid object.
+// The "wells" are the gaps between the teeth.
+// To ensure it's a single solid, we use union.
+
+union() {
+    // The Spine
+    translate([-spine_l/2, -spine_w/2, 0])
+        cube([spine_l, spine_w, plate_t]);
+    
+    // The Teeth
+    for (i = [0 : num_teeth - 1]) {
+        let (x_offset = (i - (num_teeth - 1) / 2) * (tooth_w + gap_w))
+        translate([x_offset - tooth_w/2, -spine_w/2 - tooth_l, 0])
+            cube([tooth_w, tooth_l, plate_t]);
+    }
+}
+
+// Note: The "wells" are the gaps between the teeth. 
+// When the comb is placed in the agarose, the teeth occupy space, 
+// and the gaps become the wells.
+```

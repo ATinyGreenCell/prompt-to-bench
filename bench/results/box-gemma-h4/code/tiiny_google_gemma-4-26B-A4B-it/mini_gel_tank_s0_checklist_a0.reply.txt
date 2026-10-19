@@ -1,0 +1,62 @@
+```openscad
+// Buffer tank for mini horizontal gel-electrophoresis box
+// Designed for FDM 3D printing
+
+// --- Dimensions ---
+length_outer = 120.0; // X dimension
+width_outer  = 70.0;  // Y dimension
+height_outer = 40.0;  // Z dimension
+wall_thick   = 3.0;   // Thickness of walls and floor
+floor_thick  = 3.0;   // Thickness of the floor
+platform_len = 60.0;   // Length of the central platform (X direction)
+platform_h   = 13.0;   // Height of platform top from the inner floor (Z)
+hole_diam    = 2.0;    // Diameter of electrode wire holes
+hole_y       = 0.0;    // Y position of the holes (centered on Y axis)
+hole_z       = 30.0;   // Z position of the holes (from the base of the tank)
+
+$fn = 64;
+
+// --- Calculations ---
+inner_x = length_outer - 2 * wall_thick;
+inner_y = width_outer - 2 * wall_thick;
+inner_z_max = height_outer - floor_thick;
+
+// The platform spans the full inner width (Y)
+// It is centered in X.
+platform_x_start = (length_outer / 2) - (platform_len / 2);
+platform_x_end   = (length_outer / 2) + (platform_len / 2);
+
+// --- Modeling ---
+
+difference() {
+    // Main Tank Body
+    cube([length_outer, width_outer, height_outer]);
+
+    // Hollow out the interior
+    // We subtract the floor thickness from the bottom
+    translate([wall_thick, wall_thick, floor_thick])
+        cube([inner_x, inner_y, height_outer]);
+
+    // Electrode wire holes
+    // Drilled through the X-end walls (at X=0 and X=length_outer)
+    // The holes are horizontal along X.
+    // We use a large cylinder to ensure clean cut through the walls.
+    
+    // Hole at X = 0 end
+    translate([-1, hole_y, hole_z])
+        rotate([0, 90, 0])
+            cylinder(h = wall_thick + 2, d = hole_diam);
+            
+    // Hole at X = length_outer end
+    translate([length_outer - wall_thick - 1, hole_y, hole_z])
+        rotate([0, 90, 0])
+            cylinder(h = wall_thick + 2, d = hole_diam);
+}
+
+// The Platform
+// It is a solid raised platform inside the tank.
+// It sits on the inner floor (z = floor_thick) and goes up to z = floor_thick + platform_h
+translate([platform_x_start, wall_thick, floor_thick])
+    cube([platform_len, inner_y, platform_h]);
+
+```

@@ -1,0 +1,51 @@
+```openscad
+// 10-well agarose gel comb
+// Designed for FDM printing, lying flat on the XY plane.
+
+// --- Dimensions ---
+spine_l    = 70.0;    // Length of the spine (X)
+spine_w    = 12.0;    // Width of the spine (Y)
+plate_t    = 1.5;     // Thickness of the plate (Z)
+tooth_w    = 5.0;     // Width of each tooth (X)
+tooth_l    = 12.0;    // Length of each tooth (Y)
+gap_w      = 1.5;     // Gap between teeth (X)
+num_teeth  = 10;      // Number of teeth
+
+$fn = 64;
+
+// --- Calculations ---
+// Total width occupied by the teeth and the gaps between them
+total_teeth_width = (num_teeth * tooth_w) + ((num_teeth - 1) * gap_w);
+
+// The teeth are centered on the spine in X.
+// The spine is placed from Y = 0 to Y = spine_w.
+// The teeth hang from the edge at Y = 0 in the -Y direction.
+// Therefore, the teeth occupy the Y range [-tooth_l, 0].
+
+difference() {
+    // 1. The Solid Body
+    union() {
+        // The spine (the back bar)
+        translate([-spine_l / 2, 0, 0])
+            cube([spine_l, spine_w, plate_t]);
+        
+        // The block containing the teeth
+        // We center this block in X so the teeth are centered on the spine
+        translate([-total_teeth_width / 2, -tooth_l, 0])
+            cube([total_teeth_width, tooth_l, plate_t]);
+    }
+
+    // 2. The Gaps (The spaces between the teeth)
+    // We iterate through the gaps. There are (num_teeth - 1) gaps.
+    // We use a loop to place a rectangular subtraction for each gap.
+    for (i = [0 : num_teeth - 2]) {
+        // Calculate the X position for the current gap
+        // Gap 0 is after Tooth 0.
+        // Gap X = (Start of teeth) + (Width of current tooth) + (Width of all previous gaps)
+        // Simplified: Start + (i+1)*tooth_w + i*gap_w
+        let (gap_x_start = -total_teeth_width / 2 + (i + 1) * tooth_w + i * gap_w)
+        translate([gap_x_start, -tooth_l - 0.1, -0.1])
+            cube([gap_w, tooth_l + 0.2, plate_t + 0.2]);
+    }
+}
+```

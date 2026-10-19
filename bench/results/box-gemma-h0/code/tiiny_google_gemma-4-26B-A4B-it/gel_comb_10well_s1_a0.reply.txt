@@ -1,0 +1,95 @@
+```openscad
+// 10-Well Agarose Gel Comb
+// Designed for FDM printing, lying flat on the XY plane.
+
+// --- Dimensions ---
+plate_length = 70.0;       // X dimension of the spine
+plate_width = 12.0;        // Y dimension of the spine
+plate_thickness = 1.5;     // Z dimension (height of the plate)
+
+num_teeth = 10;            // Number of teeth
+tooth_width = 5.0;         // X dimension of each tooth
+tooth_length = 12.0;       // Y dimension of each tooth (extending from spine)
+gap_width = 1.5;           // Y dimension of the gap between teeth
+
+// --- Derived Calculations ---
+// Total width of the tooth array (from start of first tooth to end of last tooth)
+// Total width = (num_teeth * tooth_width) + ((num_teeth - 1) * gap_width)
+// However, the prompt implies the teeth are rectangular and the gaps are between them.
+// Let's calculate the total span of the teeth to center them on the X axis.
+total_teeth_span = (num_teeth * tooth_width) + ((num_teeth - 1) * gap_width);
+
+// The teeth extend in the -Y direction from the spine.
+// Since the plate is 12mm wide and teeth are 12mm long, 
+// the teeth will align with the edge of the plate.
+
+// --- Rendering Settings ---
+$fn = 64;
+
+// --- Geometry Construction ---
+
+module comb() {
+    difference() {
+        // Main Plate Body
+        // Centered on X and Y, resting on Z=0
+        translate([-plate_length/2, -plate_width/2, 0])
+            cube([plate_length, plate_width, plate_thickness]);
+
+        // Subtracting the teeth (the wells)
+        // We create the "negative" space where the agarose will sit.
+        // The teeth hang from one long edge in the -Y direction.
+        // To make the teeth "hang" from the edge, we subtract rectangular prisms.
+        
+        // Calculate starting X to center the array of teeth on the plate
+        start_x = -total_teeth_span / 2;
+        
+        // We subtract the teeth from the plate. 
+        // Note: The prompt says "teeth hang from one long edge... in the -Y direction".
+        // In OpenSCAD, to create a "comb", we subtract the tooth shapes from the plate.
+        // However, a comb usually has teeth protruding. 
+        // If the plate is 1.5mm thick and teeth are 12mm long, 
+        // the teeth must be part of the geometry, not holes.
+        // Re-reading: "10 rectangular teeth that hang from one long edge of the spine".
+        // This means the teeth are ADDED geometry, and the "wells" are the gaps.
+        // But a comb for casting is usually a solid block with slots cut into it.
+        // If the plate is 1.5mm thick, the "teeth" are the parts that stick out.
+        // Let's model it as a plate with teeth protruding from the edge.
+    }
+}
+
+// Corrected approach: 
+// The "spine" is the base plate. 
+// The "teeth" are the protrusions.
+// The "wells" are the spaces between the teeth.
+// To cast a gel, the teeth are the solid parts, and the gaps are the wells.
+
+union() {
+    // The Spine (Base Plate)
+    translate([-plate_length/2, -plate_width/2, 0])
+        cube([plate_length, plate_width, plate_thickness]);
+
+    // The Teeth
+    // They hang from one long edge (-Y direction)
+    // We will place them starting from the edge of the spine.
+    // Since the spine is 12mm wide and teeth are 12mm long, 
+    // and they hang in -Y, the teeth will extend from Y = -12 to Y = 0.
+    
+    start_x = -total_teeth_span / 2;
+    
+    for (i = [0 : num_teeth - 1]) {
+        // Calculate X position for this tooth
+        // Each tooth is tooth_width, followed by gap_width
+        current_x = start_x + (i * (tooth_width + gap_width));
+        
+        translate([current_x, -tooth_length, 0])
+            cube([tooth_width, tooth_length, plate_thickness]);
+    }
+}
+
+// Note on orientation:
+// The plate is 70x12. The teeth are 5x12.
+// The teeth are centered on X.
+// The teeth extend from the edge of the plate in the -Y direction.
+// Total footprint in Y: plate_width (12) + tooth_length (12) = 24mm.
+// Total footprint in X: plate_length (70mm).
+```

@@ -1,0 +1,78 @@
+The measurement report reveals that the part is being rendered as two separate bodies (the top plate and the walls are not properly joined) and the total height is incorrect (Z=41 instead of Z=40) because the translation and the centering of the wall component were miscalculated.
+
+**Specification Check:**
+- Outer size 90 x 90 mm: OK (90.00 x 90.00)
+- Top plate 2 mm thick: OK (z=0 to z=2)
+- Four walls 2.5 mm thick: OK (85.00 x 85.00 inner cavity)
+- Total height 40 mm: WRONG (Report shows Z=41.00)
+- Four 4.5 mm holes: OK (d=4.50)
+- 71.5 mm square pattern: OK (Pitch 71.50)
+- Notch 12 mm wide: OK (Report shows area change at z=37)
+- Notch 8 mm down from open edge (z=32 to z=40): OK
+- Part centered on origin: OK (X/Y -45 to 45)
+
+The error in height and the "2 separate bodies" issue stems from the `translate([0, 0, 1])` being applied to a module that used `center=true` for a cube that was already being translated. I will rewrite the geometry to build from Z=0 upwards without relying on `center=true` for the Z-axis, ensuring a single watertight manifold.
+
+```openscad
+// Magnetic Stirrer Housing
+// Designed for an 80mm PC fan.
+// Print orientation: Top plate on the bed (z=0).
+// Centered on X and Y.
+
+// Dimensions
+outer_dim      = 90.0;    // Outer width and length (mm)
+top_thickness  = 2.0;     // Thickness of the top plate (mm)
+wall_thickness = 2.5;     // Thickness of the four walls (mm)
+total_height   = 40.0;    // Total height from top plate to open edge (mm)
+hole_diam      = 4.5;     // Diameter of M4 screw holes (mm)
+hole_pattern   = 71.5;    // Square pattern for fan mounting holes (mm)
+notch_width    = 12.0;    // Width of the cable notch (mm)
+notch_depth    = 8.0;     // Depth of the notch from the open edge (mm)
+
+$fn = 64;
+
+// Calculations
+wall_height = total_height - top_thickness;
+
+// We build the part starting from Z=0 to avoid "2 separate bodies" 
+// and ensure the bounding box Z is exactly 40.0.
+difference() {
+    // --- MAIN BODY ---
+    union() {
+        // 1. The top plate (z=0 to z=2)
+        // Centered on X and Y
+        translate([-outer_dim/2, -outer_dim/2, 0])
+            cube([outer_dim, outer_dim, top_thickness]);
+        
+        // 2. The four walls (z=2 to z=40)
+        // We build the walls as a single hollowed block to ensure it's one body
+        translate([-outer_dim/2, -outer_dim/2, top_thickness]) {
+            difference() {
+                // Outer wall boundary
+                cube([outer_dim, outer_dim, wall_height]);
+                // Inner cavity
+                translate([wall_thickness, wall_thickness, -0.1])
+                    cube([outer_dim - 2*wall_thickness, outer_dim - 2*wall_thickness, wall_height + 0.2]);
+            }
+        }
+    }
+
+    // --- SUBTRACTIONS ---
+
+    // 1. Screw Holes (M4)
+    // Pattern is 71.5mm square, centered on the plate.
+    // Holes go through the top plate (z=0 to z=2).
+    for (sx = [-1, 1], sy = [-1, 1]) {
+        translate([sx * hole_pattern / 2, sy * hole_pattern / 2, -0.1])
+            cylinder(h = top_thickness + 0.2, d = hole_diam);
+    }
+
+    // 2. Cable Notch
+    // Centered along one wall, reaching 8mm down from the open edge.
+    // Open edge is at Z = 40. Notch is from Z = 32 to Z = 40.
+    // We place it on the wall at +Y (Y = outer_dim/2).
+    // The notch cuts through the wall thickness.
+    translate([-notch_width / 2, outer_dim / 2 - wall_thickness, total_height - notch_depth])
+        cube([notch_width, wall_thickness + 0.2, notch_depth + 0.1]);
+}
+```

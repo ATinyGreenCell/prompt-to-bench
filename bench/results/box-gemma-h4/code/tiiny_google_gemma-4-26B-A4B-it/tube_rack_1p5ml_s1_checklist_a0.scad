@@ -1,0 +1,52 @@
+// Bench rack for 1.5 mL microcentrifuge tubes
+// Dimensions: 106mm (X) x 72mm (Y) x 30mm (Z)
+// Features: 24 holes (4 rows x 6 columns), 11.2mm diameter, 25mm deep
+
+// --- Dimensions ---
+length_x    = 106.0;  // Total length along X axis
+width_y     = 72.0;   // Total width along Y axis
+height_z    = 30.0;   // Total height along Z axis
+
+rows        = 4;      // Number of rows along Y
+cols        = 6;      // Number of columns along X
+spacing     = 16.0;   // Center-to-center distance between holes
+
+hole_dia    = 11.2;   // Diameter of the tube holes
+hole_depth  = 25.0;   // Depth of the holes (leaves 5mm floor)
+
+$fn = 64;             // Smoothness for cylindrical holes
+
+// --- Logic ---
+// Calculate the starting position for the grid to ensure it is centered
+// The grid spans (cols-1)*spacing in X and (rows-1)*spacing in Y
+grid_x_span = (cols - 1) * spacing;
+grid_y_span = (rows - 1) * spacing;
+
+start_x = -grid_x_span / 2;
+start_y = -grid_y_span / 2;
+
+// --- Model ---
+difference() {
+    // Main Block
+    // We use translate to center the block on the XY plane at Z=0
+    translate([-length_x / 2, -width_y / 2, 0])
+        cube([length_x, width_y, height_z]);
+
+    // Hole Grid
+    // We iterate through rows and columns to create the holes
+    for (i = [0 : cols - 1]) {
+        for (j = [0 : rows - 1]) {
+            // Calculate center of current hole
+            pos_x = start_x + (i * spacing);
+            pos_y = start_y + (j * spacing);
+            
+            // Position the hole:
+            // We translate it to the calculated X, Y.
+            // Since holes are open at the top, we start the cylinder at Z = height_z
+            // and extend it downwards. To ensure a clean cut, we extend it 
+            // slightly above the top surface (Z = height_z + 1).
+            translate([pos_x, pos_y, height_z - hole_depth + 0.01])
+                cylinder(d = hole_dia, h = hole_depth + 0.02);
+        }
+    }
+}

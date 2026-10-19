@@ -1,0 +1,53 @@
+```openscad
+// --- Dimensions (mm) ---
+collar_diameter = 13.0;      // Diameter of the base collar
+collar_thickness = 1.5;      // Height of the base collar
+sleeve_outer_diameter = 10.8; // Diameter of the main sleeve body
+sleeve_height = 21.5;        // Total height from the bed (z=0 to z=21.5)
+bore_diameter = 6.2;         // Diameter of the central hole
+bore_clearance = 0.1;        // Extra length for cutting to avoid coplanar faces
+
+// --- Constants ---
+$fn = 64;
+
+// --- Implementation ---
+
+// The part is printed upside down as requested: 
+// The collar lies on the bed (z=0 to 1.5)
+// The sleeve rises from the collar to z=21.5
+
+union() {
+    // 1. The Base Collar
+    cylinder(h = collar_thickness, d = collar_diameter);
+
+    // 2. The Sleeve Body
+    // It starts at the top of the collar (z = 1.5) and goes to z = 21.5
+    // Total height of the sleeve part = 21.5 - 1.5 = 20.0
+    translate([0, 0, collar_thickness])
+        cylinder(h = sleeve_height - collar_thickness, d = sleeve_outer_diameter);
+}
+
+// 3. The Bore (Subtraction)
+// The bore runs through the full height (0 to 21.5)
+// We extend the cylinder slightly to ensure a clean cut through the faces
+difference() {
+    // We wrap the whole assembly in a difference to cut the hole
+    // However, to keep the code clean, we subtract from the union above.
+    // Since OpenSCAD requires the difference to be the top-level operation:
+}
+
+// Corrected structure for subtraction:
+difference() {
+    // The solid body
+    union() {
+        cylinder(h = collar_thickness, d = collar_diameter);
+        translate([0, 0, collar_thickness])
+            cylinder(h = sleeve_height - collar_thickness, d = sleeve_outer_diameter);
+    }
+
+    // The hole (bore)
+    // We extend it by bore_clearance on both ends to ensure no thin walls remain at the faces
+    translate([0, 0, -bore_clearance])
+        cylinder(h = sleeve_height + (2 * bore_clearance), d = bore_diameter);
+}
+```

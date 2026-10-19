@@ -1,0 +1,45 @@
+// --- Dimensions (mm) ---
+block_length = 106;      // X dimension
+block_width = 72;        // Y dimension
+block_height = 30;       // Z dimension
+
+holes_x = 6;             // Number of holes along X axis
+holes_y = 4;             // Number of holes along Y axis
+pitch_x = 16;            // Center-to-center distance X
+pitch_y = 16;            // Center-to-center distance Y
+
+hole_diameter = 11.2;   // Diameter of the tube holes
+hole_depth = 25;        // Depth of the holes (leaving 5mm floor)
+
+// --- Constants ---
+$fn = 64;               // Smoothness for cylinders
+offset = 0.1;          // Small offset for boolean operations
+
+// --- Implementation ---
+
+// The main block
+difference() {
+    // Base block centered on XY plane
+    translate([-block_length/2, -block_width/2, 0])
+        cube([block_length, block_width, block_height]);
+
+    // Generate the grid of holes
+    // We calculate the starting position to ensure the grid is centered on the block
+    // Total span of grid = (count - 1) * pitch
+    // Start pos = -(total_span / 2)
+    
+    for (i = [0 : holes_x - 1]) {
+        for (j = [0 : holes_y - 1]) {
+            
+            // Calculate center position for this specific hole
+            pos_x = (i * pitch_x) - ((holes_x - 1) * pitch_x / 2);
+            pos_y = (j * pitch_y) - ((holes_y - 1) * pitch_y / 2);
+            
+            // Move to position and subtract the cylinder
+            // We extend the cylinder slightly below the floor and above the top
+            // to ensure a clean cut through the top face.
+            translate([pos_x, pos_y, block_height - hole_depth + 0.01])
+                cylinder(h = hole_depth + 0.02, d = hole_diameter);
+        }
+    }
+}

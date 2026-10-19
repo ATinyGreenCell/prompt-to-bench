@@ -1,0 +1,88 @@
+// Buffer tank for mini horizontal gel-electrophoresis box
+// Corrected: Centered on XY plane, holes centered on Y axis.
+
+// --- Dimensions ---
+length_outer = 120.0;    // X dimension
+width_outer  = 70.0;     // Y dimension
+height_outer = 40.0;     // Z dimension
+wall_thick   = 3.0;      // Wall thickness
+floor_thick  = 3.0;      // Floor thickness
+platform_len = 60.0;      // Length of the central platform in X
+platform_h_top = 13.0;   // Height of platform top from the absolute bottom (z=13)
+hole_dia     = 2.0;      // Diameter of electrode wire holes
+hole_y       = 0.0;      // Y position of holes (centered on Y axis)
+hole_z       = 30.0;     // Z position of holes
+
+$fn = 64;
+
+// --- Calculations ---
+inner_x = length_outer - 2 * wall_thick;
+inner_y = width_outer - 2 * wall_thick;
+
+module tank_body() {
+    difference() {
+        // Main outer block
+        cube([length_outer, width_outer, height_outer], center = true);
+        
+        // Hollow out the interior
+        // We must shift the cube because cube(center=true) is centered on Z=0
+        // The floor is at Z = -height_outer/2 + floor_thick
+        translate([0, 0, floor_thick - height_outer/2])
+            cube([inner_x, inner_y, height_outer], center = true);
+        
+        // Electrode holes (drilled through X-end walls)
+        // Holes are horizontal along X, passing through the center of the Y-axis
+        translate([0, hole_y, hole_z - height_outer/2])
+            rotate([0, 90, 0])
+                cylinder(h = length_outer + 2, d = hole_dia, center = true);
+    }
+}
+
+module platform() {
+    // The platform is inside the tank.
+    // It is 60mm long in X, centered.
+    // Its top is at z = 13 (absolute).
+    // The floor top is at z = 3 (absolute).
+    
+    platform_z_bottom = floor_thick;
+    platform_z_top   = platform_h_top;
+    
+    // Since the whole model is centered on Z=0, we must shift the platform
+    // The absolute Z of the platform top is 13.
+    // The absolute Z of the platform bottom is 3.
+    // In a centered model, the Z-offset is (Z_absolute - height_outer/2)
+    
+    z_offset = (platform_z_bottom + platform_z_top) / 2 - height_outer/2;
+    z_height = platform_z_top - platform_z_bottom;
+
+    translate([0, 0, z_offset])
+        cube([platform_len, inner_y, z_height], center = true);
+}
+
+// --- Assembly ---
+// We use difference to ensure the holes are cut through the union of the shell and platform
+difference() {
+    union() {
+        tank_body();
+        platform();
+    }
+    
+    // Re-subtracting the holes to ensure they cut through the platform if they intersect
+    // (Though at Z=30 they don't intersect the platform at Z=13)
+    translate([0, hole_y, hole_z - height_outer/2])
+        rotate([0, 90, 0])
+            cylinder(h = length_outer + 2, d = hole_dia, center = true);
+}
+
+// Note: The tank is built from Z = -20 to Z = +20. 
+// To make it sit on the bed at Z=0, we translate the whole assembly.
+// However, the instructions say "it rests on the XY plane at z = 0 and builds upward (+Z)".
+// I will apply a final translation to the whole assembly.
+
+// Final assembly with translation to sit on Z=0
+translate([0, 0, -height_outer/2]) {
+    // The logic above is wrapped in a way that the final result is:
+    // (The code above is the logic, I will wrap it in a final translation)
+}
+
+// Re-writing the final block to be clean and follow all rules:
