@@ -102,6 +102,14 @@ def load_mesh(path):
     m = trimesh.load(path, force="mesh")
     if not isinstance(m, trimesh.Trimesh) or len(m.faces) == 0:
         raise ValueError("empty mesh")
+    if not m.is_watertight:  # a watertight mesh is never touched
+        # OpenSCAD's default Manifold export can leave zero-area sliver triangles where unioned parts meet flush
+        # (a tube standing exactly on a cone's bottom ring): the mesh then reads as dozens of bodies with no volume.
+        # Merge vertices that round together at 1e-5 mm and drop zero-area faces (meta/audits/2026-10-20_v0.3.1.md:
+        # 3 correct parts in 8,964 checked attempts; no other verdict changed).
+        m.merge_vertices(digits_vertex=5)
+        m.update_faces(m.nondegenerate_faces())
+        m.remove_unreferenced_vertices()
     return m
 
 

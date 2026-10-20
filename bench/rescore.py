@@ -3,12 +3,16 @@
 
     python bench/rescore.py main-claude lang-claude      # rewrite those runs' scores
     python bench/rescore.py main --dry-run               # only report what would change
+    python bench/rescore.py main-tiiny --only-open       # only attempts whose mesh was not watertight
 
 Each attempt's saved .scad is rendered again and evaluated with the current
 `tasks.yaml` checks and `reference_stats.json`. Records keep their replies; only the
 `check`, `passed` and `score` fields are updated, and every changed verdict is listed
 and stored under `rescored`. Takes the run's lock, so it never collides with a running
 benchmark on the same folder.
+
+--only-open re-checks only the attempts whose recorded mesh was not watertight: the only ones a change to the
+mesh clean-up in `load_mesh` (tools/scadreport.py) can affect, since a watertight mesh is never touched.
 """
 import argparse
 import datetime as dt
@@ -33,13 +37,18 @@ from scadreport import load_mesh, openscad_missing, render  # noqa: E402
 REQUIRED = {"model", "task", "sample", "attempts", "passed", "first_pass"}
 
 
+def mesh_was_open(a):
+    """The attempt's recorded check found the mesh not watertight (the volume or watertight item says so)."""
+    return any("watertight" in i.get("msg", "") and not i.get("ok") for i in (a.get("check") or {}).get("items") or [])
+
+
 def scad_path(run, rec, i):
     suffix = "".join(f"_{x}" for x, d in ((rec.get("lang", "en"), "en"), (rec.get("feedback", "report"), "report")) if x != d)
     model = re.sub(r"[^A-Za-z0-9._-]+", "_", rec["model"])
     return os.path.join(HERE, "results", run, "code", model, f"{rec['task']}_s{rec['sample']}{suffix}_a{i}.scad")
 
 
-def rescore_run(run, tasks, refs, dry, commit):
+def rescore_run(run, tasks, refs, dry, commit, only_open=False):
     """Returns False if the run could not be rescored."""
     path = os.path.join(HERE, "results", run, "results.jsonl")
     if not os.path.isfile(path):
@@ -75,6 +84,8 @@ def rescore_run(run, tasks, refs, dry, commit):
         for i, a in enumerate(rec["attempts"]):
             if not a.get("render", {}).get("ok"):
                 continue  # never rendered: nothing to re-check
+            if only_open and not mesh_was_open(a):
+                continue
             src = scad_path(run, rec, i)
             if not os.path.exists(src):
                 missing += 1
@@ -121,6 +132,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("runs", nargs="+")
     ap.add_argument("--dry-run", action="store_true")
+    ap.add_argument("--only-open", action="store_true", help="only attempts whose recorded mesh was not watertight")
     a = ap.parse_args()
     if openscad_missing():
         sys.exit(openscad_missing())
@@ -131,7 +143,7 @@ def main():
         sys.exit(f"reference_stats.json is incomplete: {bad} - run bench/build_refs.py")
     commit = subprocess.run(["git", "rev-parse", "--short", "HEAD"], capture_output=True, text=True,
                             cwd=HERE).stdout.strip()
-    ok = [rescore_run(run, tasks, refs, a.dry_run, commit) for run in a.runs]
+    ok = [rescore_run(run, tasks, refs, a.dry_run, commit, a.only_open) for run in a.runs]
     sys.exit(0 if all(ok) else 1)
 
 

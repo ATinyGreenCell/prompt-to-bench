@@ -303,6 +303,12 @@ def render_edges():
     check("render: disjoint bodies counted", data["geometry"]["bodies"] == 2 and "2 separate bodies" in text)
     text, data, _ = rep("cube(5); translate([5,5,0]) cube(5);")
     check("render: edge-touching cubes reported as not watertight", "NOT watertight" in text and data["geometry"]["volume"] is None)
+    # a tube standing exactly on a cone's bottom ring: the Manifold export leaves zero-area slivers there (49 bodies,
+    # no volume), which load_mesh cleans up (meta/audits/2026-10-20_v0.3.1.md)
+    text, data, _ = rep("difference() { cylinder(h=20, d=10, $fn=64); cylinder(h=20, d=6.8, $fn=64); }\n"
+                        "translate([0, 0, 20]) rotate_extrude($fn=64) polygon([[5, 0], [30, 30], [28.4, 30], [3.4, 0]]);")
+    check("render: a tube flush on a cone's ring reads as one watertight body",
+          data["geometry"]["bodies"] == 1 and data["geometry"]["volume"] is not None, text[:300])
     text, data, _ = rep("translate([0,0,-50]) cube(10);")
     check("render: part below z=0 is reported, not shifted", data["render"]["ok"] and "does not start at z = 0" in text)
     text, data, _ = rep("cube(1); // path with spaces")
@@ -573,6 +579,12 @@ def rescore_analyze_edges():
           rescore.rescore_run("_selftest_rescore", tasks, refs, False, "x") is False
           and open(os.path.join(run_dir, "results.jsonl")).read() == '{"model": "m", "task": "tube_r')
     shutil.rmtree(run_dir)
+    open_a = {"check": {"items": [{"check": "volume", "ok": False, "msg": "volume undefined (not watertight)"}]}}
+    closed_a = {"check": {"items": [{"check": "watertight", "ok": True, "msg": "watertight"},
+                                    {"check": "volume", "ok": False, "msg": "volume 80692 vs ref 68680 (+-5%)"}]}}
+    check("rescore: --only-open picks the attempts whose mesh was not watertight, and only those",
+          rescore.mesh_was_open(open_a) and not rescore.mesh_was_open(closed_a)
+          and not rescore.mesh_was_open({"check": None}) and not rescore.mesh_was_open({}))
 
     # analyze on odd results folders (analyze.HERE points at a scratch copy)
     tmp = tempfile.mkdtemp()
