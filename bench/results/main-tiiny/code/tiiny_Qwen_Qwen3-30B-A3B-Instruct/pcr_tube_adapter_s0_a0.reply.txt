@@ -1,0 +1,34 @@
+```openscad
+// Dimensions for the adapter sleeve
+collar_diameter = 13;           // Diameter of the base collar (on print bed)
+collar_height = 1.5;           // Height of the collar (z = 0 to 1.5)
+sleeve_outer_diameter = 10.8; // Outer diameter of the sleeve body
+sleeve_height = 21.5;          // Total height of the sleeve (z = 0 to 21.5)
+bore_diameter = 6.2;            // Diameter of the central bore through the full height
+$fn = 64;                       // Smoothness for cylinders and holes
+
+// Define the collar (base) at z = 0 to 1.5
+collar = cylinder(h = collar_height, d = collar_diameter, center = false);
+
+// Define the sleeve body (from z = 0 to 21.5) with outer diameter 10.8 mm
+sleeve_body = cylinder(h = sleeve_height, d = sleeve_outer_diameter, center = false);
+
+// Define the central bore (hole) through the full height, centered on z-axis
+bore = cylinder(h = sleeve_height + 0.1, d = bore_diameter, center = false);
+
+// Assemble the full part: collar + sleeve body, with bore subtracted
+// The collar and sleeve body are stacked on top of each other (same center)
+// The bore goes through both, so we subtract the bore from the union of collar and sleeve
+
+difference() {
+    union() {
+        translate([0, 0, 0]) collar;
+        translate([0, 0, collar_height]) sleeve_body;
+    }
+    // Subtract the bore, which extends slightly beyond the sleeve to ensure clean cut
+    translate([0, 0, -0.05]) bore;
+}
+
+// The part is printed upside down: collar on bed (z=0), sleeve rising upward
+// All dimensions are in mm, as measured with calipers
+```

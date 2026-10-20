@@ -1,0 +1,62 @@
+```openscad
+// ---------------------------
+// Parameters (all in mm)
+// ---------------------------
+outer_d_spout = 10;          // outer diameter of the straight spout
+height_spout = 20;           // height of the straight spout
+outer_d_top = 60;            // outer diameter at the funnel rim
+height_cone = 30;            // height of the conical section (from 20 mm to 50 mm)
+wall_thickness = 1.6;        // uniform wall thickness
+
+// Derived inner diameters
+inner_d_spout = outer_d_spout - 2*wall_thickness;   // bore of the spout
+inner_d_top   = outer_d_top   - 2*wall_thickness;   // bore at the rim
+
+// Small over‑extrusion for clean subtraction (0.1 mm beyond each face)
+over = 0.1;
+
+// ---------------------------
+// Model
+// ---------------------------
+$fn = 128;   // smooth circles and cones
+
+// ---- Outer solid (spout + cone) ----
+outer_spout = cylinder(h = height_spout,
+                       d = outer_d_spout,
+                       center = false);   // sits at z = 0 .. 20
+
+outer_cone = translate([0,0,height_spout])
+             cylinder(h = height_cone,
+                      r1 = outer_d_spout/2,
+                      r2 = outer_d_top/2,
+                      center = false); // sits at z = 20 .. 50
+
+outer = union() {
+    outer_spout;
+    outer_cone;
+};
+
+// ---- Inner void (spout + cone) ----
+// Extend 0.1 mm beyond the outer faces to avoid coplanar surfaces
+inner_spout = translate([0,0,-over])
+              cylinder(h = height_spout + 2*over,
+                       d = inner_d_spout,
+                       center = false); // from -0.1 .. 20.1
+
+inner_cone = translate([0,0,height_spout - over])
+             cylinder(h = height_cone + 2*over,
+                      r1 = inner_d_spout/2,
+                      r2 = inner_d_top/2,
+                      center = false); // from 19.9 .. 50.1
+
+inner = union() {
+    inner_spout;
+    inner_cone;
+};
+
+// ---- Final part (outer minus inner) ----
+difference() {
+    outer;
+    inner;
+}
+```

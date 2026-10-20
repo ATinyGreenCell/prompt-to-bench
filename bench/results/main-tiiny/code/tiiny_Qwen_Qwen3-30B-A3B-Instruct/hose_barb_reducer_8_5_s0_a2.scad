@@ -1,0 +1,94 @@
+// Dimensions for the hose-barb reducer
+$fn = 64;
+
+// Overall dimensions
+hose_8mm_id = 8;        // Inner diameter of 8 mm tubing
+hose_5mm_id = 5;      // Inner diameter of 5 mm tubing
+bore_diameter = 3;       // 3 mm bore through the center
+z0 = 0;                 // Start of 8 mm barb section
+z1 = 20;                // End of 8 mm barb section
+z2 = 25;                // End of collar section
+z3 = 41;                // End of 5 mm barb section
+
+// 8 mm barb section: 2 barbs, each 10 mm tall, stacked from z=0 to z=20
+barb_8mm_height = 10;    // Height of each individual barb
+barb_8mm_bottom_d = 7.5; // Outer diameter at bottom of 8 mm barb
+barb_8mm_top_d = 9.5;  // Outer diameter at top of 8 mm barb
+barb_8mm_step_back = 7.5; // Return to this diameter after the peak
+
+// Collar section: 12 mm diameter, 5 mm long (z=20 to z=25)
+collar_diameter = 12;
+
+// 5 mm barb section: 2 barbs, each 8 mm tall, stacked from z=25 to z=41
+barb_5mm_height = 8;     // Height of each individual barb
+barb_5mm_bottom_d = 6.5; // Outer diameter at bottom of 5 mm barb
+barb_5mm_top_d = 5.0;   // Outer diameter at top of 5 mm barb
+barb_5mm_step_back = 6.5; // Return to this diameter after the peak
+
+// Build the reducer using union of parts
+module hose_reducer() {
+    // Start with a solid cylinder for the bore
+    difference() {
+        // Full length cylinder from z=0 to z=41
+        cylinder(h = z3, r = hose_8mm_id / 2, center = false);
+        
+        // Subtract the bore (a cylinder of 3 mm diameter through the full length)
+        cylinder(h = z3 + 1, r = bore_diameter / 2, center = false, $fn = 64);
+    }
+
+    // Add 8 mm barbs: two stacked barbs from z=0 to z=20
+    for (i = [0:1]) {
+        z_start = z0 + i * barb_8mm_height;
+        z_end = z_start + barb_8mm_height;
+
+        // Create a sawtooth profile: expand from bottom to top, then step back
+        // We'll use a rotate_extrude of a polygon that defines the radial profile
+        // The profile is: (r_bottom, z_start) -> (r_top, z_end) -> (r_bottom, z_end) -> (r_bottom, z_start)
+        // This forms a sawtooth shape in the r-z plane
+
+        // Define the 2D polygon for one barb's outer profile
+        // Points: [r, z]
+        poly_points = [
+            [barb_8mm_bottom_d / 2, z_start],
+            [barb_8mm_top_d / 2, z_end],
+            [barb_8mm_bottom_d / 2, z_end],
+            [barb_8mm_bottom_d / 2, z_start]
+        ];
+
+        // Create a rotate_extrude of the polygon to form the barb
+        // The polygon is in the r-z plane, so rotate_extrude will make it a 3D shape
+        rotate_extrude(convexity = 10)
+        polygon(poly_points);
+    }
+
+    // Add collar section: from z=20 to z=25, 12 mm diameter
+    difference() {
+        // Cylinder for the collar
+        cylinder(h = z2 - z1, r = collar_diameter / 2, center = false);
+        
+        // Subtract the bore through this section
+        cylinder(h = z2 - z1 + 1, r = bore_diameter / 2, center = false, $fn = 64);
+    }
+
+    // Add 5 mm barbs: two stacked barbs from z=25 to z=41
+    for (i = [0:1]) {
+        z_start = z2 + i * barb_5mm_height;
+        z_end = z_start + barb_5mm_height;
+
+        // Create a sawtooth profile: shrink from bottom to top, then step back
+        // The profile: (r_bottom, z_start) -> (r_top, z_end) -> (r_bottom, z_end) -> (r_bottom, z_start)
+        poly_points = [
+            [barb_5mm_bottom_d / 2, z_start],
+            [barb_5mm_top_d / 2, z_end],
+            [barb_5mm_bottom_d / 2, z_end],
+            [barb_5mm_bottom_d / 2, z_start]
+        ];
+
+        // Create a rotate_extrude of the polygon to form the barb
+        rotate_extrude(convexity = 10)
+        polygon(poly_points);
+    }
+}
+
+// Call the module to build the part
+hose_reducer();

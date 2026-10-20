@@ -1,0 +1,68 @@
+The measurement report reveals several critical discrepancies between the generated part and the design specification:
+
+1.  **Base Plate Dimensions**: The report shows a bounding box of X -25 to 50 (size 75) and Y 0 to 50. The spec requires X -25 to 25 (size 50) and Y 0 to 45. The motor plate was placed at Y=45, but the base plate was defined correctly. The issue is the motor plate placement and the gusset placement logic.
+2.  **Motor Plate Position**: The spec says "standing on the back edge of the base". The base is Y 0..45. The back edge is Y=45. The motor plate (Y 0..5) should be placed such that its Y=0 face is at base Y=45. The report shows the motor plate at Y 45..50, which is correct relative to the base, but the bounding box calculation in the report seems to have included the gussets or the motor plate in a way that shifted the total Y range? Wait, the report says Y 0..50. Base is 0..45. Motor plate is 45..50. This matches.
+3.  **Gusset Placement**: The spec requires gussets at X -25 to -20 and X 20 to 25. The report shows a solid region at X -25..50? No, the report says "2 solid regions... shape 20.00 x 20.00...". Wait, the report says "X -25.00 .. 50.00". This implies the motor plate (which is 50 wide) is centered at X=25?
+    *   Spec: Base X -25 to 25. Motor plate X -25 to 25.
+    *   Report: "Bounding Box: X -25.00 .. 50.00". This means the motor plate is shifted to the right by 25mm?
+    *   Looking at the code: `translate([0, 45, 0]) motor_plate()`. `motor_plate` is a cube of 50x5x50 centered at 0? No, `cube([50, 5, 50], center=false)` creates a box from 0 to 50 in X.
+    *   **Error**: The `cube` function with `center=false` creates a box from (0,0,0) to (50,5,50). The spec requires the motor plate to be centered at X=0 (X -25 to 25). The code must use `center=true` or translate the cube.
+    *   Also, the gussets in the code were extruded from X=-25 to -20 and X=20 to 25, but the `linear_extrude` was applied to a polygon at (0,0) and then translated. The translation logic was `translate([-25, 0, 0])` which places the triangle at X=-25. But the triangle is defined in YZ. The extrusion is in X.
+    *   The `cube` for the motor plate needs to be centered at X=0.
+    *   The `cube` for the base plate needs to be centered at X=0 (X -25 to 25). The code used `cube([50, 45, 5], center=false)` which creates X 0..50. This is the main error.
+4.  **Hole Positions**:
+    *   Base holes: Spec X=-17, 17. Code: `i * hole_m4_x` where `hole_m4_x = 17`. If base is 0..50, holes are at 17 and 34. Spec requires -17 and 17.
+    *   Motor plate holes: Spec X=0 center, 31mm square pattern. Code: `i * screw_offset` where `screw_offset = 15.5`. If motor plate is 0..50, holes are at 15.5 and 46.5. Spec requires -15.5 and 15.5.
+5.  **Gusset Geometry**: The spec says "right triangle... legs 20 mm along +Y and 20 mm along +Z, right-angle corner at y=5, z=5".
+    *   The code defined the polygon vertices as `[0,0], [20,0], [0,20]` relative to the translation.
+    *   If the translation is `translate([-25, 0, 0])`, the triangle is at Y=0..20, Z=0..20.
+    *   Spec requires the corner at Y=5, Z=5. The triangle should be Y 5..25, Z 5..25.
+    *   The code needs to translate the gusset to Y=5, Z=5.
+
+**Summary of Fixes**:
+1.  **Base Plate**: Change `cube` to `center=true` or translate to center at X=0, Y=22.5. Spec: X -25..25, Y 0..45.
+    *   `cube([50, 45, 5], center=false)` -> X 0..50.
+    *   Fix: `translate([-25, 0, 0]) cube([50, 45, 5])`? No, `cube` with `center=false` starts at 0.
+    *   Better: `translate([-25, 0, 0]) cube([50, 45, 5])` -> X -25..25, Y 0..45. Correct.
+    *   Wait, the previous code had `cube([base_width, base_depth, base_thickness], center = false)`. This creates X 0..50.
+    *   Fix: `translate([-25, 0, 0]) cube([50, 45, 5])`.
+2.  **Motor Plate**: Spec X -25..25.
+    *   Fix: `translate([-25, 45, 0]) cube([50, 5, 50])`.
+3.  **Holes**:
+    *   Base holes: Need to be at X -17 and 17.
+    *   If base is X -25..25, then `translate([-17, 30, 0])` and `translate([17, 30, 0])`.
+    *   Motor plate holes: Need to be at X -15.5 and 15.5 (relative to center 0).
+    *   If motor plate is X -25..25, then `translate([-15.5, 45, 28])` and `translate([15.5, 45, 28])`.
+4.  **Gussets**:
+    *   Spec: Corner at Y=5, Z=5. Legs 20mm.
+    *   Triangle vertices: (5,5), (25,5), (5,25).
+    *   Code needs to translate to Y=5, Z=5.
+    *   Also, the gusset thickness is 5mm. The spec says "flush with left and right edges (x = -25 to -20 and x = 20 to 25)".
+    *   So the gusset is a prism from X -25 to -20 and X 20 to 25.
+    *   The polygon is in YZ.
+    *   Fix: Translate the polygon to Y=5, Z=5. Extrude in X from -25 to -20 (width 5) and 20 to 25.
+
+Let's rewrite the code carefully.
+
+```openscad
+// NEMA 17 Stepper Motor Mounting Bracket for Syringe Pump
+// Units: millimetres
+
+// --- Base Plate Dimensions ---
+base_width = 50;       // X extent: -25 to 25
+base_depth = 45;      // Y extent: 0 to 45
+base_thickness = 5;    // Z extent: 0 to 5
+
+// --- Base Plate Hole Locations ---
+hole_m4_x = 17;        // X position of M4 holes (symmetric)
+hole_m4_y = 30;        // Y position of M4 holes
+hole_m4_dia = 4.5;     // Diameter for M4 threaded holes
+
+// --- Vertical Motor Plate Dimensions ---
+motor_plate_width = 50; // X extent: -25 to 25
+motor_plate_height = 50; // Z extent: 0 to 50
+motor_plate_thickness = 5; // Y extent: 0 to 5
+
+// --- Motor Plate Features ---
+motor_boss_dia = 23;    // Diameter of centring boss hole
+motor_boss_x = 0

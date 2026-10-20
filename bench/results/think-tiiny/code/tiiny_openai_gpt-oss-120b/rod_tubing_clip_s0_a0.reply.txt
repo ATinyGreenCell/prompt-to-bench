@@ -1,0 +1,78 @@
+```openscad
+// ---------- Parameters ----------
+inner_d_rod = 12.7;          // inner diameter of the rod ring (mm)
+wall_rod = 3;                // wall thickness of the rod ring (mm)
+outer_d_rod = inner_d_rod + 2*wall_rod; // outer diameter of the rod ring (mm)
+
+inner_d_tube = 6;            // inner diameter of the tubing ring (mm)
+wall_tube = 2;               // wall thickness of the tubing ring (mm)
+outer_d_tube = inner_d_tube + 2*wall_tube; // outer diameter of the tubing ring (mm)
+
+height = 10;                 // extrusion height (mm)
+
+rod_opening_width = 10;      // y‑range of the rod opening (mm)
+tube_opening_width = 4.5;    // y‑range of the tube opening (mm)
+
+bridge_x_start = 8;          // left x‑edge of the bridge (mm)
+bridge_x_end   = 12;         // right x‑edge of the bridge (mm)
+bridge_y_width = 6;          // total y‑width of the bridge (mm)
+
+cut_extra = 1;               // extra length for cutting solids (mm)
+
+// ---------- $fn for smooth curves ----------
+$fn = 128;
+
+// ---------- Helper modules ----------
+module rod_ring() {
+    // Outer cylinder
+    outer = cylinder(d = outer_d_rod, h = height + 2*cut_extra);
+    // Inner cylinder (hole)
+    inner = cylinder(d = inner_d_rod, h = height + 2*cut_extra);
+    // Rod opening cut (negative X side)
+    opening = translate([-30 - cut_extra, -rod_opening_width/2, -cut_extra])
+              cube([30 + cut_extra, rod_opening_width, height + 2*cut_extra]);
+    // Ring with opening
+    difference() {
+        outer;
+        inner;
+        opening;
+    }
+}
+
+module tube_ring() {
+    // Outer cylinder (centered at (15,0))
+    outer = translate([15,0,0])
+            cylinder(d = outer_d_tube, h = height + 2*cut_extra);
+    // Inner cylinder (hole)
+    inner = translate([15,0,0])
+            cylinder(d = inner_d_tube, h = height + 2*cut_extra);
+    // Tube opening cut (positive X side)
+    opening = translate([15 - cut_extra, -tube_opening_width/2, -cut_extra])
+              cube([30 + cut_extra, tube_opening_width, height + 2*cut_extra]);
+    // Ring with opening
+    difference() {
+        outer;
+        inner;
+        opening;
+    }
+}
+
+module bridge() {
+    // Solid bridge between the two rings
+    translate([bridge_x_start, -bridge_y_width/2, -cut_extra])
+        cube([bridge_x_end - bridge_x_start, bridge_y_width, height + 2*cut_extra]);
+}
+
+// ---------- Main model ----------
+linear_extrude(height = height) {
+    // 2‑D profile (union of all parts)
+    union() {
+        // Rod ring (centered at origin)
+        rod_ring();
+        // Tubing ring (centered at x = 15)
+        tube_ring();
+        // Bridge (centered between the rings)
+        bridge();
+    }
+}
+```

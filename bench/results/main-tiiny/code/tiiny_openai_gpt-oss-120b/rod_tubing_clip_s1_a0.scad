@@ -1,0 +1,71 @@
+// ---------- Parameters ----------
+$fn = 128;                       // smoothness for circles
+height = 10;                     // extrusion height (mm)
+
+// Rod ring
+rod_inner_d = 12.7;              // inner diameter of rod ring (mm)
+rod_wall = 3;                    // wall thickness of rod ring (mm)
+rod_outer_d = rod_inner_d + 2*rod_wall; // outer diameter (mm)
+rod_open_width = 10;             // opening width on -X side (mm)
+
+// Tubing ring
+tube_inner_d = 6;                // inner diameter of tubing ring (mm)
+tube_wall = 2;                   // wall thickness of tubing ring (mm)
+tube_outer_d = tube_inner_d + 2*tube_wall; // outer diameter (mm)
+tube_center_x = 15;              // X position of tubing ring centre (mm)
+tube_open_width = 4.5;           // opening width on +X side (mm)
+
+// Bridge
+bridge_x_start = 8;              // start X of bridge (mm)
+bridge_x_end = 12;               // end X of bridge (mm)
+bridge_y_width = 6;              // bridge width in Y (mm)
+
+// ---------- Modules ----------
+module rod_ring() {
+    // 2‑D ring with opening on the -X side
+    difference() {
+        // ring profile (outer minus inner)
+        difference() {
+            circle(d = rod_outer_d);
+            circle(d = rod_inner_d);
+        }
+        // opening cut (extends far beyond the ring)
+        translate([-200, -rod_open_width/2])
+            square([400, rod_open_width]);
+    }
+    // extrude to 3‑D
+    linear_extrude(height) children();
+}
+
+module tube_ring() {
+    // 2‑D ring centered at (tube_center_x,0) with opening on the +X side
+    translate([tube_center_x, 0]) {
+        difference() {
+            // ring profile
+            difference() {
+                circle(d = tube_outer_d);
+                circle(d = tube_inner_d);
+            }
+            // opening cut (extends far beyond the ring)
+            translate([0, -tube_open_width/2])
+                square([200, tube_open_width]);
+        }
+    }
+    // extrude to 3‑D
+    linear_extrude(height) children();
+}
+
+module bridge() {
+    // rectangular bridge between the two rings
+    translate([bridge_x_start, -bridge_y_width/2])
+        square([bridge_x_end - bridge_x_start, bridge_y_width]);
+    // extrude to 3‑D
+    linear_extrude(height) children();
+}
+
+// ---------- Assembly ----------
+union() {
+    rod_ring();
+    tube_ring();
+    bridge();
+}

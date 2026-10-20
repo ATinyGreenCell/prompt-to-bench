@@ -1,0 +1,59 @@
+```openscad
+// Buffer tank for mini horizontal gel-electrophoresis box
+outer_x = 120;
+outer_y = 70;
+outer_z = 40;
+wall_thick = 3;
+floor_thick = 3;
+platform_x = 60;
+platform_y = outer_y - 2 * wall_thick; // 64
+platform_z_bottom = floor_thick;       // 3
+platform_z_top = 13;
+platform_h = platform_z_top - platform_z_bottom; // 10
+hole_diam = 2;
+hole_y = 0;
+hole_z = 30;
+
+// Derived dimensions
+inner_x = outer_x - 2 * wall_thick;  // 114
+inner_y = platform_y;                // 64
+inner_z = outer_z - floor_thick;     // 37
+wall_h = inner_z;
+chamber_x = (inner_x - platform_x) / 2; // 27
+
+$fn = 64;
+
+difference() {
+    union() {
+        // Floor
+        cube([outer_x, outer_y, floor_thick]);
+        // Walls
+        // Left
+        translate([-outer_x / 2, 0, floor_thick]) cube([wall_thick, outer_y, wall_h]);
+        // Right
+        translate([outer_x / 2 - wall_thick, 0, floor_thick]) cube([wall_thick, outer_y, wall_h]);
+        // Front
+        translate([0, -outer_y / 2, floor_thick]) cube([inner_x, wall_thick, wall_h]);
+        // Back
+        translate([0, outer_y / 2 - wall_thick, floor_thick]) cube([inner_x, wall_thick, wall_h]);
+        // Platform
+        translate([0, 0, platform_z_bottom]) cube([platform_x, platform_y, platform_h]);
+    }
+    
+    // Cutters
+    union() {
+        // Left chamber cavity (extends 0.1 mm past top to ensure clean cut)
+        translate([-outer_x / 2 + wall_thick, -inner_y / 2, floor_thick])
+            cube([chamber_x, inner_y, inner_z + 0.1]);
+        // Right chamber cavity
+        translate([outer_x / 2 - wall_thick - chamber_x, -inner_y / 2, floor_thick])
+            cube([chamber_x, inner_y, inner_z + 0.1]);
+        // Left electrode hole
+        translate([-outer_x / 2, hole_y, hole_z])
+            rotate([0, 90, 0]) cylinder(d=hole_diam, h=wall_thick + 0.1);
+        // Right electrode hole
+        translate([outer_x / 2, hole_y, hole_z])
+            rotate([0, 90, 0]) cylinder(d=hole_diam, h=wall_thick + 0.1);
+    }
+}
+```

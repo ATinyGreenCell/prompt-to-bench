@@ -1,0 +1,53 @@
+```openscad
+// Dimensions in millimeters as per ANSI/SLAS microplate standard
+$fn = 65;
+
+// Block dimensions (length, width, height)
+X = 127.76;     // length along X-axis (front to back)
+Y = 85.48;      // width along Y-axis (left to right)
+Z = 20.0;       // height (thickness)
+
+// Hole specifications
+hole_diameter = 6.2;           // diameter of each hole
+hole_center_to_center = 9.0;   // center-to-center spacing in mm
+
+// Position of first hole (A1) from edges
+A1_x_offset = 14.38;   // from left edge
+A1_y_offset = 11.24;   // from back edge
+
+// Chamfer for orientation mark
+chamfer_length = 5.0;   // length of chamfer leg
+chamfer_angle = 45;     // 45 degrees
+
+// Number of rows and columns
+rows = 8;       // along Y-axis (height)
+cols = 12;      // along X-axis (width)
+
+// Create the base block
+difference() {
+    // Base block
+    cube([X, Y, Z], center = true);
+    
+    // Add holes: 8 rows x 12 columns
+    for (i = [0:11]) {
+        for (j = [0:7]) {
+            // Calculate position of hole
+            x = A1_x_offset + i * hole_center_to_center;
+            y = A1_y_offset + j * hole_center_to_center;
+            
+            // Create a cylinder for each hole
+            translate([x, y, -hole_diameter/2]) {
+                cylinder(h = Z, r = hole_diameter/2, f = 0);
+            }
+        }
+    }
+    
+    // Add 45-degree chamfer at A1 corner (bottom-left of first hole)
+    // Chamfer extends 5 mm along both X and Y directions at 45 degrees
+    translate([A1_x_offset - chamfer_length, A1_y_offset - chamfer_length, 0]) {
+        rotate([0, 0, chamfer_angle]) {
+            cube([chamfer_length * 2, chamfer_length * 2, Z], center = false);
+        }
+    }
+}
+```

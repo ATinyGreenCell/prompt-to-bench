@@ -1,0 +1,86 @@
+```openscad
+$fn = 64;
+
+// Knob Dimensions
+knob_diameter = 30;
+knob_height = 15;
+knob_shaft_depth = 12;
+
+// Bore Dimensions
+// 6.2 mm diameter circle with one side cut flat
+// Distance from flat to opposite side of circle is 4.7 mm
+bore_flat_width = 6.2;
+bore_depth = 4.7;
+
+// Groove Dimensions
+groove_count = 18;
+groove_diameter = 2;
+
+// Pointer Groove Dimensions
+pointer_width = 1.5;
+pointer_depth = 1;
+
+// Variables for calculation
+bore_flat_half_width = bore_flat_width / 2;
+bore_radius = bore_depth;
+
+// Main Body
+difference() {
+    // Outer Cylinder
+    cylinder(h = knob_height, d = knob_diameter, center = [0, 0, knob_height/2]);
+    
+    // D-Shaped Bore - cut from bottom (z=0) going up 12mm
+    translate([0, 0, 0]) {
+        difference() {
+            // Create D-shape profile
+            // Flat side at x = -bore_flat_half_width
+            // Arc side centered at x = -bore_flat_half_width + bore_radius
+            // Arc radius is bore_depth
+            
+            // Points for polygon: start at top of flat, go to bottom, then around arc
+            points = [
+                [bore_flat_half_width, bore_flat_half_width],
+                [bore_flat_half_width, -bore_flat_half_width],
+                [-bore_flat_half_width, -bore_flat_half_width],
+                [-bore_flat_half_width, bore_flat_half_width]
+            ];
+            
+            // Add arc points
+            for (i = [0 : 360]) {
+                angle = i * 360 / $fn;
+                x = -bore_flat_half_width + bore_radius * cos(angle);
+                y = bore_radius * sin(angle);
+                points.push([x, y]);
+            }
+            
+            // Close the polygon
+            points.push([bore_flat_half_width, bore_flat_half_width]);
+            
+            linear_extrude(height = knob_shaft_depth, center = true) {
+                polygon(points);
+            }
+        }
+    }
+    
+    // Grip Grooves - 18 evenly spaced vertical half-cylinders
+    for (i = [0 : groove_count - 1]) {
+        angle = i * 360 / groove_count;
+        translate([
+            knob_diameter / 2 * cos(angle),
+            knob_diameter / 2 * sin(angle),
+            0
+        ]) {
+            cylinder(h = knob_height, d = groove_diameter, center = [0, 0, knob_height/2]);
+        }
+    }
+    
+    // Pointer Groove on top face
+    // Runs from center to outer edge, 1.5mm wide, 1mm deep, on same side as flat of D
+    // The flat of the D is at x = -bore_flat_half_width (negative x direction)
+    // So the pointer groove should be on the negative x side
+    
+    translate([0, 0, knob_height - pointer_depth/2]) {
+        cylinder(h = pointer_depth, d = pointer_width, center = [0, 0, pointer_depth/2]);
+    }
+}
+```

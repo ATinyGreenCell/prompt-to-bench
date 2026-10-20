@@ -1,0 +1,144 @@
+// --- Dimensions ---
+// Bore diameter (straight through hole)
+BORE_DIA = 3;
+
+// --- Section 1: 8mm Tubing Barbs (z = 0 to 20) ---
+// Total height of this section
+S1_HEIGHT = 20;
+// Number of barbs in this section
+S1_COUNT = 2;
+// Height of each individual barb
+S1_BARB_H = 10;
+// Bottom outer diameter of each barb
+S1_OD_BOTTOM = 7.5;
+// Top outer diameter of each barb (before step back)
+S1_OD_TOP = 9.5;
+// Step back diameter (same as bottom)
+S1_OD_STEP = 7.5;
+
+// --- Section 2: Collar (z = 20 to 25) ---
+// Height of the collar
+S2_HEIGHT = 5; // 25 - 20
+// Diameter of the collar
+S2_DIA = 12;
+
+// --- Section 3: 5mm Tubing Barbs (z = 25 to 41) ---
+// Total height of this section
+S3_HEIGHT = 16; // 41 - 25
+// Number of barbs in this section
+S3_COUNT = 2;
+// Height of each individual barb
+S3_BARB_H = 8;
+// Bottom outer diameter of each barb (at the start of the barb)
+S3_OD_BOTTOM = 6.5;
+// Top outer diameter of each barb (at the tip)
+S3_OD_TOP = 5.0;
+// Step back diameter (same as bottom)
+S3_OD_STEP = 6.5;
+
+// --- Calculated Constants ---
+// Radius of the bore
+BORE_R = BORE_DIA / 2;
+
+// --- Helper Module: 8mm Barb ---
+// Builds a single barb for the 8mm section.
+// z_pos: The Z coordinate where the bottom of this barb starts.
+module barb_8mm(z_pos) {
+    $fn = 64;
+    
+    // The barb profile:
+    // Bottom at z_pos: OD = S1_OD_BOTTOM
+    // Top at z_pos + S1_BARB_H: OD = S1_OD_TOP
+    // Then steps back to S1_OD_STEP at z_pos + S1_BARB_H + epsilon
+    
+    // We construct this using a cylinder for the main taper, 
+    // and a thin cylinder for the step-back lip to ensure it cuts properly.
+    
+    // Main tapered part
+    // To make the top flat and sharp, we use a cylinder with slightly different top/bottom radii
+    // However, OpenSCAD cylinders are straight. A barb is a cone.
+    // We model the cone from z_pos to z_pos + S1_BARB_H.
+    // At z_pos, radius = S1_OD_BOTTOM / 2
+    // At z_pos + S1_BARB_H, radius = S1_OD_TOP / 2
+    
+    // To handle the "step back" cleanly in a union, we can model the barb as:
+    // 1. A cylinder of S1_OD_STEP diameter from z_pos to z_pos + S1_BARB_H (this fills the gap if OD grows)
+    //    Wait, OD grows from 7.5 to 9.5. So the "base" cylinder is 7.5.
+    //    The cone adds material from 7.5 to 9.5.
+    // 2. A cone from z_pos to z_pos + S1_BARB_H, bottom R = S1_OD_BOTTOM/2, top R = S1_OD_TOP/2.
+    //    But this cone sits on top of the base cylinder? No, it replaces the surface.
+    //    Actually, it's easier to model the entire volume of the barb as a single shape if possible, 
+    //    but the step-back makes it non-convex.
+    
+    // Let's model the barb volume directly.
+    // It consists of:
+    // 1. A cylinder of diameter S1_OD_STEP (7.5) from z_pos to z_pos + S1_BARB_H.
+    // 2. A cone (or truncated cone) that adds the extra diameter from 7.5 to 9.5.
+    //    This cone starts at z_pos (R=0 extra) and ends at z_pos + S1_BARB_H (R = (9.5-7.5)/2 = 1).
+    //    So, a cone with bottom R=0, top R=1, height = S1_BARB_H.
+    //    Wait, the cone's bottom is at z_pos. The cylinder is also there. Union handles the overlap.
+    
+    // 3. The step-back lip.
+    //    At z = z_pos + S1_BARB_H, the OD is 9.5. It steps back to 7.5.
+    //    This is a thin annular ring (or cylinder with a hole) at the top.
+    //    Outer diameter = S1_OD_TOP (9.5).
+    //    Inner diameter = S1_OD_STEP (7.5).
+    //    Height = small epsilon to ensure it cuts.
+    
+    // Let's refine the geometry for the 8mm barb.
+    // Base Cylinder: Dia 7.5, Height S1_BARB_H.
+    // Taper Cone: Bottom R 0, Top R (9.5-7.5)/2 = 1. Height S1_BARB_H.
+    // Step Lip: Outer Dia 9.5, Inner Dia 7.5. Height 0.05.
+    
+    // Note: The cone's bottom is at z_pos. Its top is at z_pos + S1_BARB_H.
+    // The base cylinder is from z_pos to z_pos + S1_BARB_H.
+    
+    union() {
+        // Base cylinder
+        cylinder(r = S1_OD_STEP / 2, h = S1_BARB_H, center = false);
+        
+        // Taper cone (adds material from 7.5 to 9.5)
+        // Bottom radius 0, Top radius 1
+        cylinder(r1 = 0, r2 = (S1_OD_TOP - S1_OD_STEP) / 2, h = S1_BARB_H, center = false);
+        
+        // Step-back lip
+        // This creates the "hook" that grips the tube.
+        // It sits at the very top of the barb.
+        // Outer diameter is the max OD (9.5).
+        // Inner diameter is the base OD (7.5).
+        // We make it slightly taller than 0 to ensure it exists as a solid.
+        // To avoid coplanar issues with the cone top, we make it very thin.
+        lip_height = 0.1;
+        cylinder(r1 = S1_OD_TOP / 2, r2 = S1_OD_STEP / 2, h = lip_height, center = false);
+    }
+}
+
+// --- Helper Module: 5mm Barb ---
+// Builds a single barb for the 5mm section.
+// z_pos: The Z coordinate where the bottom of this barb starts.
+module barb_5mm(z_pos) {
+    $fn = 64;
+    
+    // The barb profile:
+    // Bottom at z_pos: OD = S3_OD_BOTTOM (6.5)
+    // Top at z_pos + S3_BARB_H: OD = S3_OD_TOP (5.0)
+    // Then steps back to S3_OD_STEP (6.5).
+    
+    // Since the OD shrinks, the "base" is the larger diameter (6.5).
+    // The "taper" removes material from 6.5 down to 5.0.
+    // However, modeling subtraction in OpenSCAD primitives is tricky without a base shape.
+    // It is easier to model the positive volume.
+    
+    // The volume of this barb is:
+    // 1. A cylinder of diameter S3_OD_TOP (5.0) from z_pos to z_pos + S3_BARB_H.
+    // 2. A cone that adds material from 5.0 up to 6.5.
+    //    This cone starts at z_pos + S3_BARB_H (R=0 extra) and goes down to z_pos (R = (6.5-5.0)/2 = 0.75).
+    //    So, a cone with bottom R=0.75, top R=0, height = S3_BARB_H.
+    //    Wait, the cone's bottom is at z_pos (larger radius). Its top is at z_pos + S3_BARB_H (smaller radius).
+    //    So r1 = (S3_OD_BOTTOM - S3_OD_TOP)/2 = 0.75.
+    //    r2 = 0.
+    //    h = S3_BARB_H.
+    
+    // 3. The step-back lip.
+    //    At z = z_pos, the OD is 6.5. It steps back to 6.5? 
+    //    The prompt says

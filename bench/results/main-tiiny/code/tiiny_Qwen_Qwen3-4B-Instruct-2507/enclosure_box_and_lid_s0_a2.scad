@@ -1,0 +1,100 @@
+// Dimensions in millimeters
+$fn = 64;
+
+// Part 1: Box (base enclosure)
+box_width = 70;
+box_depth = 50;
+box_height = 30;
+wall_thickness = 2;
+floor_thickness = 2;
+
+// Part 2: Lid (printed upside down)
+lid_plate_width = 70;
+lid_plate_depth = 50;
+lid_plate_thickness = 2;
+lip_thickness = 1.5;
+lip_height = 4;
+lip_width = 65.6;
+lip_depth = 45.6;
+clearance = 0.2;
+
+// Box: outer size 70x50x30, 2mm walls, 2mm floor, open top
+// Centered at origin, built upward from z=0
+box = 
+  translate([0, 0, 0])
+  difference() {
+    // Full outer box
+    cube([box_width, box_depth, box_height]);
+    
+    // Cut out the floor (bottom 2mm)
+    translate([0, 0, -floor_thickness])
+    cube([box_width, box_depth, floor_thickness]);
+    
+    // Cut out front wall (y=0 to depth, x=0 to width, z=0 to height)
+    translate([0, 0, -floor_thickness])
+    cube([box_width, 0, box_height]);
+    
+    // Cut out back wall (y=depth to 0, x=0 to width, z=0 to height)
+    translate([0, box_depth, -floor_thickness])
+    cube([box_width, 0, box_height]);
+    
+    // Cut out left wall (x=0 to 0, y=0 to depth, z=0 to height)
+    translate([0, 0, -floor_thickness])
+    cube([0, box_depth, box_height]);
+    
+    // Cut out right wall (x=width to 0, y=0 to depth, z=0 to height)
+    translate([box_width, 0, -floor_thickness])
+    cube([0, box_depth, box_height]);
+  };
+
+// Lid plate: 70x50x2 mm, placed on the +X side of the box, 10 mm gap
+// Centered at x = 35 + 10 = 45, y = 0, z = 0
+lid_plate = 
+  translate([45, 0, 0])
+  cube([lid_plate_width, lid_plate_depth, lid_plate_thickness]);
+
+// Lip: 65.6 x 45.6 mm, 1.5 mm thick, 4 mm tall, centered on the lid plate
+// Centered at x = 45 + 32.8 = 77.8, y = 0 + 22.8 = 22.8, z = 0 to 4 mm
+// So the lip is a 65.6 x 45.6 x 4 mm block, built on top of the lid plate
+lip = 
+  translate([77.8, 22.8, 0])
+  cube([lip_width, lip_depth, lip_height]);
+
+// Final assembly: box and lid side by side with 10 mm gap
+// Box is centered at origin, from x = -35 to 35, y = -25 to 25
+// Lid plate starts at x = 45, so it is from x = 45 to 115, y = -25 to 25
+// The lip is built on top of the lid plate, at z = 0 to 4 mm
+
+// We now combine the box and lid in a single scene
+// The box is at origin, lid is at x=45, y=0, z=0
+
+// Final part: union of box and lid
+// But the lid is printed upside down, so it is built on the bed
+// The lid plate and lip are both built on the bed at z=0
+
+// So the final object is the union of the box and the lid plate and lip
+// But the lid plate and lip are on top of the box, so they are not overlapping
+
+// Since the lid is printed upside down, it is placed on the bed, so it is at z=0
+// The box is also at z=0, so we need to place them side by side
+
+// The box is centered at origin
+// The lid is placed at x=45, y=0, z=0
+
+// So we build the entire part as:
+// - The box at origin
+// - The lid plate and lip at x=45, y=0, z=0
+
+// But the lid plate and lip are not overlapping the box, so we can just place them
+
+// Final output: union of all parts
+union() {
+  // Box
+  box;
+  
+  // Lid plate
+  lid_plate;
+  
+  // Lip
+  lip;
+}

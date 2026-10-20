@@ -1,0 +1,96 @@
+```openscad
+// Units: millimetres
+// Print orientation: Flat on XY plane (Z=0), builds upward (+Z)
+// Centered on origin in X and Y
+
+// --- Dimensions ---
+// Lab stand rod diameter
+rod_diam = 12.7;
+// Lab stand rod radius
+rod_rad = rod_diam / 2;
+// Rod ring wall thickness
+rod_wall = 3;
+// Rod ring outer diameter
+rod_od = rod_diam + 2 * rod_wall;
+// Rod ring outer radius
+rod_od_rad = rod_od / 2;
+
+// Opening on rod ring (cutout on -X side)
+rod_open_width = 10;
+rod_open_half = rod_open_width / 2;
+
+// Tubing diameter
+tubing_diam = 6;
+// Tubing radius
+tubing_rad = tubing_diam / 2;
+// Tubing ring wall thickness
+tubing_wall = 2;
+// Tubing ring outer diameter
+tubing_od = tubing_diam + 2 * tubing_wall;
+// Tubing ring outer radius
+tubing_od_rad = tubing_od / 2;
+
+// Tubing ring center position
+tubing_center_x = 15;
+tubing_center_y = 0;
+
+// Opening on tubing ring (cutout on +X side)
+tubing_open_width = 4.5;
+tubing_open_half = tubing_open_width / 2;
+
+// Bridge dimensions
+bridge_width = 6;
+bridge_half = bridge_width / 2;
+bridge_x_start = 8;
+bridge_x_end = 12;
+bridge_y_start = -bridge_half;
+bridge_y_end = bridge_half;
+
+// Extrusion height (Z)
+extrude_height = 10;
+
+// --- Geometry Construction ---
+
+// 1. Rod Ring (Hollow cylinder with a cutout)
+// We create a solid cylinder and subtract a rectangular block to make the opening.
+rod_ring = difference() {
+    // Main ring body
+    cylinder(h = extrude_height, r = rod_od_rad, $fn = 64);
+    
+    // Cutout block: extends slightly past the ring to ensure clean cut
+    // Centered at x = -rod_open_half, y = 0
+    translate([-rod_open_half, 0, -0.1])
+        cube([rod_open_width, rod_open_width + 0.1, extrude_height + 0.2], center = true);
+};
+
+// 2. Tubing Ring (Hollow cylinder with a cutout)
+tubing_ring = difference() {
+    // Main ring body
+    translate([tubing_center_x, tubing_center_y, 0])
+        cylinder(h = extrude_height, r = tubing_od_rad, $fn = 64);
+    
+    // Cutout block: extends slightly past the ring
+    // Centered at x = tubing_center_x + tubing_open_half, y = 0
+    translate([tubing_center_x + tubing_open_half, 0, -0.1])
+        cube([tubing_open_width, tubing_open_width + 0.1, extrude_height + 0.2], center = true);
+};
+
+// 3. Solid Bridge
+// Connects the two rings without blocking the holes.
+// Positioned between x=8 and x=12, width 6mm in Y.
+bridge = translate([ (bridge_x_start + bridge_x_end) / 2, 0, 0 ])
+    cube([bridge_x_end - bridge_x_start, bridge_width, extrude_height], center = true);
+
+// --- Final Assembly ---
+// Union all parts together
+snap_clip = union() {
+    rod_ring;
+    tubing_ring;
+    bridge;
+};
+
+// Render the final part
+render() {
+    snap_clip;
+}
+```

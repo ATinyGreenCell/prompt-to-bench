@@ -1,0 +1,67 @@
+$fn = 128; // High resolution for smooth curves and accurate hole sizing
+
+// --- Dimensions ---
+// Disc outer diameter
+D_OUT = 85;
+// Disc thickness
+T_THICK = 2;
+// Grid configuration
+GRID_SIZE = 7;
+HOLE_D = 3;
+HOLE_SPACING = 9;
+// Notch configuration (on +Y side)
+NOTCH_W = 10; // Width in X
+NOTCH_D = 4;  // Depth in Y (from rim)
+
+// --- Derived Variables ---
+// Radius of the disc
+R_OUT = D_OUT / 2;
+// Radius of the hole grid area (to ensure holes are inside the disc)
+// The grid extends from -((GRID_SIZE-1)/2 * spacing) to +((GRID_SIZE-1)/2 * spacing)
+GRID_EXTENT = ((GRID_SIZE - 1) / 2) * HOLE_SPACING;
+
+// --- Main Module ---
+module sowing_template() {
+    // 1. Create the main disc body
+    // Centered at origin, lying on XY plane, building up Z
+    disc = difference() {
+        // Outer shape: Cylinder
+        cylinder(
+            h = T_THICK,
+            r = R_OUT,
+            $fn = 128
+        );
+        
+        // 2. Cut the 7x7 grid of holes
+        // Loop for X positions
+        for (x = [-(GRID_EXTENT), HOLE_SPACING : HOLE_SPACING : GRID_EXTENT]) {
+            for (y = [-(GRID_EXTENT), HOLE_SPACING : HOLE_SPACING : GRID_EXTENT]) {
+                // Cut a cylinder through the disc
+                translate([x, y, -T_THICK - 0.5]) {
+                    cylinder(
+                        h = T_THICK + 1, // Extend slightly past bottom to ensure clean cut
+                        r = HOLE_D / 2,
+                        $fn = 64
+                    );
+                }
+            }
+        }
+        
+        // 3. Cut the rectangular orientation notch on the +Y side
+        // The notch is centred on the Y axis.
+        // Its X range is [-NOTCH_W/2, NOTCH_W/2].
+        // Its Y range is [R_OUT - NOTCH_D, R_OUT].
+        // We cut this from the top face downwards.
+        translate([0, R_OUT - NOTCH_D, -T_THICK - 0.5]) {
+            // Create a rectangular prism that cuts into the disc
+            // Width = NOTCH_W, Depth = NOTCH_D, Height = T_THICK + 1
+            cube([NOTCH_W, NOTCH_D, T_THICK + 1]);
+        }
+    };
+    
+    // Apply the disc to the scene
+    translate([0, 0, 0]) disc;
+}
+
+// Instantiate the part
+sowing_template();

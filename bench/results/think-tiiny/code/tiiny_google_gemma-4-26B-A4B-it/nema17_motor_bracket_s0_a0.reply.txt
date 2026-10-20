@@ -1,0 +1,118 @@
+```openscad
+// L-shaped NEMA 17 Stepper Motor Mounting Bracket
+// Designed for 3D printing (FDM)
+
+// --- Dimensions (mm) ---
+// Base Plate
+base_width = 50;          // x from -25 to 25
+base_depth = 45;          // y from 0 to 45
+base_height = 5;          // z from 0 to 5
+m4_hole_dia = 4.5;        // M4 through-holes
+m4_hole_x1 = -17;         // Position of first M4 hole
+m4_hole_x2 = 17;          // Position of second M4 hole
+m4_hole_y = 30;           // Y position of M4 holes
+
+// Vertical Motor Plate
+vert_width = 50;          // x from -25 to 25
+vert_depth = 5;           // y from 0 to 5
+vert_height = 50;         // z from 0 to 50
+boss_hole_dia = 23;       // Centering boss hole diameter
+boss_hole_z = 28;         // Z position of boss hole center
+m3_hole_dia = 3.4;        // M3 screw hole diameter
+m3_pattern_size = 31;     // Square pattern size for M3 screws
+
+// Gussets
+gusset_thickness = 5;     // Thickness of the gussets
+gusset_leg_length = 20;    // Length of the triangular legs
+gusset_corner_y = 5;       // Y position of the right-angle corner
+gusset_corner_z = 5;       // Z position of the right-angle corner
+
+// --- Parameters ---
+$fn = 64;
+
+// --- Modules ---
+
+module base_plate() {
+    translate([-base_width/2, 0, 0])
+        cube([base_width, base_depth, base_height]);
+}
+
+module vertical_plate() {
+    translate([-vert_width/2, 0, 0])
+        cube([vert_width, vert_depth, vert_height]);
+}
+
+module gusset_left() {
+    // Left gusset: x from -25 to -20
+    translate([-base_width/2, gusset_corner_y, gusset_corner_z])
+    hull() {
+        translate([0, 0, 0]) cube([gusset_thickness, 0.1, 0.1]);
+        translate([0, gusset_leg_length, 0]) cube([gusset_thickness, 0.1, 0.1]);
+        translate([0, 0, gusset_leg_length]) cube([gusset_thickness, 0.1, 0.1]);
+    }
+}
+
+module gusset_right() {
+    // Right gusset: x from 20 to 25
+    translate([base_width/2 - gusset_thickness, gusset_corner_y, gusset_corner_z])
+    hull() {
+        translate([0, 0, 0]) cube([gusset_thickness, 0.1, 0.1]);
+        translate([0, gusset_leg_length, 0]) cube([gusset_thickness, 0.1, 0.1]);
+        translate([0, 0, gusset_leg_length]) cube([gusset_thickness, 0.1, 0.1]);
+    }
+}
+
+module base_holes() {
+    // M4 vertical through-holes
+    translate([m4_hole_x1, m4_hole_y, -0.1])
+        cylinder(diameter=m4_hole_dia, h=base_height + 0.2);
+    translate([m4_hole_x2, m4_hole_y, -0.1])
+        cylinder(diameter=m4_hole_dia, h=base_height + 0.2);
+}
+
+module motor_holes() {
+    // Holes are cut through the vertical plate (along Y axis)
+    // We rotate the cylinder 90 degrees around X to align with Y axis
+    
+    // Centering boss hole
+    translate([0, -0.1, boss_hole_z])
+        rotate([90, 0, 0])
+        cylinder(diameter=boss_hole_dia, h=vert_depth + 0.2);
+    
+    // M3 screw holes in a square pattern
+    half_pattern = m3_pattern_size / 2;
+    
+    // Hole 1: (+X, +Z)
+    translate([half_pattern, -0.1, boss_hole_z + half_pattern])
+        rotate([90, 0, 0])
+        cylinder(diameter=m3_hole_dia, h=vert_depth + 0.2);
+        
+    // Hole 2: (-X, +Z)
+    translate([-half_pattern, -0.1, boss_hole_z + half_pattern])
+        rotate([90, 0, 0])
+        cylinder(diameter=m3_hole_dia, h=vert_depth + 0.2);
+        
+    // Hole 3: (+X, -Z)
+    translate([half_pattern, -0.1, boss_hole_z - half_pattern])
+        rotate([90, 0, 0])
+        cylinder(diameter=m3_hole_dia, h=vert_depth + 0.2);
+        
+    // Hole 4: (-X, -Z)
+    translate([-half_pattern, -0.1, boss_hole_z - half_pattern])
+        rotate([90, 0, 0])
+        cylinder(diameter=m3_hole_dia, h=vert_depth + 0.2);
+}
+
+// --- Final Assembly ---
+
+difference() {
+    union() {
+        base_plate();
+        vertical_plate();
+        gusset_left();
+        gusset_right();
+    }
+    base_holes();
+    motor_holes();
+}
+```

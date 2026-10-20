@@ -1,0 +1,55 @@
+```openscad
+$fn = 64; // resolution for curved surfaces
+
+// Handle dimensions
+handle_d = 8;          // diameter (mm)
+handle_r = handle_d/2; // radius (mm)
+handle_h = 45;         // height (mm)
+
+// Cone dimensions (attached to the handle)
+cone_base_d = 8;          // base diameter (mm)
+cone_base_r = cone_base_d/2; // base radius (mm)
+cone_tip_d = 3;           // tip diameter (mm)
+cone_tip_r = cone_tip_d/2; // tip radius (mm)
+cone_h = 17;              // cone height (mm)
+
+// Tip sphere dimensions
+tip_d = 3;          // diameter (mm)
+tip_r = tip_d/2;   // radius (mm)
+tip_z = 62;         // center Z position (mm)
+
+// Groove parameters (cut into the handle)
+groove_z_centers = [10, 15, 20, 25]; // Z positions of groove centers (mm)
+groove_z_half = 1;                     // half of groove height (mm)
+groove_depth = 1;                     // radial depth of groove (mm)
+groove_r_outer = handle_r + 0.01;     // outer radius of groove (mm) – extends 0.01 mm beyond handle
+groove_r_inner = handle_r - groove_depth; // inner radius of groove (mm)
+
+// Build the handle with grooves
+handle = difference() {
+    cylinder(h = handle_h, r = handle_r);
+    for (c = groove_z_centers) {
+        translate([0, 0, c - groove_z_half]) difference() {
+            cylinder(h = groove_z_half * 2, r = groove_r_outer);
+            cylinder(h = groove_z_half * 2, r = groove_r_inner);
+        }
+    }
+}
+
+// Build the cone (shifted so its base is 0.01 mm above the handle top)
+cone = translate([0, 0, 45.01]) cylinder(
+    h = cone_h,
+    r1 = cone_base_r,
+    r2 = cone_tip_r
+);
+
+// Build the tip sphere
+tip = translate([0, 0, tip_z]) sphere(r = tip_r);
+
+// Final assembly
+union() {
+    handle;
+    cone;
+    tip;
+}
+```

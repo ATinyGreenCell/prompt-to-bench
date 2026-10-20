@@ -1,0 +1,71 @@
+```openscad
+// Snap-on clip for a 12.7 mm lab stand rod, printed flat (10 mm tall extrusion in Z).
+// Profile is built in the XY plane and extruded 10 mm in +Z.
+
+// --- Dimensions (mm) ---
+rod_id   = 12.7;   // rod ring inner diameter
+rod_wall = 3.0;    // rod ring wall thickness
+rod_od   = rod_id + 2 * rod_wall;   // 18.7 mm outer diameter
+
+tube_id  = 6.0;    // tubing ring inner diameter
+tube_wall = 2.0;   // tubing ring wall thickness
+tube_od  = tube_id + 2 * tube_wall; // 10.0 mm outer diameter
+
+rod_open_w = 10.0; // rod ring opening width (Y)
+tube_open_w = 4.5; // tubing ring opening width (Y)
+
+bridge_x0 = 8.0;   // bridge start X
+bridge_x1 = 12.0;  // bridge end X
+bridge_w  = 6.0;   // bridge width (Y)
+
+tube_cx   = 15.0;  // tubing ring centre X
+tube_cy   = 0.0;   // tubing ring centre Y
+
+height = 10.0;     // extrusion height (Z)
+
+$fn = 64;
+
+// --- 2-D profile pieces ---
+
+// (1) Rod ring: annulus centred at origin, with a 10 mm wide opening on the -X side.
+//     Opening removes everything with x < 0 and -5 < y < 5.
+rod_ring() = difference(
+    difference(
+        circle(d = rod_od),
+        circle(d = rod_id)
+    ),
+    // Cutting shape: extends 1 mm past the ring's outer face on the -X side
+    // and 1 mm past the ring's inner face on the +X side (into the hole, harmless).
+    // Y extends 1 mm past the opening edges.
+    translate([-rod_od/2 - 1, -rod_open_w/2 - 1])
+        square([rod_od/2 + 1 + rod_id/2, rod_open_w + 2])  // x from -rod_od/2-1 to +rod_id/2+1, y from -5.5 to 5.5
+);
+
+// (2) Tubing ring: annulus centred at (15, 0), with a 4.5 mm wide opening on the +X side.
+//     Opening removes everything with x > 15 and -2.25 < y < 2.25.
+tube_ring() = difference(
+    difference(
+        translate([tube_cx, tube_cy]) circle(d = tube_od),
+        translate([tube_cx, tube_cy]) circle(d = tube_id)
+    ),
+    // Cutting shape: extends 1 mm past the ring's outer face on the +X side
+    // and 1 mm past the ring's inner face on the -X side (into the hole, harmless).
+    // Y extends 1 mm past the opening edges.
+    translate([tube_cx - tube_id/2 - 1, -tube_open_w/2 - 1])
+        square([tube_id/2 + 1 + tube_od/2, tube_open_w + 2])  // x from 15-3-1=11 to 15+5+1=21, y from -3.25 to 3.25
+);
+
+// (3) Solid bridge: 6 mm wide in Y, from x=8 to x=12.
+//     This region is outside both rings' holes (rod hole ends at x=6.35, tube hole starts at x=12),
+//     so it joins the two rings without blocking either hole.
+bridge() = translate([bridge_x0, -bridge_w/2])
+    square([bridge_x1 - bridge_x0, bridge_w]);
+
+// --- Assemble and extrude ---
+linear_extrude(height = height)
+    union() {
+        rod_ring();
+        tube_ring();
+        bridge();
+    }
+```

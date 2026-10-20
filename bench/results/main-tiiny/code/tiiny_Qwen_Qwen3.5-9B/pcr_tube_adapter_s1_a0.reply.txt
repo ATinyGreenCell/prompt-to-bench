@@ -1,0 +1,58 @@
+```openscad
+$fn = 128; // High resolution for smooth cylindrical surfaces
+
+// --- Dimensions (mm) ---
+// Base Collar
+$collar_diameter = 13.0;
+$collar_thickness = 1.5;
+
+// Sleeve Body
+$sleeve_outer_diameter = 10.8;
+$sleeve_total_height = 21.5;
+
+// Bore
+$bore_diameter = 6.2;
+
+// --- Calculation ---
+// Calculate radii for clarity
+$r_collar = $collar_diameter / 2;
+$r_sleeve_outer = $sleeve_outer_diameter / 2;
+$r_bore = $bore_diameter / 2;
+
+// --- Build ---
+module adapter_sleeve() {
+    difference() {
+        // 1. Create the solid outer shape (Collar + Sleeve Body)
+        union() {
+            // Collar (Lies on bed, z=0 to z=1.5)
+            cylinder(
+                h = $collar_thickness,
+                r = $r_collar,
+                center = [0, 0, $collar_thickness / 2]
+            );
+            
+            // Sleeve Body (Rises from top of collar to z=21.5)
+            // Height of body = Total Height - Collar Thickness
+            $body_height = $sleeve_total_height - $collar_thickness;
+            cylinder(
+                h = $body_height,
+                r = $r_sleeve_outer,
+                center = [0, 0, $collar_thickness + $body_height / 2]
+            );
+        }
+        
+        // 2. Cut the bore through the full height
+        // The bore runs from z=0 to z=$sleeve_total_height
+        cylinder(
+            h = $sleeve_total_height,
+            r = $r_bore,
+            center = [0, 0, $sleeve_total_height / 2]
+        );
+    }
+}
+
+// Center the part on the origin as requested
+translate([0, 0, 0]) {
+    adapter_sleeve();
+}
+```

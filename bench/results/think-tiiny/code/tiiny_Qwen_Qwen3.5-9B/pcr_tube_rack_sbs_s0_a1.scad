@@ -1,0 +1,79 @@
+// OpenSCAD Rack for 96 PCR Tubes (0.2 mL)
+// ANSI/SLAS Microplate Footprint
+// Units: mm
+
+// Dimensions
+L_X = 127.76;
+L_Y = 85.48;
+H_Z = 20;
+
+// Hole Grid
+D_Hole = 6.2;
+N_Cols = 12;
+N_Rows = 8;
+S_X = 9.0;
+S_Y = 9.0;
+
+// Hole Positioning (A1)
+X_A1_Dist = 14.38; // From Left Edge
+Y_A1_Dist = 11.24; // From Back Edge
+
+// Chamfer
+Chamfer_Leg = 5;
+Chamfer_Extend = 0.05; // Extend past faces for clean cut
+
+// $fn for curved shapes
+$fn = 64;
+
+// Main Block
+block = cube([L_X, L_Y, H_Z]);
+
+// Chamfer Wedge
+// Corner at X min, Y max (A1 corner)
+// Wedge removes material in region X > X_Corner, Y < Y_Corner
+// Triangle vertices: (0,0), (Leg+Extend, 0), (0, -(Leg+Extend))
+// Translate to corner, Extrude height + Extend
+Chamfer_Wedge = linear_extrude(height = H_Z + Chamfer_Extend, center = false)
+    polygon([
+        [0, 0],
+        [Chamfer_Leg + Chamfer_Extend, 0],
+        [0, -(Chamfer_Leg + Chamfer_Extend)],
+        [0, 0]
+    ]);
+
+// Translate chamfer to A1 corner position
+// A1 corner is at X = -L_X/2 + X_A1_Dist, Y = L_Y/2 - Y_A1_Dist
+Chamfer_Translate = translate([X_A1_Dist - L_X/2, L_Y/2 - Y_A1_Dist, 0]);
+
+// Holes
+// Loop for Columns (X) and Rows (Y)
+// A1 is at (X_A1, Y_A1)
+// Grid is centred on block, so X_A1 is relative to Left Edge
+// X_A1_Pos = -L_X/2 + X_A1_Dist
+// Y_A1_Pos = L_Y/2 - Y_A1_Dist
+
+// Create holes
+difference() {
+    block;
+    Chamfer_Translate(Chamfer_Wedge);
+    
+    for (i = [0 : N_Cols - 1]) {
+        for (j = [0 : N_Rows - 1]) {
+            // Hole X position
+            // A1 is i=0, j=0
+            // X = X_A1 + i * S_X
+            // Y = Y_A1 - j * S_Y (Since A1 is Top-Left, Y decreases downwards)
+            
+            translate([
+                X_A1_Dist - L_X/2 + i * S_X,
+                L_Y/2 - Y_A1_Dist - j * S_Y,
+                0
+            ])
+            cylinder(
+                r = D_Hole / 2 + 0.01, // Extend slightly past hole wall
+                h = H_Z + 0.01,        // Extend slightly past top/bottom
+                $fn = 64
+            );
+        }
+    }
+};

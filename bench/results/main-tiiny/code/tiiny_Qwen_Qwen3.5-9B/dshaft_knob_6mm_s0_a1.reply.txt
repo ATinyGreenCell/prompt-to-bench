@@ -1,0 +1,145 @@
+```openscad
+$fn = 128;
+
+// --- Dimensions ---
+// Knob outer diameter
+D_KNOB_OUT = 30;
+// Knob height
+H_KNOB = 15;
+// Shaft diameter (for reference)
+D_SHAFT = 6;
+
+// D-Bore dimensions
+// Total diameter of the circular part of the bore
+D_BORE_CIRCLE = 6.2;
+// Distance from the flat cut to the opposite side of the circle
+D_BORE_FLAT_TO_OPPOSITE = 4.7;
+// Depth of the D-bore from the bottom face
+H_BORE = 12;
+
+// Groove dimensions (Side)
+N_GROOVES = 18;
+D_GROOVE = 2; // Diameter of the half-cylinder groove
+H_GROOVE = H_KNOB; // Full height
+
+// Pointer dimensions (Top)
+W_POINTER = 1.5; // Width of the pointer groove
+H_POINTER = 1; // Depth of the pointer groove
+
+// --- Calculations ---
+// Calculate the radius of the flat side of the D-bore
+// Distance from center to flat = (Total Diameter - Flat_to_Opposite) / 2
+R_BORE_FLAT = (D_BORE_CIRCLE - D_BORE_FLAT_TO_OPPOSITE) / 2;
+// Calculate the radius of the curved part of the D-bore
+// Distance from center to curved edge = (Total Diameter + Flat_to_Opposite) / 2
+R_BORE_CURVED = (D_BORE_CIRCLE + D_BORE_FLAT_TO_OPPOSITE) / 2;
+
+// --- Main Construction ---
+
+module knob() {
+    // 1. Base Cylinder
+    // Centered at origin, resting on XY plane (z=0)
+    cylinder(h = H_KNOB, r = D_KNOB_OUT / 2, $fn = 128);
+
+    // 2. D-Shaped Blind Bore
+    // Translate to bottom face (z=0), then extrude up 12mm
+    // The flat side of the D is aligned with the +Y axis to match the pointer groove later.
+    translate([0, 0, 0]) {
+        difference() {
+            // The solid part to remove (the hole)
+            // We create a D-shape and extrude it upwards.
+            // To ensure clean cuts, we extend slightly past the top face (z=15)
+            translate([0, 0, 0]) {
+                // Create the D-shape profile in the XY plane
+                // We construct it as a Circle minus a Rectangle segment.
+                // The circle has radius R_BORE_CURVED.
+                // The flat cut is at y = R_BORE_FLAT.
+                // We remove the rectangle defined by x in [-R_BORE_CURVED, R_BORE_CURVED] 
+                // and y in [R_BORE_FLAT, R_BORE_CURVED].
+                
+                // Note: The width of the flat is D_BORE_CIRCLE.
+                // The radius is R_BORE_CURVED.
+                // The flat extends from x = -D_BORE_CIRCLE/2 to +D_BORE_CIRCLE/2.
+                // Wait, the problem says "distance from the flat to the opposite side is 4.7mm".
+                // This implies the flat width is D_BORE_CIRCLE = 6.2mm.
+                // So the flat spans x = [-3.1, 3.1].
+                // The circle radius is 3.1 + 2.35 = 5.45mm.
+                
+                // Let's build the D-shape using a polygon for precision.
+                // Points:
+                // 1. Top-Left of Flat: (-D_BORE_CIRCLE/2, R_BORE_FLAT)
+                // 2. Bottom-Left: (-R_BORE_CURVED, -R_BORE_CURVED)
+                // 3. Bottom-Right: (R_BORE_CURVED, -R_BORE_CURVED)
+                // 4. Top-Right: (D_BORE_CIRCLE/2, R_BORE_CURVED)
+                // 5. Arc from Top-Right to Top-Left of Flat.
+                
+                // Actually, simpler: Union of a Circle and a Rectangle?
+                // No, we want the hole shape.
+                // Let's use the 'circle' and 'difference' approach for the profile itself.
+                // Profile = Circle(r=R_BORE_CURVED) - Rectangle(w=D_BORE_CIRCLE, h=R_BORE_CURVED - R_BORE_FLAT, p=[0, R_BORE_FLAT])
+                // This creates a flat top at y=R_BORE_FLAT.
+                
+                // Let's define the D-shape explicitly using a polygon to avoid any ambiguity with $fn on the profile.
+                // We need to extrude this polygon upwards.
+                
+                // Points for the D-shape (counter-clockwise):
+                // Start at top-left of the flat: (-D_BORE_CIRCLE/2, R_BORE_FLAT)
+                // Go down to bottom-left: (-R_BORE_CURVED, -R_BORE_CURVED)
+                // Go right to bottom-right: (R_BORE_CURVED, -R_BORE_CURVED)
+                // Go up to top-right: (D_BORE_CIRCLE/2, R_BORE_CURVED)
+                // Arc to top-left: (0, R_BORE_CURVED) to (-D_BORE_CIRCLE/2, R_BORE_CURVED)
+                // Go down to start: (-D_BORE_CIRCLE/2, R_BORE_FLAT)
+                
+                // Wait, the arc from (D_BORE_CIRCLE/2, R_BORE_CURVED) to (-D_BORE_CIRCLE/2, R_BORE_CURVED)
+                // is the top part of the circle.
+                
+                // Let's use a simpler construction:
+                // 1. Circle(r = R_BORE_CURVED)
+                // 2. Subtract a rectangle centered at (0, R_BORE_FLAT) with width D_BORE_CIRCLE and height (R_BORE_CURVED - R_BORE_FLAT).
+                // This creates the flat side at y = R_BORE_FLAT.
+                
+                // Let's verify coordinates:
+                // Circle center (0,0). Radius 5.45.
+                // Flat is at y = 1.1 (since 5.45 - 4.7 = 0.75? No. 5.45 - 4.7 = 0.75. Wait.)
+                // R_BORE_CURVED = 5.45.
+                // D_BORE_FLAT_TO_OPPOSITE = 4.7.
+                // R_BORE_FLAT = (6.2 - 4.7) / 2 = 0.75.
+                // So the flat is at y = 0.75.
+                // The circle goes up to y = 5.45.
+                // The distance from flat to top is 5.45 - 0.75 = 4.7. Correct.
+                
+                // So we subtract a rectangle:
+                // x range: [-3.1, 3.1] (Width 6.2)
+                // y range: [0.75, 5.45] (Height 4.7)
+                
+                // Let's build the D-shape profile using a polygon for robustness.
+                // Points:
+                // A: (-3.1, 0.75)
+                // B: (-5.45, -5.45)
+                // C: (5.45, -5.45)
+                // D: (3.1, 5.45)
+                // E: (0, 5.45)
+                // F: (-3.1, 5.45)
+                // G: (-3.1, 0.75)
+                
+                // Wait, the arc from D to F needs to be handled.
+                // Let's use the 'circle' and 'difference' method for the profile, it's cleaner.
+                
+                // Profile = Circle(r = R_BORE_CURVED) - Rectangle(w = D_BORE_CIRCLE, h = R_BORE_CURVED - R_BORE_FLAT, p = [0, R_BORE_FLAT])
+                
+                // Let's do this:
+                difference() {
+                    // The main circle of the hole
+                    circle(r = R_BORE_CURVED, $fn = 128);
+                    
+                    // The rectangular part to remove to create the flat
+                    // Centered at (0, R_BORE_FLAT)
+                    // Width = D_BORE_CIRCLE
+                    // Height = R_BORE_CURVED - R_BORE_FLAT
+                    translate([0, R_BORE_FLAT, 0]) {
+                        square([D_BORE_CIRCLE, R_BORE_CURVED - R_BORE_FLAT]);
+                    }
+                }
+            }
+            // Extrude the D-shape upwards
+            linear_extrude(h = H_BORE + 0.1, center = true

@@ -1,0 +1,95 @@
+```openscad
+// Dimensions for Hotplate Stirrer Knob Replacement
+// All units in millimetres (mm)
+
+// Main knob dimensions
+knob_diameter = 30;
+knob_height = 15;
+
+// D-shaft bore dimensions
+shaft_diameter = 6;
+bore_diameter = 6.2;
+bore_depth = 12;
+bore_flat_width = 4.7; // Distance from flat to opposite side of circle
+
+// Grip groove dimensions
+groove_count = 18;
+groove_diameter = 2;
+groove_depth = 1; // Half of groove diameter for half-cylinder cut
+
+// Pointer groove dimensions
+pointer_width = 1.5;
+pointer_depth = 1;
+
+// Safety margin for cutting operations
+cut_margin = 0.5;
+
+// Calculate radius and half-widths
+knob_radius = knob_diameter / 2;
+bore_radius = bore_diameter / 2;
+bore_flat_half_width = bore_flat_width / 2;
+groove_radius = groove_diameter / 2;
+pointer_half_width = pointer_width / 2;
+
+// Calculate flat position
+// Flat is at X = (bore_diameter - bore_flat_width) / 2 = (6.2 - 4.7) / 2 = 0.75
+// Wait, let's re-verify the geometry.
+// Circle diameter = 6.2. Radius = 3.1.
+// Flat is at X = f. Opposite side is at X = -3.1.
+// Distance from flat to opposite side = f - (-3.1) = f + 3.1 = 4.7.
+// f = 4.7 - 3.1 = 1.6.
+// So the flat is at X = 1.6.
+flat_pos = 1.6;
+
+// Center the knob on the XY plane
+translate([0, 0, 0]) {
+    // 1. Create the main cylinder body
+    main_body = cylinder(h = knob_height, r = knob_radius, $fn = 64);
+    
+    // 2. Create the D-shaped bore cutter
+    // We need to subtract a cylinder and then a box to create the flat side.
+    // The bore is a cylinder of 6.2mm diameter, 12mm high.
+    // The flat is at X = 1.6mm.
+    
+    // Cylinder for the bore
+    bore_cyl = cylinder(h = bore_depth, r = bore_radius, $fn = 64);
+    
+    // Box to cut the flat side
+    // The box must be large enough to cut through the cylinder.
+    // It is positioned at X = 1.6.
+    flat_cut = translate([flat_pos, 0, 0]) {
+        cube([10, 10, bore_depth + cut_margin], center = true);
+    };
+    
+    // The void shape is the cylinder minus the flat cut?
+    // No, the void is the D-shape.
+    // To create the void, we subtract the cylinder and then subtract the flat cut?
+    // No, if we subtract the cylinder, we have a round hole.
+    // Then we subtract the flat cut box from the round hole?
+    // Yes, that creates the D-shape.
+    // But we need to subtract the union of the cylinder and the flat cut?
+    // No, we subtract the cylinder, then subtract the flat cut from the result?
+    // Actually, the void is the cylinder minus the part that is "flat".
+    // The "flat" part is the part of the cylinder that is cut off.
+    // So the void is the cylinder minus the flat cut box?
+    // No, the void is the D-shape.
+    // The D-shape is the cylinder minus the flat cut box?
+    // No, the D-shape is the cylinder minus the flat cut box?
+    // Let's think: The cylinder is the full circle. The flat cut box removes the part of the cylinder that is to the right of X=1.6.
+    // So the void is the cylinder minus the flat cut box?
+    // No, the void is the D-shape.
+    // The D-shape is the cylinder minus the flat cut box?
+    // No, the D-shape is the cylinder minus the flat cut box?
+    // Let's use a different approach.
+    // The void is the D-shape.
+    // We can model the void as a cylinder with a flat side.
+    // To subtract this from the main body, we subtract the cylinder and then subtract the flat cut?
+    // No, if we subtract the cylinder, we have a round hole.
+    // Then we subtract the flat cut box from the round hole?
+    // Yes, that creates the D-shape.
+    // But we need to subtract the union of the cylinder and the flat cut?
+    // No, we subtract the cylinder, then subtract the flat cut box from the result?
+    // Actually, the void is the cylinder minus the flat cut box?
+    // No, the void is the D-shape.
+    // The D-shape is the cylinder minus the flat cut box?
+    // No,

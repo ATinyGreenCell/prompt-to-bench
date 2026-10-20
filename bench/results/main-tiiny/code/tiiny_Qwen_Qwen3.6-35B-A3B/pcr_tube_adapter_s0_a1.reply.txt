@@ -1,0 +1,42 @@
+The previous code failed to apply the `difference()` operation correctly because the `union()` was defined inside the `difference()` but the `cylinder` for the bore was also inside, which is correct, but the initial separate `cylinder` calls for the collar and sleeve body were *outside* the `difference` block in the first iteration (though in the second thought block I tried to fix it, the logic was flawed in the first attempt).
+
+Wait, looking at the first code block provided in the prompt's history:
+1. It defined `COLLAR_THICK` and `SLEEVE_H`.
+2. It called `cylinder` for the collar.
+3. It called `translate` and `cylinder` for the sleeve.
+4. **THEN** it called `difference()` with a `union()` of the same shapes and a cutting cylinder.
+
+The problem is that the first two `cylinder` calls created solid objects that were rendered. The `difference()` block created *another* solid object. OpenSCAD renders all top-level modules. So it rendered two parts:
+1. A solid collar and sleeve (no hole).
+2. A collar and sleeve with a hole.
+
+The measurement report likely measured the union of these or just the final one, but the "watertight" and "1 separate body" suggests it might have merged them or the user is looking at the final output. However, the key issue is that the first two cylinders were solid, meaning the part *as printed* (if we assume the user prints the output of the script) would be solid if the slicer merges them, or double-thick if not.
+
+Actually, the bigger issue is that the prompt says "Your file rendered... SOLID: 1 separate body". This implies the slicer or OpenSCAD's preview merged them. But the dimensions in the report:
+- Bounding Box: 13x13x21.5. This matches.
+- Volume: 2,028 mm3.
+  - Collar Volume: $\pi \times 6.5^2 \times 1.5 \approx 199$ mm3.
+  - Sleeve Volume: $\pi \times 5.4^2 \times 20 \approx 1832$ mm3.
+  - Total Solid Volume: $\approx 2031$ mm3.
+  - Bore Volume: $\pi \times 3.1^2 \times 21.5 \approx 646$ mm3.
+  - Net Volume: $2031 - 646 = 1385$ mm3.
+  
+The reported volume is 2,028 mm3, which is very close to the **solid** volume (2031 mm3). This confirms that the **hole was not cut** in the primary solid body, or the hole was negligible.
+
+Why? In the first code block:
+```openscad
+    // 1. The base collar
+    cylinder(r = COLLAR_R, h = COLLAR_THICK, center = false);
+
+    // 2. The sleeve body
+    translate([0, 0, COLLAR_THICK]) {
+        cylinder(r = SLEEVE_R, h = SLEEVE_BODY_H, center = false);
+    }
+
+    // 3. The bore
+    $fn = 64;
+    difference() {
+        // ... union ...
+    }
+```
+The first two cylinders

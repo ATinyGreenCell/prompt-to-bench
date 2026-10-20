@@ -1,0 +1,88 @@
+// Snap-on clip for 12.7 mm lab stand rod and 6 mm ID tubing
+// Printed flat: 10 mm tall extrusion (Z) of a 2-D profile in the XY plane.
+
+// Extrusion height (Z)
+extrusion_height = 10;
+
+// Rod ring dimensions
+rod_ring_id = 12.7;          // Inner diameter of rod ring
+rod_ring_wall = 3;           // Wall thickness of rod ring
+rod_ring_od = rod_ring_id + 2 * rod_ring_wall; // Outer diameter of rod ring
+
+// Rod ring opening dimensions
+rod_opening_width = 10;      // Width of the opening on the -X side
+rod_opening_half_width = rod_opening_width / 2;
+
+// Tubing ring dimensions
+tubing_ring_id = 6;          // Inner diameter of tubing ring
+tubing_ring_wall = 2;        // Wall thickness of tubing ring
+tubing_ring_od = tubing_ring_id + 2 * tubing_ring_wall; // Outer diameter of tubing ring
+tubing_ring_center_x = 15;   // X position of tubing ring center
+
+// Tubing ring opening dimensions
+tubing_opening_width = 4.5;  // Width of the opening on the +X side
+tubing_opening_half_width = tubing_opening_width / 2;
+
+// Bridge dimensions
+bridge_x_start = 8;          // Start X of the bridge
+bridge_x_end = 12;           // End X of the bridge
+bridge_width = 6;            // Width of the bridge in Y
+bridge_half_width = bridge_width / 2;
+
+// Resolution for curved shapes
+$fn = 64;
+
+// Define the 2D profile in the XY plane
+profile() {
+    // Rod ring centered at origin
+    rod_ring();
+    
+    // Tubing ring centered at (15, 0)
+    tubing_ring();
+    
+    // Bridge connecting the two rings
+    bridge();
+}
+
+// Rod ring with opening on -X side
+rod_ring() {
+    difference() {
+        // Outer circle of rod ring
+        circle(d = rod_ring_od);
+        
+        // Inner hole of rod ring
+        circle(d = rod_ring_id);
+        
+        // Opening cut on -X side: x < 0 and -5 < y < 5
+        // We cut a rectangle that extends past the ring to ensure clean removal
+        translate([-rod_ring_od, 0])
+            square([rod_ring_od + 1, rod_opening_width + 0.02], center = true);
+    }
+}
+
+// Tubing ring with opening on +X side
+tubing_ring() {
+    translate([tubing_ring_center_x, 0])
+    difference() {
+        // Outer circle of tubing ring
+        circle(d = tubing_ring_od);
+        
+        // Inner hole of tubing ring
+        circle(d = tubing_ring_id);
+        
+        // Opening cut on +X side: x > 15 and -2.25 < y < 2.25
+        // We cut a rectangle that extends past the ring to ensure clean removal
+        translate([tubing_ring_od, 0])
+            square([tubing_ring_od + 1, tubing_opening_width + 0.02], center = true);
+    }
+}
+
+// Bridge connecting the two rings
+bridge() {
+    translate([(bridge_x_start + bridge_x_end) / 2, 0])
+        square([bridge_x_end - bridge_x_start, bridge_width], center = true);
+}
+
+// Extrude the profile to create the 3D part
+linear_extrude(height = extrusion_height, center = false, convexity = 10)
+    profile();

@@ -1,0 +1,37 @@
+```openscad
+// Pestle for 1.5 mL microcentrifuge tube
+// Print orientation: standing upright on XY plane at z=0
+
+// Handle dimensions
+handle_dia = 8;          // mm, diameter of cylindrical handle
+handle_h = 45;           // mm, height of handle (z=0 to z=45)
+
+// Cone dimensions
+cone_bottom_dia = 8;     // mm, diameter at base (z=45)
+cone_top_dia = 3;        // mm, diameter at tip (z=62)
+cone_h = 62 - 45;        // mm, height of cone
+
+// Tip dimensions
+tip_dia = 3;             // mm, diameter of spherical tip
+tip_center_z = 62;       // mm, z-coordinate of sphere center
+
+// Groove dimensions
+groove_width = 2;        // mm, width of each groove in Z
+groove_depth = 1;        // mm, depth of each groove
+groove_centers = [10, 15, 20, 25]; // mm, Z-centers of grooves
+
+$fn = 64;
+
+// Main pestle body
+pestle = union(
+  cylinder(d=handle_dia, h=handle_h),
+  translate([0, 0, handle_h]) cylinder(d1=cone_bottom_dia, d2=cone_top_dia, h=cone_h),
+  translate([0, 0, tip_center_z]) sphere(d=tip_dia)
+);
+
+// Cut grooves into handle
+groove_cuts = [ for (z = groove_centers) translate([0, 0, z]) cylinder(d=handle_dia - 2*groove_depth, h=groove_width + 0.02) ];
+result = difference(pestle, groove_cuts);
+
+render() result;
+```

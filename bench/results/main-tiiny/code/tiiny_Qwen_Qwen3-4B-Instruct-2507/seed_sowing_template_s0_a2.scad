@@ -1,0 +1,40 @@
+// Sowing template for 90mm Petri dish
+// Dimensions in millimeters
+disc_diameter = 85;           // Diameter of the flat disc
+disc_thickness = 2;          // Thickness of the disc
+hole_diameter = 3;           // Diameter of each through-hole
+hole_spacing = 9;            // Centre-to-centre spacing of holes
+notch_width = 10;            // Width of the notch in X direction
+notch_depth = 4;             // Depth of notch in Y direction (from rim)
+
+// Create the base disc
+difference() {
+    // Base disc: full disc of 85mm diameter, 2mm thick
+    cube([disc_diameter, disc_diameter, disc_thickness], center = true);
+    
+    // Cut out the 7x7 grid of holes (centered at origin)
+    for (i = [0 : 6]) {
+        for (j = [0 : 6]) {
+            // Position of hole: centered at (i * hole_spacing - 3.5 * hole_spacing, j * hole_spacing - 3.5 * hole_spacing)
+            translate([ 
+                (i * hole_spacing) - (hole_spacing * 3.5), 
+                (j * hole_spacing) - (hole_spacing * 3.5), 
+                0 
+            ]) {
+                // Cylinder with diameter 3mm, so radius 1.5mm
+                cylinder(d = hole_diameter / 2, h = disc_thickness, center = true, $fn = 64);
+            }
+        }
+    }
+    
+    // Cut the rectangular notch on the +Y side (centered on Y axis)
+    // Notch is 10mm wide (X), 4mm deep (Y), on the +Y side of the rim
+    // We want to cut from the top edge inward, so we start at y = disc_diameter/2 and go down to y = disc_diameter/2 - notch_depth
+    // But we must ensure the notch is only in the rim and does not go through the holes
+    
+    // Translate to the top edge of the disc (y = disc_diameter/2)
+    // Then cut a rectangle from x = -notch_width/2 to +notch_width/2, y = 0 to -notch_depth
+    // This notch is on the +Y side, so we cut into the top rim
+    translate([0, disc_diameter/2, 0]) // move to top edge
+    cube([notch_width, notch_depth, disc_thickness], center = false);
+}

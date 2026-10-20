@@ -1,0 +1,74 @@
+// PCR Tube Rack (96-well)
+// Designed for 0.2 mL tubes with ANSI/SLAS footprint
+// Corrected to ensure a single solid body and accurate hole positioning
+
+// --- Dimensions ---
+block_x = 127.76;      // Total length (X)
+block_y = 85.48;       // Total width (Y)
+block_z = 20.00;       // Total height (Z)
+
+hole_dia = 6.2;        // Diameter of PCR tube holes
+hole_spacing = 9.0;    // Center-to-center spacing (pitch)
+rows = 8;              // Number of rows (Y direction)
+cols = 12;             // Number of columns (X direction)
+
+// Offset of first hole center from the edges (A1 corner)
+offset_x = 14.38;      // Distance from left edge to A1 center
+offset_y = 11.24;      // Distance from back edge to A1 center
+
+// Chamfer dimensions (Orientation Mark)
+chamfer_leg = 5.0;     // Length of the chamfer along the edges
+
+// Resolution
+$fn = 64;
+
+// --- Implementation ---
+
+// The part is built in the print orientation: rests on XY plane at Z=0
+// Centered on the origin in X and Y.
+module pcr_rack() {
+    difference() {
+        // Main Block
+        cube([block_x, block_y, block_z]);
+
+        // 1. The 96 Vertical Through-Holes
+        // We iterate through columns (X) and rows (Y)
+        // The first hole (A1) is at (offset_x, offset_y) relative to the corner (0,0)
+        for (c = [0 : cols - 1]) {
+            for (r = [0 : rows - 1]) {
+                // Subtracting a cylinder that extends slightly beyond Z bounds to ensure clean cut
+                translate([offset_x + (c * hole_spacing), offset_y + (r * hole_spacing), -1])
+                    cylinder(d = hole_dia, h = block_z + 2);
+            }
+        }
+
+        // 2. The 45-degree Chamfer at the A1 corner (0,0,0)
+        // To ensure a single solid body, the chamfer must be subtracted from the main block.
+        // The previous error produced "2 separate bodies" because the chamfer subtraction 
+        // was not properly intersecting the main block or was creating a floating volume.
+        // We define a wedge that covers the corner and subtract it.
+        
+        // We use a hull of two triangles to create a wedge that cuts the corner.
+        // The wedge is defined by the points (0,0), (chamfer_leg, 0), and (0, chamfer_leg) in XY.
+        // To make it a subtraction that removes the corner, we define the wedge 
+        // as the volume containing the corner.
+        
+        translate([-0.1, -0.1, -0.1]) // Slight overlap to ensure clean cut
+        rotate([0, 0, 0])
+        hull() {
+            // The corner point (0,0)
+            cube([0.1, 0.1, block_z + 2]);
+            // The point on X axis
+            translate([chamfer_leg, 0, 0]) cube([0.1, 0.1, block_z + 2]);
+            // The point on Y axis
+            translate([0, chamfer_leg, 0]) cube([0.1, 0.1, block_z + 2]);
+        }
+    }
+}
+
+// Final Render
+// Centering the block on X and Y as requested.
+// The block is defined from [0,0,0] to [X,Y,Z], so we translate by -half.
+// This ensures the bounding box is exactly [-63.88 to 63.88] etc.
+translate([-block_x/2, -block_y/2, 0])
+pcr_rack();

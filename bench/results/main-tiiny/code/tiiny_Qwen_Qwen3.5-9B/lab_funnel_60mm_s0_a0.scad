@@ -1,0 +1,76 @@
+$fn = 128; // High resolution for smooth cone and round holes
+
+// --- Dimensions (mm) ---
+// Spout dimensions
+$spout_outer_d = 10;
+$spout_inner_d = 6.8; // 10 - 2*1.6
+$spout_height = 20;
+
+// Cone dimensions
+$cone_bottom_d = 10; // Matches spout outer diameter
+$cone_top_d = 60;
+$cone_height = 30;   // From z=20 to z=50
+
+// Wall thickness
+$wall_thickness = 1.6;
+
+// Derived dimensions
+$part_total_height = $spout_height + $cone_height; // 50mm
+$part_radius_outer = $spout_outer_d / 2;
+$part_radius_inner = $spout_inner_d / 2;
+
+// --- Construction ---
+
+module spout() {
+    // Create the cylindrical spout with a hole through it
+    difference() {
+        // Outer cylinder
+        cylinder(h = $spout_height, r = $part_radius_outer, center = [0, 0, $spout_height/2]);
+        
+        // Inner bore (hole)
+        cylinder(h = $spout_height, r = $part_radius_inner, center = [0, 0, $spout_height/2]);
+    }
+}
+
+module cone() {
+    // Create the conical funnel part
+    difference() {
+        // Outer cone
+        // Linear extrusion of a triangle rotated 90 deg around Y to form a cone
+        // Base at z=0 (relative to cone start), height $cone_height
+        // Outer radius at base = $part_radius_outer, at top = $cone_top_d / 2
+        linear_extrude(height = $cone_height, center = true) {
+            polygon(points = [
+                [-($part_radius_outer), 0],
+                [($part_radius_outer), 0],
+                [($cone_top_d / 2), $cone_height]
+            ], convexity = 3);
+        }
+        
+        // Inner cone (hole)
+        // Inner radius at base = $part_radius_inner, at top = ($cone_top_d - 2*$wall_thickness) / 2
+        $inner_top_d = $cone_top_d - (2 * $wall_thickness);
+        $inner_top_r = $inner_top_d / 2;
+        
+        linear_extrude(height = $cone_height, center = true) {
+            polygon(points = [
+                [-($part_radius_inner), 0],
+                [($part_radius_inner), 0],
+                [($inner_top_r), $cone_height]
+            ], convexity = 3);
+        }
+    }
+}
+
+// --- Main Assembly ---
+// Translate to center the part vertically (z=0 to z=50 -> center at z=25)
+// The prompt asks for print orientation upright, wide opening at top.
+// We model it centered on origin for symmetry, resting on XY plane logic is handled by the build direction.
+translate([0, 0, $part_total_height / 2]) {
+    union() {
+        spout();
+        translate([0, 0, $spout_height]) {
+            cone();
+        }
+    }
+}

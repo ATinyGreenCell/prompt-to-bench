@@ -1,0 +1,69 @@
+// Lab Funnel Dimensions
+// All dimensions in millimetres
+
+// Spout dimensions
+spout_od = 10;        // Outer diameter of the straight spout
+spout_length = 20;    // Length of the straight spout (z=0 to z=20)
+wall_thickness = 1.6; // Wall thickness everywhere
+
+// Cone dimensions
+cone_bottom_od = 10;  // Outer diameter at the bottom of the cone (z=20)
+cone_top_od = 60;     // Outer diameter at the rim of the cone (z=50)
+cone_height = 30;     // Height of the cone (z=20 to z=50)
+total_height = 50;    // Total height of the funnel
+
+// Derived dimensions
+spout_id = spout_od - 2 * wall_thickness; // Inner diameter of the spout
+cone_bottom_id = cone_bottom_od - 2 * wall_thickness; // Inner diameter at cone bottom
+cone_top_id = cone_top_od - 2 * wall_thickness;       // Inner diameter at cone top
+
+// Safety margin for boolean operations
+margin = 0.05;
+
+// Build the spout (cylinder from z=0 to z=20)
+// Outer shell of the spout
+spout_outer = cylinder(h=spout_length + margin, d=spout_od, center=false, $fn=64);
+
+// Inner void of the spout (extends slightly past the top to ensure clean cut)
+spout_void = cylinder(h=spout_length + margin, d=spout_id, center=false, $fn=64);
+
+// Build the cone (frustum from z=20 to z=50)
+// The cone sits on top of the spout.
+// Bottom radius (at z=20)
+// Top radius (at z=50)
+
+// Create the outer cone shape
+// OpenSCAD cylinder with d1 and d2 creates a frustum.
+cone_outer = cylinder(h=cone_height + margin, d1=cone_bottom_od, d2=cone_top_od, center=false, $fn=64);
+
+// Create the inner void for the cone
+// The inner void is a frustum from z=20 to z=50.
+cone_inner = cylinder(h=cone_height + margin, d1=cone_bottom_id, d2=cone_top_id, center=false, $fn=64);
+
+// Combine the spout and cone into a single solid
+// We union the outer shapes
+funnel_solid = union() {
+    translate([0, 0, 0]) spout_outer;
+    translate([0, 0, spout_length]) cone_outer;
+};
+
+// Subtract the inner voids
+// Spout inner void: cylinder from z=0 to z=20
+// We extend it slightly upwards to ensure it cuts through the junction cleanly
+spout_void_cut = translate([0, 0, 0]) cylinder(h=spout_length + margin, d=spout_id, center=false, $fn=64);
+
+// Cone inner void: frustum from z=20 to z=50
+// We extend it slightly downwards to ensure it cuts through the junction cleanly
+cone_void_cut = translate([0, 0, spout_length]) cylinder(h=cone_height + margin, d1=cone_bottom_id, d2=cone_top_id, center=false, $fn=64);
+
+// Final part: Solid minus voids
+funnel = difference() {
+    funnel_solid;
+    spout_void_cut;
+    cone_void_cut;
+};
+
+// Render the final part
+render() {
+    translate([0, 0, 0]) funnel;
+}

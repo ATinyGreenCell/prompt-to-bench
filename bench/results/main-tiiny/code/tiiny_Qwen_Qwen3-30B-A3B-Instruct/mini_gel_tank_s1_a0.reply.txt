@@ -1,0 +1,78 @@
+```openscad
+// Dimensions in millimetres
+outer_x = 120;
+outer_y = 70;
+outer_z = 40;
+
+wall_thickness = 3;
+floor_thickness = 3;
+
+platform_length = 60;
+platform_width = outer_y;  // spans full Y
+platform_height_above_floor = 10;  // top of platform at z = 13 (floor at z = 3)
+platform_z = floor_thickness + platform_height_above_floor;  // z = 3 + 10 = 13
+
+hole_diameter = 2;
+hole_radius = hole_diameter / 2;
+hole_z = 30;  // z-level of hole center
+hole_y = 0;   // along Y=0 edge
+
+// Set resolution for smooth curves
+$fn = 64;
+
+// Main tank body (outer box)
+tank = cube([outer_x, outer_y, outer_z], center = true);
+
+// Inner cavity (removing walls and floor)
+inner_x = outer_x - 2 * wall_thickness;
+inner_y = outer_y - 2 * wall_thickness;
+inner_z = outer_z - floor_thickness;
+
+// Inner cavity: subtract walls and floor
+cavity = cube([inner_x, inner_y, inner_z], center = true);
+
+// Subtract cavity from tank to form walls and floor
+tank_with_cavity = difference() {
+    tank;
+    translate([0, 0, -outer_z/2 + inner_z/2]) {
+        cavity;
+    }
+};
+
+// Platform: solid raised rectangle in the middle
+platform = cube([platform_length, platform_width, floor_thickness + platform_height_above_floor], center = true);
+platform = translate([0, 0, -outer_z/2 + floor_thickness + platform_height_above_floor/2]) {
+    platform;
+};
+
+// Add platform to tank (union)
+tank_with_platform = union() {
+    tank_with_cavity;
+    platform;
+};
+
+// Holes for electrode wires: horizontal holes through end walls
+// Hole at X = -outer_x/2 + wall_thickness (left end wall)
+hole1_center_x = -outer_x/2 + wall_thickness;
+hole1 = cylinder(h = 2 * wall_thickness, r = hole_radius, center = true);
+hole1 = translate([hole1_center_x, 0, hole_z]) {
+    hole1;
+};
+
+// Hole at X = +outer_x/2 - wall_thickness (right end wall)
+hole2_center_x = outer_x/2 - wall_thickness;
+hole2 = cylinder(h = 2 * wall_thickness, r = hole_radius, center = true);
+hole2 = translate([hole2_center_x, 0, hole_z]) {
+    hole2;
+};
+
+// Subtract both holes from the tank
+final_tank = difference() {
+    tank_with_platform;
+    hole1;
+    hole2;
+};
+
+// Final result: buffer tank with platform and electrode holes
+final_tank;
+```

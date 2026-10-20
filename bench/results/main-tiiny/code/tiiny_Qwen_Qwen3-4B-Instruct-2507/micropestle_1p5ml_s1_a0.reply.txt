@@ -1,0 +1,143 @@
+```openscad
+// Dimensions and parameters for a pestle designed for use in a 1.5 mL microcentrifuge tube
+// Printed standing upright, with the base at z = 0 and extending upward in +Z
+$fn = 64;  // High resolution for smooth curves (especially for sphere and cone)
+
+// Key dimensions in millimeters
+handle_diameter = 8;           // Diameter of cylindrical handle
+handle_length = 45;           // Height of cylindrical handle (from z=0 to z=45)
+cone_start_z = 45;            // Start of cone at z=45
+cone_end_z = 62;             // End of cone at z=62
+cone_start_dia = 8;          // Diameter at start of cone (z=45)
+cone_end_dia = 3;            // Diameter at end of cone (z=62)
+tip_dia = 3;                 // Diameter of spherical tip at z=62
+groove_depth = 1;            // Depth of each groove (in Z)
+groove_width = 2;            // Width of each groove (in X or Y)
+groove_positions_z = [10, 15, 20, 25]; // Z positions where grooves are centered
+
+// Create the cylindrical handle from z=0 to z=45
+handle = cube([handle_diameter, handle_diameter, handle_length], center=true);
+
+// Create the cone from z=45 to z=62
+// The cone tapers from 8mm to 3mm diameter
+cone = rotate_extrude(
+    degrees=90,
+    slices=64
+) {
+    polygon(
+        [[0,0], [handle_diameter/2, 0], [handle_diameter/2, handle_diameter/2], [0, handle_diameter/2]]
+    );
+}
+
+// Adjust the cone to taper from z=45 to z=62
+// We define the cone as a difference between two cylinders
+// First, create a cylinder of diameter 8mm from z=45 to z=62
+cylinder1 = cylinder(d=handle_diameter, h=cone_end_z - cone_start_z, center=true, $fn=64);
+
+// Then, create a smaller cylinder of diameter 3mm from z=45 to z=62
+cylinder2 = cylinder(d=cone_end_dia, h=cone_end_z - cone_start_z, center=true, $fn=64);
+
+// The cone is the difference between the large and small cylinder
+// But we need to place it correctly in Z
+// We will build the cone as a cylinder with a tapered profile
+// Instead, use a linear taper from 8mm to 3mm over 17mm (62-45)
+// We create the cone as a rotated extrusion of a trapezoid
+// The trapezoid has height 17mm and tapers from 8mm to 3mm diameter
+
+// Define the cone as a solid from z=45 to z=62
+// Use a linear taper in diameter
+cone_taper = rotate_extrude(
+    degrees=90,
+    slices=64
+) {
+    polygon(
+        [[0,0], [handle_diameter/2, 0], [handle_diameter/2, handle_diameter/2], [0, handle_diameter/2]]
+    );
+}
+
+// Actually, better to build the cone as a difference of two cylinders at the same Z
+// We will build the full structure as a union of:
+// 1. The handle (cylinder from z=0 to 45)
+// 2. The cone (from z=45 to 62, tapering from 8mm to 3mm)
+// 3. The tip (sphere at z=62)
+
+// Build the handle
+handle = cube([handle_diameter, handle_diameter, handle_length], center=true);
+
+// Build the cone from z=45 to z=62
+// We create a cylinder of diameter 8mm from z=45 to z=62, then subtract a cylinder of diameter 3mm
+// But to avoid coplanar faces, we shift the small cylinder slightly
+// Instead, we use a linear taper: define the cone as a cylinder with a taper
+// We use a cylinder of diameter 8mm from z=45 to z=62, and subtract a cylinder of diameter 3mm
+// But we need to place the taper correctly
+
+// Correct approach: build the cone as a cylinder with a taper using a linear profile
+// We define the cone as a difference between two cylinders:
+// - A large cylinder of diameter 8mm from z=45 to z=62
+// - A small cylinder of diameter 3mm, centered at z=62, but extended from z=45 to z=62
+
+// First, create the base cylinder (handle) from z=0 to 45
+handle = cube([handle_diameter, handle_diameter, handle_length], center=true);
+
+// Create the cone part: from z=45 to z=62
+// We create a cylinder of diameter 8mm from z=45 to z=62
+cylinder_large = cylinder(d=handle_diameter, h=cone_end_z - cone_start_z, center=true, $fn=64);
+
+// Create a cylinder of diameter 3mm from z=45 to z=62
+cylinder_small = cylinder(d=cone_end_dia, h=cone_end_z - cone_start_z, center=true, $fn=64);
+
+// The cone is the large cylinder minus the small cylinder (tapered)
+// But we need to place the small cylinder at the same center
+// So the cone is the difference between the large cylinder and the small cylinder
+// This will give a taper from 8mm to 3mm in diameter
+
+// Now, create the tip: a 3mm diameter sphere centered at z=62
+// The sphere is centered at z=62, so its center is at (0,0,62)
+// It extends from z=62 - 1.5 to z=62 + 1.5, but we only want the part above z=62
+// Since the pestle is built upward, we only want the tip at z=62
+// So we place the sphere at z=62, with radius 1.5mm
+
+tip = sphere(r=tip_dia/2, center=true);
+
+// Now, we create the grooves in the handle (from z=10, 15, 20, 25)
+// Each groove is 2mm wide, 1mm deep, and 1mm in X or Y
+// We cut them into the handle, so we use difference
+
+// Create a single groove at a given z
+// Groove is a rectangular prism: 2mm wide, 1mm deep, 1mm in height (in Z)
+// Centered at z = groove_position, with 1mm depth into the handle
+
+// We define a function to create a groove
+// Each groove is a rectangular block of 2mm in X, 1mm in Y, 1mm in Z
+// Centered at z = groove_position, and extending from x = -1 to 1, y = -0.5 to 0.5
+
+// We will create grooves at z=10,15,20,25
+// Each groove is 2mm wide (in X), 1mm deep (in Y), and 1mm in Z
+
+// First, create the base handle
+base = cube([handle_diameter, handle_diameter, handle_length], center=true);
+
+// Now, for each groove position, cut a rectangular prism
+// The groove is centered at z = groove_position, with depth 1mm into the handle
+// The groove extends from x = -1 to 1 (width 2mm), y = -0.5 to 0.5 (depth 1mm), and z = groove_position to groove_position+1
+
+// But we need to cut into the handle, so we use difference
+
+// We will create a list of grooves
+grooves = [];
+
+for (g = [10,15,20,25]) {
+    // Create a rectangular block for the groove
+    // 2mm wide (in X), 1mm deep (in Y), 1mm in Z
+    // Centered at z = g, extending from z = g to g+1
+    // But we want the groove to be cut into the handle, so we place it at z = g
+    // The groove is 1mm deep in Y, 2mm wide in X, 1mm in Z
+    groove = cube([2, 1, 1], center=true);
+    // Translate to center at z = g, and align with the handle
+    // The handle is centered at origin, so we place the groove at (0,0,g)
+    // But we need to shift it to be centered in the handle
+    // The groove is centered at (0,0,g), and extends from z=g to g+1
+    // But we only want to cut into the handle, so we place it at z=g
+    // We will translate the groove to (0,0,g)
+    // But we need to ensure it's within the handle
+    // The handle is from z

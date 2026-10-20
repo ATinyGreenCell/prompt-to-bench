@@ -1,0 +1,60 @@
+```openscad
+$fn = 64;
+
+// --- Dimensions ---
+// Block dimensions (mm)
+BLOCK_X = 90;
+BLOCK_Y = 45;
+BLOCK_Z = 20;
+
+// Slot dimensions (mm)
+SLOT_COUNT = 10;
+SLOT_X = 77;
+SLOT_Y = 1.6;
+SLOT_DEPTH = 10;
+SLOT_SPACING_Y = 3.5;
+
+// --- Derived Dimensions ---
+// Offset for cutting rule (Rule 5): extend 0.05mm past faces
+CUT_OFFSET = 0.05;
+
+// Calculate total width of slot array including gaps
+// 10 slots + 9 gaps
+SLOT_ARRAY_Y_WIDTH = (SLOT_COUNT * SLOT_Y) + ((SLOT_COUNT - 1) * SLOT_SPACING_Y);
+
+// --- Main Part ---
+difference() {
+    // 1. Base Block
+    // Centred on origin (X, Y), resting on Z=0
+    translate([0, 0, 0])
+        cube([BLOCK_X, BLOCK_Y, BLOCK_Z]);
+
+    // 2. Slots
+    // Centred on block in X and Y
+    // Loop for 10 slots
+    for (i = [0 : SLOT_COUNT - 1]) {
+        // Calculate Y position for each slot
+        // Center of array is 0.
+        // Slot centers are spaced by SLOT_SPACING_Y
+        // First slot center offset from array center:
+        // Total array width / 2 - (Slot width / 2)
+        // Center of array = 0
+        // Center of Slot 0 = - (SLOT_ARRAY_Y_WIDTH / 2) + (SLOT_Y / 2)
+        // Center of Slot i = Center of Slot 0 + i * SLOT_SPACING_Y
+        
+        slot_center_y = -(SLOT_ARRAY_Y_WIDTH / 2) + (SLOT_Y / 2) + (i * SLOT_SPACING_Y);
+        
+        // Apply cutting offset to ensure no coplanar faces (Rule 5)
+        // Cut shape extends slightly past the intended void
+        cut_x = SLOT_X + CUT_OFFSET;
+        cut_y = SLOT_Y + CUT_OFFSET;
+        cut_z = SLOT_DEPTH + CUT_OFFSET;
+        
+        // Position slot to cut from top downward
+        // Slot should cut from z = BLOCK_Z down to z = BLOCK_Z - SLOT_DEPTH
+        // So the cutting cube should be positioned at z = BLOCK_Z - SLOT_DEPTH
+        translate([0, slot_center_y, BLOCK_Z - SLOT_DEPTH])
+            cube([cut_x, cut_y, cut_z]);
+    }
+}
+```

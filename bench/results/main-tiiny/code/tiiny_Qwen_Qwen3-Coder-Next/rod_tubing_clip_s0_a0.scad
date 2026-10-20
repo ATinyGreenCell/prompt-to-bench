@@ -1,0 +1,78 @@
+$fn = 64;
+
+// Dimensions
+rod_id = 12.7;        // inner diameter of rod ring (mm)
+rod_wall = 3;         // wall thickness of rod ring (mm)
+rod_od = rod_id + 2 * rod_wall;  // outer diameter of rod ring (mm)
+rod_ring_height = 10; // height of the entire part (Z)
+
+tubing_id = 6;        // inner diameter of tubing ring (mm)
+tubing_wall = 2;      // wall thickness of tubing ring (mm)
+tubing_od = tubing_id + 2 * tubing_wall; // outer diameter of tubing ring (mm)
+
+bridge_width = 6;     // width in Y-direction of the bridge (mm)
+bridge_x_start = 8;   // start x-coordinate of bridge
+bridge_x_end = 12;    // end x-coordinate of bridge
+
+// Opening cut dimensions
+rod_opening_width = 10;   // width of rod ring opening (mm)
+tubing_opening_width = 4.5; // width of tubing ring opening (mm)
+
+// Calculate y-limits for cuts
+rod_cut_y = rod_opening_width / 2;
+tubing_cut_y = tubing_opening_width / 2;
+
+// Rod ring (outer circle minus inner circle)
+rod_ring_outer = rod_od / 2;
+rod_ring_inner = rod_id / 2;
+
+// Tubing ring (outer circle minus inner circle)
+tubing_ring_outer = tubing_od / 2;
+tubing_ring_inner = tubing_id / 2;
+
+// Build the part
+module rod_ring_with_cut() {
+    difference() {
+        // Outer circle
+        cylinder(h = rod_ring_height + 0.02, r = rod_ring_outer, center = true);
+        // Inner circle (hole)
+        cylinder(h = rod_ring_height + 0.02, r = rod_ring_inner, center = true);
+        // Opening cut: remove x < 0 and -5 < y < 5
+        translate([0, 0, -(rod_ring_height + 0.02)/2])
+            cube([rod_ring_outer + 1, rod_opening_width, rod_ring_height + 0.02], center = true);
+    }
+}
+
+module tubing_ring_with_cut() {
+    // Position tubing ring at x = 15
+    translate([15, 0, 0]) {
+        difference() {
+            // Outer circle
+            cylinder(h = rod_ring_height + 0.02, r = tubing_ring_outer, center = true);
+            // Inner circle (hole)
+            cylinder(h = rod_ring_height + 0.02, r = tubing_ring_inner, center = true);
+            // Opening cut: remove x > 15 and -2.25 < y < 2.25
+            translate([0, 0, -(rod_ring_height + 0.02)/2])
+                cube([rod_ring_outer + 1, tubing_opening_width, rod_ring_height + 0.02], center = true);
+        }
+    }
+}
+
+module bridge() {
+    // Bridge between rod ring and tubing ring
+    // y-range: -bridge_width/2 to +bridge_width/2
+    // x-range: from rod ring outer edge (rod_od/2) to tubing ring inner edge (15 - tubing_ring_outer)
+    // but constrained to [bridge_x_start, bridge_x_end]
+    x_start = max(bridge_x_start, rod_ring_outer);
+    x_end = min(bridge_x_end, 15 - tubing_ring_outer);
+    
+    if (x_start < x_end) {
+        translate([x_start, -bridge_width/2, 0])
+            cube([x_end - x_start, bridge_width, rod_ring_height]);
+    }
+}
+
+// Assemble the part
+rod_ring_with_cut();
+tubing_ring_with_cut();
+bridge();

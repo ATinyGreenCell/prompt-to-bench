@@ -1,0 +1,82 @@
+```openscad
+// 96-Well PCR Tube Rack
+// Dimensions based on ANSI/SLAS standard microplate footprint
+// Units: millimetres
+
+$fn = 64; // High precision for curved surfaces
+
+// --- Physical Dimensions ---
+rack_length = 127.76;  // X dimension
+rack_width = 85.48;    // Y dimension
+rack_height = 20.00;   // Z dimension (thickness)
+
+// --- Hole Geometry ---
+hole_diameter = 6.2;
+hole_spacing_x = 9.0;  // Column spacing
+hole_spacing_y = 9.0;  // Row spacing
+
+// --- Positioning of the Grid ---
+// Distance from edge to the center of the first hole (A1)
+edge_offset_x = 14.38; // From left edge
+edge_offset_y = 11.24; // From back edge
+
+// --- Chamfer Geometry ---
+chamfer_length = 5.0;  // Length of the chamfer leg
+chamfer_angle = 45;    // Degrees
+
+// --- Derived Dimensions ---
+// Calculate grid start and end positions to center the block
+grid_start_x = edge_offset_x - (hole_spacing_x * 5.5); // 12 columns -> 11 gaps
+grid_start_y = edge_offset_y - (hole_spacing_y * 3.5); // 8 rows -> 7 gaps
+grid_end_x = grid_start_x + (hole_spacing_x * 11);
+grid_end_y = grid_start_y + (hole_spacing_y * 7);
+
+// --- Main Body ---
+module rack_body() {
+    // Create the solid block
+    cube([rack_length, rack_width, rack_height], center=true);
+}
+
+// --- Holes ---
+module holes() {
+    // Loop through 12 columns (X) and 8 rows (Y)
+    for (x = [0 : 11]) {
+        for (y = [0 : 7]) {
+            // Calculate absolute position for this hole
+            hole_x = grid_start_x + (x * hole_spacing_x);
+            hole_y = grid_start_y + (y * hole_spacing_y);
+            
+            // Translate to hole position and cut cylinder
+            translate([hole_x, hole_y, 0])
+                cylinder(h = rack_height + 0.1, d = hole_diameter, center = true);
+        }
+    }
+}
+
+// --- Chamfer Cut ---
+module chamfer_cut() {
+    // The chamfer is at the A1 corner.
+    // A1 is at grid_start_x, grid_start_y.
+    // We need to cut a 45-degree wedge from the top surface.
+    
+    // Translate to the corner of the block
+    translate([grid_start_x, grid_start_y, rack_height/2]) {
+        
+        // Define the cutting shape: A 45-degree wedge
+        // We use a polygon to define the cutout precisely
+        // The wedge extends 5mm along the X and Y axes
+        polygon([
+            [0, 0],           // Corner (A1)
+            [chamfer_length, 0], // End of X leg
+            [0, chamfer_length]  // End of Y leg
+        ]);
+    }
+}
+
+// --- Assembly ---
+difference() {
+    rack_body();
+    holes();
+    chamfer_cut();
+}
+```

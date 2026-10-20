@@ -1,0 +1,56 @@
+// Bench rack for 1.5 mL microcentrifuge tubes
+// Dimensions in millimetres
+
+// Block dimensions
+block_length = 106;   // X dimension
+block_width = 72;      // Y dimension
+block_height = 30;     // Z dimension
+
+// Hole grid parameters
+rows = 4;              // Number of rows along Y
+cols = 6;              // Number of columns along X
+pitch_x = 16;          // Centre-to-centre spacing in X
+pitch_y = 16;          // Centre-to-centre spacing in Y
+hole_diameter = 11.2;  // Hole diameter
+hole_depth = 25;     // Hole depth
+floor_thickness = 5;  // Solid floor thickness
+
+// Hole position offsets (to centre the grid)
+offset_x = (cols - 1) * pitch_x / 2;
+offset_y = (rows - 1) * pitch_y / 2;
+
+// Base block
+cube([block_length, block_width, block_height]);
+
+// Holes
+for (i = 0; i < cols; i++) {
+    for (j = 0; j < rows; j++) {
+        x_pos = -offset_x + i * pitch_x;
+        y_pos = -offset_y + j * pitch_y;
+        
+        // Create hole: cylinder extending from top (z=30) down to z=5
+        // We use difference to cut the hole from the solid block
+        translate([x_pos, y_pos, 0])
+            cylinder(h = hole_depth + 1, d = hole_diameter, $fn = 64);
+    }
+}
+
+// Apply the holes to the block
+difference() {
+    // The solid block
+    cube([block_length, block_width, block_height]);
+    
+    // The holes (cutting shapes)
+    for (i = 0; i < cols; i++) {
+        for (j = 0; j < rows; j++) {
+            x_pos = -offset_x + i * pitch_x;
+            y_pos = -offset_y + j * pitch_y;
+            
+            // Cylinder for hole: extends slightly past the bottom to ensure clean cut
+            // Hole depth is 25mm, floor is 5mm, so cylinder goes from z=30 down to z=0
+            // We make it slightly longer to ensure it cuts through completely
+            translate([x_pos, y_pos, 0])
+                cylinder(h = hole_depth + 1, d = hole_diameter, $fn = 64);
+        }
+    }
+}

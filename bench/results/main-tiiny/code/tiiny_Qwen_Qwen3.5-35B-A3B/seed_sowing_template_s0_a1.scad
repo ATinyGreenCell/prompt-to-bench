@@ -1,0 +1,53 @@
+// Dimensions for the sowing template
+D_DISC = 85;        // Diameter of the main disc (mm)
+THICKNESS = 2;      // Thickness of the disc (mm)
+GRID_SIZE = 7;      // Number of holes in each row/column
+HOLE_DIA = 3;       // Diameter of the through-holes (mm)
+HOLE_SPACING = 9; // Center-to-center spacing between holes (mm)
+NOTCH_WIDTH = 10;   // Width of the orientation notch (mm)
+NOTCH_DEPTH = 4;  // Depth of the orientation notch (mm)
+
+// Calculate offsets for the grid
+// The grid is centered, so we start from the negative half-spacing
+GRID_HALF_SPACING = HOLE_SPACING / 2;
+GRID_START = -((GRID_SIZE - 1) * HOLE_SPACING) / 2;
+
+// Calculate the radius of the disc
+DISC_RADIUS = D_DISC / 2;
+
+// Main body: Flat disc
+disc_body = cylinder(h = THICKNESS, r = DISC_RADIUS, $fn = 64);
+
+// Create the grid of holes
+hole_grid = translate([0, 0, THICKNESS / 2])
+    for (i = [0:GRID_SIZE-1])
+        for (j = [0:GRID_SIZE-1])
+            translate([GRID_START + i * HOLE_SPACING, GRID_START + j * HOLE_SPACING, 0])
+                cylinder(h = THICKNESS + 0.01, r = HOLE_DIA / 2, $fn = 64);
+
+// Create the orientation notch
+// The notch is on the +Y side, centered on the Y axis.
+// It cuts into the rim.
+// We model the notch as a rectangular prism that subtracts from the disc.
+// The notch extends from the rim inward by NOTCH_DEPTH.
+// The notch width is NOTCH_WIDTH.
+// To ensure the cut is clean, we make the cutting block slightly larger than the notch dimensions.
+notch_cut = translate([0, DISC_RADIUS - NOTCH_DEPTH/2, 0])
+    cube([NOTCH_WIDTH, NOTCH_DEPTH + 0.01, THICKNESS + 0.01], center = true);
+
+// Combine the disc and subtract the holes and the notch
+result = difference() {
+    // The base disc
+    disc_body;
+    
+    // Subtract the grid of holes
+    // We add a small margin to the hole height to ensure it cuts through completely
+    hole_grid;
+    
+    // Subtract the orientation notch
+    notch_cut;
+}
+
+// Render the final part
+translate([0, 0, 0])
+    result;

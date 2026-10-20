@@ -1,0 +1,48 @@
+```openscad
+// Dimensions (mm) - measured with calipers
+top_plate_thickness = 2;
+wall_thickness = 2.5;
+wall_height = 40;
+outer_size = 90;
+screw_hole_dia = 4.5;
+screw_pattern_size = 71.5;
+notch_width = 12;
+notch_depth = 8;
+
+$fn = 64;
+
+// Top plate (rests on bed, z = 0 to 2)
+cube([outer_size, outer_size, top_plate_thickness], center = false);
+
+// Four walls rising from top plate to z = 40
+// Front wall (Y = 0 side)
+translate([0, 0, top_plate_thickness])
+  cube([outer_size, wall_thickness, wall_height - top_plate_thickness]);
+
+// Back wall (Y = outer_size - wall_thickness side)
+translate([0, outer_size - wall_thickness, top_plate_thickness])
+  cube([outer_size, wall_thickness, wall_height - top_plate_thickness]);
+
+// Left wall (X = 0 side)
+translate([0, wall_thickness, top_plate_thickness])
+  cube([wall_thickness, outer_size - 2 * wall_thickness, wall_height - top_plate_thickness]);
+
+// Right wall (X = outer_size - wall_thickness side)
+translate([outer_size - wall_thickness, wall_thickness, top_plate_thickness])
+  cube([wall_thickness, outer_size - 2 * wall_thickness, wall_height - top_plate_thickness]);
+
+// Cut screw holes through top plate
+for (x = [-1, 1]) {
+  for (y = [-1, 1]) {
+    translate([outer_size / 2 + x * screw_pattern_size / 2,
+               outer_size / 2 + y * screw_pattern_size / 2,
+               -0.01])
+      cylinder(h = top_plate_thickness + 0.02, r = screw_hole_dia / 2, center = false);
+  }
+}
+
+// Cut cable notch in one wall (front wall, Y = 0 side)
+// Notch is 12 mm wide, centred along the wall, from z = 32 to z = 40
+translate([outer_size / 2 - notch_width / 2, -0.01, 32])
+  cube([notch_width, wall_thickness + 0.02, notch_depth + 0.01]);
+```

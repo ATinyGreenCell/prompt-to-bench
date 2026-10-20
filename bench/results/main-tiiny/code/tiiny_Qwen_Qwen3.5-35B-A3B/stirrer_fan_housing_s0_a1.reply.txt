@@ -1,0 +1,157 @@
+```openscad
+// Dimensions for DIY Magnetic Stirrer Housing
+// Fan size: 80 mm (reference for context)
+FAN_SIZE = 80;
+
+// Outer dimensions of the housing
+OUTER_X = 90;
+OUTER_Y = 90;
+
+// Top plate thickness
+TOP_THICKNESS = 2;
+
+// Wall thickness
+WALL_THICKNESS = 2.5;
+
+// Total height of the box
+BOX_HEIGHT = 40;
+
+// Screw hole diameter
+SCREW_HOLE_DIA = 4.5;
+
+// Screw hole pattern size (square)
+SCREW_PATTERN = 71.5;
+
+// Cable notch width
+NOTCH_WIDTH = 12;
+
+// Cable notch depth from top edge
+NOTCH_DEPTH = 8;
+
+// Notch height (from top edge down)
+NOTCH_HEIGHT = 8;
+
+// Build orientation: Top plate on bed (z=0 to 2), walls rise to z=40
+// The "top" of the box is the stirring surface, which is on the bed.
+
+module housing() {
+    // 1. Base plate (Top of the stirrer, on the bed)
+    // Solid block 90x90x2
+    base_plate = cube([OUTER_X, OUTER_Y, TOP_THICKNESS], center = true);
+
+    // 2. Drill four 4.5 mm holes for M4 screws through the top plate
+    // on a 71.5 mm square pattern centred on the plate.
+    // The holes go through the base plate (z=0 to 2).
+    // We use a small cylinder that extends slightly past the base to ensure clean cut.
+    for (i = [0:1]) {
+        for (j = [0:1]) {
+            // Calculate hole positions: centered on 71.5mm square
+            hole_x = (i == 0 ? -SCREW_PATTERN/2 : SCREW_PATTERN/2);
+            hole_y = (j == 0 ? -SCREW_PATTERN/2 : SCREW_PATTERN/2);
+            
+            // Cylinder extends from z=-0.1 to z=2.1 to ensure it cuts through cleanly
+            translate([hole_x, hole_y, 0])
+                cylinder(d = SCREW_HOLE_DIA, h = TOP_THICKNESS + 0.2, center = true);
+        }
+    }
+
+    // 3. Walls: 4 walls, 2.5 mm thick, rise from z=2 to z=40.
+    // We model the walls as a single hollow box structure that sits on top of the base.
+    // Outer dimensions: 90x90x40 (total height)
+    // Inner dimensions: (90 - 2*2.5) x (90 - 2*2.5) x 38 (height of walls only)
+    // Wait, the walls rise from z=2 to z=40. So the wall height is 38mm.
+    // The base is 2mm thick.
+    
+    // Let's create the walls as a hollow box that sits on the base.
+    // Outer box for walls: 90x90x38 (from z=2 to z=40)
+    // Inner box for walls: (90 - 2*2.5) x (90 - 2*2.5) x 38
+    // But we need to attach this to the base.
+    
+    // Alternative: Create a single solid block for the whole housing (base + walls)
+    // and then subtract the interior.
+    // Total outer box: 90x90x40
+    // Total inner box: 85x85x38 (from z=2 to z=40)
+    // But the base is solid 2mm.
+    // So the "hollow" part starts at z=2.
+    
+    // Let's build it as:
+    // 1. Base plate (90x90x2)
+    // 2. Walls (90x90x38) minus inner void (85x85x38)
+    // But the walls are 2.5mm thick.
+    // So the outer box for walls is 90x90x38.
+    // The inner box for walls is 85x85x38.
+    // The base plate is 90x90x2.
+    // We union them.
+    
+    // Actually, simpler:
+    // Create a solid block 90x90x40.
+    // Subtract a hollow box 85x85x38 starting at z=2.
+    // This leaves a 2mm base and 2.5mm walls.
+    
+    // Solid block for the whole housing
+    solid_housing = cube([OUTER_X, OUTER_Y, BOX_HEIGHT], center = true);
+    
+    // Hollow void: 85x85x38, centered at z=21 (from z=2 to z=40)
+    // Center of void: z = 2 + 38/2 = 2 + 19 = 21
+    void_housing = translate([0, 0, 21])
+        cube([OUTER_X - 2*WALL_THICKNESS, OUTER_Y - 2*WALL_THICKNESS, BOX_HEIGHT - TOP_THICKNESS], center = true);
+    
+    // Combine base and walls
+    housing_body = difference() {
+        solid_housing;
+        void_housing;
+    }
+    
+    // 4. Cut the cable notch in one wall.
+    // The notch is in one wall, 12mm wide, centered, reaching 8mm down from the open edge (z=32 to z=40).
+    // We assume the notch is on the +Y wall (front).
+    // The wall is at Y = OUTER_Y/2.
+    // The notch is 12mm wide, centered on X=0.
+    // The notch goes from Z=32 to Z=40.
+    // The notch depth must go through the wall (2.5mm) and slightly into the interior.
+    // We cut from the outside (Y > OUTER_Y/2) into the wall.
+    
+    // Notch cutter: A box that cuts through the wall.
+    // The wall is at Y = OUTER_Y/2. The notch is centered on X=0.
+    // The notch width is 12mm, so it spans X from -6 to 6.
+    // The notch height is 8mm, so it spans Z from 32 to 40.
+    // The notch depth must go through the wall (2.5mm) and slightly into the interior.
+    // We cut from the outside (Y > OUTER_Y/2) towards the inside.
+    
+    // The cutter box:
+    // X: -6 to 6 (width 12)
+    // Y: OUTER_Y/2 to OUTER_Y/2 + 2.5 + 0.01 (cut through wall)
+    // Z: 32 to 40 (height 8)
+    
+    notch_cutter = translate([0, OUTER_Y/2 + 0.01, 32])
+        cube([NOTCH_WIDTH, WALL_THICKNESS + 0.01, NOTCH_HEIGHT], center = false);
+    
+    // Apply the notch cut to the housing body
+    final_housing = difference() {
+        housing_body;
+        notch_cutter;
+    }
+    
+    // 5. Drill four 4.5 mm holes for M4 screws through the top plate.
+    // We already did this in the base plate, but let's do it again on the final housing to be safe.
+    // Actually, the holes were drilled in the base plate. The base plate is part of the final housing.
+    // So we need to subtract the holes from the final housing.
+    // But the holes were drilled in the base plate before the walls were added?
+    // No, we subtracted the void from the solid block, which includes the base.
+    // So the holes need to be subtracted from the final housing.
+    
+    // Let's subtract the holes from the final housing.
+    for (i = [0:1]) {
+        for (j = [0:1]) {
+            hole_x = (i == 0 ? -SCREW_PATTERN/2 : SCREW_PATTERN/2);
+            hole_y = (j == 0 ? -SCREW_PATTERN/2 : SCREW_PATTERN/2);
+            
+            // Cylinder extends from z=-0.1 to z=2.1 to ensure it cuts through the base
+            translate([hole_x, hole_y, 0])
+                cylinder(d = SCREW_HOLE_DIA, h = TOP_THICKNESS + 0.2, center = true);
+        }
+    }
+    
+    // Wait, the holes were already subtracted in the base plate step?
+    // No, the base plate step was just a module definition.
+    // We need to subtract the

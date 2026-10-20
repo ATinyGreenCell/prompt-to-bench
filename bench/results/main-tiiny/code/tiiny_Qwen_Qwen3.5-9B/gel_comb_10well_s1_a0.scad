@@ -1,0 +1,96 @@
+$fn = 128; // High resolution for clean edges on the teeth
+
+// --- Dimensions ---
+// Spine dimensions
+$spine_length = 70;   // X dimension
+$spine_width = 12;    // Y dimension
+$plate_thickness = 1.5; // Z dimension
+
+// Tooth dimensions
+$tooth_count = 10;
+$tooth_width = 5.0;   // X dimension
+$tooth_length = 12;   // Y dimension (matches spine width)
+$tooth_gap = 1.5;     // Gap between teeth in X
+
+// Orientation: Teeth hang in -Y direction from the spine edge.
+// Spine is at Y = 0 to Y = 12. Teeth extend from Y = 12 down to Y = 12 + 12 = 24.
+// Wait, if teeth hang from one long edge, and the spine is 12mm wide, 
+// the teeth must extend OUTWARDS from the 12mm width.
+// Let's define the spine box first, then add teeth.
+// Spine: X: 0 to 70, Y: 0 to 12, Z: 0 to 1.5.
+// Teeth hang from the edge at Y = 12 (or Y = 0). Let's assume Y=12 is the "front" edge.
+// Teeth extend from Y=12 to Y=12+12=24.
+
+// --- Calculation ---
+// Total width of the tooth row including gaps
+$total_tooth_width = $tooth_count * $tooth_width;
+$total_gap_width = ($tooth_count - 1) * $tooth_gap;
+$total_row_width = $total_tooth_width + $total_gap_width;
+
+// Center the row of teeth on the spine length (X)
+$center_offset_x = ($spine_length - $total_row_width) / 2;
+
+// Position of teeth start relative to spine edge
+// Spine is Y: 0 to 12. Teeth hang in +Y direction (from Y=12 to Y=24) or -Y (from Y=0 to Y=-12).
+// User said "hang from one long edge... in the -Y direction".
+// So if spine is Y:0 to 12, teeth go from Y:12 down to Y:24? No, -Y means decreasing Y.
+// So spine is Y:0 to 12. Edge is Y=0. Teeth go from Y=0 to Y=-12.
+// Let's re-read: "hang from one long edge... in the -Y direction".
+// If the spine is 12mm wide, let's place it at Y: 0 to 12.
+// The edge is at Y=0. The teeth hang in -Y, so they occupy Y: -12 to 0.
+// This makes the total Y span 24mm.
+
+// --- Construction ---
+
+// 1. Create the Spine (Back Bar)
+// Dimensions: 70 (X) x 12 (Y) x 1.5 (Z)
+// Centered at X=0, Y=6 (since it's 12mm wide and we want the edge at Y=0 for the teeth)
+spine = translate([0, 6, $plate_thickness/2], 
+                   [
+                     cube([
+                       $spine_length, 
+                       $spine_width, 
+                       $plate_thickness
+                     ])
+                   ]);
+
+// 2. Create the Teeth
+// We need 10 teeth.
+// Each tooth is 5mm wide (X).
+// Gaps are 1.5mm.
+// We need to position them so the row is centered on the spine (X=0).
+// The row starts at X = $center_offset_x and ends at X = $center_offset_x + $total_row_width.
+
+teeth = for (i = [0 : $tooth_count - 1]) {
+    // Calculate X position for this tooth
+    // Start of the first tooth is at $center_offset_x
+    // Each subsequent tooth is shifted by ($tooth_width + $tooth_gap)
+    $x_pos = $center_offset_x + (i * ($tooth_width + $tooth_gap));
+    
+    // Tooth geometry
+    // Width: $tooth_width (X)
+    // Length: $tooth_length (Y)
+    // Thickness: $plate_thickness (Z)
+    // Position: 
+    // X: $x_pos
+    // Y: Since they hang in -Y from the spine edge (Y=0), they go from Y=0 to Y=-12.
+    // Z: Centered at $plate_thickness/2
+    
+    translate([
+        $x_pos, 
+        0, // Start at the spine edge Y=0
+        $plate_thickness/2
+    ],
+    cube([
+        $tooth_width, 
+        $tooth_length, 
+        $plate_thickness
+    ])
+    )
+};
+
+// 3. Combine
+union() {
+    spine;
+    teeth;
+}

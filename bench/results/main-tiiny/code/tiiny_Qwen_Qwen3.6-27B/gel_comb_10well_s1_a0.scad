@@ -1,0 +1,51 @@
+// 10-well Agarose Gel Comb
+// Designed for FDM printing, lying flat on the build plate.
+
+// --- Dimensions (measured with calipers) ---
+plate_thickness = 1.5;   // Z thickness of the entire comb
+spine_length = 70;       // X length of the spine
+spine_width = 12;        // Y width of the spine
+num_teeth = 10;          // Number of teeth/wells
+tooth_width = 5.0;       // X width of each tooth
+tooth_length = 12;       // Y length of each tooth (extends from spine)
+gap_width = 1.5;         // Gap between neighbouring teeth
+
+// --- Derived Calculations ---
+// Total width occupied by teeth and gaps
+// Formula: (num_teeth * tooth_width) + ((num_teeth - 1) * gap_width)
+total_tooth_row_width = (num_teeth * tooth_width) + ((num_teeth - 1) * gap_width);
+
+// Center the tooth row on the spine (X-axis)
+// The spine is centered at X=0, so we offset the first tooth to start at -total_tooth_row_width/2
+start_x = -total_tooth_row_width / 2;
+
+// The teeth hang in the -Y direction from the spine.
+// The spine is centered at Y=0, so it spans from -spine_width/2 to +spine_width/2.
+// The teeth attach to the edge at Y = -spine_width/2.
+// They extend further in -Y by tooth_length.
+tooth_attach_y = -spine_width / 2;
+
+// --- Quality Settings ---
+$fn = 64; // High resolution for smooth edges
+
+// --- Main Structure ---
+union() {
+    // 1. The Spine (Back Bar)
+    // Centered at origin, lying flat on Z=0
+    translate([-spine_length/2, -spine_width/2, 0])
+        cube([spine_length, spine_width, plate_thickness]);
+
+    // 2. The Teeth
+    // Generated using a for loop
+    for (i = [0 : num_teeth - 1]) {
+        // Calculate X position for the current tooth
+        current_x = start_x + i * (tooth_width + gap_width);
+        
+        // Position the tooth:
+        // X: current_x
+        // Y: Starts at tooth_attach_y and extends -tooth_length
+        // Z: 0 to plate_thickness
+        translate([current_x, tooth_attach_y - tooth_length, 0])
+            cube([tooth_width, tooth_length, plate_thickness]);
+    }
+}

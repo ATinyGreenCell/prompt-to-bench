@@ -1,0 +1,67 @@
+```openscad
+$fn = 64;
+
+// Dimensions in millimetres
+plate_width_X = 130;
+plate_width_Y = 90;
+plate_thickness = 4;
+wall_height_total = 70;
+wall_thickness = 4;
+wall_length = 130;
+hole_diameter = 30.5;
+hole_count_X = 3;
+hole_count_Y = 2;
+hole_spacing = 40;
+
+// Calculated positions
+center_X = plate_width_X / 2;
+center_Y = plate_width_Y / 2;
+hole_x_offset = (plate_width_X - (hole_count_X - 1) * hole_spacing) / 2;
+hole_y_offset = (plate_width_Y - (hole_count_Y - 1) * hole_spacing) / 2;
+wall_height_above_plate = wall_height_total - plate_thickness;
+wall_z_start = plate_thickness;
+wall_z_end = wall_height_total;
+
+// Main module
+module rack() {
+    difference() {
+        // Base structure: Plate + Walls
+        union() {
+            // Plate
+            translate([0, 0, 0])
+                cube([plate_width_X, plate_width_Y, plate_thickness]);
+
+            // Wall 1 (Left edge, Y = 0)
+            // Positioned at Y = 0 to wall_thickness
+            translate([0, 0, 0])
+                cube([wall_length, wall_thickness, wall_height_total]);
+
+            // Wall 2 (Right edge, Y = plate_width_Y - wall_thickness)
+            // Positioned at Y = plate_width_Y - wall_thickness to plate_width_Y
+            translate([0, plate_width_Y - wall_thickness, 0])
+                cube([wall_length, wall_thickness, wall_height_total]);
+        }
+
+        // Holes (Through plate only, Z = 0 to plate_thickness + 0.1)
+        // Extend slightly past plate thickness to ensure clean cut
+        for (i = [0 : hole_count_X - 1]) {
+            for (j = [0 : hole_count_Y - 1]) {
+                translate([
+                    hole_x_offset + i * hole_spacing,
+                    hole_y_offset + j * hole_spacing,
+                    0
+                ])
+                    cylinder(
+                        h = plate_thickness + 0.1,
+                        r = hole_diameter / 2,
+                        center = [0, 0, 0]
+                    );
+            }
+        }
+    }
+}
+
+// Center the part on the origin
+translate([0, 0, 0])
+    rack();
+```

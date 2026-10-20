@@ -1,0 +1,69 @@
+// Bench Rack for 1.5 mL Microcentrifuge Tubes
+// Designed for FDM 3D printing.
+// Units: Millimetres (mm)
+
+// --- Dimensions ---
+block_length = 106;  // X dimension (mm)
+block_width = 72;    // Y dimension (mm)
+block_height = 30;   // Z dimension (mm)
+
+hole_rows = 4;       // Number of rows along Y
+hole_cols = 6;       // Number of columns along X
+hole_pitch_x = 16;   // Centre-to-centre spacing X (mm)
+hole_pitch_y = 16;   // Centre-to-centre spacing Y (mm)
+
+hole_diameter = 11.2; // Hole diameter (mm)
+hole_depth = 25;     // Hole depth (mm)
+floor_thickness = 5; // Solid floor thickness (mm)
+
+// --- Printing & Geometry Parameters ---
+$fn = 64;            // Facet count for curved shapes
+
+// Extension for difference() to avoid coplanar faces
+cut_extension = 0.1; // mm
+
+// --- Derived Variables ---
+// Grid centering offsets
+grid_x_offset = (block_length - (hole_cols - 1) * hole_pitch_x) / 2;
+grid_y_offset = (block_width - (hole_rows - 1) * hole_pitch_y) / 2;
+
+// Hole center Z calculation
+// Top of hole at block_height, bottom at block_height - hole_depth
+// To satisfy cut_extension rule:
+// Top cut extends to block_height + cut_extension
+// Bottom cut extends to (block_height - hole_depth) - cut_extension
+hole_height = hole_depth + (2 * cut_extension);
+hole_center_z = (block_height + cut_extension) - (hole_height / 2);
+
+// --- Module Definition ---
+module bench_rack() {
+    difference() {
+        // 1. Main Block
+        // Centered on origin, resting on Z=0
+        translate([0, 0, 0])
+            cube([block_length, block_width, block_height]);
+
+        // 2. Holes
+        // Loop over columns (X) and rows (Y)
+        for (x = [0 : hole_cols - 1]) {
+            for (y = [0 : hole_rows - 1]) {
+                // Calculate position for this hole
+                pos_x = (x * hole_pitch_x) - ((hole_cols - 1) * hole_pitch_x) / 2;
+                pos_y = (y * hole_pitch_y) - ((hole_rows - 1) * hole_pitch_y) / 2;
+
+                // Translate to hole position
+                // Cylinder is centered at origin, so we translate to the center of the hole
+                // The cylinder height is calculated to extend past the faces
+                translate([pos_x, pos_y, hole_center_z])
+                    cylinder(
+                        h = hole_height,
+                        r = hole_diameter / 2,
+                        $fn = 64
+                    );
+            }
+        }
+    }
+}
+
+// --- Main Execution ---
+bench_rack();

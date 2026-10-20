@@ -1,0 +1,69 @@
+```openscad
+// Dimensions for the Hotplate Stirrer Knob
+knob_diameter = 30;      // Overall diameter of the knob
+knob_height = 15;        // Height of the knob
+shaft_diameter = 6.2;    // Diameter of the D-shaft bore
+shaft_flat_width = 4.7;  // Width of the flat side of the D-shaft bore
+bore_depth = 12;         // Depth of the D-shaped blind bore
+groove_count = 18;       // Number of vertical grip grooves
+groove_diameter = 2;     // Diameter of the grip grooves
+pointer_width = 1.5;     // Width of the pointer groove
+pointer_depth = 1;       // Depth of the pointer groove
+$fn = 64;                // Resolution for curved surfaces
+
+// Calculate geometry
+groove_radius = knob_diameter / 2;
+groove_spacing = 360 / groove_count;
+
+module grip_groove() {
+    // Create a half-cylinder (semicircle) extruded along Z
+    // Centered on the outer surface
+    translate([groove_radius, 0, 0])
+        cylinder(h = knob_height, r = groove_diameter / 2, $fn = 32);
+}
+
+module pointer_groove() {
+    // Create a rectangular slot extruded along Z
+    // Centered on the top face, running from center to edge
+    // Positioned on the same side as the shaft flat (negative X)
+    translate([-knob_diameter / 2 + pointer_width / 2, 0, knob_height - pointer_depth])
+        cube([pointer_width, knob_diameter, pointer_depth]);
+}
+
+module shaft_bore() {
+    // Create the D-shaped blind bore
+    // The flat is on the left (negative X), so the radius is on the right
+    // We use a cylinder with a rectangular cutout to create the D shape
+    
+    // 1. The main cylinder
+    cylinder(h = bore_depth, r = shaft_diameter / 2, $fn = 64);
+    
+    // 2. The flat cut
+    // We cut a rectangular prism that is slightly wider than the flat width
+    // and extends past the cylinder to ensure clean cutting
+    translate([-shaft_diameter / 2, -shaft_diameter / 2, 0])
+        cube([shaft_diameter, shaft_diameter + 0.1, bore_depth + 0.1]);
+}
+
+// Main Assembly
+union() {
+    // 1. Base Knob
+    cylinder(h = knob_height, r = groove_radius, $fn = 64);
+    
+    // 2. Grip Grooves
+    // Loop 18 times around the circle
+    for (i = [0 : groove_count - 1]) {
+        rotate([0, 0, i * groove_spacing])
+            grip_groove();
+    }
+    
+    // 3. Shaft Bore
+    // Cut the D-shaped hole from the bottom
+    translate([0, 0, 0])
+        shaft_bore();
+        
+    // 4. Pointer Groove
+    // Cut the pointer slot from the top
+    pointer_groove();
+}
+```

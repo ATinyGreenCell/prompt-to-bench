@@ -1,0 +1,14 @@
+// ---------------
+// Parameter definitions
+// ---------------
+
+base_len   = 90;    // X length of the base block (mm)
+base_wid   = 45;    // Y width of the base block (mm)
+base_h     = 20;    // Z height of the base block (mm)
+
+slot_len   = 77;    // Length of each slot along X (mm)
+slot_wid   = 1.6;   // Width of each slot along Y (mm)
+slot_depth = 10;    // Depth of each slot down from the top face (mm)
+
+slot_count = 10;    // Number of slots
+slot_spacing = 3.5; // Centre‑to‑centre spacing of slots in Y (mm

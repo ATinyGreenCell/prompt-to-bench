@@ -1,0 +1,70 @@
+Looking at the measurement report and comparing it to the specification:
+
+1. **Groove depth issue**: The report shows that at groove centers (z=10, 15, 20, 25), the grooves are actually *increasing* the diameter to ~9.99 mm (i.e., radius ~5 mm), which means the groove depth is 1 mm (since handle radius is 4 mm, and 5 mm - 4 mm = 1 mm). But the slices at z=12.51 and z=17.51 show the handle diameter is still 7.99 mm, which is correct. However, the slice at z=20.01 shows diameter 9.99 mm, which is wrong — the groove should be 2 mm wide and 1 mm deep, but the groove should only affect the handle region (z=0 to z=45), and the groove should be *cut into* the handle, not extend beyond it.
+
+2. **The main issue**: The grooves are being subtracted with cylinders of radius `handle_radius + groove_depth` = 4 + 1 = 5 mm, which makes the groove 2 mm wide (correct) but the groove depth is actually 1 mm radially inward — that part is correct. But the problem is that the grooves are being cut *through* the entire handle height, and the slice at z=20.01 shows the groove is present, but the slice at z=12.51 shows no groove — this is inconsistent.
+
+Wait — looking at the slices:
+- z=3.18, 4.50, 12.51, 17.51, 22.51, 25.01, 35.51 → diameter 7.99 mm (correct)
+- z=20.01, 25.01 → diameter 9.99 mm (groove present)
+
+But the groove centers are at z=10, 15, 20, 25, each 2 mm wide → grooves span:
+- z=9 to 11
+- z=14 to 16
+- z=19 to 21
+- z=24 to 26
+
+So slices at:
+- z=12.51 → should be *between* grooves (z=11–14), so solid handle → correct (diameter 7.99)
+- z=17.51 → between z=16–19, solid → correct
+- z=20.01 → inside groove (z=19–21) → should show groove (larger diameter) → but groove should be *recessed*, i.e., smaller radius, not larger!
+
+Ah! Here's the critical error: The grooves are being *subtracted* by adding material (larger radius), which is wrong. To cut a groove, we should *subtract* material — i.e., use a cylinder with radius = handle_radius - groove_depth = 4 - 1 = 3 mm, and height = groove_width + 0.02.
+
+But wait — the report says "material area 78.4 mm2" at z=20.01, which corresponds to diameter ~9.99 mm (area = π*(4.995)^2 ≈ 78.4 mm²). That means the groove is *adding* material, which is backwards.
+
+The correct approach: To cut a groove (recess), we subtract a cylinder of radius `handle_radius - groove_depth` from the handle. But in OpenSCAD, to cut a groove, we should subtract a cylinder of radius `handle_radius - groove_depth`, but that would leave a groove of depth `groove_depth`. However, the current code subtracts a cylinder of radius `handle_radius + groove_depth`, which *removes* the outer ring, making the groove deeper — but that's actually *correct* for a circumferential groove: you subtract a cylinder larger than the handle to carve out a groove.
+
+Wait — no. If the handle has radius 4 mm, and you want a groove 1 mm deep (i.e., the groove bottom is at radius 3 mm), then you subtract a cylinder of radius 4 mm (the handle) and then *add back* a cylinder of radius 3 mm? No — standard way: to cut a groove, you subtract a cylinder of radius `handle_radius`, but then you *add* the handle back except for the groove region — but easier: subtract a cylinder of radius `handle_radius`, then *union* with the handle, then *difference* a cylinder of radius `handle_radius - groove_depth` in the groove region.
+
+Actually, the correct way to cut a groove is: start with the solid handle, then subtract a cylinder of radius `handle_radius - groove_depth` (i.e., the inner part remains, and the groove is the annular region removed). But that would make the groove depth = `groove_depth`, and the groove width = groove_width.
+
+Wait — no. If the handle has radius R = 4 mm, and you want a groove of depth d = 1 mm (i.e., the groove goes in 1 mm from the surface), then the groove's inner radius is R - d = 3 mm. So to cut the groove, you subtract a cylinder of radius R (the full handle) and then *add back* a cylinder of radius R - d? No — simpler: the groove is an annular region from radius R - d to R. So to cut it, you subtract a cylinder of radius R - d, but only in the groove region.
+
+But in OpenSCAD, the standard way is: `difference()` the handle with a cylinder of radius `handle_radius - groove_depth`, but only in the groove region. But since the handle is a solid cylinder, subtracting a smaller cylinder from it would leave a hollow tube — but we want a groove (a notch), not a hollow tube.
+
+Ah! Here's the mistake: The grooves are circumferential *notches*, so they should be annular grooves — i.e., the handle has a reduced diameter in the groove region. So in the groove region, the radius should be `handle_radius - groove_depth` = 3 mm, and elsewhere it's 4 mm.
+
+But the current code subtracts a cylinder of radius `handle_radius + groove_depth` = 5 mm, which would make the handle radius negative (impossible) — but in practice, OpenSCAD handles it by making the groove region have radius 5 mm, which is *larger* than the handle, so it's *adding* material, which is wrong.
+
+The correct subtraction: To make an annular groove (reducing the radius by 1 mm), we should subtract a cylinder of radius `handle_radius - groove_depth` from the handle in the groove region. But since the handle is solid, subtracting a smaller cylinder would hollow it out — but we want a groove, not a hollow tube.
+
+Actually, for a circumferential groove (like O-ring groove), you want the outer surface to have a groove — so the handle's outer surface is reduced in diameter in that region. So the correct way is: the handle is a solid cylinder of radius 4 mm. In the groove region (e.g., z=9 to 11), we want the radius to be 3 mm (i.e., 1 mm deep groove). So we need to *replace* the handle segment in that region with a cylinder of radius 3 mm.
+
+But in OpenSCAD, the easiest way is to build the handle as a union of:
+- Solid cylinder of radius 4 mm, except in the groove regions
+- In groove regions, cylinder of radius 3 mm
+
+But that's complicated. Better: Build the full handle (radius 4 mm), then subtract a cylinder of radius 4 mm in the groove region, and then *add* a cylinder of radius 3 mm in the groove region? No — simpler: use `difference()` to cut the groove.
+
+Standard method for circumferential groove:
+1. Start with the full handle (radius R = 4 mm).
+2. For each groove, subtract a cylinder of radius R (to remove the handle in that region), then add back a cylinder of radius R - d (where d = groove depth = 1 mm) in the same region.
+
+But that's equivalent to: In the groove region, the radius is R - d.
+
+So the correct code for grooves is:
+```scad
+for (z_center = groove_centers) {
+    z_start = z_center - groove_width/2;
+    z_end = z_center + groove_width/2;
+    // Subtract the handle in groove region, then add back the reduced cylinder
+    translate([0, 0, z_start])
+        difference() {
+            cylinder(h = groove_width + 0.02, r = handle_radius, center = false);
+            translate([0, 0, -0.01])
+                cylinder(h = groove_width + 0.02, r = handle_radius - groove_depth, center = false);
+        }
+}
+```
+

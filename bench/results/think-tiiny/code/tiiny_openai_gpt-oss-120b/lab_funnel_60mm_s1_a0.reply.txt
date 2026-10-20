@@ -1,0 +1,47 @@
+```openscad
+// Funnel parameters (all in mm)
+outer_d_spout = 10;          // outer diameter of straight spout
+wall_thickness = 1.6;        // wall thickness throughout
+inner_d_spout = outer_d_spout - 2*wall_thickness; // bore diameter of spout (6.8)
+
+outer_d_top = 60;            // outer diameter at funnel rim (z = 50)
+inner_d_top = outer_d_top - 2*wall_thickness; // bore diameter at rim (56.8)
+
+height_spout = 20;           // spout length from z=0 to z=20
+height_cone = 30;            // cone length from z=20 to z=50
+
+cut = 0.5;                   // extra length for cutting shapes (0.01‑1 mm)
+
+$fn = 64;                    // resolution for circles and cones
+
+// ---------- Outer solid (spout + cone) ----------
+module outer_funnel() {
+    union() {
+        // Outer cylindrical spout
+        cylinder(h = height_spout, d = outer_d_spout);
+        // Outer conical section
+        translate([0,0,height_spout])
+            cylinder(h = height_cone, d1 = outer_d_spout, d2 = outer_d_top);
+    }
+}
+
+// ---------- Inner void (bore) ----------
+module inner_void() {
+    union() {
+        // Inner cylindrical bore, extended past the outer faces
+        translate([0,0,-cut])
+            cylinder(h = height_spout + 2*cut, d = inner_d_spout);
+        // Inner conical bore, extended past the outer faces
+        translate([0,0,height_spout - cut])
+            cylinder(h = height_cone + 2*cut,
+                     d1 = inner_d_spout,
+                     d2 = inner_d_top);
+    }
+}
+
+// ---------- Final part ----------
+difference() {
+    outer_funnel();
+    inner_void();
+}
+```

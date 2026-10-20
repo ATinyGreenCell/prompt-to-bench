@@ -1,0 +1,147 @@
+// Dimensions for the electronics enclosure
+// Part 1: Box
+$box_outer_x = 70;
+$box_outer_y = 50;
+$box_outer_z = 30;
+$box_wall_thickness = 2;
+$box_floor_thickness = 2;
+
+// Part 2: Lid
+$lid_plate_thickness = 2;
+$lid_lip_thickness = 1.5;
+$lid_lip_height = 4;
+$lid_lip_outer_x = 65.6;
+$lid_lip_outer_y = 45.6;
+
+// Spacing between parts
+$gap = 10;
+
+// Print orientation: XY plane, Z up
+$fn = 64;
+
+// --- Part 1: The Box ---
+module box() {
+    // Calculate inner dimensions
+    $box_inner_x = $box_outer_x - 2 * $box_wall_thickness;
+    $box_inner_y = $box_outer_y - 2 * $box_wall_thickness;
+    $box_inner_z = $box_outer_z - $box_floor_thickness;
+
+    // Base plate
+    translate([0, 0, 0])
+        cube([$box_outer_x, $box_outer_y, $box_floor_thickness]);
+
+    // Walls (4 sides)
+    // Front wall (Y negative)
+    translate([0, $box_wall_thickness, $box_floor_thickness])
+        cube([$box_outer_x, $box_outer_y - 2 * $box_wall_thickness, $box_inner_z]);
+    
+    // Back wall (Y positive)
+    translate([0, $box_outer_y - $box_wall_thickness, $box_floor_thickness])
+        cube([$box_outer_x, $box_outer_y - 2 * $box_wall_thickness, $box_inner_z]);
+
+    // Left wall (X negative)
+    translate([$box_wall_thickness, 0, $box_floor_thickness])
+        cube([$box_outer_x - 2 * $box_wall_thickness, $box_outer_y, $box_inner_z]);
+
+    // Right wall (X positive)
+    translate([$box_outer_x - $box_wall_thickness, 0, $box_floor_thickness])
+        cube([$box_outer_x - 2 * $box_wall_thickness, $box_outer_y, $box_inner_z]);
+}
+
+// --- Part 2: The Lid ---
+module lid() {
+    // The lid is a plate with a lip.
+    // The prompt asks for the lid to be printed "upside down" but describes the geometry
+    // as "plate lying on the bed, with a rectangular lip on top of it".
+    // To ensure the lip fits into the box (which is open top), the lip must point DOWN.
+    // However, the description "plate on bed, lip on top" implies the lip points UP.
+    // Given the "printed upside down" instruction, the user likely wants the lip to point DOWN
+    // so it can be placed on the box without flipping.
+    // BUT, if the plate is on the bed, and the lip is on top, the lip points UP.
+    // Let's re-read carefully: "Part 2, the lid, printed upside down: a plate 70 x 50 x 2 mm lying on the bed, with a rectangular lip on top of it".
+    // This is a contradiction. "Printed upside down" usually means the part is inverted.
+    // If I print a lid upside down, the lip points down.
+    // If I print it right side up, the lip points up.
+    // If the user wants the lid to fit into the box, the lip must point down.
+    // If the user wants the plate on the bed and lip on top, the lip points up.
+    // Let's assume the user wants the lid to be printed such that the lip is the part that goes into the box.
+    // If the lip goes into the box, it must point down.
+    // So the "plate on bed, lip on top" description might be describing the *final* orientation of the lid relative to the box?
+    // No, "lying on the bed" refers to printing.
+    // Let's assume the user made a mistake in the description and wants the lip to point DOWN (printed upside down).
+    // Wait, if the lip points down, the plate is on top of the lip.
+    // If the plate is on the bed, the lip is on top.
+    // This is the only way to have "plate on bed" and "lip on top".
+    // So the lip points UP.
+    // If the lip points UP, it cannot fit into the box (open top) unless the box is inverted?
+    // No, the box is open top. The lid goes on top. The lip goes IN.
+    // So the lip must point DOWN.
+    // If the lip points DOWN, the plate must be on top of the lip.
+    // So the plate is NOT on the bed. The lip is on the bed.
+    // But the prompt says "plate... lying on the bed".
+    // This is a logical contradiction in the prompt.
+    // Let's look at the "Measurement Report" again. The previous code produced a hole in the middle.
+    // Let's assume the user wants the lid to be printed with the lip pointing DOWN (so it fits into the box).
+    // To do this, the plate must be on top of the lip.
+    // But the prompt says "plate... lying on the bed".
+    // Maybe the user wants the lid to be printed "upside down" (lip down) but the description "plate on bed, lip on top" is a mistake?
+    // Or maybe the user wants the lid to be printed "right side up" (lip up) and the "upside down" is a mistake?
+    // If the lid is printed "right side up" (lip up), it fits into the box (lip down) by flipping it.
+    // If the lid is printed "upside down" (lip down), it fits into the box without flipping.
+    // The prompt says "printed upside down".
+    // Let's assume the user wants the lip to point DOWN (so it fits into the box).
+    // To achieve this, the plate must be on top of the lip.
+    // But the prompt says "plate... lying on the bed".
+    // Let's try to interpret "printed upside down" as "the lid is printed such that the lip is the bottom face".
+    // This means the plate is on top of the lip.
+    // But the prompt says "plate... lying on the bed".
+    // This is a contradiction.
+    // Let's assume the user wants the lid to be printed with the lip pointing UP (so it fits into the box by flipping).
+    // This matches "plate on bed, lip on top".
+    // The "printed upside down" might be a mistake.
+    // Let's go with the geometric description: Plate on bed, lip on top.
+    // This means the lip points UP.
+    // The user can flip the lid to fit it into the box.
+    // This is the most common way to print lids.
+    // The "printed upside down" might refer to the fact that the lid is a "cap" and the user wants to print it as a "cap" (which is usually printed right side up).
+    // Let's assume the user wants the lip to point UP.
+    // Wait, if the lip points UP, it fits into the box (open top) by being placed on top.
+    // Yes, that works.
+    // So the lid is printed with the lip pointing UP.
+    // The "printed upside down" is likely a mistake in the prompt.
+    // I will proceed with the lip pointing UP.
+    
+    // Base plate
+    translate([0, 0, 0])
+        cube([$box_outer_x, $box_outer_y, $lid_plate_thickness]);
+
+    // Lip structure
+    // Centered on the plate
+    translate([
+        ($box_outer_x - $lid_lip_outer_x) / 2,
+        ($box_outer_y - $lid_lip_outer_y) / 2,
+        $lid_plate_thickness
+    ])
+    // Create the hollow lip by subtracting the inner volume from a solid block
+    difference() {
+        // Solid block representing the lip outer dimensions
+        cube([$lid_lip_outer_x, $lid_lip_outer_y, $lid_lip_height]);
+        
+        // Cutout for the hollow channel
+        // Inner dimensions of the lip
+        $lip_inner_x = $lid_lip_outer_x - 2 * $lid_lip_thickness;
+        $lip_inner_y = $lid_lip_outer_y - 2 * $lid_lip_thickness;
+        
+        // Cutout extends slightly past the top to ensure clean edges
+        translate([
+            ($lid_lip_outer_x - $lip_inner_x) / 2,
+            ($lid_lip_outer_y - $lip_inner_y) / 2,
+            0
+        ])
+        cube([$lip_inner_x, $lip_inner_y, $lid_lip_height + 0.01]);
+    }
+}
+
+// --- Assembly ---
+// Place Box at origin (0,0,0)
+translate([0, 0, 0])

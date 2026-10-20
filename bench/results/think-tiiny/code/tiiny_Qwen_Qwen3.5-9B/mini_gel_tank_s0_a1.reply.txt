@@ -1,0 +1,77 @@
+```openscad
+$fn = 64;
+
+// Outer dimensions (mm)
+$outer_x = 120;
+$outer_y = 70;
+$outer_z = 40;
+
+// Wall and floor thickness (mm)
+$wall_thickness = 3;
+$floor_thickness = 3;
+
+// Inner dimensions (mm)
+$inner_x = $outer_x - 2 * $wall_thickness;
+$inner_y = $outer_y - 2 * $wall_thickness;
+$inner_z = $outer_z - $floor_thickness;
+
+// Platform dimensions (mm)
+$platform_length = 60;
+$platform_width = $inner_y;
+$platform_height = 10;
+
+// Hole dimensions (mm)
+$hole_diameter = 2;
+$hole_radius = $hole_diameter / 2;
+$hole_z = 30;
+$hole_y = 0;
+
+// Build the tank
+difference() {
+    // Main tank body (outer box)
+    cube([
+        $outer_x,
+        $outer_y,
+        $outer_z
+    ], center = false);
+    
+    // Cut out inner cavity (open top)
+    translate([
+        $wall_thickness,
+        $wall_thickness,
+        $floor_thickness
+    ])
+    cube([
+        $inner_x,
+        $inner_y,
+        $inner_z
+    ], center = false);
+    
+    // Cut out platform cavity (space above platform)
+    translate([
+        ($outer_x - $platform_length) / 2,
+        $wall_thickness,
+        $floor_thickness + $platform_height
+    ])
+    cube([
+        $platform_length,
+        $inner_y,
+        $outer_z - ($floor_thickness + $platform_height)
+    ], center = false);
+    
+    // Cut out electrode holes (horizontal cylinders along X)
+    for (side = [-1, 1]) {
+        translate([
+            side * ($outer_x / 2),
+            $hole_y,
+            $hole_z
+        ])
+        cylinder(
+            r = $hole_radius,
+            h = $outer_x,
+            axis = [1, 0, 0],
+            center = true
+        );
+    }
+}
+```

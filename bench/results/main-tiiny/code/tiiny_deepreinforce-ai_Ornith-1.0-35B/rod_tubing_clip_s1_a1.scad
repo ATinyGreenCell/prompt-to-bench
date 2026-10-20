@@ -1,0 +1,61 @@
+// --- Dimensions ---
+// Rod inner diameter (1/2 inch lab stand)
+rod_id = 12.7;
+// Rod ring wall thickness
+rod_wall = 3;
+// Rod ring outer diameter
+rod_od = rod_id + 2 * rod_wall; // 18.7
+
+// Tubing inner diameter
+tube_id = 6;
+// Tubing ring wall thickness
+tube_wall = 2;
+// Tubing ring outer diameter
+tube_od = tube_id + 2 * tube_wall; // 10
+
+// Tubing ring center position
+tube_cx = 15;
+tube_cy = 0;
+
+// Bridge width (Y direction)
+bridge_width = 6;
+// Bridge X range
+bridge_x1 = 8;
+bridge_x2 = 12;
+
+// Extrusion height (Z)
+height = 10;
+
+// --- Snap-on clip ---
+difference() {
+    union() {
+        // Rod ring
+        difference() {
+            cylinder(d = rod_od, h = height, $fn = 64);
+            cylinder(d = rod_id, h = height + 0.01, $fn = 64);
+        }
+        
+        // Tubing ring
+        translate([tube_cx, tube_cy, 0]) {
+            difference() {
+                cylinder(d = tube_od, h = height, $fn = 64);
+                cylinder(d = tube_id, h = height + 0.01, $fn = 64);
+            }
+        }
+        
+        // Bridge
+        translate([bridge_x1, -bridge_width/2, 0]) {
+            cube([bridge_x2 - bridge_x1, bridge_width, height]);
+        }
+    }
+    
+    // Cut out rod ring opening (-X side)
+    translate([-5.01, 0, -0.01]) {
+        cube([10.02, 10.02, height + 0.02]);
+    }
+    
+    // Cut out tubing ring opening (+X side)
+    translate([tube_cx + 15.01, -2.26, -0.01]) {
+        cube([10.02, 4.52, height + 0.02]);
+    }
+}

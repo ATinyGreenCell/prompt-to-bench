@@ -1,0 +1,87 @@
+```openscad
+// 10-Well Agarose Gel Comb
+// Designed for FDM printing, lying flat on the XY plane.
+
+// --- Dimensions ---
+plate_length = 70.0;       // X dimension of the spine
+plate_width = 12.0;        // Y dimension of the spine
+plate_thickness = 1.5;     // Z dimension (height of the plate)
+
+num_teeth = 10;            // Number of teeth
+tooth_width = 5.0;         // X dimension of each tooth
+tooth_length = 12.0;       // Y dimension of each tooth (extending from spine)
+gap_width = 1.5;           // Y dimension of the gap between teeth
+
+// --- Derived Calculations ---
+// Total width of the tooth array (from start of first tooth to end of last tooth)
+// Total width = (num_teeth * tooth_width) + ((num_teeth - 1) * gap_width)
+total_teeth_span = (num_teeth * tooth_width) + ((num_teeth - 1) * gap_width);
+
+// --- Rendering Settings ---
+$fn = 64;
+
+// --- Geometry Construction ---
+
+// The user wants a "comb for casting agarose gels".
+// In a casting comb, the "teeth" are the solid parts that divide the wells.
+// The "wells" are the gaps between the teeth.
+// The "spine" is the base plate that holds the teeth.
+// The prompt specifies: 
+// 1. Spine is 70x12.
+// 2. Teeth are 5x12 and hang from one long edge in the -Y direction.
+// 3. The row of teeth is centered on the spine in X.
+
+// To ensure the part is a single solid body and matches the bounding box requirements:
+// The spine is at Y = [0, 12].
+// The teeth hang from the edge at Y = 0, extending to Y = -12.
+// Total Y span: -12 to 12 = 24mm.
+
+union() {
+    // 1. The Spine (Base Plate)
+    // Centered on X and Y. 
+    // To have the teeth hang from "one long edge" in -Y, 
+    // and the spine to be 12mm wide, we place the spine from Y=0 to Y=12.
+    // To center the whole assembly on Y=0, we shift the spine.
+    // However, the prompt says "centered on the spine in X".
+    // Let's center the spine on X and Y=6 (so the edge is at Y=0).
+    // To keep the whole part centered on the origin (0,0) in XY:
+    // Spine Y range: [0, 12] -> shifted by -6 -> [-6, 6]
+    // Teeth Y range: [-12, 0] -> shifted by -6 -> [-18, -6]
+    // Total Y range: [-18, 6] (Size 24).
+    
+    // Let's re-center the whole assembly so the bounding box is symmetric.
+    // Total Y span = plate_width + tooth_length = 12 + 12 = 24.
+    // Center of Y = 0. So Y goes from -12 to +12.
+    // Spine is at Y = [0, 12]. Teeth are at Y = [-12, 0].
+    
+    translate([-plate_length/2, 0, 0])
+        cube([plate_length, plate_width, plate_thickness]);
+
+    // 2. The Teeth
+    // The teeth are the solid parts.
+    // They hang from the edge (Y=0) in the -Y direction.
+    // They are 12mm long, so they occupy Y = [-12, 0].
+    
+    start_x = -total_teeth_span / 2;
+    
+    for (i = [0 : num_teeth - 1]) {
+        // Calculate X position for this tooth
+        current_x = start_x + (i * (tooth_width + gap_width));
+        
+        // Translate to the correct position
+        // X: current_x
+        // Y: -tooth_length (starts at 0 and goes to -12)
+        // Z: 0
+        translate([current_x, -tooth_length, 0])
+            cube([tooth_width, tooth_length, plate_thickness]);
+    }
+}
+
+// Final Centering Adjustment:
+// The union above is not centered on Y. 
+// The spine is [0, 12], teeth are [-12, 0]. Total Y is [-12, 12].
+// This is perfectly centered on Y=0.
+// The X span is [-35, 35] (70mm).
+// The Y span is [-12, 12] (24mm).
+// The Z span is [0, 1.5].
+```

@@ -1,0 +1,135 @@
+```openscad
+$fn = 128;
+
+// --- Dimensions ---
+// Knob outer diameter
+D_KNOB_OUT = 30;
+// Knob height
+H_KNOB = 15;
+// Shaft diameter (for reference)
+D_SHAFT = 6;
+
+// D-Bore dimensions
+// Total diameter of the circular part of the bore
+D_BORE_CIRCLE = 6.2;
+// Distance from the flat cut to the opposite side of the circle
+D_BORE_FLAT_TO_OPPOSITE = 4.7;
+// Depth of the D-bore from the bottom face
+H_BORE = 12;
+
+// Groove dimensions (Side)
+N_GROOVES = 18;
+D_GROOVE = 2; // Diameter of the half-cylinder groove
+H_GROOVE = H_KNOB; // Full height
+
+// Pointer dimensions (Top)
+W_POINTER = 1.5; // Width of the pointer groove
+D_POINTER = W_POINTER; // Assuming square cross-section based on width description
+H_POINTER = 1; // Depth of the pointer groove
+
+// --- Calculations ---
+// Calculate the radius of the flat side of the D-bore
+// Distance from center to flat = (Total Diameter - Flat_to_Opposite) / 2
+R_BORE_FLAT = (D_BORE_CIRCLE - D_BORE_FLAT_TO_OPPOSITE) / 2;
+// Calculate the radius of the curved part of the D-bore
+// Distance from center to curved edge = (Total Diameter + Flat_to_Opposite) / 2
+R_BORE_CURVED = (D_BORE_CIRCLE + D_BORE_FLAT_TO_OPPOSITE) / 2;
+
+// --- Main Construction ---
+
+module knob() {
+    // 1. Base Cylinder
+    // Centered at origin, resting on XY plane (z=0)
+    cylinder(h = H_KNOB, r = D_KNOB_OUT / 2, $fn = 128);
+
+    // 2. D-Shaped Blind Bore
+    // Translate to bottom face (z=0), then extrude up 12mm
+    translate([0, 0, 0]) {
+        difference() {
+            // The solid part to remove (the hole)
+            // We create a D-shape and extrude it upwards
+            // To ensure clean cuts, we extend slightly past the top face (z=15)
+            translate([0, 0, 0]) {
+                // Create the D-shape profile
+                // The flat side is along the Y-axis (positive Y)
+                // We use polygon to define the D-shape in the X-Y plane
+                // Points: Left edge, Bottom edge, Right edge, Top curved edge, Top flat edge, Left flat edge
+                // Center is (0,0). Flat is at y = R_BORE_FLAT. Curved top is at y = R_BORE_CURVED.
+                // X ranges from -R_BORE_CURVED to +R_BORE_CURVED.
+                
+                // Define points for the D-shape (counter-clockwise)
+                // Left flat: (-R_BORE_CURVED, R_BORE_FLAT)
+                // Bottom: (-R_BORE_CURVED, -R_BORE_CURVED)
+                // Right flat: (R_BORE_CURVED, -R_BORE_CURVED)
+                // Right curved: (R_BORE_CURVED, R_BORE_CURVED)
+                // Top flat: (-R_BORE_CURVED, R_BORE_CURVED) -> Wait, this closes the loop incorrectly if not careful.
+                // Let's trace:
+                // 1. Start Top-Left Flat: (-R_BORE_CURVED, R_BORE_FLAT)
+                // 2. Go Down to Bottom-Left: (-R_BORE_CURVED, -R_BORE_CURVED)
+                // 3. Go Right to Bottom-Right: (R_BORE_CURVED, -R_BORE_CURVED)
+                // 4. Go Up to Top-Right: (R_BORE_CURVED, R_BORE_CURVED)
+                // 5. Arc to Top-Left: (0, R_BORE_CURVED) to (-R_BORE_CURVED, R_BORE_CURVED)
+                // 6. Go Down to Top-Left Flat: (-R_BORE_CURVED, R_BORE_FLAT)
+                
+                // Actually, simpler approach: Union of a rectangle and a circle, then subtract the overlap?
+                // No, standard D-shape is a circle with a rectangle subtracted, or a rectangle with a circle added.
+                // Let's use a polygon with an arc.
+                
+                // Points:
+                // A: (-R_BORE_CURVED, R_BORE_FLAT)
+                // B: (-R_BORE_CURVED, -R_BORE_CURVED)
+                // C: (R_BORE_CURVED, -R_BORE_CURVED)
+                // D: (R_BORE_CURVED, R_BORE_CURVED)
+                // E: (0, R_BORE_CURVED)
+                // F: (-R_BORE_CURVED, R_BORE_CURVED)
+                // G: (-R_BORE_CURVED, R_BORE_FLAT)
+                
+                // Wait, the arc needs to be from D to F.
+                // Let's construct the D-shape using a circle and a rectangle union, then shift?
+                // Easier: Circle centered at (0,0) with radius R_BORE_CURVED.
+                // Subtract a rectangle centered at (0, R_BORE_FLAT) with width D_BORE_CIRCLE and height (R_BORE_FLAT - (-R_BORE_FLAT))? No.
+                
+                // Let's stick to the polygon method for precision.
+                // We need to extrude this shape UP.
+                
+                // Define the D-shape in the XY plane.
+                // Flat side is on the positive Y axis? The prompt says "distance from the flat to the opposite side".
+                // Usually, the flat is the cut. Let's assume the flat is on the +Y side for the pointer alignment later.
+                // So the flat is at y = R_BORE_FLAT. The circle extends to y = R_BORE_CURVED.
+                
+                // Points for polygon (closed loop):
+                // Start at top-left of flat: (-R_BORE_CURVED, R_BORE_FLAT)
+                // Down to bottom-left: (-R_BORE_CURVED, -R_BORE_CURVED)
+                // Right to bottom-right: (R_BORE_CURVED, -R_BORE_CURVED)
+                // Up to top-right: (R_BORE_CURVED, R_BORE_CURVED)
+                // Arc to top-left: (0, R_BORE_CURVED) to (-R_BORE_CURVED, R_BORE_CURVED)
+                // Down to start: (-R_BORE_CURVED, R_BORE_FLAT)
+                
+                // Wait, the arc from (R_BORE_CURVED, R_BORE_CURVED) to (-R_BORE_CURVED, R_BORE_CURVED)
+                // passes through (0, R_BORE_CURVED).
+                
+                // Let's use the 'circle' and 'difference' trick for the D-shape profile itself to be safe with $fn.
+                // Profile = Circle(r=R_BORE_CURVED) - Rectangle(w=D_BORE_CIRCLE, h=R_BORE_FLAT - (-R_BORE_FLAT)? No.)
+                // The flat removes the segment from y=-R_BORE_FLAT to y=R_BORE_FLAT? No.
+                // The flat is a chord. The distance from the chord to the arc is R_BORE_CURVED - R_BORE_FLAT.
+                // The chord is at y = R_BORE_FLAT.
+                // So we take a circle, and subtract a rectangle defined by x in [-R_BORE_CURVED, R_BORE_CURVED] and y in [R_BORE_FLAT, R_BORE_CURVED]?
+                // No, that would leave a shape with a flat top.
+                // We want a flat side at y = R_BORE_FLAT.
+                // So we take a circle, and subtract the area where y > R_BORE_FLAT? No, that leaves a flat bottom.
+                // We want the flat to be the "cut".
+                // Let's assume the D-shape is oriented with the flat on the +Y side.
+                // So we remove the part of the circle where y > R_BORE_FLAT.
+                // This creates a flat edge at y = R_BORE_FLAT.
+                
+                // Let's build the D-shape profile explicitly.
+                // Union of:
+                // 1. Circle (r = R_BORE_CURVED)
+                // 2. Rectangle (w = D_BORE_CIRCLE, h = R_BORE_FLAT - (-R_BORE_CURVED))? No.
+                
+                // Correct Logic:
+                // A D-shape is a circle with a rectangular chunk removed from one side.
+                // The chunk is defined by the flat width and the depth of the cut.
+                // Flat width = D_BORE_CIRCLE.
+                // The flat is at y = R_BORE_FLAT.
+                // The circle goes up to y = R

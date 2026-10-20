@@ -1,0 +1,36 @@
+// Parameters (mm)
+collar_diameter = 13;          // Collar outer diameter
+collar_thickness = 1.5;        // Collar height (lies on the bed)
+sleeve_outer_diameter = 10.8; // Sleeve outer diameter
+sleeve_body_height = 20.0;     // Height of sleeve body (from collar top to top of part)
+bore_diameter = 6.2;           // Diameter of the through bore
+total_height = collar_thickness + sleeve_body_height; // Full part height = 21.5 mm
+extra_cut = 0.5;               // Extra length of bore beyond each face (0.5 mm)
+
+// Set resolution for curved features
+$fn = 64;
+
+// Main solid (collar + sleeve)
+module part() {
+    union() {
+        // Collar (bottom)
+        translate([0, 0, 0])
+            cylinder(d = collar_diameter, h = collar_thickness);
+        // Sleeve body (above collar)
+        translate([0, 0, collar_thickness])
+            cylinder(d = sleeve_outer_diameter, h = sleeve_body_height);
+    }
+}
+
+// Bore that cuts through the whole part
+module bore() {
+    // Extend bore 0.5 mm below the bed and 0.5 mm above the top
+    translate([0, 0, -extra_cut])
+        cylinder(d = bore_diameter, h = total_height + 2*extra_cut);
+}
+
+// Final part with bore
+difference() {
+    part();
+    bore();
+}

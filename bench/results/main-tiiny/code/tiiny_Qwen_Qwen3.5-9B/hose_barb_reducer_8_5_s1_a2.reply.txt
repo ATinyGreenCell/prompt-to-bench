@@ -1,0 +1,108 @@
+```openscad
+// Hose-Barb Reducer: 8mm ID to 5mm ID
+// Print Orientation: Standing upright along Z, resting on XY plane at z=0.
+// Centered on origin in X and Y.
+
+$fn = 128; // High resolution for smooth curves and accurate hole sizing
+
+// --- Dimensions ---
+// Main bore
+$main_bore_d = 3.0;
+
+// Upper Section (8mm tubing)
+$upper_section_start_z = 0;
+$upper_section_end_z = 20;
+$upper_barb_height = 10;
+$upper_barb_bottom_od = 7.5;
+$upper_barb_top_od = 9.5;
+$upper_barb_step_back = 7.5;
+$upper_barb_spacing = 12;
+
+// Collar Section
+$collar_start_z = 20;
+$collar_end_z = 25;
+$collar_diameter = 12;
+
+// Lower Section (5mm tubing)
+$lower_section_start_z = 25;
+$lower_section_end_z = 41;
+$lower_barb_height = 8;
+$lower_barb_bottom_od = 6.5;
+$lower_barb_top_od = 5.0;
+$lower_barb_step_back = 6.5;
+$lower_barb_spacing = 12;
+
+// --- Main Assembly ---
+difference() {
+    // 1. Create the Main Body (Hollow Cylinder)
+    // The outer diameter must cover the largest feature (Collar = 12mm).
+    $main_body_od = $collar_diameter;
+    $main_body_id = $main_bore_d;
+    
+    // Create the main hollow cylinder
+    cylinder(h=41, r=$main_body_od/2, $fn=128);
+    
+    // Cut the main bore
+    cylinder(h=41, r=$main_bore_d/2, $fn=128);
+    
+    // 2. Create the Upper Barbs (8mm tubing)
+    // These are added to the body.
+    $y_offset_upper = $upper_barb_spacing / 2;
+    
+    for (i = [-1, 1]) {
+        translate([0, i * $y_offset_upper, 0]) {
+            $h = $upper_barb_height;
+            $r_bottom = $upper_barb_bottom_od / 2;
+            $r_top = $upper_barb_top_od / 2;
+            $r_step = $upper_barb_step_back / 2;
+            
+            // Define the 2D profile path (radius vs z)
+            // Points: Bottom -> Top -> Step -> Bottom (closed loop)
+            $path = [
+                [$r_bottom, 0],
+                [$r_top, $h],
+                [$r_step, $h],
+                [$r_step, 0],
+                [$r_bottom, 0]
+            ];
+            
+            $p = polygon($path);
+            
+            linear_extrude(height=$h, center=true) {
+                rotate_extrude(center=true) {
+                    $p;
+                }
+            }
+        }
+    }
+    
+    // 3. Create the Lower Barbs (5mm tubing)
+    // z: 25 to 41
+    $y_offset_lower = $lower_barb_spacing / 2;
+    
+    for (i = [-1, 1]) {
+        translate([0, i * $y_offset_lower, 0]) {
+            $h = $lower_barb_height;
+            $r_bottom = $lower_barb_bottom_od / 2;
+            $r_top = $lower_barb_top_od / 2;
+            $r_step = $lower_barb_step_back / 2;
+            
+            $path = [
+                [$r_bottom, 0],
+                [$r_top, $h],
+                [$r_step, $h],
+                [$r_step, 0],
+                [$r_bottom, 0]
+            ];
+            
+            $p = polygon($path);
+            
+            linear_extrude(height=$h, center=true) {
+                rotate_extrude(center=true) {
+                    $p;
+                }
+            }
+        }
+    }
+}
+```

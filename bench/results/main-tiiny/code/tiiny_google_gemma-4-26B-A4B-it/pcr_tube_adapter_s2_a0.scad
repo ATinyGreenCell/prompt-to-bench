@@ -1,0 +1,37 @@
+// --- Dimensions (mm) ---
+collar_diameter = 13.0;      // Diameter of the base collar
+collar_thickness = 1.5;      // Height of the base collar
+sleeve_outer_diameter = 10.8; // Diameter of the main sleeve body
+sleeve_height = 21.5 - 1.5;  // Height of the sleeve body (total height - collar)
+bore_diameter = 6.2;         // Diameter of the central hole
+total_height = 21.5;         // Total height of the part
+
+/* 
+   Design Notes:
+   - Print orientation: Upside down (Collar on XY plane at Z=0).
+   - The part consists of a wide collar at the bottom and a narrower sleeve on top.
+   - A central bore runs through the entire height.
+*/
+
+$fn = 64; // Smoothness for cylinders
+
+module adapter_sleeve() {
+    difference() {
+        // Main Body Construction
+        union() {
+            // The Collar (Base)
+            cylinder(d = collar_diameter, h = collar_thickness);
+            
+            // The Sleeve Body
+            cylinder(d = sleeve_outer_diameter, h = sleeve_height);
+        }
+
+        // The Bore (Cutting through the whole part)
+        // We extend the bore slightly in Z to ensure a clean cut through top and bottom
+        translate([0, 0, -0.5])
+            cylinder(d = bore_diameter, h = total_height + 1.0);
+    }
+}
+
+// Render the part
+adapter_sleeve();

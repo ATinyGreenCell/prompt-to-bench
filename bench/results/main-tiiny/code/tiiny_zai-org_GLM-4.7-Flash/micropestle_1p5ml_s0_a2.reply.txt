@@ -1,0 +1,65 @@
+```openscad
+// Dimensions for the 1.5 mL Microcentrifuge Tube Pestle
+// All dimensions are in millimetres
+
+// Handle
+handle_diameter = 8;
+handle_height = 45;
+
+// Cone
+cone_bottom_z = handle_height;
+cone_top_z = 62;
+cone_top_diameter = 3;
+
+// Rounded Tip
+tip_diameter = 3;
+tip_z = cone_top_z;
+
+// Grip Grooves
+groove_width_z = 2;
+groove_depth = 1;
+groove_z_positions = [10, 15, 20, 25];
+
+// Rendering
+$fn = 64;
+
+// Main Body
+module pestle_body() {
+    union() {
+        // 1. Cylindrical Handle
+        cylinder(h = handle_height, d = handle_diameter, center = false);
+        
+        // 2. Tapering Cone
+        // Calculate cone radius at bottom (handle) and top (tip)
+        cone_bottom_radius = handle_diameter / 2;
+        cone_top_radius = tip_diameter / 2;
+        
+        // Translate cone to start at handle height
+        translate([0, 0, cone_bottom_z])
+        cylinder(h = cone_top_z - cone_bottom_z, 
+                 r1 = cone_bottom_radius, 
+                 r2 = cone_top_radius, 
+                 center = false);
+        
+        // 3. Rounded Tip
+        translate([0, 0, tip_z])
+        sphere(d = tip_diameter, center = false);
+    }
+}
+
+// Grip Grooves
+module pestle_grooves() {
+    for (z_pos = groove_z_positions) {
+        // Create a slot shape
+        // We use a rectangular box and rotate it 90 degrees around X
+        // to make it a groove running along the length of the cylinder
+        rotate([90, 0, 0])
+        translate([0, 0, z_pos])
+        cube([handle_diameter + 2, groove_depth, groove_width_z], center = true);
+    }
+}
+
+// Assembly
+pestle_body();
+pestle_grooves();
+```

@@ -1,0 +1,53 @@
+```openscad
+// Dimensions for the buffer tank
+outer_x = 120;           // Total width (X)
+outer_y = 70;            // Total depth (Y)
+outer_z = 40;            // Total height (Z)
+wall_thick = 3;          // Wall thickness
+floor_thick = 3;         // Floor thickness
+platform_len_x = 60;      // Length of the raised platform (X)
+platform_height = 10;     // Height of the platform above the floor
+hole_diam = 2;           // Diameter of the electrode holes
+hole_y = 0;              // Y-position of the holes (centerline)
+hole_z = 30;             // Z-position of the holes
+
+// Resolution for curved surfaces
+fn = 64;
+
+// 1. Create the main tank body (the outer shell)
+// We first create a solid block and then subtract the inner void.
+tank_body = translate([-outer_x/2, -outer_y/2, 0]) 
+            cube([outer_x, outer_y, outer_z]);
+
+// The inner void is the empty space inside the tank.
+// It starts at the top of the floor and extends to the top of the tank.
+inner_void = translate([-outer_x/2 + wall_thick, -outer_y/2 + wall_thick, floor_thick]) 
+            cube([outer_x - 2*wall_thick, outer_y - 2*wall_thick, outer_z]);
+
+// The tank shell is the outer block minus the inner void.
+tank_shell = difference() {
+    tank_body;
+    inner_void;
+}
+
+// 2. Create the raised platform
+// The platform is a solid block sitting on the floor, spanning the full inner width.
+platform = translate([-platform_len_x/2, -outer_y/2 + wall_thick, floor_thick]) 
+           cube([platform_len_x, outer_y - 2*wall_thick, platform_height]);
+
+// 3. Create the electrode holes
+// The holes are cylinders passing through the X-axis.
+// We make the cylinder longer than the tank to ensure a clean cut.
+hole_cyl = cylinder(d=hole_diam, h=outer_x + 2, center=true);
+hole = translate([0, hole_y, hole_z]) rotate([0, 90, 0]) hole_cyl;
+
+// 4. Final Assembly
+// We combine the tank shell and the platform, then subtract the electrode holes.
+difference() {
+    union() {
+        tank_shell;
+        platform;
+    }
+    hole;
+}
+```

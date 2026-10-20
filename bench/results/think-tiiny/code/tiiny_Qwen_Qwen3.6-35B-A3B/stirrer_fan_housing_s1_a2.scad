@@ -1,0 +1,34 @@
+$fn = 64;
+
+// Dimensions
+OUTER_X = 90;
+OUTER_Y = 90;
+TOP_Z = 2;
+WALL_THICK = 2.5;
+WALL_H = 40;
+PITCH = 71.5;
+HOLE_R = 2.25;
+NOTCH_W = 12;
+NOTCH_H = 8;
+NOTCH_Z_START = 32;
+
+difference() {
+    // Main solid block
+    cube([OUTER_X, OUTER_Y, WALL_H]);
+
+    // Inner hollow void (starts at top plate thickness)
+    translate([WALL_THICK, WALL_THICK, TOP_Z])
+        cube([OUTER_X - 2*WALL_THICK, OUTER_Y - 2*WALL_THICK, WALL_H - TOP_Z + 0.01]);
+
+    // Screw holes (centred on plate at 45,45)
+    for (x = [-PITCH/2, PITCH/2]) {
+        for (y = [-PITCH/2, PITCH/2]) {
+            translate([45 + x, 45 + y, 2])
+                cylinder(r=HOLE_R, h=2.01);
+        }
+    }
+
+    // Cable notch (in the Y=87.5..90 wall)
+    translate([45 - NOTCH_W/2, OUTER_Y - WALL_THICK, NOTCH_Z_START])
+        cube([NOTCH_W, WALL_THICK + 0.01, NOTCH_H + 0.01]);
+}

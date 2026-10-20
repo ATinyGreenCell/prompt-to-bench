@@ -1,0 +1,46 @@
+Looking at the report, I can identify several issues:
+
+1. **Volume mismatch**: Expected 68,680 mm³ (81,000 - 12,320), but got 73,800 mm³. This means only 7,200 mm³ was removed instead of 12,320 mm³.
+
+2. **Area at z=15**: Expected 2,818 mm² (4,050 - 1,232), but got 3,330 mm². This means only 720 mm² was removed instead of 1,232 mm².
+
+3. **Centroid offset**: The centroid is at (-4.86, -0.17) instead of (0, 0), indicating the slots are not properly centered.
+
+The calculations show the slots are only ~32 mm long instead of 77 mm. This suggests the slots are being clipped. The issue is that the slots are positioned correctly but the block is being centered at the origin when it should rest on z=0.
+
+Let me fix this by ensuring the block sits on z=0 and the slots are properly positioned:
+
+```openscad
+// Drying rack for microscope slides
+// Base block: 90 x 45 x 20 mm
+// 10 slots: 77 x 1.6 x 10 mm, 3.5 mm spacing, open at top
+
+$fn = 64;
+
+block_x = 90;
+block_y = 45;
+block_z = 20;
+
+slot_x = 77;
+slot_w = 1.6;
+slot_z = 10;
+slot_z_cut = slot_z + 0.01; // Extend past top face to avoid coplanar faces
+
+slot_spacing = 3.5;
+num_slots = 10;
+
+slot_y_start = -(num_slots - 1) / 2 * slot_spacing;
+
+difference() {
+    // Block sits on z=0, extends to z=20
+    cube([block_x, block_y, block_z], center = false);
+    
+    // Slots cut from top (z=10 to z=20)
+    for (i = [0 : num_slots - 1]) {
+        slot_y = slot_y_start + i * slot_spacing;
+        translate([0, slot_y, block_z - slot_z]) {
+            cube([slot_x, slot_w, slot_z_cut], center = false);
+        }
+    }
+}
+```

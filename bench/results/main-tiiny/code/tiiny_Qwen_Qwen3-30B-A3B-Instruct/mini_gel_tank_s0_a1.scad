@@ -1,0 +1,127 @@
+// Dimensions in millimetres
+outer_x = 120;
+outer_y = 70;
+outer_z = 40;
+
+wall_thickness = 3;
+floor_thickness = 3;
+
+platform_length = 60;
+platform_width = outer_y;  // spans full Y
+platform_height_above_floor = 10;  // top of platform at z = 13 (floor at z = 3)
+
+hole_diameter = 2;
+hole_radius = hole_diameter / 2;
+hole_y = 0;  // along Y=0 edge
+hole_z = 30;  // at z = 30
+
+// Set resolution for smooth curves
+$fn = 64;
+
+// Main tank body (outer box with walls and floor)
+// Adjust to ensure base is at z = 0 and the tank builds upward from z = 0
+// The original model was centered at origin, but we need the bottom to be at z = 0
+// So we shift the entire model so that the bottom of the floor is at z = 0
+
+// Inner dimensions
+inner_x = outer_x - 2 * wall_thickness;
+inner_y = outer_y - 2 * wall_thickness;
+inner_z = outer_z - floor_thickness;
+
+// Platform is centred in X
+platform_x_center = 0;  // we'll center it in X
+
+// Define the origin at the bottom of the tank (z = 0), so we shift everything up by outer_z/2 - outer_z + floor_thickness?
+// Actually: we want the bottom of the tank at z = 0.
+// The original cube was centered at (0,0,0) with height 40 mm → from -20 to +20.
+// We want it from 0 to 40 → so we shift up by 20 mm.
+
+// But we want the floor to be at z = 0, and the tank to go up to z = 40.
+// So we shift the entire model up by 20 mm.
+
+// However, we must ensure that:
+// - The floor is at z = 0
+// - The platform top is at z = 13 (since floor is 3 mm thick → z = 3 is floor top, platform top at z = 13)
+// - The hole is at z = 30
+
+// So we define the model with base at z = 0.
+
+module tank_body() {
+    // Outer box from z = 0 to z = 40
+    cube([outer_x, outer_y, outer_z], center = false);
+    
+    // Cut out the inner cavity (walls and floor)
+    difference() {
+        cube([outer_x, outer_y, outer_z], center = false);
+        
+        // Inner cavity: from z = 0 to z = outer_z - floor_thickness = 37 mm
+        // But we need to subtract a box that is inner_x, inner_y, and height = outer_z - floor_thickness
+        // But we want the floor to be 3 mm thick → so inner cavity height is 37 mm
+        translate([0, 0, 0]) {
+            cube([inner_x, inner_y, outer_z - floor_thickness], center = false);
+        }
+    }
+}
+
+// Platform for gel tray (raised solid in the middle)
+// Platform top at z = 13 (since floor is 3 mm thick → z = 3 is floor top)
+// Platform is 3 mm thick (same as wall) and spans full Y
+module platform() {
+    // Platform is centered in X and Y
+    translate([
+        (outer_x - platform_length) / 2,  // center in X: offset from left
+        0,  // centered in Y
+        floor_thickness + platform_height_above_floor  // z = 3 + 10 = 13
+    ]) {
+        cube([platform_length, platform_width, wall_thickness], center = false);
+    }
+}
+
+// Horizontal holes through end walls (X=±outer_x/2) at y=0, z=30
+// The hole is drilled through the end wall (in X direction), so it's a hole through the wall at X = ±60 mm
+// We drill from the outer face of the wall (X = ±60) inward, so the hole is centered at X = ±60, Y = 0, Z = 30
+// The hole is 2 mm diameter, and we drill through the wall (3 mm thick), so we need a cylinder of length 3 mm (in X direction)
+// But since the wall is 3 mm thick, we drill a cylinder of length 3 mm, centered at the wall face
+
+module electrode_holes() {
+    // Left hole: at X = 0 (left face of tank) → X = 0, Y = 0, Z = 30
+    // The wall is at X = 0 (left) and X = 120 (right) → so left wall is at X = 0
+    // We drill from X = 0 to X = 3 (into the tank), so cylinder from X = 0 to X = 3, centered at X = 1.5
+    // But we want the hole to go through the wall at X = 0, so we place the cylinder at X = 0, and extend 3 mm inward (in +X direction)
+    // So: cylinder from X = 0 to X = 3, centered at X = 1.5 → but we can just place it at X = 0 and extend 3 mm in +X
+
+    // Left hole: at X = 0, Y = 0, Z = 30
+    translate([
+        0,  // X = 0 (left wall face)
+        0,  // Y = 0
+        hole_z  // Z = 30
+    ]) {
+        cylinder(h = wall_thickness, r = hole_radius, center = false, $fn = 64);
+    }
+
+    // Right hole: at X = 120 (right wall face)
+    translate([
+        outer_x,  // X = 120 (right wall face)
+        0,  // Y = 0
+        hole_z  // Z = 30
+    ]) {
+        cylinder(h = wall_thickness, r = hole_radius, center = false, $fn = 64);
+    }
+}
+
+// Assemble the complete buffer tank, with base at z = 0
+// We do not need to shift the entire model because we're building from z = 0
+// The tank body is built from z = 0 to z = 40, with floor at z = 0, and the platform at z = 13
+
+// However, the original model was centered at origin. We now build it from z = 0.
+// So we must ensure all parts are placed correctly relative to z = 0.
+
+// The only issue was the original model was centered at origin (z from -20 to +20), but we now build from z = 0 to 40.
+// So we don't need to shift — we just build everything from z = 0.
+
+// But the platform and holes are correctly placed relative to z = 0.
+
+// Final model:
+tank_body();
+platform();
+electrode_holes();

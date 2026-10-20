@@ -1,0 +1,60 @@
+// Hose-barb reducer
+// Dimensions in mm
+
+// Overall dimensions
+total_length = 41;
+barb_height_8mm = 10;
+collar_diameter = 12;
+barb_height_5mm = 8;
+barb_length_8mm = 20;
+barb_length_5mm = 25;
+
+// Barbs
+barb_outer_diameter_bottom_8mm = 7.5;
+barb_outer_diameter_top_8mm = 9.5;
+barb_outer_diameter_bottom_5mm = 6.5;
+barb_outer_diameter_top_5mm = 5.0;
+
+// Central bore
+bore_diameter = 3;
+
+// Make the part
+union() {
+    // 8mm barbs
+    for (z_offset = [0, 10]) {
+        translate([0, 0, z_offset]) {
+            // Barbs with sawtooth profile
+            union() {
+                // Main barb body
+                cylinder(h = 10, d = 9.5, center = false, $fn = 64);
+                // Step back to smaller diameter
+                translate([0, 0, 9.99]) {
+                    cylinder(h = 0.02, d = 7.5, center = false, $fn = 64);
+                }
+            }
+        }
+    }
+
+    // Collar
+    translate([0, 0, 20]) {
+        cylinder(h = 5, d = 12, center = false, $fn = 64);
+    }
+
+    // 5mm barbs
+    for (z_offset = [25, 33]) {
+        translate([0, 0, z_offset]) {
+            // Barbs with sawtooth profile
+            union() {
+                // Main barb body
+                cylinder(h = 8, d = 5.0, center = false, $fn = 64);
+                // Step back to larger diameter
+                translate([0, 0, 7.99]) {
+                    cylinder(h = 0.02, d = 6.5, center = false, $fn = 64);
+                }
+            }
+        }
+    }
+
+    // Central bore
+    cylinder(h = 41, d = 3, center = false, $fn = 64);
+}

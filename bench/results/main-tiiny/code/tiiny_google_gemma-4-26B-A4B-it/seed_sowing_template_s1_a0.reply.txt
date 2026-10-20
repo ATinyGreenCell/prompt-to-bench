@@ -1,0 +1,62 @@
+```openscad
+// --- Dimensions (mm) ---
+disc_diameter = 85.0;      // Diameter of the main disc
+disc_thickness = 2.0;      // Thickness of the disc
+hole_diameter = 3.0;       // Diameter of the sowing holes
+grid_spacing = 9.0;        // Center-to-center distance between holes
+grid_count = 7;            // Number of holes in X and Y directions
+
+notch_width = 10.0;        // Width of the notch (X direction)
+notch_depth = 4.0;         // Depth of the notch from the rim (Y direction)
+notch_height = 2.1;        // Height of the notch (slightly taller than disc to ensure clean cut)
+
+// --- Constants ---
+$fn = 64;                  // Smoothness for circles/cylinders
+
+// --- Implementation ---
+
+// The part is modeled resting on the XY plane (Z=0)
+module sowing_template() {
+    difference() {
+        // Main Disc Body
+        cylinder(h = disc_thickness, d = disc_diameter, center = false);
+
+        // 1. The Grid of Holes
+        // Calculate the offset to center the grid on the disc
+        // The grid spans (grid_count - 1) * grid_spacing
+        grid_span = (grid_count - 1) * grid_spacing;
+        offset = grid_span / 2;
+
+        for (i = [0 : grid_count - 1]) {
+            for (j = [0 : grid_count - 1]) {
+                translate(
+                    x = i * grid_spacing - offset, 
+                    y = j * grid_spacing - offset, 
+                    z = -0.5 // Extend below to ensure clean cut
+                )
+                cylinder(h = disc_thickness + 1, d = hole_diameter);
+            }
+        }
+
+        // 2. The Orientation Notch
+        // Located on the +Y side, centered on X axis.
+        // Notch is 10mm wide (X) and 4mm deep (Y) from the rim.
+        // We use a hull or a simple cube to define the notch volume.
+        // To ensure a clean cut, we make the notch slightly taller and wider.
+        
+        // Calculate the Y position: 
+        // The rim is at Y = disc_diameter / 2. 
+        // The notch goes 4mm deep, so it ends at Y = (disc_diameter / 2) - 4.
+        // We extend the notch slightly past the rim in Y to ensure a clean cut.
+        
+        notch_y_start = (disc_diameter / 2) - notch_depth;
+        notch_y_end = (disc_diameter / 2) + 1; // Extend past rim
+        
+        translate([-(notch_width + 1) / 2, notch_y_start, -0.5])
+        cube([notch_width + 1, notch_y_end - notch_y_start, notch_height]);
+    }
+}
+
+// Render the part
+sowing_template();
+```

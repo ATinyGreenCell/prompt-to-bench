@@ -1,0 +1,34 @@
+```openscad
+// ---------------------------------------------------------------
+//  Parameters (all in mm)
+// ---------------------------------------------------------------
+$fn = 64;                                   // smoothness for circles
+
+bore_d = 3;                                 // central bore diameter
+bore_r = bore_d/2;                          // bore radius
+
+// 8 mm tubing barbs (two stacked)
+barb8_bottom_d = 7.5;                      // diameter at bottom of barb
+barb8_bottom_r = barb8_bottom_d/2;
+barb8_top_d = 9.5;                         // diameter at top of tapered part
+barb8_top_r = barb8_top_d/2;
+barb8_height = 10;                         // height of each barb
+barb8_step_eps = 0.01;                     // tiny extra to avoid coplanar faces
+
+// Collar (between the two barb sections)
+collar_d = 12;                             // collar outer diameter
+collar_r = collar_d/2;
+collar_height = 5;                         // height of collar
+collar_start = 20;                         // z‑position of collar bottom
+
+// 5 mm tubing barbs (two stacked)
+barb5_bottom_d = 6.5;
+barb5_bottom_r = barb5_bottom_d/2;
+barb5_top_d = 5.0;
+barb5_top_r = barb5_top_d/2;
+barb5_height = 8;
+barb5_step_eps = 0.01;
+
+// Overall dimensions
+total_height = 41;                         // full part height
+bore_extend = 

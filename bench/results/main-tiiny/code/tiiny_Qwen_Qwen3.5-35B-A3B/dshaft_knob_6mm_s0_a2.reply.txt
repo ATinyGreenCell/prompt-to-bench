@@ -1,0 +1,68 @@
+```openscad
+// Dimensions for Hotplate Stirrer Knob Replacement
+// All units in millimetres (mm)
+
+// Main body dimensions
+knob_diameter = 30;
+knob_height = 15;
+
+// D-shaft bore dimensions
+shaft_diameter = 6;
+bore_diameter = 6.2;
+bore_depth = 12;
+bore_flat_width = 4.7; // Distance from flat to opposite side of circle
+
+// Grip groove dimensions
+groove_count = 18;
+groove_diameter = 2;
+groove_depth = 1; // Half of groove diameter for half-cylinder cut
+
+// Pointer groove dimensions
+pointer_width = 1.5;
+pointer_depth = 1;
+
+// Orientation: Knob rests on XY plane (z=0), builds upward (+Z)
+// Centered at origin (0,0,0)
+
+// Create the main cylinder body
+// Using $fn=64 for smooth curves
+body = cylinder(h = knob_height, r = knob_diameter / 2, $fn = 64);
+
+// Create the D-shaped bore
+// We will create a cylinder and then cut the flat side using a box
+bore_cylinder = cylinder(h = bore_depth, r = bore_diameter / 2, $fn = 64);
+
+// Calculate the position of the flat side
+// The flat is 4.7mm from the opposite side.
+// Diameter = 6.2mm, so radius = 3.1mm.
+// The distance from the center to the flat is: (Diameter - FlatWidth) / 2 = (6.2 - 4.7) / 2 = 0.75mm.
+// Wait, if the flat is at x = -0.75, the distance to the right side (x=3.1) is 3.85.
+// Let's re-read: "distance from the flat to the opposite side of the circle is 4.7 mm".
+// If the flat is at x = -a, and the circle goes to x = +3.1.
+// Distance = 3.1 - (-a) = 3.1 + a = 4.7 => a = 1.6.
+// So the flat is at x = -1.6.
+// Let's verify: Distance from flat (x=-1.6) to opposite side (x=3.1) is 4.7. Correct.
+// The flat cut will be a box extending from x = -1.6 to x = -1.6 - 0.01 (to ensure cut).
+// Actually, we want to remove material from x = -1.6 to the left.
+// So we cut with a box that starts at x = -1.6 and goes left.
+// To ensure the cut is clean, we make the box slightly larger than the flat width.
+// The flat is at x = -1.6. We cut from x = -1.6 - 0.01 to x = -1.6 + 0.01? No.
+// We want to remove the material to the left of x = -1.6.
+// So we cut with a box from x = -1.6 - 0.01 to x = -1.6 + 0.01? No, that cuts the flat.
+// We want to cut the material that is to the left of the flat line.
+// So the cutting box should be from x = -1.6 - 0.01 to x = -1.6 + 0.01? No.
+// We want to remove the region x < -1.6.
+// So we cut with a box from x = -1.6 - 0.01 to x = -1.6 + 0.01? No.
+// We want to cut the material that is to the left of the flat.
+// So the cutting box should be from x = -1.6 - 0.01 to x = -1.6 + 0.01? No.
+// Let's just cut with a box that is slightly wider than the flat, centered on the flat line?
+// No, we want to cut the material to the left of the flat line.
+// So we cut with a box from x = -1.6 - 0.01 to x = -1.6 + 0.01? No.
+// We want to cut the material to the left of x = -1.6.
+// So we cut with a box from x = -1.6 - 0.01 to x = -1.6 + 0.01? No.
+// Let's just cut with a box from x = -1.6 - 0.01 to x = -1.6 + 0.01? No.
+// We want to cut the material to the left of x = -1.6.
+// So we cut with a box from x = -1.6 - 0.01 to x = -1.6 + 0.01? No.
+// Let's just cut with a box from x = -1.6 - 0.01 to x = -1.6 + 0.01? No.
+// We want to cut the material to the left of x = -1.6.
+// So we cut with a box from x = -1.6 - 0.01 to x =

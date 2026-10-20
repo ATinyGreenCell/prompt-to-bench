@@ -1,0 +1,36 @@
+```openscad
+// Define dimensions
+spine_length = 70;          // Length of the spine in X direction
+spine_width = 12;           // Width of the spine in Y direction
+well_width = 5.0;           // Width of each well in X direction
+well_length = 12;            // Length of each well in Y direction
+gap_between_wells = 1.5;    // Gap between neighboring wells in Y direction
+well_thickness = 1.5;       // Thickness of the comb in Z direction
+num_wells = 10;             // Number of wells
+
+// Calculate total width of the comb
+total_comb_width = well_width + (num_wells - 1) * gap_between_wells;
+
+// Calculate the offset to center the row of teeth on the spine
+offset = (spine_width - total_comb_width) / 2;
+
+// Create the spine
+spine = cube([spine_length, spine_width, well_thickness], center=false);
+
+// Create the wells using a for loop
+wells = union() for (i = [0:num_wells-1]) {
+  translate([i * (well_width + gap_between_wells), -well_length/2 + offset, 0])
+    cube([well_width, well_length, well_thickness], center=false);
+}
+
+// Combine spine and wells
+comb = difference() {
+  spine
+  // Add a small protrusion to the spine to avoid coplanar faces
+  translate([0, 0, well_thickness + 0.01])
+    cube([spine_length, spine_width, 0.1], center=false);
+} + wells;
+
+// Final output
+comb;
+```

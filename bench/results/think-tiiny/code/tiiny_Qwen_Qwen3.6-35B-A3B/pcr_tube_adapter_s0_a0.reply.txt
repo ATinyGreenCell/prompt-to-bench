@@ -1,0 +1,30 @@
+```openscad
+// Adapter sleeve for 0.2 mL PCR tube in 1.5 mL rack hole
+// All dimensions in millimetres
+
+COLLAR_OD = 13;        // Outer diameter of the base collar
+COLLAR_H = 1.5;        // Thickness/height of the base collar
+SLEEVE_OD = 10.8;      // Outer diameter of the sleeve body
+SLEEVE_H = 20.0;       // Height of the sleeve body (21.5 - 1.5)
+BORE_D = 6.2;          // Inner bore diameter for the PCR tube
+TOTAL_H = 21.5;        // Total height of the part from bed to top
+
+$fn = 64;
+
+difference() {
+    // Main solid body
+    union() {
+        // Collar resting on the build plate
+        cylinder(d = COLLAR_OD, h = COLLAR_H, center = false);
+        
+        // Sleeve body rising from the collar
+        translate([0, 0, COLLAR_H]) {
+            cylinder(d = SLEEVE_OD, h = SLEEVE_H, center = false);
+        }
+    }
+    
+    // Through-bore for the PCR tube
+    // Extends 0.05 mm past z=0 and z=TOTAL_H to avoid coplanar faces
+    cylinder(d = BORE_D, h = TOTAL_H + 0.05, center = false);
+}
+```

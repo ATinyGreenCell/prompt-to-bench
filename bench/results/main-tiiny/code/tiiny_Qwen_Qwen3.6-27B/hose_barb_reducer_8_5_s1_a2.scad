@@ -1,0 +1,92 @@
+// Hose Barb Reducer: 8mm ID to 5mm ID
+// Designed for FDM printing, standing upright on Z axis.
+
+// Global settings
+$fn = 64; // High resolution for round holes
+
+// --- Dimensions for 8mm Tubing Barbs (Bottom Section) ---
+// Tubing ID
+id_8mm = 8;
+// Barb height
+h_barb_8 = 10;
+// Number of barbs
+n_barb_8 = 2;
+// Outer diameter at bottom of barb (shoulder)
+od_8_bottom = 7.5;
+// Outer diameter at top of barb (peak)
+od_8_top = 9.5;
+// Base height for this section
+z_start_8 = 0;
+
+// --- Dimensions for 5mm Tubing Barbs (Top Section) ---
+// Tubing ID
+id_5mm = 5;
+// Barb height
+h_barb_5 = 8;
+// Number of barbs
+n_barb_5 = 2;
+// Outer diameter at bottom of barb (shoulder)
+od_5_bottom = 6.5;
+// Outer diameter at top of barb (peak)
+od_5_top = 5.0;
+// Base height for this section
+z_start_5 = 25;
+
+// --- Collar Dimensions ---
+z_collar_start = 20;
+z_collar_end = 25;
+d_collar = 12;
+
+// --- Bore Dimensions ---
+d_bore = 3;
+z_bore_start = -1; // Extend slightly past bottom
+z_bore_end = 42;   // Extend slightly past top
+
+// --- Main Construction ---
+difference() {
+    union() {
+        // 1. Bottom Section: 8mm Barbs
+        // Profile for bottom section (z=0 to z=20)
+        // It consists of two barbs stacked.
+        // Barb 1: z=0 to z=10
+        // Barb 2: z=10 to z=20
+        
+        rotate_extrude(convexity = 10) {
+            polygon(points = [
+                [od_8_bottom/2, 0],
+                [od_8_top/2, h_barb_8],
+                [od_8_bottom/2, h_barb_8],
+                [od_8_top/2, h_barb_8 * 2],
+                [od_8_bottom/2, h_barb_8 * 2],
+                [od_8_bottom/2, 0]
+            ]);
+        }
+        
+        // 2. Middle Section: Collar
+        translate([0, 0, z_collar_start])
+        cylinder(h = z_collar_end - z_collar_start, r = d_collar/2, center = false);
+        
+        // 3. Top Section: 5mm Barbs
+        // Profile for top section (z=25 to z=41)
+        // It consists of two barbs stacked.
+        // Barb 1: z=25 to z=33
+        // Barb 2: z=33 to z=41
+        
+        translate([0, 0, z_start_5])
+        rotate_extrude(convexity = 10) {
+            polygon(points = [
+                [od_5_bottom/2, 0],
+                [od_5_top/2, h_barb_5],
+                [od_5_bottom/2, h_barb_5],
+                [od_5_top/2, h_barb_5 * 2],
+                [od_5_bottom/2, h_barb_5 * 2],
+                [od_5_bottom/2, 0]
+            ]);
+        }
+    }
+    
+    // 4. Bore Hole
+    // A straight cylinder running through the entire part
+    translate([0, 0, z_bore_start])
+    cylinder(h = z_bore_end - z_bore_start, r = d_bore/2, center = false);
+}

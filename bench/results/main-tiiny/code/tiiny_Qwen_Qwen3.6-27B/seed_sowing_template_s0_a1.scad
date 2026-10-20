@@ -1,0 +1,41 @@
+// Sowing Template for 90 mm Petri Dish
+// Dimensions measured with calipers
+
+// Disc dimensions
+disc_diameter = 85;
+disc_radius = disc_diameter / 2;
+disc_thickness = 2;
+
+// Hole grid parameters
+hole_diameter = 3;
+hole_radius = hole_diameter / 2;
+grid_spacing = 9;
+grid_size = 7; // 7x7 grid
+
+// Orientation notch parameters
+notch_width = 10;
+notch_depth = 4;
+
+// Print quality
+$fn = 64;
+
+// Main disc
+translate([0, 0, disc_thickness/2])
+  cylinder(r = disc_radius, h = disc_thickness, center = true);
+
+// Through-holes: 7x7 grid centred on origin
+// Grid spans from -3*spacing to +3*spacing in both X and Y
+for (xi = [-3, -2, -1, 0, 1, 2, 3]) {
+  for (yi = [-3, -2, -1, 0, 1, 2, 3]) {
+    translate([xi * grid_spacing, yi * grid_spacing, -0.1])
+      cylinder(r = hole_radius, h = disc_thickness + 0.2, $fn = 64);
+  }
+}
+
+// Orientation notch on +Y side, centred on Y axis
+// Notch is 10 mm wide in X, 4 mm deep in Y (inward from rim)
+// Rim is at Y = disc_radius = 42.5 mm
+// Notch extends from Y = 42.5 - 4 = 38.5 mm to Y = 42.5 mm
+// X range: -5 mm to +5 mm (10 mm wide, centred)
+translate([-notch_width/2, disc_radius - notch_depth, -0.1])
+  cube([notch_width, notch_depth + 0.1, disc_thickness + 0.2]);

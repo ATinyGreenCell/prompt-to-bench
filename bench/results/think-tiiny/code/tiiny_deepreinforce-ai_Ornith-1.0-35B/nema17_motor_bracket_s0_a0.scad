@@ -1,0 +1,52 @@
+// Dimensions
+base_w = 50;      // x: -25 to 25
+base_d = 45;       // y: 0 to 45
+base_h = 5;        // z: 0 to 5
+
+motor_w = 50;      // x: -25 to 25
+motor_d = 5;        // y: 0 to 5
+motor_h = 50;       // z: 0 to 50
+
+hole_m4_dia = 4.5;
+hole_m4_x = 17;
+hole_m4_y = 30;
+
+hole_boss_dia = 23;
+hole_boss_x = 0;
+hole_boss_y = motor_d / 2; // 2.5
+hole_boss_z = 28;
+
+hole_m3_dia = 3.4;
+hole_m3_pattern = 31; // 31 mm square pattern
+
+gusset_thick = 5;   // along X
+gusset_leg = 20;    // along Y and Z
+
+module bracket_body() {
+    // Base plate
+    translate([-base_w/2, 0, 0]) cube([base_w, base_d, base_h]);
+    // Motor plate
+    translate([-motor_w/2, 0, 0]) cube([motor_w, motor_d, motor_h]);
+    // Left gusset
+    polyhedron(points=[[-25,5,5],[-20,5,5],[-20,5,25],[-25,5,25],[-25,25,5],[-20,25,5]], faces=[[0,1,2,3],[0,1,5,4],[3,2,5,4],[0,3,4],[1,2,5]]);
+    // Right gusset
+    polyhedron(points=[[25,5,5],[20,5,5],[20,5,25],[25,5,25],[25,25,5],[20,25,5]], faces=[[0,1,2,3],[0,1,5,4],[3,2,5,4],[1,2,5],[0,3,4]]);
+}
+
+bracket_body();
+
+difference() {
+    bracket_body();
+    // M4 mounting holes
+    for (x_off in [-hole_m4_x, hole_m4_x]) {
+        translate([x_off, hole_m4_y, -0.1]) cylinder(d=hole_m4_dia, h=base_h + 0.2, $fn=64);
+    }
+    // Boss hole
+    translate([hole_boss_x, hole_boss_y, hole_boss_z]) rotate([90, 0, 0]) cylinder(d=hole_boss_dia, h=motor_d + 0.2, $fn=64);
+    // M3 screw holes
+    for (x_off in [-hole_m3_pattern/2, hole_m3_pattern/2]) {
+        for (z_off in [-hole_m3_pattern/2, hole_m3_pattern/2]) {
+            translate([x_off, hole_boss_y, hole_boss_z + z_off]) cylinder(d=hole_m3_dia, h=motor_d + 0.2, $fn=64);
+        }
+    }
+}

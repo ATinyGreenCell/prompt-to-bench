@@ -1,0 +1,46 @@
+// Bench rack for 1.5 mL microcentrifuge tubes
+// Dimensions in millimetres
+
+// Block dimensions
+block_length = 106;   // X dimension
+block_width = 72;      // Y dimension
+block_height = 30;     // Z dimension
+
+// Hole grid parameters
+rows = 4;              // Number of rows along Y
+cols = 6;              // Number of columns along X
+pitch_x = 16;          // Centre-to-centre spacing in X
+pitch_y = 16;          // Centre-to-centre spacing in Y
+hole_diameter = 11.2;  // Hole diameter
+hole_depth = 25;     // Hole depth
+floor_thickness = 5;  // Solid floor thickness
+
+// Hole position offsets (to centre the grid)
+// The grid is centered on the block, so we calculate the start position
+offset_x = (cols - 1) * pitch_x / 2;
+offset_y = (rows - 1) * pitch_y / 2;
+
+// Main structure: A solid block with holes cut out
+difference() {
+    // 1. The solid base block
+    // Centered at origin (0,0,0) with dimensions defined above
+    cube([block_length, block_width, block_height]);
+
+    // 2. The holes (cutting shapes)
+    // We iterate through the grid and subtract cylinders
+    for (i = 0; i < cols; i++) {
+        for (j = 0; j < rows; j++) {
+            // Calculate center position for this hole
+            x_pos = -offset_x + i * pitch_x;
+            y_pos = -offset_y + j * pitch_y;
+            
+            // Create a cylinder that extends slightly past the bottom of the block
+            // to ensure the difference operation cuts cleanly through the floor.
+            // The hole is 25mm deep, leaving 5mm floor. 
+            // We cut from the top (z=30) down to z=0 (or slightly below).
+            // Cylinder height = 30 (full block height) ensures it cuts through.
+            translate([x_pos, y_pos, 0])
+                cylinder(h = block_height, d = hole_diameter, $fn = 64);
+        }
+    }
+}

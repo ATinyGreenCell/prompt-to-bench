@@ -1,0 +1,162 @@
+```openscad
+// --- Dimensions ---
+BLOCK_X = 127.76;
+BLOCK_Y = 85.48;
+BLOCK_Z = 20;
+
+// Hole grid parameters
+COLS_X = 12;
+ROWS_Y = 8;
+HOLE_DIAM = 6.2;
+SPACING_X = 9.0;
+SPACING_Y = 9.0;
+
+// Position of first hole (A1) relative to block edges
+// A1 is at X = 14.38, Y = 11.24 (assuming Y=0 is the back edge)
+A1_X = 14.38;
+A1_Y = 11.24;
+
+// Chamfer parameters
+CHAMFER_LEN = 5;
+CHAMFER_ANGLE = 45;
+
+// --- Calculations ---
+// Calculate total grid width and height to verify centering
+GRID_W = (COLS_X - 1) * SPACING_X;
+GRID_H = (ROWS_Y - 1) * SPACING_Y;
+
+// Calculate center of the grid
+GRID_CX = A1_X + GRID_W / 2;
+GRID_CY = A1_Y + GRID_H / 2;
+
+// Verify centering (optional check, but we trust user's caliper measurements)
+// Block center X: BLOCK_X / 2
+// Block center Y: BLOCK_Y / 2
+// The user states the grid is centred on the block.
+// Let's check if the remaining space is equal on both sides.
+// Left margin: A1_X
+// Right margin: BLOCK_X - (A1_X + GRID_W)
+// Back margin: A1_Y
+// Front margin: BLOCK_Y - (A1_Y + GRID_H)
+
+LEFT_MARGIN = A1_X;
+RIGHT_MARGIN = BLOCK_X - (A1_X + GRID_W);
+BACK_MARGIN = A1_Y;
+FRONT_MARGIN = BLOCK_Y - (A1_Y + GRID_H);
+
+// --- Main Model ---
+module PCR_Rack() {
+    // 1. Base Block
+    // Centered on X, Y. Resting on Z=0.
+    // To center on X: translate X by (BLOCK_X/2 - GRID_CX) ? 
+    // Actually, it's easier to define the block centered at (0,0) and place holes relative to it.
+    // Let's place the block centered at origin (0,0,0) in XY.
+    // Block X range: -BLOCK_X/2 to BLOCK_X/2
+    // Block Y range: -BLOCK_Y/2 to BLOCK_Y/2
+    
+    // However, the hole positions are given from "left" and "back" edges.
+    // Let's define the block with its bottom-left-back corner at (0,0,0) for hole placement,
+    // then translate the whole assembly to center it on the XY plane.
+    
+    difference() {
+        // Main Block
+        // We build it at (0,0,0) first, then translate to center later if needed.
+        // But the prompt says "centre it on the origin in X and Y".
+        // So let's define the block centered at (0,0).
+        
+        translate([0, 0, 0]) {
+            cube([BLOCK_X, BLOCK_Y, BLOCK_Z], center = false);
+        }
+
+        // 2. Holes
+        // We need to calculate the absolute coordinates of each hole based on the block's geometry.
+        // If the block is centered at (0,0):
+        // Left edge X = -BLOCK_X / 2
+        // Back edge Y = -BLOCK_Y / 2
+        
+        // A1 position relative to block center:
+        // A1_X_abs = -BLOCK_X/2 + A1_X
+        // A1_Y_abs = -BLOCK_Y/2 + A1_Y
+        
+        A1_X_abs = -BLOCK_X / 2 + A1_X;
+        A1_Y_abs = -BLOCK_Y / 2 + A1_Y;
+
+        // Chamfer extension for difference
+        chamfer_ext = 0.05;
+
+        for (i = [0 : COLS_X - 1]) {
+            for (j = [0 : ROWS_Y - 1]) {
+                hx = A1_X_abs + i * SPACING_X;
+                hy = A1_Y_abs + j * SPACING_Y;
+                
+                // Hole depth: extend past Z=0 and Z=BLOCK_Z
+                // Using a cylinder that goes from -0.1 to BLOCK_Z + 0.1
+                // $fn is set globally for round holes
+                $fn = 64;
+                translate([hx, hy, -0.1]) {
+                    cylinder(h = BLOCK_Z + 0.2, d = HOLE_DIAM, center = false);
+                }
+            }
+        }
+
+        // 3. Chamfer at A1 corner
+        // A1 is at (A1_X_abs, A1_Y_abs). This is the "back-left" corner of the grid.
+        // The prompt says "vertical edge at the A1 corner".
+        // Usually, A1 is the top-left or front-left depending on convention.
+        // "14.38 mm from the left edge and 11.24 mm from the back edge".
+        // So A1 is near the back-left corner of the block.
+        // The "vertical edge at the A1 corner" likely refers to the corner of the block itself,
+        // or the corner of the grid? "Cut a 45-degree chamfer... off the vertical edge at the A1 corner".
+        // Given it's an orientation mark, it's typically on the block corner.
+        // Let's assume it's the block corner closest to A1.
+        // Block corner X: -BLOCK_X/2
+        // Block corner Y: -BLOCK_Y/2
+        
+        // Chamfer geometry:
+        // A 45-degree chamfer with 5mm legs.
+        // It removes material from the corner.
+        // We can model this by subtracting a triangular prism.
+        // The prism sits at the corner.
+        
+        // Corner coordinates:
+        // X: -BLOCK_X/2 to -BLOCK_X/2 + 5
+        // Y: -BLOCK_Y/2 to -BLOCK_Y/2 + 5
+        // Z: 0 to BLOCK_Z
+        
+        // To cut a 45-degree chamfer from the vertical edge:
+        // We can subtract a triangular prism.
+        // The triangle is in the XY plane (or XZ or YZ)?
+        // "Chamfer... off the vertical edge". This usually means beveling the top edge or side edge.
+        // "45-degree chamfer with 5 mm legs".
+        // If it's an orientation mark, it's often on the top face or side.
+        // Let's assume it's a bevel on the top corner of the block at the back-left.
+        // This involves cutting into the top face and the side face.
+        
+        // Let's create a wedge that removes material from the corner.
+        // The wedge will have a triangular profile in the X-Y plane? No, that would be a V-groove.
+        // A chamfer on a vertical edge usually means beveling the top edge.
+        // So the cut is in the X-Z or Y-Z plane?
+        // "45-degree chamfer with 5 mm legs".
+        // If it's on the corner, it might be a diagonal cut across the corner.
+        // Let's assume it's a bevel on the top surface at the back-left corner.
+        // This would involve two chamfers: one on the X-face and one on the Y-face?
+        // Or a single diagonal cut?
+        // "Cut a 45-degree chamfer... off the vertical edge at the A1 corner".
+        // This phrasing is slightly ambiguous. It could mean a single bevel on the corner.
+        // Let's assume it's a bevel on the top edge of the block at the back-left corner.
+        // This typically involves cutting a 45-degree angle from the top surface down to the side.
+        // But "5 mm legs" suggests a right triangle with legs of 5mm.
+        // If it's a corner chamfer, it might be a triangular prism removed from the corner.
+        
+        // Let's model a simple 45-degree bevel on the top face at the back-left corner.
+        // This would be a triangular prism along the Z-axis? No.
+        // It's a cut that removes a triangular volume from the corner.
+        // Let's assume it's a bevel on the top surface, cutting into the block.
+        // The cut surface is at 45 degrees.
+        // The "legs" are 5mm along X and 5mm along Y?
+        // If it's a corner, it might be a single diagonal cut.
+        // Let's assume it's a bevel on the top face, removing a triangular prism.
+        // The triangle is in the XY plane? No, the cut is in 3D.
+        
+        // Let's try a different interpretation:
+        // A

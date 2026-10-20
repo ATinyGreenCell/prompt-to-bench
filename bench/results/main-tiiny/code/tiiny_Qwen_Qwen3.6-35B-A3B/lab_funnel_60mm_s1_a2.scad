@@ -1,0 +1,86 @@
+// Lab Funnel Dimensions
+// Spout outer diameter
+OD_spout = 10;
+// Spout length (z = 0 to z = 20)
+H_spout = 20;
+// Funnel rim outer diameter
+OD_rim = 60;
+// Funnel top height (z = 50)
+H_top = 50;
+// Wall thickness
+T_wall = 1.6;
+
+// Derived dimensions
+// Spout inner diameter
+ID_spout = OD_spout - 2 * T_wall;
+// Spout inner radius
+R_spout = ID_spout / 2;
+// Spout outer radius
+R_spout_out = OD_spout / 2;
+
+// Funnel top inner diameter
+ID_top = OD_rim - 2 * T_wall;
+// Funnel top inner radius
+R_top = ID_top / 2;
+// Funnel top outer radius
+R_top_out = OD_rim / 2;
+
+// Spout inner height (length of the bore)
+H_bore = H_spout;
+
+// Funnel cone height (from spout top to rim)
+H_cone = H_top - H_spout;
+
+// Clearance for boolean operations to avoid coplanar faces
+clearance = 0.05;
+
+// Build the solid using difference
+// Base solid: Spout cylinder + Cone frustum
+// We build the outer shape and subtract the inner void.
+
+// 1. Outer Shape
+// Spout outer cylinder
+outer_spout = cylinder(r = R_spout_out, h = H_spout, center = false, $fn = 64);
+
+// Cone outer frustum
+// Bottom radius = R_spout_out, Top radius = R_top_out, Height = H_cone
+// Positioned at z = H_spout
+outer_cone = translate([0, 0, H_spout]) cylinder(r1 = R_spout_out, r2 = R_top_out, h = H_cone, center = false, $fn = 64);
+
+// Union of outer parts
+outer_shape = union() {
+    outer_spout;
+    outer_cone;
+};
+
+// 2. Inner Void (The hole through which liquid flows)
+// Spout inner cylinder
+// Height is H_bore. To ensure no coplanar faces, we extend it slightly.
+// It runs from z=0 to z=H_spout.
+inner_spout = cylinder(r = R_spout, h = H_bore + clearance, center = false, $fn = 64);
+
+// Cone inner frustum
+// Bottom radius = R_spout, Top radius = R_top, Height = H_cone
+// Positioned at z = H_spout.
+inner_cone = translate([0, 0, H_spout]) cylinder(r1 = R_spout, r2 = R_top, h = H_cone + clearance, center = false, $fn = 64);
+
+// Union of inner parts
+inner_void = union() {
+    inner_spout;
+    inner_cone;
+};
+
+// Final Part: Outer minus Inner
+funnel = difference() {
+    outer_shape;
+    inner_void;
+};
+
+// Center the part on XY plane
+// The part is already centered on X and Y because all primitives are centered on [0,0].
+// It rests on z=0.
+
+render() {
+    color("lightblue")
+    funnel;
+}

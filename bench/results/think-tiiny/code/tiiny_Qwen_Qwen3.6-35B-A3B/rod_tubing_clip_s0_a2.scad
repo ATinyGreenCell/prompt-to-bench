@@ -1,0 +1,50 @@
+$fn = 64;
+
+// Rod ring dimensions
+ROD_ID = 12.7;              // Inner diameter of rod ring
+ROD_WALL = 3;               // Wall thickness of rod ring
+ROD_OR = ROD_ID/2 + ROD_WALL; // Outer radius of rod ring
+ROD_CUT_Y_HALF = 5;         // Half-width of rod opening
+
+// Tubing ring dimensions
+TUBE_ID = 6;                // Inner diameter of tubing ring
+TUBE_WALL = 2;              // Wall thickness of tubing ring
+TUBE_OR = TUBE_ID/2 + TUBE_WALL; // Outer radius of tubing ring
+TUBE_CX = 15;               // X center of tubing ring
+TUBE_CY = 0;                // Y center of tubing ring
+TUBE_CUT_X = 15;            // X start of tubing opening
+TUBE_CUT_Y_HALF = 2.25;     // Half-width of tubing opening
+
+// Bridge dimensions
+BRIDGE_X_MIN = 8;           // X start of bridge
+BRIDGE_X_MAX = 12;          // X end of bridge
+BRIDGE_Y_HALF = 3;          // Half-width of bridge
+
+// Extrusion height
+HEIGHT = 10;                // Height of the clip
+
+// Build the 2D profile directly inside linear_extrude
+linear_extrude(height = HEIGHT) {
+    union() {
+        // Rod ring with opening
+        difference() {
+            circle(r = ROD_OR);
+            circle(r = ROD_ID/2);
+            // Cut out the opening on the -X side, extending past the outer face
+            translate([-ROD_OR - 0.5, -ROD_CUT_Y_HALF]) square([ROD_OR + 0.5, 2*ROD_CUT_Y_HALF]);
+        }
+        
+        // Tubing ring with opening
+        translate([TUBE_CX, TUBE_CY]) {
+            difference() {
+                circle(r = TUBE_OR);
+                circle(r = TUBE_ID/2);
+                // Cut out the opening on the +X side, extending past the outer face
+                translate([TUBE_CUT_X, -TUBE_CUT_Y_HALF]) square([TUBE_OR + 0.5, 2*TUBE_CUT_Y_HALF]);
+            }
+        }
+        
+        // Solid bridge connecting the rings
+        translate([BRIDGE_X_MIN, -BRIDGE_Y_HALF]) square([BRIDGE_X_MAX - BRIDGE_X_MIN, 2*BRIDGE_Y_HALF]);
+    }
+}

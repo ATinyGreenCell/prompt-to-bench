@@ -1,0 +1,56 @@
+```openscad
+// Buffer tank for mini horizontal gel-electrophoresis box
+outer_x = 120;
+outer_y = 70;
+outer_z = 40;
+wall_thick = 3;
+floor_thick = 3;
+platform_x = 60;
+platform_y = outer_y - 2 * wall_thick; // 64
+platform_z_bottom = floor_thick;       // 3
+platform_z_top = 13;
+platform_h = platform_z_top - platform_z_bottom; // 10
+hole_diam = 2;
+hole_y = 0;
+hole_z = 30;
+// Derived dimensions
+inner_x = outer_x - 2 * wall_thick;  // 114
+inner_y = platform_y;                // 64
+inner_z = outer_z - floor_thick;     // 37
+wall_h = inner_z;
+chamber_x = (inner_x - platform_x) / 2; // 27
+
+$fn = 64;
+
+difference() {
+    // Base solid: floor, walls, and platform
+    union() {
+        // Floor
+        translate([0, 0, floor_thick / 2]) cube([outer_x, outer_y, floor_thick]);
+        // Walls
+        walls_z = floor_thick + wall_h / 2;
+        // Left wall
+        translate([-outer_x / 2 + wall_thick / 2, 0, walls_z]) cube([wall_thick, outer_y, wall_h]);
+        // Right wall
+        translate([outer_x / 2 - wall_thick / 2, 0, walls_z]) cube([wall_thick, outer_y, wall_h]);
+        // Front wall
+        translate([0, -outer_y / 2 + wall_thick / 2, walls_z]) cube([inner_x, wall_thick, wall_h]);
+        // Back wall
+        translate([0, outer_y / 2 - wall_thick / 2, walls_z]) cube([inner_x, wall_thick, wall_h]);
+        // Platform
+        translate([0, 0, platform_z_bottom + platform_h / 2]) cube([platform_x, platform_y, platform_h]);
+    }
+    
+    // Cutters: two buffer chambers and the electrode hole
+    union() {
+        // Left chamber cavity (extends 0.05 mm past inner faces)
+        translate([-outer_x / 2 + wall_thick + chamber_x / 2, -inner_y / 2, floor_thick])
+            cube([chamber_x + 0.1, inner_y + 0.1, inner_z + 0.1]);
+        // Right chamber cavity (extends 0.05 mm past inner faces)
+        translate([outer_x / 2 - wall_thick - chamber_x / 2, -inner_y / 2, floor_thick])
+            cube([chamber_x + 0.1, inner_y + 0.1, inner_z + 0.1]);
+        // Electrode wire hole (extends 0.5 mm past each end wall)
+        rotate([0, 90, 0]) cylinder(d=hole_diam, h=outer_x + 0.5, center=true);
+    }
+}
+```

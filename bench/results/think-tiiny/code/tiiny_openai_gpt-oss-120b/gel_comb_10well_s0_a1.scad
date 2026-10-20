@@ -1,0 +1,46 @@
+// --------------- Dimensions (mm) ----------------
+// Spine (back bar)
+spine_length = 70;      // total length along X
+spine_width  = 12;      // width along Y
+thickness    = 1.5;     // plate thickness (Z)
+
+// Teeth (wells)
+tooth_count = 10;       // number of teeth
+tooth_width = 5.0;      // width of each tooth along X
+tooth_length = 12;      // length of each tooth along Y (extends -Y)
+tooth_gap   = 1.5;      // gap between neighbouring teeth (X)
+
+// Calculated helper values
+total_tooth_occupied = tooth_count*tooth_width + (tooth_count-1)*tooth_gap;
+margin_side = (spine_length - total_tooth_occupied)/2;   // unused side margin
+start_x = -spine_length/2 + margin_side;                // X‑position of first tooth's left edge
+
+// Set resolution for any curved primitives (none used, but keep $fn)
+$fn = 64;
+
+// ----------------- Model -----------------
+module comb() {
+    // Spine (solid rectangular plate)
+    spine = translate([-spine_length/2, -spine_width/2, 0])
+            cube([spine_length, spine_width, thickness]);
+
+    // Teeth (rectangular wells) – generated with a for‑loop
+    teeth = union() {
+        for (i = [0 : tooth_count-1]) {
+            // X position of this tooth's left edge
+            x_pos = start_x + i*(tooth_width + tooth_gap);
+            // Translate tooth cube
+            translate([x_pos, -spine_width/2 - tooth_length, 0])
+                cube([tooth_width, tooth_length, thickness]);
+        }
+    }
+
+    // Combine spine and teeth (they are a single solid)
+    union() {
+        spine;
+        teeth;
+    }
+}
+
+// Render the part lying flat on the build plate (Z = 0)
+comb();

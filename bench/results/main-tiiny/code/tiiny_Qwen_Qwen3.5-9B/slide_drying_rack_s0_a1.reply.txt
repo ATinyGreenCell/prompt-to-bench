@@ -1,0 +1,58 @@
+```openscad
+$fn = 128; // High resolution for smooth slot edges
+
+// --- Dimensions ---
+// Base block dimensions
+base_length_X = 90;
+base_width_Y = 45;
+base_height_Z = 20;
+
+// Slide dimensions (mm)
+slide_length = 75;
+slide_width = 25;
+slide_thickness = 1;
+
+// Slot dimensions
+slot_length = 77; // Must be >= slide_length to fit
+slot_width = 1.6; // Width of the slot (gap between slides)
+slot_depth = 10; // Depth of the cut into the block
+
+// Slot spacing and positioning
+slot_spacing_Y = 3.5; // Centre-to-centre distance between slots
+num_slots = 10;
+
+// --- Calculation ---
+// Calculate the total width occupied by the slots and gaps
+// Formula: (num_slots * slot_width) + ((num_slots - 1) * slot_spacing_Y)
+total_slot_group_width = (num_slots * slot_width) + ((num_slots - 1) * slot_spacing_Y);
+
+// Calculate offset to center the group of slots on the block width
+// Center of block = base_width_Y / 2
+// Center of slot group = total_slot_group_width / 2
+// Offset = Center of block - Center of slot group
+slot_group_offset_Y = (base_width_Y / 2) - (total_slot_group_width / 2);
+
+// --- Build ---
+
+difference() {
+    // 1. Create the solid base block
+    // Oriented on XY plane, building up Z. Centred on origin.
+    translate([0, 0, 0])
+    cube([base_length_X, base_width_Y, base_height_Z]);
+
+    // 2. Cut the 10 parallel slots
+    // Slots run along X, so we extrude a rectangle along X.
+    // We use difference() to cut them out.
+    // The cutting shape extends slightly past the faces (rule 5) to ensure clean cuts.
+    for (i = [0 : num_slots - 1]) {
+        y_center = slot_group_offset_Y + (slot_width / 2) + (i * slot_spacing_Y);
+        
+        translate([0, y_center, 0])
+        // Slot dimensions:
+        // X: slot_length + 0.1 (overshoot)
+        // Y: slot_width + 0.1 (overshoot)
+        // Z: slot_depth + 0.1 (overshoot)
+        cube([slot_length + 0.1, slot_width + 0.1, slot_depth + 0.1]);
+    }
+}
+```

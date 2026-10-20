@@ -1,0 +1,109 @@
+// Bench Rack for 1.5 mL Microcentrifuge Tubes
+// Design Parameters based on user specifications
+
+// Block Dimensions (mm)
+$block_length = 106; // X dimension
+$block_width  = 72;  // Y dimension
+$block_height = 30;  // Z dimension
+
+// Hole Grid Parameters
+$hole_count_x = 6;   // Holes along X (6 per row)
+$hole_count_y = 4;   // Rows along Y (4 rows)
+$hole_spacing = 16;  // Centre-to-centre spacing (mm)
+$hole_diameter = 11.2; // Hole diameter (mm)
+$hole_depth = 25;    // Hole depth (mm)
+
+// Geometry Setup
+$fn = 64; // Ensure smooth circular holes
+
+// Calculate Grid Offset to Center the Grid on the Block
+// Total span X = (count - 1) * spacing
+// Offset X = (Total Span / 2) - (First Hole Radius)
+// Actually, simpler: Center of grid is origin. 
+// Position of first hole = - ( (count-1)*spacing / 2 )
+$offset_x = - (($hole_count_x - 1) * $hole_spacing / 2);
+$offset_y = - (($hole_count_y - 1) * $hole_spacing / 2);
+
+module tube_rack() {
+    // 1. Create the solid rectangular block
+    // Dimensions: Length (X), Width (Y), Height (Z)
+    block = cube([
+        $block_length, 
+        $block_width, 
+        $block_height
+    ]);
+
+    // 2. Create the holes
+    // We use a for loop to generate the grid of holes
+    // The holes are cylinders with a specific depth
+    
+    holes = [];
+    
+    for (row = [0 : $hole_count_y - 1]) {
+        for (col = [0 : $hole_count_x - 1]) {
+            // Calculate position of current hole center
+            // X position
+            x_pos = $offset_x + (col * $hole_spacing);
+            // Y position
+            y_pos = $offset_y + (row * $hole_spacing);
+            
+            // Create the hole cylinder
+            // Radius = Diameter / 2
+            // Depth is specified as 25mm, open at top, closed at bottom
+            // Since the block sits on Z=0 and builds up, the hole goes from Z=0 down to Z=-25?
+            // Wait, rule 3 says: "rests on the XY plane at z = 0 and builds upward (+Z)"
+            // So the block is from Z=0 to Z=30.
+            // "Open at the top and closed at the bottom, leaving a 5 mm solid floor."
+            // Top of block is Z=30. Bottom is Z=0.
+            // Hole depth 25mm means it goes from Z=30 down to Z=5.
+            // So the cylinder height is 25.
+            
+            h = cylinder(
+                h = $hole_depth,
+                r = $hole_diameter / 2,
+                center = [x_pos, y_pos, $block_height - ($hole_depth / 2)]
+            );
+            
+            holes = concat(holes, [h]);
+        }
+    }
+    
+    // 3. Combine Block and Holes
+    // Union the block with the holes (which are cylinders)
+    // Note: In OpenSCAD, to subtract, we usually do difference(block, holes).
+    // However, the prompt asks to "make every cutting shape extend...".
+    // If I simply difference the block with the cylinders, the cylinders are the cutting shapes.
+    // To ensure no coplanar faces (Rule 5), I will extend the cylinders slightly past the bottom (Z=0)
+    // and slightly past the top (Z=30) before subtracting.
+    
+    // Calculate extended depth to ensure clean cut
+    $extend_amount = 0.5; // 0.5mm extension on both sides
+    
+    // Recalculate holes with extension for the difference operation
+    cut_holes = [];
+    for (row = [0 : $hole_count_y - 1]) {
+        for (col = [0 : $hole_count_x - 1]) {
+            x_pos = $offset_x + (col * $hole_spacing);
+            y_pos = $offset_y + (row * $hole_spacing);
+            
+            // Extend depth: 25 + 2*0.5 = 26mm
+            // Center Z remains the same, but height increases
+            h = cylinder(
+                h = $hole_depth + (2 * $extend_amount),
+                r = $hole_diameter / 2,
+                center = [x_pos, y_pos, $block_height - ($hole_depth / 2)]
+            );
+            
+            cut_holes = concat(cut_holes, [h]);
+        }
+    }
+    
+    // Final Union: Block minus Cut Holes
+    difference() {
+        block;
+        cut_holes;
+    }
+}
+
+// Render the part
+tube_rack();

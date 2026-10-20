@@ -1,0 +1,67 @@
+{
+ "time": "2026-10-14T18:21:05",
+ "model": "tiiny/Qwen/Qwen3.8-27B",
+ "run_bench_args": [],
+ "samples": 1,
+ "catalog": {
+  "model_id": "Qwen/Qwen3.8-27B",
+  "params": "27B",
+  "npu_usage": 52,
+  "context_window": 262144,
+  "thinking": {
+   "supported": true,
+   "toggleable": true,
+   "enabled_by_default": true,
+   "levels": [
+    "low",
+    "medium",
+    "xhigh"
+   ],
+   "default_level": "low"
+  },
+  "reasoning_levels": [
+   "low",
+   "medium",
+   "xhigh"
+  ],
+  "udpate_time": 1790648235,
+  "type": "Image-Text-to-Text",
+  "mode": "production",
+  "tags": [
+   {
+    "tag_name": "Qwen/Qwen3.8-27B",
+    "manifest": "Qwen3.8-27B_turbo_20260819",
+    "version": 20260928,
+    "size": 15872315597
+   }
+  ]
+ },
+ "tiiny_info": "Qwen3.8-27B\n\n  Model id        Qwen/Qwen3.8-27B\n  Parameters      27B\n  Input           Text,Image\n  Output          Text\n  NPU usage       52%\n  Model tasks     Image-Text-to-Text\n  Model size      14.8 GiB\n  Last updated    2026-09-28 22:17:15\n\n  Capability      Reasoning,Tool Use\n  Reasoning mode    Optional\n  Reasoning effort  [low medium xhigh]\n\n\nIntroduction\nQwen3.8-27B is a dense model built for developers and knowledge workers who need strong coding, research, and long-horizon agentic task performance without a mixture-of-experts footprint. It understands images alongside text, and its agentic tool use is strong enough to drive computer-use, browser automation, and mobile interaction tasks with high reliability across multi-step workflows.\n\nUse it in Chat, or load it for any agent in Agent Store that requires a text generation model.\n\nThinking Mode\n\nThinking is enabled by default, generating reasoning before the final response. It can be disabled per request, and reasoning depth can be tuned with a `reasoning_effort` parameter (low, medium, or xhigh) to balance response quality against inference cost. Reasoning traces from earlier turns are preserved by default across a conversation for consistency.\n\nAgentic and Tool Use\n\nBuilt for autonomous planning and multi-step execution with environment feedback, scoring strongly on computer-use, browser automation, and mobile-interaction benchmarks. Designed specifically to hold up on long-horizon software engineering and workflow-completion tasks rather than single-turn responses.\n\nArchitecture\n\nA 27B-parameter dense causal language model (64 layers, not MoE) with a hybrid attention design mixing gated attention and gated DeltaNet blocks, paired with a vision encoder for image understanding.\n\nLicense:\n\nApache 2.0",
+ "tiiny_status": "Device: [private-ip]\nConnected: True\nActivated: False\nNPU-COMPUTE  [\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588                   ] 52.0%\nSOC          [\u2588                                       ] 3.2%\nRAM          [\u2588\u2588\u2588                                     ] 7.6% 2.4 / 31.1 GiB \nDISK         [\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588                      ] 46.2% 402.0 / 869.8 GiB \nNPU-RAM      [\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588                   ] 51.3% 24.6 / 47.9 GiB \n  Qwen/Qwen3.8-27B 52%",
+ "tiiny_cli": "tiiny-cli-linux-amd64-v0.0.4",
+ "device_name": "seb's Tiiny",
+ "load": {
+  "before": [
+   "Qwen/Qwen3-Coder-30B-A3B-Instruct"
+  ],
+  "npu_mb_empty": null,
+  "load_s": 27.3,
+  "loaded": [
+   "Qwen/Qwen3.8-27B"
+  ],
+  "npu_mb": 25143.0
+ },
+ "bridge": "http://127.0.0.1:11435",
+ "harness": {
+  "path": "~/tiny/bench/20261014-sweep/harness",
+  "sha256": {
+   "bench/checks.py": "65247774ddde3a0690c6115ff68db26225a3547fcba5718a7757ce4c29c2ef98",
+   "bench/prompts/system.md": "17d921540d27b4245749bcf22297816087f471ec84b08be5e3d56b53bd3730ed",
+   "bench/reference_stats.json": "8622046a6d1c7972b2086f0f8bd1bd582c6ff1ce3f2add11be67919c6cbcdd29",
+   "bench/run_bench.py": "80910aaf6f5c41c432a309f40064aa71f6f6f8b1f0db03aaffb1192765933ea9",
+   "bench/tasks.yaml": "02fc72c1fd907ce0f5e78ddcd5840d3c03fa08e509c48f58aaee5d41014d5986",
+   "tools/scadreport.py": "23d59c8eed434a52247b63797ff870667c92b65fbc0a758ecf17079669cd234b"
+  }
+ },
+ "note": "Timings are measured on the laptop through the tiinykit bridge (USB link included). The meta_*.json 'ollama' field is the laptop's own Ollama version, reported by the bridge."
+}

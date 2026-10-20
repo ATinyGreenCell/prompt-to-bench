@@ -1,0 +1,63 @@
+```openscad
+// Parameters (mm)
+outer_x = 120;               // outer length (X)
+outer_y = 70;                // outer width  (Y)
+outer_z = 40;                // outer height (Z)
+wall_thk = 3;                // wall thickness
+floor_thk = 3;               // floor thickness
+
+inner_x = outer_x - 2*wall_thk;   // inner cavity length
+inner_y = outer_y - 2*wall_thk;   // inner cavity width
+inner_z = outer_z - floor_thk;    // inner cavity height (from floor to top)
+
+platform_len = 60;          // platform length (X) inside tank
+platform_h = 10;            // platform height (Z) above floor
+platform_top_z = floor_thk + platform_h; // absolute Z of platform top
+
+hole_d = 2;                 // electrode hole diameter
+hole_r = hole_d/2;
+hole_y = 0;                 // hole centre Y
+hole_z = 30;                // hole centre Z
+cyl_len = outer_x + 1;      // cylinder length (extends 0.5 mm beyond each wall)
+
+// Global resolution for curved shapes
+$fn = 64;
+
+// Outer tank (solid)
+module outer_tank() {
+    cube([outer_x, outer_y, outer_z], center = true);
+}
+
+// Inner cavity (to be removed)
+module inner_cavity() {
+    translate([0, 0, floor_thk])
+        cube([inner_x, inner_y, inner_z], center = true);
+}
+
+// Raised platform for gel tray
+module platform() {
+    translate([0, 0, floor_thk])
+        cube([platform_len, inner_y, platform_h], center = true);
+}
+
+// Horizontal electrode hole through both X‑end walls
+module electrode_hole() {
+    rotate([0, 90, 0])                     // orient cylinder along X
+        translate([0, hole_y, hole_z])      // place centre at (0,0,30)
+            cylinder(h = cyl_len, r = hole_r, center = true);
+}
+
+// Assemble tank with holes, then add platform
+module tank_assembly() {
+    difference() {
+        outer_tank();
+        inner_cavity();
+        electrode_hole();
+    }
+}
+
+union() {
+    tank_assembly();
+    platform();
+}
+```

@@ -1,0 +1,90 @@
+// Rack for 96 PCR tubes (0.2 mL) with standard microplate footprint
+// Dimensions from user specification
+
+// Block dimensions
+block_length = 127.76; // X dimension (mm)
+block_width  = 85.48;  // Y dimension (mm)
+block_height = 20;     // Z dimension (mm)
+
+// Hole grid parameters
+hole_diameter = 6.2;   // mm
+hole_spacing  = 9.0;   // mm
+rows = 8;              // along Y
+cols = 12;             // along X
+
+// Position of first hole (A1) from edges
+hole_A1_x = 14.38;     // mm from left edge (X)
+hole_A1_y = 11.24;     // mm from back edge (Y)
+
+// Chamfer dimensions
+chamfer_leg = 5;       // mm
+
+// Chamfer height (same as block height)
+chamfer_height = block_height;
+
+// Chamfer offset from edge (A1 corner is at (hole_A1_x - hole_diameter/2, hole_A1_y - hole_diameter/2))
+// But for simplicity, we'll chamfer the block corner at (0,0) with chamfer_leg
+chamfer_start_x = 0;
+chamfer_start_y = 0;
+
+// Set resolution for curves
+$fn = 64;
+
+// Calculate hole positions
+hole_x_positions = [for (i = [0 : cols-1]) hole_A1_x + i * hole_spacing];
+hole_y_positions = [for (j = [0 : rows-1]) hole_A1_y + j * hole_spacing];
+
+// Build the rack
+module rack() {
+    // Base block
+    translate([0, 0, 0])
+        cube([block_length, block_width, block_height]);
+    
+    // Cut chamfer at A1 corner (left-back corner)
+    // Chamfer plane: x + y = chamfer_leg
+    // We'll use a wedge-shaped cutter
+    translate([0, 0, -0.1]) // extend below
+        rotate([0, 0, 45])
+            translate([-chamfer_leg*sqrt(2)/2 - 1, -chamfer_leg*sqrt(2)/2 - 1, 0])
+                cube([chamfer_leg*sqrt(2) + 2, chamfer_leg + 0.1, block_height + 0.2]);
+    
+    // Actually, better approach: use a 3D wedge for chamfer
+    // Define chamfer wedge at origin corner
+    translate([0, 0, -0.1]) {
+        hull() {
+            // Points for chamfer: (0,0,0), (chamfer_leg,0,0), (0,chamfer_leg,0), and extrude up
+            translate([0, 0, 0]) cylinder(h=block_height+0.2, r=0.01);
+            translate([chamfer_leg, 0, 0]) cylinder(h=block_height+0.2, r=0.01);
+            translate([0, chamfer_leg, 0]) cylinder(h=block_height+0.2, r=0.01);
+        }
+    }
+    
+    // But the above hull with cylinders may not be clean. Let's use a polyhedron for precise chamfer
+    // Actually, simpler: use difference with a rotated cube for 45-degree chamfer
+    // Chamfer along the edge from (0,0,0) to (0,0,height) with 45-degree face
+    // The chamfer face is defined by x + y <= chamfer_leg
+    // We'll create a triangular prism cutter
+    translate([-1, -1, -0.1]) {
+        rotate([0, 0, 45]) {
+            translate([0, -chamfer_leg - 1, 0]) {
+                cube([chamfer_leg + 1, chamfer_leg + 2, block_height + 0.2]);
+            }
+        }
+    }
+    
+    // Now create holes
+    for (i = [0 : cols-1]) {
+        for (j = [0 : rows-1]) {
+            translate([
+                hole_x_positions[i],
+                hole_y_positions[j],
+                -0.1  // extend below
+            ]) {
+                cylinder(h = block_height + 0.2, r = hole_diameter / 2);
+            }
+        }
+    }
+}
+
+// Render the rack
+rack();

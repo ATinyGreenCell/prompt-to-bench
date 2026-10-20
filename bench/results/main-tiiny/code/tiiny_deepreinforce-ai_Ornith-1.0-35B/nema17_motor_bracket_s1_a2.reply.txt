@@ -1,0 +1,132 @@
+Looking at the measurement report, I can see several issues:
+
+1. **Bounding box X is wrong**: Report shows X -25.00 .. 50.00 (size 75.00), but spec says x from -25 to 25 (size 50). The gussets are still extending the part in +X direction.
+
+2. **Two separate bodies**: The gussets are not connected to the main body.
+
+3. **The gusset placement is still wrong**: The issue is with how I'm using `linear_extrude` with `center = true`. When I use `center = true` in linear_extrude, it centers the extrusion around the origin, but I need to position it correctly.
+
+Let me think about this more carefully. The gusset should be:
+- A right triangle in the YZ plane
+- Legs: 20mm along +Y, 20mm along +Z
+- Right angle corner at (y=5, z=5)
+- Thickness: 5mm in X direction
+- Positioned at x = -25 to -20 (left) and x = 20 to 25 (right)
+
+The problem is that `linear_extrude` extrudes in the Z direction by default. To extrude in the X direction, I need to rotate the polygon first, or use a different approach.
+
+Let me use a simpler approach: create the triangle as a 3D object directly using `polygon` with 3D points, or use `linear_extrude` correctly.
+
+Actually, the cleanest approach is to define the triangle in the YZ plane and then use `linear_extrude` with the appropriate rotation, or better yet, just create it as a 3D polygon.
+
+```openscad
+// === NEMA 17 Stepper Motor Mounting Bracket ===
+// Print orientation: base plate on bed (XY plane at z=0)
+
+// --- Base plate dimensions ---
+base_x_half = 25;        // Half-width in X (x: -25 to 25)
+base_y = 45;             // Depth in Y (y: 0 to 45)
+base_z = 5;              // Height/thickness in Z (z: 0 to 5)
+
+// --- Base plate mounting holes (M4, 4.5 mm dia) ---
+m4_dia = 4.5;
+m4_x = 17;               // X position of holes
+m4_y = 30;               // Y position of holes
+
+// --- Vertical motor plate dimensions ---
+motor_plate_x_half = 25; // Half-width in X (x: -25 to 25)
+motor_plate_y = 5;       // Depth in Y (y: 0 to 5)
+motor_plate_z = 50;      // Height in Z (z: 0 to 50)
+
+// --- Motor centring boss hole ---
+boss_dia = 23;            // Diameter of centring boss hole
+boss_x = 0;               // X centre
+boss_z = 28;              // Z centre
+
+// --- Motor mounting holes (M3, 3.4 mm dia) on 31 mm square pattern ---
+m3_dia = 3.4;
+m3_pattern = 31;           // Square pattern size (31 mm)
+m3_half = m3_pattern / 2; // Half of pattern size
+
+// --- Triangular gussets ---
+gusset_thickness = 5;     // Thickness in X (flush with edges)
+gusset_leg_y = 20;        // Leg along +Y
+gusset_leg_z = 20;        // Leg along +Z
+gusset_corner_y = 5;       // Y of right-angle corner (where plates meet)
+gusset_corner_z = 5;       // Z of right-angle corner
+
+// --- Global fineness for round holes ---
+$fn = 64;
+
+// --- Build the part ---
+module bracket() {
+    // Main body: base plate + vertical motor plate
+    union() {
+        // Base plate
+        cube([2 * base_x_half, base_y, base_z], center = [0, 0, 0]);
+        
+        // Vertical motor plate (standing on back edge of base at y=0)
+        translate([0, 0, base_z]) {
+            cube([2 * motor_plate_x_half, motor_plate_y, motor_plate_z], center = [0, 0, 0]);
+        }
+    }
+    
+    // Triangular gussets (in YZ plane, thickness in X)
+    for (x_start = [-base_x_half, base_x_half - gusset_thickness]) {
+        translate([x_start, gusset_corner_y, gusset_corner_z]) {
+            // Create a 3D triangle by extruding a 2D triangle in the X direction
+            linear_extrude(height = gusset_thickness, center = false) {
+                // Triangle in YZ plane (which becomes XY after rotation)
+                rotate([90, 0, 0]) {
+                    polygon([[0, 0], [gusset_leg_y, 0], [0, gusset_leg_z]]);
+                }
+            }
+        }
+    }
+    
+    // Cut holes
+    difference() {
+        // Re-create the full body
+        union() {
+            cube([2 * base_x_half, base_y, base_z], center = [0, 0, 0]);
+            translate([0, 0, base_z]) {
+                cube([2 * motor_plate_x_half, motor_plate_y, motor_plate_z], center = [0, 0, 0]);
+            }
+            
+            // Add gussets
+            for (x_start = [-base_x_half, base_x_half - gusset_thickness]) {
+                translate([x_start, gusset_corner_y, gusset_corner_z]) {
+                    linear_extrude(height = gusset_thickness, center = false) {
+                        rotate([90, 0, 0]) {
+                            polygon([[0, 0], [gusset_leg_y, 0], [0, gusset_leg_z]]);
+                        }
+                    }
+                }
+            }
+        }
+        
+        // M4 holes through base plate (extend past both faces)
+        for (x_off = [-m4_x, m4_x]) {
+            translate([x_off, m4_y, -0.5]) {
+                cylinder(d = m4_dia, h = base_z + 1, center = true);
+            }
+        }
+        
+        // Boss hole through motor plate (along Y, extend past front/back)
+        translate([boss_x, 0, boss_z]) {
+            cylinder(d = boss_dia, h = motor_plate_y + 1, center = true, axis = [0, 1, 0]);
+        }
+        
+        // M3 mounting holes through motor plate (along Y)
+        for (x_off = [-m3_half, m3_half]) {
+            for (z_off = [-m3_half, m3_half]) {
+                translate([x_off, 0, boss_z + z_off]) {
+                    cylinder(d = m3_dia, h = motor_plate_y + 1, center = true, axis = [0, 1, 0]);
+                }
+            }
+        }
+    }
+}
+
+bracket();
+```

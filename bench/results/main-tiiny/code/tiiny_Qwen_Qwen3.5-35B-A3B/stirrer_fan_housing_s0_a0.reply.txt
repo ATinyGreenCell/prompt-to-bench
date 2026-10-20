@@ -1,0 +1,165 @@
+```openscad
+// Dimensions for DIY Magnetic Stirrer Housing
+// Fan size: 80 mm (reference for context)
+FAN_SIZE = 80;
+
+// Outer dimensions of the housing
+OUTER_X = 90;
+OUTER_Y = 90;
+
+// Top plate thickness
+TOP_THICKNESS = 2;
+
+// Wall thickness
+WALL_THICKNESS = 2.5;
+
+// Total height of the box
+BOX_HEIGHT = 40;
+
+// Screw hole diameter
+SCREW_HOLE_DIA = 4.5;
+
+// Screw hole pattern size (square)
+SCREW_PATTERN = 71.5;
+
+// Cable notch width
+NOTCH_WIDTH = 12;
+
+// Cable notch depth from top edge
+NOTCH_DEPTH = 8;
+
+// Notch height (from top edge down)
+NOTCH_HEIGHT = 8;
+
+// Notch position (centered on wall)
+NOTCH_OFFSET_X = 0; // Centered on X
+NOTCH_OFFSET_Y = 0; // Centered on Y (relative to wall center)
+
+// Build orientation: Top plate on bed (z=0 to 2), walls rise to z=40
+// The "top" of the box is the stirring surface, which is on the bed.
+
+module housing() {
+    // Base plate (Top of the stirrer, on the bed)
+    difference() {
+        cube([OUTER_X, OUTER_Y, TOP_THICKNESS], center = true);
+        
+        // Four screw holes through the top plate
+        for (i = [0:1]) {
+            for (j = [0:1]) {
+                // Calculate hole positions: centered on 71.5mm square
+                // Pattern is centered at origin
+                hole_x = (i == 0 ? -SCREW_PATTERN/2 : SCREW_PATTERN/2);
+                hole_y = (j == 0 ? -SCREW_PATTERN/2 : SCREW_PATTERN/2);
+                
+                translate([hole_x, hole_y, 0])
+                    cylinder(d = SCREW_HOLE_DIA, h = TOP_THICKNESS + 0.01, center = true);
+            }
+        }
+    }
+
+    // Walls: 4 walls rising from the base plate
+    // We build them as a single hollow box structure to ensure watertightness
+    // and then subtract the interior.
+    
+    // Outer box
+    outer_box = cube([OUTER_X, OUTER_Y, BOX_HEIGHT], center = true);
+    
+    // Inner box (to create walls)
+    // Inner width = Outer - 2 * Wall Thickness
+    INNER_X = OUTER_X - 2 * WALL_THICKNESS;
+    INNER_Y = OUTER_Y - 2 * WALL_THICKNESS;
+    INNER_Z = BOX_HEIGHT;
+    
+    inner_box = cube([INNER_X, INNER_Y, INNER_Z], center = true);
+    
+    // Create the hollow box by difference
+    hollow_box = difference() {
+        outer_box;
+        inner_box;
+    }
+    
+    // Cut the cable notch in one wall
+    // The notch is in one wall, 12mm wide, centered, reaching 8mm down from the open edge (z=32 to 40)
+    // We assume the notch is on the +Y wall (front) for this model.
+    // Notch dimensions: width 12, height 8, depth through the wall.
+    
+    // Notch cutter: A box that cuts through the wall
+    // The wall is at Y = OUTER_Y/2 (approx). We need to cut from the outside in.
+    // The notch is centered on the wall, so X is 0.
+    // The notch goes from Z = 32 to Z = 40 (8mm deep from top).
+    // The wall thickness is 2.5mm, so the cut needs to go through the wall.
+    // We cut from the outside (Y > OUTER_Y/2) into the wall.
+    
+    notch_cutter = translate([0, OUTER_Y/2 + WALL_THICKNESS/2 - NOTCH_WIDTH/2, 32])
+        cube([NOTCH_WIDTH, WALL_THICKNESS + 0.01, NOTCH_HEIGHT], center = false);
+    
+    // Actually, simpler approach: Cut a notch from the outside of the +Y wall.
+    // The wall is at Y = OUTER_Y/2. The notch is 12mm wide, centered on X=0.
+    // It goes from Z=32 to Z=40.
+    // We need to cut through the wall thickness.
+    
+    // Let's define the notch cutter more precisely.
+    // The wall is at Y = OUTER_Y/2. The notch is centered on X=0.
+    // The notch width is 12mm, so it spans X from -6 to 6.
+    // The notch height is 8mm, so it spans Z from 32 to 40.
+    // The notch depth must go through the wall (2.5mm) and slightly into the interior.
+    // We cut from the outside (Y > OUTER_Y/2) towards the inside.
+    
+    notch_cutter = translate([0, OUTER_Y/2 + 0.01, 32])
+        cube([NOTCH_WIDTH, WALL_THICKNESS + 0.01, NOTCH_HEIGHT], center = false);
+    
+    // Apply the notch cut to the hollow box
+    final_housing = difference() {
+        hollow_box;
+        notch_cutter;
+    }
+    
+    // Ensure the top plate is solid (the hollow box logic above creates a shell, 
+    // but the top plate is solid 2mm thick. The hollow box logic subtracts the inner box 
+    // which goes all the way to the top, so the top plate is effectively the top of the outer box 
+    // minus the top of the inner box? No, the inner box is height 40.
+    // The outer box is height 40. The inner box is height 40.
+    // The difference creates a shell of 2.5mm walls and a 2mm top?
+    // Wait, the top plate is 2mm thick. The walls are 2.5mm thick.
+    // The outer box is 90x90x40.
+    // The inner box should be 85x85x40? No, the walls are 2.5mm thick.
+    // So inner width = 90 - 2*2.5 = 85.
+    // But the top plate is 2mm thick. The walls rise from the top plate.
+    // So the "hollow" part is 40mm high, but the top plate is 2mm thick.
+    // The walls are 2.5mm thick.
+    // The structure is:
+    // 1. Solid base plate (2mm thick).
+    // 2. Four walls (2.5mm thick) rising from the base plate to 40mm height.
+    // The base plate is part of the "top" of the stirrer.
+    // The walls are attached to the base plate.
+    
+    // Let's rebuild:
+    // Base plate: 90x90x2
+    // Walls: 4 separate walls or a single shell?
+    // If we use a shell, the top plate is the top of the shell.
+    // But the top plate is 2mm, walls are 2.5mm.
+    // So the shell should be:
+    // Outer: 90x90x40
+    // Inner: 85x85x40 (if walls are 2.5mm thick)
+    // But the top plate is only 2mm thick.
+    // So the top of the shell is 2mm thick?
+    // No, the top plate is a separate piece or the top of the shell is 2mm thick.
+    // If we use a shell, the top is 2mm thick, walls are 2.5mm thick.
+    // This means the inner box should be 85x85x38? No.
+    // Let's think of it as:
+    // Base: 90x90x2
+    // Walls: 4 walls of 2.5mm thickness, height 38mm (from z=2 to z=40).
+    // But the problem says "four walls, 2.5 mm thick, rise from it to z = 40".
+    // So the walls start at z=2 and go to z=40.
+    // The base is z=0 to z=2.
+    
+    // Let's build it as:
+    // 1. Base plate (90x90x2)
+    // 2. Four walls (2.5mm thick, 38mm high) attached to the base.
+    
+    // Base plate
+    base = cube([OUTER_X, OUTER_Y, TOP_THICKNESS], center = true);
+    
+    // Walls
+    // Wall 1: +Y wall
+    wall1 = translate([0, OUTER_Y/2

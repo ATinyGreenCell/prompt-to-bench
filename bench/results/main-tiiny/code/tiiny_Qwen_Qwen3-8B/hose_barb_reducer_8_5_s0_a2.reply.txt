@@ -1,0 +1,85 @@
+```openscad
+// Dimensions for the hose-barb reducer
+// Total height of the part
+total_height = 41;
+// Bore diameter
+bore_diameter = 3;
+// 8mm tubing barb dimensions
+barb_height_8mm = 10;
+barb_outer_diameter_bottom_8mm = 7.5;
+barb_outer_diameter_top_8mm = 9.5;
+barb_outer_diameter_step_8mm = 7.5;
+// 5mm tubing barb dimensions
+barb_height_5mm = 8;
+barb_outer_diameter_bottom_5mm = 6.5;
+barb_outer_diameter_top_5mm = 5.0;
+barb_outer_diameter_step_5mm = 6.5;
+// Collar diameter
+collar_diameter = 12;
+// Collar height
+collar_height = 5;
+// Radius for curved shapes
+radius = 3;
+
+// Create a single barb for 8mm tubing
+module barb_8mm(z_start, z_end, bottom_diameter, top_diameter, step_diameter) {
+    // Calculate the number of steps for linear growth and step back
+    steps = 10; // arbitrary number of steps for linear growth
+    step_height = (z_end - z_start) / steps;
+    // Create the barb profile
+    for (i = [0:steps]) {
+        current_diameter = bottom_diameter + i * (top_diameter - bottom_diameter) / steps;
+        translate([0, 0, z_start + i * step_height]) {
+            cylinder(r = current_diameter / 2, h = step_height, $fn = 64);
+        }
+    }
+    // Step back to the bottom diameter
+    translate([0, 0, z_end - step_height]) {
+        cylinder(r = step_diameter / 2, h = step_height, $fn = 64);
+    }
+}
+
+// Create a single barb for 5mm tubing
+module barb_5mm(z_start, z_end, bottom_diameter, top_diameter, step_diameter) {
+    steps = 10; // arbitrary number of steps for linear growth
+    step_height = (z_end - z_start) / steps;
+    for (i = [0:steps]) {
+        current_diameter = bottom_diameter + i * (top_diameter - bottom_diameter) / steps;
+        translate([0, 0, z_start + i * step_height]) {
+            cylinder(r = current_diameter / 2, h = step_height, $fn = 64);
+        }
+    }
+    // Step back to the bottom diameter
+    translate([0, 0, z_end - step_height]) {
+        cylinder(r = step_diameter / 2, h = step_height, $fn = 64);
+    }
+}
+
+// Main part
+difference() {
+    // Create the full cylinder with bore
+    union() {
+        // Outer cylinder
+        cylinder(r = 30, h = total_height, $fn = 64);
+        // Bore through the center
+        translate([0, 0, 0]) {
+            cylinder(r = bore_diameter / 2, h = total_height, $fn = 64);
+        }
+    }
+    
+    // Subtract the 8mm barbs from z=0 to z=20
+    translate([0, 0, 0]) {
+        barb_8mm(0, 20, barb_outer_diameter_bottom_8mm, barb_outer_diameter_top_8mm, barb_outer_diameter_step_8mm);
+    }
+    
+    // Subtract the collar from z=20 to z=25
+    translate([0, 0, 20]) {
+        cylinder(r = collar_diameter / 2, h = collar_height, $fn = 64);
+    }
+    
+    // Subtract the 5mm barbs from z=25 to z=41
+    translate([0, 0, 25]) {
+        barb_5mm(25, 41, barb_outer_diameter_bottom_5mm, barb_outer_diameter_top_5mm, barb_outer_diameter_step_5mm);
+    }
+}
+```

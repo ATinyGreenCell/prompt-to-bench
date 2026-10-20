@@ -1,0 +1,85 @@
+$fn = 64;
+
+// Base plate dimensions
+base_x = 50; // from -25 to 25
+base_y = 45; // from 0 to 45
+base_z = 5;
+
+// Vertical motor plate dimensions
+motor_plate_x = 50; // from -25 to 25
+motor_plate_y = 5;
+motor_plate_z = 50;
+
+// Mounting holes in base plate
+base_hole_x = 17;
+base_hole_y = 30;
+base_hole_d = 4.5;
+
+// Motor mounting features
+motor_boss_d = 23;
+motor_hole_radius = 3.4 / 2;
+motor_hole_pitch = 31;
+motor_hole_z = 28;
+
+// Gusset dimensions
+gusset_thick = 5;
+gusset_leg = 20;
+
+// Base plate
+base = translate([-base_x/2, 0, 0])
+    cube([base_x, base_y, base_z]);
+
+// Motor plate
+motor_plate = translate([-motor_plate_x/2, 0, base_z])
+    cube([motor_plate_x, motor_plate_y, motor_plate_z]);
+
+// Gussets
+gusset_left = translate([-base_x/2, 0, base_z])
+    rotate([0, 0, 90])
+    linear_extrude(height = gusset_thick)
+    polygon(points = [[0, 0], [gusset_leg, 0], [0, gusset_leg]]);
+
+gusset_right = translate([base_x/2 - gusset_thick, 0, base_z])
+    rotate([0, 0, -90])
+    linear_extrude(height = gusset_thick)
+    polygon(points = [[0, 0], [gusset_leg, 0], [0, gusset_leg]]);
+
+// Base mounting holes
+base_hole1 = translate([-base_hole_x, base_hole_y, -1])
+    cylinder(h = base_z + 2, d = base_hole_d);
+
+base_hole2 = translate([base_hole_x, base_hole_y, -1])
+    cylinder(h = base_z + 2, d = base_hole_d);
+
+// Motor boss hole (through motor plate along Y)
+boss_hole = translate([0, -1, motor_hole_z])
+    cylinder(h = motor_plate_y + 2, d = motor_boss_d);
+
+// Motor mounting holes (4 holes on 31mm square pattern)
+module motor_mount_holes() {
+    r = motor_hole_pitch / 2;
+    for (dx = [-1, 1], dy = [-1, 1]) {
+        translate([dx * r, -1, motor_hole_z])
+            cylinder(h = motor_plate_y + 2, d = motor_hole_d;
+    }
+}
+
+motor_holes = motor_mount_holes();
+
+// Combine all parts
+bracket = union() {
+    difference() {
+        union() {
+            base;
+            motor_plate;
+            gusset_left;
+            gusset_right;
+        }
+        base_hole1;
+        base_hole2;
+        boss_hole;
+        motor_holes;
+    }
+};
+
+translate([0, 0, 0]) bracket;

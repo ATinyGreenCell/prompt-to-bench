@@ -1,0 +1,119 @@
+Looking at the measurement report, I see several discrepancies with the specification:
+
+1. **Slot length**: Report shows 79.00 mm, but specification says 77.00 mm
+2. **Slot width**: Report shows 1.60 mm (correct)
+3. **Slot depth**: Report shows slots at z=15.00 and z=19.00, meaning depth is only 5 mm (20-15=5), but specification says 10 mm
+4. **Number of slots visible in slices**: Only 3 holes shown at z=15 and z=19, but we need 10 slots
+5. **Slot spacing**: The report shows pitch Y of 3.50 mm (correct)
+
+The main issues are:
+- The slot length calculation is wrong (showing 79 instead of 77)
+- The slot depth calculation is wrong (showing 5 mm depth instead of 10 mm)
+- The number of slots being cut is wrong (only 3 visible instead of 10)
+
+Let me analyze the code:
+- In the `slot()` module, I have `cube([slot_length + 2, slot_width, slot_depth + 0.01])` which is correct
+- But in the `translate` for positioning, I have `y_pos - slot_width / 2` which is incorrect - it should just be `y_pos` since `slot()` already centers the slot
+
+The main issue is in how I'm calculating the Y positions and positioning the slots. Let me recalculate:
+
+- Total width occupied by slots and gaps: 10 * 1.6 + 9 * 3.5 = 16 + 31.5 = 47.5 mm
+- But base width is only 45 mm, so this won't fit! The specification must mean something else.
+
+Re-reading the specification: "the group of slots is centred on the block in X and Y". With base width 45 mm and total slot+gap width 47.5 mm, this is impossible unless the slots extend beyond the base width.
+
+But the measurement report shows the bounding box is exactly 45 mm in Y, so the slots must be within the 45 mm width. This means the slot spacing might be measured differently.
+
+Let me reconsider: perhaps "3.5 mm apart centre-to-centre" means the distance between adjacent slot centres is 3.5 mm, so total width = 10 * 1.6 + 9 * (3.5 - 1.6) = 16 + 9 * 1.9 = 16 + 17.1 = 33.1 mm, which fits within 45 mm.
+
+But the report shows 3 holes, not 10, so there's definitely an issue with the loop.
+
+Looking more carefully at the code:
+```scad
+for (i = [0 : num_slots - 1]) {
+    y_pos = first_slot_offset + i * slot_pitch + slot_width / 2;
+    translate([
+        (base_length - slot_length) / 2,
+        y_pos - slot_width / 2,  // This is wrong - double subtraction
+        base_height - slot_depth
+    ]) {
+        slot();
+    }
+}
+```
+
+The issue is `y_pos - slot_width / 2` - since `y_pos` already includes `+ slot_width / 2`, this subtracts it again, causing incorrect positioning.
+
+Also, `slot_length + 2` in the slot module makes the slots 79 mm instead of 77 mm.
+
+Let me fix these issues:
+
+1. Remove the `+ 2` from slot_length in the cube
+2. Fix the y_pos calculation to not double-subtract
+3. Ensure proper slot depth calculation
+
+```openscad
+// Drying rack for 10 microscope slides
+// Slide dimensions: 75 x 25 x 1 mm (L x W x T)
+// Base dimensions: 90 x 45 x 20 mm (X x Y x Z)
+// Slots: 10 parallel slots along X, 77 mm long, 1.6 mm wide, 10 mm deep
+// Slot spacing: 3.5 mm centre-to-centre in Y
+// Slots centred on block in X and Y
+
+// Base dimensions
+base_length = 90;   // X
+base_width  = 45;   // Y
+base_height = 20;   // Z
+
+// Slot dimensions
+num_slots    = 10;
+slot_length  = 77;  // along X
+slot_width   = 1.6; // along Y
+slot_depth   = 10;  // along Z
+slot_pitch   = 3.5; // centre-to-centre spacing in Y
+
+// Calculate slot positions
+// Total slot width + gaps: num_slots * slot_width + (num_slots - 1) * (slot_pitch - slot_width)
+// But we want slots centred, so we compute the total width occupied by slots and gaps
+total_slot_width = num_slots * slot_width + (num_slots - 1) * (slot_pitch - slot_width);
+// Offset from centre to first slot edge
+first_slot_offset = (base_width - total_slot_width) / 2;
+
+// Set resolution for curves
+$fn = 64;
+
+// Base block
+module base_block() {
+    cube([base_length, base_width, base_height]);
+}
+
+// Slot module
+module slot() {
+    // Slot runs along X, so extrude along X
+    cube([slot_length, slot_width, slot_depth + 0.01]);
+}
+
+// Build the rack
+module drying_rack() {
+    difference() {
+        // Base block
+        base_block();
+        
+        // Cut slots
+        for (i = [0 : num_slots - 1]) {
+            // Calculate Y position of each slot (from bottom)
+            y_pos = first_slot_offset + i * slot_pitch;
+            // Position slot: centred in X (base_length/2 - slot_length/2), at y_pos, at top (base_height - slot_depth)
+            translate([
+                (base_length - slot_length) / 2,
+                y_pos,
+                base_height - slot_depth
+            ]) {
+                slot();
+            }
+        }
+    }
+}
+
+drying_rack();
+```

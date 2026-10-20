@@ -1,0 +1,124 @@
+Looking at the measurement report and comparing with the specification:
+
+1. **Bounding Box Y-dimension**: The report shows Y from -47.00 to 47.00 (size 94.00 mm), but the specification says the plate should be 90 mm in Y direction. This means the walls are 4 mm thick (as specified), but they're being placed such that the total Y dimension is 94 mm (47 + 47) instead of 90 mm.
+
+2. **Plate Y-dimension**: The plate should be exactly 90 mm in Y, but the bounding box shows the total part is 94 mm in Y. This suggests the walls are being added to the plate's Y dimension, but the plate itself should be 90 mm, and the walls should be attached to the edges without increasing the overall Y dimension beyond 90 mm + 4 mm + 4 mm = 98 mm? Wait, no.
+
+Let me re-read the specification carefully:
+- "a flat plate 130 mm (X) by 90 mm (Y) and 4 mm thick"
+- "Two solid walls run along the two long edges of the plate: each wall is 130 mm long (X) and 4 mm thick (Y), flush with the plate's long edge"
+
+So the plate is 90 mm in Y. The walls are 4 mm thick and flush with the plate's long edges. This means:
+- The plate spans Y from -45 to +45 mm (total 90 mm)
+- The front wall is at Y = +45 mm (edge of plate), 4 mm thick, so it spans Y from +43 to +47 mm
+- The back wall is at Y = -45 mm (edge of plate), 4 mm thick, so it spans Y from -47 to -43 mm
+- Total Y dimension = 47 - (-47) = 94 mm
+
+But the specification says the plate is 90 mm, and the walls are attached to the edges. The bounding box showing 94 mm is actually correct! The plate is 90 mm, and with 4 mm walls on each side, total is 98 mm? No, wait.
+
+Let me think again:
+- Plate: 90 mm in Y (from -45 to +45)
+- Wall thickness: 4 mm
+- Wall flush with plate's long edge: so the wall's inner face is at the plate's edge
+
+If the wall is 4 mm thick and flush with the plate's edge, then:
+- The plate's edge is at Y = ±45 mm
+- The wall extends from Y = ±45 mm to Y = ±(45 + 4) = ±49 mm for the front wall, and from Y = ∓49 mm to Y = ∓45 mm for the back wall
+
+But the report shows walls at Y = ±45 mm with thickness 4 mm, so they span Y from ±43 to ±47 mm. That means the walls are centered at Y = ±45 mm, which would make them not flush with the plate edge.
+
+The specification says "flush with the plate's long edge". This means the inner face of the wall should be at the plate's edge (Y = ±45 mm), and the wall extends outward from there.
+
+So the wall should be positioned with its inner face at Y = ±45 mm, meaning:
+- Front wall: Y from +45 to +49 mm, centered at Y = +47 mm
+- Back wall: Y from -49 to -45 mm, centered at Y = -47 mm
+
+But the report shows walls centered at Y = ±45 mm, which would make them overlap with the plate (since the plate goes from -45 to +45 mm).
+
+Let me check the slice at z=0.94 mm: it shows a single solid region with outline 130.00 x 94.00. This suggests the plate and walls are merged into one piece, which is correct.
+
+The issue is the plate Y-dimension. The specification says the plate is 90 mm, but the bounding box shows Y from -47 to +47 (94 mm total), which includes the walls. The plate itself should be 90 mm, and the walls should be attached to the edges.
+
+In the current code, the plate is defined as 130 x 90 x 4, which is correct. The walls are added as 4 mm thick, centered at Y = ±45 mm (plate edges), which means they extend from Y = ±43 to ±47 mm. This makes the total Y dimension 94 mm, which is correct for the part (plate 90 mm + 4 mm walls on each side).
+
+But the specification says the plate is 90 mm, and the walls are 4 mm thick and flush with the plate's long edge. This is ambiguous. Does "flush with the plate's long edge" mean the wall's inner face is at the plate edge, or the wall's center is at the plate edge?
+
+In engineering, "flush" usually means the surfaces are aligned, so the wall's inner face should be at the plate edge. This means:
+- Plate: Y from -45 to +45 mm
+- Wall: Y from +45 to +49 mm (front), Y from -49 to -45 mm (back)
+- Total Y dimension: 98 mm
+
+But the report shows 94 mm total, which suggests the walls are centered at the plate edges (Y = ±45 mm), so they extend from ±43 to ±47 mm, overlapping with the plate (which is from -45 to +45 mm).
+
+The specification says the plate is 90 mm, and the walls are 4 mm thick and flush with the plate's long edge. This means the total part should be 90 + 4 + 4 = 98 mm in Y.
+
+Let me check the slice at z=0.94 mm: it shows a single solid region with outline 130.00 x 94.00. This is wrong. It should be 130.00 x 98.00.
+
+The issue is in the wall placement. The walls should be positioned with their inner face at the plate edge (Y = ±45 mm), not centered at the plate edge.
+
+So:
+- Front wall: Y from +45 to +49 mm, so center at Y = +47 mm
+- Back wall: Y from -49 to -45 mm, so center at Y = -47 mm
+
+Current code has walls centered at Y = ±45 mm, which is wrong.
+
+Let me fix the wall placement:
+
+```openscad
+// Rack for six 50 mL conical (Falcon-type) tubes
+// Printed upside down and flipped over after printing
+
+$fn = 64;
+
+// Plate dimensions
+plate_x = 130; // mm, X direction
+plate_y = 90;  // mm, Y direction
+plate_z = 4;   // mm, thickness
+
+// Hole pattern
+hole_diameter = 30.5; // mm
+hole_spacing_x = 40;  // mm, centre-to-centre in X
+hole_spacing_y = 40;  // mm, centre-to-centre in Y
+hole_rows = 2;        // number of rows (along Y)
+hole_cols = 3;        // number of columns (along X)
+
+// Compute hole positions (centred on plate)
+hole_x_offset = (plate_x - (hole_cols - 1) * hole_spacing_x) / 2;
+hole_y_offset = (plate_y - (hole_rows - 1) * hole_spacing_y) / 2;
+
+// Walls along long edges (X direction)
+// Walls are flush with plate's long edges (inner face at Y = ±plate_y/2)
+// Each wall is 4 mm thick, so positioned with inner face at plate edge
+wall_thickness = 4;   // mm
+wall_height = 70;     // mm
+
+// Plate base
+module plate_base() {
+    translate([0, 0, plate_z/2]) {
+        cube([plate_x, plate_y, plate_z], center=true);
+    }
+}
+
+// Holes for tubes
+module hole_grid() {
+    for (i = [0 : hole_cols - 1]) {
+        for (j = [0 : hole_rows - 1]) {
+            x = -plate_x/2 + hole_x_offset + i * hole_spacing_x;
+            y = -plate_y/2 + hole_y_offset + j * hole_spacing_y;
+            translate([x, y, -1]) {
+                cylinder(h = plate_z + 2, r = hole_diameter/2, center=false);
+            }
+        }
+    }
+}
+
+// Walls along long edges (X direction)
+module walls() {
+    // Front wall (positive Y edge) - inner face at Y = plate_y/2
+    // Wall thickness 4 mm, so extends from Y = plate_y/2 to Y = plate_y/2 + wall_thickness
+    // Centered at Y = plate_y/2 + wall_thickness/2
+    translate([0, plate_y/2 + wall_thickness/2, wall_height/2]) {
+        cube([plate_x, wall_thickness, wall_height], center=true);
+    }
+    
+   

@@ -1,0 +1,124 @@
+// Dimensions for the snap-on clip
+// Rod specifications
+rod_id = 12.7; // Inner diameter of the rod ring (1/2 inch)
+rod_wall = 3;   // Wall thickness of the rod ring
+rod_od = rod_id + 2 * rod_wall; // Outer diameter of the rod ring (18.7 mm)
+rod_center_x = 0; // X position of the rod ring center
+rod_center_y = 0; // Y position of the rod ring center
+
+// Tubing specifications
+tubing_id = 6; // Inner diameter of the tubing ring
+tubing_wall = 2; // Wall thickness of the tubing ring
+tubing_od = tubing_id + 2 * tubing_wall; // Outer diameter of the tubing ring (10 mm)
+tubing_center_x = 15; // X position of the tubing ring center
+tubing_center_y = 0; // Y position of the tubing ring center
+
+// Bridge specifications
+bridge_x1 = 8; // Left X coordinate of the bridge
+bridge_x2 = 12; // Right X coordinate of the bridge
+bridge_width_y = 6; // Width of the bridge in Y direction
+
+// Opening specifications
+rod_opening_y_half = 5; // Half-width of the opening on the rod ring
+tubing_opening_y_half = 2.25; // Half-width of the opening on the tubing ring
+
+// Print orientation
+print_height = 10; // Height of the extrusion in Z direction
+
+// $fn for curved shapes to ensure roundness
+$fn = 64;
+
+// Module to create a 2D ring (washer)
+module ring_2d(id, od, x, y) {
+    difference() {
+        circle(r = od / 2);
+        circle(r = id / 2);
+    }
+    translate([x, y]);
+}
+
+// Module to create a 2D rectangular bridge
+module bridge_2d(x1, x2, y_width) {
+    width = x2 - x1;
+    height = y_width;
+    translate([x1 + width / 2, 0]) {
+        square([width, height]);
+    }
+}
+
+// Module to create a 2D rectangular cutout
+module opening_2d(x_min, x_max, y_min, y_max) {
+    translate([x_min, y_min]) {
+        square([x_max - x_min, y_max - y_min]);
+    }
+}
+
+// Main part construction
+union() {
+    // 1. Rod Ring
+    ring_2d(rod_id, rod_od, rod_center_x, rod_center_y);
+    
+    // 2. Tubing Ring
+    ring_2d(tubing_id, tubing_od, tubing_center_x, tubing_center_y);
+    
+    // 3. Solid Bridge
+    bridge_2d(bridge_x1, bridge_x2, bridge_width_y);
+}
+
+// 4. Apply Openings (Subtract cutouts from the union)
+difference() {
+    // The union of the rings and bridge
+    union() {
+        ring_2d(rod_id, rod_od, rod_center_x, rod_center_y);
+        ring_2d(tubing_id, tubing_od, tubing_center_x, tubing_center_y);
+        bridge_2d(bridge_x1, bridge_x2, bridge_width_y);
+    }
+    
+    // Cutout 1: -X side of rod ring (x < 0, -5 < y < 5)
+    // We use a box that extends past the face of the ring to satisfy Rule 5.
+    // Ring face is at x = -9.35. Box extends to x = -20.
+    opening_2d(-20, 0, -rod_opening_y_half, rod_opening_y_half);
+    
+    // Cutout 2: +X side of tubing ring (x > 15, -2.25 < y < 2.25)
+    // We use a box that extends past the face of the ring to satisfy Rule 5.
+    // Ring face is at x = 20. Box extends to x = 25.
+    opening_2d(tubing_center_x, 25, -tubing_opening_y_half, tubing_opening_y_half);
+}
+
+// Extrude the 2D profile to 3D
+linear_extrude(height = print_height) {
+    // The union and difference operations are applied to the 2D shapes above
+    // We need to re-structure the logic to apply extrusion correctly
+    // Actually, the above union/difference is 2D. We need to extrude the result.
+    // Let's re-write the main block to be clearer.
+}
+
+// Corrected Main Block
+// We define the 2D shapes, union them, subtract the openings, then extrude.
+// Since OpenSCAD doesn't allow nested modules with union/difference easily in one go without
+// defining the shapes first, we will do it in the main script.
+
+// Define the 2D shapes
+rod_ring_shape = ring_2d(rod_id, rod_od, rod_center_x, rod_center_y);
+tubing_ring_shape = ring_2d(tubing_id, tubing_od, tubing_center_x, tubing_center_y);
+bridge_shape = bridge_2d(bridge_x1, bridge_x2, bridge_width_y);
+
+// Define the 2D cutouts
+rod_cutout = opening_2d(-20, 0, -rod_opening_y_half, rod_opening_y_half);
+tubing_cutout = opening_2d(tubing_center_x, 25, -tubing_opening_y_half, tubing_opening_y_half);
+
+// Construct the final 2D profile
+final_2d_profile = difference() {
+    union() {
+        rod_ring_shape;
+        tubing_ring_shape;
+        bridge_shape;
+    }
+    rod_cutout;
+    tubing_cutout;
+};
+
+// Extrude to 3D
+linear_extrude(height = print_height) {
+    final_2d_profile;
+}

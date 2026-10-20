@@ -1,0 +1,63 @@
+$fn = 64;
+
+// Part 1: Box Dimensions
+box_x = 70;
+box_y = 50;
+box_z = 30;
+wall_thick = 2;
+floor_thick = 2;
+
+// Part 2: Lid Dimensions
+lid_plate_x = 70;
+lid_plate_y = 50;
+lid_plate_z = 2;
+lip_thick = 1.5;
+lip_height = 4;
+lip_outer_x = 65.6;
+lip_outer_y = 45.6;
+
+// Assembly Layout
+gap = 10;
+
+module box_part() {
+    // Calculate inner cavity dimensions
+    inner_x = box_x - (2 * wall_thick);
+    inner_y = box_y - (2 * wall_thick);
+    inner_z = box_z - floor_thick;
+
+    // Create the solid outer block
+    difference() {
+        cube([box_x, box_y, box_z]);
+
+        // Create the cutting shape (inner cavity)
+        // Extend dimensions by 0.01mm to ensure clean cuts (Rule 5)
+        cut_x = inner_x + 0.01;
+        cut_y = inner_y + 0.01;
+        cut_z = inner_z + 0.01;
+
+        cube([cut_x, cut_y, cut_z]);
+    }
+}
+
+module lid_part() {
+    // Base Plate
+    translate([0, 0, 0])
+    cube([lid_plate_x, lid_plate_y, lid_plate_z]);
+
+    // Lip
+    // Positioned on top of the plate (z = lid_plate_z)
+    translate([0, 0, lid_plate_z])
+    cube([lip_outer_x, lip_outer_y, lip_height]);
+}
+
+// Assembly
+union() {
+    // Part 1: Box
+    translate([0, 0, 0])
+    box_part();
+
+    // Part 2: Lid
+    // Positioned 10mm to the right of the box
+    translate([box_x + gap, 0, 0])
+    lid_part();
+}

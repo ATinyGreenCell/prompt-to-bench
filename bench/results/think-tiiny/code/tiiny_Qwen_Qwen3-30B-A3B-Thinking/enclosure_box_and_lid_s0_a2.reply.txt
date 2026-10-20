@@ -1,0 +1,49 @@
+```openscad
+$fn = 64;
+
+// Box dimensions
+wall_thickness = 2;        // 2 mm wall thickness
+floor_thickness = 2;         // 2 mm floor thickness
+box_outer_x = 70;            // Outer X dimension (mm)
+box_outer_y = 50;            // Outer Y dimension (mm)
+box_outer_z = 30;              // Outer Z dimension (mm)
+inner_x = box_outer_x - 2 * wall_thickness; // Inner X cavity (mm)
+inner_y = box_outer_y - 2 * wall_thickness; // Inner Y cavity (mm)
+inner_z = box_outer_z - floor_thickness;    // Inner Z cavity height (mm)
+cavity_x = inner_x + 0.01;   // Extend cavity 0.01mm for subtraction
+cavity_y = inner_y + 0.01;   // Extend cavity 0.01mm for subtraction
+cavity_z = inner_z + 0.01;     // Extend cavity 0.01mm for subtraction
+cavity_pos = [wall_thickness, wall_thickness, floor_thickness]; // Position of cavity
+
+// Lid dimensions
+lid_plate_x = 70;              // Plate X dimension (mm)
+lid_plate_y = 50;              // Plate Y dimension (mm)
+lid_plate_z = 2;               // Plate thickness (mm)
+lip_thickness = 1.5;           // Lip wall thickness (mm)
+lip_height = 4;                // Lip height (mm)
+lid_outer_x = 65.6;            // Outer size of lip frame (mm)
+lid_outer_y = 45.6;            // Outer size of lip frame (mm)
+
+// Box creation: solid box with cavity subtracted
+box = difference() {
+    cube([box_outer_x, box_outer_y, box_outer_z]);
+    translate(cavity_pos) cube([cavity_x, cavity_y, cavity_z]);
+};
+
+// Lid creation: plate with lip frame on top
+lid_frame = difference() {
+    cube([lid_outer_x, lid_outer_y, lip_height]);
+    translate([lip_thickness, lip_thickness, 0]) {
+        cube([lid_outer_x - 2 * lip_thickness, lid_outer_y - 2 * lip_thickness, lip_height]);
+    }
+};
+
+lid = union() {
+    cube([lid_plate_x, lid_plate_y, lid_plate_z]);
+    translate([(lid_plate_x - lid_outer_x)/2, (lid_plate_y - lid_outer_y)/2, lid_plate_z]) lid_frame;
+};
+
+// Place parts side by side with 10mm gap
+translate([0, 0, 0]) box;
+translate([box_outer_x + 10, 0, 0]) lid;
+```

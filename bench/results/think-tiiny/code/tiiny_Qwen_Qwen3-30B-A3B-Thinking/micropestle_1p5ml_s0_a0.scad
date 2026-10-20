@@ -1,0 +1,49 @@
+$fn = 64;
+
+// Dimensions in mm
+handle_dia = 8;          // Diameter of the cylindrical handle
+handle_height = 45;        // Height of the handle (z=0 to z=45)
+cone_start_z = 45;         // Start of the cone (z=45)
+cone_end_z = 62;         // End of the cone (z=62)
+cone_height = cone_end_z - cone_start_z;
+cone_base_dia = 8;       // Diameter at cone start (z=45)
+cone_tip_dia = 3;      // Diameter at cone end (z=62)
+sphere_dia = 3;          // Diameter of the rounded tip sphere
+sphere_center_z = 62;    // Z-coordinate of sphere center
+groove_width = 2;          // Width of each groove (in Z direction)
+groove_depth = 1;          // Depth of each groove (radial direction)
+groove_centers = [10, 15, 20, 25]; // Z-positions for groove centers
+
+// Calculate radii
+handle_radius = handle_dia / 2;
+cone_base_radius = cone_base_dia / 2;
+cone_tip_radius = cone_tip_dia / 2;
+sphere_radius = sphere_dia / 2;
+groove_inner_radius = handle_radius - groove_depth;
+
+// Build the handle with grooves
+handle = cylinder(h = handle_height, r = handle_radius, center = false);
+grooves = difference() {
+    handle;
+    for (z = groove_centers) {
+        translate([0, 0, z - groove_width / 2])
+        cylinder(h = groove_width, r = groove_inner_radius, center = false);
+    }
+}
+
+// Build the cone (tapering from handle to sphere)
+cone = cylinder(h = cone_height, r1 = cone_base_radius, r2 = cone_tip_radius, center = false);
+cone = translate([0, 0, cone_start_z]) cone;
+
+// Build the rounded tip sphere
+sphere = sphere(r = sphere_radius);
+sphere = translate([0, 0, sphere_center_z]) sphere;
+
+// Assemble the pestle
+pestle = union() {
+    grooves;
+    cone;
+    sphere;
+};
+
+pestle;

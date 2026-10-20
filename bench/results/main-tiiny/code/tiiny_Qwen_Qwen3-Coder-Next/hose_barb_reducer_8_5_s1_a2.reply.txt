@@ -1,0 +1,100 @@
+Looking at the measurement report and comparing it to the specification, I found several discrepancies:
+
+1. **8mm barbs section diameter at z=2.50 is 11.99mm** - This is wrong. The 8mm barbs section should be from z=0 to z=20, but the report shows the 8mm section has a diameter of 11.99mm at z=2.50, which is too large. The specification says the 8mm barbs should have an outer diameter that grows from 7.5mm to 9.5mm, but the current implementation is using the collar diameter (12mm) for the 8mm section.
+
+2. **Missing collar section** - The report shows "z=22.50: empty", but the collar should be at z=20 to z=25 (so z=22.50 should be in the collar section with 12mm diameter).
+
+3. **5mm barbs section position** - The report shows solid regions at z=31.00, 35.00, 39.00, but the 5mm barbs should be from z=25 to z=41. The report shows the 5mm section starting too late (around z=31 instead of z=25).
+
+4. **Step-back feature not implemented correctly** - The specification says "steps straight back to 7.5 mm" and "steps straight back out to 6.5 mm", but the current implementation has the step in the middle of the barb height, not at the top.
+
+Let me fix these issues:
+- Correct the 8mm barbs section to use the proper diameters (7.5mm to 9.5mm)
+- Ensure the collar section is properly placed between the barb sections
+- Fix the 5mm barbs section to start at z=25
+- Implement the sawtooth profile correctly: linear taper up to the top diameter, then a sharp step back to the bottom diameter at the end of each barb
+
+```openscad
+// Hose-barb reducer for 8mm to 5mm silicone tubing
+// Print orientation: upright along Z axis
+
+// Parameters
+bore_diameter = 3;              // Internal bore diameter (mm)
+collar_diameter = 12;           // Collar outer diameter (mm)
+collar_height = 5;              // Collar height (mm) - from z=20 to z=25
+
+// 8 mm side barb parameters (2 barbs, each 10mm tall)
+barb8_height = 10;              // Height of each 8mm barb (mm)
+barb8_bottom_diameter = 7.5;    // Bottom diameter of 8mm barb (mm)
+barb8_top_diameter = 9.5;       // Top diameter of 8mm barb (mm)
+num_barb8 = 2;                  // Number of 8mm barbs
+
+// 5 mm side barb parameters (2 barbs, each 8mm tall)
+barb5_height = 8;               // Height of each 5mm barb (mm)
+barb5_bottom_diameter = 6.5;    // Bottom diameter of 5mm barb (mm)
+barb5_top_diameter = 5.0;       // Top diameter of 5mm barb (mm)
+num_barb5 = 2;                  // Number of 5mm barbs
+
+// Total heights
+z8_start = 0;
+z8_end = z8_start + num_barb8 * barb8_height;  // 20
+z_collar_start = z8_end;                        // 20
+z_collar_end = z_collar_start + collar_height; // 25
+z5_start = z_collar_end;                        // 25
+z5_end = z5_start + num_barb5 * barb5_height;  // 41
+
+// Resolution
+$fn = 64;
+
+module sawtooth_barb_section(start_z, height, bottom_d, top_d, num_barbs) {
+    total_height = num_barbs * height;
+    
+    // Outer shape with sawtooth profile
+    union() {
+        for (i = [0 : num_barbs - 1]) {
+            z_barb_start = start_z + i * height;
+            // Create the sawtooth profile: linear up to top_d, then step back to bottom_d
+            // First part: linear taper from bottom_d to top_d over height/2
+            translate([0, 0, z_barb_start]) {
+                linear_extrude(height = height/2, scale = top_d / bottom_d) {
+                    circle(d = bottom_d);
+                }
+            }
+            // Second part: step back to bottom_d (no taper, just constant diameter)
+            translate([0, 0, z_barb_start + height/2]) {
+                cylinder(h = height/2 + 0.01, d = bottom_d);
+            }
+        }
+    }
+    
+    // Bore through entire section
+    translate([0, 0, -0.01]) {
+        cylinder(h = total_height + 0.02, d = bore_diameter);
+    }
+}
+
+module collar_section(z_start, z_end, outer_d, inner_d) {
+    total_height = z_end - z_start;
+    difference() {
+        cylinder(h = total_height, d = outer_d);
+        translate([0, 0, -0.01]) {
+            cylinder(h = total_height + 0.02, d = inner_d);
+        }
+    }
+}
+
+// Build the complete reducer
+module reducer() {
+    // 8 mm barbs section (z = 0 to 20)
+    sawtooth_barb_section(z8_start, barb8_height, barb8_bottom_diameter, barb8_top_diameter, num_barb8);
+    
+    // Collar section (z = 20 to 25)
+    collar_section(z_collar_start, z_collar_end, collar_diameter, bore_diameter);
+    
+    // 5 mm barbs section (z = 25 to 41)
+    sawtooth_barb_section(z5_start, barb5_height, barb5_bottom_diameter, barb5_top_diameter, num_barb5);
+}
+
+// Render the reducer
+reducer();
+```

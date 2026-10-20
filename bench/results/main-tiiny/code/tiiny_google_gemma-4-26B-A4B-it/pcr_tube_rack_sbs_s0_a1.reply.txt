@@ -1,0 +1,91 @@
+```openscad
+// PCR Tube Rack (96-well)
+// Designed for 0.2 mL tubes with ANSI/SLAS footprint
+// Corrected to ensure a single solid body and accurate hole positioning
+
+// --- Dimensions ---
+block_x = 127.76;      // Total length (X)
+block_y = 85.48;       // Total width (Y)
+block_z = 20.00;       // Total height (Z)
+
+hole_dia = 6.2;        // Diameter of PCR tube holes
+hole_spacing = 9.0;    // Center-to-center spacing (pitch)
+rows = 8;              // Number of rows (Y direction)
+cols = 12;             // Number of columns (X direction)
+
+// Offset of first hole center from the edges (A1 corner)
+offset_x = 14.38;      // Distance from left edge to A1 center
+offset_y = 11.24;      // Distance from back edge to A1 center
+
+// Chamfer dimensions (Orientation Mark)
+chamfer_leg = 5.0;     // Length of the chamfer along the edges
+
+// Resolution
+$fn = 64;
+
+// --- Implementation ---
+
+// The part is built in the print orientation: rests on XY plane at Z=0
+// Centered on the origin in X and Y.
+module pcr_rack() {
+    difference() {
+        // Main Block
+        cube([block_x, block_y, block_z]);
+
+        // 1. The 96 Vertical Through-Holes
+        // We iterate through columns (X) and rows (Y)
+        // The first hole (A1) is at (offset_x, offset_y) relative to the corner (0,0)
+        for (c = [0 : cols - 1]) {
+            for (r = [0 : rows - 1]) {
+                translate([offset_x + (c * hole_spacing), offset_y + (r * hole_spacing), -0.5])
+                    cylinder(d = hole_dia, h = block_z + 1);
+            }
+        }
+
+        // 2. The 45-degree Chamfer at the A1 corner (0,0,0)
+        // A 45-degree chamfer with 5mm legs on the vertical edge.
+        // We use a wedge shape to cut the corner.
+        // To ensure it cuts the corner cleanly, we translate it slightly.
+        translate([-0.5, -0.5, -0.5])
+        rotate([0, 0, 0])
+        difference() {
+            // Create a large enough shape to cover the corner
+            cube([chamfer_leg + 1, chamfer_leg + 1, block_z + 2]);
+            
+            // The wedge to remove: a triangle in XY plane extruded in Z
+            // The triangle vertices are (0,0), (chamfer_leg, 0), (0, chamfer_leg)
+            // But we want to keep the block and remove the corner, 
+            // so we subtract a shape that covers the corner area.
+            // The "cut" is the area outside the line connecting (5,0) and (0,5).
+            // Actually, the simplest way to chamfer a corner is to subtract 
+            // a shape that contains the corner and the area up to the chamfer line.
+            
+            // We use a polygon that covers the corner (0,0) and extends to the chamfer line
+            // To make it a "cut", we define the part to be REMOVED.
+            // The part to be removed is the corner triangle.
+            // However, the user wants a chamfer on the vertical edge.
+            // This means the corner (0,0) is gone, replaced by a slope.
+            // We subtract a shape that covers the corner and the space between the corner and the chamfer line.
+            
+            // We define the shape to be removed as a large triangle that covers the corner.
+            // The chamfer line is x + y = chamfer_leg.
+            // We want to remove the region where x + y < chamfer_leg.
+            // But we must ensure the subtraction is a single solid.
+            // Let's use a hull of the corner and the chamfer line points.
+            hull() {
+                // The corner itself
+                cube([0.1, 0.1, block_z + 2]);
+                // The points on the chamfer line
+                translate([chamfer_leg, 0, 0]) cube([0.1, 0.1, block_z + 2]);
+                translate([0, chamfer_leg, 0]) cube([0.1, 0.1, block_z + 2]);
+            }
+        }
+    }
+}
+
+// Final Render
+// Centering the block on X and Y as requested.
+// The block is defined from [0,0,0] to [X,Y,Z], so we translate by -half.
+translate([-block_x/2, -block_y/2, 0])
+pcr_rack();
+```

@@ -1,0 +1,43 @@
+// Pestle for 1.5 mL microcentrifuge tube
+// Print orientation: standing upright on XY plane at z=0
+
+// Handle dimensions
+handle_diameter = 8;      // mm
+handle_height = 45;        // mm, z=0 to z=45
+
+// Cone dimensions
+cone_bottom_diameter = 8;  // mm, at z=45
+cone_top_diameter = 3;     // mm, at z=62
+cone_height = 17;          // mm, z=45 to z=62
+
+// Tip dimensions
+tip_diameter = 3;          // mm
+tip_center_z = 62;         // mm
+
+// Groove dimensions
+groove_width = 2;          // mm (in Z)
+groove_depth = 1;        // mm
+groove_centers = [10, 15, 20, 25];  // mm, Z positions
+
+// Build the pestle
+difference() {
+    union() {
+        // Handle: cylinder from z=0 to z=45
+        cylinder(d=handle_diameter, h=handle_height, center=false, $fn=64);
+        
+        // Cone: taper from 8mm to 3mm over z=45 to z=62
+        cylinder(d1=cone_bottom_diameter, d2=cone_top_diameter, h=cone_height, center=false, $fn=64);
+        
+        // Rounded tip: sphere centered at z=62
+        translate([0, 0, tip_center_z - tip_diameter/2])
+            sphere(d=tip_diameter, $fn=64);
+    }
+    
+    // Cut four circumferential grooves into the handle
+    for (z_center = groove_centers) {
+        // Create a groove by subtracting a cylinder that only removes surface material
+        // The groove cylinder should be slightly larger than the handle to ensure it cuts through
+        translate([0, 0, z_center - groove_width/2])
+            cylinder(d=handle_diameter + 0.02, h=groove_width + 0.02, center=false, $fn=64);
+    }
+}

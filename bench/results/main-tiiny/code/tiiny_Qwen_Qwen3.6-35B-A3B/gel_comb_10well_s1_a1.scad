@@ -1,0 +1,68 @@
+// --- Dimensions ---
+plate_thickness = 1.5;      // Z height of the plate
+spine_length = 70;          // X length of the spine
+spine_width = 12;           // Y width of the spine
+num_teeth = 10;             // Number of teeth
+tooth_width = 5.0;          // X width of each tooth
+tooth_length = 12;          // Y length of each tooth (hanging in -Y)
+gap_width = 1.5;            // Y gap between teeth
+
+// --- Derived Dimensions ---
+// Total X width of the tooth array
+total_tooth_width = num_teeth * tooth_width + (num_teeth - 1) * gap_width;
+
+// --- Build ---
+// The part is printed lying flat, resting on XY plane at z=0.
+// The spine is centered at X=0.
+// The teeth hang in the -Y direction from the spine.
+
+// 1. The Spine
+// Centered at X=0, Y=0.
+// We place the spine such that the teeth hang from one edge.
+// Let's define the spine's Y range as [0, spine_width].
+// The teeth will hang from Y=0 in the -Y direction.
+spine = translate([0, spine_width/2, 0]) {
+    cube([spine_length, spine_width, plate_thickness], center=true);
+};
+
+// 2. The Teeth
+// The teeth hang from the edge at Y=0 (relative to spine center) in the -Y direction.
+// The spine's bottom edge (in local coords) is at Y = -spine_width/2.
+// So the teeth start at Y = -spine_width/2 and extend to Y = -spine_width/2 - tooth_length.
+// The teeth are centered on the spine in X.
+// The total width of the teeth is total_tooth_width.
+// The leftmost edge of the teeth is at X = -total_tooth_width / 2.
+
+// We need to build the teeth as a single module or object to union with the spine.
+// Using a for loop inside a union block is not directly supported in OpenSCAD without wrapping in a module or using a list comprehension for children.
+// However, we can create a list of translated cubes and union them.
+
+// Helper module to generate teeth
+module teeth_module() {
+    for (i = [0 : num_teeth - 1]) {
+        // Calculate X position for the i-th tooth
+        // Each tooth has width 'tooth_width' and there is a gap 'gap_width' after it (except the last one)
+        // Position of the left edge of the i-th tooth:
+        x_offset = i * (tooth_width + gap_width);
+        
+        // The tooth geometry:
+        // X: from -total_tooth_width/2 + x_offset to -total_tooth_width/2 + x_offset + tooth_width
+        // Y: from -spine_width/2 to -spine_width/2 - tooth_length
+        // Z: 0 to plate_thickness
+        
+        tooth_x_start = -total_tooth_width / 2 + x_offset;
+        tooth_x_end = tooth_x_start + tooth_width;
+        tooth_y_start = -spine_width / 2;
+        tooth_y_end = tooth_y_start - tooth_length;
+        
+        translate([tooth_x_start + tooth_width/2, tooth_y_start + tooth_length/2, plate_thickness/2]) {
+            cube([tooth_width, tooth_length, plate_thickness], center=true);
+        }
+    }
+}
+
+// Union the spine and the teeth
+union() {
+    spine;
+    teeth_module();
+}

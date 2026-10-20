@@ -1,0 +1,47 @@
+```openscad
+// Dimensions in millimetres
+$fn = 64;
+
+// Base block dimensions
+base_length = 90;        // X dimension
+base_width = 45;         // Y dimension
+base_height = 20;        // Z dimension
+
+// Slot specifications
+slot_count = 10;
+slot_length = 77;        // along X
+slot_width = 1.6;        // along Y
+slot_depth = 10;         // along Z
+slot_center_spacing = 3.5; // centre-to-centre in Y
+
+// Create the base block
+base = cube([base_length, base_width, base_height]);
+
+// Generate slots on the top face (cut from the top, going down)
+// We use difference to subtract each slot from the base
+// Each slot is a rectangular prism extending from the top face down
+final_rack = base;
+
+// Loop to cut each slot
+for (i = [0 : slot_count - 1]) {
+    // Calculate Y position of the slot center (centered in Y)
+    y_offset = base_width / 2 - slot_center_spacing * i - slot_width / 2;
+    
+    // Define the slot as a cube that extends from the top face down
+    // It starts at z = base_height - slot_depth and goes down to z = 0
+    // We extend it slightly beyond the top face to avoid coplanar issues
+    slot = cube([slot_length, slot_width, slot_depth + 0.1]);
+    
+    // Translate the slot to the correct position
+    slot_translated = translate([base_length / 2 - slot_length / 2, y_offset, base_height - slot_depth - 0.1]) slot;
+    
+    // Subtract the slot from the base
+    final_rack = difference() {
+        final_rack;
+        slot_translated;
+    };
+}
+
+// Final result
+final_rack;
+```

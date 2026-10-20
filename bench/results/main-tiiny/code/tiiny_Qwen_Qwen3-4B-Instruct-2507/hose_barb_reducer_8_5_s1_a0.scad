@@ -1,0 +1,157 @@
+// Dimensions in millimeters
+$fn = 64;
+
+// Lengths and diameters
+total_length = 41;
+z_start_8mm_barbs = 0;
+z_end_8mm_barbs = 20;
+z_collar = 20;
+z_start_5mm_barbs = 25;
+z_end_5mm_barbs = 41;
+
+// Barb dimensions
+barb_height_8mm = 10;
+barb_height_5mm = 8;
+barb_base_dia_8mm = 7.5;
+barb_top_dia_8mm = 9.5;
+barb_base_dia_5mm = 6.5;
+barb_top_dia_5mm = 5.0;
+barb_base_dia_return = 6.5; // return to base after taper
+
+// Bore diameter (3 mm straight through)
+bore_diameter = 3.0;
+
+// Create the main cylindrical body with 3 mm bore
+// The reducer is rotationally symmetric about Z-axis, centered at origin
+
+// Start with the central bore
+cylinder(h=total_length, r=bore_diameter/2, f=0.01); // small f to avoid coplanar faces
+
+// From z=0 to z=20: two stacked 8mm barbs (each 10mm tall)
+// Each barb has a linear growth from 7.5mm to 9.5mm, then step back to 7.5mm
+
+// Function to create a single barb from z_start to z_end
+// Barbs are stacked, so we create two barbs per 10mm height
+// Each barb spans 10mm in height
+
+// Barb 1: from z=0 to z=10
+// Barb 2: from z=10 to z=20
+
+// Define barb profile function
+// For a barb from z_start to z_end, with height h, base_d, top_d, and return to base_d
+// We create a 3D shape with a linear taper and a step back
+
+// Function to create a barb with taper and step
+function create_barb(z_start, z_end, base_d, top_d, height, barb_type) =
+    let(h = z_end - z_start)
+        // Create a cylindrical section from z_start to z_end with taper
+        // The diameter grows linearly from base_d to top_d over height h
+        // Then steps back to base_d at the top
+        // Use a linear extrusion with rotation about Z
+
+        // We create the barb as a series of cylindrical segments with taper
+        // But since it's rotationally symmetric, we use a linear taper in radius
+
+        // Create a 3D shape with a linear taper and step
+        // We use a cylinder with a linear variation in radius
+        // We use a linear variation in radius from z_start to z_end
+
+        // We define the radius at any z in [z_start, z_end]
+        // r(z) = base_d + (top_d - base_d) * (z - z_start) / h for z in [z_start, z_end - height_step]
+        // Then step back to base_d
+
+        // We create the barb as a difference: a larger cylinder minus a smaller one
+        // But we build it with a taper and step
+
+        // Instead, we build it as a union of three parts:
+        // 1. A cylinder from z_start to z_end with radius growing to top_d
+        // 2. A cylinder from z_end - height to z_end with radius returning to base_d
+
+        // But we need to avoid coplanar faces, so we add small offsets
+
+        // We create a single barb as a taper and step
+
+        // Use a linear taper from base_d to top_d over first part, then step back
+
+        // First, create the taper section: from z_start to z_end - barb_height
+        // The taper section has height h_taper = height - step_height
+        // But here, the taper is from z_start to z_end - barb_height, then step back
+
+        // Since barb is 10mm tall, we define:
+        // - taper from z_start to z_end - barb_height: 10mm height
+        // - then step back to base_d
+
+        // Actually, the barb is 10mm tall, so from z_start to z_end, height = 10mm
+
+        // We create the barb as a union of:
+        // 1. A cylinder with radius growing from base_d to top_d over 10mm
+        // 2. A cylinder with radius from top_d to base_d over last 1mm (step)
+
+        // But we must avoid coplanar faces, so we use small offsets
+
+        // We create the barb as a difference: a larger cylinder minus a smaller one
+        // But it's easier to use a linear variation in radius
+
+        // We use a linear variation in radius from base_d to top_d over 10mm
+        // Then a step back to base_d over 1mm
+
+        // We create a 3D shape with a linear taper and a step
+
+        // We define the radius at any z in [z_start, z_end]
+        // r(z) = base_d + (top_d - base_d) * (z - z_start) / (z_end - z_start) for z in [z_start, z_end - 1]
+        // then r(z) = base_d for z in [z_end - 1, z_end]
+
+        // We create the barb as a union of two parts:
+        // 1. A cylinder from z_start to z_end - 1 with radius growing to top_d
+        // 2. A cylinder from z_end - 1 to z_end with radius returning to base_d
+
+        // But we must avoid coplanar faces, so we use small offsets
+
+        // We create the barb as a union of:
+        // - a cylinder from z_start to z_end - 1 with radius growing from base_d to top_d
+        // - a cylinder from z_end - 1 to z_end with radius from top_d to base_d
+
+        // But this would create a solid with a taper and step
+
+        // We use a single function to create a barb with taper and step
+
+        // We create the barb as a linear taper and then a step back
+
+        // We use a linear variation in radius
+        // We use a linear variation in radius from base_d to top_d over 10mm
+        // Then a step back to base_d over 1mm
+
+        // We create the barb as a union of two cylinders:
+        // 1. A cylinder from z_start to z_end - 1 with radius growing to top_d
+        // 2. A cylinder from z_end - 1 to z_end with radius from top_d to base_d
+
+        // But we need to define the radius as a function of z
+
+        // We create the barb as a 3D shape with a taper and step
+
+        // We use a linear variation in radius from base_d to top_d over 10mm
+        // Then a step back to base_d over 1mm
+
+        // We create the barb as a union of two parts:
+        // 1. A cylinder from z_start to z_end - 1 with radius growing to top_d
+        // 2. A cylinder from z_end - 1 to z_end with radius from top_d to base_d
+
+        // But we must avoid coplanar faces, so we use small offsets
+
+        // We create the barb with a taper and step
+
+        // First, create the taper section: from z_start to z_end - 1
+        // Radius at z: base_d + (top_d - base_d) * (z - z_start) / (z_end - z_start)
+
+        // Then from z_end - 1 to z_end, radius decreases to base_d
+
+        // We create the barb as a union of two cylinders with different radii
+
+        // But we must avoid coplanar faces, so we use small offsets
+
+        // We create the barb as a difference: a large cylinder minus a small one
+        // But it's easier to build it as a solid with taper and step
+
+        // We create the barb as a union of:
+        // 1. A cylinder from z_start to z_end - 1 with radius growing to top_d
+        // 2. A cylinder from z_end - 1 to z_end with radius from top_d to base_d

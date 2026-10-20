@@ -1,0 +1,60 @@
+$fn = 64;
+
+// Dimensions
+handle_diameter = 8;
+cone_start_z = 45;
+cone_end_z = 62;
+cone_base_diameter = 8;
+cone_tip_diameter = 3;
+tip_sphere_diameter = 3;
+tip_sphere_center_z = 62;
+
+// Groove dimensions
+groove_width_z = 2;
+groove_depth = 1;
+groove_centers_z = [10, 15, 20, 25];
+
+// Handle (cylinder from z = 0 to z = 45)
+handle = cylinder(h = 45, d = handle_diameter, center = false);
+
+// Cone (tapering from 8 mm at z=45 to 3 mm at z=62)
+cone = union() {
+  for (z = [cone_start_z : 0.1 : cone_end_z]) {
+    radius = cone_base_diameter / 2 - (z - cone_start_z) * (cone_base_diameter - cone_tip_diameter) / (cone_end_z - cone_start_z);
+    cylinder(h = 0.1, d = 2 * radius, center = false, $fn = 64);
+  }
+}
+
+// Rounded tip: sphere centered at z = 62 with diameter 3 mm
+tip = sphere(d = tip_sphere_diameter, center = true);
+
+// Grooves: four circumferential grooves on the handle
+// Each groove is a cylinder hole cut into the handle, centered at specified z
+// The hole is slightly larger than groove depth to ensure full cut
+grooves = difference() {
+  // The base is the handle
+  handle;
+  // Subtract the groove cylinders
+  for (z_center in groove_centers_z) {
+    // Cut a cylinder hole through the handle at each groove location
+    // The hole is centered on the handle axis, and extends slightly beyond the groove depth
+    // to ensure full removal (0.01 mm extra for safety)
+    translate([0, 0, z_center - groove_width_z / 2 - 0.01])
+    cylinder(h = groove_width_z + 0.02, d = handle_diameter - 2 * groove_depth, center = false);
+  }
+};
+
+// Assemble the full pestle: handle with grooves + cone + tip
+pestle = union() {
+  // Handle with grooves already cut
+  grooves;
+  // Cone attached to the top of the handle (z = 45)
+  translate([0, 0, 45])
+  cone;
+  // Tip attached to the top of the cone (centered at z = 62)
+  translate([0, 0, 62])
+  tip;
+};
+
+// Render the final model
+pestle;

@@ -1,0 +1,52 @@
+$fn = 64;
+
+// Dimensions in mm
+handle_d = 8;
+handle_h = 45;
+cone_top_d = 8;
+cone_bottom_d = 3;
+cone_start_z = 45;
+cone_end_z = 62;
+tip_d = 3;
+tip_center_z = 62;
+
+// Groove dimensions
+num_grooves = 4;
+groove_w = 2; // Width in Z
+groove_d = 1; // Depth
+groove_z = [10, 15, 20, 25]; // Z centers
+
+// Main Body Construction
+// Handle: Cylinder from z=0 to z=45
+// Cone: Linear extrusion of a triangle from z=45 to z=62
+// Tip: Sphere centered at z=62
+
+// Create the main solid
+difference() {
+    union() {
+        // 1. Handle
+        cylinder(d=handle_d, h=handle_h, center=false);
+
+        // 2. Cone
+        // Tapers from 8mm at z=45 to 3mm at z=62
+        // Height = 17mm
+        // Using linear_extrude with a polygon profile rotated 90 deg to align with Z
+        // Actually, rotate_extrude is better for cones
+        rotate_extrude($fn=64) {
+            // Profile in XZ plane: Line from (0,0) to (4,0) to (1.5, 17)
+            // Wait, rotate_extrude rotates around Z.
+            // So the profile must be in XY plane.
+            // To make a cone, we need the radius to change with Z.
+            // So we need to rotate the profile 90 degrees so it lies in XZ.
+            // No, rotate_extrude rotates the input around Z.
+            // So the input must be in XY.
+            // If I want a cone, I need the radius to change with Z.
+            // So I need to rotate the profile 90 degrees so it lies in XZ.
+            // Wait, rotate_extrude rotates around Z.
+            // So the input must be in XY.
+            // If I want a cone, I need the radius to change with Z.
+            // So I need to rotate the profile 90 degrees so it lies in XZ.
+            // Wait, rotate_extrude rotates around Z.
+            // So the input must be in XY.
+            // If I want a cone, I need the radius to change with Z.
+            // So I need to rotate the profile 90

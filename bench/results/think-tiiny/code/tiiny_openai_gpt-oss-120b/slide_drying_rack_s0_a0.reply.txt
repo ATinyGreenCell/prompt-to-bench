@@ -1,0 +1,49 @@
+```openscad
+// ---------- Parameters ----------
+base_x = 90;          // block length (X) in mm
+base_y = 45;          // block width  (Y) in mm
+base_z = 20;          // block height (Z) in mm
+
+slot_length = 77;    // slot length along X in mm
+slot_width  = 1.6;   // slot width  along Y in mm
+slot_depth  = 10;    // slot depth  down from top surface in mm
+
+slot_spacing = 3.5;  // centre‑to‑centre spacing of slots in Y (mm)
+num_slots = 10;      // number of slots
+
+extra_cut = 0.2;     // extra material beyond cut faces (mm) (0.1 mm below, 0.1 mm above)
+
+// ---------- Geometry ----------
+$fn = 64;   // smoothness for cylinders, circles, etc.
+
+module base_block() {
+    // block centered on origin, bottom at Z=0
+    translate([-base_x/2, -base_y/2, 0])
+        cube([base_x, base_y, base_z]);
+}
+
+module slot(y_center) {
+    // Slot cut shape: extends slightly below the intended depth and slightly above the top surface
+    // to avoid coplanar faces after difference().
+    slot_height = slot_depth + extra_cut;          // total height of cutting shape
+    bottom_z = base_z - slot_depth - extra_cut/2; // bottom of cut shape (below block top)
+    translate([
+        -slot_length/2,               // X: centered on block
+        y_center - slot_width/2,      // Y: shift to slot center
+        bottom_z                      // Z: bottom of cut shape
+    ])
+        cube([slot_length, slot_width, slot_height]);
+}
+
+// ---------- Assembly ----------
+difference() {
+    base_block();
+
+    // Create the 10 slots on the top face
+    for (i = 0; i < num_slots; i = i + 1) {
+        // Compute centre Y position of each slot
+        y_center = (i - (num_slots - 1)/2) * slot_spacing;
+        slot(y_center);
+    }
+}
+```

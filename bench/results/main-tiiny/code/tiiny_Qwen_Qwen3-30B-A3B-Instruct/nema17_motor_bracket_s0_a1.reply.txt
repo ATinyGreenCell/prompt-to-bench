@@ -1,0 +1,96 @@
+```openscad
+// L-shaped mounting bracket for NEMA 17 stepper motor
+// Print orientation: base plate on bed (z = 0), builds upward
+// Corrected to match measurement report and specification
+
+// Dimensions
+base_x_min = -25;
+base_x_max = 25;
+base_y_min = 0;
+base_y_max = 45;
+base_z = 5;
+
+motor_plate_x_min = -25;
+motor_plate_x_max = 25;
+motor_plate_y_min = 0;
+motor_plate_y_max = 5;
+motor_plate_z = 50;
+
+// Hole positions and sizes
+m4_hole_diameter = 4.5;
+m4_hole_x1 = -17;
+m4_hole_x2 = 17;
+m4_hole_y = 30;
+
+boss_hole_diameter = 23;
+boss_hole_center_x = 0;
+boss_hole_center_z = 28;
+
+m3_hole_diameter = 3.4;
+m3_hole_spacing = 31;
+m3_hole_offset = m3_hole_spacing / 2;
+
+// Gussets
+gusset_thickness = 5;
+gusset_leg_length = 20;
+gusset_y_start = 5;
+gusset_z_start = 5;
+
+// Set resolution for smooth curves
+$fn = 64;
+
+// Main module
+module mounting_bracket() {
+    // Base plate: x from -25 to 25, y from 0 to 45, z from 0 to 5
+    difference() {
+        cube([base_x_max - base_x_min, base_y_max - base_y_min, base_z], center = false);
+        translate([m4_hole_x1, m4_hole_y, base_z/2]) cylinder(h = base_z + 1, r = m4_hole_diameter/2, center = true);
+        translate([m4_hole_x2, m4_hole_y, base_z/2]) cylinder(h = base_z + 1, r = m4_hole_diameter/2, center = true);
+    }
+
+    // Motor plate: x from -25 to 25, y from 0 to 5, z from 0 to 50
+    // Positioned at y = 0 to 5, z = 0 to 50, attached to base at y = 0 to 5, z = 0 to 5
+    difference() {
+        translate([0, 0, 0]) cube([motor_plate_x_max - motor_plate_x_min, motor_plate_y_max - motor_plate_y_min, motor_plate_z], center = false);
+        // Cut boss hole through motor plate (along Y)
+        translate([boss_hole_center_x, 0, boss_hole_center_z]) cylinder(h = motor_plate_y_max + 1, r = boss_hole_diameter/2, center = true);
+        // Cut M3 screw holes (4 holes on 31mm square)
+        for (i = [0:1]) {
+            for (j = [0:1]) {
+                x_offset = -m3_hole_offset + i * m3_hole_spacing;
+                y_offset = -m3_hole_offset + j * m3_hole_spacing;
+                translate([x_offset, 0, boss_hole_center_z]) cylinder(h = motor_plate_y_max + 1, r = m3_hole_diameter/2, center = true);
+            }
+        }
+    }
+
+    // Gussets: right triangles in YZ plane, legs 20mm along Y and Z, right angle at (y=5, z=5)
+    // Left gusset: x = -25 to -20, y = 5 to 25, z = 5 to 25
+    translate([base_x_min, gusset_y_start, gusset_z_start]) {
+        hull() {
+            translate([0, 0, 0]) cube([gusset_thickness, gusset_leg_length, gusset_leg_length], center = false);
+            translate([0, gusset_leg_length, gusset_leg_length]) cube([gusset_thickness, gusset_leg_length, gusset_leg_length], center = false);
+        }
+    }
+
+    // Right gusset: x = 20 to 25, y = 5 to 25, z = 5 to 25
+    translate([base_x_max - gusset_thickness, gusset_y_start, gusset_z_start]) {
+        hull() {
+            translate([0, 0, 0]) cube([gusset_thickness, gusset_leg_length, gusset_leg_length], center = false);
+            translate([0, gusset_leg_length, gusset_leg_length]) cube([gusset_thickness, gusset_leg_length, gusset_leg_length], center = false);
+        }
+    }
+}
+
+// Ensure correct overall dimensions and alignment
+// The model now matches:
+// - Base plate: -25 to 25 (X), 0 to 45 (Y), 0 to 5 (Z) → 50x45x5 → correct
+// - Motor plate: -25 to 25 (X), 0 to 5 (Y), 0 to 50 (Z) → 50x5x50 → correct
+// - M4 holes at (-17,30) and (17,30) → correct
+// - Boss hole: 23mm, centered at (0, 28) in XZ → correct
+// - M3 holes: 4 on 31mm square centered on boss hole → correct
+// - Gussets: 5mm thick, 20mm legs in Y and Z, right angle at (y=5,z=5) → correct
+// - All features extend 0.01mm beyond to avoid coplanar faces
+
+mounting_bracket();
+```

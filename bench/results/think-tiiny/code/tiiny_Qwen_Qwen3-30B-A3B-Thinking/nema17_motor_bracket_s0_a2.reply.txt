@@ -1,0 +1,92 @@
+```openscad
+// L-shaped mounting bracket for NEMA 17 stepper motor (syringe pump)
+// Units: millimetres
+// Print orientation: base plate on bed (z=0), built upward (+Z)
+// Entire part centered on origin in X and Y
+
+// Dimensions (all in mm)
+base_x_min = -25;
+base_x_max = 25;
+base_y_min = 0;
+base_y_max = 45;
+base_z_thickness = 5;
+base_z_min = 0; // Added to fix syntax error
+
+vert_x_min = -25;
+vert_x_max = 25;
+vert_y_min = 0;
+vert_y_max = 5;
+vert_z_min = 0;
+vert_z_max = 50;
+
+m4_dia = 4.5; // M4 through-hole diameter
+m4_rad = m4_dia / 2;
+
+boss_dia = 23; // Motor boss hole diameter
+boss_rad = boss_dia / 2;
+
+m3_dia = 3.4; // M3 screw hole diameter
+m3_rad = m3_dia / 2;
+
+gusset_thickness = 5; // Thickness of gusset (in X direction)
+gusset_leg = 20; // Length of legs for triangular gusset (in Y and Z)
+
+hole_extra = 0.01; // Extra for hole cutting (beyond face)
+
+// Centering adjustment for Y: entire part should be centered at origin in X and Y
+// Base plate spans y=0 to 45 -> center at y=22.5, so shift by -22.5 in Y
+center_shift_y = -base_y_max / 2;
+
+// Base plate (with M4 holes) - positioned correctly at (-25, 0, 0)
+base_plate = 
+  difference() {
+    translate([base_x_min, base_y_min, base_z_min]) 
+      cube([base_x_max - base_x_min, base_y_max - base_y_min, base_z_thickness], center=false);
+    // M4 holes: through base plate (z=0 to 5), so hole extends 0.01mm beyond top and bottom
+    for (pos = [[-17, 30], [17, 30]]) {
+      translate([pos[0], pos[1], base_z_thickness / 2]) 
+        cylinder(r = m4_rad, h = base_z_thickness + 2 * hole_extra, center=true);
+    }
+  };
+
+// Vertical plate (with boss and screw holes) - positioned correctly at (-25, 0, 0)
+vertical_plate = 
+  difference() {
+    translate([vert_x_min, vert_y_min, vert_z_min]) 
+      cube([vert_x_max - vert_x_min, vert_y_max - vert_y_min, vert_z_max - vert_z_min], center=false);
+    // Boss hole: through vertical plate (y=0 to 5), so hole extends 0.01mm beyond front and back
+    translate([0, vert_y_min + (vert_y_max - vert_y_min)/2, 28]) 
+      cylinder(r = boss_rad, h = vert_y_max - vert_y_min + 2 * hole_extra, center=true);
+    // M3 screw holes: four holes on 31mm square centered at boss hole
+    m3_square_side = 31;
+    m3_offset = m3_square_side / 2;
+    for (i = [0:3]) {
+      // Calculate positions: (±m3_offset, ±m3_offset) relative to boss center (in XZ)
+      x_pos = (i < 2) ? m3_offset : -m3_offset;
+      z_pos = (i % 2 == 0) ? 28 + m3_offset : 28 - m3_offset;
+      translate([x_pos, vert_y_min + (vert_y_max - vert_y_min)/2, z_pos])
+        cylinder(r = m3_rad, h = vert_y_max - vert_y_min + 2 * hole_extra, center=true);
+    }
+  };
+
+// Gussets: left and right triangles in YZ plane, 5mm thick in X
+gusset_points = [[5, 5], [25, 5], [5, 25]]; // (y, z) for triangle
+
+left_gusset = 
+  translate([-22.5, 0, 0]) 
+  linear_extrude(height = gusset_thickness, center=true)
+    polygon(gusset_points);
+
+right_gusset = 
+  translate([22.5, 0, 0]) 
+  linear_extrude(height = gusset_thickness, center=true)
+    polygon(gusset_points);
+
+// Combine all parts and center the entire bracket at origin in X and Y
+union() {
+  translate([0, center_shift_y, 0]) base_plate;
+  translate([0, center_shift_y, 0]) vertical_plate;
+  translate([0, center_shift_y, 0]) left_gusset;
+  translate([0, center_shift_y, 0]) right_gusset;
+}
+```

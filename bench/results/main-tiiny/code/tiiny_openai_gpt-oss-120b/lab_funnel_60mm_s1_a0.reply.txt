@@ -1,0 +1,60 @@
+```openscad
+// ---------- Parameters ----------
+outer_diameter_spout = 10;      // outer diameter of the straight spout (mm)
+spout_height          = 20;      // height of the straight spout (mm)
+outer_diameter_top   = 60;      // outer diameter at the funnel rim (mm)
+funnel_height        = 50;      // total height from bottom to rim (mm)
+wall_thickness       = 1.6;      // uniform wall thickness (mm)
+extension            = 0.1;      // amount to extend inner cut beyond outer faces (mm)
+
+$fn = 64; // smoothness for curved surfaces
+
+// ---------- Derived dimensions ----------
+inner_diameter_spout = outer_diameter_spout - 2*wall_thickness; // bore of spout (mm)
+inner_diameter_top    = outer_diameter_top - 2*wall_thickness; // bore at rim (mm)
+
+cone_height = funnel_height - spout_height; // height of the conical section (mm)
+
+// ---------- Outer funnel ----------
+outer_spout = cylinder(
+    h = spout_height,
+    r = outer_diameter_spout/2
+);
+
+outer_cone = cylinder(
+    h = cone_height,
+    r1 = outer_diameter_spout/2,
+    r2 = outer_diameter_top/2
+);
+outer_cone = translate([0,0,spout_height]) outer_cone;
+
+outer_funnel = union() {
+    outer_spout;
+    outer_cone;
+}
+
+// ---------- Inner (bore) funnel ----------
+inner_spout = cylinder(
+    h = spout_height + 2*extension,
+    r = inner_diameter_spout/2
+);
+inner_spout = translate([0,0,-extension]) inner_spout; // extend below outer bottom
+
+inner_cone = cylinder(
+    h = cone_height + 2*extension,
+    r1 = inner_diameter_spout/2,
+    r2 = inner_diameter_top/2
+);
+inner_cone = translate([0,0,spout_height - extension]) inner_cone; // extend above outer top
+
+inner_funnel = union() {
+    inner_spout;
+    inner_cone;
+}
+
+// ---------- Final part ----------
+difference() {
+    outer_funnel;
+    inner_funnel;
+}
+```

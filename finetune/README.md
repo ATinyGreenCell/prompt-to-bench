@@ -129,12 +129,13 @@ new descriptions from 14 families, 13 of them unseen, `rft/onpolicy/`) both v9 r
 feedback and fixed 2.1-3.5% of failures, against 14-17% and 0.1-0.3% for both v5 runs. A better prompt instead of
 training (`bench/harness_search.py`: OpenSCAD idioms, two worked examples, checklist feedback) lifted the stock base
 from 2 to 6 tasks in eight samples on the GPU (5 in-family, 1 held out), but added nothing reliable to v9 seed 1
-(paper Tables 9-10). v11 (`build_v11.py`: v9's data + batch C for ten families, as plain examples and as v9 seed 1's
+(paper Tables 10-11). v11 (`build_v11.py`: v9's data + batch C for ten families, as plain examples and as v9 seed 1's
 own failures; four families held out), trained with seeds 0 and 1, passed 4 and 5 tasks (both with the held-out slide
-rack), won 3 passes by repair in each run and changed its file after 42-44% of feedback - no clear gain over v9's better
-run (5 tasks, 3 wins, 43%). On
+rack), won 3 passes by repair in each run and changed its file after 42-44% of feedback - level with v9's better run
+(5 tasks, 3 wins, 43%) or within a task and a point of it; one run raised its score after more feedback messages than
+either v9 run (25 of 227, against 12 of 226 and 18 of 230). On
 the four held-out families its first attempts passed 1.5-2.5% (v5's and v9's runs 0.2-3.8%) and its two runs fixed 1
-and 14 of ~390 failures (`scripts/heldout_c_stats.py`, paper Table 11). On the box itself (one sample per task, the box's
+and 14 of ~390 failures (`scripts/heldout_c_stats.py`, paper Table 9). On the box itself (one sample per task, the box's
 own quantised build, imported by URL with `scripts/box_import.py`) v5 passed the slide rack, the gel comb and the
 PCR-tube adapter, all on the first attempt; v1 and v2 had passed none. With eight samples on the box v5 passed 6/16 (4 in-family, 2 held out:
 the hose-barb reducer and the slide rack), against 5/16 on the GPU (`bench/results/box-v5-k8/`). v9 passed 3/16 on the box at one sample (the 1.5 mL rack, the slide

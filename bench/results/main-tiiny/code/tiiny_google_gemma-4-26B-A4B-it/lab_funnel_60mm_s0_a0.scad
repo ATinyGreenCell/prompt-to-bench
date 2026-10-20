@@ -1,0 +1,123 @@
+// --- Dimensions (mm) ---
+spout_od = 10.0;          // Outer diameter of the spout
+spout_height = 20.0;      // Height of the spout section
+funnel_rim_od = 60.0;     // Outer diameter at the top rim
+funnel_height = 50.0;     // Total height from base to rim
+wall_thickness = 1.6;     // Uniform wall thickness
+$fn = 100;                // Smoothness for curves
+
+// --- Derived Dimensions ---
+spout_id = spout_od - (2 * wall_thickness);
+funnel_id_base = spout_od - (2 * wall_thickness); // ID at the transition
+funnel_id_top = funnel_rim_od - (2 * wall_thickness);
+
+// --- Main Construction ---
+
+// The part is printed upright, resting on the XY plane at Z=0.
+union() {
+    // 1. The Spout (Cylinder)
+    difference() {
+        // Outer shell of spout
+        cylinder(h = spout_height, d = spout_od);
+        
+        // Inner bore of spout (extended to ensure clean cut)
+        translate([0, 0, -1])
+            cylinder(h = spout_height + 2, d = spout_id);
+    }
+
+    // 2. The Funnel Cone
+    difference() {
+        // Outer cone shape
+        cylinder(h = funnel_height, d1 = spout_od, d2 = funnel_rim_od);
+        
+        // Inner cone shape (the hollow part)
+        // We use a slightly smaller cone to ensure the wall thickness is maintained
+        // and extend the cut to ensure the top is open.
+        translate([0, 0, -0.1])
+            cylinder(h = funnel_height + 0.2, d1 = spout_id, d2 = funnel_id_top);
+    }
+}
+
+// Note on Geometry:
+// The spout is a cylinder from Z=0 to Z=20.
+// The cone starts at Z=20 (where diameter is 10) and goes to Z=50 (where diameter is 60).
+// To achieve the user's specific request of a "straight spout from z=0 to z=20" 
+// and a "cone from z=20 to z=50", we model the cone starting from the base 
+// but the geometry naturally transitions at the spout height.
+// However, to be mathematically precise to the prompt:
+// We will use a hull of two cylinders to create the cone part to ensure 
+// the transition at Z=20 is seamless.
+
+// --- Refined Construction for exact Z-heights ---
+
+module lab_funnel() {
+    difference() {
+        // OUTER VOLUME
+        union() {
+            // Spout: Z=0 to Z=20
+            cylinder(h = spout_height, d = spout_od);
+            
+            // Cone: Z=20 to Z=50 (Total height 50, so cone is 30mm tall)
+            // We use hull to create the transition from spout top to rim
+            hull() {
+                translate([0, 0, spout_height])
+                    cylinder(h = 0.01, d = spout_od);
+                translate([0, 0, funnel_height])
+                    cylinder(h = 0.01, d = funnel_rim_od);
+            }
+        }
+
+        // INNER VOID (The hollow part)
+        union() {
+            // Spout bore: Z=0 to Z=20
+            translate([0, 0, -1])
+                cylinder(h = spout_height + 2, d = spout_id);
+            
+            // Funnel bore: Z=20 to Z=50
+            // We use a hull to create the tapered inner cavity
+            hull() {
+                translate([0, 0, spout_height - 0.1])
+                    cylinder(h = 0.1, d = spout_id);
+                translate([0, 0, funnel_height + 1])
+                    cylinder(h = 1, d = funnel_id_top);
+            }
+        }
+    }
+}
+
+// Clear the workspace and render the refined version
+// (The code above is the logic; the actual rendered part is below)
+// To avoid double rendering, I will wrap the logic in a single block.
+
+/* 
+RE-WRITTEN FINAL BLOCK 
+*/
+
+difference() {
+    // OUTER SHELL
+    union() {
+        // Spout
+        cylinder(h = spout_height, d = spout_od);
+        // Cone transition
+        hull() {
+            translate([0, 0, spout_height])
+                cylinder(h = 0.01, d = spout_od);
+            translate([0, 0, funnel_height])
+                cylinder(h = 0.01, d = funnel_rim_od);
+        }
+    }
+    
+    // INNER HOLLOW
+    union() {
+        // Spout hole
+        translate([0, 0, -1])
+            cylinder(h = spout_height + 2, d = spout_id);
+        // Funnel hole
+        hull() {
+            translate([0, 0, spout_height - 0.1])
+                cylinder(h = 0.2, d = spout_id);
+            translate([0, 0, funnel_height + 1])
+                cylinder(h = 2, d = funnel_id_top);
+        }
+    }
+}

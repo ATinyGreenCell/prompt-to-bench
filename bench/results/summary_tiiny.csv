@@ -1,0 +1,34 @@
+model,label,sample,n_tasks,pass3,pass1,render1,mean_best_score,minutes,gen_tok_s,attempts,cut_off,think
+tiiny/google/gemma-4-26B-A4B-it,Gemma 4 26B-A4B,0,16,9,4,16,0.893,36.0,17.8,36,0,False
+tiiny/google/gemma-4-26B-A4B-it,Gemma 4 26B-A4B,1,16,7,2,15,0.813,40.2,17.8,39,1,False
+tiiny/google/gemma-4-26B-A4B-it,Gemma 4 26B-A4B,2,16,12,3,13,0.907,35.4,18.6,35,2,False
+tiiny/Qwen/Qwen3.6-27B,Qwen3.6 27B,0,16,5,3,16,0.668,81.7,6.1,40,0,False
+tiiny/Qwen/Qwen3.6-27B,Qwen3.6 27B,1,16,6,3,15,0.754,79.2,6.0,40,0,False
+tiiny/openai/gpt-oss-120b,gpt-oss-120b,0,16,4,3,3,0.388,80.6,17.2,42,23,False
+tiiny/openai/gpt-oss-120b,gpt-oss-120b,1,16,5,3,5,0.352,72.0,16.5,40,22,False
+tiiny/Qwen/Qwen3.8-27B,Qwen3.8 27B,0,16,4,2,3,0.315,23.1,26.0,42,0,False
+tiiny/Qwen/Qwen3.8-27B,Qwen3.8 27B,1,16,4,3,5,0.288,21.5,25.3,41,0,False
+tiiny/Qwen/Qwen3-Coder-Next,Qwen3-Coder-Next 80B-A3B,0,16,4,1,13,0.604,36.9,20.8,43,3,False
+tiiny/Qwen/Qwen3-Coder-Next,Qwen3-Coder-Next 80B-A3B,1,16,2,2,14,0.583,41.1,20.4,44,2,False
+tiiny/deepreinforce-ai/Ornith-1.0-35B,Ornith-1.0 35B (MoE),0,16,3,2,11,0.432,28.3,22.0,44,1,False
+tiiny/deepreinforce-ai/Ornith-1.0-35B,Ornith-1.0 35B (MoE),1,16,1,1,11,0.419,29.4,21.6,46,0,False
+tiiny/Qwen/Qwen3.6-35B-A3B,Qwen3.6 35B-A3B,0,16,0,0,9,0.383,41.6,26.3,48,17,False
+tiiny/Qwen/Qwen3.6-35B-A3B,Qwen3.6 35B-A3B,1,16,3,1,7,0.352,47.2,23.4,45,13,False
+tiiny/Qwen/Qwen3-30B-A3B-Instruct,Qwen3 30B-A3B Instruct-2507,0,16,0,0,9,0.295,39.6,22.9,48,10,False
+tiiny/Qwen/Qwen3-30B-A3B-Instruct,Qwen3 30B-A3B Instruct-2507,1,16,2,2,7,0.298,33.3,22.8,44,10,False
+tiiny/Qwen/Qwen3.5-35B-A3B,Qwen3.5 35B-A3B,0,16,2,1,3,0.176,34.3,25.8,46,19,False
+tiiny/Qwen/Qwen3.5-35B-A3B,Qwen3.5 35B-A3B,1,16,0,0,7,0.165,37.1,25.7,48,18,False
+tiiny/Qwen/Qwen3.5-9B,Qwen3.5 9B (Tiiny),0,16,1,0,8,0.336,57.5,17.4,47,12,False
+tiiny/Qwen/Qwen3.5-9B,Qwen3.5 9B (Tiiny),1,16,0,0,4,0.146,58.1,17.2,48,12,False
+tiiny/zai-org/GLM-4.7-Flash,GLM-4.7-Flash 30B-A3B,0,16,0,0,13,0.257,39.3,12.8,48,0,False
+tiiny/zai-org/GLM-4.7-Flash,GLM-4.7-Flash 30B-A3B,1,16,0,0,14,0.409,42.1,12.7,48,0,False
+tiiny/Qwen/Qwen3-Coder-30B-A3B-Instruct,Qwen3-Coder 30B-A3B,0,16,0,0,4,0.103,14.8,24.6,48,0,False
+tiiny/Qwen/Qwen3-Coder-30B-A3B-Instruct,Qwen3-Coder 30B-A3B,1,16,0,0,6,0.168,15.9,24.0,48,0,False
+tiiny/Qwen/Qwen3-4B-Instruct-2507,Qwen3 4B Instruct-2507,0,16,0,0,3,0.088,62.4,16.4,48,21,False
+tiiny/Qwen/Qwen3-4B-Instruct-2507,Qwen3 4B Instruct-2507,1,16,0,0,1,0.05,58.3,16.0,48,16,False
+tiiny/Qwen/Qwen3-8B,Qwen3 8B,0,16,0,0,2,0.043,27.8,17.7,48,0,False
+tiiny/Qwen/Qwen3-8B,Qwen3 8B,1,16,0,0,3,0.087,28.8,17.7,48,0,False
+tiiny/Qwen/Qwen3-30B-A3B-Thinking,Qwen3 30B-A3B Thinking-2507,0,16,0,0,0,0.0,69.0,23.9,48,48,False
+tiiny/Qwen/Qwen3-30B-A3B-Thinking,Qwen3 30B-A3B Thinking-2507,1,16,0,0,0,0.0,69.5,23.7,48,48,False
+tiiny/openai/gpt-oss-20b,gpt-oss-20b,0,16,0,0,0,0.0,75.4,22.0,48,48,False
+tiiny/openai/gpt-oss-20b,gpt-oss-20b,1,16,0,0,0,0.0,76.7,21.6,48,48,False

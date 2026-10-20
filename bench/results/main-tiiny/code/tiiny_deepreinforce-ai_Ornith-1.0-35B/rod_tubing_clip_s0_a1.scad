@@ -1,0 +1,60 @@
+// no code found in reply
+/*
+Looking at the measurement report, I need to compare it with the specification:
+
+**Specification requirements:**
+1. Rod ring: 12.7 mm ID, 3 mm wall (18.7 mm OD), centered at origin
+2. Rod ring opening: 10 mm wide, on -X side (x < 0 and -5 < y < 5 removed)
+3. Tubing ring: 6 mm ID, 2 mm wall (10 mm OD), centered at x=15, y=0
+4. Tubing ring opening: 4.5 mm wide, on +X side (x > 15 and -2.25 < y < 2.25 removed)
+5. Bridge: 6 mm wide (Y), from x=8 to x=12
+6. Height: 10 mm
+
+**Issues found in the report:**
+
+1. **Bounding box Y range**: Report shows Y -9.35 .. 6.00, but the rod ring should extend from -9.35 to +9.35 (radius = 9.35). The tubing ring extends from -5 to +5. The bridge extends from -3 to +3. So the maximum Y extent should be ±9.35, not just +6.00.
+
+2. **Hole location**: The report shows only 1 hole at (15, 0) with d=6.00, which is correct for the tubing ring. However, the rod ring should have a hole at (0, 0) with d=12.7. This is missing from the report!
+
+3. **Bounding box X range**: Report shows X -9.35 .. 20.00. The rod ring extends from -9.35 to +9.35. The tubing ring extends from 15-5=10 to 15+5=20. So this looks correct.
+
+Wait, let me reconsider. The report says "1 solid region" and "1 hole". This suggests the rod ring's hole might not be showing up properly, or there's an issue with how the openings are cut.
+
+Actually, looking more carefully at the Y bounding box: -9.35 .. 6.00. The rod ring has radius 9.35, so it should extend to Y = ±9.35. But the report shows only up to +6.00. This is very suspicious.
+
+Let me check the opening cuts:
+- Rod ring opening: removes x < 0, -5 < y < 5
+- Tubing ring opening: removes x > 15, -2.25 < y < 2.25
+
+These openings should only remove material, not affect the overall bounding box in Y. The rod ring should still have material at Y = ±9.35 (except where the opening is, but the opening is only in the -X side).
+
+Wait, I think I see the issue! The rod ring opening is removing everything with x < 0 and -5 < y < 5. But the rod ring extends from x = -9.35 to x = +9.35. So at y = ±9.35, there should still be material (since the opening only goes from y = -5 to y = 5).
+
+But the report shows Y only going to +6.00. This suggests something is wrong with the rod ring geometry.
+
+Let me re-examine the rod_ring() module. The issue might be in how I'm cutting the opening. Let me trace through:
+- Outer cylinder: d=18.7, so radius=9.35
+- Inner cylinder: d=12.7, so radius=6.35
+- Opening cut: cube at [-9.35-0.1, 0, 0] with size [18.7+0.2, 10+0.1, 10.1]
+
+This should remove x < 0, -5 < y < 5. But wait, the cube is centered at x = -9.45, and extends 9.4 units in +X direction. So it goes from x = -9.45 to x = 0.05. This should correctly remove the -X side.
+
+Hmm, but the report shows the part is only going to Y = +6.00. Let me think about this differently.
+
+Actually, I think the issue might be that the rod ring opening is too large or positioned incorrectly. Let me check: the opening should be 10 mm wide (Y direction), from y = -5 to y = 5. But maybe there's an issue with how this interacts with the rest of the geometry.
+
+Wait, I just realized something. The report shows the bounding box Y range as -9.35 .. 6.00. This is asymmetric! The rod ring should be symmetric around Y=0. This suggests there's a problem with the geometry.
+
+Let me look at the tubing ring: it's centered at (15, 0) with radius 5, so it should extend from Y = -5 to Y = +5. The bridge is from Y = -3 to Y = +3.
+
+So the maximum Y extent should be from the rod ring: ±9.35. But the report shows only +6.00.
+
+I think I found the issue! Let me re-examine the rod_ring() module more carefully. The problem might be in the opening cut. Let me think about what happens:
+
+The cube for the opening is at [-9.45, 0, 0] with size [18.9, 10.1, 10.1]. This cube extends from:
+- X: -9.45 to 9.45
+- Y: -5.05 to 5.05
+- Z: 0 to 10.1
+
+So it removes everything in that box. But the rod ring only exists from X = -9.35 to X = +9.35. So at X = -9.35, the cube removes Y fro
+*/

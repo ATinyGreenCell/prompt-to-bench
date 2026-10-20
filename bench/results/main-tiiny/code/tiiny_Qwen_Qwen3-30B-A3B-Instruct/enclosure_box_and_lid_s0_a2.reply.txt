@@ -1,0 +1,100 @@
+```openscad
+// Dimensions for the enclosure parts
+$fn = 64;
+
+// Part 1: Box (main enclosure)
+box_width = 70;
+box_depth = 50;
+box_height = 30;
+wall_thickness = 2;
+floor_thickness = 2;
+
+// Part 2: Lid (printed upside down)
+lid_plate_thickness = 2;
+lip_thickness = 1.5;
+lip_height = 4;
+lip_outer_width = 65.6;
+lip_outer_depth = 45.6;
+
+// Spacing between parts
+gap = 10;
+
+// Center of box on X and Y
+box_x_center = 0;
+box_y_center = 0;
+
+// Center of lid on X and Y (placed on +X side of box)
+lid_x_center = box_width / 2 + gap + lid_plate_thickness / 2;
+lid_y_center = 0;
+
+// --- Box (Part 1) ---
+// The box must be centered on the origin (X=0, Y=0) and rest on the bed (z=0)
+// It should have outer dimensions 70 x 50 x 30 mm, 2 mm walls, 2 mm floor, open top
+
+// Outer box: from z=0 to z=30
+// Inner cavity: to be subtracted from the outer box, with 2 mm wall thickness on all sides
+// Inner cavity dimensions: (70 - 2*2) x (50 - 2*2) x (30 - 2) = 66 x 46 x 28
+
+// Create the box using a single difference operation with proper 3D geometry
+// Use cube for outer and inner, both centered in X and Y, but bottom at z=0
+
+// Outer box (solid)
+outer_box = cube([box_width, box_depth, box_height], center = false);
+// Inner cavity (to be removed), with slight extension to ensure clean cut
+inner_cavity = cube([box_width - 2 * wall_thickness, box_depth - 2 * wall_thickness, box_height - floor_thickness + 0.01], center = false);
+
+// Apply difference to create the box with walls and floor
+translate([0, 0, 0]) {
+  difference() {
+    outer_box;
+    // Subtract inner cavity from the same position (z=0 to z=28.01)
+    translate([0, 0, 0]) {
+      inner_cavity;
+    }
+  }
+}
+
+// --- Lid (Part 2) ---
+// The lid is printed upside down: the plate lies on the bed (z=0), and the lip is on top
+// Plate: 70 x 50 x 2 mm, centered at lid_x_center, lid_y_center, z=0
+// Lip: 1.5 mm thick wall, 4 mm tall, outer size 65.6 x 45.6 mm, centered on the plate
+
+// Create the lid plate (flat base) at z=0 to z=2
+translate([lid_x_center, lid_y_center, 0]) {
+  cube([box_width, box_depth, lid_plate_thickness], center = false);
+}
+
+// Create the lip as a 3D rectangular frame (wall) on top of the plate
+// The lip is a 4 mm high wall with 1.5 mm thickness, forming a frame around the inner area
+
+// Define the lip's outer and inner rectangles (in 2D) for the frame
+// The lip is a rectangular wall: outer rectangle minus inner rectangle, extruded 4 mm high
+
+// We'll use a 2D shape (a frame) and extrude it to form the lip
+// The frame is centered on the plate
+
+// Outer rectangle of lip (65.6 x 45.6 mm), centered on the plate
+lip_outer = [lip_outer_width, lip_outer_depth];
+lip_inner = [
+  lip_outer_width - 2 * lip_thickness,
+  lip_outer_depth - 2 * lip_thickness
+];
+
+// Create lip as a 3D extrusion of a 2D frame (using difference of two squares)
+// The lip is built on top of the plate (z = lid_plate_thickness to z = lid_plate_thickness + lip_height)
+// So it starts at z = 2 and goes to z = 6
+
+translate([lid_x_center, lid_y_center, lid_plate_thickness]) {
+  // Use a 2D shape (frame) and extrude it upward
+  difference() {
+    // Outer rectangle (top face of lip)
+    square(lip_outer, center = true);
+    // Inner rectangle (hole to remove)
+    square(lip_inner, center = true);
+  }
+  // Extrude the 2D frame upward to form the lip (4 mm height)
+  linear_extrude(lip_height) {
+    // The 2D shape is already defined above
+  }
+}
+```

@@ -1,0 +1,54 @@
+```openscad
+// ---------------
+//  Dimensions (mm)
+// ---------------
+block_x = 127.76;   // length (X) of the rack
+block_y = 85.48;    // width  (Y) of the rack
+block_z = 20;       // height (Z) of the rack
+
+hole_d   = 6.2;    // diameter of the PCR‑tube holes
+spacing  = 9.0;    // centre‑to‑centre spacing of the hole grid
+
+first_hole_x_offset = 14.38; // X distance from left edge to first hole centre (A1)
+first_hole_y_offset = 11.24; // Y distance from back edge to first hole centre (A1)
+
+chamfer_leg = 5;   // leg length of the 45° chamfer at the A1 corner
+extra_cut   = 1;   // amount (mm) the cutting shapes extend beyond the block faces
+
+// ---------------
+//  Helper calculations
+// ---------------
+corner_x = -block_x/2;   // X coordinate of the left‑back corner of the block
+corner_y = -block_y/2;   // Y coordinate of the left‑back corner of the block
+
+$fn = 64; // smoothness for cylinders and extrusions
+
+// ---------------
+//  Main model
+// ---------------
+difference() {
+    // ---- Block (resting on XY plane, centered in X/Y) ----
+    translate([corner_x, corner_y, 0])
+        cube([block_x, block_y, block_z]);
+
+    // ---- Through‑holes (96 cylinders) ----
+    union() {
+        for (i = [0:11]) {          // 12 columns along X
+            for (j = [0:7]) {       // 8 rows along Y
+                // compute hole centre
+                hx = corner_x + first_hole_x_offset + i*spacing;
+                hy = corner_y + first_hole_y_offset + j*spacing;
+                // cylinder cuts through the block, extending 1 mm beyond each face
+                translate([hx, hy, -extra_cut])
+                    cylinder(h = block_z + 2*extra_cut, d = hole_d, center = true);
+            }
+        }
+    }
+
+    // ---- 45° chamfer at the A1 corner ----
+    // triangular prism defined by a right‑triangle (0,0)-(leg,0)-(0,leg) extruded along Z
+    translate([corner_x, corner_y, -extra_cut])
+        linear_extrude(height = block_z + 2*extra_cut)
+            polygon(points = [[0,0], [chamfer_leg,0], [0,chamfer_leg]]);
+}
+```

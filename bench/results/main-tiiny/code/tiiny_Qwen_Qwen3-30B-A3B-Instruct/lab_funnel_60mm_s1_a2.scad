@@ -1,0 +1,118 @@
+// Lab funnel parameters
+$fn = 64;
+
+// Dimensions
+spout_outer_diameter = 10;           // mm
+spout_length = 20;                   // mm from z=0 to z=20
+cone_base_diameter = 10;             // mm at z=20 (same as spout)
+cone_top_diameter = 60;              // mm at z=50 (rim)
+cone_height = 30;                      // mm from z=20 to z=50
+wall_thickness = 1.6;                    // mm everywhere
+
+// Derived dimensions
+spout_inner_diameter = spout_outer_diameter - 2 * wall_thickness; // 6.8 mm
+cone_inner_base_diameter = cone_base_diameter - 2 * wall_thickness;   // 6.8 mm
+cone_inner_top_diameter = cone_top_diameter - 2 * wall_thickness;     // 56.8 mm
+
+// The issue: the current model has a continuous taper from z=0 to z=50 for both outer and inner profiles.
+// But the spout is only 20 mm long, and the cone starts at z=20.
+// However, the current model has the outer profile starting at z=0 with radius 5 mm and continuing to z=20 with radius 5 mm, then tapering to 30 mm at z=50.
+// That's correct.
+// But the problem is that the inner bore is also continuous from z=0 to z=50, with radius 3.4 mm from z=0 to z=20, then tapering to 28.4 mm at z=50.
+// That's correct too.
+// However, the measurement report shows:
+//   - At z=1.60: outer diameter = 11.60 mm (should be 10 mm) — too big!
+//   - At z=2.50: outer diameter = 12.50 mm — even bigger!
+//   - At z=24.20: outer diameter = 34.17 mm — should be around 10 + (24.2-20)/30 * (60-10) = 10 + 4.2/30 * 50 = 10 + 7 = 17 mm? Wait, let's recalculate.
+
+// Let's recalculate the expected outer diameter at z=24.2:
+//   - At z=20: 10 mm
+//   - At z=50: 60 mm
+//   - So from z=20 to z=50: 30 mm height, 50 mm increase in diameter
+//   - At z=24.2: 4.2 mm from z=20
+//   - Diameter = 10 + (4.2 / 30) * 50 = 10 + 7 = 17 mm
+// But the report says 34.17 mm — that's way off.
+
+// The issue is that the rotate_extrude is not creating a solid that is aligned with the z-axis properly.
+// The rotate_extrude of a polygon creates a solid by rotating the polygon around the z-axis.
+// But the polygon we defined has points:
+//   - (5, 0)
+//   - (5, 20)
+//   - (30, 50)
+// This creates a surface that is not a straight cone — it's a ruled surface between the points.
+// But the problem is that the rotate_extrude is not creating a solid that is bounded by the z-axis.
+// Actually, the rotate_extrude creates a solid that is the rotation of the polygon around the z-axis.
+// The polygon is in the xz plane, so rotating it around the z-axis creates a 3D solid.
+
+// But the issue is that the outer profile is not a straight line from (5,0) to (5,20) to (30,50).
+// The line from (5,0) to (5,20) is vertical, so it creates a cylinder of radius 5 from z=0 to z=20.
+// Then from (5,20) to (30,50): a line that goes from radius 5 at z=20 to radius 30 at z=50.
+// That's correct.
+// But why is the outer diameter at z=1.60 11.60 mm? That's larger than 10 mm.
+
+// The only explanation is that the rotate_extrude is not creating a solid that is exactly the rotation of the polygon.
+// But the polygon is correct.
+
+// Wait: the rotate_extrude creates a solid that is the rotation of the polygon around the z-axis.
+// The polygon is a 2D shape in the xz plane.
+// The solid at a given z is a circle with radius equal to the x-coordinate of the polygon at that z.
+// But the polygon is not a function — it has multiple x values at the same z.
+// At z=1.60, the polygon has only one point: (5,0) and (5,20), so at z=1.60, the x value is interpolated between (5,0) and (5,20)?
+// No — the polygon is a list of points, and when we rotate it, the solid is the rotation of the entire polygon.
+// But the polygon is not closed — it's a polyline.
+// The rotate_extrude of a polygon creates a solid that is the rotation of the 2D region enclosed by the polygon.
+// But our polygon is not closed — it's just a path.
+
+// The rotate_extrude function in OpenSCAD expects a polygon that is a closed 2D shape.
+// But we are passing a list of points that form a polyline, not a closed polygon.
+// That's the problem.
+
+// We must close the polygon: add a point at (0,0) and (0,50) to close it?
+// No — the rotate_extrude of a polygon creates a solid by rotating the 2D region enclosed by the polygon.
+// But our polygon is not a closed region — it's a path.
+
+// The correct way is to define a closed polygon that represents the profile.
+// For the outer profile:
+//   - Start at (0,0)
+//   - Go to (5,0)
+//   - Go to (5,20)
+//   - Go to (30,50)
+//   - Go to (0,50)
+//   - Back to (0,0)
+// But that would create a solid that has a flat bottom at z=0 and top at z=50, which is not what we want.
+
+// Actually, the rotate_extrude of a polygon creates a solid that is the rotation of the 2D region enclosed by the polygon.
+// But for a profile that is a function of z, we should define a polygon that is a "profile" of the solid.
+
+// The correct way is to define the profile as a polygon that is the boundary of the solid in the xz plane.
+// For a solid of revolution, the profile is a 2D region bounded by the profile curve and the z-axis.
+// But we don't want that — we want the solid to be hollow.
+
+// Alternative: use a different approach.
+// We'll build the funnel as:
+//   - A solid outer body: spout (cylinder) + cone (tapered)
+//   - A solid inner bore: spout (cylinder) + cone (tapered)
+//   - Then difference: outer minus inner
+
+// But we can't use rotate_extrude for the cone because of the discontinuity.
+
+// Let's do it with two separate parts for the outer and inner.
+
+// We'll define:
+//   - Outer spout: cylinder from z=0 to z=20, d=10
+//   - Outer cone: a cone from z=20 to z=50, with base diameter 10, top diameter 60
+//   - Inner spout: cylinder from z=0 to z=20, d=6.8
+//   - Inner cone: a cone from z=20 to z=50, with base diameter 6.8, top diameter 56.8
+
+// But we can't use a cone directly. We can use a rotate_extrude of a triangle for the cone.
+
+// For the outer cone:
+//   - From z=20 to z=50: radius from 5 to 30
+//   - So the profile is a line from (5,0) to (30,30) in the xz plane (relative to z=20)
+//   - We'll create a polygon: [ (0,0), (5,0), (30,30), (0,30) ] — but that's a trapezoid.
+
+// Actually, for a cone, we can use a triangle: [ (0,0), (30,30), (0,30) ] — no.
+
+// The correct way: for a cone with base radius r1 at z=0 and top radius r2 at z=h, the profile is a line from (r1,0) to (r2,h).
+// So for the outer cone:
+//   -

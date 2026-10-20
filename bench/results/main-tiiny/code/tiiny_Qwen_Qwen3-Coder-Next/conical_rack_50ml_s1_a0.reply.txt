@@ -1,0 +1,74 @@
+```openscad
+// Rack for six 50 mL conical (Falcon-type) tubes
+// Printed upside down and flipped over after printing
+
+$fn = 64;
+
+// Plate dimensions
+plate_x = 130; // mm
+plate_y = 90;  // mm
+plate_z = 4;   // mm
+
+// Hole dimensions
+hole_dia = 30.5; // mm
+hole_spacing_x = 40; // mm
+hole_spacing_y = 40; // mm
+hole_offset_x = (plate_x - 2 * hole_spacing_x) / 2; // mm, centred
+hole_offset_y = (plate_y - 2 * hole_spacing_y) / 2; // mm, centred
+
+// Wall dimensions
+wall_thickness = 4; // mm
+wall_height = 70;   // mm
+
+// Plate
+plate = [
+    [-plate_x/2, -plate_y/2, 0],
+    [plate_x/2, plate_y/2, plate_z]
+];
+
+// Wall positions: left and right (along X axis)
+wall_left_x = -plate_x/2;
+wall_right_x = plate_x/2;
+
+// Generate holes
+module holes() {
+    for (i = [0:2]) {
+        for (j = [0:1]) {
+            x = hole_offset_x + i * hole_spacing_x;
+            y = hole_offset_y + j * hole_spacing_y;
+            translate([x, y, -1]) 
+                cylinder(h = plate_z + 2, d = hole_dia);
+        }
+    }
+}
+
+// Generate walls
+module walls() {
+    // Left wall
+    translate([wall_left_x - wall_thickness/2, -plate_y/2, plate_z])
+        cube([wall_thickness, plate_y, wall_height]);
+    
+    // Right wall
+    translate([wall_right_x - wall_thickness/2, -plate_y/2, plate_z])
+        cube([wall_thickness, plate_y, wall_height]);
+}
+
+// Main body: plate with holes and walls
+module rack() {
+    difference() {
+        union() {
+            // Base plate
+            translate([0, 0, plate_z/2])
+                cube([plate_x, plate_y, plate_z], center=true);
+            
+            // Walls
+            walls();
+        }
+        
+        // Holes
+        holes();
+    }
+}
+
+rack();
+```

@@ -1,0 +1,37 @@
+```openscad
+// ---------------
+// 96‑tube rack dimensions (mm)
+X = 127.76;          // length (X)
+Y = 85.48;           // width (Y)
+Z = 20;              // height (Z)
+
+// Hole specifications
+hole_d = 6.2;        // tube hole diameter
+spacing = 9.0;       // centre‑to‑centre spacing
+cols = 12;           // columns (along X)
+rows = 8;            // rows (along Y)
+offset_x = 14.38;    // distance from left edge to first hole centre
+offset_y = 11.24;    // distance from back edge to first hole centre
+
+// Chamfer (orientation mark)
+chamfer_leg = 5;     // leg length of 45° chamfer
+
+// Helper: extra length for cutting shapes to avoid coplanar faces
+extra = 0.5;         // extend 0.5 mm beyond each face
+
+// Resolution for circles and arcs
+$fn = 64;
+
+// -----------------
+// Base block (centered on origin, rests on XY plane)
+module base_block() {
+    cube([X, Y, Z], center = true);
+}
+
+// -----------------
+// Grid of through‑holes
+module hole_grid() {
+    // start positions from the left/back edges
+    start_x = -X/2 + offset_x;
+    start_y = -Y/2 + offset_y;
+    for (

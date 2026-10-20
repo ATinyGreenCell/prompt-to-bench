@@ -1,0 +1,59 @@
+// Lab Funnel Design
+// Units: mm
+
+// Dimensions
+funnel_wall_thickness = 1.6;
+funnel_spout_od = 10;
+funnel_spout_length = 20;
+funnel_cone_od_top = 60;
+funnel_cone_height = 50;
+funnel_cone_od_bottom = funnel_spout_od;
+
+// Derived Dimensions
+funnel_spout_id = funnel_spout_od - (2 * funnel_wall_thickness);
+funnel_cone_id_top = funnel_cone_od_top - (2 * funnel_wall_thickness);
+funnel_cone_id_bottom = funnel_cone_od_bottom - (2 * funnel_wall_thickness);
+
+// Render
+$fn = 64;
+
+// Main Body
+union() {
+    // Spout (Straight Tube)
+    cylinder(
+        h = funnel_spout_length, 
+        r1 = funnel_spout_od / 2, 
+        r2 = funnel_spout_od / 2
+    );
+    
+    // Cone (Tapered Section)
+    // We calculate the radius at the bottom of the cone to create a smooth transition
+    // The cone starts at z=20 (radius 5) and ends at z=50 (radius 30)
+    cone_radius_bottom = funnel_spout_od / 2;
+    cone_radius_top = (funnel_cone_od_top / 2) + (funnel_wall_thickness / 2);
+    
+    cylinder(
+        h = funnel_cone_height, 
+        r1 = cone_radius_bottom, 
+        r2 = cone_radius_top
+    );
+}
+
+// Inner Cut (Void)
+// The cut extends slightly past the top face to ensure the rim is fully open
+difference() {
+    // Outer shape (already defined in union)
+    
+    // Spout Bore
+    cylinder(
+        h = funnel_spout_length + 0.1, 
+        r = funnel_spout_id / 2
+    );
+    
+    // Cone Bore
+    cylinder(
+        h = funnel_cone_height + 0.1, 
+        r1 = funnel_cone_id_bottom / 2, 
+        r2 = funnel_cone_id_top / 2
+    );
+}

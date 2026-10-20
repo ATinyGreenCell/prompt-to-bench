@@ -1,0 +1,156 @@
+// Dimensions in millimeters
+$fn = 64;
+
+// Lengths and diameters
+total_length = 41;
+z_start_8mm_barbs = 0;
+z_end_8mm_barbs = 20;
+z_collar = 20;
+z_start_5mm_barbs = 25;
+z_end_5mm_barbs = 41;
+
+// Barb dimensions
+barb_height_8mm = 10;
+barb_height_5mm = 8;
+barb_outer_diam_8mm_bottom = 7.5;
+barb_outer_diam_8mm_top = 9.5;
+barb_outer_diam_8mm_bottom_end = 7.5; // after step back
+
+barb_outer_diam_5mm_bottom = 6.5;
+barb_outer_diam_5mm_top = 5.0;
+barb_outer_diam_5mm_bottom_end = 6.5; // after step back
+
+// Bore diameter (constant through entire part)
+bore_diameter = 3.0;
+
+// Radius values
+bore_radius = bore_diameter / 2;
+
+// Create the main cylindrical bore (3mm diameter, full length)
+cylinder_bore = cube([bore_diameter, bore_diameter, total_length], center=true);
+
+// Create the 8mm barbs from z=0 to z=20
+// Each barb is 10mm tall, with outer diameter growing from 7.5mm to 9.5mm then back to 7.5mm
+// We stack two identical barbs, each with a sawtooth profile
+
+// Function to create one barb with linear growth and step back
+function create_barb(z_start, z_end, barb_height, start_diam, peak_diam, end_diam) =
+    for (i = [0:1]) // two barbs stacked
+        translate([0, 0, z_start + i * barb_height])
+            // First linear growth: 7.5 to 9.5 mm over first half of barb height
+            difference() {
+                // Full barb cylinder with outer diameter growing from start_diam to peak_diam
+                // Then step back to end_diam at the top
+                // We build it as a cylinder with a hole, then subtract a smaller cylinder at the top
+                // But instead, we use a linear profile in height
+
+                // Define the profile: from z=0 to z=barb_height/2: grow from start_diam to peak_diam
+                // from z=barb_height/2 to z=barb_height: step back to end_diam
+
+                // Create a solid with a linearly growing diameter
+                // Use a cylinder with a hole, but we model the barb as a solid with a taper and step
+
+                // First, create the full barb as a cylinder with variable diameter
+                // We use a linear profile in height: diameter at height z is:
+                // d(z) = start_diam + (z * (peak_diam - start_diam)) / (barb_height/2) for 0 <= z <= barb_height/2
+                // then d(z) = peak_diam for z in [barb_height/2, barb_height] -> then step down to end_diam
+
+                // Instead, we build it in segments using a linear taper and a step
+
+                // Segment 1: linear growth from start_diam to peak_diam (first half)
+                // Segment 2: constant diameter (peak_diam) for half height
+                // Segment 3: step down to end_diam at the top
+
+                // We create a solid with a taper and then a step
+                // We use a cylinder of diameter peak_diam for the full height, then subtract a cylinder of diameter end_diam at the top
+
+                // First, create the base cylinder with peak diameter
+                cylinder(h=barb_height, r=peak_diam/2, center=true);
+
+                // Then subtract a cylinder of diameter end_diam at the top (to create the step back)
+                // This is only at the top half
+                translate([0, 0, barb_height - 0.01]) // 0.01 to avoid coplanar
+                    cylinder(h=0.01, r=end_diam/2, center=true);
+            };
+
+// Actually, we will build each barb as a solid with a taper and step using a single shape
+
+// Better: create a single barb with taper and step using a linear profile and a step
+// We define the barb as a union of two cylinders with a step
+
+// Create one barb (height = barb_height)
+// From z=0 to z=barb_height/2: diameter grows from start_diam to peak_diam
+// From z=barb_height/2 to z=barb_height: diameter stays at peak_diam, then drops to end_diam at top
+
+// We use a linear taper and a step back at the top
+
+// We build the barb as a cylinder with diameter at each height
+// We use a function to create a tapered barb
+
+function create_tapered_barb(z_start, z_end, barb_height, start_diam, peak_diam, end_diam) =
+    difference() {
+        // Base cylinder with peak diameter
+        cylinder(h=barb_height, r=peak_diam/2, center=true);
+
+        // Subtract a cylinder at the top to create the step back
+        translate([0, 0, z_end - 0.01])
+            cylinder(h=0.01, r=end_diam/2, center=true);
+    };
+
+// Now create the two barbs for 8mm tubing (from z=0 to z=20)
+// Each barb is 10mm tall, stacked vertically
+// First barb at z=0 to z=10, second at z=10 to z=20
+
+// But the barbs are 10mm tall, and stacked from z=0 to z=20, so two barbs at z=0-10 and z=10-20
+
+// We create each barb with taper and step
+
+// Barbs for 8mm tubing: z=0 to 20, two barbs of 10mm height each
+// Each barb has:
+// - outer diameter grows from 7.5 to 9.5 mm over first 5mm, then stays at 9.5mm until 10mm, then drops to 7.5mm at top
+
+// So for each barb:
+// - from z=0 to 5: diameter grows from 7.5 to 9.5
+// - from z=5 to 10: diameter = 9.5
+// - from z=10 to 10: step back to 7.5 at z=10
+
+// But we want the barb to be 10mm tall, and the step back to 7.5mm at the top
+
+// So we create a barb from z_start to z_end, with taper and step
+
+// First barb: z=0 to 10
+// Second barb: z=10 to 20
+
+// We create both barbs with taper and step
+
+// Create barbs for 8mm tubing
+for (i = [0:1]) {
+    z_pos = z_start_8mm_barbs + i * barb_height_8mm;
+    create_tapered_barb(z_pos, z_pos + barb_height_8mm, barb_height_8mm, barb_outer_diam_8mm_bottom, barb_outer_diam_8mm_top, barb_outer_diam_8mm_bottom_end);
+}
+
+// Now the collar from z=20 to z=25: 12mm diameter
+// This is a cylinder of 12mm diameter, 5mm long
+cylinder(h=5, r=6, center=true);
+
+// Now the 5mm tubing barbs from z=25 to z=41
+// Each barb is 8mm tall, stacked
+// Two barbs: one at z=25 to 33, one at z=33 to 41
+
+// Each barb has:
+// - diameter from 6.5 to 5.0 mm over first 4mm, then stays at 5.0mm until 8mm, then drops to 6.5mm at top
+
+// So for each barb:
+// - from z=0 to 4: diameter grows from 6.5 to 5.0 mm
+// - from z=4 to 8: diameter = 5.0 mm
+// - from z=8 to 8: step back to 6.5 mm at top
+
+// We create two barbs, each 8mm tall
+
+for (i = [0:1]) {
+    z_pos = z_start_5mm_barbs + i * barb_height_5mm;
+    create_tapered_barb(z_pos, z_pos + barb_height_5mm, barb_height_5mm, barb_outer_diam_5mm_bottom, barb_outer_diam_5mm_top, barb_outer_diam_5mm_bottom_end);
+}
+
+// Now we must create the main body with the 3mm bore through the entire length
+// We start with a cylinder of 3mm diameter,

@@ -1,0 +1,64 @@
+// Dimensions of the bench rack
+$fn = 64;
+
+// Block dimensions (in mm)
+length_X = 106;
+width_Y = 72;
+height_Z = 30;
+
+// Hole grid: 24 holes in 4 rows (Y direction), 6 holes per row (X direction)
+// Centre-to-centre distance between holes
+hole_centre_to_centre = 16.0;
+hole_diameter = 11.2;
+hole_depth = 25.0;
+floor_thickness = 5.0;  // solid floor at the bottom
+
+// Calculate the total height of the rack: height_Z = floor_thickness + hole_depth
+// So the hole starts at z = 0 and goes down to z = -hole_depth, with a 5 mm solid floor at the bottom
+
+// The rack is centered on the origin in X and Y
+// So the block extends from -length_X/2 to +length_X/2 in X, and -width_Y/2 to +width_Y/2 in Y
+
+// First, create the solid base block
+base = cube([length_X, width_Y, height_Z], center=true);
+
+// Define hole positions in X and Y
+hole_rows = 4;
+holes_per_row = 6;
+
+// Calculate the starting position of the first hole in X and Y
+// The holes are centered in the block
+// So the first hole in X is at x = -length_X/2 + (holes_per_row * hole_centre_to_centre / 2)
+// and similarly in Y
+hole_x_offset = -length_X / 2 + (holes_per_row * hole_centre_to_centre / 2);
+hole_y_offset = -width_Y / 2 + (hole_rows * hole_centre_to_centre / 2);
+
+// Create a list of holes to subtract
+holes_list = [];
+
+for (i = [0:holes_per_row-1]) {
+    for (j = [0:hole_rows-1]) {
+        x = hole_x_offset + i * hole_centre_to_centre;
+        y = hole_y_offset + j * hole_centre_to_centre;
+        
+        // Create a cylinder for the hole: 11.2 mm diameter, 25 mm deep, going from z = 0 to z = -hole_depth
+        // So it is centered at (x, y, -hole_depth/2), and extends from z = -hole_depth - 0.1 to z = 0
+        // to avoid coplanar faces
+        hole_cylinder = translate([x, y, -hole_depth - 0.1]) 
+            cylinder(r = hole_diameter / 2, h = hole_depth + 0.1, center=true);
+        
+        holes_list.append(hole_cylinder);
+    }
+}
+
+// Subtract each hole from the base block
+final_rack = base;
+for (hole in holes_list) {
+    final_rack = difference() {
+        final_rack;
+        hole;
+    };
+}
+
+// Final output: the bench rack with 24 holes
+final_rack;

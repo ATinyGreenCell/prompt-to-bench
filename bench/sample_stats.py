@@ -14,17 +14,41 @@ import collections
 import glob
 import json
 import os
+import re
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
 
 def rows_for(prefix: str) -> list[dict]:
-    paths = sorted(glob.glob(os.path.join(HERE, "results", prefix, "results.jsonl")) +
-                   glob.glob(os.path.join(HERE, "results", f"{prefix}-g*", "results.jsonl")))
-    rows = []
+    """A run's records, a split run (prefix-g0, -g1, ...) read as one, loaded as analyze.load_runs and analyze.dedupe
+    load them: damaged lines and non-records are skipped, attempts after the first passing one (left by a rescore) are
+    dropped, within a folder a conversation recorded twice keeps its newest record and one flagged needs_rerun is left
+    out until run_bench.py has redone it, and across folders the newest record wins."""
+    own = re.compile(re.escape(prefix) + r"(-g\d+)?")  # not prefix-gemma or prefix-gpu-x: a glob would take those
+    paths = sorted(p for p in glob.glob(os.path.join(HERE, "results", f"{glob.escape(prefix)}*", "results.jsonl"))
+                   if own.fullmatch(os.path.basename(os.path.dirname(p))))
+    newest = {}
     for p in paths:
-        rows += [json.loads(l) for l in open(p, encoding="utf-8") if l.strip()]
-    return rows
+        latest = {}
+        for line in open(p, encoding="utf-8", errors="replace"):
+            try:
+                r = json.loads(line)
+            except json.JSONDecodeError:  # a half-written line from a crash, or a blank one
+                continue
+            if not isinstance(r, dict) or not {"model", "task", "sample", "attempts"} <= r.keys() \
+                    or not isinstance(r["attempts"], list) or not all(isinstance(a, dict) for a in r["attempts"]):
+                continue  # valid JSON but not a record
+            first = next((i for i, a in enumerate(r["attempts"]) if a.get("passed")), None)
+            if first is not None:  # the attempts after it would never have been requested
+                r["attempts"] = r["attempts"][:first + 1]
+            key = (r["model"], r["task"], r["sample"], r.get("lang", "en"), r.get("feedback", "report"))
+            if key not in latest or str(r.get("finished", "")) >= str(latest[key].get("finished", "")):
+                latest[key] = r
+        for key, r in latest.items():
+            if not r.get("needs_rerun") and (key not in newest or
+                                             str(r.get("finished", "")) >= str(newest[key].get("finished", ""))):
+                newest[key] = r
+    return list(newest.values())
 
 
 def stats(rows: list[dict]) -> dict:

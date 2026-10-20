@@ -1,0 +1,29 @@
+$fn = 64;
+
+wall_thickness = 1.6;
+spout_height = 20;
+funnel_height = 30;
+outer_spout_dia = 10;
+outer_cone_base_dia = 10;
+outer_cone_top_dia = 60;
+
+inner_spout_dia = outer_spout_dia - 2 * wall_thickness + 0.01;
+inner_cone_base_dia = outer_cone_base_dia - 2 * wall_thickness + 0.01;
+inner_cone_top_dia = outer_cone_top_dia - 2 * wall_thickness + 0.01;
+
+outer = union() {
+    cylinder(h = spout_height, d = outer_spout_dia);
+    translate([0, 0, spout_height])
+        cone(funnel_height, outer_cone_base_dia, outer_cone_top_dia);
+};
+
+inner = union() {
+    cylinder(h = spout_height, d = inner_spout_dia);
+    translate([0, 0, spout_height])
+        cone(funnel_height, inner_cone_base_dia, inner_cone_top_dia);
+};
+
+difference() {
+    outer;
+    inner;
+}

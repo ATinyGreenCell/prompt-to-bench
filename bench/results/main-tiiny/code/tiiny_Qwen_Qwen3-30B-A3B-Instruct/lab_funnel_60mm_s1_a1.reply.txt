@@ -1,0 +1,154 @@
+```openscad
+// Lab funnel parameters
+$fn = 64;
+
+// Dimensions
+spout_outer_diameter = 10;           // mm
+spout_length = 20;                       // mm from z=0 to z=20
+cone_base_diameter = 10;               // mm at z=20 (same as spout)
+cone_top_diameter = 60;                // mm at z=50 (rim)
+cone_height = 30;                      // mm from z=20 to z=50
+wall_thickness = 1.6;                    // mm everywhere
+
+// Derived dimensions
+spout_inner_diameter = spout_outer_diameter - 2 * wall_thickness; // 10 - 3.2 = 6.8 mm
+cone_inner_base_diameter = cone_base_diameter - 2 * wall_thickness; // 10 - 3.2 = 6.8 mm
+cone_inner_top_diameter = cone_top_diameter - 2 * wall_thickness; // 60 - 3.2 = 56.8 mm
+
+// The issue: the spout is only 20 mm long, but the funnel's cone starts at z=20.
+// The current model has the cone starting at z=20, but the inner bore is not properly aligned.
+// The measurement report shows that at z=1.00, 10.00, 19.00, the outer diameter is 9.99 mm — almost 10 mm.
+// That's correct for the spout. But the cone should start at z=20 and widen to 60 mm at z=50.
+// However, the current model uses a rotate_extrude for the cone that is not properly aligned with the spout.
+// The problem is that the rotate_extrude of the cone is placed at z=20, but the inner bore is subtracted from the same region.
+// But the issue is that the inner bore of the cone is not properly connected to the spout's inner bore.
+// The current model has a discontinuity: the inner bore of the cone is a separate rotate_extrude, but it's not aligned with the spout's inner bore.
+// We must ensure that the inner bore is continuous from z=0 to z=50.
+
+// Fix: Use a single continuous inner bore from z=0 to z=50.
+// The inner bore has:
+//   - From z=0 to z=20: constant diameter = spout_inner_diameter = 6.8 mm
+//   - From z=20 to z=50: tapers from 6.8 mm to 56.8 mm
+
+// Similarly, the outer shape:
+//   - From z=0 to z=20: constant diameter = 10 mm
+//   - From z=20 to z=50: tapers from 10 mm to 60 mm
+
+// We'll build the funnel as:
+//   - Outer shape: spout (cylinder) + cone (tapered)
+//   - Inner bore: spout (cylinder) + cone (tapered) with inner dimensions
+//   - Use difference to subtract the inner bore from the outer
+
+// But we can't use rotate_extrude for both parts independently because of alignment.
+// Instead, we'll define the outer and inner profiles as separate polygons and use rotate_extrude.
+
+// However, a better approach: use a single difference operation with two parts:
+//   - The outer body: a solid from z=0 to z=50 with outer profile
+//   - The inner bore: a solid from z=0 to z=50 with inner profile
+
+// We'll use a for loop to build the profile for the outer and inner, but that's complex.
+// Alternative: use a polyhedron or use a single rotate_extrude for the entire funnel.
+
+// Simpler: define the outer and inner profiles as polygons that are extruded with rotate_extrude.
+// But we need two separate profiles: one for outer, one for inner.
+
+// Let's define the outer profile as a polygon that goes from (5, 0) to (30, 30) for the cone, but we need to combine with spout.
+
+// We'll build the funnel as:
+//   - A solid outer shape: spout (cylinder) + cone (tapered)
+//   - A solid inner bore: spout (cylinder) + cone (tapered with inner diameters)
+//   - Then difference: outer minus inner
+
+// But the inner bore must be continuous. So we define the inner bore as a single shape.
+
+// We'll use a rotate_extrude for the inner bore that spans from z=0 to z=50.
+// The inner bore has:
+//   - From z=0 to z=20: radius = 6.8 / 2 = 3.4 mm
+//   - From z=20 to z=50: radius increases from 3.4 to 28.4 mm (since 56.8 / 2 = 28.4)
+
+// So we define a polygon for the inner profile:
+//   - At z=0: (3.4, 0)
+//   - At z=20: (3.4, 20)  [same radius]
+//   - At z=50: (28.4, 50)
+
+// But we can't do that with a single rotate_extrude unless we use a polygon with multiple points.
+
+// We'll define the inner profile as a polygon with three points:
+//   - (3.4, 0)
+//   - (3.4, 20)
+//   - (28.4, 50)
+
+// But that would create a flat top at z=20, which is not what we want.
+// We want a continuous taper from z=20 to z=50, but the inner bore at z=20 must be 3.4 mm radius.
+
+// Actually, the inner bore should be:
+//   - From z=0 to z=20: constant radius 3.4 mm
+//   - From z=20 to z=50: linear increase from 3.4 mm to 28.4 mm
+
+// So the profile is:
+//   - (3.4, 0)
+//   - (3.4, 20)
+//   - (28.4, 50)
+
+// But that would make the inner bore have a flat section from z=0 to z=20, then a taper from z=20 to z=50.
+// That's correct.
+
+// Similarly, the outer profile:
+//   - (5, 0)
+//   - (5, 20)
+//   - (30, 50)
+
+// But we can't use a single rotate_extrude for both. We need to do:
+//   - Outer: a rotate_extrude of the outer profile polygon
+//   - Inner: a rotate_extrude of the inner profile polygon
+//   - Then difference: outer minus inner
+
+// But the rotate_extrude will be from z=0 to z=50, but the inner profile has a discontinuity at z=20? No, it's continuous.
+
+// However, the rotate_extrude will create a solid from the polygon. The polygon is in the xz plane, and we rotate around the z-axis.
+
+// Let's do it.
+
+module funnel() {
+    // Outer profile: from z=0 to z=50
+    // - At z=0: radius = 5 mm
+    // - At z=20: radius = 5 mm (flat)
+    // - At z=50: radius = 30 mm
+    // So the outer profile is a polygon with points:
+    outer_profile = [
+        [5, 0],
+        [5, 20],
+        [30, 50]
+    ];
+    
+    // Inner profile: from z=0 to z=50
+    // - At z=0: radius = 3.4 mm
+    // - At z=20: radius = 3.4 mm
+    // - At z=50: radius = 28.4 mm
+    inner_profile = [
+        [3.4, 0],
+        [3.4, 20],
+        [28.4, 50]
+    ];
+    
+    // Create outer solid: rotate_extrude of outer_profile
+    // But rotate_extrude creates a solid by rotating around the z-axis.
+    // We need to make sure the profile is in the xz plane.
+    // We'll use rotate_extrude() with the polygon.
+    
+    difference() {
+        // Outer body: rotate_extrude of outer_profile
+        rotate_extrude() {
+            polygon(outer_profile);
+        }
+        
+        // Inner bore: rotate_extrude of inner_profile
+        rotate_extrude() {
+            polygon(inner_profile);
+        }
+    }
+}
+
+// Render the funnel
+funnel();
+```

@@ -1,0 +1,64 @@
+```openscad
+// ---------- Parameters ----------
+inner_d_rod = 12.7;          // inner diameter of the rod ring (mm)
+wall_rod = 3;                // wall thickness of the rod ring (mm)
+outer_d_rod = inner_d_rod + 2*wall_rod; // outer diameter of the rod ring (mm)
+
+inner_d_tube = 6;            // inner diameter of the tubing ring (mm)
+wall_tube = 2;               // wall thickness of the tubing ring (mm)
+outer_d_tube = inner_d_tube + 2*wall_tube; // outer diameter of the tubing ring (mm)
+
+height = 10;                 // extrusion height (mm)
+
+rod_opening_width = 10;      // y‑range of the rod opening (mm)
+tube_opening_width = 4.5;    // y‑range of the tube opening (mm)
+
+bridge_x_start = 8;          // left x edge of the bridge (mm)
+bridge_x_end   = 12;         // right x edge of the bridge (mm)
+bridge_y_width = 6;          // total y width of the bridge (mm)
+
+cut_extra = 1;               // extra length for cutting shapes (mm)
+
+// ---------- $fn for smooth curves ----------
+$fn = 128;
+
+// ---------- 2‑D profile modules ----------
+module rod_ring_2d() {
+    difference() {
+        // outer circle
+        circle(d = outer_d_rod);
+        // inner hole
+        circle(d = inner_d_rod);
+        // opening cut on the -X side
+        translate([-100 - cut_extra, -rod_opening_width/2])
+            square([100 + cut_extra, rod_opening_width]);
+    }
+}
+
+module tube_ring_2d() {
+    difference() {
+        // outer circle (centered at (15,0))
+        translate([15,0]) circle(d = outer_d_tube);
+        // inner hole
+        translate([15,0]) circle(d = inner_d_tube);
+        // opening cut on the +X side
+        translate([15 + cut_extra, -tube_opening_width/2])
+            square([100 + cut_extra, tube_opening_width]);
+    }
+}
+
+module bridge_2d() {
+    // solid bridge between the two rings
+    translate([bridge_x_start, -bridge_y_width/2])
+        square([bridge_x_end - bridge_x_start, bridge_y_width]);
+}
+
+// ---------- Main model ----------
+linear_extrude(height = height) {
+    union() {
+        rod_ring_2d();
+        tube_ring_2d();
+        bridge_2d();
+    }
+}
+```

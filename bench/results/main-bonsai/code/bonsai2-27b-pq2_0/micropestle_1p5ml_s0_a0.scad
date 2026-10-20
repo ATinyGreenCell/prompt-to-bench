@@ -1,0 +1,81 @@
+// Pestle for grinding tissue inside a 1.5 mL microcentrifuge tube
+// Printed standing upright, resting on the XY plane at z = 0.
+
+$fn = 64;
+
+// Dimensions (mm)
+handle_diameter = 8;
+handle_height   = 45;
+
+cone_bottom_diameter = 8;
+cone_top_diameter    = 3;
+cone_bottom_z        = 45;
+cone_top_z           = 62;
+
+tip_diameter = 3;
+tip_center_z = 62;
+
+groove_width = 2;
+groove_depth = 1;
+groove_centers_z = [10, 15, 20, 25];
+
+// Build the pestle in the print orientation: upright, base at z = 0.
+union() {
+    // (1) Cylindrical handle from z = 0 to z = 45
+    cylinder(h = handle_height, d = handle_diameter, center = false);
+
+    // (2) Cone tapering from 8 mm at z = 45 to 3 mm at z = 62
+    translate([0, 0, cone_bottom_z])
+        cylinder(h = cone_top_z - cone_bottom_z,
+                 d1 = cone_bottom_diameter,
+                 d2 = cone_top_diameter,
+                 center = false);
+
+    // (3) Rounded tip: 3 mm sphere centred at z = 62
+    translate([0, 0, tip_center_z])
+        sphere(d = tip_diameter);
+
+    // Grip grooves: cut four circumferential grooves into the handle.
+    // Each groove is 2 mm wide in Z and 1 mm deep, centred at the given Z.
+    // The cutting cylinder extends 0.5 mm past the handle surface in X/Y
+    // so the cut is clean and not coplanar.
+    for (z = groove_centers_z) {
+        translate([0, 0, z - groove_width / 2])
+            difference() {
+                // The groove is a torus-like cut; model it as a cylinder
+                // with a hole, but since it is circumferential, use a
+                // difference of two cylinders: outer cut cylinder minus
+                // inner cylinder to leave a ring.
+                // Simpler: a full cylinder of radius (handle_radius + 0.5)
+                // minus a cylinder of radius (handle_radius - groove_depth)
+                // would cut a ring. But we only want to cut into the handle,
+                // so use a cylinder that spans the full width and depth.
+                //
+                // Actually, a circumferential groove is a ring-shaped cut.
+                // We can model it as:
+                //   difference() {
+                //       cylinder(h = groove_width, d = handle_diameter + 1, center = false);
+                //       cylinder(h = groove_width + 1, d = handle_diameter - 2 * groove_depth, center = false);
+                //   }
+                // This creates a ring (annulus) that, when subtracted from
+                // the handle, leaves a groove.
+                //
+                // However, the cutting shape must extend 0.01-1 mm past the
+                // faces it cuts. The outer cylinder extends 0.5 mm past the
+                // handle surface (handle_diameter + 1 vs handle_diameter).
+                // The inner cylinder is fully inside the handle.
+                //
+                // But we must also ensure the cutting shape extends past the
+                // top and bottom faces of the groove. The groove is 2 mm wide,
+                // so the cutting cylinder should be slightly taller. We use
+                // h = groove_width + 1 to extend 0.5 mm past each face.
+                //
+                // Let's use a simpler approach: a single cylinder that is
+                // slightly larger than the handle and slightly taller than
+                // the groove, then subtract a smaller cylinder to create the
+                // ring.
+                cylinder(h = groove_width + 1, d = handle_diameter + 1, center = false);
+                cylinder(h = groove_width + 1, d = handle_diameter - 2 * groove_depth, center = false);
+            }
+    }
+}

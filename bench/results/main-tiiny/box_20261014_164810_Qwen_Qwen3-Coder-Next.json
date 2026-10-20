@@ -1,0 +1,48 @@
+{
+ "time": "2026-10-14T16:48:00",
+ "model": "tiiny/Qwen/Qwen3-Coder-Next",
+ "run_bench_args": [],
+ "samples": 2,
+ "catalog": {
+  "model_id": "Qwen/Qwen3-Coder-Next",
+  "params": "80B",
+  "npu_usage": 94,
+  "context_window": 131072,
+  "thinking": {
+   "supported": false,
+   "toggleable": false,
+   "enabled_by_default": false,
+   "levels": [],
+   "default_level": null
+  },
+  "reasoning_levels": [],
+  "udpate_time": 1790132465,
+  "type": "Text Generation",
+  "mode": "production",
+  "tags": [
+   {
+    "tag_name": "v1",
+    "manifest": "qwen3_coder_80b",
+    "version": 1,
+    "size": 37697536035
+   }
+  ]
+ },
+ "tiiny_info": "Qwen3-Coder-Next\n\n  Model id        Qwen/Qwen3-Coder-Next\n  Parameters      80B\n  Input           Text\n  Output          Text\n  NPU usage       94%\n  Model tasks     Text Generation\n  Model size      35.1 GiB\n  Last updated    2026-09-22 23:01:05\n\n  Capability      Tool Use\n\n\nIntroduction\nQwen3-Coder-Next is an 80B MoE model built specifically for agentic coding tasks: multi-file edits, long-horizon debugging, tool use, and recovery from execution failures across real codebases. It activates only 3B parameters per token, which puts throughput on par with a small model while the overall capacity supports complex reasoning over large codebases.\n\nUse it in Chat, or load it for Kilocode-Tiiny and opencode in Agent Store.\n\n\n\nArchitecture\n\nBuilt on the Qwen3-Next base, which departs from standard Transformer attention. The hybrid attention layer combines Gated DeltaNet and Gated Attention to handle ultra-long contexts without the quadratic memory cost of full self-attention. The MoE layer uses an extreme sparsity ratio: 80B total parameters, 3B activated per forward pass.\n\nTraining Approach\n\nThe defining design choice is agentic training rather than static code-text pretraining. Qwen synthesized 800,000 verifiable coding tasks drawn from real GitHub pull requests and paired them with executable environments. The model was trained using supervised fine-tuning on agent trajectories followed by reinforcement learning with environment feedback. This means the model learned from actual execution outcomes, not text prediction alone.\n\nThinking Mode\n\nThis model operates in non-thinking mode only. There are no chain-of-thought traces in output. Responses are immediate. The model's reasoning capability comes from training, not from an explicit thinking step at inference time.\n\nAgentic Integration\n\nThe model card explicitly names scaffold compatibility with Kilo Code, Cline, Claude Code, Qwen Code, and Trae. Tool calling is a first-class capability.\n\nLicense\n\nApache 2.0.",
+ "tiiny_status": "Device: [private-ip]\nConnected: True\nActivated: False\nNPU-COMPUTE  [\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588  ] 94.0%\nSOC          [\u2588\u2588\u2588\u2588\u2588                                   ] 13.7%\nRAM          [\u2588\u2588\u2588                                     ] 6.4% 2.0 / 31.1 GiB \nDISK         [\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588                              ] 25.2% 219.4 / 869.8 GiB \nNPU-RAM      [\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588   ] 91.9% 44.0 / 47.9 GiB \n  Qwen/Qwen3-Coder-Next 94%",
+ "tiiny_cli": "tiiny-cli-linux-amd64-v0.0.4",
+ "device_name": "seb's Tiiny",
+ "load": {
+  "before": [
+   "openai/gpt-oss-120b"
+  ],
+  "npu_mb_empty": null,
+  "load_s": 105.8,
+  "loaded": [
+   "Qwen/Qwen3-Coder-Next"
+  ],
+  "npu_mb": 45050.0
+ },
+ "bridge": "http://127.0.0.1:11435",
+ "note": "Timings are measured on the laptop through the tiinykit bridge (USB link included). The meta_*.json 'ollama' field is the laptop's own Ollama version, reported by the bridge."
+}

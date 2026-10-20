@@ -1,0 +1,99 @@
+// Replacement knob for hotplate stirrer
+// D-shaft: 6 mm, Knob: 30 mm dia x 15 mm tall, printed with bottom face on bed (z=0)
+
+// --- Knob outer dimensions ---
+knob_dia = 30;           // Outer diameter of knob (mm)
+knob_h = 15;             // Total height of knob (mm)
+knob_r = knob_dia / 2;  // Outer radius
+
+// --- D-shaft bore dimensions ---
+shaft_dia = 6;           // Shaft diameter (mm)
+bore_dia = 6.2;           // Bore diameter (slight clearance) (mm)
+bore_r = bore_dia / 2;   // Bore radius
+bore_depth = 12;         // Depth of blind bore from bottom (mm)
+flat_to_opposite = 4.7;  // Distance from flat to opposite side of circle (mm)
+
+// --- Grip grooves ---
+num_grooves = 18;         // Number of vertical grip grooves
+groove_dia = 2;           // Diameter of half-cylinder groove (mm)
+groove_r = groove_dia / 2;
+
+// --- Pointer groove ---
+pointer_width = 1.5;      // Width of pointer groove (mm)
+pointer_depth = 1;       // Depth of pointer groove (mm)
+
+// --- Calculated values ---
+// For D-shape: the flat is cut such that distance from flat to opposite side = 4.7 mm
+// The circle has radius 3.1 mm. The flat is at distance (3.1 - (4.7 - 3.1)) = 1.5 mm from center
+// So the flat is at x = 1.5 mm (if flat is on the right side)
+flat_offset = bore_r - (flat_to_opposite - bore_r);  // Distance from center to flat
+
+// Groove center is on outer surface, so groove center radius = knob_r
+groove_center_r = knob_r;
+
+// --- Build the knob ---
+union() {
+    // Main cylinder body
+    cylinder(r = knob_r, h = knob_h, $fn = 64);
+    
+    // Add material for grip grooves (they are half-cylinders on the surface)
+    for (i = [0 : num_grooves - 1]) {
+        angle = i * 360 / num_grooves;
+        translate([cos(angle) * groove_center_r, sin(angle) * groove_center_r, 0]) {
+            rotate([0, 0, angle]) {
+                // Half-cylinder groove: we'll subtract it later, but for union we need the full shape
+                // Actually, we'll build the knob solid first, then subtract grooves
+                // So we don't add anything here for grooves
+            }
+        }
+    }
+}
+
+// --- Subtract features ---
+difference() {
+    // The main knob body (rebuild to ensure clean solid)
+    union() {
+        cylinder(r = knob_r, h = knob_h, $fn = 64);
+    }
+    
+    // D-shaped blind bore from bottom (z=0)
+    translate([0, 0, bore_depth - 0.01]) {
+        // Cylinder part of bore
+        cylinder(r = bore_r, h = 0.02, $fn = 64);
+        
+        // Cut the flat side: the flat is at x = flat_offset
+        // We cut from x = flat_offset to x = bore_r + 0.01
+        translate([flat_offset + 0.01, 0, 0]) {
+            cube([bore_r + 0.01, bore_dia + 0.02, 0.02], center = [0, 0, 0]);
+        }
+    }
+    
+    // Vertical grip grooves (half-cylinders on outer surface)
+    for (i = [0 : num_grooves - 1]) {
+        angle = i * 360 / num_grooves;
+        translate([cos(angle) * groove_center_r, sin(angle) * groove_center_r, 0]) {
+            rotate([0, 0, angle]) {
+                // Half-cylinder groove: cut from the outer surface inward
+                // The groove is a half-cylinder with diameter groove_dia, centered on the surface
+                // So it extends from r = knob_r - groove_r to r = knob_r + groove_r
+                // But since it's a half-cylinder on the surface, we only cut the inner half
+                // Actually, for a half-cylinder groove on the surface, the cut goes from the surface inward by groove_r
+                translate([groove_r, 0, 0]) {
+                    // Full cylinder, but we only want the half that cuts into the knob
+                    // Since we're subtracting, we can use a full cylinder and it will only remove material where it overlaps
+                    cylinder(r = groove_r, h = knob_h + 0.02, $fn = 32);
+                }
+            }
+        }
+    }
+    
+    // Pointer groove on top face
+    // Runs from center to outer edge, on the same side as the flat of the D
+    // The flat is on the right side (positive x), so pointer groove is along positive x-axis
+    translate([0, 0, knob_h - pointer_depth]) {
+        // Rectangular groove from center to edge
+        translate([pointer_width / 2, 0, 0]) {
+            cube([knob_r, pointer_width, pointer_depth + 0.01], center = [0, 0, 0]);
+        }
+    }
+}

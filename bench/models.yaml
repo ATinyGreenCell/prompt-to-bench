@@ -114,11 +114,25 @@
   size_gb: 6.6
   licence: Apache-2.0
   coder: false
+# Ternary Bonsai 2 27B (prism-ml, Hugging Face revision b072e1d): Qwen3.8-27B with its language-model weights, all but
+# 26.2M (0.1%), in {-1, 0, +1} plus a scale per 128, the PQ2_0 GGUF (2.13 bits per weight). Not runnable by Ollama or
+# upstream llama.cpp: served on the same laptop CPU by PrismML's llama.cpp fork (commit 11809184, llama-server -c 8192
+# -t 12 -np 1 --jinja, with --cache-ram 0 from 2026-10-19 17:36) through bench/ollama_openai_shim.py, thinking off via
+# the chat template. Run folder bench/results/main-bonsai.
+- id: bonsai2-27b-pq2_0
+  label: Bonsai 2 27B (ternary)
+  family: Qwen3.8 (ternary)
+  params_b: 26.9
+  size_gb: 7.2
+  licence: Apache-2.0
+  coder: false
+  runtime: laptop CPU, ternary, llama.cpp fork
 # Tiiny AI Pocket Lab (NPU box on USB-C), reached through the tiinykit bridge as tiiny/<store id>.
 # Sizes are the Tiiny store's download sizes (vendor format, not GGUF); parameters, licences and the
 # thinking mode are from the Hugging Face model cards (read 2026-10-14). `thinking`: none, switchable or always.
 - id: tiiny/Qwen/Qwen3-Coder-Next
   label: Qwen3-Coder-Next 80B-A3B
+  short_label: Qwen3-Coder-Next  # Figure 6, whose x axis gives the size: the full label crossed the 27B points
   family: Qwen3-Coder
   params_b: 80
   active_b: 3
@@ -145,7 +159,7 @@
   size_gb: 18.0
   licence: MIT
   coder: true
-  thinking: always
+  thinking: switchable  # the catalog says not toggleable, but it reasons only when asked
   runtime: tiiny
 - id: tiiny/openai/gpt-oss-120b
   label: gpt-oss-120b
@@ -167,7 +181,7 @@
   coder: false
   thinking: always
   runtime: tiiny
-- id: tiiny/Qwen/Qwen3.8-27B
+- id: tiiny/Qwen/Qwen3.8-27B  # the store's only build is a Turbo one: manifest Qwen3.8-27B_turbo_20260819 (speculative decoding)
   label: Qwen3.8 27B
   family: Qwen3.8
   params_b: 27
@@ -235,7 +249,7 @@
   size_gb: 15.8
   licence: MIT
   coder: false
-  thinking: switchable
+  thinking: switchable  # the catalog says unsupported, but it reasons when asked (46 of 46) and not otherwise (0 of 96)
   runtime: tiiny
 - id: tiiny/Qwen/Qwen3-30B-A3B-Instruct
   label: Qwen3 30B-A3B Instruct-2507

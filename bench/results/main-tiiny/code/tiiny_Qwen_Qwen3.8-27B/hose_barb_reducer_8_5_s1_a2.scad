@@ -1,0 +1,57 @@
+// Hose-barb reducer: 8 mm ID silicone tubing (bottom) to 5 mm ID (top)
+// Printed upright, rotationally symmetric about Z, 3 mm bore through full length.
+
+// ---- Global ----
+$fn = 64;
+
+// ---- Bore ----
+bore_d = 3.0;          // straight through-bore diameter
+bore_r = bore_d / 2;   // 1.5 mm
+
+// ---- 8 mm tubing barbs (bottom, z = 0..20) ----
+barb8_h   = 10.0;      // height of each 8 mm barb
+barb8_bot = 7.5;       // outer diameter at barb base (bottom of each barb)
+barb8_top = 9.5;       // outer diameter at barb tip (top of each barb)
+n8        = 2;         // number of 8 mm barbs
+
+// ---- Collar (z = 20..25) ----
+collar_d  = 12.0;      // collar outer diameter
+collar_h  = 5.0;       // collar height
+
+// ---- 5 mm tubing barbs (top, z = 25..41) ----
+barb5_h   = 8.0;       // height of each 5 mm barb
+barb5_bot = 6.5;       // outer diameter at barb base (bottom of each barb)
+barb5_top = 5.0;       // outer diameter at barb tip (top of each barb)
+n5        = 2;         // number of 5 mm barbs
+
+// ---- Sawtooth profile (radius vs z), built bottom-up ----
+// Each barb: linear ramp from base radius to tip radius, then a vertical
+// step back to the base radius. The step is modelled as a zero-length
+// vertical segment (a vertical edge in the profile).
+profile = [
+    [0, 0],                       // centre, bottom
+    [barb8_bot/2, 0],             // base of first 8 mm barb
+    [barb8_top/2, barb8_h],       // tip of first 8 mm barb
+    [barb8_bot/2, barb8_h],       // step back to base (start of second barb)
+    [barb8_top/2, 2*barb8_h],     // tip of second 8 mm barb
+    [collar_d/2,  2*barb8_h],     // step out to collar radius
+    [collar_d/2,  2*barb8_h + collar_h], // top of collar
+    [barb5_bot/2, 2*barb8_h + collar_h], // step in to base of first 5 mm barb
+    [barb5_top/2, 2*barb8_h + collar_h + barb5_h],   // tip of first 5 mm barb
+    [barb5_bot/2, 2*barb8_h + collar_h + barb5_h],   // step out to base of second 5 mm barb
+    [barb5_top/2, 2*barb8_h + collar_h + 2*barb5_h], // tip of second 5 mm barb
+    [0, 2*barb8_h + collar_h + 2*barb5_h],          // centre, top
+];
+
+// ---- Body: revolve the sawtooth profile about Z ----
+body = rotate_extrude($fn = $fn) polygon(profile);
+
+// ---- Bore: straight 3 mm hole through the full length ----
+// Extend 1 mm past each face so the cut is clean (no coplanar faces).
+bore_cut = cylinder(h = 43, r = bore_r, $fn = $fn);   // z = -1 .. 42
+
+// ---- Final part ----
+difference() {
+    body;
+    bore_cut;
+}

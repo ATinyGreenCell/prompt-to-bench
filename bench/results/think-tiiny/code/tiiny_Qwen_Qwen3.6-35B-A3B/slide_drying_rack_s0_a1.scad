@@ -1,0 +1,30 @@
+// Microscope slide dimensions (mm)
+slide_l = 75;   // Length
+slide_w = 25;   // Width
+slide_t = 1;    // Thickness
+
+// Base block dimensions (mm)
+block_l = 90;   // Length (X)
+block_w = 45;   // Width (Y)
+block_h = 20;   // Height (Z)
+
+// Slot dimensions and layout (mm)
+slot_l = 77;    // Length (X)
+slot_w = 1.6;   // Width (Y)
+slot_d = 10;    // Depth (Z)
+slot_spacing = 3.5; // Centre-to-centre spacing in Y
+num_slots = 10; // Number of slots
+
+$fn = 64;
+
+difference() {
+    // Solid base block, resting on XY plane at z=0, centred in X and Y
+    cube([block_l, block_w, block_h], center=[true, true, false]);
+
+    // Cut 10 parallel slots into the top face
+    for (i = [0 : num_slots-1]) {
+        y_pos = (i - (num_slots-1)/2) * slot_spacing;
+        translate([0, y_pos, block_h - slot_d])
+            cube([slot_l, slot_w, slot_d + 0.01]);
+    }
+}

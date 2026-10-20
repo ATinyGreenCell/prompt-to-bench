@@ -1,0 +1,55 @@
+```openscad
+// Sowing template for a 90 mm Petri dish
+// Flat disc, 7x7 grid of through-holes, orientation notch on +Y rim
+
+// --- Dimensions (mm) ---
+dish_diameter   = 90;   // Petri dish inner diameter (context)
+disc_diameter   = 85;   // Template disc diameter
+disc_radius     = disc_diameter / 2;
+disc_thickness  = 2;    // Disc thickness
+
+hole_diameter   = 3;    // Through-hole diameter
+hole_radius     = hole_diameter / 2;
+hole_spacing    = 9;    // Centre-to-centre spacing
+grid_size       = 7;    // 7 x 7 grid
+
+notch_width     = 10;   // Notch width along X
+notch_depth     = 4;    // Notch depth into rim from +Y side
+
+// --- Print orientation ---
+// Disc rests on XY plane at z = 0, centred on origin in X and Y.
+
+// --- Main disc ---
+disc = cylinder(d=disc_diameter, h=disc_thickness, center=false, $fn=128);
+
+// --- 7x7 grid of through-holes ---
+// Holes cut from z = -0.01 to z = disc_thickness + 0.01 (0.01 mm past each face)
+hole_cut = cylinder(d=hole_diameter, h=disc_thickness + 0.02, center=false, $fn=64);
+
+// --- Orientation notch on +Y rim ---
+// 10 mm wide (X), 4 mm deep (Y) from the rim, full thickness
+notch_cut = cube([notch_width, notch_depth + 0.01, disc_thickness + 0.02], center=[0, 0, 0]);
+
+// --- Assemble ---
+module template() {
+    difference() {
+        disc;
+
+        // 7x7 hole grid, centred on origin
+        for (i = -3 : 3) {
+            for (j = -3 : 3) {
+                translate([i * hole_spacing, j * hole_spacing, 0])
+                    hole_cut;
+            }
+        }
+
+        // Notch on +Y side: centred on Y axis, 4 mm deep from rim
+        // Rim is at y = disc_radius; notch extends from y = disc_radius - notch_depth to y = disc_radius
+        // Place notch so its outer face is at y = disc_radius + 0.01 (0.01 mm past rim)
+        translate([0, disc_radius - notch_depth + 0.01, 0])
+            notch_cut;
+    }
+}
+
+template();
+```

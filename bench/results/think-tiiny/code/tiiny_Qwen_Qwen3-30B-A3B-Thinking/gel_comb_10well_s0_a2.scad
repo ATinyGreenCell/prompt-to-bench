@@ -1,0 +1,27 @@
+$fn = 64;
+
+// Dimensions in millimeters
+spine_length = 70.0;      // Spine length (X direction)
+spine_width = 12.0;         // Spine width (Y direction)
+tooth_width = 5.0;        // Tooth width (X direction)
+tooth_length = 12.0;       // Tooth length (Y direction, extending -Y)
+gap = 1.5;                // Gap between teeth (X direction)
+thickness = 1.5;          // Comb thickness (Z direction)
+
+// Total X length for teeth (10 teeth + 9 gaps)
+total_teeth_length = 10 * tooth_width + 9 * gap;
+
+union() {
+    // Spine: centered at origin (X), positioned at Y = spine_width/2 (so spans Y=0 to spine_width)
+    translate([-spine_length/2, spine_width/2, 0])
+        cube([spine_length, spine_width, thickness]);
+    
+    // Teeth: 10 teeth, centered on spine in X, each extending -Y from spine edge
+    for (i = [0:9]) {
+        // Calculate X position for this tooth (centered on spine)
+        x_pos = -spine_length/2 + (spine_length - total_teeth_length)/2 + i * (tooth_width + gap);
+        // Y position: centered at -tooth_length/2 (so spans Y=-tooth_length to 0)
+        translate([x_pos, -tooth_length/2, 0])
+            cube([tooth_width, tooth_length, thickness]);
+    }
+}

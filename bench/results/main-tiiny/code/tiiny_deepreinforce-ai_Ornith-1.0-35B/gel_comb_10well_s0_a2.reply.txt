@@ -1,0 +1,63 @@
+Looking at the measurement report, I can see several issues:
+
+1. **Bounding box Y**: Report shows Y -18.00 .. 12.00 (size 30.00), but the spine is only 12 mm wide (Y). The spine should extend from -6 to +6 in Y, and teeth should extend from -6 to -18. So Y should be -18 to +6 (size 24), not -18 to +12.
+
+2. **Number of solid bodies**: Report shows 11 separate bodies, but it should be 1 connected body (spine + teeth should be merged).
+
+3. **Contact area**: Report shows 1,440 mm², which is 70 × 12 + 10 × 5 × 12 = 840 + 600 = 1,440 mm². This seems correct for the footprint.
+
+The main issue is that the spine is positioned incorrectly. Looking at the code, the spine is translated to `[0, 0, 0]` with `center = false`, which means it extends from `(0, 0, 0)` to `(70, 12, 1.5)`. But it should be centered in X and positioned so that the spine is from `(-6, -6)` to `(6, 6)` in Y.
+
+Let me fix this:
+
+```openscad
+// 10-well agarose gel comb
+// Print orientation: lying flat on XY plane, z=0
+
+// Overall plate dimensions
+plate_thickness = 1.5;    // Z thickness (mm)
+spine_length = 70;         // X length (mm)
+spine_width = 12;          // Y width (mm)
+
+// Tooth dimensions
+tooth_width = 5.0;         // X width (mm)
+tooth_length = 12;         // Y length (mm) (extends in -Y from spine edge)
+
+// Gap between teeth
+gap_width = 1.5;           // X gap (mm)
+
+// Number of teeth
+num_teeth = 10;
+
+// Calculate total width of teeth + gaps
+total_tooth_width = num_teeth * tooth_width;
+total_gap_width = (num_teeth - 1) * gap_width;
+total_tooth_group_width = total_tooth_width + total_gap_width;
+
+// Center the tooth group on the spine in X
+tooth_group_offset_x = (spine_length - total_tooth_group_width) / 2;
+
+// Position of first tooth in X (relative to origin)
+first_tooth_x = tooth_group_offset_x;
+
+// Spine extends in +Y from center, teeth hang in -Y
+// Spine Y range: [-spine_width/2, spine_width/2]
+// Teeth start at spine bottom edge: y = -spine_width/2
+// Teeth extend to: y = -spine_width/2 - tooth_length
+
+$fn = 64;
+
+// Main spine plate
+union() {
+    // Spine body - centered at origin in X, spanning -spine_width/2 to +spine_width/2 in Y
+    translate([-spine_length/2, -spine_width/2, 0])
+        cube([spine_length, spine_width, plate_thickness], center = false);
+    
+    // Add teeth
+    for (i = [0 : num_teeth - 1]) {
+        tooth_x = first_tooth_x + i * (tooth_width + gap_width);
+        translate([tooth_x - spine_length/2, -spine_width/2 - tooth_length, 0])
+            cube([tooth_width, tooth_length, plate_thickness], center = false);
+    }
+}
+```

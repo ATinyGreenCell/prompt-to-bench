@@ -1,0 +1,118 @@
+// L-shaped NEMA 17 mounting bracket
+// Print orientation: base plate on bed (z=0), builds upward (+Z)
+
+// Base plate dimensions
+base_x_min = -25;   // base plate left edge
+base_x_max = 25;    // base plate right edge
+base_y_min = 0;     // base plate back edge (against motor plate)
+base_y_max = 45;    // base plate front edge
+base_z_min = 0;     // base plate bottom (bed)
+base_z_max = 5;     // base plate top
+
+// Motor plate dimensions
+motor_x_min = -25;  // motor plate left edge
+motor_x_max = 25;   // motor plate right edge
+motor_y_min = 0;    // motor plate back edge (bed side)
+motor_y_max = 5;    // motor plate front edge
+motor_z_min = 0;    // motor plate bottom (bed)
+motor_z_max = 50;   // motor plate top
+
+// Base plate M4 through-holes
+m4_hole_d = 4.5;    // M4 clearance hole diameter
+m4_hole_x1 = -17;   // left M4 hole x
+m4_hole_y1 = 30;    // left M4 hole y
+m4_hole_x2 = 17;    // right M4 hole x
+m4_hole_y2 = 30;    // right M4 hole y
+
+// Motor plate centring boss hole
+boss_hole_d = 23;   // NEMA 17 centring boss hole diameter
+boss_hole_x = 0;    // boss hole x centre
+boss_hole_z = 28;   // boss hole z centre
+
+// Motor plate M3 screw holes (31 mm square pattern)
+m3_hole_d = 3.4;    // M3 clearance hole diameter
+m3_square = 31;     // square pattern side length
+m3_hole_x1 = -m3_square / 2;  // left M3 holes x
+m3_hole_x2 = m3_square / 2;   // right M3 holes x
+m3_hole_z1 = boss_hole_z - m3_square / 2;  // bottom M3 holes z
+m3_hole_z2 = boss_hole_z + m3_square / 2;  // top M3 holes z
+
+// Gusset dimensions
+gusset_thick = 5;   // gusset thickness in X
+gusset_leg_y = 20;  // gusset leg along +Y
+gusset_leg_z = 20;  // gusset leg along +Z
+gusset_y0 = 5;      // gusset right-angle corner y (where plates meet)
+gusset_z0 = 5;      // gusset right-angle corner z (where plates meet)
+gusset_left_x0 = -25;  // left gusset x start
+gusset_left_x1 = -20;  // left gusset x end
+gusset_right_x0 = 20;  // right gusset x start
+gusset_right_x1 = 25;  // right gusset x end
+
+$fn = 64;
+
+// Base plate
+base_plate = translate([base_x_min, base_y_min, base_z_min])
+    cube([base_x_max - base_x_min, base_y_max - base_y_min, base_z_max - base_z_min]);
+
+// Motor plate
+motor_plate = translate([motor_x_min, motor_y_min, motor_z_min])
+    cube([motor_x_max - motor_x_min, motor_y_max - motor_y_min, motor_z_max - motor_z_min]);
+
+// Left gusset: right triangle in YZ, hypotenuse from (y=25,z=5) to (y=5,z=25)
+left_gusset = linear_extrude(gusset_thick, center = false)
+    polygon([[0, 0], [gusset_leg_y, 0], [0, gusset_leg_z]]);
+
+// Right gusset: same triangle
+right_gusset = linear_extrude(gusset_thick, center = false)
+    polygon([[0, 0], [gusset_leg_y, 0], [0, gusset_leg_z]]);
+
+// Position gussets
+left_gusset_pos = translate([gusset_left_x0, gusset_y0, gusset_z0]) left_gusset;
+right_gusset_pos = translate([gusset_right_x0, gusset_y0, gusset_z0]) right_gusset;
+
+// Solid body before cutting
+solid_body = union() {
+    base_plate;
+    motor_plate;
+    left_gusset_pos;
+    right_gusset_pos;
+}
+
+// Cutting tools (extend 1 mm past faces to avoid coplanar issues)
+
+// M4 holes in base plate (vertical, through Z)
+m4_cut_1 = translate([m4_hole_x1, m4_hole_y1, base_z_min - 1])
+    cylinder(h = base_z_max - base_z_min + 2, r = m4_hole_d / 2, $fn = 64);
+m4_cut_2 = translate([m4_hole_x2, m4_hole_y2, base_z_min - 1])
+    cylinder(h = base_z_max - base_z_min + 2, r = m4_hole_d / 2, $fn = 64);
+
+// Boss hole in motor plate (along Y)
+boss_cut = translate([boss_hole_x, motor_y_min - 1, boss_hole_z])
+    rotate([90, 0, 0])
+    cylinder(h = motor_y_max - motor_y_min + 2, r = boss_hole_d / 2, $fn = 64);
+
+// M3 holes in motor plate (along Y)
+m3_cut_1 = translate([m3_hole_x1, motor_y_min - 1, m3_hole_z1])
+    rotate([90, 0, 0])
+    cylinder(h = motor_y_max - motor_y_min + 2, r = m3_hole_d / 2, $fn = 64);
+m3_cut_2 = translate([m3_hole_x1, motor_y_min - 1, m3_hole_z2])
+    rotate([90, 0, 0])
+    cylinder(h = motor_y_max - motor_y_min + 2, r = m3_hole_d / 2, $fn = 64);
+m3_cut_3 = translate([m3_hole_x2, motor_y_min - 1, m3_hole_z1])
+    rotate([90, 0, 0])
+    cylinder(h = motor_y_max - motor_y_min + 2, r = m3_hole_d / 2, $fn = 64);
+m3_cut_4 = translate([m3_hole_x2, motor_y_min - 1, m3_hole_z2])
+    rotate([90, 0, 0])
+    cylinder(h = motor_y_max - motor_y_min + 2, r = m3_hole_d / 2, $fn = 64);
+
+// Final part
+difference() {
+    solid_body;
+    m4_cut_1;
+    m4_cut_2;
+    boss_cut;
+    m3_cut_1;
+    m3_cut_2;
+    m3_cut_3;
+    m3_cut_4;
+}

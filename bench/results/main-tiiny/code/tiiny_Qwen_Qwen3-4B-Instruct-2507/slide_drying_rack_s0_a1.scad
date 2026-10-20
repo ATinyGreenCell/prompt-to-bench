@@ -1,0 +1,79 @@
+// Dimensions in millimetres
+$fn = 64;
+
+// Block dimensions (solid base)
+base_length = 90;        // X: length of the base
+base_width = 45;         // Y: width of the base
+base_height = 20;        // Z: height of the base
+
+// Slide dimensions
+slide_length = 75;       // length of slide (long edge)
+slide_width = 25;       // width of slide
+slide_thickness = 1;    // thickness of slide
+
+// Slot dimensions
+slot_length = 77;       // length of slot (along X)
+slot_width = 1.6;       // width of slot (in Y)
+slot_depth = 10;        // depth of slot (in Z)
+slot_spacing = 3.5;     // centre-to-centre distance in Y
+
+// Number of slots
+num_slots = 10;
+
+// Create the base block
+base = cube([base_length, base_width, base_height]);
+
+// Calculate Y positions for slots: centered in Y, spaced 3.5 mm apart
+slot_y_positions = [];
+for (i = [0 : num_slots - 1]) {
+    // Centered on Y, symmetric around center_y
+    y_pos = base_width / 2 - (num_slots / 2 - i) * slot_spacing;
+    slot_y_positions.push(y_pos);
+}
+
+// Create each slot as a rectangular prism, cut into the top face
+// Each slot is 77 mm long (in X), 1.6 mm wide (in Y), 10 mm deep (in Z)
+// Cut from the top face down to 10 mm depth, so from z = base_height - 10 to z = base_height
+// We use difference to remove material
+
+// Start with the base
+result = base;
+
+// For each slot, cut a rectangular hole from the top face down
+for (i = [0 : num_slots - 1]) {
+    y_pos = slot_y_positions[i];
+    
+    // Define the slot: extends from x = -slot_length/2 to +slot_length/2
+    // y = y_pos - slot_width/2 to y_pos + slot_width/2
+    // z = base_height - slot_depth to base_height (so depth is 10 mm)
+    
+    // Create the slot as a cube
+    slot = cube([
+        slot_length,
+        slot_width,
+        slot_depth
+    ], center = true);
+    
+    // Translate to correct position: centered in X, at y_pos, and at z = base_height - slot_depth to base_height
+    // We cut from z = base_height - slot_depth to z = base_height
+    // So we place the slot at z = base_height - slot_depth, and extend up to base_height
+    // But in OpenSCAD, we define the slot as a block from z = 0 to z = slot_depth, so we need to place it at the top
+    
+    // Translate the slot to be centered in X, at y_pos, and at z = base_height - slot_depth
+    slot_translated = translate([
+        base_length / 2 - slot_length / 2,
+        y_pos - slot_width / 2,
+        base_height - slot_depth
+    ]) * slot;
+    
+    // Subtract the slot from the base
+    result = difference() {
+        result;
+        slot_translated;
+    };
+}
+
+// Final output: base with 10 slots cut into the top face
+// Each slot is 77 mm long, 1.6 mm wide, 10 mm deep, 3.5 mm apart in Y, centered
+// All slots are cut into the top face, extending 10 mm down from the top
+// The base is 90 x 45 x 20 mm

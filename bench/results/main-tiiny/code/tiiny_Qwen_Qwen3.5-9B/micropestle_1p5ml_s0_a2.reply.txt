@@ -1,0 +1,114 @@
+```openscad
+$fn = 128; // High resolution for smooth curves and accurate hole sizes
+
+// --- Dimensions ---
+// Handle
+d_handle = 8;      // Diameter of handle (mm)
+h_handle = 45;     // Height of handle (mm)
+
+// Cone
+d_cone_top = 8;    // Top diameter of cone (matches handle) (mm)
+d_cone_bot = 3;    // Bottom diameter of cone (mm)
+h_cone = 17;       // Height of cone (62 - 45) (mm)
+
+// Tip
+d_tip = 3;         // Diameter of spherical tip (mm)
+z_tip_center = 62; // Z-coordinate of sphere center (mm)
+
+// Grooves
+n_grooves = 4;     // Number of circumferential grooves
+w_groove = 2;      // Width of groove in Z (mm)
+d_groove = 1;      // Depth of groove (mm)
+z_grooves = [10, 15, 20, 25]; // Z-centers of the 4 grooves
+
+// --- Construction ---
+
+// Main body: Handle + Cone + Tip
+// We build this as a single union, then subtract grooves.
+
+module pestle_body() {
+    // 1. Handle Cylinder
+    // Centered at z = h_handle/2 = 22.5
+    translate([0, 0, h_handle / 2]) {
+        cylinder(h = h_handle, r = d_handle / 2);
+    }
+    
+    // 2. Cone
+    // Tapers from d_cone_top at z = h_handle to d_cone_bot at z = h_handle + h_cone
+    // Center of cone is at z = h_handle + h_cone/2
+    translate([0, 0, h_handle + h_cone / 2]) {
+        // Create cone using rotate_extrude
+        // Profile in XY plane: X=radius, Y=height
+        // We want the cone to go from z=0 (relative to cone center) to z=h_cone
+        // Top (z=-h_cone/2): radius = d_cone_top/2
+        // Bottom (z=h_cone/2): radius = d_cone_bot/2
+        
+        rotate_extrude($fn = 64) {
+            // Path: (radius, z)
+            // Start: (d_cone_top/2, -h_cone/2)
+            // End:   (d_cone_bot/2, h_cone/2)
+            // Close loop back to start to define the area
+            polygon = [
+                [d_cone_top / 2, -h_cone / 2],
+                [d_cone_bot / 2, h_cone / 2],
+                [d_cone_bot / 2, -h_cone / 2],
+                [d_cone_top / 2, -h_cone / 2]
+            ];
+        }
+    }
+    
+    // 3. Spherical Tip
+    // Centered at z = h_handle + h_cone = 62
+    translate([0, 0, h_handle + h_cone]) {
+        sphere(r = d_tip / 2);
+    }
+}
+
+// --- Grooves ---
+// Cut 4 circumferential grooves into the handle
+// Handle is from z=0 to z=45.
+// Grooves are 2mm wide (Z), 1mm deep.
+// Centers at z=10, 15, 20, 25.
+
+module grooves() {
+    // We need to cut holes into the cylinder.
+    // The cylinder is centered at z=22.5.
+    // Groove centers: 10, 15, 20, 25.
+    // Width 2mm means from z_center-1 to z_center+1.
+    // Depth 1mm means from z_surface_inwards by 1mm.
+    // Surface of handle is at r = 4mm.
+    // So we cut a cylinder of r = 4 - 1 = 3mm, height = 2mm.
+    
+    for (z = z_grooves) {
+        // Position the cutter
+        // The handle is centered at z=22.5.
+        // The groove is centered at z.
+        // The cutter needs to be centered at z.
+        translate([0, 0, z]) {
+            // Cutter: Cylinder
+            // Radius: (d_handle/2) - d_groove = 4 - 1 = 3mm
+            // Height: w_groove = 2mm
+            // We extend slightly past the faces to ensure clean cut (Rule 5)
+            // The handle is 45mm tall. The grooves are well within.
+            // We add 0.1mm to height to ensure no coplanar faces.
+            cylinder(
+                h = w_groove + 0.1, 
+                r = (d_handle / 2) - d_groove,
+                $fn = 64
+            );
+        }
+    }
+}
+
+// --- Final Assembly ---
+
+// Build the main body
+difference() {
+    union() {
+        pestle_body();
+    }
+    
+    // Cut the grooves
+    grooves();
+}
+```

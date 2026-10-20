@@ -1,0 +1,86 @@
+```openscad
+//-------------------------------
+// Parameters (mm)
+//-------------------------------
+$fn = 64;               // resolution for circles/cylinders
+
+// Box outer dimensions
+outer_x = 70;           // X size of box outer shell
+outer_y = 50;           // Y size of box outer shell
+outer_z = 30;           // Z size of box outer shell
+wall = 2;               // Wall thickness
+floor_thick = 2;       // Floor thickness (bottom)
+
+// Lid dimensions
+plate_thick = 2;       // Thickness of the flat plate (lid base)
+lip_outer_x = 65.6;     // Outer X size of the lip
+lip_outer_y = 45.6;     // Outer Y size of the lip
+lip_wall = 1.5;        // Lip wall thickness
+lip_height = 4;        // Lip height above the plate
+
+// Placement
+gap = 10;               // Gap between the two parts on the print bed
+
+// Computed translations (center each part on its own X-Y origin, then shift)
+box_tx = -(outer_x/2 + gap/2);   // X translation for the box
+lid_tx =  (outer_x/2 + gap/2);   // X translation for the lid
+
+//-------------------------------
+// Modules
+//-------------------------------
+
+// Box (open top)
+module box_part() {
+    // Outer solid (lower corner at (0,0,0))
+    outer = cube([outer_x, outer_y, outer_z]);
+
+    // Inner cavity (extends slightly beyond the inner faces to avoid coplanar surfaces)
+    inner_x = outer_x - 2*wall;
+    inner_y = outer_y - 2*wall;
+    inner_z = outer_z - floor_thick;          // interior height up to the top
+    inner = translate([wall, wall, floor_thick])
+            cube([inner_x + 0.2, inner_y + 0.2, inner_z + 0.2]);
+
+    difference() {
+        outer;
+        inner;
+    }
+}
+
+// Lid (plate + lip)
+module lid_part() {
+    // Flat plate (lower corner at (0,0,0))
+    plate = cube([outer_x, outer_y, plate_thick]);
+
+    // Lip outer block (positioned on top of the plate, centred)
+    lip_outer = translate([
+                (outer_x - lip_outer_x)/2,
+                (outer_y - lip_outer_y)/2,
+                plate_thick])
+                cube([lip_outer_x, lip_outer_y, lip_height + 0.2]);
+
+    // Lip inner cavity (subtract to create the wall, also extended a bit)
+    lip_inner = translate([
+                (outer_x - lip_outer_x)/2 + lip_wall,
+                (outer_y - lip_outer_y)/2 + lip_wall,
+                plate_thick])
+                cube([lip_outer_x - 2*lip_wall + 0.2,
+                      lip_outer_y - 2*lip_wall + 0.2,
+                      lip_height + 0.2]);
+
+    // Combine plate and lip, then cut the inner cavity
+    difference() {
+        union() {
+            plate;
+            lip_outer;
+        }
+        lip_inner;
+    }
+}
+
+//-------------------------------
+// Assembly (side-by-side)
+//-------------------------------
+translate([box_tx, 0, 0]) box_part();
+translate([lid_tx, 0, 0]) lid_part();
+```

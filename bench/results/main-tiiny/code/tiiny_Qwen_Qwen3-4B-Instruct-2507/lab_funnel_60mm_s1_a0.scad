@@ -1,0 +1,75 @@
+// Lab funnel design with straight spout and conical top
+// Units: millimeters
+// Print orientation: upright, wide opening at top, rests on z=0
+
+// Dimensions
+$fn = 64;  // High resolution for smooth curves
+
+// Spout length (from z=0 to z=20)
+spout_length = 20;
+spout_od = 10.0;  // outer diameter of spout
+spout_id = spout_od - 2 * 1.6;  // inner diameter (wall thickness 1.6 mm)
+
+// Cone height (from z=20 to z=50)
+cone_height = 30;  // 50 - 20 = 30 mm
+cone_start_od = 10.0;  // outer diameter at z=20
+cone_end_od = 60.0;   // outer diameter at z=50
+
+// Wall thickness (constant 1.6 mm)
+wall_thickness = 1.6;
+
+// Spout: cylinder from z=0 to z=20 with inner and outer diameter
+spout = difference() {
+    // Outer cylinder of spout
+    translate([0, 0, 0])
+        cylinder(h=spout_length, r=spout_od/2, f=1);
+    
+    // Inner cylinder (bore) to remove the inner part
+    translate([0, 0, 0])
+        cylinder(h=spout_length, r=spout_id/2, f=1);
+};
+
+// Cone: widens from z=20 to z=50
+// At z=20, outer diameter = 10 mm; at z=50, outer diameter = 60 mm
+// So the cone has a linear taper over 30 mm
+cone = difference() {
+    // Outer cone from z=20 to z=50
+    translate([0, 0, 20])
+        rotate([90, 0, 0])
+            linear_extrude(height=cone_height, center=true, convexity=0)
+                polygon([
+                    [0, 0],
+                    [cone_start_od/2, 0],
+                    [cone_end_od/2, 0],
+                    [cone_end_od/2, cone_height],
+                    [0, cone_height]
+                ]);
+    
+    // Subtract the inner part (bore) of the cone
+    // The cone's inner diameter is 60 - 2*1.6 = 56.8 mm at z=50, and 10 - 2*1.6 = 6.8 mm at z=20
+    // So inner cylinder at z=20 to z=50 with inner diameter 6.8 mm
+    translate([0, 0, 20])
+        cylinder(h=cone_height, r=spout_id/2, f=1);
+};
+
+// Final funnel: union of spout and cone
+funnel = union() {
+    spout;
+    cone;
+};
+
+// Final part: the funnel with open top and bottom
+// Since it's open at the bottom (z=0) and top (z=50), we just build the solid
+// and it will naturally have open ends due to the design
+
+// Final model: the funnel with the spout and cone
+module funnel() {
+    // The funnel is built as a single solid with outer walls and inner bore
+    // The spout and cone are joined at z=20
+    // The entire structure is centered at origin
+    translate([0, 0, 0])
+        funnel;
+}
+
+// Render the funnel
+funnel();

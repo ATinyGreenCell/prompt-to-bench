@@ -1,0 +1,59 @@
+```openscad
+// Buffer tank for mini horizontal gel-electrophoresis box
+// Outer dimensions: 120 mm (X) x 70 mm (Y) x 40 mm (Z)
+// Wall thickness: 3 mm
+// Floor thickness: 3 mm
+// Platform: 60 mm (X) x 70 mm (Y) x 10 mm (Z), centered in X, z = 13
+// Electrode holes: 2 holes, 2 mm diameter, at z = 30, y = 0, at each X end
+
+// Dimensions
+tank_length = 120;   // X dimension
+tank_width = 70;    // Y dimension
+tank_height = 40;   // Z dimension
+wall_thickness = 3; // Wall and floor thickness
+platform_length = 60; // X dimension of platform
+platform_width = 70;  // Y dimension of platform (full width)
+platform_height = 10; // Z dimension of platform
+platform_z = 13;    // Platform top height above floor (z = 3)
+hole_diameter = 2;  // Electrode hole diameter
+hole_z = 30;        // Electrode hole height
+
+// Main tank body (outer dimensions)
+outer = [tank_length, tank_width, tank_height];
+
+// Inner dimensions (subtracting wall thickness)
+inner_length = tank_length - 2 * wall_thickness;
+inner_width = tank_width - 2 * wall_thickness;
+inner_height = tank_height - wall_thickness;
+
+// Platform dimensions (inner)
+platform_inner_length = platform_length;
+platform_inner_width = platform_width;
+
+// Create the tank
+difference() {
+  // Outer shell
+  cube(outer, center = false);
+  
+  // Inner hollow
+  translate([wall_thickness, wall_thickness, wall_thickness]) {
+    cube([inner_length, inner_width, inner_height], center = false);
+  }
+  
+  // Platform (cut out from inner volume)
+  translate([(tank_length - platform_length) / 2, 0, platform_z]) {
+    cube([platform_length, platform_width, platform_height], center = false);
+  }
+  
+  // Electrode holes (at each X end)
+  // Left hole
+  translate([wall_thickness, 0, hole_z]) {
+    cylinder(h = 1, d = hole_diameter, center = true, $fn = 64);
+  }
+  
+  // Right hole
+  translate([tank_length - wall_thickness, 0, hole_z]) {
+    cylinder(h = 1, d = hole_diameter, center = true, $fn = 64);
+  }
+}
+```

@@ -1,0 +1,93 @@
+// Hose-barb reducer: 8mm ID to 5mm ID silicone tubing
+// Print orientation: standing upright on XY plane, builds in +Z
+
+// --- Dimensions ---
+bore_dia = 3;              // Through-bore diameter (mm)
+bore_radius = bore_dia / 2;
+
+// 8mm tubing section (z = 0 to z = 20)
+barb8_height = 10;         // Height of each 8mm barb (mm)
+barb8_od_bottom = 7.5;     // OD at bottom of each 8mm barb (mm)
+barb8_od_top = 9.5;       // OD at top of each 8mm barb (mm)
+barb8_count = 2;           // Number of 8mm barbs
+
+// Collar section (z = 20 to z = 25)
+collar_dia = 12;           // Collar outer diameter (mm)
+collar_height = 5;         // Collar height (mm)
+
+// 5mm tubing section (z = 25 to z = 41)
+barb5_height = 8;          // Height of each 5mm barb (mm)
+barb5_od_bottom = 6.5;     // OD at bottom of each 5mm barb (mm)
+barb5_od_top = 5.0;        // OD at top of each 5mm barb (mm)
+barb5_count = 2;           // Number of 5mm barbs
+
+// --- Helper: single barb as a cylinder with conical taper ---
+// Bottom at z=0, top at z=h, OD grows from od_bot to od_top linearly
+module single_barb(od_bot, od_top, h) {
+    $fn = 64;
+    // Use linear_extrude of a polygon to create the tapered profile
+    // The polygon is in the XZ plane, rotated around Z
+    polygon([
+        [-od_bot/2, 0],
+        [-od_top/2, h],
+        [ od_top/2, h],
+        [ od_bot/2, 0]
+    ]);
+    rotate_extrude() {
+        polygon([
+            [-od_bot/2, 0],
+            [-od_top/2, h],
+            [ od_top/2, h],
+            [ od_bot/2, 0]
+        ]);
+    }
+}
+
+// --- Build the part ---
+union() {
+    // 8mm tubing section: two stacked barbs
+    for (i = [0 : barb8_count - 1]) {
+        translate([0, 0, i * barb8_height]) {
+            single_barb(barb8_od_bottom, barb8_od_top, barb8_height);
+        }
+    }
+    
+    // Collar section
+    cylinder(d = collar_dia, h = collar_height, center = false, $fn = 64);
+    translate([0, 0, collar_height]) {
+        // No additional geometry needed - collar is just a cylinder
+    }
+    
+    // 5mm tubing section: two stacked barbs (tapering down)
+    for (i = [0 : barb5_count - 1]) {
+        translate([0, 0, collar_height + i * barb5_height]) {
+            single_barb(barb5_od_bottom, barb5_od_top, barb5_height);
+        }
+    }
+}
+
+// --- Drill the through-bore ---
+difference() {
+    // The entire part (rebuild for difference)
+    union() {
+        // 8mm tubing section: two stacked barbs
+        for (i = [0 : barb8_count - 1]) {
+            translate([0, 0, i * barb8_height]) {
+                single_barb(barb8_od_bottom, barb8_od_top, barb8_height);
+            }
+        }
+        
+        // Collar section
+        cylinder(d = collar_dia, h = collar_height, center = false, $fn = 64);
+        
+        // 5mm tubing section: two stacked barbs (tapering down)
+        for (i = [0 : barb5_count - 1]) {
+            translate([0, 0, collar_height + i * barb5_height]) {
+                single_barb(barb5_od_bottom, barb5_od_top, barb5_height);
+            }
+        }
+    }
+    
+    // Through-bore: extend slightly past both ends to avoid coplanar faces
+    cylinder(d = bore_dia, h = 41 + 0.01, center = false, $fn = 64);
+}

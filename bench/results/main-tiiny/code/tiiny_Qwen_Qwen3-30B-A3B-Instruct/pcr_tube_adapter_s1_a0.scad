@@ -1,0 +1,26 @@
+// Dimensions for the adapter sleeve
+collar_diameter = 13;           // Diameter of the base collar (on print bed)
+collar_height = 1.5;          // Height of the collar (z = 0 to 1.5)
+sleeve_outer_diameter = 10.8;  // Outer diameter of the sleeve body
+sleeve_height = 21.5;         // Total height from z = 0 to 21.5
+bore_diameter = 6.2;              // Diameter of the central bore through the full height
+
+// Set resolution for smooth curves
+$fn = 64;
+
+// Main body: collar + sleeve
+difference() {
+    // Outer shape: collar + sleeve body
+    union() {
+        // Collar: cylinder at base
+        cylinder(h = collar_height, r = collar_diameter / 2, center = false);
+        // Sleeve body: cylinder on top of collar
+        translate([0, 0, collar_height])
+            cylinder(h = sleeve_height - collar_height, r = sleeve_outer_diameter / 2, center = false);
+    }
+
+    // Inner bore: through the full height, centered
+    // Extend slightly beyond the collar to ensure clean hole
+    translate([0, 0, -0.1])
+        cylinder(h = sleeve_height + 0.2, r = bore_diameter / 2, center = false);
+}

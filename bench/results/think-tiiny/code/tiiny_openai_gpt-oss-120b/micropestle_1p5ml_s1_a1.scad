@@ -1,0 +1,72 @@
+//---------------------------
+//  Parameters (mm)
+//---------------------------
+handle_d = 8;               // diameter of cylindrical handle
+handle_h = 45;               // height of cylindrical handle (z = 0 → 45)
+
+cone_start_z = handle_h;     // z‑position where cone starts (45 mm)
+cone_end_z = 62;             // z‑position where cone ends / tip centre (62 mm)
+cone_start_d = handle_d;    // diameter at cone base (8 mm)
+cone_end_d = 3;              // diameter at cone tip (3 mm)
+
+tip_d = 3;                   // diameter of spherical tip
+tip_center_z = cone_end_z; // z‑position of tip centre (62 mm)
+
+groove_width_z = 2;          // axial width of each groove (mm)
+groove_depth = 1;            // radial depth of each groove (mm)
+groove_centers = [10,15,20,25]; // z‑positions of groove centres (mm)
+
+// Over‑cut margins (to avoid coplanar faces)
+over_z = 0.2;   // extra height beyond groove width (mm)  (0.1 mm each side)
+over_r = 0.5;   // extra radial extension beyond cylinder wall (mm)
+
+//---------------------------
+//  $fn for smooth curves
+//---------------------------
+$fn = 64;
+
+//---------------------------
+//  Main solid (handle + cone + tip)
+//---------------------------
+module pestle_solid() {
+    // cylindrical handle
+    translate([0,0,0])
+        cylinder(r=handle_d/2, h=handle_h);
+    
+    // tapered cone
+    translate([0,0,cone_start_z])
+        cylinder(r1=handle_d/2, r2=tip_d/2,
+                h=cone_end_z - cone_start_z);
+    
+    // rounded tip
+    translate([0,0,tip_center_z])
+        sphere(r=tip_d/2);
+}
+
+//---------------------------
+//  Single groove cutter (four circumferential slots)
+//---------------------------
+module groove(zc) {
+    // The cutter is a rectangular block that extends outward beyond the
+    // cylinder wall (over_r) and is slightly taller than the specified
+    // groove width (over_z).
+    translate([0,0,zc])               // place at the correct centre height
+        for (ang = [0,90,180,270])    // four 90°‑spaced slots
+            rotate([0,0,ang])
+                translate([handle_d/2 - groove_depth,
+                           -handle_d,
+                           -groove_width_z/2 - over_z/2])
+                    cube([groove_depth + over_r,   // X : radial depth + outward margin
+                          2*handle_d,               // Y : long enough to cut through wall
+                          groove_width_z + over_z]); // Z : axial width + over‑cut
+}
+
+//---------------------------
+//  Final part (solid minus grooves)
+//---------------------------
+difference() {
+    pestle_solid();
+    // cut the four grooves at their specified heights
+    for (z = groove_centers)
+        groove(z);
+}

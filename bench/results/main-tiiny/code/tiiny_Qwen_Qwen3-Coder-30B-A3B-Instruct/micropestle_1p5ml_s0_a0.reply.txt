@@ -1,0 +1,60 @@
+```openscad
+// Dimensions
+handle_diameter = 8;
+handle_height = 45;
+cone_top_diameter = 3;
+cone_bottom_diameter = 8;
+cone_height = 17;
+tip_diameter = 3;
+groove_width = 2;
+groove_depth = 1;
+groove_z_positions = [10, 15, 20, 25];
+
+// Main handle cylinder
+handle = cylinder(h = handle_height, d = handle_diameter, center = false);
+
+// Cone
+cone = cylinder(h = cone_height, d1 = cone_bottom_diameter, d2 = cone_top_diameter, center = false);
+
+// Tip sphere
+tip = sphere(d = tip_diameter, center = true);
+
+// Grooves
+grooves = [
+  for (z_pos = groove_z_positions) 
+    translate([0, 0, z_pos]) 
+    cylinder(h = groove_width, d = handle_diameter, center = true)
+];
+
+// Combine all parts
+assembly = union() {
+  handle;
+  translate([0, 0, handle_height]) cone;
+  translate([0, 0, handle_height + cone_height]) tip;
+  for (z_pos = groove_z_positions) {
+    translate([0, 0, z_pos]) 
+    cylinder(h = groove_width, d = handle_diameter - groove_depth, center = true);
+  }
+};
+
+// Final assembly with grooves cut out
+result = union() {
+  assembly;
+  for (z_pos = groove_z_positions) {
+    translate([0, 0, z_pos]) 
+    cylinder(h = groove_width + 0.02, d = handle_diameter, center = true);
+  }
+};
+
+// Final result with grooves subtracted
+final = difference() {
+  assembly;
+  for (z_pos = groove_z_positions) {
+    translate([0, 0, z_pos]) 
+    cylinder(h = groove_width + 0.02, d = handle_diameter - groove_depth, center = true);
+  }
+};
+
+// Render the final part
+final;
+```

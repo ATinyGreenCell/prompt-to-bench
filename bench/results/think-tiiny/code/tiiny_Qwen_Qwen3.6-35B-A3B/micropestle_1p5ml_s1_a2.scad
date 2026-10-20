@@ -1,0 +1,62 @@
+// Dimensions
+handle_d = 8;          // Handle diameter (mm)
+handle_h = 45;         // Handle height, z=0 to z=45 (mm)
+cone_d_bottom = 8;     // Cone bottom diameter at z=45 (mm)
+cone_d_top = 3;        // Cone top diameter at z=62 (mm)
+cone_h = 17;           // Cone height, z=45 to z=62 (mm)
+tip_d = 3;             // Tip sphere diameter (mm)
+tip_center_z = 62;     // Tip sphere center Z position (mm)
+groove_width = 2;      // Groove width in Z (mm)
+groove_depth = 1;      // Groove depth into handle (mm)
+groove_centers = [10, 15, 20, 25]; // Groove center Z positions (mm)
+
+$fn = 64;
+
+// Groove cutters
+// Each groove is a toroidal segment.
+// We define a rectangular profile in the XY plane and rotate_extrude it.
+// The profile spans radially from (handle_d/2 - groove_depth) to (handle_d/2 + 0.01).
+// The extension ensures the cutter is slightly larger than the groove to avoid coplanar faces.
+// The profile spans axially from (z - groove_width/2) to (z + groove_width/2).
+
+module groove_cutters() {
+    for (z = groove_centers) {
+        r_inner = handle_d / 2 - groove_depth;
+        r_outer = handle_d / 2 + 0.01; // Extend slightly past handle surface
+        
+        // Center of the square in X (radial) and Y (axial)
+        x_center = (r_inner + r_outer) / 2;
+        y_center = z;
+        
+        // Width and height of the square in XY plane
+        x_width = r_outer - r_inner;
+        y_height = groove_width;
+        
+        translate([x_center, y_center, 0]) {
+            square([x_width, y_height]);
+            rotate_extrude();
+        }
+    }
+}
+
+// Main body
+module pestle_body() {
+    union() {
+        // Cylindrical handle
+        cylinder(r = handle_d/2, h = handle_h);
+        
+        // Tapered cone
+        translate([0, 0, handle_h])
+            cylinder(r1 = handle_d/2, r2 = cone_d_top/2, h = cone_h);
+        
+        // Rounded tip
+        translate([0, 0, tip_center_z])
+            sphere(r = tip_d/2);
+    }
+}
+
+// Final part
+difference() {
+    pestle_body();
+    groove_cutters();
+}

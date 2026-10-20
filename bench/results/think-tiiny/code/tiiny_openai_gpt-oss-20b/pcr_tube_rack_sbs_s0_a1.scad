@@ -1,0 +1,65 @@
+$fn = 64; // resolution for curved surfaces
+
+// Block dimensions (mm)
+length = 127.76; // X
+width  = 85.48; // Y
+height  = 20;    // Z
+
+// PCR tube hole parameters
+hole_diameter = 6.2;          // mm
+hole_radius   = hole_diameter/2;
+hole_spacing = 9.0;           // mm
+cols = 12;                    // X direction
+rows = 8;                     // Y direction
+
+// Orientation mark parameters
+mark_leg   = 5.0;   // mm
+mark_offset = 0.01; // mm to avoid coplanar faces
+
+// Position of the first hole (A1) relative to block edges
+x_A1 = -length/2 + 14.38; // mm from left edge
+y_A1 = -width/2  + 11.24; // mm from back edge
+
+// ---------------------------------------------------------------------
+// Build the block (rests on XY plane at z = 0 and is centered in X/Y)
+block = translate([ -length/2, -width/2, 0 ]) cube([length, width, height]);
+
+// ---------------------------------------------------------------------
+// Build the 96 vertical through‑holes
+holes = union() {
+    for (i = [0:cols-1]) {
+        for (j = [0:rows-1]) {
+            translate([ x_A1 + i*hole_spacing,
+                         y_A1 + j*hole_spacing,
+                         -mark_offset ]) {
+                cylinder(h=height + 2*mark_offset,
+                         r=hole_radius,
+                         center=false);
+            }
+        }
+    }
+};
+
+// ---------------------------------------------------------------------
+// Build the orientation mark (45° chamfer)
+// The mark is translated to the left‑back corner and shifted by
+// mark_offset in X, Y and Z so that no faces are coplanar with
+// the block.  The chamfer is therefore slightly inside the block
+// to satisfy the modeling constraints.
+wedge = translate([ -length/2 + mark_offset,
+                    -width/2  + mark_offset,
+                    -mark_offset ]) {
+    linear_extrude(h=height + 2*mark_offset, center=false) polygon(points=[
+        [0,0],
+        [mark_leg,0],
+        [0,mark_leg]
+    ]);
+};
+
+// ---------------------------------------------------------------------
+// Subtract holes and orientation mark from the block
+difference() {
+    block;
+    holes;
+    wedge;
+}

@@ -1,0 +1,83 @@
+// ------------------- Parameters (mm) -------------------
+// Base plate
+base_x = 50;          // width  (x: -25 .. 25)
+base_y = 45;          // length (y: 0 .. 45)
+base_z = 5;           // thickness
+
+// Motor plate (vertical)
+motor_x = 50;         // width (same as base)
+motor_y = 5;          // thickness along Y (back edge of base)
+motor_z = 50;        // height along Z
+
+// Hole dimensions
+m4_d = 4.5;           // M4 through‑hole diameter
+m4_r = m4_d/2;
+
+m3_d = 3.4;           // M3 screw hole diameter
+m3_r = m3_d/2;
+
+boss_d = 23;          // motor centring boss hole diameter
+boss_r = boss_d/2;
+boss_z = 28;         // Z centre of boss hole
+
+// Gusset geometry
+gusset_thick = 5;    // thickness in X direction
+gusset_leg = 20;     // leg length in Y and Z
+
+$fn = 64;            // resolution for circles/cylinders
+
+// ------------------- Solid parts -------------------
+module solid_parts() {
+    union() {
+        // Base plate (lies on the bed)
+        translate([-25, 0, 0])
+            cube([base_x, base_y, base_z], center = false);
+
+        // Motor plate (standing on back edge of base)
+        translate([-25, base_y, 0])   // y = 45 .. 50
+            cube([motor_x, motor_y, motor_z], center = false);
+
+        // Left triangular gusset
+        translate([-25, base_y, base_z])   // corner at (x=-25, y=45, z=5)
+            rotate([0, 90, 0])               // rotate so extrusion goes along X
+                translate([0, 0, gusset_thick])   // shift Z to make all faces ≥0
+                    linear_extrude(height = gusset_thick)
+                        polygon(points = [[0,0], [gusset_leg,0], [0,gusset_leg]]);
+
+        // Right triangular gusset
+        translate([20, base_y, base_z])    // corner at (x=20, y=45, z=5)
+            rotate([0, 90, 0])
+                translate([0, 0, gusset_thick])
+                    linear_extrude(height = gusset_thick)
+                        polygon(points = [[0,0], [gusset_leg,0], [0,gusset_leg]]);
+    }
+}
+
+// ------------------- Cutting features -------------------
+module cut_features() {
+    union() {
+        // M4 through‑holes in base plate
+        for (pos = [[-17,30], [17,30]]) {
+            translate([pos[0], pos[1], -0.5])          // extend 0.5 mm below & above
+                cylinder(r = m4_r, h = base_z + 1);
+        }
+
+        // Boss hole (oriented along Y) in motor plate
+        translate([0, base_y + motor_y/2, boss_z])   // centre at y = 45 + 2.5 = 47.5
+            rotate([90,0,0])                         // rotate cylinder to Y‑axis
+                cylinder(r = boss_r, h = motor_y + 2); // extend 1 mm beyond each face
+
+        // Four M3 screw holes (oriented along Y) in motor plate
+        for (dx = [-15.5, 15.5])
+            for (dz = [-15.5, 15.5])
+                translate([dx, base_y + motor_y/2, boss_z + dz])
+                    rotate([90,0,0])
+                        cylinder(r = m3_r, h = motor_y + 2);
+    }
+}
+
+// ------------------- Final model -------------------
+difference() {
+    solid_parts();
+    cut_features();
+}

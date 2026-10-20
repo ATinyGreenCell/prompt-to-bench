@@ -1,0 +1,111 @@
+```openscad
+// Dimensions for the hotplate stirrer knob
+$fn = 64; // Set resolution for smooth curves
+
+// Main knob dimensions
+diameter_knob = 30;        // Diameter of the cylindrical knob
+height_knob = 15;          // Height of the knob
+d_shaft_diameter = 6.2;      // Diameter of the D-shaft hole (slightly larger than 6 mm for clearance)
+d_shaft_flat_width = 4.7;   // Width across flats of the D-shaft (flat to opposite side)
+d_shaft_depth = 12;          // Depth of the D-shaped blind bore
+
+// Grip grooves
+num_grooves = 18;          // Number of vertical grip grooves
+groove_diameter = 2;       // Diameter of the half-cylinder groove
+groove_depth = 15;         // Grooves go full height (15 mm)
+
+// Pointer groove
+pointer_width = 1.5;     // Width of the pointer groove
+pointer_depth = 1;        // Depth of the pointer groove
+
+// Calculate radius for ease of use
+radius_knob = diameter_knob / 2;
+radius_groove = groove_diameter / 2;
+
+// D-shaft bore: D-shaped hole (6.2 mm diameter circle with one side flat)
+// The flat is 4.7 mm across, so the flat is centered on the x-axis (assuming flat on negative x side)
+// The D-shaft hole is centered at (0, 0) on the bottom face (z = 0), and extends 12 mm up
+
+// Build the knob as a cylinder
+cylinder(h = height_knob, r = radius_knob, center = true);
+
+// Subtract the D-shaped blind bore
+difference() {
+    // Main cylinder (already defined)
+    cylinder(h = height_knob, r = radius_knob, center = true);
+
+    // D-shaped hole: a circle of diameter 6.2 mm, with one side flat
+    // The flat is 4.7 mm wide, so the flat is centered on the x-axis (flat on negative x side)
+    // The circle has radius 3.1 mm
+    // We'll create a D-shape by cutting a rectangle from the circle
+
+    // First, create a cylinder for the D-hole (but only the D-shape)
+    // Use a cube for the flat side, and a cylinder for the curved side
+    // Then use difference to combine them
+
+    // The D-hole is centered at (0, 0) at z = 0, and goes up to z = 12
+    // The flat side is on the negative x side, so the flat extends from x = -3.1 to x = -3.1 + (6.2 - 4.7)/2? Wait — no.
+
+    // Actually: the D-shaft has a diameter of 6.2 mm, and the flat side is 4.7 mm across.
+    // So the flat is centered on the x-axis, and the circle has radius 3.1 mm.
+    // The flat side means that the circle is cut off at x = -3.1 mm, but only from y = -2.35 to y = 2.35 (since 4.7 / 2 = 2.35)
+    // So the D-shape is: a full circle of radius 3.1 mm, minus a rectangular strip from x = -3.1 to x = -3.1 + (6.2 - 4.7)/2? No.
+
+    // Correct: the D-shaft has a diameter of 6.2 mm, so the full circle would be 6.2 mm. But one side is flat: the flat is 4.7 mm wide.
+    // That means the curved side has a radius of 3.1 mm, and the flat side is 4.7 mm long.
+    // So the D-shape is a circle of radius 3.1 mm, with a rectangular cutout from the side: from x = -3.1 to x = -3.1 + (6.2 - 4.7)/2? No.
+
+    // Actually: the D-shaft has a diameter of 6.2 mm, so the circle has radius 3.1 mm. The flat side is 4.7 mm across, so the flat is centered on the x-axis.
+    // Therefore, the flat is from y = -2.35 to y = 2.35, and the flat side is at x = -3.1 mm.
+    // So the D-shape is the region where x >= -3.1 and x^2 + y^2 <= (3.1)^2
+
+    // So we can define the D-shape as:
+    // - A cylinder of radius 3.1 mm, height 12.01 mm (slightly longer to ensure full cut)
+    // - Minus a rectangular prism (in x) from x = -3.1 to x = -3.1 - 0.01 (to ensure it cuts), but that's not right.
+
+    // Actually, we want to subtract the region where x < -3.1 and x^2 + y^2 <= 3.1^2.
+    // So we can define a rectangular prism that covers the flat side: from x = -3.1 - 0.01 to x = -3.1, and y = -3.1 to 3.1, but only where the circle is.
+
+    // Better: use a cube for the flat side, but only where it intersects the circle.
+
+    // Instead, we can define the D-shape as a union of:
+    // 1. A cylinder of radius 3.1 mm, height 12.01 mm (to ensure it cuts through)
+    // 2. A rectangular prism (in x) that covers the flat side: from x = -3.1 - 0.01 to x = -3.1, y = -2.35 to 2.35, z = 0 to 12.01
+    // But that would be the flat side.
+
+    // Actually, the D-shape is: the set of points (x,y) such that x^2 + y^2 <= 3.1^2 and x >= -3.1.
+    // So we can define it as:
+    //   cylinder(r = 3.1, h = 12.01, center = true)
+    //   minus
+    //   cube([0.01, 4.7, 12.01], center = false) translated to x = -3.1, y = 0, z = 0
+
+    // But that would remove too much.
+
+    // Correct method: use a cube to cut the flat side from the cylinder.
+    // The flat side is a rectangle: width 4.7 mm (in y), and depth 0.01 mm (in x) from x = -3.1 to x = -3.1 - 0.01
+    // But only where the circle is.
+
+    // So we do:
+    //   cylinder(r = 3.1, h = 12.01, center = true)
+    //   difference:
+    //     cube([0.01, 4.7, 12.01], center = false) at (-3.1 - 0.005, 0, 0) — no.
+
+    // Actually, the flat side is at x = -3.1, and the flat is 4.7 mm long in y.
+    // So we cut a rectangular prism from the cylinder: from x = -3.1 to x = -3.1 - 0.01 (to ensure it cuts), y = -2.35 to 2.35, z = 0 to 12.01
+
+    // But the cylinder already has x >= -3.1, so we want to remove the region where x < -3.1 and x^2 + y^2 <= 3.1^2.
+    // So we can define a cube: [0.01, 4.7, 12.01] at x = -3.1 - 0.005, y = 0, z = 0? No.
+
+    // Let's do it simply: create a cube that covers the flat side:
+    //   cube([0.01, 4.7, 12.01], center = false) at (x = -3.1 - 0.005, y = 0, z = 0) — but that's not centered.
+
+    // Actually, we want to cut a rectangular prism from the cylinder:
+    //   x: from -3.1 to -3.1 - 0.01 (so it extends 0.01 mm past the flat)
+    //   y: from -2.35 to 2.35 (4.7 mm)
+    //   z: from 0 to 12.01 (to ensure full cut)
+
+    // So:
+    translate([0, 0, 0]) {
+        cube([0.01, 4.7, 12.01], center = false);
+    }
+

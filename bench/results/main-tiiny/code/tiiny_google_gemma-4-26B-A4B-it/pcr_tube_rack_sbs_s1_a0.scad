@@ -1,0 +1,124 @@
+// --- Dimensions (mm) ---
+block_x = 127.76;          // Total length (X)
+block_y = 85.48;           // Total width (Y)
+block_z = 20.00;           // Total height (Z)
+
+hole_dia = 6.2;            // Diameter of PCR tube holes
+hole_spacing = 9.0;        // Center-to-center spacing
+
+rows = 8;                  // Number of rows (Y direction)
+cols = 12;                 // Number of columns (X direction)
+
+// Offset from edges to the center of the first hole (A1)
+offset_x = 14.38;          // Distance from left edge to first hole center
+offset_y = 11.24;          // Distance from back edge to first hole center
+
+// Chamfer parameters
+chamfer_leg = 5.0;         // Length of the chamfer legs
+
+// --- Rendering Settings ---
+$fn = 64;
+
+// --- Main Construction ---
+
+// The block is centered on XY, so we translate the base to allow for chamfering
+// and to ensure the geometry is easy to manage.
+// However, the prompt asks to center it on the origin. 
+// To handle the chamfer at the "A1 corner" (which is an edge), 
+// we will build the block and then subtract the chamfer.
+
+module pcr_rack() {
+    difference() {
+        // The main block
+        cube([block_x, block_y, block_z], center = true);
+
+        // The 96 holes
+        // We iterate through columns (X) and rows (Y)
+        // We must translate the grid so the first hole is at the specified offset.
+        // Since the block is centered, the coordinate of the first hole center is:
+        // X_center = (-block_x/2) + offset_x
+        // Y_center = (-block_y/2) + offset_y (Note: "back edge" usually implies Y max or Y min. 
+        // In standard lab orientation, Y=0 is front, Y=max is back. 
+        // If offset is from back edge, Y_center = (block_y/2) - offset_y)
+        
+        for (i = [0 : cols - 1]) {
+            for (j = [0 : rows - 1]) {
+                translate(
+                    [(-block_x / 2) + offset_x + (i * hole_spacing), 
+                     (block_y / 2) - offset_y - (j * hole_spacing), 
+                     0]
+                )
+                // Cylinder extends past Z to ensure clean cut
+                cylinder(h = block_z + 2, d = hole_dia, center = true);
+            }
+        }
+
+        // The 45-degree chamfer at the A1 corner
+        // A1 corner is the "left-back" corner relative to the grid.
+        // Based on the offsets:
+        // X_corner = -block_x/2
+        // Y_corner = block_y/2
+        // We use a wedge/prism to cut the corner.
+        
+        translate([0, 0, 0]) // Placeholder for logic
+        difference() {
+            // We create a large cube and subtract it to leave the chamfer, 
+            // or more simply, create a prism that cuts the corner.
+            // A 45-degree chamfer with 5mm legs on a vertical edge.
+            
+            // The corner is at (-block_x/2, block_y/2, Z)
+            // We'll place a prism at that corner.
+            translate([-block_x/2 - 1, block_y/2 - chamfer_leg, -1])
+            rotate([0, 0, 0])
+            // This is a right isosceles triangle prism
+            // Vertices in local space: (0,0), (leg, 0), (0, leg)
+            // We use a polygon for the base
+            linear_extrude(height = block_z + 2)
+            polygon(points=[[0,0], [chamfer_leg, 0], [0, chamfer_leg]]);
+        }
+    }
+}
+
+// Since the prompt asks to center the block on the origin in X and Y:
+// The chamfer is at the corner defined by the offsets.
+// Let's refine the chamfer placement to be exactly at the edge.
+
+module final_rack() {
+    difference() {
+        // Main Body
+        cube([block_x, block_y, block_z], center = true);
+
+        // Holes
+        // We calculate the center of the first hole relative to the block center
+        // Block center is at (0,0,0) in local coordinates.
+        // Left edge is at -block_x/2.
+        // First hole X = -block_x/2 + offset_x
+        // Back edge is at block_y/2.
+        // First hole Y = block_y/2 - offset_y
+        
+        for (i = [0 : cols - 1]) {
+            for (j = [0 : rows - 1]) {
+                translate(
+                    [(-block_x / 2) + offset_x + (i * hole_spacing), 
+                     (block_y / 2) - offset_y - (j * hole_spacing), 
+                     0]
+                )
+                cylinder(h = block_z + 2, d = hole_dia, center = true);
+            }
+        }
+
+        // Chamfer at A1 corner
+        // A1 corner is at X = -block_x/2, Y = block_y/2
+        // We use a wedge to cut the corner.
+        // We translate the wedge to the corner.
+        // The wedge is a prism with a triangular base.
+        
+        translate([-block_x/2 - 1, block_y/2 - chamfer_leg, -1])
+        rotate([0, 0, 0])
+        linear_extrude(height = block_z + 2)
+        polygon(points=[[0,0], [chamfer_leg, 0], [0, chamfer_leg]]);
+    }
+}
+
+// Execute
+final_rack();

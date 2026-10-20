@@ -1,0 +1,120 @@
+// NEMA 17 Stepper Motor L-Bracket for Syringe Pump
+// Corrected to match exact dimensions and centering requirements
+
+// --- Dimensions ---
+// Base Plate
+base_x_min = -25;
+base_x_max = 25;
+base_y_min = 0;
+base_y_max = 45;
+base_z_height = 5;
+
+// Base Plate Holes (M4)
+m4_hole_dia = 4.5;
+m4_hole_x1 = -17;
+m4_hole_x2 = 17;
+m4_hole_y = 30;
+
+// Vertical Motor Plate
+motor_plate_x_min = -25;
+motor_plate_x_max = 25;
+motor_plate_y_max = 5;
+motor_plate_z_max = 50;
+
+// Motor Boss Hole (Centering)
+boss_hole_dia = 23;
+boss_hole_x = 0;
+boss_hole_z = 28;
+
+// Motor Screw Holes (M3)
+m3_hole_dia = 3.4;
+m3_pattern_size = 31;
+m3_offset = m3_pattern_size / 2;
+
+// Gussets
+gusset_thickness = 5;
+gusset_leg_y = 20;
+gusset_leg_z = 20;
+
+// Resolution
+$fn = 64;
+
+// --- Construction ---
+
+module base_plate() {
+    difference() {
+        // Main Base Body
+        // X: -25 to 25 (width 50), Y: 0 to 45 (depth 45), Z: 0 to 5
+        cube([base_x_max - base_x_min, base_y_max - base_y_min, base_z_height]);
+        
+        // M4 Holes (Vertical through-holes)
+        // Holes are at x = -17 and x = 17, y = 30
+        translate([m4_hole_x1, m4_hole_y, -1])
+            cylinder(d = m4_hole_dia, h = base_z_height + 2);
+        translate([m4_hole_x2, m4_hole_y, -1])
+            cylinder(d = m4_hole_dia, h = base_z_height + 2);
+    }
+}
+
+module motor_plate() {
+    difference() {
+        // Main Vertical Plate Body
+        // X: -25 to 25 (width 50), Y: 0 to 5 (depth 5), Z: 0 to 50
+        cube([motor_plate_x_max - motor_plate_x_min, motor_plate_y_max, motor_plate_z_max]);
+        
+        // Motor Centering Boss Hole (Cylinder along Y axis)
+        // Center at x=0, z=28. Extends through the plate (y=0 to 5)
+        translate([boss_hole_x, -1, boss_hole_z])
+            rotate([0, 90, 0])
+            cylinder(d = boss_hole_dia, h = motor_plate_y_max + 2);
+            
+        // M3 Screw Holes (4 holes in a square pattern)
+        // Pattern is centered on the boss hole (x=0, z=28)
+        for (px = [-m3_offset, m3_offset]) {
+            for (pz = [-m3_offset, m3_offset]) {
+                translate([px, -1, boss_hole_z + pz])
+                    rotate([0, 90, 0])
+                    cylinder(d = m3_hole_dia, h = motor_plate_y_max + 2);
+            }
+        }
+    }
+}
+
+// --- Final Assembly ---
+
+union() {
+    // 1. Base Plate
+    // Centered on X (width 50), Y starts at 0
+    translate([base_x_min, base_y_min, 0])
+    base_plate();
+
+    // 2. Vertical Motor Plate
+    // Positioned at the back edge (y=0 to 5)
+    // Centered on X (width 50)
+    translate([motor_plate_x_min, 0, 0])
+    motor_plate();
+
+    // 3. Gussets
+    // Left Gusset: x from -25 to -20
+    // Right Gusset: x from 20 to 25
+    // Right-angle corner at y=5, z=5
+    // Legs: 20mm along +Y and 20mm along +Z
+    
+    // Left Gusset
+    translate([-25, 5, 5])
+    linear_extrude(height = gusset_thickness)
+    polygon(points=[
+        [0, 0],
+        [gusset_leg_y, 0],
+        [0, gusset_leg_z]
+    ]);
+    
+    // Right Gusset
+    translate([20, 5, 5])
+    linear_extrude(height = gusset_thickness)
+    polygon(points=[
+        [0, 0],
+        [gusset_leg_y, 0],
+        [0, gusset_leg_z]
+    ]);
+}

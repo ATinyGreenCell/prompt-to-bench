@@ -1,0 +1,66 @@
+// Lab Funnel Design
+// Dimensions measured in mm, printed upright (XY plane at z=0)
+
+// Spout dimensions
+spout_od = 10;          // Outer diameter of spout
+spout_height = 20;      // Height of spout section
+spout_thickness = 1.6;  // Wall thickness
+spout_id = spout_od - 2 * spout_thickness; // Inner diameter of spout
+
+// Funnel cone dimensions
+funnel_base_diam = spout_od; // Diameter at base of cone (z=20)
+funnel_top_diam = 60;        // Diameter at rim of cone (z=50)
+funnel_height = 30;         // Height of cone section (50 - 20)
+funnel_total_height = spout_height + funnel_height; // Total height
+
+// Wall thickness (constant)
+wall_thickness = 1.6;
+
+// Calculate inner diameters
+funnel_base_id = funnel_base_diam - 2 * wall_thickness;
+funnel_top_id = funnel_top_diam - 2 * wall_thickness;
+
+// Spout inner radius
+spout_r = spout_id / 2;
+
+// Funnel base inner radius
+funnel_base_r = funnel_base_id / 2;
+
+// Funnel top inner radius
+funnel_top_r = funnel_top_id / 2;
+
+// Spout outer radius
+spout_r_out = spout_od / 2;
+
+// Funnel base outer radius
+funnel_base_r_out = funnel_base_diam / 2;
+
+// Funnel top outer radius
+funnel_top_r_out = funnel_top_diam / 2;
+
+// Create the solid funnel
+module funnel() {
+    // Spout section (cylinder)
+    // Outer cylinder
+    cylinder(h = spout_height, r = spout_r_out, center = false);
+    
+    // Inner hole (difference)
+    translate([0, 0, 0.01]) // Offset slightly to avoid coplanar faces
+    cylinder(h = spout_height + 0.02, r = spout_r, center = false);
+    
+    // Funnel cone section
+    // Outer cone (tapered cylinder)
+    // We use a cylinder with different radii at top and bottom
+    // Base at z=20, Top at z=50
+    // Outer cone
+    translate([0, 0, spout_height])
+    cylinder(h = funnel_height, r1 = funnel_base_r_out, r2 = funnel_top_r_out, center = false);
+    
+    // Inner cone (difference)
+    translate([0, 0, spout_height + 0.01]) // Offset slightly
+    cylinder(h = funnel_height + 0.02, r1 = funnel_base_r, r2 = funnel_top_r, center = false);
+}
+
+// Center the funnel on the XY plane
+translate([0, 0, 0])
+funnel();

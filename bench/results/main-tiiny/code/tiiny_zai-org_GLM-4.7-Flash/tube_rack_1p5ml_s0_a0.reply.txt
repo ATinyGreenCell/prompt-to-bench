@@ -1,0 +1,70 @@
+```openscad
+// Bench Rack for 1.5 mL Microcentrifuge Tubes
+// Dimensions based on user specifications
+
+// Overall Block Dimensions
+block_length = 106;  // X dimension
+block_width = 72;    // Y dimension
+block_height = 30;   // Z dimension
+
+// Hole Grid Dimensions
+hole_grid_rows = 4;  // Number of rows along Y
+hole_grid_cols = 6;  // Number of columns along X
+hole_spacing = 16;  // Centre-to-centre distance
+
+// Hole Dimensions
+hole_diameter = 11.2;
+hole_depth = 25;
+hole_floor_thickness = 5;
+
+// Derived Dimensions
+hole_radius = hole_diameter / 2;
+grid_width = (hole_grid_cols - 1) * hole_spacing;
+grid_height = (hole_grid_rows - 1) * hole_spacing;
+
+// Calculate offset to center the grid
+offset_x = (block_length - grid_width) / 2;
+offset_y = (block_width - grid_height) / 2;
+
+$fn = 64;
+
+module rack() {
+    difference() {
+        // Main Block
+        cube([block_length, block_width, block_height], center=true);
+        
+        // Cut Holes
+        for (y = [0 : hole_grid_rows - 1]) {
+            for (x = [0 : hole_grid_cols - 1]) {
+                // Calculate position of each hole
+                hole_x = offset_x + x * hole_spacing;
+                hole_y = offset_y + y * hole_spacing;
+                
+                // Translate to hole position
+                translate([hole_x, hole_y, 0]) {
+                    // Cut the cylinder
+                    // We extend the cutting shape slightly past the bottom face
+                    // to ensure the floor is solid and not intersecting
+                    cylinder(h = hole_depth + 1, r = hole_radius, center=false);
+                }
+            }
+        }
+    }
+    
+    // Add the floor thickness
+    // We place a solid block at the bottom of the holes
+    for (y = [0 : hole_grid_rows - 1]) {
+        for (x = [0 : hole_grid_cols - 1]) {
+            hole_x = offset_x + x * hole_spacing;
+            hole_y = offset_y + y * hole_spacing;
+            
+            translate([hole_x, hole_y, -hole_depth/2]) {
+                cylinder(h = hole_floor_thickness, r = hole_radius, center=false);
+            }
+        }
+    }
+}
+
+// Render the part
+rack();
+```

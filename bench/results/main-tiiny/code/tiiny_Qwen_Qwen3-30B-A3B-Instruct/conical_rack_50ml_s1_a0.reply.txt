@@ -1,0 +1,75 @@
+```openscad
+// Dimensions for the Falcon tube rack
+$fn = 64;
+
+// Plate dimensions
+plate_length_X = 130;   // X dimension (length)
+plate_width_Y = 90;      // Y dimension (width)
+plate_thickness_Z = 4;   // Z thickness (height of plate)
+
+// Hole dimensions
+hole_diameter = 30.5;
+hole_spacing_X = 40;    // Center-to-center spacing along X
+hole_spacing_Y = 40;      // Center-to-center spacing along Y
+num_holes_X = 3;           // Number of holes along X (2 rows of 3)
+num_holes_Y = 2;         // Number of holes along Y
+
+// Wall dimensions
+wall_length_X = plate_length_X;   // Same as plate length
+wall_thickness_Y = 4;             // Y dimension (depth of wall)
+wall_height_Z = 70;                 // Height of walls from plate
+
+// Calculate center of plate
+plate_center_X = plate_length_X / 2;
+plate_center_Y = plate_width_Y / 2;
+
+// Calculate hole positions (centered on plate)
+// Holes are arranged in 2 rows (Y) of 3 (X), spaced 40 mm apart
+// We'll place the first hole at (plate_center_X - (2 * hole_spacing_X)/2, plate_center_Y - (hole_spacing_Y)/2)
+// But since we have 3 holes along X, spacing is 40 mm between centers
+
+// Create the base plate
+plate = cube([plate_length_X, plate_width_Y, plate_thickness_Z], center = true);
+
+// Create the hole pattern: 2 rows (Y) of 3 (X)
+// Use for loop to generate holes
+holes = union() {
+  for (i = [0 : num_holes_X - 1]) {
+    for (j = [0 : num_holes_Y - 1]) {
+      // Calculate offset from center
+      x_offset = (i - (num_holes_X - 1) / 2) * hole_spacing_X;
+      y_offset = (j - (num_holes_Y - 1) / 2) * hole_spacing_Y;
+      // Position hole at (x_offset, y_offset) relative to center
+      translate([x_offset, y_offset, 0])
+        cylinder(h = plate_thickness_Z + 1, r = hole_diameter / 2, center = true);
+    }
+  }
+}
+
+// Subtract holes from plate
+plate_with_holes = difference() {
+  plate;
+  holes;
+}
+
+// Create the two walls along the long edges (X direction)
+// Wall 1: at Y = -plate_width_Y/2 (negative Y edge)
+// Wall 2: at Y = +plate_width_Y/2 (positive Y edge)
+// Both walls are 4 mm thick in Y, 130 mm long in X, and rise from Z = 0 to Z = 70
+
+wall1 = cube([wall_length_X, wall_thickness_Y, wall_height_Z], center = false);
+wall1 = translate([0, -plate_width_Y / 2, 0]) wall1;
+
+wall2 = cube([wall_length_X, wall_thickness_Y, wall_height_Z], center = false);
+wall2 = translate([0, plate_width_Y / 2, 0]) wall2;
+
+// Combine plate with holes and walls
+rack = union() {
+  plate_with_holes;
+  wall1;
+  wall2;
+}
+
+// Output the final rack
+rack;
+```

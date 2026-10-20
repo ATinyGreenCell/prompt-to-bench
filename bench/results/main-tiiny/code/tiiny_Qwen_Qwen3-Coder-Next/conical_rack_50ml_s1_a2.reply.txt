@@ -1,0 +1,49 @@
+Looking at the measurement report and comparing it to the specification, I found the following discrepancies:
+
+1. **Bounding box X size**: 134.00 mm (should be 130 mm). This is because the walls are placed at ±67 mm instead of ±65 mm. The issue is that the walls are being placed at `±plate_x/2 ± wall_thickness/2`, which gives ±(65 + 2) = ±67 mm.
+
+2. **Hole diameter**: The report shows 30.48 mm (which is exactly 1.2 inches), but the specification says 30.5 mm. This is likely due to OpenSCAD's internal precision, but we need to ensure it's exactly 30.5.
+
+3. **Hole positions**: The report shows a 3×2 grid with pitch X 40.00 / Y 40.00 and grid center (0.00, 0.00), which matches the specification.
+
+4. **Wall placement**: The walls should run along the long edges (X-axis), meaning they should be at the left and right edges of the plate (X = ±plate_x/2), with thickness 4 mm. The current implementation places them at ±67 mm, but they should be at ±65 mm (plate edge) with thickness 4 mm, so the bounding box should be ±(65 + 2) = ±67 mm? Wait, let me reconsider.
+
+Actually, the specification says: "Two solid walls run along the two long edges of the plate: each wall is 130 mm long (X) and 4 mm thick (Y), flush with the plate's long edge". 
+
+The plate is 130 mm long (X) and 90 mm wide (Y). The long edges are along the X-axis, so the walls should be at Y = ±plate_y/2 = ±45 mm, with thickness 4 mm, so walls at Y = ±(45 ± 2) = ±47 mm.
+
+But the bounding box shows Y size 90.00 mm, which means the walls are not extending beyond the plate in Y, which is correct. The issue is in X: the bounding box shows X size 134.00 mm, which means the walls are extending 2 mm beyond the plate on each side (since plate is 130 mm, and 134 = 130 + 4).
+
+The specification says the walls are "flush with the plate's long edge", which means the walls should be aligned with the plate's edge, not extending beyond it. So the walls should be at X = ±plate_x/2 = ±65 mm, with thickness 4 mm, so the outer edge of the wall would be at ±67 mm, but the bounding box would be ±67 mm, which is 134 mm total.
+
+Wait, the specification says the plate is 130 mm (X), and the walls are "flush with the plate's long edge". The long edges are along X, so the walls should be along the X edges, meaning at Y = ±plate_y/2.
+
+Let me re-read: "Two solid walls run along the two long edges of the plate: each wall is 130 mm long (X) and 4 mm thick (Y), flush with the plate's long edge".
+
+So the walls are 130 mm long (X), 4 mm thick (Y), and flush with the plate's long edge. The plate is 130 mm (X) × 90 mm (Y). The long edges are the ones with length 130 mm, which are at Y = ±plate_y/2 = ±45 mm.
+
+So the walls should be at Y = ±45 mm, with thickness 4 mm, so walls at Y = ±(45 ± 2) = ±47 mm.
+
+But the bounding box shows Y size 90.00 mm, which means the walls are not extending beyond the plate in Y, which is correct.
+
+The issue is in X: the bounding box shows X size 134.00 mm, which means the walls are extending 2 mm beyond the plate on each side in X. But the walls should be along the Y edges (long edges), not the X edges.
+
+Let me re-read the specification again: "Two solid walls run along the two long edges of the plate: each wall is 130 mm long (X) and 4 mm thick (Y), flush with the plate's long edge".
+
+So the walls are 130 mm long (X), 4 mm thick (Y), and flush with the plate's long edge. The plate is 130 mm (X) × 90 mm (Y). The long edges are the ones with length 130 mm, which are at Y = ±plate_y/2 = ±45 mm.
+
+So the walls should be at Y = ±45 mm, with thickness 4 mm, so walls at Y = ±(45 ± 2) = ±47 mm.
+
+But the bounding box shows Y size 90.00 mm, which means the walls are not extending beyond the plate in Y, which is correct.
+
+The issue is in X: the bounding box shows X size 134.00 mm, which means the walls are extending 2 mm beyond the plate on each side in X. But the walls should be along the Y edges (long edges), not the X edges.
+
+Wait, I think I've been confusing the axes. Let me be very clear:
+
+- Plate: 130 mm (X) × 90 mm (Y) × 4 mm (Z)
+- Long edges: the edges with length 130 mm, which are at Y = ±plate_y/2 = ±45 mm
+- Short edges: the edges with length 90 mm, which are at X = ±plate_x/2 = ±65 mm
+
+So the walls should be at Y = ±45 mm, with thickness 4 mm, so walls at Y = ±(45 ± 2) = ±47 mm.
+
+But the bounding box shows Y size 90.00 mm, which means the walls are not extending beyond the plate in Y, which is

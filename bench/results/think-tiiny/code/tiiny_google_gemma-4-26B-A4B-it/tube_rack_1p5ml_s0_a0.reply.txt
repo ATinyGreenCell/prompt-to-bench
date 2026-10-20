@@ -1,0 +1,42 @@
+```openscad
+// Dimensions
+block_x = 106;           // Length of the block (X)
+block_y = 72;            // Width of the block (Y)
+block_z = 30;            // Height of the block (Z)
+num_holes_x = 6;         // Number of holes along X
+num_holes_y = 4;         // Number of holes along Y
+spacing_x = 16;          // Center-to-center spacing along X
+spacing_y = 16;          // Center-to-center spacing along Y
+hole_dia = 11.2;         // Diameter of each hole
+hole_depth = 25;         // Depth of each hole
+$fn = 64;                // Resolution for curved surfaces
+
+// Calculated grid offsets to center the grid on the block
+x_start = -( (num_holes_x - 1) * spacing_x ) / 2;
+y_start = -( (num_holes_y - 1) * spacing_y ) / 2;
+
+difference() {
+    // The solid rectangular block
+    // Translated so the center of the footprint is at (0,0) and base is at Z=0
+    translate([-block_x/2, -block_y/2, 0]) {
+        cube([block_x, block_y, block_z]);
+    }
+
+    // The 24 vertical holes
+    for (i = [0 : num_holes_x - 1]) {
+        for (j = [0 : num_holes_y - 1]) {
+            // Calculate the X and Y center of the current hole
+            hole_x = x_start + (i * spacing_x);
+            hole_y = y_start + (j * spacing_y);
+            
+            // The hole is open at the top (Z=30) and 25mm deep.
+            // This means the bottom of the hole is at Z = 30 - 25 = 5.
+            // We translate the cylinder to start slightly below the floor (5 - 0.01)
+            // and extend it slightly above the top (30 + 0.01) to ensure a clean cut.
+            translate([hole_x, hole_y, block_z - hole_depth - 0.01]) {
+                cylinder(h = hole_depth + 0.02, d = hole_dia);
+            }
+        }
+    }
+}
+```

@@ -1,0 +1,84 @@
+// Dimensions
+outer_size = 90;          // outer X/Y size in mm
+wall_thickness = 2.5;     // wall thickness in mm
+top_thickness = 2;        // top plate thickness in mm
+height = 40;              // total height from top plate to open top
+hole_pattern_size = 71.5; // screw hole pattern square size in mm
+hole_diameter = 4.5;      // screw hole diameter in mm
+notch_width = 12;         // notch width in mm
+notch_depth = 8;          // notch depth from top (40 - 32) in mm
+
+// Derived dimensions
+inner_size = outer_size - 2 * wall_thickness;
+hole_offset = hole_pattern_size / 2;
+
+// Top plate - centered at origin, at z=0 to 2
+module top_plate() {
+    translate([-outer_size/2, -outer_size/2, 0])
+        cube([outer_size, outer_size, top_thickness]);
+}
+
+// Walls - on top of top plate, from z=2 to z=42
+module walls() {
+    // Front wall (Y negative side)
+    translate([-outer_size/2, -inner_size/2, top_thickness])
+        cube([outer_size, wall_thickness, height]);
+    
+    // Back wall (Y positive side)
+    translate([-outer_size/2, inner_size/2, top_thickness])
+        cube([outer_size, wall_thickness, height]);
+    
+    // Left wall (X negative side)
+    translate([-inner_size/2, -outer_size/2, top_thickness])
+        cube([wall_thickness, outer_size, height]);
+    
+    // Right wall (X positive side)
+    translate([inner_size/2, -outer_size/2, top_thickness])
+        cube([wall_thickness, outer_size, height]);
+}
+
+// Screw holes - through the top plate
+module screw_holes() {
+    for (x = [-1, 1]) {
+        for (y = [-1, 1]) {
+            translate([x * hole_offset, y * hole_offset, -0.01])
+                cylinder(h = top_thickness + 0.02, r = hole_diameter/2, $fn = 64);
+        }
+    }
+}
+
+// Notch for power cable - in front wall (Y negative side)
+module notch() {
+    // Notch centered on front wall, 12mm wide, 8mm deep from top (z=34 to 42)
+    translate([-notch_width/2, -inner_size/2, height + top_thickness - notch_depth])
+        cube([notch_width + 0.1, wall_thickness + 0.1, notch_depth + 0.02]);
+}
+
+// Assemble the housing
+module housing() {
+    union() {
+        top_plate();
+        walls();
+    }
+}
+
+// Subtract screw holes
+module housing_with_holes() {
+    difference() {
+        housing();
+        translate([0, 0, -0.01])
+            screw_holes();
+    }
+}
+
+// Subtract notch
+module final_housing() {
+    difference() {
+        housing_with_holes();
+        translate([0, 0, -0.01])
+            notch();
+    }
+}
+
+// Render
+final_housing();

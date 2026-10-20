@@ -1,0 +1,47 @@
+// Dimensions (mm)
+plate_x = 130;          // plate length (X)
+plate_y = 90;           // plate width  (Y)
+plate_thick = 4;        // plate thickness (Z)
+hole_d = 30.5;          // tube hole diameter
+hole_spacing = 40;     // centre‑to‑centre spacing of holes
+wall_height = 70;      // final height of the rack after flipping
+wall_thick = 4;         // wall thickness (Y)
+
+// $fn for smooth circles
+$fn = 64;
+
+// Main rack module
+module rack() {
+    // --- Solid base (plate + two side walls) ---
+    plate = translate([-plate_x/2, -plate_y/2, 0])
+                cube([plate_x, plate_y, plate_thick]);
+
+    left_wall = translate([-plate_x/2, -plate_y/2 - wall_thick, plate_thick])
+                cube([plate_x, wall_thick, wall_height - plate_thick]);
+
+    right_wall = translate([-plate_x/2, plate_y/2, plate_thick])
+                cube([plate_x, wall_thick, wall_height - plate_thick]);
+
+    solid = union() {
+        plate;
+        left_wall;
+        right_wall;
+    };
+
+    // --- Tube holes (extend 0.5 mm beyond each face) ---
+    holes = union() {
+        for (col = [-1, 0, 1])
+            for (row = [-1, 1])
+                translate([col*hole_spacing, row*hole_spacing, -0.5])
+                    cylinder(d = hole_d, h = plate_thick + 1);
+    };
+
+    // --- Final part (plate with holes) ---
+    difference() {
+        solid;
+        holes;
+    }
+}
+
+// Render the rack
+rack();

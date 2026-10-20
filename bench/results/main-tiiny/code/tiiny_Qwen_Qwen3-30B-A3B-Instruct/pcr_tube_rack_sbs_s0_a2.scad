@@ -1,0 +1,76 @@
+// Dimensions for 96-well PCR tube rack (ANSI/SLAS footprint)
+$fn = 64;
+
+// Overall dimensions
+length_X = 127.76;   // Length along X axis
+width_Y = 85.48;     // Width along Y axis
+height_Z = 20.0;     // Height of rack
+
+// Hole grid parameters
+num_rows = 8;      // 8 rows along Y (A to H)
+num_cols = 12;     // 12 columns along X (1 to 12)
+hole_diameter = 6.2; // Diameter of each hole
+hole_spacing_X = 9.0; // Center-to-center spacing along X
+hole_spacing_Y = 9.0; // Center-to-center spacing along Y
+
+// Position of first hole (A1) relative to edges
+offset_X = 14.38;   // From left edge (X)
+offset_Y = 11.24;   // From back edge (Y)
+
+// Chamfer parameters
+chamfer_leg = 5.0; // Length of each leg of 45-degree chamfer
+
+// Create base block: from (0,0,0) to (length_X, width_Y, height_Z), sitting on the bed at z = 0
+// This ensures the lowest point is at z = 0, and the block is axis-aligned
+
+// We'll use a single difference to build the entire part
+
+difference() {
+    // Base block: sits on the bed at z = 0
+    cube([length_X, width_Y, height_Z], center = false);
+
+    // Subtract all 96 holes
+    for (col = [0 : num_cols - 1]) {
+        for (row = [0 : num_rows - 1]) {
+            // Calculate center of hole
+            x = offset_X + col * hole_spacing_X;
+            y = offset_Y + row * hole_spacing_Y;
+            
+            // Create a cylinder for the hole, slightly larger than hole_diameter
+            // to ensure clean subtraction (0.1 mm overhang for safety)
+            cylinder(h = height_Z + 0.1, d = hole_diameter + 0.1, center = false, $fn = 64)
+                translate([x, y, -0.05]); // Slight negative offset to ensure hole goes through bottom
+        }
+    }
+
+    // Subtract chamfer at A1 corner (bottom front left: x=0, y=0, z=0)
+    // The chamfer is a 45-degree bevel on the vertical edge at the A1 corner
+    // We define a tetrahedron (pyramid) with:
+    //   P1: (0, 0, 0)         // outer corner
+    //   P2: (chamfer_leg, 0, 0) // along X
+    //   P3: (0, chamfer_leg, 0) // along Y
+    //   P4: (chamfer_leg, chamfer_leg, chamfer_leg) // apex
+
+    // This forms a 45-degree chamfer because:
+    // - The face from P1 to P2 to P4 has a 45-degree angle in the XZ plane
+    // - The face from P1 to P3 to P4 has a 45-degree angle in the YZ plane
+    // - The apex is at (chamfer_leg, chamfer_leg, chamfer_leg), so the Z rise is equal to the XY offset
+
+    // Define the polyhedron with 4 points and 4 faces
+    // Points: [P1, P2, P3, P4]
+    polyhedron(
+        points = [
+            [0, 0, 0],           // P1
+            [chamfer_leg, 0, 0], // P2
+            [0, chamfer_leg, 0], // P3
+            [chamfer_leg, chamfer_leg, chamfer_leg] // P4
+        ],
+        // Faces: [ [P1,P2,P4], [P1,P3,P4], [P2,P3,P4], [P1,P2,P3] ]
+        faces = [
+            [0,1,3], // P1,P2,P4
+            [0,2,3], // P1,P3,P4
+            [1,2,3], // P2,P3,P4
+            [0,1,2]  // P1,P2,P3 (base on bed)
+        ]
+    );
+}

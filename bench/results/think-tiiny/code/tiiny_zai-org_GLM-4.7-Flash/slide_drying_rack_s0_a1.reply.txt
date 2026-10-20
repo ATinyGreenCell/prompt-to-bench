@@ -1,0 +1,44 @@
+```openscad
+$fn = 64;
+
+// Dimensions (mm)
+block_x = 90;
+block_y = 45;
+block_z = 20;
+slot_length = 77;
+slot_width = 1.6;
+slot_depth = 10;
+slot_spacing = 3.5;
+num_slots = 10;
+
+// Calculations for centering the slots
+// To center the group of slots, the first slot center is offset from the block center
+// by half the total span of the slots (which is (num_slots - 1) * spacing)
+total_span = (num_slots - 1) * slot_spacing;
+first_slot_y = (block_y / 2) - (total_span / 2);
+
+module rack() {
+    difference() {
+        // Base Block
+        cube([block_x, block_y, block_z], center=false);
+
+        // Slots
+        for (i = [0 : num_slots - 1]) {
+            // Calculate Y position for this slot
+            current_y = first_slot_y + (i * slot_spacing);
+
+            // The cutting shape (void)
+            // We extend the depth by 0.2mm to ensure it cuts past the top face
+            // (0.1mm to cut through the slot, 0.1mm to clear the top face)
+            void_depth = slot_depth + 0.2;
+            
+            // Position the cube so it starts slightly below the slot bottom
+            // and extends 0.1mm above the top face of the block
+            translate([0, current_y, block_z - void_depth + 0.1])
+                cube([slot_length, slot_width, void_depth], center=false);
+        }
+    }
+}
+
+rack();
+```

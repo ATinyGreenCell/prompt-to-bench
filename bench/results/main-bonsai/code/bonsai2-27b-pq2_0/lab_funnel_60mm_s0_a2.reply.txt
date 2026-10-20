@@ -1,0 +1,51 @@
+```openscad
+// Lab funnel - upright, wide opening at top, spout at bottom
+// All dimensions in mm.
+
+// Named dimensions (measured with calipers)
+spout_od        = 10.0;   // spout outer diameter
+spout_length    = 20.0;   // spout height (z = 0 to 20)
+cone_top_od     = 60.0;   // cone outer diameter at rim (z = 50)
+cone_bottom_od  = 10.0;   // cone outer diameter at base (z = 20)
+cone_height     = 30.0;   // cone height (z = 20 to 50)
+wall_thickness  = 1.6;    // wall thickness everywhere
+bore_od         = 6.8;    // spout bore outer diameter (10 - 2*1.6)
+cone_top_id     = 56.8;   // cone inner diameter at rim (60 - 2*1.6)
+cone_bottom_id  = 6.8;    // cone inner diameter at base (10 - 2*1.6)
+cone_top_z      = 50.0;   // rim height
+cone_bottom_z   = 20.0;   // cone base height
+spout_bottom_z  = 0.0;    // spout bottom height
+spout_top_z     = 20.0;   // spout top height
+
+// Overhang for clean boolean cuts (0.01-1 mm past faces)
+cut_overhang = 1.0;
+
+// Curvature resolution
+$fn = 64;
+
+// ---- Outer solid: spout cylinder + cone ----
+outer = union() {
+    // Spout: cylinder from z=0 to z=20, OD 10
+    cylinder(h = spout_length, d = spout_od, center = false);
+    // Cone: from z=20 (d=10) to z=50 (d=60)
+    translate([0, 0, cone_bottom_z])
+        cylinder(h = cone_height, d1 = cone_bottom_od, d2 = cone_top_od, center = false);
+};
+
+// ---- Inner void: spout bore + cone bore ----
+inner = union() {
+    // Spout bore: cylinder from z=0 to z=20, OD 6.8
+    cylinder(h = spout_length, d = bore_od, center = false);
+    // Cone bore: from z=20 (d=6.8) to z=50 (d=56.8)
+    translate([0, 0, cone_bottom_z])
+        cylinder(h = cone_height, d1 = cone_bottom_id, d2 = cone_top_id, center = false);
+};
+
+// ---- Final part: outer minus inner ----
+// Extend inner 1 mm past top and bottom so no coplanar faces remain
+difference() {
+    outer;
+    translate([0, 0, -cut_overhang])
+        inner;
+}
+```

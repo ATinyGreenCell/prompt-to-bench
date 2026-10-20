@@ -1,0 +1,50 @@
+// Bench rack for 1.5 mL microcentrifuge tubes
+// All dimensions are in millimetres
+
+// Block dimensions
+block_length = 106;   // X dimension
+block_width  = 72;    // Y dimension
+block_height = 30;    // Z dimension (total height)
+
+// Hole specifications
+hole_diameter = 11.2; // Hole diameter
+hole_depth    = 25;   // Depth of each hole (from top surface)
+
+// Grid layout
+cols = 6;   // number of holes along X
+rows = 4;   // number of holes along Y
+spacing = 16; // centre‑to‑centre spacing (both X and Y)
+
+// Derived values
+floor_thickness = block_height - hole_depth; // solid floor left at bottom (5 mm)
+hole_radius = hole_diameter/2;
+
+// Global resolution for curved shapes
+$fn = 64;
+
+// Main solid (centered on origin, rests on XY plane at z = 0)
+module block() {
+    translate([-block_length/2, -block_width/2, 0])
+        cube([block_length, block_width, block_height]);
+}
+
+// All holes combined (union of cylinders)
+module holes() {
+    union() {
+        for (i = [0:cols-1])
+            for (j = [0:rows-1]) {
+                // Compute hole centre coordinates
+                x = (i - (cols-1)/2) * spacing;
+                y = (j - (rows-1)/2) * spacing;
+                // Cylinder placed slightly beyond the top and bottom faces
+                translate([x, y, floor_thickness - 0.01])
+                    cylinder(h = hole_depth + 0.02, r = hole_radius);
+            }
+    }
+}
+
+// Final part: block minus holes
+difference() {
+    block();
+    holes();
+}

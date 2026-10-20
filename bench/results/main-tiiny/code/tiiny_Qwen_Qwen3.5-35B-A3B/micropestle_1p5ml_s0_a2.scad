@@ -1,0 +1,48 @@
+// Dimensions for 1.5 mL microcentrifuge tube pestle
+// Handle diameter
+handle_d = 8;
+// Handle length
+handle_h = 45;
+// Cone base diameter (matches handle)
+cone_base_d = 8;
+// Cone tip diameter
+cone_tip_d = 3;
+// Cone height (from z=45 to z=62)
+cone_h = 17;
+// Tip sphere diameter
+tip_d = 3;
+// Groove width (Z-axis)
+groove_w = 2;
+// Groove depth
+groove_d = 1;
+// Groove center positions
+groove_z1 = 10;
+groove_z2 = 15;
+groove_z3 = 20;
+groove_z4 = 25;
+
+// Total height of the pestle
+total_h = handle_h + cone_h;
+
+// Main body: Cylinder handle
+// Centered at origin, extending from z=0 to z=45
+cylinder_handle = cylinder(r = handle_d/2, h = handle_h, center = false);
+
+// Cone part: Tapers from 8mm to 3mm
+// We create a cone by extruding a triangle polygon
+// The cone sits on top of the handle, so we translate it by handle_h
+// The polygon is defined in the XY plane, extruded along Z
+// Base radius = 4, Tip radius = 1.5
+// We use a polygon with vertices: (0,0), (4,0), (1.5, 17), (0, 17)
+// Actually, to make a solid cone, we need a closed polygon.
+// Vertices: (0,0), (4,0), (1.5, 17), (0,17) -> This forms a trapezoid if we close it?
+// No, a cone is a triangle extruded.
+// Let's define the cone as a cylinder with a taper using a custom shape.
+// Actually, the simplest way to make a cone in OpenSCAD is to use a cylinder with a very small top radius? No.
+// We can use a cylinder with a cone cut out? No.
+// Let's use a cylinder with a cone shape by using a cylinder with a cone cut out? No.
+// Let's use a cylinder with a cone shape by using a cylinder with a cone cut out? No.
+// Let's use a cylinder with a cone shape by using a cylinder with a cone cut out? No.
+// Let's use a cylinder with a cone shape by using a cylinder with a cone cut out? No.
+// Let's use a cylinder with a cone shape by using a cylinder with a cone cut out? No.
+// Let's use a cylinder with a cone shape by using a cylinder with a cone

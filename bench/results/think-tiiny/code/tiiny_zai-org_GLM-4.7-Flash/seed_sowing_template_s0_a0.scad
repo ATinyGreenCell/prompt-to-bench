@@ -1,0 +1,37 @@
+$fn = 64;
+
+// Dimensions
+dish_diameter = 90;      // Context: 90 mm Petri dish
+part_diameter = 85;      // 85 mm diameter
+part_thickness = 2;      // 2 mm thick
+hole_diameter = 3;       // 3 mm diameter
+hole_spacing = 9;        // 9 mm centre-to-centre
+grid_size = 7;           // 7 x 7 grid
+notch_width = 10;        // 10 mm wide (X)
+notch_depth = 4;         // 4 mm deep (Y, measured in from the rim)
+
+// Geometry
+difference() {
+    // Base Disc
+    cylinder(r = part_diameter / 2, h = part_thickness, center = true);
+
+    // Holes
+    // Calculate offset to center the grid
+    grid_span = (grid_size - 1) * hole_spacing;
+    offset = grid_span / 2;
+
+    for (i = [0 : grid_size - 1]) {
+        x = -offset + (i * hole_spacing);
+        y = -offset + (i * hole_spacing);
+        // Extend 0.01mm past faces to ensure clean cut
+        translate([x, y, 0])
+            cylinder(h = part_thickness + 0.01, r = hole_diameter / 2, center = true);
+    }
+
+    // Notch
+    // Located on +Y side of the rim (Y = part_diameter/2)
+    // 4mm deep means it goes from Y = 42.5 down to Y = 38.5
+    // Centered on the rim line: Y = 42.5 - 2 = 40.5
+    translate([0, part_diameter / 2 - 2, 0])
+        cube([notch_width, notch_depth, part_thickness + 0.01], center = true);
+}

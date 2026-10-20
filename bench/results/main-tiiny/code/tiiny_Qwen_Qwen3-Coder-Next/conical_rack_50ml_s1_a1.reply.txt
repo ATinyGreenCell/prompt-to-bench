@@ -1,0 +1,120 @@
+Looking at the measurement report and comparing it to the specification, I found several discrepancies:
+
+1. **Plate dimensions**: The report shows X size 134.00 mm (should be 130 mm), Y size 90.00 mm (correct), Z size 74.00 mm (should be 74 mm total height: 4 mm plate + 70 mm walls).
+
+2. **Hole positions**: The slices show holes at (25.00, 5.00) but should be centered on the plate. With plate_y = 90 mm, hole_offset_y should be (90 - 2*40)/2 = -5 mm, not 5 mm.
+
+3. **Hole diameter**: The report shows 30.48 mm (which is 1.2 inches), but specification says 30.5 mm.
+
+4. **Wall placement**: The walls appear to be placed incorrectly - the slice at z=4.50 shows walls that don't match the specification of walls running along the long edges (X-axis) with length 130 mm.
+
+Let me recalculate the correct dimensions:
+
+- Plate should be 130×90×4 mm
+- Holes: 30.5 mm diameter, spaced 40 mm apart, centered on plate
+  - With 3 holes along X: positions at x = -40, 0, +40 mm
+  - With 2 holes along Y: positions at y = -20, +20 mm
+  - This gives hole_offset_x = 0, hole_offset_y = -20 mm (since 3 holes need 2 gaps of 40 mm = 80 mm total, so 30 mm margin each side: (130-80)/2 = 25 mm, but wait - let me recalculate)
+
+Actually, for 3 holes with 40 mm spacing, the positions should be at x = -40, 0, +40 mm (total width 80 mm), so offset from center = (130 - 80)/2 = 25 mm. So hole positions: x = -40+25 = -15, 0+25 = 25, +40+25 = 65 mm.
+
+For 2 holes with 40 mm spacing, positions at y = -20, +20 mm (total width 40 mm), so offset from center = (90 - 40)/2 = 25 mm. So hole positions: y = -20+25 = 5, +20+25 = 45 mm.
+
+Wait, let me be more precise:
+- 3 holes along X: positions at x = 0, 40, 80 mm relative to left edge, so centered: x = (0-65), (40-65), (80-65) = -65, -25, +15 mm? No.
+
+Let's do it properly:
+- Plate center is at (0,0)
+- 3 holes with 40 mm spacing: positions relative to center: x = -40, 0, +40 mm (total span 80 mm)
+- 2 holes with 40 mm spacing: positions relative to center: y = -20, +20 mm (total span 40 mm)
+
+But the report shows holes at (25.00, 5.00), which suggests my calculation is still off.
+
+Let me re-read the specification: "centred on the plate" with "40 mm centre-to-centre in both directions".
+
+For 3 holes along X (130 mm plate):
+- Total span of holes = (3-1)*40 = 80 mm
+- Center of hole pattern should be at plate center (0,0)
+- So hole positions: x = -40, 0, +40 mm
+
+For 2 holes along Y (90 mm plate):
+- Total span of holes = (2-1)*40 = 40 mm
+- Center of hole pattern should be at plate center (0,0)
+- So hole positions: y = -20, +20 mm
+
+But the report shows holes at (25.00, 5.00), which suggests the first hole is at x=25, y=5. Let me check the slice description again: "hole: 1 x circle d=30.48 [centre (25.00, 5.00)]" - this is only showing one hole, but there should be 6.
+
+Actually, the slice at z=2.00 and z=3.70 shows "1 hole", which is incorrect - there should be 6 holes visible at those heights.
+
+The main issues I see:
+1. Hole positions are wrong - should be at x = -40, 0, +40 and y = -20, +20 relative to center
+2. The walls are not correctly placed - they should be along the long edges (X-axis), so at x = ±(130/2) = ±65 mm, with thickness 4 mm, so walls at x = ±65 ± 2 mm
+
+Let me fix the code:
+
+```openscad
+// Rack for six 50 mL conical (Falcon-type) tubes
+// Printed upside down and flipped over after printing
+
+$fn = 64;
+
+// Plate dimensions
+plate_x = 130; // mm
+plate_y = 90;  // mm
+plate_z = 4;   // mm
+
+// Hole dimensions
+hole_dia = 30.5; // mm
+hole_spacing_x = 40; // mm
+hole_spacing_y = 40; // mm
+
+// Calculate hole positions (centered on plate)
+// 3 holes along X: positions at -40, 0, +40 mm relative to center
+// 2 holes along Y: positions at -20, +20 mm relative to center
+hole_positions_x = [-40, 0, 40];
+hole_positions_y = [-20, 20];
+
+// Wall dimensions
+wall_thickness = 4; // mm
+wall_height = 70;   // mm
+
+// Generate holes
+module holes() {
+    for (x_pos = hole_positions_x) {
+        for (y_pos = hole_positions_y) {
+            translate([x_pos, y_pos, -1]) 
+                cylinder(h = plate_z + 2, d = hole_dia);
+        }
+    }
+}
+
+// Generate walls
+module walls() {
+    // Left wall (along X axis at left edge)
+    translate([-plate_x/2 - wall_thickness/2, -plate_y/2, plate_z])
+        cube([wall_thickness, plate_y, wall_height]);
+    
+    // Right wall (along X axis at right edge)
+    translate([plate_x/2 - wall_thickness/2, -plate_y/2, plate_z])
+        cube([wall_thickness, plate_y, wall_height]);
+}
+
+// Main body: plate with holes and walls
+module rack() {
+    difference() {
+        union() {
+            // Base plate
+            translate([0, 0, plate_z/2])
+                cube([plate_x, plate_y, plate_z], center=true);
+            
+            // Walls
+            walls();
+        }
+        
+        // Holes
+        holes();
+    }
+}
+
+rack();
+```

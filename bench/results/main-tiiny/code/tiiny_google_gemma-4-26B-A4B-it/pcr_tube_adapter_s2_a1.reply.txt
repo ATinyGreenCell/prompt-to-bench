@@ -1,0 +1,45 @@
+```openscad
+// --- Dimensions (mm) ---
+collar_diameter = 13.0;      // Diameter of the base collar
+collar_thickness = 1.5;      // Height of the base collar
+sleeve_outer_diameter = 10.8; // Diameter of the main sleeve body
+total_height = 21.5;         // Total height of the part (from Z=0 to Z=21.5)
+bore_diameter = 6.2;         // Diameter of the central hole
+
+/* 
+   Correction Report:
+   - The previous render resulted in a total height of 20.0mm instead of 21.5mm.
+   - This was caused by calculating sleeve_height as (21.5 - 1.5) and then 
+     placing it on top of the collar, but the math/logic in the previous 
+     version resulted in a total height of 20.0mm due to a logic error 
+     in the height variable definition.
+   - Fixed: The sleeve body now starts at Z = collar_thickness and 
+     ends at Z = total_height.
+*/
+
+$fn = 64; // Smoothness for cylinders
+
+module adapter_sleeve() {
+    difference() {
+        // Main Body Construction
+        union() {
+            // The Collar (Base)
+            // Sits on the bed from Z=0 to Z=1.5
+            cylinder(d = collar_diameter, h = collar_thickness);
+            
+            // The Sleeve Body
+            // Starts at Z = collar_thickness and rises to Z = total_height
+            translate([0, 0, collar_thickness])
+                cylinder(d = sleeve_outer_diameter, h = total_height - collar_thickness);
+        }
+
+        // The Bore (Cutting through the whole part)
+        // We extend the bore slightly in Z to ensure a clean cut through top and bottom
+        translate([0, 0, -0.5])
+            cylinder(d = bore_diameter, h = total_height + 1.0);
+    }
+}
+
+// Render the part
+adapter_sleeve();
+```

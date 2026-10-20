@@ -1,0 +1,44 @@
+// Dimensions
+Bore_D = 3;
+Total_H = 41;
+Collar_D = 12;
+Collar_Z_start = 20;
+Collar_Z_end = 25;
+
+// 8mm tubing barbs (z=0 to 20)
+Barb1_H = 10;
+Barb1_OD_start = 7.5;
+Barb1_OD_end = 9.5;
+
+// 5mm tubing barbs (z=25 to 41)
+Barb2_H = 8;
+Barb2_OD_start = 6.5;
+Barb2_OD_end = 5.0;
+
+$fn = 64;
+
+// 2D profile points (X, Z) for the right half of the part
+pts = [
+    [0, 0],
+    [0, Total_H],
+    [Barb2_OD_end/2, Total_H],
+    [Barb2_OD_end/2, Total_H - Barb2_H],
+    [Barb2_OD_start/2, Total_H - Barb2_H],
+    [Barb2_OD_start/2, Collar_Z_end],
+    [Collar_D/2, Collar_Z_end],
+    [Collar_D/2, Collar_Z_start],
+    [Barb1_OD_end/2, Collar_Z_start],
+    [Barb1_OD_end/2, Collar_Z_start - Barb1_H],
+    [Barb1_OD_start/2, Collar_Z_start - Barb1_H],
+    [Barb1_OD_start/2, 0]
+];
+
+outer_shape = rotate_extrude() polygon(points = pts);
+
+// Bore cylinder extends slightly past the faces to avoid coplanar issues
+bore = translate([0, 0, -0.05]) cylinder(r = Bore_D/2, h = Total_H + 0.1, center = false);
+
+difference() {
+    outer_shape;
+    bore;
+}

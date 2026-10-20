@@ -1,0 +1,80 @@
+```openscad
+//---------------------------
+//  Parameters (mm)
+//---------------------------
+knob_diameter = 30;               // overall knob diameter
+knob_height   = 15;               // knob height
+knob_radius   = knob_diameter/2; // derived radius
+
+shaft_dia     = 6.2;               // shaft (D‑shaped) bore diameter
+shaft_radius  = shaft_dia/2;      // shaft radius
+
+flat_offset   = 1.6;               // distance from shaft centre to the flat plane of the D‑shape
+
+groove_count  = 18;               // number of grip grooves
+groove_dia    = 2;                // groove (half‑cylinder) diameter
+groove_radius = groove_dia/2;     // groove radius
+groove_angle_step = 360 / groove_count;
+
+pointer_width = 1.5;              // pointer groove width (across Y)
+pointer_depth = 1;                // pointer groove depth (into top face)
+pointer_extra = 0.02;             // extra size to ensure cuts extend beyond faces
+
+//---------------------------
+//  Settings
+//---------------------------
+$fn = 64; // smooth circles
+
+//---------------------------
+//  Main knob body
+//---------------------------
+module knob() {
+    cylinder(r = knob_radius, h = knob_height, center = false);
+}
+
+// D‑shaped blind bore (intersection of a cylinder with a half‑space)
+module d_bore() {
+    // full cylinder (height a little longer than the bore depth)
+    cyl = cylinder(r = shaft_radius, h = 12 + 0.02, center = false);
+    // half‑space that defines the flat side (plane x = flat_offset)
+    // large cube extending beyond the cylinder in all directions
+    half_space = translate([-1000, -1000, -0.01])
+                 cube([flat_offset + 1000, 2000, 12 + 0.04 + 0.02]);
+    intersection() {
+        cyl;
+        half_space;
+    }
+}
+
+// Single grip groove (half‑cylinder) placed on the outer surface
+module groove(angle) {
+    rotate([0, 0, angle])
+        translate([knob_radius, 0, -0.01]) // extend below/above the knob faces
+            cylinder(r = groove_radius, h = knob_height + 0.02, center = false);
+}
+
+// All grip grooves (union of the 18 rotated grooves)
+module all_grooves() {
+    union() {
+        for (i = [0 : groove_count-1])
+            groove(i * groove_angle_step);
+    }
+}
+
+// Pointer groove on the top face (rectangular slot)
+module pointer_groove() {
+    // start at the centre (x = 0) and extend outward to the outer edge
+    translate([-0.01, -pointer_width/2, knob_height - pointer_depth - 0.01])
+        cube([knob_radius + 0.02, pointer_width, pointer_depth + pointer_extra]);
+}
+
+//---------------------------
+//  Final part (knob with all cuts)
+//---------------------------
+difference() {
+    knob();
+    d_bore();
+    all_grooves();
+    pointer_groove();
+}
+```

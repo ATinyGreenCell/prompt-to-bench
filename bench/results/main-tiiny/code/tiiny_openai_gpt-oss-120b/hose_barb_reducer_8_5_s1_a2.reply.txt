@@ -1,0 +1,44 @@
+```openscad
+//---------------------------
+// Parameters (all in mm)
+//---------------------------
+inner_dia_8 = 8;          // inner diameter of 8 mm tubing
+inner_dia_5 = 5;          // inner diameter of 5 mm tubing
+bore_dia    = 3;          // straight through bore diameter
+total_height = 41;       // overall height of the part (0 → 41 mm)
+
+$fn = 128;                // resolution for curved surfaces
+
+//---------------------------
+// Helper modules
+//---------------------------
+
+// 8 mm tubing barb (height = 10 mm)
+//   bottom radius = 7.5 mm / 2 = 3.75 mm
+//   top radius   = 9.5 mm / 2 = 4.75 mm
+module barb_8() {
+    rotate_extrude($fn=$fn)
+        polygon(points = [
+            [0,0],                 // axis
+            [3.75,0],             // bottom outer radius
+            [4.75,10],            // top outer radius (conical part)
+            [3.75,10],            // step back to bottom radius
+            [0,10]                // axis at top
+        ]);
+}
+
+// 5 mm tubing barb (height = 8 mm)
+//   bottom radius = 6.5 mm / 2 = 3.25 mm
+//   top radius   = 5.0 mm / 2 = 2.50 mm
+module barb_5() {
+    rotate_extrude($fn=$fn)
+        polygon(points = [
+            [0,0],
+            [3.25,0],
+            [2.5,8],
+            [3.25,8],
+            [0,8]
+        ]);
+}
+
+// Cylindrical collar (diameter =

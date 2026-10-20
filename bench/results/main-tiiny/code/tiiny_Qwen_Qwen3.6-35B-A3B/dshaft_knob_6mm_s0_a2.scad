@@ -1,0 +1,151 @@
+// Replacement knob for hotplate stirrer
+// D-shaft: 6 mm nominal, bore is 6.2 mm diameter circle with one side cut flat
+// Flat-to-opposite-side distance: 4.7 mm
+// Knob outer: 30 mm diameter, 15 mm tall
+// Bore depth: 12 mm from bottom (z=0)
+// Grip grooves: 18 evenly spaced, 2 mm diameter half-cylinders on outer surface
+// Pointer groove: 1.5 mm wide, 1 mm deep, from centre to edge on D-flat side
+
+// --- Dimensions ---
+knob_diam = 30;          // Outer diameter of knob
+knob_height = 15;        // Total height of knob
+bore_diam = 6.2;         // Diameter of D-bore circle
+bore_flat_dist = 4.7;    // Distance from flat side to opposite side of bore circle
+bore_depth = 12;         // Depth of blind bore from bottom
+
+grip_groove_diam = 2;    // Diameter of grip groove cutter
+num_grip_grooves = 18;   // Number of grip grooves
+
+pointer_width = 1.5;     // Width of pointer groove
+pointer_depth = 1;       // Depth of pointer groove
+
+// --- Derived Values ---
+knob_radius = knob_diam / 2;
+bore_radius = bore_diam / 2;
+
+// Calculate the offset of the flat from the center of the bore circle
+// The flat is at distance 'bore_flat_dist' from the opposite side.
+// The center of the bore circle is at bore_radius from the opposite side.
+// So the distance from center to flat is: bore_radius - (bore_flat_dist - bore_radius)
+// Wait, let's think carefully.
+// The circle has radius bore_radius.
+// The flat cuts the circle. The distance from the flat to the farthest point on the circle is bore_flat_dist.
+// The farthest point is on the opposite side of the center from the flat.
+// So, distance from flat to center + distance from center to farthest point = bore_flat_dist
+// distance from flat to center + bore_radius = bore_flat_dist
+// distance from flat to center = bore_flat_dist - bore_radius
+flat_to_center_dist = bore_flat_dist - bore_radius;
+
+// The flat is on the "positive X" side if we orient the D such that the flat is at +X.
+// However, the problem states the pointer groove is on the same side as the flat.
+// Let's place the flat at +X.
+// The center of the bore is at (0,0) in the XY plane of the bore cross-section.
+// The flat is a vertical line at x = flat_to_center_dist.
+// Since the flat cuts the circle, we need flat_to_center_dist < bore_radius.
+// Let's verify: 4.7 - 3.1 = 1.6 mm. 1.6 < 3.1. Correct.
+
+// --- Construction ---
+$fn = 64;
+
+module knob_body() {
+    // Main cylinder
+    cylinder(h=knob_height, d=knob_diam, center=false);
+}
+
+module bore_cutter() {
+    // The bore is a blind hole 12 mm deep from z=0.
+    // It consists of a cylindrical part and a flat cut.
+    // To make it a "D" shape, we take a cylinder and subtract a rectangular block.
+    
+    // Cylinder part of the bore
+    // We extend it slightly past the bottom (z=-0.01) and top (z=bore_depth+0.01)
+    // to ensure clean boolean operations.
+    translate([0, 0, -0.01])
+        cylinder(h=bore_depth + 0.02, d=bore_diam, center=false);
+    
+    // The flat cut
+    // The flat is at x = flat_to_center_dist.
+    // We need to cut away the material from x = flat_to_center_dist to the right.
+    // The cut must extend through the entire bore depth and slightly beyond.
+    // It must also extend in Y to cover the full width of the bore.
+    // Width in Y: 2 * bore_radius + margin
+    // Length in X: from flat_to_center_dist to outside the knob
+    // Height in Z: from z=-0.01 to z=bore_depth+0.01
+    
+    // We use a cube to cut the flat side.
+    // The cube starts at x = flat_to_center_dist.
+    // It extends to the right by enough to clear the knob.
+    // It extends in Y by enough to cover the bore.
+    // It extends in Z by enough to cover the bore depth.
+    
+    translate([flat_to_center_dist, 0, -0.01])
+        cube([
+            knob_radius + 1,      // Extend past the center and outer edge
+            bore_radius * 2 + 2,  // Extend past the bore in Y
+            bore_depth + 0.02      // Extend past the bore depth
+        ], center=false);
+}
+
+module grip_groove(angle) {
+    // Each groove is a half-cylinder cut into the outer surface.
+    // The groove is 2 mm in diameter.
+    // It is centered on the outer surface.
+    // We cut a cylinder of diameter 2 mm, centered at the surface.
+    // The cylinder axis is vertical (Z).
+    // The position is on the circumference at the given angle.
+    
+    // Position on the circumference
+    x = knob_radius * cos(angle);
+    y = knob_radius * sin(angle);
+    
+    // Cut a cylinder. To make it a "half-cylinder" cut into the surface,
+    // we just cut a full cylinder of diameter 2 mm centered at the surface.
+    // The material outside the knob is not there, so it effectively cuts a half-cylinder.
+    // We extend the cutter in Z to cover the full height of the knob.
+    // We extend it in X/Y slightly to ensure it cuts through.
+    
+    translate([x, y, 0])
+        cylinder(h=knob_height + 0.1, d=grip_groove_diam, center=false);
+}
+
+module pointer_groove() {
+    // 1.5 mm wide, 1 mm deep, from centre to outer edge.
+    // On the same side as the flat of the D.
+    // The flat is at +X.
+    // The groove runs from the centre (0,0) to the outer edge.
+    // It is 1.5 mm wide. Let's assume it's centered on the X-axis.
+    // So it spans from y = -0.75 to y = 0.75.
+    // It is 1 mm deep.
+    // It runs from x = 0 to x = knob_radius.
+    
+    // We cut a rectangular slot.
+    // To ensure it cuts cleanly, we extend it slightly.
+    // X: from -0.1 to knob_radius + 0.1
+    // Y: from -pointer_width/2 - 0.1 to pointer_width/2 + 0.1
+    // Z: from -0.1 to knob_height + 0.1 (cuts through the top face)
+    
+    translate([0, 0, -0.1])
+        cube([
+            knob_radius + 0.2,
+            pointer_width + 0.2,
+            knob_height + 0.2
+        ], center=false);
+}
+
+// --- Main Assembly ---
+difference() {
+    // The solid knob
+    knob_body();
+    
+    // The D-bore
+    bore_cutter();
+    
+    // The grip grooves
+    for (i = [0 : num_grip_grooves - 1]) {
+        angle = i * 360 / num_grip_grooves;
+        grip_groove(angle);
+    }
+    
+    // The pointer groove
+    pointer_groove();
+}

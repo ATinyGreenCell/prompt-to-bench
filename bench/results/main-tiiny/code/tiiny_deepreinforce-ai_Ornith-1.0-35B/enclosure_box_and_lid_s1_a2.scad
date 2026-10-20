@@ -1,0 +1,72 @@
+// --- Dimensions ---
+// Outer box length (X)
+box_L = 70;
+// Outer box width (Y)
+box_W = 50;
+// Outer box height (Z)
+box_H = 30;
+// Wall thickness
+wall_t = 2;
+// Floor thickness
+floor_t = 2;
+// Lid plate thickness
+lid_plate_t = 2;
+// Lip wall thickness
+lip_t = 1.5;
+// Lip height
+lip_H = 4;
+// Lip outer length
+lip_L = 65.6;
+// Lip outer width
+lip_W = 45.6;
+// Clearance on each side between lip and box opening
+clearance = 0.2;
+// Gap between parts on bed
+gap = 10;
+
+// Derived: Inner box dimensions
+box_inner_L = box_L - 2 * wall_t;
+box_inner_W = box_W - 2 * wall_t;
+box_inner_H = box_H - floor_t;
+
+// Derived: Box opening dimensions (where lip slides in)
+box_open_L = box_inner_L - 2 * clearance;
+box_open_W = box_inner_W - 2 * clearance;
+
+// Derived: Position of box centre on bed
+box_cx = -(box_L + gap/2) / 2;
+box_cy = 0;
+
+// Derived: Position of lid centre on bed
+lid_cx = (box_L + gap/2) / 2;
+lid_cy = 0;
+
+// --- Part 1: Box ---
+translate([box_cx, box_cy, 0]) {
+    difference() {
+        // Outer shell
+        cube([box_L, box_W, box_H], center = false);
+        
+        // Inner cavity (subtract to create hollow box)
+        // Extend slightly past bottom to ensure clean cut
+        translate([wall_t, wall_t, -0.01])
+            cube([box_inner_L, box_inner_W, box_inner_H + 0.01], center = false);
+    }
+}
+
+// --- Part 2: Lid (printed upside down) ---
+translate([lid_cx, lid_cy, 0]) {
+    difference() {
+        union() {
+            // Plate (lying on bed)
+            cube([box_L, box_W, lid_plate_t], center = false);
+            
+            // Lip (extruded upward from plate)
+            // Since lid is printed upside down, the lip points up (toward the box opening)
+            translate([(box_L - lip_L)/2, (box_W - lip_W)/2, lid_plate_t])
+                cube([lip_L, lip_W, lip_H], center = false);
+        }
+        
+        // No internal cavities needed for the lid
+    }
+}

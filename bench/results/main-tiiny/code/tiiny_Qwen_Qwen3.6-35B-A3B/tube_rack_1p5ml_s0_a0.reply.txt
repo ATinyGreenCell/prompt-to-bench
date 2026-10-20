@@ -1,0 +1,60 @@
+```openscad
+// Dimensions for 1.5 mL microcentrifuge tube rack
+// Block size
+BLOCK_X = 106;
+BLOCK_Y = 72;
+BLOCK_Z = 30;
+
+// Hole grid parameters
+GRID_ROWS = 4;      // Along Y
+GRID_COLS = 6;      // Along X
+SPACING_X = 16;     // Centre-to-centre along X
+SPACING_Y = 16;     // Centre-to-centre along Y
+HOLE_DIAM = 11.2;   // Hole diameter
+HOLE_DEPTH = 25;    // Depth of hole from top
+FLOOR_THICK = 5;    // Solid floor thickness (BLOCK_Z - HOLE_DEPTH = 30 - 25 = 5)
+
+// Calculate grid offset to centre the grid on the block
+// Total width of grid in X: (6-1)*16 = 80 mm. Offset from centre: 80/2 = 40 mm.
+// Total width of grid in Y: (4-1)*16 = 48 mm. Offset from centre: 48/2 = 24 mm.
+GRID_OFFSET_X = (GRID_COLS - 1) * SPACING_X / 2;
+GRID_OFFSET_Y = (GRID_ROWS - 1) * SPACING_Y / 2;
+
+// Hole radius
+HOLE_R = HOLE_DIAM / 2;
+
+// Clearance for difference operation
+CLEARANCE = 0.05;
+
+// Total height of the cutting cylinder (hole depth + floor thickness + extra for clean cut)
+// The hole is 25mm deep, leaving 5mm floor. The cylinder must go through the 5mm floor 
+// and extend slightly below z=0 to ensure the bottom face is cleanly cut.
+// Cylinder bottom at z = -0.1, top at z = HOLE_DEPTH + FLOOR_THICK + 0.1 = 30.1
+CUT_CYL_H = HOLE_DEPTH + FLOOR_THICK + 0.1;
+CUT_CYL_Z_BOTTOM = -0.1;
+
+// Main block
+difference() {
+    // Base block
+    cube([BLOCK_X, BLOCK_Y, BLOCK_Z], center = false);
+    
+    // Holes
+    for (i = [0 : GRID_COLS - 1]) {
+        for (j = [0 : GRID_ROWS - 1]) {
+            // Calculate hole position
+            // X: Start from -GRID_OFFSET_X, step by SPACING_X
+            hx = -GRID_OFFSET_X + i * SPACING_X;
+            // Y: Start from -GRID_OFFSET_Y, step by SPACING_Y
+            hy = -GRID_OFFSET_Y + j * SPACING_Y;
+            
+            // Cut hole
+            // Cylinder extends from slightly below the block to slightly above the top surface
+            // to ensure clean boolean operations.
+            translate([hx, hy, CUT_CYL_Z_BOTTOM]) {
+                $fn = 64;
+                cylinder(h = CUT_CYL_H, d = HOLE_DIAM, center = false);
+            }
+        }
+    }
+}
+```

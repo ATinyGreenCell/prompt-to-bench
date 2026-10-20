@@ -1,0 +1,33 @@
+// Variables
+$fn = 64; // resolution for curved surfaces
+
+// Dimensions (mm)
+collar_d = 13;          // diameter of collar
+collar_h = 1.5;         // height of collar
+sleeve_outer_d = 10.8;  // outer diameter of sleeve body
+sleeve_h = 21.5 - collar_h; // height of sleeve body (20 mm)
+bore_d = 6.2;           // diameter of bore
+bore_h = 21.5 + 0.02;   // bore height extended beyond faces
+bore_offset_z = -0.01;  // bore offset to extend below z=0
+
+// Modules
+module collar() {
+    cylinder(d=collar_d, h=collar_h, $fn=$fn);
+}
+
+module sleeve_body() {
+    cylinder(d=sleeve_outer_d, h=sleeve_h, $fn=$fn);
+}
+
+module bore() {
+    translate([0, 0, bore_offset_z]) cylinder(d=bore_d, h=bore_h, $fn=$fn);
+}
+
+// Build part: collar + sleeve body, then subtract bore
+difference() {
+    union() {
+        collar();                // collar sits on bed (z=0 to 1.5)
+        translate([0, 0, collar_h]) sleeve_body(); // sleeve body starts at z=1.5
+    }
+    bore(); // straight bore through full height, open at both ends
+}

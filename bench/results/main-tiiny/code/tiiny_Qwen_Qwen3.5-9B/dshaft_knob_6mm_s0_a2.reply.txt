@@ -1,0 +1,112 @@
+```openscad
+$fn = 128;
+
+// --- Dimensions ---
+// Knob outer diameter
+D_KNOB_OUT = 30;
+// Knob height
+H_KNOB = 15;
+// Shaft diameter (for reference)
+D_SHAFT = 6;
+
+// D-Bore dimensions
+// Total diameter of the circular part of the bore
+D_BORE_CIRCLE = 6.2;
+// Distance from the flat cut to the opposite side of the circle
+D_BORE_FLAT_TO_OPPOSITE = 4.7;
+// Depth of the D-bore from the bottom face
+H_BORE = 12;
+
+// Groove dimensions (Side)
+N_GROOVES = 18;
+D_GROOVE = 2; // Diameter of the half-cylinder groove
+H_GROOVE = H_KNOB; // Full height
+
+// Pointer dimensions (Top)
+W_POINTER = 1.5; // Width of the pointer groove
+H_POINTER = 1; // Depth of the pointer groove
+
+// --- Calculations ---
+// Calculate the radius of the flat side of the D-bore
+// Distance from center to flat = (Total Diameter - Flat_to_Opposite) / 2
+R_BORE_FLAT = (D_BORE_CIRCLE - D_BORE_FLAT_TO_OPPOSITE) / 2;
+// Calculate the radius of the curved part of the D-bore
+// Distance from center to curved edge = (Total Diameter + Flat_to_Opposite) / 2
+R_BORE_CURVED = (D_KNOB_OUT / 2); // Wait, the bore is inside the knob. The knob is 30mm. The bore is 6.2mm.
+// The bore is centered on the shaft.
+// The knob is 30mm diameter.
+// The bore is 6.2mm diameter (circle part).
+// The flat part of the D is 4.7mm away from the opposite side.
+// So the flat width is 6.2mm.
+// The radius of the circle part of the D is 3.1mm + 2.35mm = 5.45mm.
+// The radius of the flat part from the center is 2.35mm.
+// Wait, the prompt says "6.2 mm diameter circle with one side cut flat".
+// This implies the circle diameter is 6.2mm.
+// "distance from the flat to the opposite side of the circle is 4.7 mm".
+// So the flat width is 6.2mm.
+// The distance from the flat to the far edge is 4.7mm.
+// So the radius of the circle is (6.2/2) + 4.7 = 3.1 + 4.7 = 7.8mm?
+// No, that would make the total diameter 15.6mm.
+// Let's re-read carefully: "a 6.2 mm diameter circle with one side cut flat, so the distance from the flat to the opposite side of the circle is 4.7 mm."
+// This phrasing is slightly ambiguous.
+// Interpretation A: The original circle was 6.2mm diameter. One side is cut flat. The distance from that flat to the opposite side (the arc) is 4.7mm.
+// If the original diameter was 6.2mm, the radius is 3.1mm.
+// If the distance from the flat to the opposite side is 4.7mm, then the flat must be at a distance of 4.7 - 3.1 = 1.6mm from the center?
+// No, the distance from the flat to the opposite side is the chord length? No, it's the distance from the flat face to the arc.
+// If the circle diameter is 6.2mm, the max distance from any chord to the arc is 3.1mm (if the chord is a diameter).
+// If the distance is 4.7mm, the original circle must have been larger, or the "6.2 mm diameter circle" refers to the width of the flat part?
+// Let's assume the "6.2 mm diameter circle" describes the width of the flat part (the chord).
+// So the flat width is 6.2mm.
+// The distance from the flat to the opposite side (the arc) is 4.7mm.
+// So the radius of the circle is (6.2/2) + 4.7 = 3.1 + 4.7 = 7.8mm.
+// This seems the most logical interpretation for a D-shaft fit (6mm shaft needs a hole slightly larger than 6mm, but a D-shape usually fits a D-shaft).
+// Wait, a 6mm D-shaft has a flat side and a round side.
+// The flat side of the shaft is usually 6mm wide? Or the circle is 6mm?
+// Standard D-shafts: The flat side is usually the same width as the diameter of the round part? No.
+// Let's stick to the prompt's numbers strictly.
+// "6.2 mm diameter circle" -> This likely means the width of the flat part is 6.2mm.
+// "distance from the flat to the opposite side of the circle is 4.7 mm" -> This is the sagitta (height of the arc above the chord).
+// So Radius = (Width/2) + Sagitta = 3.1 + 4.7 = 7.8mm.
+// Center to Flat distance = Radius - Sagitta = 7.8 - 4.7 = 3.1mm.
+// Center to Flat distance = Width/2 = 3.1mm.
+// This makes sense. The flat is centered on the X-axis, extending from -3.1 to +3.1.
+// The arc goes from y = 3.1 to y = 3.1 + 4.7 = 7.8.
+// Wait, if the flat is on the X-axis, the distance from the flat to the opposite side is the y-coordinate of the arc.
+// So R = 7.8mm.
+// The flat is at y = 3.1mm? No, the flat is a chord.
+// If the flat is on the X-axis (y=0), the distance to the arc is 7.8mm.
+// But the prompt says "distance from the flat to the opposite side is 4.7mm".
+// So the flat is at y = 7.8 - 4.7 = 3.1mm.
+// And the width of the flat is 6.2mm.
+// So the flat spans x = [-3.1, 3.1] at y = 3.1mm.
+// The arc is centered at (0,0) with radius 7.8mm.
+// This creates a D-shape where the flat is at y=3.1, and the arc goes up to y=7.8.
+// The "opposite side" is the top of the arc.
+// This fits the description.
+
+// Let's recalculate based on this:
+// Radius of the D-bore circle: R_BORE = 3.1 + 4.7 = 7.8mm.
+// Flat position (y-coordinate): Y_FLAT = 3.1mm.
+// Flat width: 6.2mm.
+
+// Wait, is the knob 30mm diameter? Yes.
+// Is the bore 7.8mm radius? That's 15.6mm diameter.
+// The knob is 30mm diameter. So the bore fits inside.
+
+// Let's re-verify the "6.2 mm diameter circle" part.
+// Maybe it means the circle part of the D is 6.2mm diameter?
+// If the circle is 6.2mm diameter, R = 3.1mm.
+// Then the max distance from flat to arc is 3.1mm.
+// But the prompt says 4.7mm.
+// This is a contradiction unless the "6.2 mm diameter circle" refers to the width of the flat part.
+// Given the context of a 6mm shaft, a 7.8mm bore is quite large for a 6mm shaft (it would be loose).
+// However, if the shaft is a D-shaft, the flat side is 6mm wide?
+// If the shaft is 6mm diameter (round part) and the flat is 6mm wide?
+// Then the hole needs to be 6mm wide at the flat, and slightly larger at the arc.
+// If the flat is 6mm wide, and the distance to the arc is 4.7mm, then R = 3 + 4.7 = 7.7mm.
+// This is still large.
+// Let's reconsider the "6.2 mm diameter circle" phrase.
+// Could it mean the hole is a circle of 6.2mm diameter, and then cut flat?
+// If so, R = 3.1mm.
+// Then the distance from the flat to the opposite side cannot be 4.7mm.
+// Unless the "opposite side" is not the arc, but something else?

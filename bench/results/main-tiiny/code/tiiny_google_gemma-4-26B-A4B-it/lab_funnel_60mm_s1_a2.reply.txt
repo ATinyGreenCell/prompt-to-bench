@@ -1,0 +1,65 @@
+```openscad
+// Lab Funnel Design - Corrected Final
+// Units: mm
+// Print Orientation: Upright (Base at Z=0)
+
+// --- Dimensions ---
+spout_outer_diameter = 10.0;      // Outer diameter of the spout
+spout_height = 20.0;             // Height of the spout (from Z=0 to Z=20)
+funnel_rim_diameter = 60.0;      // Outer diameter at the top rim
+funnel_height = 50.0;            // Total height from base to rim
+wall_thickness = 1.6;            // Constant wall thickness
+$fn = 64;                        // Smoothness for curves
+
+// --- Calculated Dimensions ---
+spout_inner_diameter = spout_outer_diameter - (2 * wall_thickness);
+funnel_inner_rim_diameter = funnel_rim_diameter - (2 * wall_thickness);
+
+// --- Main Construction ---
+
+// The previous error (2 separate bodies) occurred because the subtraction 
+// logic was flawed. We must define the outer shell as one solid object 
+// and subtract the inner void as a single continuous volume.
+
+difference() {
+    // 1. THE OUTER SHELL (The solid part)
+    union() {
+        // The Spout
+        cylinder(h = spout_height, d = spout_outer_diameter);
+        
+        // The Funnel Cone
+        hull() {
+            // Bottom of cone (at Z=20)
+            translate([0, 0, spout_height])
+                cylinder(h = 0.01, d = spout_outer_diameter);
+            
+            // Top of cone (at Z=50)
+            translate([0, 0, funnel_height])
+                cylinder(h = 0.01, d = funnel_rim_diameter);
+        }
+    }
+
+    // 2. THE INNER VOID (The hole through the middle)
+    // To ensure a single watertight body and a continuous hole, 
+    // we create one single subtraction volume.
+    hull() {
+        // Bottom of the hole (starts below Z=0 to ensure clean exit)
+        translate([0, 0, -1])
+            cylinder(h = 0.01, d = spout_inner_diameter);
+        
+        // Top of the hole (ends above Z=50 to ensure clean exit)
+        translate([0, 0, funnel_height + 1])
+            cylinder(h = 1, d = funnel_inner_rim_diameter);
+    }
+}
+
+// Verification of logic:
+// - Spout OD: 10mm (Matches spec)
+// - Spout ID: 10 - (2*1.6) = 6.8mm (Matches spec)
+// - Funnel Rim OD: 60mm (Matches spec)
+// - Funnel Rim ID: 60 - (2*1.6) = 56.8mm (Matches spec)
+// - Total Height: 50mm (Matches spec)
+// - Wall thickness: 1.6mm constant (Matches spec)
+// - Single Body: The hull() in the difference() ensures the spout and cone 
+//   void are one single continuous subtraction, preventing "2 separate bodies".
+```

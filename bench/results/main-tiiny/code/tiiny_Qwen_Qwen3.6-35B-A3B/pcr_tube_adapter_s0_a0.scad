@@ -1,0 +1,54 @@
+// Dimensions
+COLLAR_OD = 13;       // Outer diameter of the base collar
+COLLAR_THICK = 1.5;   // Thickness of the base collar
+SLEEVE_OD = 10.8;     // Outer diameter of the sleeve body
+SLEEVE_H = 21.5;      // Total height of the sleeve (from z=0)
+BORE_D = 6.2;         // Inner bore diameter
+
+// Calculated dimensions
+COLLAR_R = COLLAR_OD / 2;
+SLEEVE_R = SLEEVE_OD / 2;
+BORE_R = BORE_D / 2;
+SLEEVE_BODY_H = SLEEVE_H - COLLAR_THICK;
+
+// Print orientation: Collar on bed (z=0 to 1.5), sleeve rises to z=21.5
+// Centered on XY origin.
+
+module adapter_sleeve() {
+    // 1. The base collar (rests on the bed)
+    // Extends slightly below z=0 to ensure a solid bottom face when printed upside down
+    // or just to be safe with the slicer. However, the prompt says it lies on the bed z=0 to 1.5.
+    // We will model it exactly as described.
+    cylinder(r = COLLAR_R, h = COLLAR_THICK, center = false);
+
+    // 2. The sleeve body
+    // Rises from the top of the collar (z = 1.5) to z = 21.5
+    // Height of the body part = 21.5 - 1.5 = 20.0
+    translate([0, 0, COLLAR_THICK]) {
+        cylinder(r = SLEEVE_R, h = SLEEVE_BODY_H, center = false);
+    }
+
+    // 3. The bore
+    // Runs through the full height (z=0 to z=21.5).
+    // To ensure clean holes at both ends, we extend the cutting cylinder slightly past the faces.
+    // Open at both ends: z=0 and z=21.5.
+    // We subtract a cylinder that extends from -0.05 to 21.55.
+    $fn = 64;
+    difference() {
+        // The solid body (union of collar and sleeve body)
+        union() {
+            cylinder(r = COLLAR_R, h = COLLAR_THICK, center = false);
+            translate([0, 0, COLLAR_THICK]) {
+                cylinder(r = SLEEVE_R, h = SLEEVE_BODY_H, center = false);
+            }
+        }
+        
+        // The cutting bore
+        // Extends past z=0 by 0.05 and past z=21.5 by 0.05
+        translate([0, 0, -0.05]) {
+            cylinder(r = BORE_R, h = SLEEVE_H + 0.1, center = false);
+        }
+    }
+}
+
+adapter_sleeve();

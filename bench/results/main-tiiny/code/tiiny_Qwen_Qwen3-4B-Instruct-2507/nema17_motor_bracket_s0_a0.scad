@@ -1,0 +1,126 @@
+// Dimensions for NEMA 17 stepper motor L-shaped mounting bracket
+// Print orientation: base plate on XY plane (z=0), builds upward in +Z
+
+// Base plate dimensions
+base_x_range = 50;         // total x span (from -25 to 25)
+base_y_range = 45;         // y from 0 to 45
+base_z_height = 5;         // height of base plate
+
+// Motor plate dimensions
+motor_x_range = 50;        // x from -25 to 25
+motor_y_range = 5;         // y from 0 to 5
+motor_z_height = 50;       // z from 0 to 50
+
+// Hole dimensions
+m4_hole_diameter = 4.5;    // M4 through-holes in base plate
+m3_hole_diameter = 3.4;    // M3 screw holes in motor plate
+motor_boss_diameter = 23;  // hole for motor centring boss
+boss_center_z = 28;       // z-position of boss hole center
+boss_center_x = 0;       // x-center of boss hole
+boss_center_y = 0;       // y-center of boss hole
+
+// Gusset dimensions (5 mm thick, right triangles)
+gusset_thickness = 5;     // thickness in Z
+gusset_leg_length = 20;   // 20 mm along Y and Z
+gusset_y_start = 5;       // y = 5 where plates meet
+gusset_z_start = 5;      // z = 5 where plates meet
+
+// Square pattern for M3 screws: 31 mm on a side, centered on boss hole
+m3_screw_spacing = 31;    // 31 mm square pattern
+m3_screw_count = 4;       // 4 screws
+
+// $fn for smooth holes
+$fn = 64;
+
+// Base plate: x from -25 to 25, y from 0 to 45, z from 0 to 5
+base_plate = cube([base_x_range, base_y_range, base_z_height]);
+
+// M4 through-holes at (x = -17, y = 30) and (x = 17, y = 30)
+// Each hole extends 0.1 mm beyond the face to avoid coplanar surfaces
+hole_m4_1 = translate([ -17, 30, 0 ]) 
+    cylinder(r = m4_hole_diameter / 2, h = base_z_height + 0.1, center = false);
+
+hole_m4_2 = translate([ 17, 30, 0 ]) 
+    cylinder(r = m4_hole_diameter / 2, h = base_z_height + 0.1, center = false);
+
+// Motor plate: x from -25 to 25, y from 0 to 5, z from 0 to 50
+// Stands on back edge of base plate (y=0 to 5)
+motor_plate = cube([motor_x_range, motor_y_range, motor_z_height]);
+
+// Cut a 23 mm diameter hole for motor centring boss at (x=0, y=0, z=28)
+// Boss hole centered at x=0, y=0, z=28 (in YZ plane, x=0)
+boss_hole = translate([0, 0, 28]) 
+    cylinder(r = motor_boss_diameter / 2, h = 2 * 0.1, center = false);
+
+// Cut four M3 holes in a 31 mm square pattern centered on the boss hole
+// Center of pattern at (x=0, y=0, z=28)
+// Pattern: 31 mm apart, 4 positions: (±15.5, ±15.5) in Y and Z
+// Since the motor plate is 50 mm in Z, holes at z=28±15.5 = 12.5 to 43.5
+// But we place them in the YZ plane, centered at z=28
+
+// First hole: (y=0, z=28)
+// We place holes at (y=±15.5, z=28±15.5) — 4 holes total
+// All at x=0, y=±15.5, z=28±15.5
+
+hole_m3_1 = translate([0, -15.5, 28 - 15.5]) 
+    cylinder(r = m3_hole_diameter / 2, h = 2 * 0.1, center = false);
+
+hole_m3_2 = translate([0, 15.5, 28 - 15.5]) 
+    cylinder(r = m3_hole_diameter / 2, h = 2 * 0.1, center = false);
+
+hole_m3_3 = translate([0, -15.5, 28 + 15.5]) 
+    cylinder(r = m3_hole_diameter / 2, h = 2 * 0.1, center = false);
+
+hole_m3_4 = translate([0, 15.5, 28 + 15.5]) 
+    cylinder(r = m3_hole_diameter / 2, h = 2 * 0.1, center = false);
+
+// Left gusset: x from -25 to -20, y from 0 to 5, z from 0 to 5
+// Right triangle in YZ plane: right angle at (y=5, z=5)
+// Legs: 20 mm in +Y and +Z
+left_gusset = translate([-25, 0, 0]) 
+    hull() [
+        // Front face (y=5, z=5 to 25)
+        translate([0, 5, 5]) cube([20, 0, 20]),
+        // Back face (y=0 to 5, z=0 to 5)
+        translate([0, 0, 0]) cube([20, 5, 5])
+    ];
+
+// Better: define as a right triangle in YZ plane, at x = -25
+// From (y=5, z=5) to (y=5, z=25) and (y=25, z=5)
+// So we build a 20x20 triangle in YZ, at x = -25, y from 5 to 25, z from 5 to 25
+// But we want it flush with the left edge of the base plate
+
+// Correct gusset: right triangle in YZ plane, at x = -25, y from 5 to 25, z from 5 to 25
+// Right angle at (y=5, z=5)
+left_gusset = translate([-25, 0, 0]) 
+    hull() [
+        // Face 1: y from 5 to 25, z=5 (line)
+        // Face 2: y=5, z from 5 to 25 (line)
+        // So we use a triangle in YZ
+        translate([0, 5, 5]) cube([20, 20, 0]),  // 20 in Y, 20 in Z
+        translate([0, 5, 5]) cube([0, 20, 20])   // 20 in Y, 20 in Z
+    ];
+
+// Actually, simpler: use a triangle in YZ at x = -25, y=5 to 25, z=5 to 25
+// But we want a right triangle with legs 20 mm in +Y and +Z
+// So from (y=5, z=5) to (y=25, z=5) and (y=5, z=25)
+
+left_gusset = translate([-25, 0, 0]) 
+    hull() [
+        // Point A: (y=5, z=5)
+        // Point B: (y=25, z=5)
+        // Point C: (y=5, z=25)
+        // Triangle ABC
+        translate([0, 5, 5]) cube([20, 0, 0]),  // 20 in Y
+        translate([0, 5, 5]) cube([0, 0, 20])    // 20 in Z
+    ];
+
+// Better: use a single right triangle in YZ plane
+// At x = -25, y from 5 to 25, z from 5 to 25
+// We define it as a 20x20 right triangle in YZ, at x = -25, y=5, z=5
+// So we use a hull of two rectangles
+
+left_gusset = translate([-25, 0, 0]) 
+    hull() [
+        // Rectangle 1: y=5 to 25, z=5 to 5 (zero height)
+        // Rectangle 2: y=5 to 5, z

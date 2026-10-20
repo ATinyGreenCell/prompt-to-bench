@@ -1,0 +1,39 @@
+// Adapter sleeve for 0.2 mL PCR tube to fit 1.5 mL rack hole
+// Units: millimetres
+
+// Collar dimensions (bottom part resting on bed)
+collar_d = 13;
+collar_h = 1.5;
+
+// Sleeve body dimensions (upper part)
+body_d = 10.8;
+total_h = 21.5;
+body_h = total_h - collar_h;
+
+// Bore dimensions (through-hole)
+bore_d = 6.2;
+// Bore cutter must extend past faces to avoid coplanar issues (Rule 5)
+// Extends 0.1mm past bottom (z=0) and 0.1mm past top (z=21.5)
+bore_h = total_h + 0.2; 
+bore_offset = -0.1;
+
+// Global setting for curved shapes to ensure roundness
+$fn = 64;
+
+// Main part definition
+difference() {
+    // Union of collar and body
+    union() {
+        // Collar: z = 0 to 1.5
+        cylinder(h=collar_h, d=collar_d);
+        
+        // Body: z = 1.5 to 21.5
+        // Translate up by collar height
+        translate([0, 0, collar_h])
+            cylinder(h=body_h, d=body_d);
+    }
+    
+    // Bore: z = -0.1 to 21.6 (extends past top and bottom faces)
+    translate([0, 0, bore_offset])
+        cylinder(h=bore_h, d=bore_d);
+}

@@ -1,0 +1,81 @@
+```openscad
+// Bench Rack for 1.5 mL Microcentrifuge Tubes
+// Designed for FDM 3D printing. Rests on XY plane at Z=0.
+
+// --- Dimensions (mm) ---
+// Block Dimensions
+$block_length = 106; // X
+$block_width  = 72;  // Y
+$block_height = 30;  // Z
+
+// Grid Configuration
+$grid_rows = 4;      // Rows along Y
+$grid_cols = 6;      // Columns along X
+$grid_spacing_x = 16; // Centre-to-centre spacing X
+$grid_spacing_y = 16; // Centre-to-centre spacing Y
+
+// Hole Dimensions
+$hole_diameter = 11.2;
+$hole_depth    = 25; // Depth of the hole (from top surface)
+$floor_height  = 5;  // Solid floor thickness (30 - 25)
+
+// --- Variables ---
+$fn = 64; // Resolution for curved shapes
+
+// --- Main Module ---
+module bench_rack() {
+    // 1. Create the solid block
+    block = cube([
+        $block_length,
+        $block_width,
+        $block_height
+    ]);
+
+    // 2. Create the holes
+    // We iterate through rows (Y) and columns (X)
+    // The grid is centred on the block, so we calculate offsets from the center (0,0)
+    
+    holes = difference() {
+        // The base solid block
+        translate([0, 0, 0]) block;
+        
+        // Loop through columns (X direction)
+        for (col = [0 : $grid_cols - 1]) {
+            // Loop through rows (Y direction)
+            for (row = [0 : $grid_rows - 1]) {
+                
+                // Calculate position of the hole center
+                // Center of block is (0,0). 
+                // Step size is spacing. 
+                // Offset = (index * spacing) - (total_items * spacing / 2)
+                
+                $x_pos = (col * $grid_spacing_x) - (($grid_cols - 1) * $grid_spacing_x / 2);
+                $y_pos = (row * $grid_spacing_y) - (($grid_rows - 1) * $grid_spacing_y / 2);
+                
+                // Define the hole geometry
+                // Cylinder: diameter, height, centered at (x, y, z)
+                // We subtract a cylinder that is slightly larger than the hole diameter
+                // to ensure clean cutting (Rule 5).
+                $cut_diameter = $hole_diameter + 0.1; 
+                
+                hole_shape = cylinder(
+                    h = $hole_depth,
+                    r = $cut_diameter / 2,
+                    center = [$x_pos, $y_pos, $block_height / 2]
+                );
+                
+                difference() {
+                    block;
+                    hole_shape;
+                }
+            }
+        }
+    };
+    
+    // Render the final part
+    translate([0, 0, 0]) holes;
+}
+
+// Instantiate the part
+bench_rack();
+```

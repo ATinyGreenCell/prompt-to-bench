@@ -1,0 +1,87 @@
+```openscad
+$fn = 64;
+
+// Base plate dimensions
+base_x = 50; // from -25 to 25
+base_y = 45; // from 0 to 45
+base_z = 5;
+
+// Vertical motor plate dimensions
+motor_plate_y = 5;
+motor_plate_z = 50;
+
+// Mounting hole positions
+hole_x_offset = 17;
+hole_y = 30;
+
+// Motor plate features
+boss_hole_diameter = 23;
+boss_hole_z = 28;
+screw_hole_diameter = 3.4;
+screw_pattern_size = 31; // square pattern side length
+
+// Gusset dimensions
+gusset_thickness = 5;
+gusset_leg = 20;
+
+// Base plate
+base = cube([base_x, base_y, base_z]);
+
+// Motor plate (vertical, on back edge of base)
+motor_plate = translate([0, 0, base_z]) 
+              cube([base_x, motor_plate_y, motor_plate_z]);
+
+// Gussets
+gusset_left = translate([-25, 5, 5]) 
+              hull() {
+                cube([gusset_thickness, gusset_leg, gusset_leg]);
+                translate([0, gusset_leg, 0]) cube([gusset_thickness, 0, gusset_leg]);
+                translate([0, 0, gusset_leg]) cube([gusset_thickness, gusset_leg, 0]);
+              };
+
+gusset_right = translate([25 - gusset_thickness, 5, 5]) 
+               hull() {
+                 cube([gusset_thickness, gusset_leg, gusset_leg]);
+                 translate([0, gusset_leg, 0]) cube([gusset_thickness, 0, gusset_leg]);
+                 translate([0, 0, gusset_leg]) cube([gusset_thickness, gusset_leg, 0]);
+               };
+
+// Base mounting holes (M4 = 4.5mm diameter)
+base_hole = cylinder(d = 4.5, h = base_z + 0.1, $fn = 64);
+base_holes = union(
+  translate([-hole_x_offset, hole_y, -0.05]) base_hole,
+  translate([hole_x_offset, hole_y, -0.05]) base_hole
+);
+
+// Motor plate boss hole (23mm diameter)
+boss_hole = cylinder(d = boss_hole_diameter, h = motor_plate_y + 0.1, $fn = 64);
+boss_hole_pos = translate([0, -0.05, boss_hole_z]) boss_hole;
+
+// Motor plate screw holes (M3 = 3.4mm diameter)
+screw_hole = cylinder(d = screw_hole_diameter, h = motor_plate_y + 0.1, $fn = 64);
+screw_offset = screw_pattern_size / 2;
+screw_holes = union(
+  translate([screw_offset, -0.05, boss_hole_z + screw_offset]) screw_hole,
+  translate([screw_offset, -0.05, boss_hole_z - screw_offset]) screw_hole,
+  translate([-screw_offset, -0.05, boss_hole_z + screw_offset]) screw_hole,
+  translate([-screw_offset, -0.05, boss_hole_z - screw_offset]) screw_hole
+);
+
+// Combine parts
+bracket = union(
+  base,
+  motor_plate,
+  gusset_left,
+  gusset_right
+);
+
+// Subtract holes
+bracket_with_holes = difference() {
+  bracket;
+  base_holes;
+  boss_hole_pos;
+  screw_holes;
+};
+
+translate([-base_x/2, 0, 0]) bracket_with_holes;
+```

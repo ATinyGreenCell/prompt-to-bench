@@ -1,0 +1,46 @@
+Looking at the measurement report and comparing with the specification, I found several issues:
+
+1. **Disc diameter**: The bounding box shows X and Y size of 42.50 mm (diameter 42.5 mm), but the specification requires 85 mm diameter. This means the disc radius is being set to 42.5 mm (diameter 85 mm), but the actual rendered disc appears to be only 42.5 mm in diameter. This suggests the `disc_diameter = 85` is being used correctly, but the bounding box report shows the wrong size - wait, looking more carefully: bounding box shows X -21.25 .. 21.25, which is 42.5 mm total, but the specification says 85 mm diameter. So the disc is only 42.5 mm in diameter instead of 85 mm.
+
+2. **Z position**: The lowest point is at z = -1.00, but the part should rest on the bed at z = 0. This is because the cylinder is centered (center = true), so it extends from -1 mm to +1 mm. It should be positioned with bottom at z = 0.
+
+3. **Hole positions**: The slice at z=0.51 shows holes at positions like (0.0, 18.0), (-18.0, 0.0), etc. With 9 mm spacing, the outermost holes should be at ±27 mm (since (7-1)/2 * 9 = 27), but the positions shown are at ±18 mm, which suggests the grid is only 5x5 instead of 7x7.
+
+Let me recalculate:
+- For a 7x7 grid with 9 mm spacing, the hole positions should be at: -27, -18, -9, 0, 9, 18, 27 mm (7 positions with spacing 9 mm).
+- The bounding box issue suggests the disc radius is 21.25 mm (diameter 42.5 mm) instead of 42.5 mm (diameter 85 mm).
+
+The issue is that `disc_radius = disc_diameter / 2` with `disc_diameter = 85` gives 42.5, but the cylinder is being created with `r = disc_radius / 2`, which would be 21.25. That's the bug!
+
+Let me fix:
+1. Change `r = disc_radius / 2` to `r = disc_radius` (since `disc_radius` is already half of `disc_diameter`)
+2. Remove `center = true` from the cylinder and position it at z = 0
+3. Check the hole grid calculation
+
+Actually, looking at the hole positions in the report: (0.0, 18.0), (-18.0, 0.0), etc. With 9 mm spacing, for a 7x7 grid, the positions should be at offsets of 0, ±9, ±18, ±27 mm from center. But the report shows positions at 0, ±9, ±18 mm only, which is 5 positions (5x5 grid), not 7x7.
+
+The issue is in the loop: `for (i = [0 : grid_size - 1])` with `grid_size = 7` gives i = 0,1,2,3,4,5,6 (7 values), and `(i - (grid_size - 1) / 2)` gives -3, -2, -1, 0, 1, 2, 3, multiplied by 9 gives -27, -18, -9, 0, 9, 18, 27. So that should be correct.
+
+But the report shows positions at 0, ±9, ±18 mm only. This suggests the grid might be 5x5. Let me check the calculation again.
+
+Wait, the report says: "13 holes" at z=0.51. A 7x7 grid should have 49 holes, but the report shows only 13 holes. This means the holes are being cut incorrectly - likely the holes are only being created where they don't overlap with the notch, or there's an issue with the hole generation.
+
+Actually, looking at the slice description: it lists 13 hole centers, but a 7x7 grid should have 49 holes. The positions listed are for a 3x3 grid (positions at 0, ±9, ±18), not 7x7.
+
+The issue is in the hole generation: the `hole_grid()` module is subtracted from the disc, but the holes might be too large or positioned incorrectly.
+
+Let me re-examine the code:
+- `grid_radius = (grid_size - 1) * grid_spacing / 2` = 6 * 9 / 2 = 27 mm
+- The holes are placed at `x = (i - (grid_size - 1) / 2) * grid_spacing`, which for i=0..6 gives -3..+3 * 9 = -27..+27, which is correct.
+
+But the report shows only 13 holes. This suggests that the holes are being cut, but the slice only shows 13 because many holes are outside the disc or something is wrong.
+
+Wait, the disc radius is 42.5 mm, and the outermost holes are at 27 mm from center, so they should all be inside the disc (27 < 42.5). So all 49 holes should be visible.
+
+The issue must be in how the holes are being generated. Let me check the hole cylinder placement:
+```openscad
+translate([x, y, -disc_thickness / 2 + 0.01]) {
+    cylinder(h = disc_thickness + 0.02, r = hole_diameter / 2, center = true);
+}
+```
+This places the hole cylinder with its center at z = -disc

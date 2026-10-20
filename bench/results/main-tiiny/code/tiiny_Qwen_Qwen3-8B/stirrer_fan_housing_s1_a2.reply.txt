@@ -1,0 +1,61 @@
+```openscad
+// Variables for dimensions
+outer_size_x = 90;  // Outer size in X direction
+outer_size_y = 90;  // Outer size in Y direction
+top_plate_thickness = 2;  // Thickness of the top plate
+wall_thickness = 2.5;  // Thickness of the walls
+wall_height = 40;  // Height of the walls from the top plate
+screw_hole_diameter = 4.5;  // Diameter of screw holes
+screw_pattern_distance = 71.5;  // Distance between screw holes in square pattern
+notch_width = 12;  // Width of the cable notch
+notch_depth = 8;  // Depth of the cable notch from the open edge
+
+// Main housing
+union() {
+  // Top plate (lying on the bed, z=0 to z=2)
+  cube([outer_size_x, outer_size_y, top_plate_thickness], center=false);
+
+  // Walls rising from the top plate
+  translate([0, 0, top_plate_thickness]) {
+    // Front wall
+    cube([outer_size_x, wall_thickness, wall_height], center=false);
+    // Back wall
+    translate([0, outer_size_y - wall_thickness, top_plate_thickness]) {
+      cube([outer_size_x, wall_thickness, wall_height], center=false);
+    }
+    // Left wall
+    translate([0, 0, top_plate_thickness]) {
+      cube([wall_thickness, outer_size_y, wall_height], center=false);
+    }
+    // Right wall
+    translate([outer_size_x - wall_thickness, 0, top_plate_thickness]) {
+      cube([wall_thickness, outer_size_y, wall_height], center=false);
+    }
+  }
+
+  // Screw holes in the top plate
+  for (i = [0:3]) {
+    // Calculate positions for square pattern
+    x = (screw_pattern_distance / 2) * (1 - 2 * (i % 2));
+    y = (screw_pattern_distance / 2) * (1 - 2 * (i / 2 % 2));
+    translate([x, y, 0]) {
+      cylinder(r = screw_hole_diameter / 2, h = top_plate_thickness, $fn=64);
+    }
+  }
+
+  // Cable notch in the front wall
+  translate([0, (outer_size_y - wall_thickness) / 2, top_plate_thickness]) {
+    // Notch depth is 8 mm from the open edge (z=32 to z=40)
+    // So we cut from z=32 to z=40, which is 8 mm deep
+    // Notch is 12 mm wide and 8 mm deep, centered along the wall
+    difference() {
+      // Create a rectangular block for the notch
+      cube([notch_width, wall_thickness, 8], center=false);
+      // Cut a square hole in the middle of the notch block
+      translate([notch_width / 2 - 1, 0, 32]) {
+        cube([2, 2, 8], center=false);
+      }
+    }
+  }
+}
+```

@@ -1,0 +1,46 @@
+// Dimensions
+rod_inner_diameter = 12.7;
+rod_wall_thickness = 3;
+rod_outer_diameter = rod_inner_diameter + 2 * rod_wall_thickness;
+rod_radius = rod_outer_diameter / 2;
+
+tubing_inner_diameter = 6;
+tubing_wall_thickness = 2;
+tubing_outer_diameter = tubing_inner_diameter + 2 * tubing_wall_thickness;
+tubing_radius = tubing_outer_diameter / 2;
+
+clip_height = 10;
+snap_width = 10;
+tubing_snap_width = 4.5;
+bridge_width = 6;
+bridge_x_start = 8;
+bridge_x_end = 12;
+
+// Main clip assembly
+linear_extrude(height = clip_height)
+union() {
+  // Rod ring
+  difference() {
+    circle(d = rod_outer_diameter, $fn = 64);
+    circle(d = rod_inner_diameter, $fn = 64);
+  }
+  
+  // Cutout for snapping onto rod
+  translate([-rod_radius, -snap_width/2])
+    square([rod_radius, snap_width]);
+  
+  // Tubing ring
+  translate([15, 0])
+  difference() {
+    circle(d = tubing_outer_diameter, $fn = 64);
+    circle(d = tubing_inner_diameter, $fn = 64);
+  }
+  
+  // Cutout for tubing
+  translate([15 + tubing_radius, -tubing_snap_width/2])
+    square([tubing_radius, tubing_snap_width]);
+  
+  // Bridge
+  translate([bridge_x_start, 0])
+    square([bridge_width, clip_height]);
+}

@@ -1,0 +1,44 @@
+```openscad
+// Drying rack for 10 microscope slides (75 x 25 x 1 mm)
+// Slides stand upright on their long edge, held in slots cut into the top face.
+
+// --- Base block dimensions ---
+base_L = 90;   // length along X (mm)
+base_W = 45;   // width along Y (mm)
+base_H = 20;   // height along Z (mm)
+
+// --- Slot dimensions ---
+slot_L = 77;   // slot length along X (mm)
+slot_W = 1.6;  // slot width along Y (mm)
+slot_D = 10;   // slot depth along Z (mm)
+
+// --- Slot layout ---
+n_slots = 10;          // number of slots
+slot_pitch = 3.5;      // centre-to-centre spacing along Y (mm)
+
+// --- Render quality ---
+$fn = 64;
+
+// --- Build the rack ---
+// The base block is centred on the origin in X and Y, resting on z = 0.
+// Slots are cut from the top face, open at the top, running along X.
+
+difference() {
+    // Solid base block, centred in X and Y
+    translate([-base_L/2, -base_W/2, 0])
+        cube([base_L, base_W, base_H]);
+
+    // Cut 10 parallel slots into the top face
+    for (i = [0 : n_slots - 1]) {
+        // Each slot is a rectangular prism running along X,
+        // centred on the block in X, positioned at the correct Y offset.
+        // The slot is 10 mm deep, open at the top (z = base_H).
+        // Extend 0.5 mm past the top face to ensure clean cuts.
+        
+        y_offset = (i - (n_slots - 1) / 2.0) * slot_pitch;
+        
+        translate([-slot_L/2, y_offset - slot_W/2, base_H - slot_D])
+            cube([slot_L, slot_W, slot_D + 0.5]);
+    }
+}
+```

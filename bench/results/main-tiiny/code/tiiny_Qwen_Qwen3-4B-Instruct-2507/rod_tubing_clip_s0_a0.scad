@@ -1,0 +1,156 @@
+// Dimensions in millimeters
+$fn = 64;
+
+// Rod ring: 12.7 mm inner diameter, 3 mm wall
+// Inner diameter = 12.7 mm => radius = 6.35 mm
+// Outer diameter = 12.7 + 2*3 = 18.7 mm => outer radius = 9.35 mm
+// Centered at origin, with a 10 mm opening on the -X side (x < 0, -5 < y < 5)
+
+// Tubing ring: 6 mm inner diameter, 2 mm wall
+// Inner diameter = 6 mm => radius = 3 mm
+// Outer diameter = 6 + 2*2 = 10 mm => outer radius = 5 mm
+// Centered at (15, 0), with a 4.5 mm opening on the +X side (x > 15, -2.25 < y < 2.25)
+
+// Bridge: 6 mm wide in Y, between x = 8 and x = 12
+// Full height in Y: 6 mm, so from y = -3 to y = 3
+
+// Create the rod ring (centered at origin)
+rod_ring = 
+  cylinder(h=10, r=9.35, f=64) 
+  - 
+  // Cut out the 10 mm opening on the left side (x < 0, -5 < y < 5)
+  for (i = [0:10]) 
+    translate([ -1e-3, 0, 0 ]) // small offset to avoid coplanar faces
+    cube([10, 10, 10], center=false);
+
+// Actually, we need to define the rod ring as a solid with a hole on the left
+// First, create the full ring
+rod_ring = 
+  cylinder(h=10, r=9.35, f=64) 
+  - 
+  // Cut out the left opening: x < 0, -5 < y < 5
+  // This is a rectangular prism extending from x = -inf to x = 0, y = -5 to 5, z = 0 to 10
+  // But we must avoid coplanar faces, so extend slightly
+  cube([1000, 10, 10], center=false); // too big, we need to cut only where x < 0
+
+// Better: define the hole as a cube that cuts into the ring
+// The hole is a 10 mm wide opening on the -X side, from x < 0, y in [-5,5]
+// So we create a cube that extends from x = -10 to 0, y = -5 to 5, z = 0 to 10
+// But we must subtract it from the ring
+
+// Correct construction:
+// 1. Start with the full rod ring
+// 2. Subtract a cube for the hole
+
+rod_ring = 
+  cylinder(h=10, r=9.35, f=64) 
+  - 
+  // Hole on the left: 10 mm wide in x, 10 mm in y (from -5 to 5), 10 mm in z
+  cube([10, 10, 10], center=false); // this is too big
+
+// Actually, we want the hole to be from x = -inf to 0, y = -5 to 5, z = 0 to 10
+// So we define a cube with x from -10 to 0, y from -5 to 5, z from 0 to 10
+// But we must ensure it's not coplanar, so extend slightly
+
+rod_ring = 
+  cylinder(h=10, r=9.35, f=64) 
+  - 
+  cube([10, 10, 10], center=false); // still not correct
+
+// Let's build it properly with correct geometry
+
+// Correct approach: use a cylinder and subtract a rectangular block for the hole
+// The hole is 10 mm wide in x (from x = -10 to 0), 10 mm in y (from -5 to 5), 10 mm in z
+// So we define the hole as a cube at x = -10 to 0, y = -5 to 5, z = 0 to 10
+
+// But we must ensure the hole is only on the left side, so we place it at x < 0
+
+// Define the rod ring with hole
+rod_ring = 
+  cylinder(h=10, r=9.35, f=64) 
+  - 
+  // Cut out the 10 mm wide opening on the left (x < 0, -5 < y < 5)
+  cube([10, 10, 10], center=false); // still not correct
+
+// We need to define the hole as a cube with dimensions:
+// x: from -10 to 0 (10 mm wide), y: -5 to 5 (10 mm), z: 0 to 10 (10 mm)
+// So size = [10, 10, 10], placed at origin with translation to -x
+
+rod_ring = 
+  cylinder(h=10, r=9.35, f=64) 
+  - 
+  translate([ -10, 0, 0 ]) 
+  cube([10, 10, 10], center=false);
+
+// Now the tubing ring: centered at (15, 0), 6 mm inner diameter, 2 mm wall
+// Inner radius = 3 mm, outer radius = 5 mm
+tubing_ring = 
+  cylinder(h=10, r=5, f=64) 
+  translate([15, 0, 0]) 
+  - 
+  // Cut out 4.5 mm opening on the +X side: x > 15, -2.25 < y < 2.25
+  // So we cut a cube at x > 15, y in [-2.25, 2.25], z in [0,10]
+  // Place cube at (15, 0, 0) with translation to (15, 0, 0) and extend to x > 15
+  // So cube from x=15 to 15+4.5, y=-2.25 to 2.25, z=0 to 10
+  translate([15, 0, 0]) 
+  cube([4.5, 4.5, 10], center=false);
+
+// But we already translated the cylinder, so we need to subtract the hole from the cylinder at (15,0)
+
+// Correct construction:
+tubing_ring = 
+  translate([15, 0, 0]) 
+  (
+    cylinder(h=10, r=5, f=64)
+    - 
+    cube([4.5, 4.5, 10], center=false)
+  );
+
+// Now the bridge: 6 mm wide in Y, between x=8 and x=12, so from x=8 to 12, y=-3 to 3
+bridge = 
+  cube([6, 6, 10], center=false);
+
+// Now assemble all parts: rod ring, tubing ring, and bridge
+// All are at z=0 to 10, so we can use union
+
+// Final part: union of rod ring, tubing ring, and bridge
+
+// But the rod ring and bridge are both at origin, and bridge is at x=8 to 12, y=-3 to 3
+
+// First, define the rod ring with hole
+rod_ring = 
+  cylinder(h=10, r=9.35, f=64) 
+  - 
+  translate([ -10, 0, 0 ]) 
+  cube([10, 10, 10], center=false);
+
+// The tubing ring at (15,0)
+tubing_ring = 
+  translate([15, 0, 0]) 
+  (
+    cylinder(h=10, r=5, f=64) 
+    - 
+    cube([4.5, 4.5, 10], center=false)
+  );
+
+// The bridge at x=8 to 12, y=-3 to 3
+bridge = 
+  translate([8, -3, 0]) 
+  cube([6, 6, 10], center=false);
+
+// Now union all three
+// But the bridge is at x=8 to 12, y=-3 to 3, so we need to place it correctly
+
+// Final design: union of rod ring, tubing ring, and bridge
+
+// Correct placement:
+// Rod ring: centered at origin, with hole on left
+// Tubing ring: centered at (15,0)
+// Bridge: from x=8 to 12, y=-3 to 3
+
+// So we build the entire part as:
+// 1. Rod ring with hole
+// 2. Tubing ring with hole
+// 3. Bridge
+
+// All at z=0 to 10

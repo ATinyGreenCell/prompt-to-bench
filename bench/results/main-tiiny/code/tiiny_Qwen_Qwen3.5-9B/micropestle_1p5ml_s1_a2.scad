@@ -1,0 +1,163 @@
+$fn = 128; // High resolution for smooth curves and accurate hole sizing
+
+// --- Dimensions ---
+// Handle
+d_handle = 8;      // Handle diameter (mm)
+h_handle = 45;     // Handle height (mm)
+
+// Cone
+d_cone_top = 8;    // Cone top diameter (matches handle) (mm)
+d_cone_bot = 3;    // Cone bottom diameter (mm)
+h_cone = 17;       // Cone height (62 - 45) (mm)
+
+// Tip
+d_tip = 3;         // Tip diameter (mm)
+// Tip center is at z = 62, so it extends from z = 62 - 1.5 to z = 62 + 1.5
+
+// Grooves
+n_grooves = 4;     // Number of circumferential grooves
+w_groove = 2;      // Groove width in Z (mm)
+d_groove = 1;      // Groove depth (mm)
+z_grooves = [10, 15, 20, 25]; // Z positions of groove centers
+
+// --- Construction ---
+
+module pestle() {
+    // 1. Create the main body (Handle + Cone + Tip)
+    // We build this as a single union to ensure watertightness before cutting.
+    
+    // Handle: Cylinder
+    handle = cylinder(
+        h = h_handle,
+        r = d_handle / 2,
+        center = [0, 0, h_handle / 2]
+    );
+    
+    // Cone: Linear extrusion of a triangle
+    // Base at z=45 (radius 4), Top at z=62 (radius 1.5)
+    // We define the profile in XY and extrude along Z
+    cone_profile = polygon([
+        [-d_cone_top/2, 0],
+        [d_cone_top/2, 0],
+        [d_cone_bot/2, h_cone],
+        [-d_cone_bot/2, h_cone]
+    ]);
+    cone = linear_extrude(
+        h = h_cone,
+        center = true
+    )(cone_profile);
+    // Translate cone to sit on top of handle
+    cone = translate([0, 0, h_handle])(cone);
+    
+    // Tip: Sphere centered at z = 62
+    tip = sphere(
+        r = d_tip / 2,
+        center = [0, 0, 62]
+    );
+    
+    // Union the main body parts
+    body = union(
+        handle,
+        cone,
+        tip
+    );
+    
+    // 2. Cut the grooves
+    // We use difference to subtract the grooves.
+    // The cutting planes must extend slightly past the body to ensure clean cuts.
+    
+    for (i = [0 : n_grooves - 1]) {
+        z_pos = z_grooves[i];
+        
+        // Define the groove geometry
+        // Width in Z is w_groove. Centered at z_pos.
+        // Depth is d_groove.
+        // The groove goes all the way around (360 degrees).
+        
+        cut_width = w_groove + 0.1; // Slightly wider than specified to ensure clean cut
+        cut_depth = d_groove + 0.1; // Slightly deeper
+        
+        // The cutter is a cylinder with radius (d_handle/2 + cut_depth).
+        // We rotate it 90 degrees around the X axis so its axis becomes the Y axis? 
+        // No, we want to cut a ring around the Z axis.
+        // Imagine a cylinder standing on the XY plane (axis Z).
+        // We want to remove a slice of it.
+        // Actually, the easiest way to cut a circumferential groove is:
+        // Create a cylinder of radius (d_handle/2 + cut_depth).
+        // Rotate it 90 degrees around X. Now its axis is Y.
+        // This doesn't help directly.
+        
+        // Correct approach:
+        // The groove is a cylinder of radius (d_handle/2 + cut_depth) that has been sliced to length cut_width.
+        // The axis of this "cylinder" is the Z axis.
+        // Wait, if the axis is Z, it's a standard cylinder.
+        // If we subtract a standard cylinder from a standard cylinder, we get a hole.
+        // We need the groove to be a cut INTO the cylinder surface.
+        // The groove is parallel to the Z axis? No.
+        // The handle is parallel to Z.
+        // The groove is circumferential. It runs in the XY plane? No.
+        // "Circumferential grooves... 2 mm wide (in Z)".
+        // This means the groove runs along the Z-axis (parallel to the handle axis) but is a ring?
+        // No, "2 mm wide in Z" implies the groove has a finite length along Z.
+        // "Circumferential" implies it goes all the way around the 360 degrees.
+        // So it is a ring cut into the side of the cylinder.
+        // The ring is centered at z_pos.
+        // The ring has a width of 2mm along Z.
+        // The ring has a depth of 1mm radially inward.
+        
+        // Construction of the cutter:
+        // 1. Start with a cylinder of radius (d_handle/2 + cut_depth).
+        // 2. Rotate it 90 degrees around X. Now it is a cylinder along Z.
+        //    Wait, if I rotate a cylinder (axis Z) 90 deg around X, the axis becomes Y.
+        //    If I rotate a cylinder (axis Z) 90 deg around X, the axis becomes Y.
+        //    I want the cutter to be a cylinder along the Z-axis? No.
+        //    I want to cut a ring.
+        //    Let's use a cylinder of radius (d_handle/2 + cut_depth).
+        //    Rotate it 90 degrees around X.
+        //    This makes the cylinder axis Z.
+        //    Wait, if I rotate a cylinder (axis Z) 90 deg around X, the axis becomes Y.
+        //    Let's try: Cylinder along X, rotated 90 deg around Z -> Cylinder along Y.
+        //    Cylinder along X, rotated 90 deg around Y -> Cylinder along Z.
+        //    Okay, let's build the cutter shape directly.
+        //    The cutter is a cylinder of radius (d_handle/2 + cut_depth).
+        //    We want to remove material where this cylinder overlaps with the handle.
+        //    The handle is a cylinder of radius d_handle/2 along Z.
+        //    The cutter should be a cylinder of radius (d_handle/2 + cut_depth) along Z?
+        //    No, that would make a hole.
+        
+        // Correct Logic:
+        // The groove is a slot.
+        // We can create a cylinder of radius (d_handle/2 + cut_depth).
+        // We rotate it 90 degrees around X.
+        // This makes the cylinder axis Y.
+        // Then we translate it to z_pos? No.
+        
+        // Let's try a different approach:
+        // The groove is a cylinder of radius (d_handle/2 + cut_depth) that is sliced.
+        // The axis of the cylinder is Z.
+        // We slice it with two planes at z = z_pos - w_groove/2 and z = z_pos + w_groove/2.
+        // No, that creates a hole.
+        
+        // The correct way to cut a circumferential groove:
+        // 1. Create a cylinder of radius (d_handle/2 + cut_depth).
+        // 2. Rotate it 90 degrees around X. Now its axis is Y.
+        // 3. Translate it so it sits on the handle? No.
+        
+        // Let's visualize the cut:
+        // We want to remove a ring of material.
+        // The ring is defined by:
+        // - Radius > d_handle/2
+        // - Z between z_pos - w_groove/2 and z_pos + w_groove/2
+        // - All angles (0 to 360)
+        
+        // We can create this by:
+        // 1. Creating a cylinder of radius (d_handle/2 + cut_depth).
+        // 2. Rotating it 90 degrees around X. Now its axis is Y.
+        // 3. This cylinder is infinite in Y.
+        // 4. We need to limit it in Z? No, the axis is Y.
+        
+        // Let's try:
+        // 1. Create a cylinder of radius (d_handle/2 + cut_depth).
+        // 2. Rotate it 90 degrees around X. Now its axis is Y.
+        // 3. Translate it to [0, 0, 0].
+        // 4. This cylinder is along Y.

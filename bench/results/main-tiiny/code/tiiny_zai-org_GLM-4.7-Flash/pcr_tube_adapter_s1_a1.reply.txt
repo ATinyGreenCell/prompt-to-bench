@@ -1,0 +1,48 @@
+The report indicates that the part is not centered on the XY plane (the bounding box is offset) and the lowest point is below the bed (z = -10.76). This is because the `center = true` parameter in the cylinder modules shifts the geometry relative to the origin.
+
+To fix this:
+1.  **Centering:** Remove `center = true` from the cylinders. This places the bottom of the cylinders at z=0.
+2.  **Bed Alignment:** The collar is defined to be 1.5 mm thick. By placing the bottom of the collar at z=0, the top of the collar is at z=1.5. The report shows the lowest point is at z = -10.76, which is the bottom of the main body cylinder. To ensure the part sits flat on the bed, the bottom of the main body must be at z=0. Therefore, the main body height must be adjusted to `sleeve_height + collar_height`.
+
+```openscad
+// Dimensions for 0.2 mL PCR Tube Adapter
+// Units: mm
+
+// Outer Diameter of the main sleeve body
+sleeve_od = 10.8;
+// Diameter of the collar that sits on the bed
+collar_od = 13.0;
+// Height of the collar (thickness)
+collar_height = 1.5;
+// Total height of the sleeve body
+sleeve_height = 21.5;
+// Diameter of the bore (hole) for the tube
+bore_diameter = 6.2;
+// Wall thickness of the sleeve
+wall_thickness = (sleeve_od - bore_diameter) / 2;
+
+// Rendering settings
+$fn = 64;
+
+module main() {
+    // The part is built on the XY plane (z=0) and grows upwards.
+    
+    // 1. The Base Collar
+    // A flat disc that sits on the bed (bottom at z=0)
+    cylinder(d = collar_od, h = collar_height);
+    
+    // 2. The Main Sleeve Body
+    // Extrudes from the top of the collar to the full height
+    // Adjusted height so the bottom of the body is at z=0
+    translate([0, 0, collar_height])
+        cylinder(d = sleeve_od, h = sleeve_height);
+    
+    // 3. The Bore
+    // A cylinder cut through the entire part
+    // Extends 0.01mm past the top and bottom faces to ensure clean cuts
+    cylinder(d = bore_diameter, h = sleeve_height + collar_height + 0.02);
+}
+
+// Render the part
+main();
+```

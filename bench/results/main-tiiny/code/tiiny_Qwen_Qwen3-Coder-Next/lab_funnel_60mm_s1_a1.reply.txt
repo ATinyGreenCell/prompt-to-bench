@@ -1,0 +1,81 @@
+Looking at the measurement report and comparing with the specification:
+
+1. **Spout outer diameter**: Report shows 9.99 mm (expected 10 mm) — acceptable tolerance.
+2. **Spout inner diameter**: Report shows 6.79 mm (expected 10 - 2×1.6 = 6.8 mm) — acceptable tolerance.
+3. **Cone bottom diameter at z=50**: Report shows 55.79 mm (expected 60 mm) — **this is the problem**.
+4. **Cone top diameter at z=20**: Report shows 9.99 mm (expected 10 mm) — acceptable.
+
+The issue is in the cone construction: the inner cone is being calculated with the wrong radii. The cone's inner surface should be offset inward by exactly 1.6 mm (wall thickness), but the calculation is not accounting for the fact that the cone's slant means a simple radial subtraction doesn't preserve the wall thickness correctly.
+
+Actually, looking more carefully: the cone's outer diameter at the bottom is 60 mm, so the outer radius is 30 mm. The inner radius should be 30 - 1.6 = 28.4 mm, giving an inner diameter of 56.8 mm. But the report shows 52.61 mm for the inner hole at z=47.51, which suggests the inner cone calculation is wrong.
+
+Let me verify: at z=47.51 (which is 27.51 mm above the cone base), the cone height from the base is 30 mm, so we're at 2.49 mm from the top of the cone (where the top is at z=50). 
+
+The cone's outer diameter at height h from the cone base (where base is at z=20, so h=0 at z=20, h=30 at z=50) should be:
+- At h=0 (z=20): 10 mm
+- At h=30 (z=50): 60 mm
+
+So the outer radius at height h is: 5 + (25)*(h/30) = 5 + (25/30)*h
+
+The inner radius should be: (5 - 1.6) + ((25 - 1.6)*(h/30)) = 3.4 + (23.4/30)*h
+
+But the report shows an inner diameter of 52.61 mm at the top (z=50), which means an inner radius of 26.305 mm. The expected inner radius should be 30 - 1.6 = 28.4 mm.
+
+This means the inner cone calculation is using the wrong approach. The issue is that when we subtract a scaled-down cone, we need to make sure the wall thickness is exactly 1.6 mm at every point, which requires the inner cone to be offset by 1.6 mm along the normal direction, not radially.
+
+However, for 3D printing purposes, a simpler and acceptable approach is to calculate the inner cone diameters directly:
+- At z=20: inner diameter = 10 - 2×1.6 = 6.8 mm
+- At z=50: inner diameter = 60 - 2×1.6 = 56.8 mm
+
+The current code is incorrectly calculating the inner cone. Let me fix it by explicitly defining the inner cone diameters.
+
+```openscad
+// Lab Funnel Design
+// Wall thickness: 1.6 mm
+// Spout: 10 mm outer diameter, 20 mm tall (z = 0 to z = 20)
+// Cone: 10 mm outer diameter at z = 20, 60 mm outer diameter at z = 50
+
+$fn = 64;
+
+wall_thickness = 1.6;
+spout_height = 20;
+spout_outer_diameter = 10;
+spout_inner_diameter = spout_outer_diameter - 2 * wall_thickness;
+cone_height = 30; // from z=20 to z=50
+cone_top_outer_diameter = spout_outer_diameter;
+cone_bottom_outer_diameter = 60;
+cone_top_inner_diameter = spout_inner_diameter;
+cone_bottom_inner_diameter = cone_bottom_outer_diameter - 2 * wall_thickness;
+
+// Spout (cylinder with hole)
+module spout() {
+    difference() {
+        cylinder(h = spout_height + 0.01, d = spout_outer_diameter, center = false);
+        translate([0, 0, -0.01]) 
+            cylinder(h = spout_height + 0.02, d = spout_inner_diameter, center = false);
+    }
+}
+
+// Cone (frustum with hole)
+module cone() {
+    translate([0, 0, spout_height]) {
+        difference() {
+            // Outer cone
+            cylinder(h = cone_height + 0.01, 
+                     r1 = cone_top_outer_diameter / 2, 
+                     r2 = cone_bottom_outer_diameter / 2, 
+                     center = false);
+            // Inner cone (with correct wall thickness)
+            translate([0, 0, -0.01]) 
+                cylinder(h = cone_height + 0.02, 
+                         r1 = cone_top_inner_diameter / 2, 
+                         r2 = cone_bottom_inner_diameter / 2, 
+                         center = false);
+        }
+    }
+}
+
+// Build the funnel
+spout();
+cone();
+```

@@ -1,0 +1,121 @@
+```openscad
+// Rack for six 50 mL conical (Falcon-type) tubes
+// Print orientation: Flat plate on bed (Z=0), walls rising up.
+// After printing, flip upside down to use.
+
+// --- Dimensions (mm) ---
+// Plate dimensions
+plate_length_X = 130;
+plate_width_Y = 90;
+plate_thickness = 4;
+
+// Tube hole dimensions
+tube_diameter = 30.5;
+tube_holes_count_X = 3;
+tube_holes_count_Y = 2;
+tube_center_spacing_X = 40;
+tube_center_spacing_Y = 40;
+
+// Wall dimensions
+wall_length_X = 130;
+wall_thickness_Y = 4;
+wall_height = 70; // Total height from Z=0
+
+// --- Derived Variables ---
+// Calculate plate center offsets for grid
+// Grid is centered on the plate.
+// X positions: -40, 0, 40 (span 80, centered at 0)
+// Y positions: -20, 20 (span 40, centered at 0)
+// Since spacing is 40 and count is 3, offset is (3-1)/2 * 40 / 2 = 20? 
+// Let's verify: -40, 0, 40. Distance between -40 and 0 is 40. Correct.
+// Y positions: -20, 20. Distance is 40. Correct.
+// Center of plate is (0,0).
+
+// Wall height relative to plate top (optional, but good for logic)
+// Walls rise from Z=0 to Z=70.
+
+// --- Main Module ---
+module tube_rack() {
+    $fn = 64; // Ensure smooth holes and cylinders
+
+    // 1. Create the base plate
+    // Dimensions: 130 (X) x 90 (Y) x 4 (Z)
+    // Centered at origin.
+    plate = translate([0, 0, 0], 
+        cube([plate_length_X, plate_width_Y, plate_thickness]));
+
+    // 2. Create the six tube holes
+    // We use a for loop to position the cylinders.
+    // We subtract cylinders from the plate.
+    // To ensure clean cuts, we extend the cylinder slightly past the plate thickness.
+    hole_extension = 0.5; 
+    
+    holes = translate([0, 0, 0], 
+        // We will build the holes array here or use a loop directly in the difference.
+        // Let's use a loop inside the difference for clarity.
+    );
+
+    // 3. Create the two side walls
+    // Dimensions: 130 (X) x 4 (Y) x 70 (Z)
+    // Positioned at the long edges (Y = +/- 45).
+    // Note: Plate width is 90, so edges are at Y=45 and Y=-45.
+    // Walls are 4mm thick.
+    
+    wall_left = translate([0, -45, 0], 
+        cube([wall_length_X, wall_thickness_Y, wall_height]));
+    
+    wall_right = translate([0, 45, 0], 
+        cube([wall_length_X, wall_thickness_Y, wall_height]));
+
+    // --- Assembly ---
+    // Start with the plate
+    union() {
+        // Plate
+        translate([0, 0, 0], 
+            cube([plate_length_X, plate_width_Y, plate_thickness]));
+        
+        // Walls (added to the plate)
+        translate([0, -45, 0], 
+            cube([wall_length_X, wall_thickness_Y, wall_height]));
+            
+        translate([0, 45, 0], 
+            cube([wall_length_X, wall_thickness_Y, wall_height]));
+    }
+    
+    // Subtract the holes
+    difference() {
+        // Re-create the solid union to ensure subtraction works correctly on the combined shape
+        union() {
+            translate([0, 0, 0], 
+                cube([plate_length_X, plate_width_Y, plate_thickness]));
+            
+            translate([0, -45, 0], 
+                cube([wall_length_X, wall_thickness_Y, wall_height]));
+                
+            translate([0, 45, 0], 
+                cube([wall_length_X, wall_thickness_Y, wall_height]));
+        }
+        
+        // Loop for holes
+        for (y_idx = [0, 1]) {
+            for (x_idx = [0, 1, 2]) {
+                // Calculate position
+                // X: 0, 40, 80 -> Centered at 0: -40, 0, 40
+                // Y: 0, 40 -> Centered at 0: -20, 20
+                x_pos = (x_idx - 1) * tube_center_spacing_X;
+                y_pos = (y_idx - 1) * tube_center_spacing_Y;
+                
+                // Hole cylinder
+                // Radius = diameter / 2
+                // Extend slightly past the plate thickness (4mm) to ensure clean cut
+                // The walls are 4mm thick too, so this cuts through them cleanly.
+                translate([x_pos, y_pos, -hole_extension], 
+                    cylinder(h = (plate_thickness + hole_extension), r = tube_diameter / 2, $fn = 64));
+            }
+        }
+    }
+}
+
+// Render the part
+tube_rack();
+```

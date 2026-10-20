@@ -1,0 +1,98 @@
+// Replacement knob for hotplate stirrer with 6 mm D-shaft
+// Dimensions from user specification
+
+$fn = 64;
+
+// Main knob dimensions
+knob_diameter = 30;
+knob_height = 15;
+
+// D-shaft bore dimensions
+d_shaft_flat_to_opposite = 4.7;
+d_shaft_radius = 6.2 / 2;
+d_shaft_depth = 12;
+
+// Grip groove dimensions
+groove_diameter = 2;
+num_grooves = 18;
+
+// Pointer groove dimensions
+pointer_width = 1.5;
+pointer_depth = 1;
+
+// Calculate D-shaft cut height (chord height)
+// Given chord height h = 4.7 mm and circle radius r = 3.1 mm
+// The chord is at distance d from center: d = sqrt(r^2 - (chord/2)^2)
+chord_height = d_shaft_flat_to_opposite;
+chord_half = chord_height / 2;
+d_from_center = sqrt(d_shaft_radius * d_shaft_radius - chord_half * chord_half);
+
+// Build the knob
+module knob() {
+    // Main cylinder
+    cylinder(h = knob_height, r = knob_diameter / 2, center = false);
+}
+
+module d_shaft_bore() {
+    // D-shaped bore: cylinder with one side cut flat
+    // First create the full cylinder for the bore
+    translate([0, 0, -0.01]) {
+        cylinder(h = d_shaft_depth + 0.01, r = d_shaft_radius, center = false);
+    }
+    
+    // Cut the flat side: subtract a rectangular prism
+    // The flat is at distance d_from_center from center, and chord height is 4.7 mm
+    // Position the cut so the flat is at the front (positive Y side)
+    translate([0, d_from_center, -0.01]) {
+        cube([d_shaft_radius * 2 + 0.1, chord_height, d_shaft_depth + 0.02], center = false);
+    }
+}
+
+module grip_grooves() {
+    radius = knob_diameter / 2;
+    for (i = [0 : num_grooves - 1]) {
+        angle = (i * 360) / num_grooves;
+        translate([0, 0, 0]) {
+            rotate([0, 0, angle]) {
+                translate([radius, 0, 0]) {
+                    rotate([0, 90, 0]) {
+                        cylinder(h = knob_height + 0.1, r = groove_diameter / 2, center = false);
+                    }
+                }
+            }
+        }
+    }
+}
+
+module pointer_groove() {
+    // Pointer groove runs from center to outer edge on the same side as the D-shaft flat (positive Y side)
+    // Width = 1.5 mm, depth = 1 mm
+    // Create a triangular wedge shape
+    translate([0, 0, knob_height - pointer_depth - 0.01]) {
+        hull() {
+            // Center point
+            translate([0, 0, 0]) {
+                cylinder(h = 0.1, r = 0.01, center = false);
+            }
+            // Outer edge point (at knob radius)
+            translate([knob_diameter / 2, 0, 0]) {
+                cylinder(h = 0.1, r = 0.01, center = false);
+            }
+            // Add width by extending in Y direction
+            translate([0, pointer_width / 2, 0]) {
+                cylinder(h = 0.1, r = 0.01, center = false);
+            }
+            translate([knob_diameter / 2, pointer_width / 2, 0]) {
+                cylinder(h = 0.1, r = 0.01, center = false);
+            }
+        }
+    }
+}
+
+// Build the final part
+difference() {
+    knob();
+    d_shaft_bore();
+    grip_grooves();
+    pointer_groove();
+}

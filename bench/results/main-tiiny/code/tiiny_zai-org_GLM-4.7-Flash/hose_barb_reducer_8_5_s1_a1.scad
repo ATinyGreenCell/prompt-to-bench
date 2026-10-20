@@ -1,0 +1,102 @@
+$fn = 64;
+
+// --- Dimensions (mm) ---
+// Bore (inner diameter of tubing)
+bore = 5.0; 
+
+// 8mm Tubing Section
+z_start_8mm = 0;
+z_end_8mm = 20;
+barb_h_8mm = 10;
+barb_od_start_8mm = 7.5;
+barb_od_end_8mm = 9.5;
+
+// Transition Section
+z_start_transition = 20;
+z_end_transition = 25;
+collar_diam = 12;
+
+// 5mm Tubing Section
+z_start_5mm = 25;
+z_end_5mm = 41;
+barb_h_5mm = 8;
+barb_od_start_5mm = 6.5;
+barb_od_end_5mm = 5.0;
+
+// --- Geometry ---
+
+// 1. Main Body (Cylinder with Barbs)
+module main_body() {
+    union() {
+        // 8mm Section
+        translate([0, 0, z_start_8mm])
+        cylinder(h = z_end_8mm - z_start_8mm, d = barb_od_end_8mm, center = false);
+        
+        // Transition Section
+        translate([0, 0, z_start_transition])
+        cylinder(h = z_end_transition - z_start_transition, d = collar_diam, center = false);
+        
+        // 5mm Section
+        translate([0, 0, z_start_5mm])
+        cylinder(h = z_end_5mm - z_start_5mm, d = barb_od_end_5mm, center = false);
+        
+        // Barbs
+        // 8mm Barbs (Stacked)
+        for (i = [0, 1]) {
+            translate([0, 0, z_start_8mm + (i * barb_h_8mm)])
+            barb_shape(barb_h_8mm, barb_od_start_8mm, barb_od_end_8mm);
+        }
+        
+        // 5mm Barbs (Stacked)
+        for (i = [0, 1]) {
+            translate([0, 0, z_start_5mm + (i * barb_h_5mm)])
+            barb_shape(barb_h_5mm, barb_od_start_5mm, barb_od_end_5mm);
+        }
+    }
+}
+
+// Helper to create a single sawtooth barb
+module barb_shape(height, od_start, od_end) {
+    // The barb is a cylinder that is cut by a shape that is wider at the top
+    // and narrower at the bottom.
+    // We use a cylinder with a hole cut out by a shape that is wider at the top.
+    
+    // Outer shape (The "cutting" shape)
+    // We extend it slightly past the faces to ensure clean cuts
+    cut_height = height + 0.1;
+    
+    // The cutting shape is a cylinder with a "step" cut out.
+    // It is wider at the top (od_end) and narrower at the bottom (od_start).
+    // We model this as a cylinder with a hole.
+    
+    // Outer cylinder
+    cylinder(h = cut_height, d = od_end + 0.1, center = false);
+    
+    // Inner cylinder (The hole)
+    // The hole is wider at the top (bore + clearance) and narrower at the bottom (bore)
+    // We model this as a cylinder with a "step" cut out.
+    
+    // Inner cylinder
+    cylinder(h = cut_height, d = bore, center = false);
+    
+    // The "Step" cut (The part that makes it a sawtooth)
+    // It is a cylinder that is wider at the bottom (od_start) and narrower at the top (bore)
+    // This cylinder is subtracted from the inner cylinder.
+    
+    // Step cylinder
+    cylinder(h = cut_height, d = od_start, center = false);
+}
+
+// 2. Bore (The hole)
+module bore() {
+    // The bore is a straight cylinder through the whole part
+    // We extend it slightly past the top and bottom to ensure clean cuts
+    total_length = z_end_5mm + 0.1;
+    cylinder(h = total_length, d = bore, center = false);
+}
+
+// 3. Assembly
+difference() {
+    main_body();
+    bore();
+}

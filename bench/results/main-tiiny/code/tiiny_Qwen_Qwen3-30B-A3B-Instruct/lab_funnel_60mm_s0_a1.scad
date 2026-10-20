@@ -1,0 +1,160 @@
+// Lab funnel parameters
+$fn = 64;
+
+// Dimensions
+spout_length = 20;           // from z = 0 to z = 20
+funnel_length = 30;        // from z = 20 to z = 50
+spout_od = 10;             // outer diameter of spout
+spout_id = spout_od - 2 * 1.6; // inner diameter (bore) = 6.8 mm
+funnel_base_od = 10;       // base of cone (same as spout top)
+funnel_rim_od = 60;        // outer diameter at rim (z = 50)
+wall_thickness = 1.6;        // constant wall thickness
+
+// Create the funnel as a solid with a hole through it
+
+// Define the outer profile (in XZ plane) for the entire funnel
+// Points: (x, z) for the outer wall
+// - Start at (5, 0) — bottom of spout
+// - Go up to (5, 20) — vertical spout
+// - Then to (30, 50) — taper to rim
+// We'll use this to create the outer wall via rotate_extrude
+
+// Define the inner profile (bore) — 1.6 mm inside the outer wall at each z
+// - (3.4, 0) to (3.4, 20) — vertical bore in spout
+// - (3.4, 20) to (28.4, 50) — taper inward to rim (30 - 1.6 = 28.4)
+
+// Build the outer solid: rotate the outer profile around Z-axis
+// Build the inner hole: rotate the inner profile around Z-axis
+// Then subtract inner from outer
+
+// Outer wall: from (5,0) to (5,20) to (30,50)
+// We'll define a polygon for the outer wall cross-section
+// But rotate_extrude needs a 2D shape in the XZ plane (Y=0), so we define a polygon that traces the outer wall
+
+// Use a single rotate_extrude for the outer shape
+// The profile is a polygon: (x, z) points
+// We'll define a closed polygon: start at (0,0), go to (5,0), (5,20), (30,50), (0,50), back to (0,0)
+// But that would include a flat bottom — we want the funnel to be open at the bottom
+
+// Actually, we want the funnel to be a hollow tube with walls, so we do:
+// - Create a solid outer shape (with hole) by subtracting the inner bore from the outer body
+
+// Alternative: build the funnel as a single solid using a difference operation
+
+// Step 1: Create the outer body (solid funnel with wall thickness)
+// Use rotate_extrude on a polygon that defines the outer wall profile
+
+// Define outer profile: list of (x, z) points for the outer wall
+outer_profile = [
+  [5, 0],        // bottom of spout
+  [5, 20],       // top of spout (vertical)
+  [30, 50]       // rim of funnel
+];
+
+// Define inner profile (bore) — 1.6 mm inside at each z
+inner_profile = [
+  [3.4, 0],     // inner radius at bottom
+  [3.4, 20],    // inner radius at spout top
+  [28.4, 50]     // inner radius at rim (30 - 1.6)
+];
+
+// Create the outer solid: rotate the outer_profile around Z-axis
+// Create the inner hole: rotate the inner_profile around Z-axis
+// Then use difference to remove the hole from the outer solid
+
+// But rotate_extrude only works on a 2D shape in the XZ plane (Y=0), so we define a polygon
+
+// We'll define the outer shape as a polygon that traces the outer wall
+// But to make it a solid, we need to define a closed shape
+
+// Actually, we can use:
+// - outer_cylinder = rotate_extrude() of the outer_profile (but it's not closed)
+// - We need to define a closed polygon for rotate_extrude
+
+// Correct method: define a polygon that represents the cross-section of the funnel in the XZ plane
+// The funnel has a hollow center, so we define two profiles: outer and inner
+
+// We'll do:
+// 1. Create the outer body: a solid shape from rotate_extrude of the outer_profile (but we need to close it)
+// 2. Create the inner hole: a solid from rotate_extrude of the inner_profile
+// 3. Subtract inner from outer
+
+// But rotate_extrude on a list of points creates a surface — we need to make it a solid
+
+// Instead, we can use:
+// - outer_body = rotate_extrude() of a polygon that goes from (0,0) to (5,0) to (5,20) to (30,50) to (0,50) to (0,0)
+// - inner_hole = rotate_extrude() of a polygon that goes from (0,0) to (3.4,0) to (3.4,20) to (28.4,50) to (0,50) to (0,0)
+
+// But this would create a solid with a flat bottom — we don't want that
+
+// We want the funnel to be open at both ends, so we need to ensure the hole goes all the way through
+
+// Better: build the funnel as a single solid using a difference operation between two rotated extrusions
+
+// Let's define the outer solid as a rotated extrusion of the outer_profile, but we need to close it
+
+// We'll define a closed polygon for the outer wall:
+// - Start at (0,0)
+// - Go to (5,0)
+// - (5,20)
+// - (30,50)
+// - (0,50)
+// - Back to (0,0)
+
+// This creates a solid that is a "solid" funnel with wall thickness
+
+// Similarly for the inner hole
+
+// But this will include a flat bottom at z=0 — we want the funnel to be open at the bottom
+
+// Actually, we want the funnel to be a hollow tube, so the hole should go through
+
+// We can do:
+// - outer_body = rotate_extrude() of the outer_profile (but we need to define a closed shape)
+// - inner_hole = rotate_extrude() of the inner_profile (closed shape)
+
+// But the hole should be a cylinder that goes through the entire funnel
+
+// Let's change approach: build the funnel as a solid with a hole using a single difference
+
+// We'll create:
+// - outer_shape = rotate_extrude() of a polygon that traces the outer wall (but we need to define a closed region)
+
+// Actually, the correct way is to define the cross-section as a region between two radii
+
+// We can use a single rotate_extrude of a polygon that has two parts: outer and inner
+
+// But OpenSCAD doesn't support that directly
+
+// Alternative: build the funnel using a for loop to create a series of toroidal rings, but that's complex
+
+// Best approach: use a single rotate_extrude for the outer shape, and a single rotate_extrude for the inner hole, then subtract
+
+// Define the outer polygon (closed) for the cross-section:
+// - (0,0) to (5,0) to (5,20) to (30,50) to (0,50) to (0,0)
+// This creates a solid that is the outer wall
+
+// Define the inner polygon (closed) for the hole:
+// - (0,0) to (3.4,0) to (3.4,20) to (28.4,50) to (0,50) to (0,0)
+
+// But this will create a solid with a flat bottom — we don't want that
+
+// We want the funnel to be open at both ends, so the hole should go through
+
+// We can use a different method: build the funnel as a solid with a hole by using a difference between two solids
+
+// Let's define the outer body as a solid that is the rotation of the outer_profile, but we need to close it
+
+// Actually, we can use:
+// - outer_body = rotate_extrude() of a polygon that is the outer wall profile, but we need to define it as a region
+
+// After research, the correct way is to define a polygon that represents the cross-section of the funnel in the XZ plane
+
+// We'll define the outer cross-section as a polygon:
+// [ (0,0), (5,0), (5,20), (30,50), (0,50), (0,0) ]
+// This creates a solid that is the outer wall
+
+// Similarly for the inner hole:
+// [ (0,0), (3.4,0), (3.4,20), (28.4,50), (0,50), (0,0) ]
+
+// But this will have a flat bottom at z=0 —

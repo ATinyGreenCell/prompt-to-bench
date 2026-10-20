@@ -1,0 +1,30 @@
+```openscad
+// 10-well agarose gel comb, printed lying flat
+// Units: millimetres
+
+// --- Dimensions ---
+thickness       = 1.5;      // Z thickness
+spine_len_x     = 70;       // Spine length (X)
+spine_wid_y     = 12;       // Spine width (Y)
+tooth_wid_x     = 5.0;      // Tooth width (X)
+tooth_len_y     = 12;       // Tooth length (Y)
+gap_x           = 1.5;      // Gap between teeth (X)
+num_teeth       = 10;       // Number of teeth
+
+// --- Derived ---
+total_teeth_span_x = num_teeth * tooth_wid_x + (num_teeth - 1) * gap_x;
+start_x            = -total_teeth_span_x / 2;
+
+union() {
+    // Spine (back bar)
+    translate([-spine_len_x / 2, 0, 0])
+        cube([spine_len_x, spine_wid_y, thickness]);
+
+    // Teeth (hang in -Y direction from the spine's long edge)
+    for (i = [0 : num_teeth - 1]) {
+        tx = start_x + i * (tooth_wid_x + gap_x);
+        translate([tx, -tooth_len_y, 0])
+            cube([tooth_wid_x, tooth_len_y, thickness]);
+    }
+}
+```

@@ -1,0 +1,52 @@
+```openscad
+// Dimensions for the sowing template
+$fn = 64; // For curved shapes to ensure smooth holes
+
+// Main disc dimensions
+disc_diameter = 85; // Diameter of the flat disc in mm
+disc_thickness = 2; // Thickness of the disc in mm
+
+// Grid parameters
+grid_rows = 7; // Number of rows in the grid
+grid_cols = 7; // Number of columns in the grid
+hole_diameter = 3; // Diameter of each through-hole in mm
+spacing = 9; // Centre-to-centre spacing between holes in mm
+
+// Notch dimensions
+notch_width = 10; // Width of the notch in X direction
+notch_depth = 4; // Depth of the notch in Y direction
+notch_offset_y = disc_thickness / 2 - notch_depth; // Position the notch from the top rim
+
+// Create the main disc
+disc = cylinder(r = disc_diameter / 2, h = disc_thickness, $fn = 64);
+
+// Calculate the positions of the holes
+hole_positions = [
+  for (i = [0 : grid_rows - 1]) 
+    for (j = [0 : grid_cols - 1]) 
+      [j * spacing - grid_cols * spacing / 2, i * spacing - grid_rows * spacing / 2, 0]
+];
+
+// Create the through-holes
+holes = 
+  for (pos = hole_positions) 
+    cylinder(r = hole_diameter / 2, h = disc_thickness, $fn = 64, center = true);
+
+// Create the notch
+notch = 
+  translate([notch_width / 2 - 1, -notch_offset_y, 0]) 
+    rotate([0, 90, 0]) 
+      cube([notch_width, notch_depth, 1], center = true);
+
+// Combine the disc with the holes and notch
+template = difference() {
+  disc
+  for (h in holes) {
+    h
+  }
+  notch
+};
+
+// Final output
+template;
+```

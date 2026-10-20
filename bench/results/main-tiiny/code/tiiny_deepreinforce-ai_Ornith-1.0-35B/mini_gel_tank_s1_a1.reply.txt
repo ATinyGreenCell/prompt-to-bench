@@ -1,0 +1,99 @@
+Looking at the measurement report, I can see several issues:
+
+1. **Platform position**: The platform top should be at z = 13 (10 mm above inner floor), but the report shows the hollow interior starts at z = 1.50 (floor at z = 0, so inner floor at z = 3). The platform should be at z = 3 + 10 = 13, which matches. However, looking at z = 16.00 slice, there's only 1 solid region with 1 hole, which suggests the platform isn't creating the expected buffer chambers.
+
+2. **Platform length**: The platform should be 60 mm long and centred. With inner_x = 114 mm, the platform should span from x = (114-60)/2 = 27 to x = 87 in inner coordinates, or x = 30 to x = 90 in outer coordinates.
+
+3. **Buffer chambers**: The platform should divide the bottom into two chambers. The report shows only one hollow region, which is correct, but the platform should be creating a barrier that only connects above it.
+
+4. **Hole placement**: The holes should be at y = 0, z = 30. The report doesn't show these holes in any slice, which is suspicious.
+
+Let me trace through the logic:
+- Outer box: 120 × 70 × 40
+- Floor: 3 mm thick, so inner starts at z = 3
+- Inner dimensions: 114 × 64 × 37
+- Platform: 60 mm long, centred, top at z = 13 (so height = 13 - 3 = 10 mm)
+- Platform spans full Y (64 mm)
+
+The issue is that the platform is being subtracted from the solid, but it should be ADDED as a solid feature. Let me re-read the spec: "a solid raised platform for the gel tray spans the full inner width". So the platform is solid, not hollow.
+
+The current code is subtracting the platform, which is wrong. The platform should be part of the solid.
+
+Also, the holes at y = 0, z = 30 should be visible in the z = 34.50 slice if they're through the walls.
+
+Let me fix this:
+
+```openscad
+// --- Buffer tank for mini horizontal gel-electrophoresis box ---
+// Print orientation: resting on XY plane at z = 0, building upward (+Z)
+
+// Outer dimensions
+outer_x = 120;   // mm, X direction
+outer_y = 70;    // mm, Y direction
+outer_z = 40;    // mm, Z direction
+
+// Wall and floor thickness
+wall_thick = 3;  // mm
+floor_thick = 3; // mm
+
+// Platform dimensions
+platform_length = 60;  // mm, X direction (centred)
+platform_top_z = 13;   // mm, top of platform above inner floor
+
+// Electrode wire holes
+hole_dia = 2;    // mm, diameter
+hole_z = 30;     // mm, height of hole centre
+
+// --- Derived dimensions ---
+inner_x = outer_x - 2 * wall_thick;
+inner_y = outer_y - 2 * wall_thick;
+inner_z = outer_z - floor_thick;
+
+platform_x_start = (inner_x - platform_length) / 2;
+platform_y_start = 0; // spans full inner Y
+platform_y_end = inner_y;
+platform_height = platform_top_z - floor_thick;
+
+// --- Build the part ---
+difference() {
+    // Outer shell (solid block)
+    union() {
+        // Main outer box
+        cube([outer_x, outer_y, outer_z], center = false);
+    }
+    
+    // Hollow out the interior
+    translate([wall_thick, wall_thick, floor_thick]) {
+        cube([inner_x, inner_y, inner_z], center = false);
+    }
+    
+    // Electrode wire holes (through end walls)
+    // Left end wall hole
+    translate([
+        0,  // X: starts at left edge
+        0,  // Y: centred
+        hole_z - hole_dia / 2
+    ]) {
+        cylinder(
+            d = hole_dia,
+            h = outer_x + 0.01,  // extend past both walls
+            center = false
+        );
+    }
+    
+    // Right end wall hole
+    translate([
+        outer_x,  // X: starts at right edge
+        0,
+        hole_z - hole_dia / 2
+    ]) {
+        cylinder(
+            d = hole_dia,
+            h = outer_x + 0.01,
+            center = false
+        );
+    }
+}
+```
+
+Wait

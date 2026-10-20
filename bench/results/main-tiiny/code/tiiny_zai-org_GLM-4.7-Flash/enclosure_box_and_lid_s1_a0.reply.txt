@@ -1,0 +1,84 @@
+```openscad
+// Part 1: The Box
+// Dimensions: 70 x 50 x 30 mm (X x Y x Z)
+// Wall thickness: 2 mm
+// Floor thickness: 2 mm
+// Open top
+box_x = 70;
+box_y = 50;
+box_z = 30;
+wall_thick = 2;
+floor_thick = 2;
+
+// Part 2: The Lid
+// Dimensions: 70 x 50 x 2 mm (Plate)
+// Lip dimensions: 1.5 mm thick, 4 mm tall
+// Outer lip size: 65.6 x 45.6 mm
+// Clearance: 0.2 mm on each side
+lid_x = 70;
+lid_y = 50;
+lid_z = 2;
+lip_thick = 1.5;
+lip_h = 4;
+lip_outer_x = 65.6;
+lip_outer_y = 45.6;
+clearance = 0.2;
+
+// Gap between parts
+gap = 10;
+
+// Calculate inner box dimensions
+inner_box_x = box_x - (2 * wall_thick);
+inner_box_y = box_y - (2 * wall_thick);
+inner_box_z = box_z - floor_thick;
+
+// Calculate lip inner dimensions
+lip_inner_x = lip_outer_x - (2 * lip_thick);
+lip_inner_y = lip_outer_y - (2 * lip_thick);
+
+// Calculate lid position offset
+lid_offset = box_x + gap;
+
+// --- Part 1: The Box ---
+module box_part() {
+    union() {
+        // Floor
+        translate([0, 0, 0])
+            cube([box_x, box_y, floor_thick]);
+        
+        // Walls
+        // Front Wall
+        translate([0, box_y / 2, floor_thick])
+            cube([box_x, wall_thick, box_z - floor_thick]);
+        // Back Wall
+        translate([0, -box_y / 2, floor_thick])
+            cube([box_x, wall_thick, box_z - floor_thick]);
+        // Left Wall
+        translate([0, 0, floor_thick])
+            cube([wall_thick, box_y, box_z - floor_thick]);
+        // Right Wall
+        translate([box_x - wall_thick, 0, floor_thick])
+            cube([wall_thick, box_y, box_z - floor_thick]);
+    }
+}
+
+// --- Part 2: The Lid (Printed Upside Down) ---
+module lid_part() {
+    union() {
+        // Main Plate
+        translate([lid_offset, 0, 0])
+            cube([lid_x, lid_y, lid_z]);
+        
+        // Lip (Raised on top)
+        // The lip is 1.5mm thick, 4mm tall.
+        // It sits on top of the 2mm plate, so its bottom is at z = 2mm.
+        translate([lid_offset, 0, lid_z])
+            cube([lip_outer_x, lip_outer_y, lip_h]);
+    }
+}
+
+// --- Assembly ---
+// Render both parts
+box_part();
+lid_part();
+```

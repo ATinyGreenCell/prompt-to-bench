@@ -1,0 +1,156 @@
+// Lab funnel parameters
+$fn = 64;
+
+// Dimensions
+spout_length = 20;           // from z = 0 to z = 20
+funnel_length = 30;            // from z = 20 to z = 50
+spout_od = 10;              // outer diameter of spout
+spout_id = spout_od - 2 * 1.6; // inner diameter (bore) = 6.8 mm
+funnel_base_od = 10;         // base of cone (same as spout top)
+funnel_rim_od = 60;             // outer diameter at rim (z = 50)
+wall_thickness = 1.6;          // constant wall thickness
+
+// Center the funnel on the origin in X and Y
+// Spout: from z = 0 to z = 20, constant diameter
+// Cone: from z = 20 to z = 50, tapers from 10 mm to 60 mm outer diameter
+
+// Build the funnel as a solid with a hole through it
+
+// First, create the outer shape (solid funnel with hole)
+// Use difference to subtract the inner bore from the outer shape
+
+// Define the outer wall profile (from z = 0 to z = 50)
+// At z = 0: outer radius = spout_od / 2 = 5
+// At z = 20: outer radius = 5 (still spout)
+// At z = 50: outer radius = funnel_rim_od / 2 = 30
+
+// We'll use a for loop to build the funnel in two parts: spout and cone
+
+// Start with a large cylinder for the outer shape (to be subtracted from)
+// But better: build the funnel using a single hull or by combining parts
+
+// Alternative: build the outer wall as a rotated extrusion of a polygon
+
+// Define the outer profile (in XZ plane) from z = 0 to z = 50
+// We'll define points for the outer wall
+
+// Create a list of points for the outer wall profile
+// (x, z) points: (r, z)
+outer_profile = [
+  [spout_od / 2, 0],           // start at z = 0
+  [spout_od / 2, spout_length],   // go up to z = 20 (vertical spout)
+  [funnel_rim_od / 2, spout_length + funnel_length] // taper to rim at z = 50
+];
+
+// Create the inner profile (bore) - same shape but offset inward by wall_thickness
+// The inner radius at each z is outer_radius - wall_thickness
+inner_profile = [
+  [spout_id / 2, 0],              // inner radius at z = 0
+  [spout_id / 2, spout_length],  // inner radius at z = 20
+  [funnel_rim_od / 2 - wall_thickness, spout_length + funnel_length] // inner radius at rim
+];
+
+// Build the outer solid: rotate the outer_profile around the Z-axis
+// Build the inner hole: rotate the inner_profile around the Z-axis
+
+// Use rotate_extrude to make the 3D funnel shape from the profile
+// But we need to do it in two parts and subtract
+
+// We'll do: outer_cylinder = rotate_extrude() of outer_profile
+// inner_hole = rotate_extrude() of inner_profile
+// Then use difference: outer_cylinder - inner_hole
+
+// But rotate_extrude requires a 2D shape in the XY plane, so we define the profile in XZ
+
+// However, rotate_extrude() works on a 2D shape in the XZ plane (with Y=0), so we can use it
+
+// Create the outer funnel body
+// Use a polygon to define the profile, then rotate_extrude
+
+// We'll use a loop to build the profile step by step
+
+// Instead, we can use a simpler method: build the funnel as a solid with a hole
+
+// Use a single rotate_extrude for the outer shape, then subtract the inner bore
+
+// But the profile is piecewise linear, so we can define it as a polygon
+
+// Define the outer profile as a polygon in the XZ plane (Y=0)
+// We'll use a list of (x, z) points
+
+// Build the outer shape: from z=0 to z=50
+// The outer wall has constant thickness, so the inner wall is always 1.6 mm inside
+
+// We can build the funnel as:
+// - A cylinder for the spout (z=0 to z=20) with outer diameter 10 mm and inner diameter 6.8 mm
+// - A cone for the funnel (z=20 to z=50) with outer diameter from 10 to 60 mm, inner diameter from 6.8 to 56.8 mm
+
+// Let's do it step by step
+
+// Step 1: Create the spout (cylinder from z=0 to z=20)
+// Outer cylinder: radius = 5, height = 20
+// Inner cylinder: radius = 3.4, height = 20
+
+// Step 2: Create the funnel cone (from z=20 to z=50)
+// The cone tapers from 10 mm outer diameter at z=20 to 60 mm at z=50
+// So at any z in [20, 50], outer radius = 5 + (z - 20) * (55 / 30) = 5 + (z - 20) * (11/6)
+// But we can define it as a linear interpolation
+
+// We'll use a for loop to build the funnel cone as a series of cylinders, but that's inefficient
+
+// Better: use rotate_extrude on a polygon that defines the outer and inner profiles
+
+// Define the outer profile (x, z) for the entire funnel:
+// - From (5, 0) to (5, 20): vertical line (spout)
+// - From (5, 20) to (30, 50): diagonal line (funnel cone)
+
+// Define the inner profile (bore):
+// - From (3.4, 0) to (3.4, 20): vertical line
+// - From (3.4, 20) to (28.4, 50): diagonal line (since 30 - 1.6 = 28.4)
+
+// Now, we can use rotate_extrude to create the 3D shape from these profiles
+
+// But rotate_extrude only takes a 2D shape in the XZ plane (with Y=0), so we can define a polygon
+
+// Create the outer polygon (in XZ plane) for the entire funnel
+// We'll define a polygon with points: (x, z) for the outer wall
+
+// We'll define the outer wall as a polygon with 3 points:
+// (5, 0), (5, 20), (30, 50)
+
+// But we need to close it? No, rotate_extrude will revolve it around Z-axis
+
+// However, we need to define a closed shape. We can define a polygon that goes from (0,0) to (5,0) to (5,20) to (30,50) to (0,50) to (0,0) — but that's not correct
+
+// Actually, rotate_extrude works on a 2D shape in the XZ plane (Y=0), and it revolves around the Z-axis
+
+// So we define a 2D polygon that lies in the XZ plane (Y=0), and then rotate it around Z-axis
+
+// The correct way: define a polygon that has points (x, z) for the outer wall, and then use rotate_extrude
+
+// But we need to define the full cross-section. We can define the outer profile as a list of points
+
+// Let's define the outer profile as a polygon with:
+// - (5, 0)  // start at bottom
+// - (5, 20)  // go up
+// - (30, 50) // go to rim
+
+// Then we can use rotate_extrude to make the 3D shape
+
+// But we need to define the inner hole too
+
+// So we do:
+// outer_shape = rotate_extrude() of outer_profile
+// inner_hole = rotate_extrude() of inner_profile
+// final = outer_shape - inner_hole
+
+// But we can't use rotate_extrude on a list of points directly — we need a polygon
+
+// Define the outer profile as a polygon (list of (x,z) points) for the outer wall
+// We'll define a polygon that goes from (0,0) to (5,0) to (5,20) to (30,50) to (0,50) to (0,0) — but that's not correct
+
+// Actually, for rotate_extrude, we define a 2D shape in the XZ plane (Y=0), and it revolves around Z-axis
+
+// The correct way: define a polygon that represents the cross-section of the funnel in the XZ plane
+
+// The funnel

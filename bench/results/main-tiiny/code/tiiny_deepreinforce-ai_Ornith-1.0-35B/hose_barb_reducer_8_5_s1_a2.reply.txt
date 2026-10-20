@@ -1,0 +1,101 @@
+Looking at the measurement report, I can see several issues:
+
+1. **Bounding box X: -6.00 .. 6.00 (size 12.00)** - This is correct for the collar (12mm diameter)
+2. **Bounding box Y: -6.00 .. 10.00 (size 16.00)** - This is WRONG. The part should be rotationally symmetric about the Z-axis, so Y should match X: -6.00 .. 6.00 (size 12.00)
+3. **Bounding box Z: 0.00 .. 21.00 (size 21.00)** - This is WRONG. The total height should be:
+   - 8mm barbs: 2 × 10mm = 20mm
+   - Collar: 5mm
+   - 5mm barbs: 2 × 8mm = 16mm
+   - Total: 20 + 5 + 16 = 41mm
+4. **At z=1.05 and z=2.50, outline is 12.00 x 16.00** - This is WRONG. At the bottom (z=0), we should have the 8mm barb with OD starting at 7.5mm, not 12mm.
+5. **At z=7.50 and z=15.00, outline is 9.50 x 13.75** - This is WRONG. These should be within the 8mm barb section.
+6. **At z=20.50, outline is 6.50 x 11.25** - This is WRONG. This should be in the 5mm barb section.
+
+The main issue is that the `single_barb` function is creating a cylinder with the bottom diameter, not a tapered shape. Let me fix this properly using `rotate_extrude` with a polygon that defines the profile.
+
+```openscad
+// Hose-barb reducer: 8mm ID to 5mm ID silicone tubing
+// Print orientation: standing upright on XY plane, builds in +Z
+
+// --- Dimensions ---
+bore_dia = 3;              // Through-bore diameter (mm)
+bore_radius = bore_dia / 2;
+
+// 8mm tubing section (z = 0 to z = 20)
+barb8_height = 10;         // Height of each 8mm barb (mm)
+barb8_od_bottom = 7.5;     // OD at bottom of each 8mm barb (mm)
+barb8_od_top = 9.5;       // OD at top of each 8mm barb (mm)
+barb8_count = 2;           // Number of 8mm barbs
+
+// Collar section (z = 20 to z = 25)
+collar_dia = 12;           // Collar outer diameter (mm)
+collar_height = 5;         // Collar height (mm)
+
+// 5mm tubing section (z = 25 to z = 41)
+barb5_height = 8;          // Height of each 5mm barb (mm)
+barb5_od_bottom = 6.5;     // OD at bottom of each 5mm barb (mm)
+barb5_od_top = 5.0;        // OD at top of each 5mm barb (mm)
+barb5_count = 2;           // Number of 5mm barbs
+
+// --- Helper: single barb as a tapered cylinder ---
+// Bottom at z=0, top at z=h, OD grows from od_bot to od_top linearly
+module single_barb(od_bot, od_top, h) {
+    $fn = 64;
+    // Create a polygon in the XZ plane representing the profile
+    // Then rotate it around the Z-axis
+    rotate_extrude() {
+        polygon([
+            [od_bot/2, 0],
+            [od_top/2, h],
+            [od_top/2, h + 0.01],
+            [od_bot/2, 0.01]
+        ]);
+    }
+}
+
+// --- Build the part ---
+union() {
+    // 8mm tubing section: two stacked barbs
+    for (i = [0 : barb8_count - 1]) {
+        translate([0, 0, i * barb8_height]) {
+            single_barb(barb8_od_bottom, barb8_od_top, barb8_height);
+        }
+    }
+    
+    // Collar section
+    cylinder(d = collar_dia, h = collar_height, center = false, $fn = 64);
+    
+    // 5mm tubing section: two stacked barbs (tapering down)
+    for (i = [0 : barb5_count - 1]) {
+        translate([0, 0, collar_height + i * barb5_height]) {
+            single_barb(barb5_od_bottom, barb5_od_top, barb5_height);
+        }
+    }
+}
+
+// --- Drill the through-bore ---
+difference() {
+    // The entire part (rebuild for difference)
+    union() {
+        // 8mm tubing section: two stacked barbs
+        for (i = [0 : barb8_count - 1]) {
+            translate([0, 0, i * barb8_height]) {
+                single_barb(barb8_od_bottom, barb8_od_top, barb8_height);
+            }
+        }
+        
+        // Collar section
+        cylinder(d = collar_dia, h = collar_height, center = false, $fn = 64);
+        
+        // 5mm tubing section: two stacked barbs (tapering down)
+        for (i = [0 : barb5_count - 1]) {
+            translate([0, 0, collar_height + i * barb5_height]) {
+                single_barb(barb5_od_bottom, barb5_od_top, barb5_height);
+            }
+        }
+    }
+    
+    // Through-bore: extend slightly past both ends to avoid coplanar faces
+    cylinder(d = bore_dia, h = 41 + 0.01, center = false, $fn = 64);
+}
+```

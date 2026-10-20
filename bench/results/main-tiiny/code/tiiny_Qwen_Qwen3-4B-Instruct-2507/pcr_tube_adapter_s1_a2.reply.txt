@@ -1,0 +1,43 @@
+```openscad
+// Adapter sleeve for 0.2 mL PCR tube in a 1.5 mL rack hole
+// Designed to fit 0.2 mL tube into a 1.5 mL rack hole
+// Print orientation: collar on z=0 to z=1.5, body from z=1.5 to z=21.5
+// Features:
+// - Collar: 13 mm diameter, 1.5 mm thick, at z=0 to z=1.5
+// - Sleeve body: 10.8 mm outer diameter, from z=1.5 to z=21.5
+// - Full 6.2 mm bore through entire height, open at both ends
+
+$fn = 64;
+
+// Dimensions in millimeters
+collar_diameter = 13.0;
+collar_thickness = 1.5;
+sleeve_outer_diameter = 10.8;
+sleeve_height = 20.0;  // Corrected: from z=1.5 to z=21.5 is 20.0 mm height, not 21.5
+bore_diameter = 6.2;
+bore_radius = bore_diameter / 2;
+
+// Corrected: The sleeve body must rise from z=1.5 to z=21.5, so total height is 20.0 mm
+// The full part must have:
+// - A collar from z=0 to z=1.5
+// - A body from z=1.5 to z=21.5 (height = 20.0 mm)
+// - A central bore from z=0 to z=23.0 (full height of collar + body)
+
+difference() {
+    // Base: collar (13 mm diameter, 1.5 mm thick)
+    translate([0, 0, 0])
+        cylinder(r = collar_diameter / 2, h = collar_thickness, $fn = 64);
+
+    // Sleeve body: 10.8 mm outer diameter, from z=1.5 to z=21.5 (height = 20.0 mm)
+    translate([0, 0, collar_thickness])
+        cube([sleeve_outer_diameter, sleeve_outer_diameter, sleeve_height], center = true);
+
+    // Central bore: 6.2 mm diameter, full height (from z=0 to z=23.0)
+    // The bore must go through the entire part, from z=0 to z=23.0
+    // But the part only exists from z=0 to z=21.5, so we must ensure the bore is fully inside
+    // The bore should extend from z=0 to z=23.0, but the part only exists up to z=21.5
+    // So we must make the bore go through the full height of the part (z=0 to z=21.5 + 1.5 = 23.0)
+    translate([0, 0, 0])
+        cylinder(r = bore_radius, h = 23.0, $fn = 64);
+}
+```

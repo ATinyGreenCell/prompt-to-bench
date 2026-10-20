@@ -1,0 +1,52 @@
+```openscad
+// Dimensions (in mm)
+outer_size = 90;           // Outer width and length (X and Y)
+plate_thickness = 2;       // Thickness of the top stirring plate
+wall_thickness = 2.5;      // Thickness of the four side walls
+total_height = 40;         // Total height of the housing
+hole_diameter = 4.5;       // Diameter of the M4 screw holes
+hole_pattern_size = 71.5;  // Square pattern size for the screw holes
+notch_width = 12;          // Width of the cable notch (along the wall)
+notch_height = 8;          // Height of the cable notch (along Z)
+
+// Centering offset to keep the object centered on the origin in X and Y
+offset = outer_size / 2;
+
+// The part is modeled in print orientation:
+// The top plate (stirring surface) is at z = 0 to z = 2.
+// The walls rise from the plate up to z = 40.
+// The box is open at the top (z = 40).
+
+translate([-offset, -offset, 0]) {
+    difference() {
+        // 1. The main solid block
+        cube([outer_size, outer_size, total_height]);
+
+        // 2. The hollow interior
+        // The interior starts above the top plate (z = plate_thickness)
+        // and extends to the top of the box (z = total_height).
+        translate([wall_thickness, wall_thickness, plate_thickness]) {
+            cube([outer_size - 2 * wall_thickness, outer_size - 2 * wall_thickness, total_height]);
+        }
+
+        // 3. The four M4 screw holes
+        // Holes are centered on the 90x90 plate in a 71.5x71.5 pattern.
+        for (x = [-hole_pattern_size / 2, hole_pattern_size / 2]) {
+            for (y = [-hole_pattern_size / 2, hole_pattern_size / 2]) {
+                // Translate to the hole position, ensuring it cuts through the plate
+                translate([offset + x, offset + y, -1]) {
+                    cylinder(d = hole_diameter, h = plate_thickness + 2, $fn = 64);
+                }
+            }
+        }
+
+        // 4. The cable notch
+        // Located in one wall (the wall at x = outer_size).
+        // Centered along the wall (Y direction) and reaching 8mm down from the top (Z direction).
+        // The notch cuts through the entire wall thickness.
+        translate([outer_size - wall_thickness - 1, offset - notch_width / 2, total_height - notch_height]) {
+            cube([wall_thickness + 2, notch_width, notch_height + 1]);
+        }
+    }
+}
+```

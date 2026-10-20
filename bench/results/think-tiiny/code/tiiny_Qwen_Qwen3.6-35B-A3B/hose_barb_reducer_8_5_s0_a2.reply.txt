@@ -1,0 +1,48 @@
+```openscad
+// Dimensions
+ID_8_TUBE = 8;
+ID_5_TUBE = 5;
+BORE_DIA = 3;
+BARB_8_H = 10;
+BARB_8_OD_MIN = 7.5;
+BARB_8_OD_MAX = 9.5;
+COLLAR_H = 5;
+COLLAR_OD = 12;
+BARB_5_H = 8;
+BARB_5_OD_MIN = 6.5;
+BARB_5_OD_MAX = 5.0;
+TOTAL_H = 41;
+
+R_BORE = BORE_DIA / 2;
+R_BARB8_MIN = BARB_8_OD_MIN / 2;
+R_BARB8_MAX = BARB_8_OD_MAX / 2;
+R_COLLAR = COLLAR_OD / 2;
+R_BARB5_MIN = BARB_5_OD_MIN / 2;
+R_BARB5_MAX = BARB_5_OD_MAX / 2;
+
+pts = [
+  [R_BARB8_MIN, 0],
+  [R_BARB8_MAX, BARB_8_H],
+  [R_BARB8_MIN, BARB_8_H],
+  [R_BARB8_MAX, 2*BARB_8_H],
+  [R_BARB8_MIN, 2*BARB_8_H],
+  [R_COLLAR, 2*BARB_8_H + COLLAR_H],
+  [R_BARB5_MAX, 2*BARB_8_H + COLLAR_H + BARB_5_H],
+  [R_BARB5_MIN, 2*BARB_8_H + COLLAR_H + BARB_5_H],
+  [R_BARB5_MAX, 2*BARB_8_H + COLLAR_H + 2*BARB_5_H],
+  [R_BARB5_MIN, 2*BARB_8_H + COLLAR_H + 2*BARB_5_H],
+  [0, 2*BARB_8_H + COLLAR_H + 2*BARB_5_H],
+  [0, 0]
+];
+
+$fn = 64;
+
+outer_shape = rotate_extrude() polygon(pts);
+
+part = difference() {
+  outer_shape;
+  translate([0, 0, -0.1]) cylinder(r=R_BORE, h=TOTAL_H + 0.2);
+};
+
+part;
+```

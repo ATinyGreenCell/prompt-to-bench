@@ -1,0 +1,44 @@
+```openscad
+// Sowing Template for 90 mm Petri Dish
+// Dimensions measured with calipers
+
+// Disc dimensions
+disc_diameter = 85;
+disc_radius = disc_diameter / 2;
+disc_thickness = 2;
+
+// Hole grid parameters
+hole_diameter = 3;
+hole_radius = hole_diameter / 2;
+grid_spacing = 9;
+grid_size = 7; // 7x7 grid
+
+// Orientation notch parameters
+notch_width = 10;
+notch_depth = 4;
+
+// Print quality
+$fn = 64;
+
+// Main disc
+difference() {
+    // Solid disc
+    cylinder(r = disc_radius, h = disc_thickness, center = false);
+    
+    // 7x7 grid of through-holes
+    for (i = [-(grid_size-1)/2 : (grid_size-1)/2]) {
+        for (j = [-(grid_size-1)/2 : (grid_size-1)/2]) {
+            translate([i * grid_spacing, j * grid_spacing, -0.01])
+                cylinder(r = hole_radius, h = disc_thickness + 0.02, center = false);
+        }
+    }
+    
+    // Orientation notch on +Y side
+    // Notch is 10mm wide (X) and 4mm deep (Y, measured in from rim)
+    // Rim is at Y = disc_radius = 42.5
+    // Notch extends from Y = 42.5 - 4 = 38.5 to Y = 42.5
+    // Centered on Y axis, so X goes from -5 to +5
+    translate([-notch_width/2, disc_radius - notch_depth, -0.01])
+        cube([notch_width, notch_depth, disc_thickness + 0.02], center = false);
+}
+```

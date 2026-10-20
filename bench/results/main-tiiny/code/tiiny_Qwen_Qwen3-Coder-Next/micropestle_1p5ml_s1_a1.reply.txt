@@ -1,0 +1,75 @@
+Looking at the measurement report and comparing with the specification, I see several issues:
+
+1. **Groove placement**: The report shows grooves at z=20.00 and z=25.00 (with holes), but the specification says grooves should be centered at z=10, 15, 20, and 25. The report shows grooves at z=20 and z=25, but the slices at z=20.00 and z=25.00 show grooves that are 2mm wide (from z=19.0 to 21.01 and 24.0 to 26.01 respectively), which is correct. However, the slices at z=3.18, 4.50, 12.50, 17.50, 35.51 don't show grooves, which is correct since grooves should only be at the specified centers.
+
+2. **Groove depth**: The report shows groove holes with diameter 6.00mm (radius 3mm), but the handle radius is 4mm (8mm diameter), so groove depth should be 1mm (4mm - 3mm = 1mm), which matches the specification.
+
+3. **Cone dimensions**: The report shows the cone at z=53.50 has diameter 5.49mm, but the cone should taper from 8mm at z=45 to 3mm at z=62. Let me calculate: at z=53.50 (which is 8.5mm above the cone start at z=45), the diameter should be 8mm - (8mm-3mm)*(8.5/17) = 8mm - 5mm*0.5 = 5.5mm, which matches the report (5.49mm ≈ 5.5mm).
+
+4. **Sphere position**: The report shows the bounding box Z from 0.00 to 63.50, and the sphere center is at z=62 with diameter 3mm, so the sphere should extend from z=60.5 to z=63.5. The report shows z=60.32 slice with diameter 3.49mm, which is close to the expected 3mm sphere (3.49mm is likely due to the sphere approximation with $fn=64).
+
+5. **Main issue**: The report shows 5 separate bodies, but the pestle should be a single solid body. This indicates the grooves are not properly subtracted from the main body - they're creating separate bodies. This is likely because the grooves are being subtracted as separate cylinders that don't properly connect with the main body.
+
+Looking more closely at the code: I'm creating the grooves with `cylinder(h = groove_width + 0.01, r = handle_radius - groove_depth, center = false)` but I'm doing this inside the `difference()` after calling `pestle()`. However, the `pestle()` function already includes the grooves as part of the union, and then I'm trying to subtract them again, which creates separate bodies.
+
+The correct approach is to either:
+- Build the main body without grooves, then subtract the grooves in difference()
+- Or build the main body with grooves, but ensure proper subtraction
+
+The issue is in my code structure. Let me fix it by building the main body without grooves first, then subtracting the grooves.
+
+```openscad
+// Pestle for grinding tissue in 1.5 mL microcentrifuge tube
+// Print orientation: upright (standing on base)
+
+$fn = 64;
+
+// Dimensions
+handle_diameter = 8;
+handle_height = 45;
+cone_top_diameter = 3;
+cone_height = 62 - 45; // 17 mm
+sphere_diameter = 3;
+groove_width = 2;
+groove_depth = 1;
+groove_centers = [10, 15, 20, 25];
+
+// Calculate handle radius
+handle_radius = handle_diameter / 2;
+
+// Calculate cone radii
+cone_bottom_radius = handle_radius;
+cone_top_radius = cone_top_diameter / 2;
+
+// Calculate sphere center height
+sphere_center_z = 62;
+
+// Build the pestle body without grooves
+module pestle_body() {
+    // (1) Handle cylinder
+    translate([0, 0, 0])
+        cylinder(h = handle_height, r = handle_radius, center = false);
+    
+    // (2) Cone (tapering from handle diameter to 3 mm)
+    translate([0, 0, handle_height])
+        cylinder(h = cone_height, r1 = cone_bottom_radius, r2 = cone_top_radius, center = false);
+    
+    // (3) Rounded tip: sphere
+    translate([0, 0, sphere_center_z])
+        sphere(d = sphere_diameter);
+}
+
+// Grooves: subtract cylinders from handle only
+module grooves() {
+    for (z_pos = groove_centers) {
+        translate([0, 0, z_pos - groove_width/2])
+            cylinder(h = groove_width + 0.01, r = handle_radius - groove_depth, center = false);
+    }
+}
+
+// Subtract grooves from the main body
+difference() {
+    pestle_body();
+    grooves();
+}
+```

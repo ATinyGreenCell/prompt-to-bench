@@ -1,0 +1,109 @@
+// Drying rack for 10 microscope slides
+// Units: millimetres
+
+// --- Base Block Dimensions ---
+base_length = 90;      // X dimension
+base_width = 45;        // Y dimension
+base_height = 20;      // Z dimension
+
+// --- Slide Specifications ---
+slide_length = 75;     // Length of slide (X direction in rack)
+slide_width = 25;      // Width of slide (Y direction in rack)
+slide_thickness = 1;  // Thickness of slide (Z direction in rack)
+
+// --- Slot Specifications ---
+slot_length = 77;      // Length of slot along X
+slot_width = 1.6;      // Width of slot along Y
+slot_depth = 10;     // Depth of slot along Z (from top)
+
+// --- Slot Layout ---
+num_slots = 10;      // Number of slots
+slot_spacing = 3.5;    // Centre-to-centre spacing in Y
+slot_offset = 0.01;    // Small gap to ensure non-coplanar cuts
+
+// --- Calculated Positions ---
+// Center the slot group on the base block
+slot_group_center_y = 0;
+slot_group_center_x = 0;
+
+// Calculate start position for the first slot to center the group
+// Total width of slots = (num_slots - 1) * spacing
+// We want the center of the group to be at 0.
+// The first slot center is at: - ( (num_slots - 1) / 2 ) * spacing
+// However, to be safe with floating point, we calculate the range.
+// Let's place the first slot at:
+// center_y = 0
+// first_slot_y = center_y - ( (num_slots - 1) / 2 ) * spacing
+first_slot_y = - ( (num_slots - 1) / 2 ) * slot_spacing;
+
+// --- Construction ---
+
+module drying_rack() {
+    // 1. Create the solid base block
+    // Centered at origin (0,0,0)
+    difference() {
+        // Base block
+        cube([base_length, base_width, base_height], center = true);
+        
+        // 2. Cut the slots
+        // Slots run along X, so we extrude a rectangle along X and cut it out
+        // We use a loop to create each slot
+        for (i = [0 : num_slots - 1]) {
+            // Calculate Y position for this slot
+            current_y = first_slot_y + i * slot_spacing;
+            
+            // Create a cutting cylinder or box for the slot
+            // Since slots are rectangular, we use a cube (box)
+            // Dimensions: X = slot_length, Y = slot_width, Z = slot_depth + clearance
+            // Clearance ensures the cut goes slightly past the bottom of the slot
+            // to avoid coplanar faces (Rule 5).
+            slot_cut_height = slot_depth + 0.5; 
+            
+            // Position the cut:
+            // X: Centered on base (0)
+            // Y: Calculated position
+            // Z: Start at top of base (base_height/2) and go down
+            // Actually, simpler to position the cut box centered on the top face
+            // and extend downwards.
+            
+            // The cut box needs to be slightly larger than the slot to ensure clean cuts
+            // and to avoid coplanar faces with the base bottom of the slot.
+            // We place the cut box such that its top is slightly above the base top.
+            
+            slot_cut = cube([slot_length, slot_width, slot_cut_height], center = true);
+            
+            // Translate to the correct Y position
+            translate([0, current_y, base_height/2 - slot_depth/2 - 0.5]) {
+                // We need to ensure the cut is deep enough.
+                // The base top is at Z = base_height/2.
+                // We want to cut down to Z = base_height/2 - slot_depth.
+                // So the cut box should extend from Z = base_height/2 - slot_depth - 0.5
+                // to Z = base_height/2 + 0.5 (to ensure it cuts through).
+                // Let's re-center the cut box relative to the base top.
+                
+                // Correct positioning for the cut box:
+                // X: 0
+                // Y: current_y
+                // Z: We want the bottom of the cut box to be at base_height/2 - slot_depth - 0.01
+                // And the top to be at least at base_height/2.
+                // Let's just make the cut box large enough and position it correctly.
+                
+                // Re-defining the cut box position:
+                // Center Z of cut box = base_height/2 - slot_depth/2 - 0.5 (to ensure it goes past)
+                // Actually, let's just make the cut box extend from Z = base_height/2 - slot_depth - 1.0
+                // to Z = base_height/2 + 1.0.
+                
+                // Simpler approach:
+                // Cut box center Z = base_height/2 - slot_depth/2 - 0.5
+                // This ensures the bottom of the cut is at base_height/2 - slot_depth - 0.5
+                // and top is at base_height/2 + 0.5.
+                
+                translate([0, current_y, base_height/2 - slot_depth/2 - 0.5]) {
+                    cube([slot_length, slot_width, slot_depth + 1.0], center = true);
+                }
+            }
+        }
+    }
+}
+
+drying_rack();

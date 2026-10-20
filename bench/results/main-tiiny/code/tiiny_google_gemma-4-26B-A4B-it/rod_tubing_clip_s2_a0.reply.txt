@@ -1,0 +1,90 @@
+```openscad
+// --- Parameters ---
+// Rod Ring Dimensions
+rod_inner_dia = 12.7;      // Inner diameter of the rod ring (mm)
+rod_wall_thick = 3.0;      // Wall thickness of the rod ring (mm)
+rod_opening_w = 10.0;      // Width of the gap in the rod ring (mm)
+rod_opening_h = 10.0;      // Height of the gap in the rod ring (mm)
+
+// Tubing Ring Dimensions
+tube_inner_dia = 6.0;       // Inner diameter of the tubing ring (mm)
+tube_wall_thick = 2.0;      // Wall thickness of the tubing ring (mm)
+tube_opening_w = 4.5;       // Width of the gap in the tubing ring (mm)
+tube_opening_h = 10.0;      // Height of the gap in the tubing ring (mm)
+
+// Bridge Dimensions
+bridge_width_y = 6.0;       // Width of the bridge along the Y axis (mm)
+bridge_x_start = 8.0;       // Start position of bridge along X axis (mm)
+bridge_x_end = 12.0;        // End position of bridge along X axis (mm)
+
+// Extrusion Height
+extrusion_z = 10.0;         // Total height of the part (Z) (mm)
+
+// Resolution
+fn_val = 64;                // Smoothness for circular features
+
+// --- Calculations ---
+rod_outer_dia = rod_inner_dia + (2 * rod_wall_thick);
+tube_outer_dia = tube_inner_dia + (2 * tube_wall_thick);
+
+// Offsets for cutting to ensure clean manifold geometry
+offset = 0.1;
+
+// --- Main Model ---
+// The part is printed flat on the XY plane (Z=0)
+union() {
+    difference() {
+        // Base Body: The two rings and the bridge
+        union() {
+            // 1. Rod Ring
+            cylinder(d = rod_outer_dia, h = extrusion_z, center = true, $fn = fn_val);
+            
+            // 2. Tubing Ring
+            translate([15, 0, 0])
+                cylinder(d = tube_outer_dia, h = extrusion_z, center = true, $fn = fn_val);
+            
+            // 3. Solid Bridge
+            translate([bridge_x_start, -bridge_width_y/2, -extrusion_z/2])
+                cube([bridge_x_end - bridge_x_start, bridge_width_y, extrusion_z]);
+        }
+
+        // --- Subtraction Operations (Holes and Openings) ---
+
+        // A. Rod Inner Hole
+        cylinder(d = rod_inner_dia, h = extrusion_z + offset*2, center = true, $fn = fn_val);
+
+        // B. Rod Ring Opening (Snap-on gap)
+        // Removes everything with x < 0 and -5 < y < 5
+        // We use a large cube to ensure it cuts through the ring completely
+        translate([-rod_outer_dia - offset, -rod_opening_h/2 - offset, -extrusion_z/2 - offset])
+            cube([rod_outer_dia + offset*2, rod_opening_h, extrusion_z + offset*2]);
+
+        // C. Tubing Inner Hole
+        translate([15, 0, 0])
+            cylinder(d = tube_inner_dia, h = extrusion_z + offset*2, center = true, $fn = fn_val);
+
+        // D. Tubing Ring Opening (Snap-on gap)
+        // Removes everything with x > 15 and -2.25 < y < 2.25
+        translate([15 + offset, -tube_opening_h/2 - offset, -extrusion_z/2 - offset])
+            cube([tube_outer_dia, tube_opening_h, extrusion_z + offset*2]);
+    }
+}
+
+// Note: The part is centered at origin in XY and sits on Z=0 
+// because the cylinders are centered and the extrusion is 10mm.
+// To ensure it rests on Z=0, we adjust the Z translation.
+// Since the cylinders were 'center=true', we must translate the whole assembly.
+// Let's wrap the whole thing in a translate to fix the Z-base.
+
+/* 
+   RE-WRITING THE ASSEMBLY TO ENSURE Z=0 BASE 
+   The previous logic used center=true for cylinders, which puts half at Z<0.
+   I will wrap the logic in a translate to ensure the bottom face is at Z=0.
+*/
+
+// (Self-correction: The code above is logically sound but the 'center=true' 
+// makes the bottom face Z = -5. I will provide the final corrected version below.)
+```
+
+```openscad
+// --- Parameters ---

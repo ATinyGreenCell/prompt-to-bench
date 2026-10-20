@@ -1,0 +1,47 @@
+// Define dimensions
+handle_diameter = 8;  // Diameter of the handle in mm
+handle_length = 45;   // Length of the handle from z=0 to z=45
+cone_base_diameter = 8;  // Diameter at the base of the cone
+cone_tip_diameter = 3;   // Diameter at the tip of the cone
+cone_length = 17;        // Length of the cone from z=45 to z=62
+sphere_diameter = 3;    // Diameter of the rounded tip sphere
+sphere_center_z = 62;   // Z-coordinate of the sphere center
+groove_width = 2;       // Width of each circumferential groove in Z
+groove_depth = 1;       // Depth of each groove
+groove_positions_z = [10, 15, 20, 25];  // Z positions of the grooves
+
+// Create the handle
+handle = cylinder(r = handle_diameter / 2, h = handle_length, $fn = 64);
+
+// Create the cone
+cone = cylinder(r1 = cone_base_diameter / 2, r2 = cone_tip_diameter / 2, h = cone_length, $fn = 64);
+
+// Create the sphere
+sphere = sphere(r = sphere_diameter / 2);
+
+// Create the grooves
+grooves = union() for (z = groove_positions_z) {
+    // Each groove is a rectangular prism with a circular cutout
+    // Positioned at z, with a 2mm height (groove_width) and 1mm depth (groove_depth)
+    // The groove is centered in X and Y, and spans the full width of the handle
+    translate([0, 0, z]) rotate([0, 0, 0]) 
+        linear_extrude(height = groove_width, twist = 0, scale = 1) {
+            polygon(points=[[0, -handle_diameter/2], [handle_diameter/2, 0], [0, handle_diameter/2], [-handle_diameter/2, 0]], 
+                    paths=[[0, 1, 2, 3]]);
+        }
+    // Cut the groove with a cylinder to remove material
+    translate([0, 0, z - groove_depth]) 
+        rotate([0, 0, 0]) 
+        cylinder(r = groove_depth, h = groove_width, $fn = 64);
+}
+
+// Combine all parts
+final_part = union() {
+    handle;
+    cone;
+    sphere;
+    grooves;
+};
+
+// Output the final part
+final_part;

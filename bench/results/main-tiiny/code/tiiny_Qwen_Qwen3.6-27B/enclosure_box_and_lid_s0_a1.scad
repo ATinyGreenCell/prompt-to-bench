@@ -1,0 +1,87 @@
+// Dimensions for the box (Part 1)
+box_outer_x = 70;
+box_outer_y = 50;
+box_outer_z = 30;
+box_wall_thickness = 2;
+box_floor_thickness = 2;
+
+// Dimensions for the lid (Part 2)
+lid_plate_x = 70;
+lid_plate_y = 50;
+lid_plate_z = 2;
+lip_thickness = 1.5;
+lip_height = 4;
+lip_outer_x = 65.6;
+lip_outer_y = 45.6;
+
+// Layout parameters
+gap = 10;
+$fn = 64;
+
+// --- Part 1: The Box ---
+// Positioned on the left side (negative X)
+// Center of the box is at x = -(box_outer_x/2 + gap/2)
+box_center_x = -(box_outer_x/2 + gap/2);
+
+translate([box_center_x, 0, 0]) {
+    // Outer shell
+    cube([box_outer_x, box_outer_y, box_outer_z], center = false);
+    
+    // Inner cavity
+    // The cavity is defined by subtracting the wall thickness from the outer dimensions
+    // X: box_outer_x - 2*wall_thickness
+    // Y: box_outer_y - 2*wall_thickness
+    // Z: box_outer_z - floor_thickness (open top)
+    cavity_x = box_outer_x - 2 * box_wall_thickness;
+    cavity_y = box_outer_y - 2 * box_wall_thickness;
+    cavity_z = box_outer_z - box_floor_thickness;
+    
+    // Position the cavity so it aligns with the inner walls
+    // X offset: wall_thickness
+    // Y offset: wall_thickness
+    // Z offset: floor_thickness
+    translate([box_wall_thickness, box_wall_thickness, box_floor_thickness]) {
+        // Extend slightly past the top to ensure clean cut
+        cube([cavity_x, cavity_y, cavity_z + 0.1], center = false);
+    }
+}
+
+// --- Part 2: The Lid ---
+// Positioned on the right side (positive X)
+// Center of the lid is at x = +(box_outer_x/2 + gap/2)
+lid_center_x = (box_outer_x/2 + gap/2);
+
+translate([lid_center_x, 0, 0]) {
+    // The lid is printed upside down, so the plate is at z=0 and the lip builds upward (+Z)
+    
+    // Base plate
+    cube([lid_plate_x, lid_plate_y, lid_plate_z], center = false);
+    
+    // Lip
+    // The lip is centered on the plate
+    // Outer size: lip_outer_x x lip_outer_y
+    // Height: lip_height
+    // Thickness: lip_thickness
+    
+    // Calculate inner dimensions of the lip
+    lip_inner_x = lip_outer_x - 2 * lip_thickness;
+    lip_inner_y = lip_outer_y - 2 * lip_thickness;
+    
+    // Position the lip on top of the plate
+    translate([0, 0, lid_plate_z]) {
+        // Outer block of the lip
+        // Center the lip on the plate
+        lip_offset_x = (lid_plate_x - lip_outer_x) / 2;
+        lip_offset_y = (lid_plate_y - lip_outer_y) / 2;
+        
+        translate([lip_offset_x, lip_offset_y, 0]) {
+            cube([lip_outer_x, lip_outer_y, lip_height], center = false);
+            
+            // Cut out the inner part of the lip to make it a wall
+            // Extend slightly past the top and bottom to ensure clean cut
+            translate([lip_thickness, lip_thickness, -0.1]) {
+                cube([lip_inner_x, lip_inner_y, lip_height + 0.2], center = false);
+            }
+        }
+    }
+}

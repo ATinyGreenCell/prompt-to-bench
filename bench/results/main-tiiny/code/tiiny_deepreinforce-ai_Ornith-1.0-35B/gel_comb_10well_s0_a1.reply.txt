@@ -1,0 +1,72 @@
+Looking at the measurement report, I can see several issues:
+
+1. **Bounding box X**: Report shows X 3.25 .. 66.75 (size 63.50), but specification says spine is 70 mm long (X). This should be 0 to 70 or centered at origin with -35 to 35.
+
+2. **Bounding box Y**: Report shows Y -18.00 .. -6.00 (size 12.00), but the spine is 12 mm wide and teeth extend 12 mm in -Y direction. The spine should extend from -6 to +6 in Y, and teeth should extend from -6 to -18. So Y should be -18 to +6 (size 24), not -18 to -6.
+
+3. **Volume**: Report shows 900 mm³, but let me calculate:
+   - Spine: 70 × 12 × 1.5 = 1260 mm³
+   - Teeth: 10 × 5 × 12 × 1.5 = 900 mm³
+   - Total: 2160 mm³
+
+The issue is that the teeth are being positioned incorrectly. Looking at the code, the teeth are being translated to `y = -spine_width/2 - tooth_length`, which should be `-6 - 12 = -18`. But the bounding box shows Y from -18 to -6, which means the spine isn't there!
+
+Wait, let me re-examine. The spine is centered at origin with Y from -6 to +6. The teeth start at y = -6 and extend to y = -18. So the total Y range should be -18 to +6.
+
+But the report shows Y -18.00 .. -6.00, which suggests the spine is missing or not being rendered.
+
+Actually, looking more carefully at the difference() operation - there's a problem. The second cube in the difference() is larger and might be subtracting the spine. Let me fix this properly.
+
+The issue is in the difference() - I'm subtracting a larger cube from the union, which would remove everything. I should just use a simple union without the difference.
+
+```openscad
+// 10-well agarose gel comb
+// Print orientation: lying flat on XY plane, z=0
+
+// Overall plate dimensions
+plate_thickness = 1.5;    // Z thickness (mm)
+spine_length = 70;         // X length (mm)
+spine_width = 12;          // Y width (mm)
+
+// Tooth dimensions
+tooth_width = 5.0;         // X width (mm)
+tooth_length = 12;         // Y length (mm) (extends in -Y from spine edge)
+
+// Gap between teeth
+gap_width = 1.5;           // X gap (mm)
+
+// Number of teeth
+num_teeth = 10;
+
+// Calculate total width of teeth + gaps
+total_tooth_width = num_teeth * tooth_width;
+total_gap_width = (num_teeth - 1) * gap_width;
+total_tooth_group_width = total_tooth_width + total_gap_width;
+
+// Center the tooth group on the spine in X
+tooth_group_offset_x = (spine_length - total_tooth_group_width) / 2;
+
+// Position of first tooth in X (relative to origin)
+first_tooth_x = tooth_group_offset_x;
+
+// Spine extends in +Y from center, teeth hang in -Y
+// Spine Y range: [-spine_width/2, spine_width/2]
+// Teeth start at spine bottom edge: y = -spine_width/2
+// Teeth extend to: y = -spine_width/2 - tooth_length
+
+$fn = 64;
+
+// Main spine plate
+union() {
+    // Spine body - centered at origin
+    translate([0, 0, 0])
+        cube([spine_length, spine_width, plate_thickness], center = false);
+    
+    // Add teeth
+    for (i = [0 : num_teeth - 1]) {
+        tooth_x = first_tooth_x + i * (tooth_width + gap_width);
+        translate([tooth_x, -spine_width/2 - tooth_length, 0])
+            cube([tooth_width, tooth_length, plate_thickness], center = false);
+    }
+}
+```

@@ -1,0 +1,62 @@
+```openscad
+// === Sowing Template for 90 mm Petri Dish ===
+// Flat disc, 85 mm diameter, 2 mm thick, with 7x7 hole grid and orientation notch
+
+// --- Disc dimensions ---
+disc_diameter = 85;          // mm, overall disc diameter
+disc_thickness = 2;          // mm, thickness of the disc
+
+// --- Hole grid parameters ---
+grid_rows = 7;               // number of rows in the grid
+grid_cols = 7;               // number of columns in the grid
+hole_diameter = 3;           // mm, diameter of each through-hole
+hole_spacing = 9;            // mm, centre-to-centre spacing between holes
+
+// --- Orientation notch parameters ---
+notch_width = 10;            // mm, width of the notch along X
+notch_depth = 4;           // mm, depth of the notch cut into the rim along -Y
+
+// --- Derived values ---
+disc_radius = disc_diameter / 2;
+half_thickness = disc_thickness / 2;
+
+// Grid extent: total width/height of the hole pattern
+grid_extent_x = (grid_cols - 1) * hole_spacing;
+grid_extent_y = (grid_rows - 1) * hole_spacing;
+
+// Notch cutting shape: extends past the disc faces to ensure clean cuts
+notch_cut_length = disc_radius + 0.5;  // extends beyond the disc edge
+
+// --- Build the base disc ---
+disc = translate([0, 0, 0])
+    cylinder(d = disc_diameter, h = disc_thickness, center = false, $fn = 128);
+
+// --- Build the hole grid ---
+holes = [];
+for (row = 0 : grid_rows - 1)
+    for (col = 0 : grid_cols - 1)
+    {
+        hx = (col - (grid_cols - 1) / 2) * hole_spacing;
+        hy = (row - (grid_rows - 1) / 2) * hole_spacing;
+        holes = concat(holes, [
+            translate([hx, hy, 0])
+                cylinder(d = hole_diameter, h = disc_thickness + 0.02, center = false, $fn = 64)
+        ]);
+    };
+
+// --- Build the orientation notch (cutout) ---
+// The notch is on the +Y side of the rim, centred on the Y axis
+// It removes material from y = (disc_radius - notch_depth) to y = disc_radius
+notch_cut = translate([0, disc_radius - notch_depth / 2, 0])
+    cube([notch_width, notch_cut_length, disc_thickness + 0.02], center = true);
+
+// --- Final part: disc minus holes minus notch ---
+sowing_template = difference() {
+    disc;
+    for (h = holes) h;
+    notch_cut;
+};
+
+// Render
+sowing_template;
+```

@@ -1,0 +1,55 @@
+// Knob for hotplate stirrer replacement
+// Dimensions in millimetres
+
+// Overall knob dimensions
+knob_diam = 30;
+knob_h = 15;
+
+// D-shaped bore dimensions
+shaft_diam = 6.2;
+shaft_flat_dist = 4.7; // Distance from flat to opposite side of circle
+shaft_depth = 12;
+
+// Grip grooves
+groove_count = 18;
+groove_diam = 2;
+
+// Pointer groove
+pointer_width = 1.5;
+pointer_depth = 1;
+pointer_len = 15; // Runs from centre to outer edge
+
+// Derived dimensions
+knob_r = knob_diam / 2;
+shaft_r = shaft_diam / 2;
+// Flat position relative to bore center (0,0)
+// Top of circle is at y = shaft_r. Flat is shaft_flat_dist from top.
+y_flat = shaft_r - shaft_flat_dist;
+
+$fn = 64;
+
+difference() {
+    // Main cylinder body
+    cylinder(h = knob_h, d = knob_diam, center = false);
+
+    // D-shaped blind bore
+    // Cylinder of diameter 6.2, depth 12
+    translate([0, 0, 0]) cylinder(h = shaft_depth + 0.01, d = shaft_diam, center = false);
+    // Box to cut the flat side
+    // Width 10 covers the diameter. Height covers depth.
+    // Centered at y_flat, starting at z=0, so it cuts everything below y_flat.
+    translate([0, y_flat, 0]) cube([10, 10, shaft_depth + 0.01], center = false);
+
+    // Grip grooves
+    // 18 evenly spaced vertical grooves along the full height
+    for (i = [0:groove_count-1]) {
+        rotate(i * (360 / groove_count)) {
+            translate([knob_r, 0, 0]) cylinder(h = knob_h, d = groove_diam, center = false);
+        }
+    }
+
+    // Pointer groove
+    // 1.5 mm wide, 1 mm deep, from centre to outer edge
+    // Centered on the flat side y = y_flat
+    translate([pointer_len / 2, y_flat, knob_h]) cube([pointer_len, pointer_width, pointer_depth], center = false);
+}

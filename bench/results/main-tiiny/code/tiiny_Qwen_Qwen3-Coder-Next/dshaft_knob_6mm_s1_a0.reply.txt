@@ -1,0 +1,163 @@
+```openscad
+// Replacement knob for hotplate stirrer with 6 mm D-shaft
+// Dimensions
+d_shaft = 6.0;           // shaft diameter (mm)
+d_knob = 30.0;           // knob outer diameter (mm)
+h_knob = 15.0;           // knob total height (mm)
+h_bore = 12.0;           // depth of D-bore (mm)
+d_bore = 6.2;            // bore circle diameter (mm)
+flat_to_flat = 4.7;      // distance from flat side to opposite side of D-bore (mm)
+groove_d = 2.0;          // groove diameter (half-cylinder) (mm)
+n_grooves = 18;          // number of grip grooves
+pointer_width = 1.5;     // pointer groove width (mm)
+pointer_depth = 1.0;     // pointer groove depth (mm)
+
+// Geometry calculations
+r_knob = d_knob / 2;
+r_bore = d_bore / 2;
+// Distance from center to flat side of D-bore
+h_flat = sqrt(r_bore^2 - (flat_to_flat/2)^2);
+// Height of D-bore flat from center (negative because flat is at bottom)
+y_flat = -h_flat;
+
+// Set resolution for curves
+$fn = 64;
+
+module knob() {
+    // Main cylinder
+    cylinder(h = h_knob, r = r_knob, center = false);
+}
+
+module d_bore() {
+    // D-shaped blind bore: cylinder with flat cut on one side
+    translate([0, 0, -0.01]) {
+        // Full cylinder
+        cylinder(h = h_bore + 0.02, r = r_bore, center = false);
+        
+        // Cut flat side: extrude a rectangle to remove material
+        // The flat is at y = -h_flat, and extends across the diameter
+        translate([0, y_flat, -0.01]) {
+            cube([d_bore + 0.02, flat_to_flat + 0.02, h_bore + 0.02]);
+        }
+    }
+}
+
+module grip_grooves() {
+    r_groove = groove_d / 2;
+    // Position grooves around the circumference
+    for (i = [0 : n_grooves - 1]) {
+        angle = 360 * i / n_grooves;
+        // Each groove is a half-cylinder (semicircle) extruded along height
+        // Centered on outer surface, so its center is at (r_knob - r_groove, 0)
+        // Rotate around Z axis
+        translate([0, 0, -0.01]) {
+            rotate([0, 0, angle]) {
+                translate([r_knob - r_groove, 0, 0]) {
+                    // Half-cylinder (semicircle) groove: cut from outside
+                    // Use cylinder with half the circle (cut in half by XY plane)
+                    translate([0, 0, -0.01]) {
+                        cylinder(h = h_knob + 0.02, r = r_groove, center = false);
+                    }
+                    // Cut the bottom half (since we want the groove to be on the top half for visibility)
+                    // Actually, the groove should be a half-cylinder, so we need to cut only half
+                    // We'll do this by subtracting a half-cylinder from the outside
+                    // Instead, we'll use a different approach: subtract a half-cylinder from the outside
+                    // Let's use a cube to cut half of the cylinder
+                    // But simpler: use rotate_extrude with a semicircle polygon
+                }
+            }
+        }
+    }
+}
+
+// Better approach for grip grooves: use rotate_extrude with semicircle
+module grip_grooves_v2() {
+    r_groove = groove_d / 2;
+    // Create a semicircle profile (half-cylinder)
+    // Semicircle in the radial direction: from angle 90 to 270 degrees (top half)
+    // But we want the groove to be a half-cylinder cut into the surface
+    // So we'll create a semicircular groove profile and rotate it around the knob
+    
+    // Define semicircle profile (in the r-z plane, with r as x-axis, z as y-axis)
+    // The groove is centered on the outer surface, so its center is at (r_knob, 0)
+    // The semicircle has radius r_groove, and we want the groove to be a half-cylinder
+    // Let's define the semicircle in the x-y plane (cross-section), then rotate around z-axis
+    
+    // Actually, simpler: use for loop with rotate and translate
+    for (i = [0 : n_grooves - 1]) {
+        angle = 360 * i / n_grooves;
+        // Translate to position on circumference, rotate so groove is oriented radially
+        rotate([0, 0, angle]) {
+            translate([r_knob - r_groove, 0, -0.01]) {
+                // Half-cylinder: we want only the part pointing outward (radially)
+                // So we'll use a cylinder and cut the inner half
+                // Or use a cube to cut the inner half
+                // Let's use a cube to cut the inner half-cylinder
+                // The groove should be a semicircle cut into the surface
+                // So we need to subtract a semicircle from the outside
+                
+                // Instead, let's create the groove as a positive feature and subtract from knob
+                // But OpenSCAD uses constructive solid geometry, so we'll subtract from the knob
+                
+                // For now, let's use a different approach: create a semicircular groove profile
+                // and rotate it around the knob
+            }
+        }
+    }
+}
+
+// Best approach: use rotate_extrude for the grip grooves
+module grip_grooves_final() {
+    r_groove = groove_d / 2;
+    // Create a semicircular groove profile in the r-z plane
+    // The groove is centered at r = r_knob, z = 0, and extends from z = 0 to h_knob
+    // The semicircle has radius r_groove, and we want the outer half (pointing outward)
+    
+    // Define the semicircle profile: a semicircle centered at (r_knob, 0) with radius r_groove
+    // The semicircle should be the outer half (from angle -90 to 90 degrees in local coordinates)
+    // But in the r-z plane, we want the part where r > r_knob - r_groove (outer half)
+    
+    // Actually, let's define the profile as a semicircle in the x-y plane, then rotate around z-axis
+    // The profile is a semicircle of radius r_groove, centered at (r_knob, 0), with the flat side toward the center
+    
+    // Create the semicircle profile
+    translate([r_knob - r_groove, 0, 0]) {
+        rotate_extrude(angle = 180, $fn = 32) {
+            // Semicircle: from y = 0 to y = r_groove (top half)
+            // But we want the outer half, so we need to flip it
+            // Let's define a semicircle pointing outward
+            translate([0, 0, -0.01]) {
+                // A rectangle that will be rotated to make a hollow cylinder, but we want a groove
+                // Instead, let's use a polygon
+                polygon(points = [
+                    [0, 0],
+                    [r_groove, 0],
+                    [r_groove, h_knob + 0.02],
+                    [0, h_knob + 0.02]
+                ]);
+            }
+        }
+    }
+}
+
+// Actually, the simplest way is to use the difference of cylinders
+// Let's do it with a for loop and rotate, using a half-cylinder cut
+module grip_grooves_final_v2() {
+    r_groove = groove_d / 2;
+    for (i = [0 : n_grooves - 1]) {
+        angle = 360 * i / n_grooves;
+        rotate([0, 0, angle]) {
+            // Position the groove on the circumference
+            translate([r_knob - r_groove, 0, -0.01]) {
+                // Half-cylinder: we want the outer half, so we'll use a cylinder and cut the inner half
+                // But easier: use a cube to cut the inner half
+                // The groove should be a semicircle, so we'll use a cube to cut half of the cylinder
+                
+                // Create a half-cylinder (outer half) by subtracting the inner half
+                // But since we're subtracting from the knob, we'll define the groove as a positive feature
+                // and subtract it from the knob
+                
+                // Let's use a different approach: define the groove as a semicircular cylinder
+                // and subtract it from the knob
+                cylinder(h = h_knob + 0.02, r = r_groove, center = false);
+                

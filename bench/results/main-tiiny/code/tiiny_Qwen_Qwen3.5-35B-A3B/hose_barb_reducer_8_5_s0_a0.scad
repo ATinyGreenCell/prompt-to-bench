@@ -1,0 +1,136 @@
+// Dimensions for the hose-barb reducer
+// Units: millimetres
+
+// Overall length
+TOTAL_LENGTH = 41;
+
+// Bore diameter (through hole)
+BORE_DIA = 3;
+
+// --- Section 1: 8mm tubing barbs (z=0 to z=20) ---
+// Number of barbs in this section
+BARBS_8_COUNT = 2;
+// Height of each barb in this section
+BARB_8_HEIGHT = 10;
+// Bottom diameter of the barb profile (at the start of the barb)
+BARB_8_BOTTOM_DIA = 7.5;
+// Top diameter of the barb profile (at the peak of the barb)
+BARB_8_TOP_DIA = 9.5;
+// Step back diameter (after the peak)
+BARB_8_STEP_DIA = 7.5;
+// Length of the step back (to create the sawtooth shape)
+BARB_8_STEP_LEN = 1; // 1mm step back to ensure distinct geometry
+
+// --- Section 2: Cylindrical collar (z=20 to z=25) ---
+COLLAR_DIA = 12;
+COLLAR_HEIGHT = 5; // 25 - 20
+
+// --- Section 3: 5mm tubing barbs (z=25 to z=41) ---
+// Number of barbs in this section
+BARBS_5_COUNT = 2;
+// Height of each barb in this section
+BARB_5_HEIGHT = 8;
+// Bottom diameter of the barb profile (at the start of the barb)
+BARB_5_BOTTOM_DIA = 6.5;
+// Top diameter of the barb profile (at the peak of the barb)
+BARB_5_TOP_DIA = 5.0;
+// Step back diameter (after the peak)
+BARB_5_STEP_DIA = 6.5;
+// Length of the step back
+BARB_5_STEP_LEN = 1;
+
+// --- Geometry Construction ---
+
+// Helper function to create a single barb segment
+// z_start: bottom of the barb
+// z_end: top of the barb (before step back)
+// dia_bottom: diameter at z_start
+// dia_top: diameter at z_end
+// step_len: length of the step back
+// step_dia: diameter after step back
+module single_barb(z_start, dia_bottom, dia_top, step_len, step_dia) {
+    // Calculate the height of the sloped part
+    slope_height = z_start + (z_start + step_len) - z_start; // Actually, let's define z_end explicitly
+    // Re-logic: The module takes z_start, height of slope, and step length.
+    // But the prompt says "each barb is X tall". Let's stick to the prompt's structure.
+    // The prompt says: "each barb is 10 mm tall... grows linearly... then steps straight back".
+    // So the "tall" part is the slope. The step back is extra.
+    // Let's redefine the module to be clearer:
+    // z_base: bottom of the barb
+    // h_slope: height of the slope
+    // d_base: diameter at bottom
+    // d_peak: diameter at peak
+    // h_step: height of the step back
+    // d_step: diameter at step back
+    // Actually, let's just build it in the main loop to avoid complexity.
+}
+
+// We will build the object by stacking cylinders and using difference for the barbs.
+// However, the barbs are complex (sawtooth).
+// Strategy: Create a base cylinder for the section, then subtract the "negative" of the barb shape?
+// No, easier: Create the shape by union of segments.
+// Segment 1: 8mm barbs.
+// Segment 2: Collar.
+// Segment 3: 5mm barbs.
+
+// We need to handle the "step back" carefully.
+// The profile is:
+// 1. Slope up from D1 to D2 over height H.
+// 2. Step back (diameter decreases) from D2 to D1 over height H_step.
+// Wait, the prompt says "steps straight back to 7.5 mm".
+// If it's a barb, usually the "step back" is a groove.
+// So the outer diameter goes: 7.5 -> 9.5 (slope) -> 7.5 (step).
+// This creates a ridge.
+// To model this in OpenSCAD:
+// We can create a cylinder of diameter 9.5, then subtract a cylinder of diameter 7.5 that is offset?
+// No, the shape is continuous.
+// Let's use a single cylinder with a varying radius? No, OpenSCAD doesn't support variable radius cylinders directly.
+// We must use linear_extrude with a polygon or use a series of small cylinders.
+// Or, use a single cylinder for the "base" and subtract the "negative" of the barb?
+// Actually, the simplest way for a sawtooth profile on a cylinder:
+// Create a cylinder of the max diameter (9.5).
+// Then subtract a cylinder of the min diameter (7.5) but only in the specific Z range?
+// No, that would leave a hole.
+// The shape is:
+// Z=0 to Z=10: Diameter 7.5 -> 9.5 (Slope)
+// Z=10 to Z=11: Diameter 9.5 -> 7.5 (Step back)
+// Z=11 to Z=20: Diameter 7.5 (Flat)
+// Wait, the prompt says "two identical barbs... stacked".
+// So we have two barbs in the first 20mm.
+// Barb 1: Z=0 to Z=10 (Slope 7.5->9.5) + Z=10 to Z=11 (Step 9.5->7.5).
+// Barb 2: Z=11 to Z=21? No, total length is 20.
+// If Barb 1 is 10mm tall, and Barb 2 is 10mm tall.
+// Barb 1: Z=0 to Z=10.
+// Barb 2: Z=10 to Z=20.
+// But the "step back" is part of the barb.
+// So Barb 1: Z=0 to Z=10 (Slope) + Z=10 to Z=11 (Step).
+// Barb 2: Z=11 to Z=21? That would be 11mm.
+// The prompt says "each barb is 10 mm tall".
+// This implies the "tall" part is the slope.
+// So:
+// Barb 1: Z=0 to Z=10 (Slope 7.5->9.5). Then Z=10 to Z=11 (Step 9.5->7.5).
+// Barb 2: Z=11 to Z=21? No, total length is 20.
+// Maybe the "step back" is included in the 10mm?
+// "each barb is 10 mm tall and its outer diameter grows linearly from 7.5 mm at its bottom to 9.5 mm at its top, then steps straight back to 7.5 mm".
+// This phrasing suggests the "barb" includes the step back.
+// If the total height is 10mm, and the step back is 1mm (as I guessed), then the slope is 9mm.
+// But the prompt says "steps straight back to 7.5 mm".
+// Let's assume the "10mm tall" refers to the entire feature including the step back.
+// So:
+// Barb 1: Z=0 to Z=10.
+//   Slope: Z=0 to Z=9 (7.5 -> 9.5).
+//   Step: Z=9 to Z=10 (9.5 -> 7.5).
+// Barb 2: Z=10 to Z=20.
+//   Slope: Z=10 to Z=19 (7.5 -> 9.5).
+//   Step: Z=19 to Z=20 (9.5 -> 7.5).
+// This fits the "20mm total" and "10mm tall" description.
+
+// Let's re-verify the 5mm section.
+// "two identical barbs... each barb is 8 mm tall".
+// Total length 25 to 41 = 16mm.
+// 2 barbs * 8mm = 16mm. Perfect.
+// Barb 3: Z=25 to Z=33.
+//   Slope: Z=25 to Z=32 (6.5 -> 5.0).
+//   Step: Z=32 to Z=33 (5.0 -> 6.5).
+// Barb 4: Z=33 to Z=41.
+//   Slope: Z=33

@@ -1,0 +1,94 @@
+// ---------------------------------------------------------------
+//  Parameters (all in mm)
+// ---------------------------------------------------------------
+$fn = 64;                                   // smoothness for circles
+
+bore_d = 3;                                 // central bore diameter
+bore_r = bore_d/2;                         // bore radius
+
+// 8 mm tubing barbs (two stacked)
+barb8_bottom_d = 7.5;                      // diameter at bottom of barb
+barb8_bottom_r = barb8_bottom_d/2;
+barb8_top_d = 9.5;                         // diameter at top of tapered part
+barb8_top_r = barb8_top_d/2;
+barb8_total_h = 10;                        // total height of each barb
+barb8_taper_h = 9;                         // height of tapered portion
+barb8_step_h = barb8_total_h - barb8_taper_h; // height of step back
+
+// Collar (between the two barb sections)
+collar_d = 12;                             // collar outer diameter
+collar_r = collar_d/2;
+collar_h = 5;                              // height of collar
+collar_start_z = 20;                       // z‑position of collar bottom
+
+// 5 mm tubing barbs (two stacked)
+barb5_bottom_d = 6.5;                      // diameter at bottom of barb
+barb5_bottom_r = barb5_bottom_d/2;
+barb5_top_d = 5.0;                         // diameter at top of tapered part
+barb5_top_r = barb5_top_d/2;
+barb5_total_h = 8;                         // total height of each barb
+barb5_taper_h = 7;                         // height of tapered portion
+barb5_step_h = barb5_total_h - barb5_taper_h; // height of step back
+
+// Overall dimensions
+total_h = 41;                              // full part height
+bore_extra = 1;                            // extra length for bore cut (mm)
+
+// ---------------------------------------------------------------
+//  Modules
+// ---------------------------------------------------------------
+
+// Single 8 mm barb placed at given start Z
+module barb8(start_z) {
+    // tapered part
+    translate([0,0,start_z])
+        cylinder(h=barb8_taper_h, r1=barb8_bottom_r, r2=barb8_top_r, center=false);
+    // step back to original diameter
+    translate([0,0,start_z+barb8_taper_h])
+        cylinder(h=barb8_step_h, r=barb8_bottom_r, center=false);
+}
+
+// Single 5 mm barb placed at given start Z
+module barb5(start_z) {
+    // tapered part (shrinking)
+    translate([0,0,start_z])
+        cylinder(h=barb5_taper_h, r1=barb5_bottom_r, r2=barb5_top_r, center=false);
+    // step back to original diameter
+    translate([0,0,start_z+barb5_taper_h])
+        cylinder(h=barb5_step_h, r=barb5_bottom_r, center=false);
+}
+
+// Collar
+module collar(start_z) {
+    translate([0,0,start_z])
+        cylinder(h=collar_h, r=collar_r, center=false);
+}
+
+// ---------------------------------------------------------------
+//  Build the outer solid
+// ---------------------------------------------------------------
+module outer_body() {
+    union() {
+        // 8 mm barbs (two stacked)
+        for (i = [0:1]) {
+            barb8(i*barb8_total_h);
+        }
+        // Collar
+        collar(collar_start_z);
+        // 5 mm barbs (two stacked)
+        // start after collar: collar_start_z + collar_h = 25
+        for (i = [0:1]) {
+            barb5(collar_start_z + collar_h + i*barb5_total_h);
+        }
+    }
+}
+
+// ---------------------------------------------------------------
+//  Final part (outer body with central bore)
+// ---------------------------------------------------------------
+difference() {
+    outer_body();
+    // bore cylinder (extends beyond part by bore_extra on each side)
+    translate([0,0,-bore_extra])
+        cylinder(h=total_h + 2*bore_extra, r=bore_r, center=false);
+}

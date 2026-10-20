@@ -1,0 +1,60 @@
+The report shows the cuts are not being applied — the bore and grooves appear as *separate* solid regions in the slice data rather than holes in the body. This means the `difference()` is not working as intended. The issue is that the bore's flat-cut slab and the grooves are being placed at positions that don't properly intersect the body, or the difference is not being computed correctly.
+
+Let me fix this by ensuring all cuts are properly contained within the body and the difference is computed correctly:
+
+```openscad
+// Replacement knob for a hotplate stirrer (6 mm D-shaft)
+// Print orientation: bottom face (facing hotplate) on the bed at z = 0,
+// knob builds upward in +Z. Centred on the origin in X and Y.
+
+// ---- Dimensions (mm) ----
+knob_d        = 30.0;   // outer diameter of knob
+knob_h        = 15.0;   // overall height of knob
+shaft_d       = 6.0;    // D-shaft nominal diameter
+bore_d        = 6.2;    // bore circle diameter
+bore_flat     = 4.7;    // distance from flat to opposite side of bore circle
+bore_depth    = 12.0;   // depth of D-shaped blind bore from bottom face
+groove_d      = 2.0;    // diameter of each vertical grip groove
+groove_n      = 18;     // number of grip grooves
+pointer_w     = 1.5;    // width of top pointer groove
+pointer_d     = 1.0;    // depth of top pointer groove
+
+// ---- Derived values ----
+knob_r        = knob_d / 2.0;
+bore_r        = bore_d / 2.0;
+bore_flat_off = bore_r - bore_flat;   // offset of the flat from the bore centre
+groove_r      = groove_d / 2.0;
+groove_off    = knob_r - groove_r;    // groove centre radius (on outer surface)
+
+// ---- Main solid ----
+module knob() {
+    difference() {
+        // Body: cylinder 30 mm dia x 15 mm tall, resting on z = 0
+        cylinder(h = knob_h, d = knob_d, $fn = 128);
+
+        // D-shaped blind bore from the bottom face, 12 mm deep
+        // (circle with one side cut flat; flat on the +X side)
+        translate([0, 0, -0.01])
+            difference() {
+                cylinder(h = bore_depth + 0.02, d = bore_d, $fn = 128);
+                // flat cut: slab extending past the bore on the +X side
+                translate([bore_flat_off, 0, -0.01])
+                    cube([bore_r + 0.01, bore_d + 0.02, bore_depth + 0.02]);
+            }
+
+        // 18 evenly spaced vertical grip grooves, full height
+        for (i = [0 : groove_n - 1]) {
+            angle = 360 * i / groove_n;
+            translate([groove_off * cos(angle), groove_off * sin(angle), -0.01])
+                cylinder(h = knob_h + 0.02, d = groove_d, $fn = 64);
+        }
+
+        // Top pointer groove: 1.5 mm wide, 1 mm deep, centre to outer edge,
+        // on the same side as the flat of the D (+X)
+        translate([0, 0, knob_h - pointer_d])
+            cube([knob_r + 0.01, pointer_w, pointer_d + 0.01]);
+    }
+}
+
+knob();
+```

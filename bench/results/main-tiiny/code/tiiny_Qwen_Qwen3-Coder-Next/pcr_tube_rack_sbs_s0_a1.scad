@@ -1,0 +1,94 @@
+// Rack for 96 PCR tubes (0.2 mL) with standard microplate footprint
+// Dimensions from user specification
+
+// Block dimensions
+block_length = 127.76; // X dimension (mm)
+block_width  = 85.48;  // Y dimension (mm)
+block_height = 20;     // Z dimension (mm)
+
+// Hole grid parameters
+hole_diameter = 6.2;   // mm
+hole_spacing  = 9.0;   // mm centre-to-centre spacing
+rows = 8;              // number of rows (Y direction)
+cols = 12;             // number of columns (X direction)
+
+// Position of first hole (A1) from edges
+hole_A1_x = 14.38;     // mm from left edge (X)
+hole_A1_y = 11.24;     // mm from back edge (Y)
+
+// Chamfer dimensions
+chamfer_leg = 5;       // mm
+
+// Orientation
+$fn = 64;
+
+// Compute block centre
+block_x_center = block_length / 2;
+block_y_center = block_width / 2;
+
+// Compute hole positions relative to block centre
+// First compute the grid's centre relative to A1
+grid_x_center_offset = (cols - 1) * hole_spacing / 2;
+grid_y_center_offset = (rows - 1) * hole_spacing / 2;
+
+// Position of grid centre relative to block origin (0,0 at bottom-left)
+grid_x_pos = hole_A1_x + grid_x_center_offset;
+grid_y_pos = hole_A1_y + grid_y_center_offset;
+
+// Translate to centre the grid on the block
+grid_x_offset = block_x_center - grid_x_pos;
+grid_y_offset = block_y_center - grid_y_pos;
+
+// Build the rack
+module rack_base() {
+    // Main block
+    cube([block_length, block_width, block_height]);
+}
+
+module hole_grid() {
+    for (i = [0 : cols - 1]) {
+        for (j = [0 : rows - 1]) {
+            x = hole_A1_x + i * hole_spacing + grid_x_offset;
+            y = hole_A1_y + j * hole_spacing + grid_y_offset;
+            translate([x, y, -0.01])
+                cylinder(d = hole_diameter, h = block_height + 0.02, center = false);
+        }
+    }
+}
+
+module chamfer_A1() {
+    // Chamfer at A1 corner: 45-degree chamfer with 5mm legs
+    // A1 corner of the plate is at (hole_A1_x, hole_A1_y) from the block's origin
+    // Chamfer is on the block edge at the A1 corner, so we place it at (hole_A1_x, hole_A1_y)
+    // The chamfer cuts from the corner towards the interior of the block
+    // We'll create a triangular prism and subtract it from the block
+    
+    // Chamfer at the A1 corner (left-back corner of the plate)
+    // The corner is at (hole_A1_x, hole_A1_y) from the block origin
+    // We chamfer the vertical edge at this corner, so we cut into the block from this point
+    
+    // Translate to the A1 corner position
+    translate([hole_A1_x, hole_A1_y, 0]) {
+        // Chamfer cut: 45-degree angle, 5mm legs
+        // We cut from the corner towards the block interior
+        // The chamfer is a triangular prism extending along Z
+        // Using difference to cut into the block
+        
+        // Define the chamfer shape as a triangular prism
+        // The triangle is in the XY plane, extruded along Z
+        linear_extrude(height = block_height + 1, center = false) {
+            polygon(points = [
+                [0, 0],           // corner point
+                [-chamfer_leg, 0], // cut along -X direction
+                [0, -chamfer_leg]  // cut along -Y direction
+            ]);
+        }
+    }
+}
+
+// Main assembly
+difference() {
+    rack_base();
+    hole_grid();
+    chamfer_A1();
+}

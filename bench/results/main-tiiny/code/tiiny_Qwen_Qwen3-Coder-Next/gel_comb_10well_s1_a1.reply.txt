@@ -1,0 +1,53 @@
+Looking at the measurement report and comparing with the specification:
+
+1. **Bounding box Y range**: The report shows Y from -5.25 to 6.75 (size 12.00 mm), but the specification says the comb should have a spine 12 mm wide (Y) and teeth extending in the -Y direction. The current implementation has the spine centered at Y=0 with width 12 mm (from Y=-6 to Y=6), but the teeth are extending from the spine edge at Y=6+0.75=6.75 (since thickness=1.5, half is 0.75) down to Y=6.75-12=-5.25, which matches the report. However, the spine should be 12 mm wide, and the teeth should hang from one long edge.
+
+2. **Spine placement**: The spine should be 12 mm wide (Y direction), and the teeth should extend from one edge (the -Y edge) of the spine. The spine should be centered in X (70 mm long), and the teeth row should be centered on the spine in X.
+
+3. **The issue**: In my current implementation, I placed the spine with Y from -6 to +6 (centered), but the thickness (1.5 mm) is being added as part of the spine width calculation incorrectly. The spine should be 12 mm wide (Y direction), and the thickness (1.5 mm) is the Z dimension. The teeth should extend from the spine's edge in the -Y direction.
+
+Let me re-examine the specification:
+- "10-well comb for casting agarose gels, printed lying flat"
+- "flat plate 1.5 mm thick (Z)"
+- "spine (back bar) 70 mm long (X) and 12 mm wide (Y)"
+- "10 rectangular teeth that hang from one long edge of the spine in the -Y direction"
+- "Each tooth is 5.0 mm wide (X) and 12 mm long (Y)"
+
+So the spine is 70 mm (X) × 12 mm (Y) × 1.5 mm (Z). The teeth hang from the -Y edge of the spine, so they extend in the negative Y direction from the spine's edge.
+
+The spine's Y extent should be from Y=0 to Y=12 (or centered at Y=6, from Y=0 to Y=12), and the teeth extend from Y=12 in the -Y direction for 12 mm each.
+
+Actually, for printing stability and to match typical comb designs, the spine should be positioned so that the teeth hang downward (in -Y), and the spine is the base that rests on the gel tray. So the spine should be at the "top" (higher Y values) and teeth extend toward lower Y.
+
+Let me recalculate:
+- Spine: X from 0 to 70, Y from 0 to 12, Z from 0 to 1.5
+- Teeth: extend from Y=12 in the -Y direction, so Y from 12 down to 12 - tooth_length = 12 - 12 = 0
+- But wait, that would make the teeth occupy the same Y space as the spine base. That doesn't make sense.
+
+Re-reading: "the row of teeth is centred on the spine in X". So the spine is the main body, and teeth hang from one edge. The spine is 12 mm wide (Y), and the teeth extend in the -Y direction from that edge.
+
+So the spine should be positioned with its +Y edge at some position, and teeth extend from there in -Y. For simplicity, let's put the spine's +Y edge at Y=12, so the spine occupies Y from 0 to 12, and the teeth extend from Y=12 downward.
+
+But then the teeth would be at Y=12 to Y=0, same as the spine's Y range. That's not right.
+
+Let me think differently: The spine is 12 mm wide (Y), and the teeth hang from one edge, so they extend beyond the spine's width in the -Y direction. So if the spine is at Y from 0 to 12, the teeth extend from Y=12 to Y=12 - tooth_length = 12 - 12 = 0. But that means the teeth and spine overlap in Y.
+
+No, the teeth should extend from the edge of the spine, so if the spine is at Y from 0 to 12, the teeth extend from Y=12 in the -Y direction for 12 mm, so Y from 12 to 0. But that means the bottom of the teeth is at Y=0, same as the spine's bottom edge.
+
+Actually, that might be correct - the teeth are attached to the spine's edge, so their Y position overlaps with the spine's Y range. The spine is 12 mm wide (Y), and each tooth is 12 mm long (Y), so the total height from spine top to tooth bottom is 12 + 12 = 24 mm in Y.
+
+But the bounding box report shows Y from -5.25 to 6.75, size 12.00 mm. That means the total Y extent is 12 mm, which is just the spine width. That suggests the teeth are not extending properly.
+
+Let me calculate the expected Y extent:
+- Spine: 12 mm wide (Y)
+- Teeth: 10 teeth, each 12 mm long (Y), extending from the spine's edge in -Y direction
+- So total Y extent should be spine width + tooth length = 12 + 12 = 24 mm
+
+But the report shows Y size 12.00 mm, which means the teeth are not being added correctly.
+
+Looking at my code:
+```scad
+translate([0, (spine_width - thickness) / 2, 0])
+    cube([spine_length, thickness, thickness]);
+```
+This is wrong - I'm using `thickness` (1.

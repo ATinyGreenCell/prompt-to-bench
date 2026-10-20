@@ -1,0 +1,48 @@
+// Sowing Template for 90 mm Petri Dish
+// Dimensions based on user specifications
+
+// Plate Dimensions
+plate_diameter = 85;
+plate_thickness = 2;
+
+// Hole Grid
+hole_diameter = 3;
+grid_spacing = 9;
+grid_rows = 7;
+grid_cols = 7;
+
+// Orientation Notch
+notch_width = 10;
+notch_depth = 4;
+
+// Derived Dimensions
+plate_radius = plate_diameter / 2;
+hole_radius = hole_diameter / 2;
+grid_radius = (grid_rows * grid_spacing) / 2;
+
+// Rendering
+$fn = 64;
+
+module main() {
+    union() {
+        // Main flat disc
+        cylinder(h = plate_thickness, r = plate_radius, center = false);
+        
+        // Grid of through-holes
+        for (x = -grid_radius : grid_spacing : grid_radius) {
+            for (y = -grid_radius : grid_spacing : grid_radius) {
+                translate([x, y, 0])
+                    cylinder(h = plate_thickness + 0.1, r = hole_radius, center = false);
+            }
+        }
+        
+        // Orientation notch on the +Y side
+        // The notch is cut into the rim. 
+        // The rim is at X = plate_radius.
+        // The notch is 10mm wide (X range) and 4mm deep (Y range).
+        translate([plate_radius, 0, 0])
+            cube([notch_width, notch_depth, plate_thickness + 0.1], center = true);
+    }
+}
+
+main();

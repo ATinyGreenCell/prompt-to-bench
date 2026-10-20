@@ -1,0 +1,70 @@
+The report shows the lid is still offset: its plate is centred at (150, 50) instead of (115, 25), and the lip at (160.12, 60.12) instead of (125.12, 35.12). The lid is shifted by +35 in X and +25 in Y relative to where it should be. This means the lid's local origin is not at its centre — the `cube` with `center` is not working as expected, or the lid module's geometry is being built with the origin at the corner.
+
+Looking at the lid module: `cube([box_outer_x, box_outer_y, lid_plate_t], center = [0, 0, lid_plate_t / 2])` should place the plate centred at (0, 0, 1). But the report shows the lid plate at (150, 50) when translated by (115, 25, 0), which means the lid's local origin is at (35, 25, 0) relative to the plate centre. This suggests the `center` parameter is not being applied correctly, or there's a bug in how the module is being evaluated.
+
+Wait — the issue is that the lid module's plate is at (0, 0, 1) in local coordinates, but when I translate by (115, 25, 0), the plate should be at (115, 25, 1). The report shows it at (150, 50, 1), which is (115+35, 25+25, 1). So the lid's local origin is at (35, 25, 0) relative to the plate centre. This means the `cube` with `center` is not working as expected.
+
+Actually, I think the issue is that the lid module is being evaluated in a context where the origin is not at (0, 0, 0). Let me re-examine: the lid module uses `cube` with `center = [0, 0, lid_plate_t / 2]`, which should place the plate centred at (0, 0, 1). When I translate by (115, 25, 0), the plate should be at (115, 25, 1). But the report shows it at (150, 50, 1), which is (115+35, 25+25, 1). This means the lid's local origin is at (35, 25, 0) relative to the plate centre.
+
+The only explanation is that the `center` parameter is not being applied. Let me check: in OpenSCAD, `cube([x, y, z], center = [cx, cy, cz])` places the cube centred at (cx, cy, cz). So `cube([70, 50, 2], center = [0, 0, 1])` should place the cube from (-35, -25, 0) to (35, 25, 2). When translated by (115, 25, 0), it should be from (80, 0, 0) to (150, 50, 2), centred at (115, 25, 1). But the report shows it centred at (150, 50, 1), which is from (115, 25, 0) to (185, 75, 2). This means the cube is from (0, 0, 0) to (70, 50, 2) in local coordinates, not centred at (0, 0, 1).
+
+So the `center` parameter is not being applied. This is a bug in my code. Let me fix it by using `translate` instead of `center`.
+
+```openscad
+// Two-part enclosure for a small electronics board (Arduino temp logger)
+// Part 1: open box, Part 2: lid printed upside down, side by side on the bed.
+// Units: mm. Print orientation: both parts rest on the XY plane at z = 0.
+
+// ---- Named dimensions (measured with calipers) ----
+box_outer_x   = 70.0;   // box outer length (X)
+box_outer_y   = 50.0;   // box outer width  (Y)
+box_outer_z   = 30.0;   // box outer height (Z)
+wall_t        = 2.0;    // wall thickness
+floor_t       = 2.0;    // floor thickness
+lid_plate_t   = 2.0;    // lid plate thickness
+lid_lip_t     = 1.5;    // lid lip wall thickness
+lid_lip_h     = 4.0;    // lid lip height
+lid_lip_outer_x = 65.6; // lip outer length (X)
+lid_lip_outer_y = 45.6; // lip outer width  (Y)
+gap           = 10.0;   // gap between the two parts on the bed
+
+// Derived values
+box_inner_x   = box_outer_x - 2 * wall_t;   // 66
+box_inner_y   = box_outer_y - 2 * wall_t;   // 46
+box_inner_z   = box_outer_z - floor_t;      // 28 (interior height)
+lip_inner_x   = lid_lip_outer_x - 2 * lid_lip_t; // 62.6
+lip_inner_y   = lid_lip_outer_y - 2 * lid_lip_t; // 42.6
+
+// ---- Part 1: the box (open top), centred on the origin ----
+module box() {
+    // Outer shell, centred at origin
+    translate([-box_outer_x/2, -box_outer_y/2, 0])
+        cube([box_outer_x, box_outer_y, box_outer_z]);
+    difference() {
+        // Interior cavity, open at the top (cavity extends 1 mm above the rim)
+        translate([-box_inner_x/2, -box_inner_y/2, floor_t])
+            cube([box_inner_x, box_inner_y, box_inner_z + 1]);
+    }
+}
+
+// ---- Part 2: the lid, printed upside down ----
+// Plate lies flat on the bed (z 0..2). The lip is a 1.5 mm wall, 4 mm tall,
+// centred on the plate, with a 0.2 mm clearance per side vs. the box opening.
+module lid() {
+    // Plate, centred at origin
+    translate([-box_outer_x/2, -box_outer_y/2, 0])
+        cube([box_outer_x, box_outer_y, lid_plate_t]);
+    // Lip: outer wall minus inner void (void extends 1 mm above the lip top)
+    difference() {
+        translate([-lid_lip_outer_x/2, -lid_lip_outer_y/2, lid_plate_t])
+            cube([lid_lip_outer_x, lid_lip_outer_y, lid_lip_h]);
+        translate([-lip_inner_x/2, -lip_inner_y/2, lid_plate_t])
+            cube([lip_inner_x, lip_inner_y, lid_lip_h + 1]);
+    }
+}
+
+// ---- Place both parts side by side on the bed, 10 mm apart ----
+// Box centred at origin; lid on the +X side, centred at (115, 25).
+box();
+translate([115, 25, 0]) lid();
+```

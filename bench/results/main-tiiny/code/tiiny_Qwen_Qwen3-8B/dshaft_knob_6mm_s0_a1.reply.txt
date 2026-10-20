@@ -1,0 +1,75 @@
+```openscad
+// Dimensions for the replacement knob
+shaft_diameter = 6;          // Diameter of the D-shaft
+knob_diameter = 30;         // Diameter of the knob
+knob_height = 15;            // Height of the knob
+bore_depth = 12;             // Depth of the D-shaped blind bore
+bore_circle_diameter = 6.2;   // Diameter of the bore circle
+bore_flat_distance = 4.7;     // Distance from flat to opposite side of the bore
+groove_depth = 1;             // Depth of each vertical grip groove
+groove_width = 2;             // Width of each vertical grip groove
+num_grooves = 18;             // Number of vertical grip grooves
+pointer_groove_width = 1.5;   // Width of the pointer groove
+pointer_groove_depth = 1;    // Depth of the pointer groove
+
+// Create the main knob cylinder
+cylinder(r = knob_diameter / 2, h = knob_height, $fn = 64);
+
+// Create the D-shaped blind bore
+// The D-shape is a circle with a flat cut, positioned at the bottom of the knob
+// We'll use a difference to cut the D-shape from the cylinder
+
+difference() {
+  // Main cylinder for the D-shaped bore
+  cylinder(r = bore_circle_diameter / 2, h = bore_depth, $fn = 64);
+  
+  // Subtract the flat part of the D-shape
+  translate([0, 0, bore_depth / 2 - bore_circle_diameter / 2]) {
+    rotate([0, 0, 90]) {
+      // Create a square for the flat part of the D-shape
+      square([bore_flat_distance, bore_circle_diameter], center = true);
+    }
+  }
+}
+
+// Create the vertical grip grooves
+// Each groove is a half-cylinder, 2 mm diameter, along the full height of the knob
+// Positioned around the outer surface, evenly spaced
+
+// Create the vertical grip grooves using a for loop
+for (i = [0:num_grooves-1]) {
+  // Calculate angle for each groove
+  angle = 360 * i / num_grooves;
+  
+  // Create a half-cylinder groove
+  rotate([0, 0, angle]) {
+    linear_extrude(height = knob_height, convexity = 10)
+      circle(r = groove_width / 2, $fn = 64);
+  }
+}
+
+// Create the pointer groove on the top face
+// It runs from the center to the outer edge, on the same side as the flat of the D
+// The pointer groove is 1.5 mm wide and 1 mm deep
+
+// Create the pointer groove using a polygon
+// The groove is a rectangle from the center to the outer edge, rotated to align with the D-shape
+// We'll use a difference to cut the groove from the top face
+
+// Define the pointer groove as a rectangle rotated to align with the D-shape
+// The rectangle is centered at the top face, with length equal to knob_diameter / 2
+// Width is pointer_groove_width, depth is pointer_groove_depth
+
+// Create the pointer groove
+translate([0, 0, knob_height - 0.01]) { // Slightly above the top face to avoid coplanar faces
+  difference() {
+    // Create a square for the pointer groove
+    square([knob_diameter / 2, pointer_groove_width], center = true);
+    
+    // Subtract a smaller square to create the groove
+    translate([0, pointer_groove_width / 2 - 0.01, 0]) { // Offset to avoid coplanar
+      square([knob_diameter / 2, pointer_groove_width + 0.02], center = true);
+    }
+  }
+}
+```

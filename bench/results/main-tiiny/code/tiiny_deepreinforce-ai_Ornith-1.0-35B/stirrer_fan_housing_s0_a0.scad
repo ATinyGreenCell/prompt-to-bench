@@ -1,0 +1,72 @@
+// === Dimensions ===
+// Top plate thickness
+top_plate_z = 2;
+// Wall thickness
+wall_thick = 2.5;
+// Wall height (from top of top plate)
+wall_height = 40 - top_plate_z;
+// Outer width (X)
+outer_x = 90;
+// Outer depth (Y)
+outer_y = 90;
+// Screw hole diameter
+screw_dia = 4.5;
+// Screw hole pattern spacing (square)
+screw_pattern = 71.5;
+// Cable notch width
+notch_width = 12;
+// Cable notch depth from top of wall
+notch_depth = 8;
+
+// === Derived ===
+// Inner width
+inner_x = outer_x - 2 * wall_thick;
+// Inner depth
+inner_y = outer_y - 2 * wall_thick;
+// Half dimensions
+half_x = outer_x / 2;
+half_y = outer_y / 2;
+// Half screw pattern
+half_pattern = screw_pattern / 2;
+
+// === Build ===
+$fn = 64;
+
+// Main box: top plate + 4 walls
+difference() {
+    // Outer shape (top plate + walls)
+    union() {
+        // Top plate
+        cube([outer_x, outer_y, top_plate_z], center = false);
+        // Four walls
+        // Front wall (Y+ side)
+        translate([0, half_y - wall_thick, top_plate_z])
+            cube([outer_x, wall_thick, wall_height], center = false);
+        // Back wall (Y- side)
+        translate([0, -half_y + wall_thick, top_plate_z])
+            cube([outer_x, wall_thick, wall_height], center = false);
+        // Left wall (X- side)
+        translate([-half_x + wall_thick, 0, top_plate_z])
+            cube([wall_thick, outer_y, wall_height], center = false);
+        // Right wall (X+ side)
+        translate([half_x - wall_thick, 0, top_plate_z])
+            cube([wall_thick, outer_y, wall_height], center = false);
+    }
+    
+    // Cut out inner cavity
+    translate([0, 0, top_plate_z])
+        cube([inner_x, inner_y, wall_height + 0.01], center = false);
+    
+    // Four screw holes
+    for (x = [-half_pattern, half_pattern]) {
+        for (y = [-half_pattern, half_pattern]) {
+            translate([x, y, -0.01])
+                cylinder(d = screw_dia, h = top_plate_z + 0.01, center = false);
+        }
+    }
+    
+    // Cable notch in the front wall (Y+ side)
+    // Notch is 12mm wide, centered along X, from z=32 to z=40
+    translate([0, half_y - 0.01, 32])
+        cube([notch_width, wall_thick + 0.02, notch_depth], center = false);
+}

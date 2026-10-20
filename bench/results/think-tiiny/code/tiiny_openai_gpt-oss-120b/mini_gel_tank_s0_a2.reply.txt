@@ -1,0 +1,65 @@
+```openscad
+// Parameters (mm)
+outer_x = 120;               // outer dimension X
+outer_y = 70;                // outer dimension Y
+outer_z = 40;                // outer dimension Z (height)
+wall_thick = 3;              // wall thickness
+floor_thick = 3;             // floor thickness
+
+inner_x = outer_x - 2*wall_thick;   // inner cavity X
+inner_y = outer_y - 2*wall_thick;   // inner cavity Y
+inner_z = outer_z - floor_thick;    // inner cavity Z (open top)
+
+platform_len = 60;           // platform length in X (centred)
+platform_top_z = 13;         // absolute Z of platform top
+platform_bottom_z = floor_thick; // absolute Z of inner floor
+platform_thick = platform_top_z - platform_bottom_z; // platform thickness
+
+hole_d = 2;                  // electrode hole diameter
+hole_r = hole_d/2;
+hole_z = 30;                 // absolute Z of hole centre
+hole_y = 0;                  // absolute Y of hole centre (center line)
+
+// Set resolution for curved features
+$fn = 64;
+
+// Outer shell (outer cube minus inner cavity)
+module outer_shell() {
+    difference() {
+        // outer solid, centred on origin
+        translate([-outer_x/2, -outer_y/2, 0])
+            cube([outer_x, outer_y, outer_z]);
+
+        // inner cavity, start just above the floor to keep the floor solid
+        translate([-inner_x/2 - 0.1, -inner_y/2 - 0.1, floor_thick + 0.1])
+            cube([inner_x + 0.2, inner_y + 0.2, inner_z + 0.2]); // extend a bit beyond top
+    }
+}
+
+// Platform (solid raised tray)
+module platform() {
+    translate([-platform_len/2, -inner_y/2, floor_thick])
+        cube([platform_len, inner_y, platform_thick]);
+}
+
+// Electrode holes through the end walls (horizontal along X)
+module electrode_holes() {
+    // left end wall
+    translate([-(outer_x/2) + wall_thick/2, hole_y, hole_z])
+        rotate([0, 90, 0])
+            cylinder(h = wall_thick + 0.2, r = hole_r, center = true);
+    // right end wall
+    translate([(outer_x/2) - wall_thick/2, hole_y, hole_z])
+        rotate([0, 90, 0])
+            cylinder(h = wall_thick + 0.2, r = hole_r, center = true);
+}
+
+// Final part (single solid body)
+difference() {
+    union() {
+        outer_shell();
+        platform();
+    }
+    electrode_holes();
+}
+```

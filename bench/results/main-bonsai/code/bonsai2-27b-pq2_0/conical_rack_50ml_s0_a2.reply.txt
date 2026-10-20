@@ -1,0 +1,40 @@
+The report shows the part is **not centred on the origin** and the **walls are offset from the plate edges**. The bounding box (X: -55.25..130.00, Y: -55.25..90.00) shows the plate is shifted +65 in X and +45 in Y, and the walls sit at Y = ±41/±45 instead of flush at Y = ±45. This is because the `cylinder` holes (which extend 2 mm past the plate) are being interpreted as part of the geometry in a way that shifts the reported bounding box, but more importantly the walls are not flush with the plate edges.
+
+The fix: ensure the plate is truly centred at origin, and the walls are flush with the plate's long edges (Y = ±45).
+
+```openscad
+// 6x 50 mL conical tube rack
+// Print orientation: plate on bed (z=0..4), walls rise to z=70.
+// After flipping, the rack stands on the two walls and tubes pass through the holes.
+
+// --- Dimensions (mm) ---
+plate_x   = 130;   // plate length along X
+plate_y   = 90;    // plate width along Y
+plate_z   = 4;     // plate thickness
+wall_len  = 130;   // wall length along X (same as plate_x)
+wall_thk  = 4;     // wall thickness along Y
+wall_hgt  = 70;    // wall height above plate (z=4 to z=70)
+hole_d    = 30.5;  // tube hole diameter
+hole_cx   = 40;    // hole spacing centre-to-centre along X
+hole_cy   = 40;    // hole spacing centre-to-centre along Y
+
+// --- Build ---
+union() {
+    // Flat plate, centred on origin in X and Y, z = 0..4
+    cube([plate_x, plate_y, plate_z], center=[0, 0, plate_z/2]);
+
+    // Two solid walls along the long edges (Y = +/- plate_y/2), z = 4..70
+    for (y_dir = [-1, 1]) {
+        translate([0, y_dir * (plate_y/2 - wall_thk/2), 0])
+            cube([wall_len, wall_thk, wall_hgt], center=[0, 0, wall_hgt/2 + plate_z]);
+    }
+
+    // Six through-holes, 2 rows (Y) x 3 (X), centred on the plate
+    for (i = [-1, 0, 1]) {
+        for (j = [-1, 1]) {
+            translate([i * hole_cx, j * hole_cy, 0])
+                cylinder(h = plate_z + 2, d = hole_d, $fn = 64);
+        }
+    }
+}
+```

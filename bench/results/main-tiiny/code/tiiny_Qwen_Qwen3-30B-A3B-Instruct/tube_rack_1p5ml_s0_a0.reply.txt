@@ -1,0 +1,65 @@
+```openscad
+// Bench rack for 1.5 mL microcentrifuge tubes
+// Dimensions in millimetres
+
+// Overall block dimensions
+length_x = 106;    // Length along X axis
+width_y = 72;       // Width along Y axis
+height_z = 30;      // Height along Z axis
+
+// Hole grid parameters
+hole_diameter = 11.2;         // Diameter of each hole
+hole_depth = 25;              // Depth of each hole (from top)
+floor_thickness = 5;            // Solid floor thickness at bottom of hole
+hole_spacing_x = 16;          // Center-to-center spacing along X
+hole_spacing_y = 16;          // Center-to-center spacing along Y
+num_rows_y = 4;                 // Number of rows along Y (4 rows)
+num_cols_x = 6;                 // Number of columns along X (6 columns)
+
+// Calculate grid centering offsets
+grid_center_x = length_x / 2;
+grid_center_y = width_y / 2;
+
+// Calculate starting positions for hole grid (to center it)
+start_x = grid_center_x - ((num_cols_x - 1) * hole_spacing_x) / 2;
+start_y = grid_center_y - ((num_rows_y - 1) * hole_spacing_y) / 2;
+
+// Set resolution for smooth holes
+$fn = 64;
+
+// Main block: solid rectangular prism
+cube([length_x, width_y, height_z], center = true);
+
+// Create holes using difference
+difference() {
+    // Main block
+    cube([length_x, width_y, height_z], center = true);
+
+    // Subtract cylinders for each hole
+    for (i = [0 : num_cols_x - 1]) {
+        for (j = [0 : num_rows_y - 1]) {
+            // Calculate hole center
+            hole_x = start_x + i * hole_spacing_x;
+            hole_y = start_y + j * hole_spacing_y;
+            hole_z = height_z / 2;  // Centered vertically
+
+            // Cylinder for hole: extends slightly beyond the block to ensure clean cut
+            // We make it slightly longer than the block to ensure full penetration
+            cylinder(
+                h = height_z + 1,  // Slightly longer to ensure full cut
+                d = hole_diameter,
+                center = true,
+                $fn = 64
+            );
+            translate([hole_x, hole_y, hole_z]) {
+                cylinder(
+                    h = height_z + 1,
+                    d = hole_diameter,
+                    center = true,
+                    $fn = 64
+                );
+            }
+        }
+    }
+}
+```

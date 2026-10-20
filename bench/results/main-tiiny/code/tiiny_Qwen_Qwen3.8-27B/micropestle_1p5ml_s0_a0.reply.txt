@@ -1,0 +1,63 @@
+```openscad
+// Pestle for 1.5 mL microcentrifuge tube, printed standing upright (z=0 at base)
+
+// --- Dimensions (mm) ---
+handle_d   = 8;   // handle diameter
+handle_r   = handle_d / 2;
+handle_z0  = 0;   // handle bottom
+handle_z1  = 45;  // handle top / cone base
+
+cone_d_top = 3;   // cone top diameter
+cone_r_top = cone_d_top / 2;
+cone_z0    = 45;  // cone base (same as handle top)
+cone_z1    = 62;  // cone tip / sphere centre
+
+tip_d      = 3;   // rounded tip sphere diameter
+tip_r      = tip_d / 2;
+tip_z      = 62;  // sphere centre height
+
+// Grip grooves (cut into handle)
+groove_w   = 2;   // groove width in Z
+groove_d   = 1;   // groove depth (radial)
+groove_z   = [10, 15, 20, 25];  // groove centre heights
+
+// --- Curvature quality ---
+$fn = 64;
+
+// --- Build the solid body (handle + cone + tip) ---
+body = union() {
+    // 1. Cylindrical handle
+    translate([0, 0, handle_z0])
+        cylinder(h = handle_z1 - handle_z0, r = handle_r, $fn = $fn);
+
+    // 2. Tapering cone (8 mm dia -> 3 mm dia)
+    translate([0, 0, cone_z0])
+        cylinder(h = cone_z1 - cone_z0, r1 = handle_r, r2 = cone_r_top, $fn = $fn);
+
+    // 3. Rounded tip (sphere centred at z = 62)
+    translate([0, 0, tip_z])
+        sphere(r = tip_r, $fn = $fn);
+};
+
+// --- Cut the four circumferential grip grooves ---
+// Each groove is a short tube (annulus) that bites 1 mm into the 4 mm-radius handle.
+// The tube is made 0.5 mm longer than the 2 mm groove width so its end faces
+// extend past the handle surface and leave clean, non-coplanar walls.
+groove_cut = union() {
+    for (z = groove_z) {
+        // outer radius = handle radius (flush with surface), inner radius = 1 mm deep
+        // height extends 0.5 mm past each side of the 2 mm groove
+        translate([0, 0, z - groove_w / 2 - 0.5])
+            difference() {
+                cylinder(h = groove_w + 1.0, r = handle_r, $fn = $fn);
+                cylinder(h = groove_w + 1.0, r = handle_r - groove_d, $fn = $fn);
+            }
+    }
+};
+
+// --- Final part ---
+difference() {
+    body;
+    groove_cut;
+}
+```

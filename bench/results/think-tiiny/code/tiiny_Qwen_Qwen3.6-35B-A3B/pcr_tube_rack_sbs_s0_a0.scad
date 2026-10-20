@@ -1,0 +1,40 @@
+// Dimensions
+BLOCK_X = 127.76;
+BLOCK_Y = 85.48;
+BLOCK_Z = 20;
+HOLE_DIA = 6.2;
+COLS = 12;
+ROWS = 8;
+SPACING = 9.0;
+A1_X = 14.38;
+A1_Y = 11.24;
+CHAMFER_SIZE = 5;
+
+$fn = 64;
+
+difference() {
+    // Main block, centered on XY origin
+    translate([-BLOCK_X / 2, -BLOCK_Y / 2, 0]) {
+        cube([BLOCK_X, BLOCK_Y, BLOCK_Z], center = false);
+    }
+
+    // 96 through-holes
+    for (x = [0 : COLS - 1]) {
+        for (y = [0 : ROWS - 1]) {
+            translate([
+                -BLOCK_X / 2 + A1_X + x * SPACING,
+                -BLOCK_Y / 2 + A1_Y + y * SPACING,
+                0
+            ]) {
+                cylinder(d = HOLE_DIA, h = BLOCK_Z + 0.01, center = false);
+            }
+        }
+    }
+
+    // 45-degree chamfer at A1 corner
+    translate([-BLOCK_X / 2, -BLOCK_Y / 2, 0]) {
+        linear_extrude(height = BLOCK_Z + 0.01) {
+            polygon([[0, 0], [CHAMFER_SIZE, 0], [0, CHAMFER_SIZE]]);
+        }
+    }
+}

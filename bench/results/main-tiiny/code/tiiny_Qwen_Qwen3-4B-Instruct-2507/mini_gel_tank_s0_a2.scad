@@ -1,0 +1,65 @@
+// Buffer tank for mini horizontal gel-electrophoresis box
+// Dimensions in millimeters
+
+// Outer dimensions of the tank
+outer_X = 120;
+outer_Y = 70;
+outer_Z = 40;
+
+// Wall and floor thickness
+wall_thickness = 3;
+floor_thickness = 3;
+
+// Platform dimensions (inner dimensions)
+platform_length_X = 60;
+platform_width_Y = 70; // spans full inner Y
+platform_height = 10; // 10 mm above inner floor (at z = 13)
+platform_z_position = 13; // z = 13 mm (inner floor + 10 mm platform)
+
+// Electrode hole: 2 mm diameter, horizontal, along X, at y=0, z=30
+hole_diameter = 2;
+hole_depth = 3; // hole goes through the wall thickness
+hole_z_position = 30; // at z = 30 mm (within the tank)
+
+// Inner dimensions (after subtracting walls and floor)
+inner_X = outer_X - 2 * wall_thickness;
+inner_Y = outer_Y - 2 * wall_thickness;
+inner_Z = outer_Z - wall_thickness - floor_thickness;
+
+// Create the outer tank base (open top, with walls and floor)
+outer_tank = cube([outer_X, outer_Y, outer_Z], center=true);
+
+// Subtract the inner volume to create walls and floor
+inner_tank = cube([inner_X, inner_Y, inner_Z], center=true);
+tank_with_walls_floor = difference() {
+    outer_tank;
+    inner_tank;
+};
+
+// Add the raised platform (centered in X, full Y, 10 mm high)
+platform = cube([platform_length_X, platform_width_Y, platform_height], center=true);
+platform_translated = translate([0, 0, platform_z_position]) platform;
+
+// Drill electrode holes in the end walls (at y=0, z=27 to z=30, along X)
+// Each hole is 2 mm in diameter, 3 mm deep, aligned with X-axis
+
+// Hole at left end wall (x=0, y=0, z=27 to z=30)
+hole_left = translate([0, 0, 27]) 
+    rotate([0, 0, 90]) 
+    cylinder(d=hole_diameter/2, h=hole_depth, $fn=64);
+
+// Hole at right end wall (x=outer_X, y=0, z=27 to z=30)
+hole_right = translate([outer_X, 0, 27]) 
+    rotate([0, 0, 90]) 
+    cylinder(d=hole_diameter/2, h=hole_depth, $fn=64);
+
+// Final part: union of the tank, platform, and electrode holes
+final_part = union() {
+    tank_with_walls_floor;
+    platform_translated;
+    hole_left;
+    hole_right;
+};
+
+// Output the final part
+final_part;

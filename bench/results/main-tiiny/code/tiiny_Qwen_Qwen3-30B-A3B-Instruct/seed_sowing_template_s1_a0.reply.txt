@@ -1,0 +1,65 @@
+```openscad
+// Sowing template for 90 mm Petri dish
+// Dimensions in millimetres
+
+// Overall disc dimensions
+diameter_disc = 85;
+thickness_disc = 2;
+
+// Grid parameters
+grid_rows = 7;
+grid_cols = 7;
+hole_diameter = 3;
+spacing = 9;
+
+// Notch dimensions
+notch_width = 10;      // X direction
+notch_depth = 4;       // Y direction, measured inward from rim
+
+// Center the grid on the disc
+grid_origin_x = -((grid_cols - 1) * spacing) / 2;
+grid_origin_y = -((grid_rows - 1) * spacing) / 2;
+
+// Set resolution for smooth holes
+$fn = 64;
+
+// Main disc body
+module disc() {
+    translate([0, 0, 0])
+        cube([diameter_disc, diameter_disc, thickness_disc], center = true);
+}
+
+// Cut holes in a grid
+module grid_holes() {
+    for (i = [0 : grid_rows - 1]) {
+        for (j = [0 : grid_cols - 1]) {
+            x = grid_origin_x + j * spacing;
+            y = grid_origin_y + i * spacing;
+            translate([x, y, -0.01])
+                cylinder(h = thickness_disc + 0.02, r = hole_diameter / 2, center = true);
+        }
+    }
+}
+
+// Cut notch on +Y side of rim
+module notch() {
+    // Notch is centered on Y axis, extends from Y = -rim to Y = +rim
+    // Rim is at Y = diameter_disc / 2 = 42.5 mm
+    // Notch depth is 4 mm inward from rim, so Y goes from 42.5 - 4 = 38.5 to 42.5
+    // Notch width is 10 mm in X direction, centered at X = 0
+    notch_x_min = -notch_width / 2;
+    notch_x_max = notch_width / 2;
+    notch_y_min = diameter_disc / 2 - notch_depth;
+    notch_y_max = diameter_disc / 2;
+
+    translate([0, 0, -0.01])
+        cube([notch_width, notch_depth, thickness_disc + 0.02], center = false);
+}
+
+// Assemble the template
+difference() {
+    disc();
+    grid_holes();
+    notch();
+}
+```

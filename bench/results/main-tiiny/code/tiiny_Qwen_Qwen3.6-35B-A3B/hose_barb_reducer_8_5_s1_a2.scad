@@ -1,0 +1,83 @@
+// Dimensions for straight hose-barb reducer
+// 8mm tubing side (bottom)
+dia_8_bottom = 7.5;      // Outer diameter at bottom of first 8mm barb
+dia_8_top = 9.5;         // Outer diameter at top of first 8mm barb
+h_barb_8 = 10;             // Height of each 8mm barb
+num_barbs_8 = 2;           // Number of 8mm barbs
+
+// Collar
+dia_collar = 12;           // Diameter of the cylindrical collar
+h_collar = 5;              // Height of the collar (20 to 25)
+
+// 5mm tubing side (top)
+dia_5_bottom = 6.5;        // Outer diameter at bottom of first 5mm barb
+dia_5_top = 5.0;           // Outer diameter at top of first 5mm barb
+h_barb_5 = 8;                // Height of each 5mm barb
+num_barbs_5 = 2;             // Number of 5mm barbs
+
+// Bore
+dia_bore = 3;              // Diameter of the through bore
+
+// Global settings
+$fn = 64;
+
+// Helper module to create a single barb section
+// r_start: radius at the bottom of this section
+// r_end: radius at the top of this section
+// h: height of this section
+// z_offset: Z position of the bottom of this section
+module build_barb_section(r_start, r_end, h, z_offset) {
+    // Define the 2D profile in the XY plane
+    // X is radius, Y is height (relative to z_offset)
+    // The profile goes from (r_start, 0) to (r_end, h), then steps back to (r_start, h), then down to (r_start, 0)
+    
+    pts = [
+        [r_start, 0],
+        [r_end, h],
+        [r_start, h],
+        [r_start, 0]
+    ];
+    
+    translate([0, 0, z_offset]) {
+        rotate_extrude() {
+            polygon(pts);
+        }
+    }
+}
+
+// Build the part
+union() {
+    // 8mm Tubing Side
+    // z=0 to z=20
+    for (i = [0 : num_barbs_8 - 1]) {
+        z_base = i * h_barb_8;
+        build_barb_section(dia_8_bottom / 2, dia_8_top / 2, h_barb_8, z_base);
+    }
+    
+    // Collar
+    // z=20 to z=25
+    // Diameter 12mm -> Radius 6mm
+    translate([0, 0, 20]) {
+        cylinder(r = dia_collar / 2, h = h_collar, center = false);
+    }
+    
+    // 5mm Tubing Side
+    // z=25 to z=41
+    // Two barbs, each 8mm high.
+    // Barb 1: z=25 to z=33. r: 6.5 -> 5.0
+    // Barb 2: z=33 to z=41. r: 6.5 -> 5.0
+    for (i = [0 : num_barbs_5 - 1]) {
+        z_base = 25 + i * h_barb_5;
+        build_barb_section(dia_5_bottom / 2, dia_5_top / 2, h_barb_5, z_base);
+    }
+}
+
+// Subtract the bore
+// The bore is 3mm diameter, running straight through from z=0 to z=41.
+// We need to extend it slightly past the faces to avoid coplanar faces.
+// Extend by 0.1mm.
+// The part goes from z=0 to z=41.
+// So the bore should go from -0.1 to 41.1.
+translate([0, 0, -0.1]) {
+    cylinder(r = dia_bore / 2, h = 41 + 0.2, center = false);
+}

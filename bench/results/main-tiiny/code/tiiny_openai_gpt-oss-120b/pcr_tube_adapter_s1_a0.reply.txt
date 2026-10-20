@@ -1,0 +1,37 @@
+```openscad
+// Parameters (all in mm)
+collar_d   = 13;    // collar outer diameter
+collar_h   = 1.5;   // collar thickness (height)
+sleeve_d   = 10.8;  // sleeve outer diameter
+sleeve_h   = 20.0;  // sleeve body height (21.5‑1.5)
+bore_d     = 6.2;   // straight bore diameter
+clearance  = 0.02;  // extra length for cutting shapes (to avoid coplanar faces)
+
+$fn = 128; // smooth curved surfaces
+
+// Full part before boring
+module part() {
+    union() {
+        // Collar (lies on the bed)
+        cylinder(d = collar_d, h = collar_h);
+        // Sleeve body (starts on top of collar)
+        translate([0, 0, collar_h])
+            cylinder(d = sleeve_d, h = sleeve_h);
+    }
+}
+
+// Bore that cuts through the entire height
+module bore() {
+    // Height of bore = total part height + 2*clearance
+    cylinder(d = bore_d, h = collar_h + sleeve_h + 2*clearance);
+    // Shift so it extends beyond both ends
+    translate([0, 0, -clearance])
+        cylinder(d = bore_d, h = collar_h + sleeve_h + 2*clearance);
+}
+
+// Final solid
+difference() {
+    part();
+    bore();
+}
+```

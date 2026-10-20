@@ -1,0 +1,71 @@
+// Dimensions for the 50 mL conical tube rack
+// Base plate dimensions
+plate_length_x = 130;      // X dimension of the base plate
+plate_width_y = 90;        // Y dimension of the base plate
+plate_thickness_z = 4;    // Z thickness of the base plate
+
+// Tube hole dimensions
+tube_diameter = 30.5;     // Diameter of the 50 mL conical tube holes
+hole_depth = 4;         // Depth of the through-holes (same as plate thickness)
+
+// Wall dimensions
+wall_height_z = 70;      // Height of the side walls
+wall_thickness_y = 4;   // Thickness of the side walls (along Y)
+wall_length_x = 130;     // Length of the side walls (along X)
+
+// Hole grid dimensions
+rows_y = 2;              // Number of rows along Y
+cols_x = 3;              // Number of columns along X
+hole_spacing_x = 40;     // Center-to-center spacing in X
+hole_spacing_y = 40;     // Center-to-center spacing in Y
+
+// Centering offsets
+offset_x = plate_length_x / 2;
+offset_y = plate_width_y / 2;
+
+// Base plate
+base_plate = cube([plate_length_x, plate_width_y, plate_thickness_z], center = true);
+
+// Create the six holes
+holes = [];
+for (i = [0 : cols_x - 1]) {
+    for (j = [0 : rows_y - 1]) {
+        // Calculate hole center positions
+        hx = -offset_x + (i * hole_spacing_x) + (hole_spacing_x / 2);
+        hy = -offset_y + (j * hole_spacing_y) + (hole_spacing_y / 2);
+        
+        // Create a cylinder for the hole that extends slightly past the plate
+        // to ensure clean cuts in the difference operation
+        hole_cyl = cylinder(d = tube_diameter + 0.02, h = plate_thickness_z + 0.02, center = true);
+        holes = holes + [translate([hx, hy, 0]) * hole_cyl];
+    }
+}
+
+// Combine base plate with holes
+plate_with_holes = difference() {
+    base_plate;
+    for (h = holes) {
+        h;
+    }
+}
+
+// Create the two side walls
+// Wall 1: Along the positive Y edge (Y = plate_width_y/2)
+wall1 = translate([0, plate_width_y / 2 - wall_thickness_y / 2, 0]) *
+        cube([wall_length_x, wall_thickness_y, wall_height_z], center = false);
+
+// Wall 2: Along the negative Y edge (Y = -plate_width_y/2)
+wall2 = translate([0, -plate_width_y / 2 + wall_thickness_y / 2, 0]) *
+        cube([wall_length_x, wall_thickness_y, wall_height_z], center = false);
+
+// Combine plate with walls
+rack = union() {
+    plate_with_holes;
+    wall1;
+    wall2;
+}
+
+// Final assembly
+render() {
+    rack;
+}

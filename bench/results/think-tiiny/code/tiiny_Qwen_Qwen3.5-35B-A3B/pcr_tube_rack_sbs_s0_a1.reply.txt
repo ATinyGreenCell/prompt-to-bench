@@ -1,0 +1,77 @@
+```openscad
+// Block dimensions
+BLOCK_LENGTH = 127.76;    // X dimension (length)
+BLOCK_WIDTH = 85.48;      // Y dimension (width)
+BLOCK_HEIGHT = 20;       // Z dimension (height)
+
+// Hole specifications
+HOLE_DIAMETER = 6.2;     // Hole diameter
+HOLE_SPACING = 9.0;    // Center-to-center spacing
+NUM_ROWS = 8;            // Rows along Y axis
+NUM_COLS = 12;           // Columns along X axis
+
+// First hole (A1) position from edges
+HOLE_A1_X_OFFSET = 14.38;  // From left edge
+HOLE_A1_Y_OFFSET = 11.24;  // From back edge
+
+// Chamfer specifications
+CHAMFER_SIZE = 5;          // Leg length
+CHAMFER_DEPTH = 20.01;    // Slightly past block height
+
+// Calculate hole grid positions
+// Block center is at origin (0, 0)
+// Left edge at X = -BLOCK_LENGTH/2
+// Back edge at Y = -BLOCK_WIDTH/2
+
+FIRST_HOLE_X = -BLOCK_LENGTH/2 + HOLE_A1_X_OFFSET;
+FIRST_HOLE_Y = -BLOCK_WIDTH/2 + HOLE_A1_Y_OFFSET;
+
+// Create the base block (resting on XY plane at z=0)
+module base_block() {
+    cube([BLOCK_LENGTH, BLOCK_WIDTH, BLOCK_HEIGHT], center = false);
+}
+
+// Create the hole grid
+module hole_grid() {
+    for (col = [0:NUM_COLS-1]) {
+        for (row = [0:NUM_ROWS-1]) {
+            hole_x = FIRST_HOLE_X + col * HOLE_SPACING;
+            hole_y = FIRST_HOLE_Y + row * HOLE_SPACING;
+            translate([hole_x, hole_y, 0]) {
+                cylinder(d = HOLE_DIAMETER, h = BLOCK_HEIGHT + 0.01, center = false);
+            }
+        }
+    }
+}
+
+// Create the chamfer at A1 corner (45-degree, 5mm legs)
+// A1 corner is at FIRST_HOLE_X, FIRST_HOLE_Y
+// Chamfer cuts 5mm from both X and Y edges at 45 degrees
+module chamfer() {
+    // Create a triangular wedge that cuts the corner
+    // The wedge extends from the corner diagonally
+    translate([FIRST_HOLE_X, FIRST_HOLE_Y, 0]) {
+        // Create a triangular prism that cuts the corner
+        // Base triangle with legs of 5mm at 45 degrees
+        difference() {
+            // Create a cube that covers the chamfer area
+            cube([CHAMFER_SIZE * 2, CHAMFER_SIZE * 2, CHAMFER_DEPTH], center = false);
+            // Cut away the corner with a diagonal plane
+            // Using a rotated cube to create the 45-degree cut
+            rotate([0, 0, 45]) {
+                cube([CHAMFER_SIZE * 2, CHAMFER_SIZE * 2, CHAMFER_DEPTH], center = false);
+            }
+        }
+    }
+}
+
+// Main assembly - create block with holes and chamfer
+// Part rests on XY plane at z=0
+difference() {
+    base_block();
+    // Subtract holes
+    hole_grid();
+    // Subtract chamfer
+    chamfer();
+}
+```

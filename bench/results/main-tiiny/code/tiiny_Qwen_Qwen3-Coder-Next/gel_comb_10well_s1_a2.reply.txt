@@ -1,0 +1,75 @@
+Looking at the error report, the issue is clear: the variable names in my code don't match what I intended. The warnings show that `thickness`, `spine_width`, and `spine_length` are undefined, which means I had a syntax error in my variable declarations (likely using `//` comments incorrectly or having typos).
+
+The bounding box shows a 1×1×1 mm cube instead of the expected 70×12×1.5 mm comb, confirming the variables weren't properly defined.
+
+Let me carefully re-implement with correct variable declarations and proper geometry:
+
+- The comb is a flat plate 1.5 mm thick (Z)
+- Spine: 70 mm long (X), 12 mm wide (Y) - this is the base plate
+- 10 teeth hanging from one long edge in -Y direction
+- Each tooth: 5.0 mm wide (X), 12 mm long (Y)
+- Gap between teeth: 1.5 mm
+- Teeth row centered on spine in X
+
+The spine should be positioned so its top edge (at +Y) is where teeth attach, and teeth extend in -Y direction. For proper printing orientation (lying flat on XY plane), the spine should be at the "top" (higher Y values) and teeth extend downward (lower Y values).
+
+Correct Y positioning:
+- Spine width = 12 mm, so if we position spine from Y=0 to Y=12, then teeth extend from Y=12 in -Y direction for 12 mm each (to Y=0)
+- But that would make teeth and spine overlap in Y. Instead, the spine should be positioned with its bottom edge at Y=0, so spine is from Y=0 to Y=12, and teeth extend from Y=12 to Y=12-12=0 - still overlapping.
+
+Actually, for agarose gel combs, the teeth need to fit into the gel tray wells, so the spacing between teeth should match the well spacing. The spine is the back bar that rests on the tray, and teeth hang down into the gel.
+
+The correct interpretation:
+- Spine: 70 mm (X) × 12 mm (Y) × 1.5 mm (Z) - this is the main body
+- Teeth: extend from the -Y edge of the spine, so if spine is at Y=0 to Y=12, teeth extend from Y=12 in the -Y direction for 12 mm (so Y=12 to Y=0) - but this means the teeth bottom is at Y=0, same as spine bottom.
+
+Wait, that can't be right because then the total Y size would be 12 mm (spine width) + 12 mm (tooth length) = 24 mm, but the previous report showed only 12 mm.
+
+Let me re-read the specification: "the row of teeth is centred on the spine in X". This means the teeth are arranged along the X direction, centered on the spine's X center.
+
+The spine is 70 mm long (X) and 12 mm wide (Y). The teeth are attached to one long edge (the -Y edge), so the spine's Y extent is say from Y=0 to Y=12, and teeth extend from Y=12 in the -Y direction.
+
+The total Y size should be spine width + tooth length = 12 + 12 = 24 mm.
+
+But the first report showed Y from -5.25 to 6.75, size 12.00 mm, which is only 12 mm, suggesting the teeth weren't being added correctly.
+
+The second report shows a 1×1×1 mm cube, which means variables weren't defined properly.
+
+Let me carefully write the correct code with proper variable declarations:
+
+```openscad
+// 10-well comb for agarose gel casting
+// Print orientation: lying flat on XY plane (Z = 0), builds upward (+Z)
+
+// Dimensions
+thickness = 1.5;        // Total thickness (Z)
+spine_length = 70;      // Spine length (X)
+spine_width = 12;       // Spine width (Y)
+num_wells = 10;         // Number of teeth/wells
+tooth_width = 5.0;      // Width of each tooth (X)
+tooth_length = 12;      // Length of each tooth (Y)
+gap_width = 1.5;        // Gap between neighbouring teeth (X)
+
+// Calculations
+total_tooth_and_gap_width = num_wells * tooth_width + (num_wells - 1) * gap_width;
+tooth_row_start_x = (spine_length - total_tooth_and_gap_width) / 2;
+
+// Build the comb
+module comb() {
+    // Spine (base plate) - positioned at Y=0 to Y=spine_width
+    cube([spine_length, spine_width, thickness]);
+    
+    // Teeth - extend from the +Y edge of the spine in the -Y direction
+    for (i = [0 : num_wells - 1]) {
+        // Calculate X position of each tooth, centered on spine
+        tooth_x = tooth_row_start_x + i * (tooth_width + gap_width);
+        
+        // Position tooth: X as calculated, Y from spine_width to spine_width - tooth_length
+        translate([tooth_x, spine_width, 0])
+            cube([tooth_width, -tooth_length, thickness]);
+    }
+}
+
+// Build the comb
+comb();
+```

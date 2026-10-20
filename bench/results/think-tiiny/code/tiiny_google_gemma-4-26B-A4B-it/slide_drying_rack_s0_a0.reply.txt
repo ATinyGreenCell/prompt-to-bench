@@ -1,0 +1,32 @@
+```openscad
+// Dimensions for the microscope slide drying rack
+base_x = 90;           // Length of the base block (X)
+base_y = 45;           // Width of the base block (Y)
+base_z = 20;           // Height of the base block (Z)
+slot_x = 77;           // Length of each slot (X)
+slot_y = 1.6;          // Width of each slot (Y)
+slot_z = 10;           // Depth of each slot (Z)
+slot_pitch = 3.5;      // Center-to-center distance between slots (Y)
+num_slots = 10;        // Total number of slots
+
+// Calculated offsets to ensure the group of slots is centered on the block
+// The total width of the slot group from outer edge to outer edge is:
+// (number_of_slots - 1) * pitch + slot_width
+y_start = (base_y - ((num_slots - 1) * slot_pitch + slot_y)) / 2;
+x_start = (base_x - slot_x) / 2;
+
+difference() {
+    // The main solid base block
+    cube([base_x, base_y, base_z]);
+
+    // The 10 parallel slots
+    for (i = [0 : num_slots - 1]) {
+        // We translate the slot to its position.
+        // To ensure a clean cut through the top face, we extend the Z-height slightly.
+        // To ensure a clean cut through the bottom of the slot, we start slightly below the target depth.
+        translate([x_start, y_start + (i * slot_pitch), base_z - slot_z - 0.01]) {
+            cube([slot_x, slot_y, slot_z + 0.02]);
+        }
+    }
+}
+```

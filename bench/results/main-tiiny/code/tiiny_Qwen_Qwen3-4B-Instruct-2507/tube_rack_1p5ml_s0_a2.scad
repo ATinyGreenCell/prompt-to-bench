@@ -1,0 +1,56 @@
+// Dimensions of the bench rack
+$fn = 64;
+
+// Block dimensions (in mm)
+length_X = 106;
+width_Y = 72;
+height_Z = 30;
+
+// Hole grid: 24 holes in 4 rows (Y direction), 6 holes per row (X direction)
+// Centre-to-centre distance in both directions
+hole_center_to_center = 16.0;
+hole_diameter = 11.2;
+hole_depth = 25.0;
+floor_thickness = 5.0;  // solid floor at the bottom
+
+// Calculate hole positions
+num_holes_per_row = 6;
+num_rows = 4;
+
+// X positions: 6 holes per row, centered on origin
+hole_x_positions = [];
+for (i = [0 : num_holes_per_row - 1]) {
+    hole_x_positions.push(-5 * hole_center_to_center / 2 + i * hole_center_to_center);
+}
+
+// Y positions: 4 rows, centered on origin
+hole_y_positions = [];
+for (i = [0 : num_rows - 1]) {
+    hole_y_positions.push(-3 * hole_center_to_center / 2 + i * hole_center_to_center);
+}
+
+// Create the bench rack using difference
+difference() {
+    // Full base block: 106 x 72 x 30 mm, centered
+    cube([length_X, width_Y, height_Z], center = true);
+    
+    // Subtract each hole: 4 rows x 6 holes = 24 holes
+    for (i = [0 : num_rows - 1]) {
+        for (j = [0 : num_holes_per_row - 1]) {
+            x = hole_x_positions[j];
+            y = hole_y_positions[i];
+            
+            // Translate to hole position
+            translate([x, y, 0]) {
+                // Cylinder with 11.2 mm diameter, 25 mm depth, extended 0.1 mm beyond top
+                // to avoid coplanarity with the floor
+                cylinder(
+                    r = hole_diameter / 2,
+                    h = hole_depth + 0.1,
+                    center = false,
+                    f = 64
+                );
+            }
+        }
+    }
+}

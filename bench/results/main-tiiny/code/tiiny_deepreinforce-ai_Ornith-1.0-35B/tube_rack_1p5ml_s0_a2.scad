@@ -1,0 +1,45 @@
+// Bench rack for 1.5 mL microcentrifuge tubes
+// Block dimensions
+BLOCK_X = 106;       // Length (X) in mm
+BLOCK_Y = 72;         // Width (Y) in mm
+BLOCK_Z = 30;         // Height (Z) in mm
+
+// Hole parameters
+HOLE_DIAM = 11.2;    // Hole diameter in mm
+HOLE_DEPTH = 25;    // Hole depth in mm (open at top, closed at bottom)
+FLOOR_THICK = 5;     // Solid floor thickness at bottom
+
+// Hole grid parameters
+ROWS = 4;             // Number of rows along Y
+COLS = 6;             // Number of columns along X
+SPACING_X = 16;     // Centre-to-centre spacing along X
+SPACING_Y = 16;      // Centre-to-centre spacing along Y
+
+// Calculate grid origin to centre the grid on the block
+GRID_ORIG_X = -(COLS - 1) * SPACING_X / 2;
+GRID_ORIG_Y = -(ROWS - 1) * SPACING_Y / 2;
+
+// Ensure round holes
+$fn = 64;
+
+// Main block
+block = cube([BLOCK_X, BLOCK_Y, BLOCK_Z], center = true);
+
+// Create all hole cylinders directly in the difference operation
+cut_shape = union(
+    for (row = [0 : ROWS - 1])
+        for (col = [0 : COLS - 1])
+            translate([GRID_ORIG_X + col * SPACING_X,
+                       GRID_ORIG_Y + row * SPACING_Y,
+                       BLOCK_Z - HOLE_DEPTH - 0.01])
+                cylinder(d = HOLE_DIAM, h = HOLE_DEPTH + 0.02, center = false)
+);
+
+// Final part: block minus holes
+part = difference() {
+    block;
+    cut_shape;
+};
+
+// Output the part
+part;

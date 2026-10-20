@@ -1,0 +1,48 @@
+```openscad
+// Bench rack for 1.5 mL microcentrifuge tubes
+// All dimensions in millimetres
+
+// Block dimensions
+block_length = 106;   // X dimension
+block_width  = 72;    // Y dimension
+block_height = 30;    // Z dimension
+
+// Hole pattern
+hole_diameter   = 11.2;   // Ø of each tube hole
+hole_spacing    = 16;     // centre‑to‑centre spacing (both X and Y)
+hole_cols       = 6;      // number of holes along X
+hole_rows       = 4;      // number of holes along Y
+floor_thickness = 5;     // solid floor thickness below holes
+
+// Tolerances for clean cuts (extend beyond faces)
+tol = 0.01;
+
+// Set resolution for curved features
+$fn = 64;
+
+// Main solid (block)
+block = translate([-block_length/2, -block_width/2, 0])
+        cube([block_length, block_width, block_height]);
+
+// Generate all hole cylinders
+module hole_grid() {
+    // Height of each cylinder: block_height - floor_thickness + 2*tol
+    cyl_height = block_height - floor_thickness + 2*tol;
+    // Bottom of cylinder: floor_thickness - tol
+    cyl_bottom = floor_thickness - tol;
+    for (i = [0 : hole_cols-1])
+        for (j = [0 : hole_rows-1]) {
+            // Compute X and Y positions (centered)
+            x = -((hole_cols-1)/2)*hole_spacing + i*hole_spacing;
+            y = -((hole_rows-1)/2)*hole_spacing + j*hole_spacing;
+            translate([x, y, cyl_bottom])
+                cylinder(h = cyl_height, d = hole_diameter);
+        }
+}
+
+// Subtract holes from block
+difference() {
+    block;
+    hole_grid();
+}
+```

@@ -1,0 +1,50 @@
+```openscad
+// Dimensions in millimetres
+block_length = 90;      // X dimension
+block_width = 45;       // Y dimension
+block_height = 20;      // Z dimension
+
+slide_length = 75;      // Length of microscope slide
+slide_width = 25;       // Width of microscope slide
+slide_thickness = 1;    // Thickness of microscope slide
+
+slot_length = 77;       // Length of the slot
+slot_width = 1.6;       // Width of the slot
+slot_depth = 10;        // Depth of the slot
+slot_spacing = 3.5;     // Centre-to-centre distance between slots
+
+$fn = 64;
+
+// Main base block
+base_block = cube([block_length, block_width, block_height], center=true);
+
+// Create a single slot
+module single_slot() {
+    // The slot is cut into the top face (z = block_height/2)
+    // We shift it slightly so the cut tool extends past the face
+    translate([0, 0, block_height/2 + 0.01])
+    cube([slot_length, slot_width, slot_depth + 0.01], center=true);
+}
+
+// Generate the 10 slots
+module slot_group() {
+    // Calculate offset to center the group of slots
+    // Total width occupied by slots = (10 - 1) * slot_spacing
+    // We want the group to be centered on the block width
+    group_offset = (block_width - ((10 - 1) * slot_spacing)) / 2;
+    
+    // Center the group in X
+    translate([0, group_offset, 0]) {
+        for (i = [0 : 9]) {
+            translate([0, i * slot_spacing, 0])
+            single_slot();
+        }
+    }
+}
+
+// Union the base block and subtract the slots
+difference() {
+    base_block;
+    slot_group();
+}
+```

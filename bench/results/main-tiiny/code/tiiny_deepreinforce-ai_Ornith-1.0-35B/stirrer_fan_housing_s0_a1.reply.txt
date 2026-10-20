@@ -1,0 +1,136 @@
+Looking at the measurement report, I can identify several issues:
+
+1. **Separate bodies**: The report shows 3 separate bodies, which means the walls aren't properly connected to the top plate. This is likely because the walls are positioned at the edges but there's a gap or the union isn't working correctly.
+
+2. **Bounding box**: X goes from -42.50 to 90.00 (size 132.50), but it should be -45 to 45 (size 90). This suggests the part is not centered on the origin.
+
+3. **Wall positions**: The walls are positioned incorrectly. Looking at the z=2 slice, we see:
+   - Rectangle 90.00 x 2.50 centered at (45.00, -41.25) - this is the back wall, but it should be at y = -41.25 (which is -half_y + wall_thick = -45 + 2.5 = -42.5, not -41.25)
+   - Rectangle 90.00 x 2.50 centered at (-41.25, 45.00) - this is the left wall, but it should be at x = -41.25 (which is -half_x + wall_thick = -45 + 2.5 = -42.5, not -41.25)
+
+The issue is that I'm using `center = false` for the walls, but the translate positions are calculated as if they were center-based. Let me fix this:
+
+- For the back wall (Y- side): should be at y = -half_y + wall_thick = -45 + 2.5 = -42.5
+- For the front wall (Y+ side): should be at y = half_y - wall_thick = 45 - 2.5 = 42.5
+- For the left wall (X- side): should be at x = -half_x + wall_thick = -45 + 2.5 = -42.5
+- For the right wall (X+ side): should be at x = half_x - wall_thick = 45 - 2.5 = 42.5
+
+But wait, looking more carefully at the report, the walls are at:
+- (45.00, -41.25) - this is x=45, y=-41.25
+- (-41.25, 45.00) - this is x=-41.25, y=45
+
+These positions are wrong. The walls should be:
+- Back wall: y = -42.5 (centered at y=-42.5)
+- Front wall: y = 42.5 (centered at y=42.5)
+- Left wall: x = -42.5 (centered at x=-42.5)
+- Right wall: x = 42.5 (centered at x=42.5)
+
+The issue is that I'm using `center = false` but the translate values are not accounting for this correctly. Let me recalculate:
+
+For a wall of width W centered at position P with `center = false`:
+- The wall extends from P - W/2 to P + W/2
+- So the translate should be at P - W/2
+
+For the back wall (Y- side):
+- Center should be at y = -half_y + wall_thick/2 = -45 + 1.25 = -43.75
+- With `center = false`, translate y = -43.75 + wall_thick/2 = -43.75 + 1.25 = -42.5
+
+Actually, let me think about this differently. The wall is wall_thick wide and should be positioned so that its outer face is at the edge of the box.
+
+For the back wall:
+- Outer face at y = -half_y = -45
+- Inner face at y = -half_y + wall_thick = -45 + 2.5 = -42.5
+- Center of wall at y = -45 + wall_thick/2 = -45 + 1.25 = -43.75
+- With `center = false`, translate y = -43.75 + wall_thick/2 = -43.75 + 1.25 = -42.5
+
+Wait, that's still not matching. Let me look at the actual positions in the report again:
+- Rectangle 90.00 x 2.50 centered at (45.00, -41.25)
+
+This means the wall extends from x = 45 - 45 = 0 to x = 45 + 45 = 90, and y = -41.25 - 1.25 = -42.5 to y = -41.25 + 1.25 = -40.
+
+So the wall is at y = -42.5 to y = -40, which is not right. It should be at y = -45 to y = -42.5.
+
+The issue is that I'm calculating the translate position incorrectly. Let me fix this:
+
+For the back wall with `center = false`:
+- The wall should extend from y = -45 to y = -42.5
+- So the translate y should be -45 + wall_thick/2 = -45 + 1.25 = -43.75
+
+Let me rewrite the code with correct positions.
+
+```openscad
+// === Dimensions ===
+// Top plate thickness
+top_plate_z = 2;
+// Wall thickness
+wall_thick = 2.5;
+// Wall height (from top of top plate)
+wall_height = 40 - top_plate_z;
+// Outer width (X)
+outer_x = 90;
+// Outer depth (Y)
+outer_y = 90;
+// Screw hole diameter
+screw_dia = 4.5;
+// Screw hole pattern spacing (square)
+screw_pattern = 71.5;
+// Cable notch width
+notch_width = 12;
+// Cable notch depth from top of wall
+notch_depth = 8;
+
+// === Derived ===
+// Inner width
+inner_x = outer_x - 2 * wall_thick;
+// Inner depth
+inner_y = outer_y - 2 * wall_thick;
+// Half dimensions
+half_x = outer_x / 2;
+half_y = outer_y / 2;
+// Half screw pattern
+half_pattern = screw_pattern / 2;
+
+// === Build ===
+$fn = 64;
+
+// Main box: top plate + 4 walls
+difference() {
+    // Outer shape (top plate + walls)
+    union() {
+        // Top plate
+        cube([outer_x, outer_y, top_plate_z], center = false);
+        // Four walls
+        // Back wall (Y- side)
+        translate([0, -half_y + wall_thick/2, top_plate_z])
+            cube([outer_x, wall_thick, wall_height], center = false);
+        // Front wall (Y+ side)
+        translate([0, half_y - wall_thick/2, top_plate_z])
+            cube([outer_x, wall_thick, wall_height], center = false);
+        // Left wall (X- side)
+        translate([-half_x + wall_thick/2, 0, top_plate_z])
+            cube([wall_thick, outer_y, wall_height], center = false);
+        // Right wall (X+ side)
+        translate([half_x - wall_thick/2, 0, top_plate_z])
+            cube([wall_thick, outer_y, wall_height], center = false);
+    }
+    
+    // Cut out inner cavity
+    translate([0, 0, top_plate_z])
+        cube([inner_x, inner_y, wall_height + 0.01], center = false);
+    
+    // Four screw holes
+    for (x = [-half_pattern, half_pattern]) {
+        for (y = [-half_pattern, half_pattern]) {
+            translate([x, y, -0.01])
+                cylinder(d = screw_dia, h = top_plate_z + 0.01, center = false);
+        }
+    }
+    
+    // Cable notch in the front wall (Y+ side)
+    // Notch is 12mm wide, centered along X, from z=32 to z=40
+    translate([0, half_y - 0.01, 32])
+        cube([notch_width, wall_thick + 0.02, notch_depth], center = false);
+}
+```
+
+Wait, I need to reconsider. The issue is that I

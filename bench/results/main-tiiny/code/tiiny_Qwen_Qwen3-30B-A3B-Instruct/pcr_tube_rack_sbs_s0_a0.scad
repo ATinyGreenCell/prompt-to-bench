@@ -1,0 +1,139 @@
+// Dimensions for 96-well PCR tube rack (ANSI/SLAS footprint)
+$fn = 64;
+
+// Overall dimensions
+length_X = 127.76;   // Length along X axis
+width_Y = 85.48;     // Width along Y axis
+height_Z = 20.0;     // Height of rack
+
+// Hole grid parameters
+num_rows = 8;      // 8 rows along Y (A to H)
+num_cols = 12;     // 12 columns along X (1 to 12)
+hole_diameter = 6.2; // Diameter of each hole
+hole_spacing_X = 9.0; // Center-to-center spacing along X
+hole_spacing_Y = 9.0; // Center-to-center spacing along Y
+
+// Position of first hole (A1) relative to edges
+offset_X = 14.38;   // From left edge (X)
+offset_Y = 11.24;   // From back edge (Y)
+
+// Chamfer parameters
+chamfer_leg = 5.0; // Length of each leg of 45-degree chamfer
+chamfer_angle = 45;   // Chamfer angle
+
+// Calculate hole centers
+// We'll use a for loop to generate all 96 holes
+
+// Create base block
+cube([length_X, width_Y, height_Z], center = true);
+
+// Subtract holes using a for loop
+difference() {
+    cube([length_X, width_Y, height_Z], center = true);
+    
+    for (col = [0 : num_cols - 1]) {
+        for (row = [0 : num_rows - 1]) {
+            // Calculate center of hole
+            x = -length_X / 2 + offset_X + col * hole_spacing_X;
+            y = -width_Y / 2 + offset_Y + row * hole_spacing_Y;
+            
+            // Create a cylinder for the hole, slightly larger than hole_diameter
+            // to ensure clean subtraction (0.1 mm overhang for safety)
+            cylinder(h = height_Z + 0.1, d = hole_diameter + 0.1, center = true, $fn = 64)
+                translate([x, y, 0]);
+        }
+    }
+}
+
+// Add chamfer at A1 corner (top front left when viewed from above, but we define by coordinates)
+// A1 is at (x = -length_X/2 + offset_X, y = -width_Y/2 + offset_Y) — bottom-left corner of the grid
+// We chamfer the vertical edge at this corner: remove a 45-degree bevel from the front-left edge
+
+// Define chamfer region: a pyramid-like cut from the corner
+// We'll use a difference with a rotated cube to cut the chamfer
+
+// Coordinates of A1 corner (in the positive Z direction, but we're cutting from the vertical face)
+// The chamfer is on the front-left vertical edge (where X = -length_X/2 and Y = -width_Y/2)
+// We cut a 45-degree chamfer with 5 mm legs along X and Y
+
+// Create a chamfering solid: a square pyramid with 45-degree faces
+// We'll use a hull of two points: the chamfer tip and the base of the chamfer
+
+// The chamfer is applied at the corner where:
+// X = -length_X/2 + offset_X (but we're cutting from the outer face)
+// Y = -width_Y/2 + offset_Y
+// Z = 0 to Z = height_Z
+
+// The chamfer is a 45-degree cut from the outer edge, so we cut a region where:
+// (X + length_X/2) <= chamfer_leg and (Y + width_Y/2) <= chamfer_leg
+
+// But we want to cut from the outer face at the A1 corner
+
+// Instead, we'll create a chamfering solid that is a right-angled triangle extruded along Z,
+// but rotated 45 degrees in the X-Y plane
+
+// We'll use a polyhedron to define a chamfer pyramid at the A1 corner
+
+// The chamfer tip is at:
+// x_tip = -length_X/2 + offset_X + chamfer_leg;
+// y_tip = -width_Y/2 + offset_Y + chamfer_leg;
+// z_tip = 0;
+
+// But actually, we want to cut from the outer face: the chamfer is on the vertical face at:
+// X = -length_X/2, Y = -width_Y/2, and we cut inward at 45 degrees
+
+// So the chamfer solid is a tetrahedron with:
+// - One vertex at the outer corner: (-length_X/2, -width_Y/2, 0)
+// - Two vertices along the X and Y edges: (-length_X/2 + chamfer_leg, -width_Y/2, 0) and (-length_X/2, -width_Y/2 + chamfer_leg, 0)
+// - One vertex at the tip: (-length_X/2 + chamfer_leg, -width_Y/2 + chamfer_leg, chamfer_leg)
+
+// But we want to cut a chamfer that goes from the outer face inward at 45 degrees, so the cut is a pyramid
+
+// We'll define a polyhedron that is a square pyramid with 45-degree faces
+
+// Actually, simpler: use a cube rotated and clipped to form a chamfer
+
+// We'll use a cube of size chamfer_leg * 2, rotated 45 degrees in XZ and YZ planes, but easier to use a polyhedron
+
+// Define the 5 points of the chamfer pyramid:
+// P1: outer corner (X = -length_X/2, Y = -width_Y/2, Z = 0)
+// P2: along X: (X = -length_X/2 + chamfer_leg, Y = -width_Y/2, Z = 0)
+// P3: along Y: (X = -length_X/2, Y = -width_Y/2 + chamfer_leg, Z = 0)
+// P4: tip: (X = -length_X/2 + chamfer_leg, Y = -width_Y/2 + chamfer_leg, Z = chamfer_leg)
+// P5: base center: (X = -length_X/2 + chamfer_leg, Y = -width_Y/2 + chamfer_leg, Z = 0)
+
+// Actually, we want a pyramid with base on the outer face and apex at the chamfer tip
+
+// The chamfer is a 45-degree bevel on the vertical edge at the A1 corner.
+// We'll define a pyramid with:
+// - Apex at: (-length_X/2 + chamfer_leg, -width_Y/2 + chamfer_leg, chamfer_leg)
+// - Base: a square on the outer face at Z=0: from (-length_X/2, -width_Y/2, 0) to (-length_X/2 + chamfer_leg, -width_Y/2 + chamfer_leg, 0)
+
+// But we want to cut a chamfer that removes material from the vertical face at the A1 corner.
+
+// Alternative: use a cube rotated 45 degrees in XZ and YZ planes.
+
+// Instead, we'll use a simpler method: subtract a polyhedron that forms a 45-degree chamfer.
+
+// Define the chamfering solid as a polyhedron with 5 points:
+// P1: (-length_X/2, -width_Y/2, 0)         // outer corner
+// P2: (-length_X/2 + chamfer_leg, -width_Y/2, 0) // along X
+// P3: (-length_X/2, -width_Y/2 + chamfer_leg, 0) // along Y
+// P4: (-length_X/2 + chamfer_leg, -width_Y/2 + chamfer_leg, chamfer_leg) // apex
+// P5: (-length_X/2 + chamfer_leg, -width_Y/2 + chamfer_leg, 0) // base center
+
+// But we want to cut a pyramid from the corner.
+
+// Correct approach: the chamfer is a 45-degree bevel on the vertical edge at the A1 corner.
+// We can define a polyhedron that is a tetrahedron with:
+// - A1: (-length_X/2, -width_Y/2, 0)
+// - B: (-length_X/2 + chamfer_leg, -width_Y/2, 0)
+// - C: (-length_X/2, -width_Y/2 + chamfer_leg, 0)
+// - D: (-length_X/2 + chamfer_leg, -width_Y/2 + chamfer_leg, chamfer_leg)
+
+// But this is not correct because the chamfer should be a 45-degree face from the outer edge to the inside.
+
+// Actually, the chamfer is a 45-degree face that starts at the outer edge and goes inward at 45 degrees.
+// So the face is defined by:
+// - One edge: from (X = -length_X/2, Y = -width_Y/2, Z = 0) to (X = -length_X/2, Y = -width_Y/2, Z = height_Z) — the vertical edge
+// - But we are chamfering the corner, so we cut a 45-degree face from the outer face.

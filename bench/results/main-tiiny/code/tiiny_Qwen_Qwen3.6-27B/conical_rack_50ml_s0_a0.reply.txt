@@ -1,0 +1,49 @@
+```openscad
+// Dimensions (mm)
+plate_x = 130;
+plate_y = 90;
+plate_z = 4;
+hole_dia = 30.5;
+wall_height = 70;
+wall_thick = 4;
+hole_spacing_x = 40;
+hole_spacing_y = 40;
+num_x = 3;
+num_y = 2;
+
+// Resolution for curved shapes
+$fn = 64;
+
+// Main plate
+translate([-plate_x/2, -plate_y/2, 0])
+    cube([plate_x, plate_y, plate_z]);
+
+// Side walls (along the long edges, Y-direction edges)
+// Left wall (at y = -plate_y/2)
+translate([-plate_x/2, -plate_y/2, 0])
+    cube([plate_x, wall_thick, wall_height]);
+
+// Right wall (at y = plate_y/2 - wall_thick)
+translate([-plate_x/2, plate_y/2 - wall_thick, 0])
+    cube([plate_x, wall_thick, wall_height]);
+
+// Holes in the plate
+// Centred on the plate, 2 rows (Y) x 3 columns (X)
+// Spacing 40 mm centre-to-centre
+// Total width in X: (num_x - 1) * hole_spacing_x = 80 mm
+// Total height in Y: (num_y - 1) * hole_spacing_y = 40 mm
+// Centred on origin, so offsets:
+offset_x_start = -((num_x - 1) * hole_spacing_x) / 2;
+offset_y_start = -((num_y - 1) * hole_spacing_y) / 2;
+
+for (i = [0 : num_x - 1]) {
+    for (j = [0 : num_y - 1]) {
+        x_pos = offset_x_start + i * hole_spacing_x;
+        y_pos = offset_y_start + j * hole_spacing_y;
+        
+        // Hole extends slightly past plate thickness to ensure clean cut
+        translate([x_pos, y_pos, -0.5])
+            cylinder(h = plate_z + 1, r = hole_dia / 2);
+    }
+}
+```

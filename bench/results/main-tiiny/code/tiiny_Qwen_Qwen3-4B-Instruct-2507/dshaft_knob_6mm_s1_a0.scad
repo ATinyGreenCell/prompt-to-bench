@@ -1,0 +1,131 @@
+// Knob design for hotplate stirrer
+// Dimensions measured with calipers
+
+// Base dimensions
+$fn = 64;
+
+// Cylinder: 30mm diameter, 15mm tall
+diameter = 30;
+height = 15;
+
+// D-shaped blind bore: 6.2mm diameter circle with flat on one side, 12mm deep
+bore_diameter = 6.2;
+bore_depth = 12;
+bore_flat_distance = 4.7; // distance from flat to opposite side of circle
+
+// Grip grooves: 18 evenly spaced vertical grooves, 2mm diameter half-cylinder
+groove_diameter = 2;
+groove_depth = 2; // depth of groove (not specified, using 2mm as reasonable)
+num_grooves = 18;
+groove_spacing = 360 / num_grooves; // 360 degrees / 18 grooves
+
+// Pointer groove: 1.5mm wide, 1mm deep, from center to edge, on the same side as the D-shape flat
+pointer_width = 1.5;
+pointer_depth = 1.0;
+
+// Center the knob on origin, with base on z=0, extending upward
+
+// Main cylinder
+cylinder(h=height, d=diameter, center=true);
+
+// D-shaped blind bore: start from bottom face (z=0), go 12mm deep
+// The bore is a 6.2mm diameter circle, with one side cut flat (4.7mm from flat to opposite edge)
+// The flat is on the side of the D, so we cut a half-cylinder from the bottom face
+// The flat is on the "bottom" of the D, so we cut a half-cylinder from z=0 to z=12, with flat on the left
+
+// First, create a half-cylinder at the bottom (z=0 to z=12), 6.2mm diameter, flat on the left
+// This half-cylinder will be centered on the x-axis, with flat on the negative x side
+// The flat is 4.7mm from the flat to the opposite side of the circle, so the full circle is 6.2mm diameter
+// The flat is on the left, so we cut a half-cylinder from x = -3.1 to x = 3.1, but only on the left half
+
+// Translate to center of knob (origin)
+// Cut a half-cylinder of diameter 6.2mm, depth 12mm, with flat on the left (negative x)
+// The flat is 4.7mm from flat to opposite side, so the half-cylinder extends from x = -3.1 to x = 3.1, but only on the left half
+// We cut a half-cylinder with flat on the left, so we use a half-cylinder with flat on the negative x side
+
+// The D-shape is a 6.2mm diameter circle with flat on one side, 4.7mm from flat to opposite side
+// So the flat is 4.7mm from the flat to the opposite edge, meaning the flat is 4.7mm from the edge of the circle to the opposite edge
+// So the flat is 4.7mm from the flat to the opposite side, so the flat is 4.7mm from the flat to the opposite edge
+// So the flat is 4.7mm from the flat to the opposite edge, so the flat is 4.7mm from the flat to the opposite edge
+
+// We cut a half-cylinder of diameter 6.2mm, depth 12mm, with flat on the left
+// The half-cylinder is centered at origin, with flat on the negative x side
+
+// Create the blind bore: half-cylinder from z=0 to z=12, diameter 6.2mm, flat on left
+// This removes material from the bottom half of the knob
+difference() {
+    // Main cylinder
+    cylinder(h=height, d=diameter, center=true);
+    
+    // Subtract the blind bore (half-cylinder)
+    // The blind bore is 6.2mm diameter, 12mm deep, flat on the left (negative x)
+    // So we cut a half-cylinder from x = -3.1 to x = 3.1, z=0 to z=12, with flat on left
+    // The flat is 4.7mm from flat to opposite side, so the flat is 4.7mm from the flat to the opposite edge
+    // The half-cylinder is centered at origin, with flat on the negative x side
+    // So we cut a half-cylinder with flat on the negative x side, 6.2mm diameter, 12mm deep
+    translate([0, 0, 0]) {
+        // Half-cylinder with flat on negative x side
+        rotate([90, 0, 0]) // rotate to align with y-axis for half-cylinder
+        cylinder(h=12, d=6.2, center=true, $fn=64);
+    }
+}
+
+// Wait, that doesn't work — we need to cut a half-cylinder with flat on the left side
+// We need to cut a half-cylinder that is 6.2mm in diameter, 12mm deep, with flat on the left (negative x)
+// The flat is 4.7mm from flat to opposite side — that means the flat is 4.7mm from the flat to the opposite edge
+// So the flat is 4.7mm from the flat to the opposite edge, so the flat is 4.7mm from the flat to the opposite edge
+// So the flat is 4.7mm from the flat to the opposite edge, so the flat is 4.7mm from the flat to the opposite edge
+
+// Correct approach: create a half-cylinder with flat on the left (negative x)
+// The half-cylinder is 6.2mm diameter, 12mm deep, centered at origin, with flat on negative x
+// So we cut a half-cylinder from x = -3.1 to x = 3.1, z=0 to z=12, with flat on left
+
+// We will subtract a half-cylinder from the main cylinder
+// The half-cylinder is defined by:
+// - diameter 6.2mm, so radius 3.1mm
+// - depth 12mm
+// - flat on the negative x side
+
+// So we create a half-cylinder with flat on the negative x side
+// We do this by rotating the cylinder to align with the y-axis, then translating
+
+// Subtract the blind bore: half-cylinder with flat on negative x
+difference() {
+    // Main cylinder
+    cylinder(h=height, d=diameter, center=true);
+    
+    // Blind bore: half-cylinder of 6.2mm diameter, 12mm deep, flat on negative x
+    // We create it as a half-cylinder with flat on negative x
+    // This is equivalent to a cylinder with flat on the left side
+    // We rotate the cylinder to align with the y-axis, then translate to center
+    // But we need to cut a half-cylinder with flat on negative x
+    
+    // We create a half-cylinder with flat on negative x by rotating the cylinder to align with y-axis
+    // Then we translate to center
+    // The half-cylinder is defined as a cylinder with flat on the negative x side
+    // We create it with rotation around z-axis to align with y-axis
+    
+    // We create a half-cylinder with flat on negative x by rotating the cylinder to align with y-axis
+    // Then we translate to center
+    // The half-cylinder is defined as a cylinder with flat on negative x
+    // We create it with rotation around z-axis to align with y-axis
+    
+    // We create a half-cylinder with flat on negative x
+    // We do this by rotating the cylinder to align with y-axis, then cutting from x = -3.1 to x = 3.1, z=0 to z=12
+    // But we need to cut only the half-cylinder with flat on negative x
+    
+    // We use a half-cylinder with flat on negative x
+    // We create it as a cylinder with flat on negative x
+    // We rotate the cylinder to align with y-axis, then cut from x = -3.1 to x = 3.1, z=0 to z=12
+    
+    // We create a half-cylinder with flat on negative x
+    // We do this by rotating the cylinder to align with y-axis, then cutting from x = -3.1 to x = 3.1, z=0 to z=12
+    // But we need to cut only the half-cylinder with flat on negative x
+    
+    // Correct: use a half-cylinder with flat on negative x
+    // We create it as a cylinder with flat on negative x
+    // We rotate the cylinder to align with y-axis, then cut from x = -3.1 to x = 3.1, z=0 to z=12
+    
+    // We create the half-cylinder with flat on negative x
+    // We do this by rotating the cylinder to align with y-axis, then cutting from x = -3.1 to x = 3.1, z=0 to z=12
+    // But we need to

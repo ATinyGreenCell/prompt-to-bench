@@ -1,0 +1,78 @@
+// Parameters (mm)
+top_thick      = 2;          // thickness of the top plate
+wall_thick     = 2.5;        // thickness of each wall
+outer_size     = 90;        // outer X and Y dimension
+height         = 40;        // total height of the box (open at top)
+hole_dia       = 4.5;       // diameter of M4 screw holes
+hole_pattern   = 71.5;      // spacing of screw holes (square pattern)
+notch_width    = 12;        // width of the cable notch (along wall)
+notch_height   = 8;         // vertical depth of the notch (from open edge)
+notch_extra    = 0.2;       // extra extension of cut shapes beyond faces
+cylinder_extra = 1;         // extra length of hole cylinders beyond top plate
+
+$fn = 64; // smoothness for circles and cylinders
+
+// --- Top plate --------------------------------------------------------------
+top_plate = 
+    translate([0, 0, top_thick/2])               // place bottom at z = 0
+    cube([outer_size, outer_size, top_thick], center = true);
+
+// --- Walls (a hollow box) ----------------------------------------------------
+outer_box = 
+    translate([0, 0, height/2])
+    cube([outer_size, outer_size, height], center = true);
+
+inner_cavity = 
+    translate([0, 0, top_thick + (height - top_thick)/2])
+    cube([outer_size - 2*wall_thick,
+          outer_size - 2*wall_thick,
+          height - top_thick], center = true);
+
+walls = difference() {
+    outer_box;
+    inner_cavity;
+};
+
+// --- Assemble ---------------------------------------------------------------
+assembly = union() {
+    top_plate;
+    walls;
+};
+
+// --- Screw holes (cut through top plate) ------------------------------------
+hole_positions = [
+    [ hole_pattern/2,  hole_pattern/2],
+    [-hole_pattern/2,  hole_pattern/2],
+    [ hole_pattern/2, -hole_pattern/2],
+    [-hole_pattern/2, -hole_pattern/2]
+];
+
+screw_holes = union() {
+    for (p = hole_positions)
+        translate([p[0], p[1], top_thick/2])
+            cylinder(d = hole_dia,
+                     h = top_thick + 2*cylinder_extra,
+                     center = true);
+};
+
+// --- Cable notch (cut from one wall) -----------------------------------------
+notch = 
+    // front wall (Y = +outer_size/2)
+    translate([0,
+               outer_size/2 - wall_thick/2,
+               notch_z_start() + notch_height/2])
+    cube([notch_width,
+          wall_thick + notch_extra,
+          notch_height + notch_extra],
+         center = true);
+
+function notch_z_start() = height - notch_height; // 32 mm
+
+// --- Final part (difference) -------------------------------------------------
+final_part = difference() {
+    assembly;
+    screw_holes;
+    notch;
+};
+
+final_part;

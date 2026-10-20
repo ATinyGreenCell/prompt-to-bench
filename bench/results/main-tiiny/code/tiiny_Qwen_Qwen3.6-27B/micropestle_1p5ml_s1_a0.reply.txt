@@ -1,0 +1,53 @@
+```openscad
+// Dimensions for the pestle
+handle_diameter = 8;
+handle_height = 45;
+cone_start_diameter = 8;
+cone_end_diameter = 3;
+cone_height = 17; // 62 - 45
+sphere_diameter = 3;
+sphere_center_z = 62;
+
+// Groove dimensions
+groove_width = 2;
+groove_depth = 1;
+groove_centers = [10, 15, 20, 25];
+
+// Resolution for smooth curves
+$fn = 64;
+
+// Main body of the pestle
+union() {
+    // Cylindrical handle
+    translate([0, 0, 0])
+        cylinder(h = handle_height, r = handle_diameter / 2, center = false);
+
+    // Cone section
+    translate([0, 0, handle_height])
+        cylinder(h = cone_height, r1 = cone_start_diameter / 2, r2 = cone_end_diameter / 2, center = false);
+
+    // Rounded tip (sphere)
+    translate([0, 0, sphere_center_z])
+        sphere(r = sphere_diameter / 2);
+}
+
+// Cut grooves into the handle
+difference() {
+    // The main body is already defined above, but we need to subtract the grooves
+    // So we redefine the union here for the difference operation
+    union() {
+        translate([0, 0, 0])
+            cylinder(h = handle_height, r = handle_diameter / 2, center = false);
+        translate([0, 0, handle_height])
+            cylinder(h = cone_height, r1 = cone_start_diameter / 2, r2 = cone_end_diameter / 2, center = false);
+        translate([0, 0, sphere_center_z])
+            sphere(r = sphere_diameter / 2);
+    }
+
+    // Grooves
+    for (z = groove_centers) {
+        translate([0, 0, z - groove_width / 2])
+            cylinder(h = groove_width + 0.02, r = (handle_diameter / 2) - groove_depth, center = false);
+    }
+}
+```

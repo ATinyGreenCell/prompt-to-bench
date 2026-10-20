@@ -1,0 +1,101 @@
+The measurement report reveals two critical discrepancies between the generated part and the specification:
+
+1.  **Grid Positioning:** The report states the grid centre is at `(24.00, 16.00)`. The specification requires the grid to be **centred on the block**. The block is 106mm wide (X) and 72mm deep (Y).
+    *   The block centre is at `(53, 36)`.
+    *   The current code places the grid centre at `(24, 16)`. This is incorrect.
+    *   The grid is 6 holes wide (X) and 4 holes deep (Y) with 16mm pitch.
+    *   Grid width = $5 \times 16 = 80$ mm. Grid depth = $3 \times 16 = 48$ mm.
+    *   To centre this on the block:
+        *   X offset from block centre: $80 / 2 = 40$ mm.
+        *   Y offset from block centre: $48 / 2 = 24$ mm.
+    *   The first hole in X should be at $53 - 40 = 13$ mm.
+    *   The first hole in Y should be at $36 - 24 = 12$ mm.
+    *   The current code used `(GRID_COLS - 1) * SPACING_X / 2` as the offset from the *origin* (0,0), but since the block is not centred at (0,0) in the `cube` definition (it starts at 0,0), the grid calculation was effectively offset relative to the block's geometry incorrectly. Specifically, `cube([106, 72, 30], center=false)` places the block from 0 to 106. The grid logic `hx = -GRID_OFFSET_X + i * SPACING_X` where `GRID_OFFSET_X` is 40, results in holes at x = -40, -24, -8, 8, 24, 40. This places the grid entirely on the negative side or crossing the origin incorrectly relative to the block's positive coordinates. Wait, looking at the report: holes are at x=13, 29, 45, 61, 77, 93? No, the report says grid centre is (24, 16).
+    *   Let's re-verify the report's grid centre. If the grid centre is (24, 16), and pitch is 16:
+        *   X holes: $24 - 24 = 0$, $24 - 8 = 16$, $24 + 8 = 32$, $24 + 24 = 48$? No, 6 holes.
+        *   Indices -2, -1, 0, 1, 2, 3? Or -2.5 to 2.5?
+        *   With 6 holes, the centre is between hole 3 and 4.
+        *   Hole positions: $C - 2.5P, C - 1.5P, C - 0.5P, C + 0.5P, C + 1.5P, C + 2.5P$.
+        *   If C=24, P=16: $24 - 40 = -16$, $24 - 24 = 0$, $24 - 8 = 16$, $24 + 8 = 32$, $24 + 24 = 48$, $24 + 40 = 64$.
+        *   The report says "grid centre (24.00, 16.00)". This confirms the grid is shifted.
+        *   Correct Centre: X=53, Y=36.
+        *   Correct X holes: $53 - 40 = 13$, $13 + 16 = 29$, $29 + 16 = 45$, $45 + 16 = 61$, $61 + 16 = 77$, $77 + 16 = 93$.
+        *   Correct Y holes: $36 - 24 = 12$, $12 + 16 = 28$, $28 + 16 = 44$, $44 + 16 = 60$.
+
+2.  **Hole Depth/Floor:** The specification says "25 mm deep... leaving a 5 mm solid floor". The block is 30 mm tall.
+    *   The report shows holes at z=1.5, 15.0, 28.5.
+    *   At z=28.5, there are still holes. This means the holes go all the way through or deeper than 25mm.
+    *   If the hole is 25mm deep, it should stop at z=25.
+    *   The current code uses `CUT_CYL_H = HOLE_DEPTH + FLOOR_THICK + 0.1 = 30.1`.
+    *   The cylinder starts at `z = -0.1`.
+    *   So the cylinder goes from z=-0.1 to z=30.0. This cuts through the entire block (30mm height).
+    *   To leave a 5mm floor, the hole depth must be 25mm. The cylinder should extend from z=0 to z=25 (plus clearance).
+    *   The current code's `CUT_CYL_Z_BOTTOM = -0.1` and height `30.1` results in a through-hole.
+    *   Correction: The cylinder should start at z=0 (or slightly below to ensure clean bottom if we want, but usually holes are open at top). The spec says "open at the top". So z=0 is the top surface. The hole goes down 25mm.
+    *   So, `translate([hx, hy, 0])` and `cylinder(h=25.01, d=11.2)`.
+
+Let's fix the code.
+
+```openscad
+// Dimensions for 1.5 mL microcentrifuge tube rack
+// Block size
+BLOCK_X = 106;
+BLOCK_Y = 72;
+BLOCK_Z = 30;
+
+// Hole grid parameters
+GRID_ROWS = 4;      // Along Y
+GRID_COLS = 6;      // Along X
+SPACING_X = 16;     // Centre-to-centre along X
+SPACING_Y = 16;     // Centre-to-centre along Y
+HOLE_DIAM = 11.2;   // Hole diameter
+HOLE_DEPTH = 25;    // Depth of hole from top
+FLOOR_THICK = 5;    // Solid floor thickness (BLOCK_Z - HOLE_DEPTH = 30 - 25 = 5)
+
+// Calculate grid offset to centre the grid on the block
+// The block is placed at origin [0,0,0] with size [BLOCK_X, BLOCK_Y, BLOCK_Z].
+// Block centre is at (BLOCK_X/2, BLOCK_Y/2).
+BLOCK_CX = BLOCK_X / 2;
+BLOCK_CY = BLOCK_Y / 2;
+
+// Grid dimensions
+GRID_W = (GRID_COLS - 1) * SPACING_X;
+GRID_D = (GRID_ROWS - 1) * SPACING_Y;
+
+// Grid centre relative to block centre
+// We want the grid centre to align with the block centre.
+// Grid centre is at (0,0) in grid-local coords.
+// First hole in X: -GRID_W / 2
+// First hole in Y: -GRID_D / 2
+
+// Hole radius
+HOLE_R = HOLE_DIAM / 2;
+
+// Clearance for difference operation
+CLEARANCE = 0.01;
+
+// Main block
+difference() {
+    // Base block
+    cube([BLOCK_X, BLOCK_Y, BLOCK_Z], center = false);
+    
+    // Holes
+    for (i = [0 : GRID_COLS - 1]) {
+        for (j = [0 : GRID_ROWS - 1]) {
+            // Calculate hole position relative to block origin (0,0)
+            // X: Start from BLOCK_CX - GRID_W/2, step by SPACING_X
+            hx = BLOCK_CX - GRID_W / 2 + i * SPACING_X;
+            // Y: Start from BLOCK_CY - GRID_D/2, step by SPACING_Y
+            hy = BLOCK_CY - GRID_D / 2 + j * SPACING_Y;
+            
+            // Cut hole
+            // Hole is open at top (z=0), depth 25mm.
+            // Cylinder extends from z=0 to z=HOLE_DEPTH + CLEARANCE
+            translate([hx, hy, 0]) {
+                $fn = 64;
+                cylinder(h = HOLE_DEPTH + CLEARANCE, d = HOLE_DIAM, center = false);
+            }
+        }
+    }
+}
+```

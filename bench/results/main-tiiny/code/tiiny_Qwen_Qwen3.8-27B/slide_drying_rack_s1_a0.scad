@@ -1,0 +1,40 @@
+// Drying rack for 10 microscope slides (75 x 25 x 1 mm)
+// Slides stand upright on their long edge, held in slots cut into the top of a solid base block.
+
+// --- Base block dimensions ---
+base_L = 90;   // length along X (mm)
+base_W = 45;   // width along Y (mm)
+base_H = 20;   // height along Z (mm)
+
+// --- Slot dimensions ---
+slot_L = 77;   // slot length along X (mm)
+slot_W = 1.6;  // slot width along Y (mm)
+slot_D = 10;   // slot depth along Z (mm), open at top
+
+// --- Slot layout ---
+n_slots = 10;          // number of slots
+slot_pitch = 3.5;      // centre-to-centre spacing along Y (mm)
+
+// --- Rendering quality ---
+$fn = 64;
+
+// --- Build the rack ---
+// Base block, centred on origin in X and Y, resting on z = 0
+base_block = translate([-base_L/2, -base_W/2, 0])
+    cube([base_L, base_W, base_H]);
+
+// Cutting tool: one slot, extended 1 mm past the top face (z = base_H + 1)
+// so the difference() cut is not coplanar with the top face.
+slot_cutter = translate([-slot_L/2, -slot_W/2, base_H - slot_D])
+    cube([slot_L, slot_W, slot_D + 1]);
+
+// 10 slots, centred as a group in Y (and in X by construction)
+slot_group = for (i = [0 : n_slots - 1])
+    translate([0, (i - (n_slots - 1) / 2) * slot_pitch, 0])
+        slot_cutter;
+
+// Final part: base block minus all slots
+difference() {
+    base_block;
+    slot_group;
+}

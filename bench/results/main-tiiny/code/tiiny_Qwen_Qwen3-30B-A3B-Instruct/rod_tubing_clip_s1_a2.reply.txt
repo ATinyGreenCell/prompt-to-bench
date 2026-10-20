@@ -1,0 +1,96 @@
+```openscad
+$fn = 64;
+
+// Dimensions
+rod_diameter = 12.7;           // Inner diameter of rod ring
+rod_wall = 3;                 // Wall thickness of rod ring
+rod_outer_diameter = rod_diameter + 2 * rod_wall; // 18.7 mm
+
+tubing_inner_diameter = 6;     // Inner diameter of tubing ring
+tubing_wall = 2;               // Wall thickness of tubing ring
+tubing_outer_diameter = tubing_inner_diameter + 2 * tubing_wall; // 10 mm
+
+bridge_width_y = 6;          // Width of bridge in Y direction
+bridge_start_x = 8;            // Start X of bridge
+bridge_end_x = 12;           // End X of bridge
+
+// Rod ring: centered at origin, with -X side opening
+rod_ring_inner_radius = rod_diameter / 2;
+rod_ring_outer_radius = rod_outer_diameter / 2;
+
+// Tubing ring: centered at (15, 0), with +X side opening
+tubing_ring_center_x = 15;
+tubing_ring_center_y = 0;
+tubing_ring_inner_radius = tubing_inner_diameter / 2;
+tubing_ring_outer_radius = tubing_outer_diameter / 2;
+
+// Opening dimensions
+rod_opening_width = 10;        // -5 < y < 5 → height 10 mm
+tubing_opening_width = 4.5; // -2.25 < y < 2.25 → height 4.5 mm
+
+// Bridge: solid connection between rings
+bridge_y_min = -bridge_width_y / 2;
+bridge_y_max = bridge_width_y / 2;
+
+// The issue: the rod ring's outer shape is not a perfect circle in the slice at z=0.5,
+// but the report shows "shape 18.70 x 18.70" (a square) instead of a circle.
+// This indicates that the rod ring is not being properly modeled as a circular ring.
+// The problem: using `cylinder` with `center = false` and `h = 10` creates a cylinder from z=0 to z=10,
+// but the `difference` operation is applied to the full height, and the hole is also from z=0 to z=10.01,
+// but the opening is a cube that extends from z=-0.01 to z=10.02 — this causes the hole to be too deep,
+// and the slicing engine interprets the intersection as a rectangular profile.
+
+// The real issue: the `cylinder` with `center = false` is correct for z=0 to z=10,
+// but the `difference` with the cube (which extends 0.01 below z=0) causes the hole to be cut through the entire base,
+// and the slicing algorithm sees the intersection of the cylinder and the cube as a rectangular profile at z=0.5,
+// because the cube is not aligned to the cylinder's center.
+
+// Fix: ensure the opening cutout (cube) is aligned to the rod ring's center and only cuts through the ring at the correct z.
+// Also, the rod ring's outer shape should be a perfect circle, not a square.
+
+// Correct approach: use `cylinder` with `center = false` for both the outer ring and the hole,
+// and make the opening cutout (cube) only extend from z=0 to z=10.01, not below.
+
+// Also, the tubing ring's opening is cut with a cube that extends below z=0 — this is wrong.
+
+// Revised: define the clip with all geometry in z = 0 to 10, and ensure all cuts are within bounds.
+
+module clip() {
+    // Rod ring: centered at origin, with -X side opening
+    difference() {
+        // Outer ring (rod ring) - from z=0 to z=10
+        cylinder(r = rod_ring_outer_radius, h = 10, center = false);
+        
+        // Inner hole (rod ring)
+        cylinder(r = rod_ring_inner_radius, h = 10.01, center = false);
+        
+        // Cut out rod ring opening: rectangle from x = -inf to x = 0, y = -5 to 5, z = 0 to 10.01
+        // Must extend slightly beyond in z to ensure clean cut
+        translate([0, 0, -0.01])
+            cube([rod_ring_outer_radius * 2, rod_opening_width, 10.02], center = false);
+    }
+
+    // Tubing ring: centered at (15, 0), with +X side opening
+    difference() {
+        // Outer tubing ring
+        translate([tubing_ring_center_x, tubing_ring_center_y, 0])
+            cylinder(r = tubing_ring_outer_radius, h = 10, center = false);
+        
+        // Inner hole of tubing ring
+        translate([tubing_ring_center_x, tubing_ring_center_y, 0])
+            cylinder(r = tubing_ring_inner_radius, h = 10.01, center = false);
+        
+        // Cut out tubing ring opening: rectangle from x = 15 to x = 15 + 4.5, y = -2.25 to 2.25, z = 0 to 10.01
+        translate([tubing_ring_center_x + tubing_ring_outer_radius, 0, -0.01])
+            cube([tubing_opening_width + 0.1, tubing_opening_width, 10.02], center = false);
+    }
+
+    // Add bridge between rings
+    // Bridge is a solid rectangle from x = 8 to 12, y = -3 to 3, z = 0 to 10
+    translate([bridge_start_x + (bridge_end_x - bridge_start_x)/2, 0, 0])
+        cube([bridge_end_x - bridge_start_x, bridge_width_y, 10], center = false);
+}
+
+// Render the clip with correct z alignment and proper cuts
+clip();
+```

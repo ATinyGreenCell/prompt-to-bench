@@ -1,0 +1,18 @@
+```openscad
+// Parameters (mm)
+thickness_top      = 2;      // top plate thickness
+wall_thickness     = 2.5;    // wall thickness
+height_total       = 40;    // overall height from bed to open edge
+outer_size        = 90;      // outer X and Y dimensions
+hole_dia          = 4.5;    // M4 screw hole diameter
+hole_pattern      = 71.5;   // spacing of the four mounting holes (square pattern)
+cable_notch_width = 12;     // width of cable notch
+cable_notch_depth = 8;      // depth of notch down from the open edge (z = 32 → 40)
+cable_notch_extra = 0.01;   // extra beyond the outer wall for the notch (0.01‑1 mm)
+cut_extra         = 0.1;    // generic extra for cutting bodies (0.01‑1 mm)
+
+$fn = 64; // smoothness for cylinders & circles
+
+// ---------- Helper modules ----------
+module top_plate() {
+    //

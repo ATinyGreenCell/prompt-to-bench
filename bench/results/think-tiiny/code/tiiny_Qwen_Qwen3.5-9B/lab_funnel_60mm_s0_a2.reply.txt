@@ -1,0 +1,33 @@
+```openscad
+$fn = 64;
+
+// Dimensions in mm
+wall_thickness = 1.6;
+spout_od = 10;
+spout_id = spout_od - 2 * wall_thickness;
+spout_len = 20;
+funnel_top_od = 60;
+funnel_top_id = funnel_top_od - 2 * wall_thickness;
+funnel_bottom_od = spout_od;
+funnel_bottom_id = spout_id;
+funnel_height = 30; // 50 - 20
+
+// Epsilon for clean cuts at boundaries (Rule 5)
+cut_epsilon = 0.1;
+
+// Outer Shape
+outer_spout = cylinder(r = spout_od / 2, h = spout_len);
+outer_cone = translate([0, 0, spout_len])
+    cylinder(r1 = funnel_bottom_od / 2, r2 = funnel_top_od / 2, h = funnel_height);
+outer = union(outer_spout, outer_cone);
+
+// Inner Shape (Cutting Shape)
+// Extend slightly past z=0 and z=50 to ensure clean cuts (Rule 5)
+inner_spout = cylinder(r = spout_id / 2, h = spout_len + cut_epsilon);
+inner_cone = translate([0, 0, spout_len + cut_epsilon])
+    cylinder(r1 = funnel_bottom_id / 2, r2 = funnel_top_id / 2, h = funnel_height + cut_epsilon);
+inner = union(inner_spout, inner_cone);
+
+// Final Part
+difference([outer, inner]);
+```

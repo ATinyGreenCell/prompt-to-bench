@@ -1,0 +1,71 @@
+// L-shaped mounting bracket for NEMA 17 stepper motor
+// Units: millimetres
+// Orientation: Base plate on XY plane (z=0), builds upward (+Z).
+// Centered on origin in X and Y.
+
+// --- Dimensions ---
+// Base Plate
+base_width = 50;      // x from -25 to 25
+base_depth = 45;      // y from 0 to 45
+base_thickness = 5;   // z from 0 to 5
+
+// Vertical Motor Plate
+vertical_width = 50;  // x from -25 to 25
+vertical_depth = 5;   // y from 0 to 5
+vertical_height = 50; // z from 0 to 50
+
+// Gussets
+gusset_thickness = 5; // x thickness
+gusset_leg_y = 20;    // leg along +Y
+gusset_leg_z = 20;    // leg along +Z
+
+// Holes
+base_hole_diameter = 4.5; // M4
+base_hole_x = 17;        // x = +/- 17
+base_hole_y = 30;        // y = 30
+
+motor_boss_hole_diameter = 23; // 23 mm hole
+motor_boss_hole_x = 0;         // x = 0
+motor_boss_hole_z = 28;        // z = 28
+
+screw_hole_diameter = 3.4; // M3
+screw_pattern_size = 31;   // 31 mm square pattern
+screw_hole_x_offset = screw_pattern_size / 2; // 15.5
+screw_hole_z_offset = screw_pattern_size / 2; // 15.5
+
+// --- Calculations ---
+// Centering the assembly on the origin in X and Y.
+// Base Y: 0 to 45. Vertical Y: 45 to 50. Total Y: 0 to 50. Center Y = 25.
+// Base X: -25 to 25. Center X = 0.
+// Translation offset to center Y:
+y_center_offset = (base_depth + vertical_depth) / 2; // 25
+
+// --- Cut Offset ---
+// Constraint 5: Difference cuts must extend 0.01-1 mm past faces.
+cut_offset = 0.1; 
+
+// --- Main Assembly ---
+module l_bracket() {
+    difference() {
+        // 1. Base Plate
+        translate([0, 0, 0])
+        cube([base_width, base_depth, base_thickness], center = true);
+        
+        // 2. Vertical Motor Plate
+        // Attached at back edge of base (y = base_depth)
+        translate([0, base_depth, 0])
+        cube([vertical_width, vertical_depth, vertical_height], center = true);
+        
+        // 3. Gussets
+        // Left Gusset: x = -25 to -20.
+        // Right Gusset: x = 20 to 25.
+        // Corner at y = base_depth, z = base_thickness.
+        // Extends +Y (gusset_leg_y) and +Z (gusset_leg_z).
+        
+        // Left Gusset
+        translate([-gusset_thickness/2, base_depth, base_thickness])
+        linear_extrude(gusset_thickness)
+        polygon([
+            [0, 0],
+            [gusset_leg_y, 0],
+            [gusset_leg_y, g

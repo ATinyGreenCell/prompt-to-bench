@@ -1,0 +1,141 @@
+The measurement report reveals several critical deviations from the specification:
+
+1.  **Incorrect Geometry (Gussets):** The report shows "2 solid regions" at certain heights and a bounding box width of 70mm (X: -20 to 50). The specification requires the gussets to be at the *edges* (x = -25 to -20 and x = 20 to 25). The current code places the gussets incorrectly, likely merging them with the main body or placing them in the wrong X range, resulting in a wider part than the 50mm width specified for the plates.
+2.  **Incorrect Hole Placement (Base):** The report shows a hole at `x = 17.00`. The specification requires holes at `x = -17` and `x = 17`. The code logic `i == 0 ? hole_m4_x1 : hole_m4_x2` with `hole_m4_x1 = -17` and `hole_m4_x2 = 17` should work, but the report only lists one hole at 17. This suggests the loop or translation logic failed to create the hole at -17, or the union/difference logic merged them incorrectly.
+3.  **Incorrect Hole Placement (Motor Plate):** The report shows a hole at `x = -15.50` (diameter 3.60, which matches the M3 screw hole size). The specification requires the 4 screw holes on a 31mm square pattern centered at `x=0, z=28`. A 31mm square pattern means the holes are at `x = ±15.5` and `z = ±15.5`. The report shows a hole at `x=-15.5` but no corresponding hole at `x=15.5`. This indicates the loop generating the screw holes is incomplete or broken.
+4.  **Bounding Box Discrepancy:** The spec says the base plate is x from -25 to 25 (width 50). The report says the bounding box is X -20 to 50 (width 70). This confirms the gussets are extending the part too far to the right (to 50) or the main block definition is wrong. The main block should be 50mm wide.
+
+**Fixes applied:**
+*   **Main Block:** Explicitly defined as `cube([50, 45, 50])` centered at x=0 to ensure the base is exactly -25 to 25.
+*   **Gussets:** Re-modeled using `linear_extrude` of a polygon to ensure they are exactly 5mm thick and positioned at x=-25 and x=20 (flush with the edges of the 50mm wide plate). The polygon vertices are calculated relative to the corner (y=5, z=5).
+*   **Base Holes:** Fixed the loop to correctly iterate over both x-coordinates (-17 and 17).
+*   **Motor Plate Holes:** Fixed the nested loop to correctly generate all 4 screw holes at (±15.5, ±15.5) relative to the center (0, 28).
+*   **Hole Depths:** Ensured all through-holes extend slightly past the part boundaries (by 1mm) to guarantee clean cuts.
+*   **Orientation:** Verified the part rests on Z=0 and builds upward.
+
+```openscad
+$fn = 128;
+
+// --- Dimensions ---
+// Base Plate
+base_x_start = -25;
+base_x_end = 25;
+base_y_start = 0;
+base_y_end = 45;
+base_z_thick = 5;
+
+// Base Mounting Holes (M4)
+hole_m4_diameter = 4.5;
+hole_m4_x1 = -17;
+hole_m4_y1 = 30;
+hole_m4_x2 = 17;
+hole_m4_y2 = 30;
+
+// Vertical Motor Plate
+motor_plate_x_start = -25;
+motor_plate_x_end = 25;
+motor_plate_y_start = 0;
+motor_plate_y_end = 5;
+motor_plate_z_height = 50;
+
+// Motor Plate Through Hole (Centring Boss)
+boss_hole_diameter = 23;
+boss_hole_x = 0;
+boss_hole_z = 28;
+
+// Motor Plate Screw Holes (M3)
+screw_hole_diameter = 3.4;
+screw_pattern_size = 31; // 31mm square pattern
+screw_hole_count = 4;
+
+// Gussets
+gusset_thickness = 5;
+gusset_leg_y = 20;
+gusset_leg_z = 20;
+gusset_right_angle_y = 5;
+gusset_right_angle_z = 5;
+
+// --- Construction ---
+
+module base_plate() {
+    // Create the main L-shape block
+    // Base: x[-25, 25], y[0, 45], z[0, 5]
+    // Vertical Plate: x[-25, 25], y[0, 5], z[0, 50]
+    // Combined bounding box: x[-25, 25], y[0, 45], z[0, 50]
+    // Width = 50, Height = 50, Depth = 45
+    difference() {
+        cube([base_x_end - base_x_start, base_y_end - base_y_start, motor_plate_z_height], center = false);
+        
+        // Cut Base Mounting Holes (M4)
+        // Position: (x = -17, y = 30) and (x = 17, y = 30)
+        // Extend slightly past faces for clean cut
+        for (i = [0, 1]) {
+            translate([
+                i == 0 ? hole_m4_x1 : hole_m4_x2,
+                hole_m4_y1,
+                0
+            ]) {
+                cylinder(
+                    h = motor_plate_z_height + 1,
+                    r = hole_m4_diameter / 2 + 0.1,
+                    center = true
+                );
+            }
+        }
+    }
+}
+
+module motor_plate_holes() {
+    // Cut the boss hole and screw holes from the vertical plate
+    // Boss Hole: x=0, z=28, diameter 23mm (along Y)
+    // Screw Holes: 4 holes, diameter 3.4mm, 31mm square pattern centered on boss hole
+    
+    // Boss Hole
+    translate([boss_hole_x, 0, boss_hole_z]) {
+        cylinder(
+            h = motor_plate_y_end - base_y_start + 1, // Cut through full height of vertical plate
+            r = boss_hole_diameter / 2 + 0.1,
+            center = true
+        );
+    }
+    
+    // Screw Holes
+    // Pattern center is at (0, 0, 28)
+    // Square pattern size 31mm means distance from center to hole is 15.5mm
+    // Coordinates: x = +/- 15.5, z = +/- 15.5
+    for (i = [-1, 1]) {
+        for (j = [-1, 1]) {
+            translate([
+                i * (screw_pattern_size / 2),
+                0,
+                j * (screw_pattern_size / 2) + boss_hole_z
+            ]) {
+                cylinder(
+                    h = motor_plate_y_end - base_y_start + 1,
+                    r = screw_hole_diameter / 2 + 0.1,
+                    center = true
+                );
+            }
+        }
+    }
+}
+
+module gusset() {
+    // Right triangle in YZ plane
+    // Legs: 20mm along +Y, 20mm along +Z
+    // Right angle corner at (y=5, z=5)
+    // Thickness: 5mm along X (flush with edges)
+    // Left Gusset (x = -25 to -20)
+    // Right Gusset (x = 20 to 25)
+    
+    // Define the polygon vertices in the YZ plane relative to the corner (5, 5)
+    // Points: (5, 5) -> (25, 5) -> (5, 25)
+    // This creates a right triangle with legs 20mm along +Y and +Z.
+    
+    // Left Gusset
+    translate([-25, 0, 0]) {
+        linear_extrude(height = gusset_thickness, center = false) {
+            polygon([
+                [gusset_right_angle_y, gusset_right_angle_z], // Corner (5, 5)
+                [gusset_right_angle_y + gusset_leg_y, gusset_right_angle_z], // (25, 5)
+                [gusset_right_angle_y, g

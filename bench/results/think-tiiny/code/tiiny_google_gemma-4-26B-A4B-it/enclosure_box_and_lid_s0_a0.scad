@@ -1,0 +1,74 @@
+// Parameters
+$fn = 64;
+
+// Part 1: Box dimensions (mm)
+box_width = 70;           // Outer width (X)
+box_depth = 50;           // Outer depth (Y)
+box_height = 30;          // Outer height (Z)
+box_wall = 2;             // Wall thickness
+box_floor = 2;            // Floor thickness
+
+// Part 2: Lid dimensions (mm)
+lid_plate_width = 70;     // Plate width (X)
+lid_plate_depth = 50;     // Plate depth (Y)
+lid_plate_thickness = 2;  // Plate thickness (Z)
+lip_outer_width = 65.6;   // Lip outer width (X)
+lip_outer_depth = 45.6;   // Lip outer depth (Y)
+lip_height = 4;           // Lip height (Z)
+lip_wall_thickness = 1.5; // Lip wall thickness
+
+// Layout
+gap = 10;                 // Gap between the two parts
+
+// --- Part 1: The Box ---
+// Rests on the XY plane at Z=0 and is centered on X and Y.
+module box() {
+    difference() {
+        // Outer shell
+        translate([-box_width/2, -box_depth/2, 0])
+            cube([box_width, box_depth, box_height]);
+        
+        // Inner cavity
+        // We subtract the floor and walls. 
+        // The cavity starts at Z = floor_thickness.
+        // We extend the cavity slightly past the top to ensure a clean cut.
+        translate([-box_width/2 + box_wall, -box_depth/2 + box_wall, box_floor])
+            cube([box_width - 2 * box_wall, box_depth - 2 * box_wall, box_height - box_floor + 0.1]);
+    }
+}
+
+// --- Part 2: The Lid ---
+// Printed with the plate on the bed and the lip on top.
+// Centered on its own origin, then translated to the +X side of the box.
+module lid() {
+    union() {
+        // The base plate
+        translate([-lid_plate_width/2, -lid_plate_depth/2, 0])
+            cube([lid_plate_width, lid_plate_depth, lid_plate_thickness]);
+        
+        // The rectangular lip
+        // Centered on the plate, sitting on top of it.
+        translate([-lip_outer_width/2, -lip_outer_depth/2, lid_plate_thickness])
+            difference() {
+                // Outer lip shape
+                cube([lip_outer_width, lip_outer_depth, lip_height]);
+                
+                // Inner hollow part of the lip
+                // We extend the cut slightly in Z to ensure a clean cut.
+                translate([lip_wall_thickness, lip_wall_thickness, -0.01])
+                    cube([lip_outer_width - 2 * lip_wall_thickness, lip_outer_depth - 2 * lip_wall_thickness, lip_height + 0.02]);
+            }
+    }
+}
+
+// --- Final Assembly ---
+
+// Render the box at the origin
+box();
+
+// Render the lid on the +X side of the box
+// The box ends at X = box_width/2.
+// The gap starts at box_width/2 + gap.
+// The lid's own center is at lid_plate_width/2.
+translate([box_width/2 + gap + lid_plate_width/2, 0, 0])
+    lid();

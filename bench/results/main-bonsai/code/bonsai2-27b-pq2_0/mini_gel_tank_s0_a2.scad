@@ -1,0 +1,57 @@
+// Buffer tank for a mini horizontal gel-electrophoresis box
+// Open-top rectangular tank with a central raised platform and two electrode-wire holes.
+
+// ---- Named dimensions (mm) ----
+outer_x   = 120;   // outer length in X
+outer_y   = 70;    // outer width in Y
+outer_z   = 40;    // outer height in Z
+wall      = 3;     // wall thickness
+floor     = 3;     // floor thickness
+plat_len  = 60;    // platform length in X (centred)
+plat_h    = 10;    // platform height above inner floor
+wire_d    = 2;     // electrode-wire hole diameter
+wire_z    = 30;    // wire hole centre height (z)
+wire_y    = 0;     // wire hole centre position in Y
+cut_over  = 1;     // extra mm for cutting shapes to avoid coplanar faces
+
+// ---- Derived values ----
+inner_x   = outer_x - 2*wall;   // 114
+inner_y   = outer_y - 2*wall;   // 64
+inner_z   = outer_z - floor;    // 37
+plat_z    = floor + plat_h;     // 13 (top of platform)
+plat_bot  = floor;             // 3  (bottom of platform)
+plat_y    = inner_y;           // platform spans full inner width in Y
+
+// ---- Build the tank ----
+$fn = 64;
+
+// Outer tank shell (open top): outer box minus inner cavity
+tank_shell = difference(
+    cube([outer_x, outer_y, outer_z], center=[0,0,outer_z/2]),
+    cube([inner_x, inner_y, inner_z], center=[0,0,floor + inner_z/2])
+);
+
+// Central raised platform (solid, spans full inner width in Y)
+platform = cube([plat_len, plat_y, plat_h], center=[0,0,plat_bot + plat_h/2]);
+
+// Tank with platform
+tank = union([tank_shell, platform]);
+
+// Two horizontal electrode-wire holes through the X end walls
+// Each hole is a cylinder along X, centred at (y=0, z=30), extending past both end walls.
+wire_hole = cylinder(
+    d = wire_d,
+    h = outer_x + 2*cut_over,
+    center = true
+);
+
+tank = difference(
+    tank,
+    union(
+        translate([-outer_x/2 - cut_over, wire_y, wire_z]) rotate([0,90,0]) wire_hole,
+        translate([ outer_x/2 + cut_over, wire_y, wire_z]) rotate([0,90,0]) wire_hole
+    )
+);
+
+// Final model, centred on origin in X and Y, resting on z=0
+tank;

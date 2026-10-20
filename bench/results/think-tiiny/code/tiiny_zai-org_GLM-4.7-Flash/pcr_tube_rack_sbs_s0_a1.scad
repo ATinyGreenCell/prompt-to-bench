@@ -1,0 +1,49 @@
+$fn = 64;
+
+// Block Dimensions (mm)
+block_x = 127.76;
+block_y = 85.48;
+block_z = 20.0;
+
+// Hole Dimensions (mm)
+hole_d = 6.2;
+hole_h = block_z + 0.1; // Slightly longer to ensure clean cut
+
+// Grid Dimensions
+cols = 12;
+rows = 8;
+spacing = 9.0;
+
+// A1 Offset (mm) - Distance from left and back edges
+a1_offset_x = 14.38;
+a1_offset_y = 11.24;
+
+// Chamfer Dimensions (mm)
+chamfer_leg = 5.0;
+
+// Main Body
+difference() {
+    // Base Block
+    cube([block_x, block_y, block_z]);
+
+    // 96 Holes
+    for (x = [0 : cols - 1]) {
+        for (y = [0 : rows - 1]) {
+            translate([
+                a1_offset_x + x * spacing,
+                a1_offset_y + y * spacing,
+                0
+            ]) {
+                cylinder(h = hole_h, d = hole_d, $fn = 64);
+            }
+        }
+    }
+
+    // Chamfer at A1 Corner (Corner of block at 0,0)
+    // A 45-degree chamfer cut from the corner
+    translate([0, 0, 0]) {
+        rotate([0, 0, 45]) {
+            cube([chamfer_leg, chamfer_leg, hole_h]);
+        }
+    }
+}

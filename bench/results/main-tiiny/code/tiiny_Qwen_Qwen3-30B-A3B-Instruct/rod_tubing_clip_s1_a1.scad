@@ -1,0 +1,79 @@
+$fn = 64;
+
+// Dimensions
+rod_diameter = 12.7;           // Inner diameter of rod ring
+rod_wall = 3;                 // Wall thickness of rod ring
+rod_outer_diameter = rod_diameter + 2 * rod_wall; // 18.7 mm
+
+tubing_inner_diameter = 6;     // Inner diameter of tubing ring
+tubing_wall = 2;               // Wall thickness of tubing ring
+tubing_outer_diameter = tubing_inner_diameter + 2 * tubing_wall; // 10 mm
+
+bridge_width_y = 6;            // Width of bridge in Y direction
+bridge_start_x = 8;            // Start X of bridge
+bridge_end_x = 12;             // End X of bridge
+
+// Rod ring: centered at origin, with -X side opening
+rod_ring_inner_radius = rod_diameter / 2;
+rod_ring_outer_radius = rod_outer_diameter / 2;
+
+// Tubing ring: centered at (15, 0), with +X side opening
+tubing_ring_center_x = 15;
+tubing_ring_center_y = 0;
+tubing_ring_inner_radius = tubing_inner_diameter / 2;
+tubing_ring_outer_radius = tubing_outer_diameter / 2;
+
+// Opening dimensions
+rod_opening_width = 10;       // Width of opening in rod ring: -5 < y < 5
+tubing_opening_width = 4.5; // Width of opening in tubing ring: -2.25 < y < 2.25
+
+// Bridge: solid connection between rings
+bridge_y_min = -bridge_width_y / 2;
+bridge_y_max = bridge_width_y / 2;
+
+// Ensure the entire part is printed flat on the bed (z = 0)
+// The original model was centered at z = 0, but the bed is at z = -5.00
+// We need to shift the whole model so that the lowest z is 0
+
+// Adjust: move the entire model up by 5 mm so that z = 0 is the bed surface
+// The original height was 10 mm (z from -5 to +5), now we want z from 0 to 10
+
+// Build the clip with z offset of +5 mm
+module clip() {
+    // Start with rod ring
+    difference() {
+        // Outer ring (rod ring) - shifted up by 5 mm in z
+        cylinder(r = rod_ring_outer_radius, h = 10, center = false);
+        
+        // Inner hole (rod ring)
+        cylinder(r = rod_ring_inner_radius, h = 10.01, center = false);
+        
+        // Cut out rod ring opening: rectangle from x = -inf to x = 0, y = -5 to 5
+        // Extend slightly beyond to ensure clean cut
+        translate([0, 0, -0.01])
+            cube([rod_ring_outer_radius * 2, rod_opening_width, 10.02], center = false);
+    }
+
+    // Add tubing ring (with its own opening)
+    difference() {
+        // Outer tubing ring - shifted up by 5 mm in z
+        translate([tubing_ring_center_x, tubing_ring_center_y, 0])
+            cylinder(r = tubing_ring_outer_radius, h = 10, center = false);
+        
+        // Inner hole of tubing ring
+        translate([tubing_ring_center_x, tubing_ring_center_y, 0])
+            cylinder(r = tubing_ring_inner_radius, h = 10.01, center = false);
+        
+        // Cut out tubing ring opening: rectangle from x = 15 to x = 15 + 4.5, y = -2.25 to 2.25
+        translate([tubing_ring_center_x + tubing_ring_outer_radius, 0, -0.01])
+            cube([tubing_opening_width + 0.1, tubing_opening_width, 10.02], center = false);
+    }
+
+    // Add bridge between rings
+    // Bridge is a solid rectangle from x = 8 to 12, y = -3 to 3, z = 0 to 10
+    translate([bridge_start_x + (bridge_end_x - bridge_start_x)/2, 0, 0])
+        cube([bridge_end_x - bridge_start_x, bridge_width_y, 10], center = false);
+}
+
+// Render the clip, now correctly positioned at z = 0 to 10
+clip();

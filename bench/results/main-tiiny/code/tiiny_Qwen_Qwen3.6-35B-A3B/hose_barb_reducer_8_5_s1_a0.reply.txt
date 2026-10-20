@@ -1,0 +1,170 @@
+```openscad
+// Dimensions for straight hose-barb reducer
+// 8mm tubing side (bottom)
+dia_8_bottom = 7.5;      // Outer diameter at bottom of first 8mm barb
+dia_8_top = 9.5;         // Outer diameter at top of first 8mm barb
+h_barb_8 = 10;             // Height of each 8mm barb
+num_barbs_8 = 2;           // Number of 8mm barbs
+
+// Collar
+dia_collar = 12;           // Diameter of the cylindrical collar
+h_collar = 5;              // Height of the collar (25 to 30, but user said 25 to 25? No, 20 to 25 is 5mm. Wait, user said 20 to 25 is collar. So h=5.)
+
+// 5mm tubing side (top)
+dia_5_bottom = 6.5;        // Outer diameter at bottom of first 5mm barb
+dia_5_top = 5.0;           // Outer diameter at top of first 5mm barb
+h_barb_5 = 8;                // Height of each 5mm barb
+num_barbs_5 = 2;             // Number of 5mm barbs
+
+// Bore
+dia_bore = 3;              // Diameter of the through bore
+
+// Total Height Calculation
+// 8mm side: 2 barbs * 10mm = 20mm (z=0 to z=20)
+// Collar: z=20 to z=25, height = 5mm
+// 5mm side: 2 barbs * 8mm = 16mm (z=25 to z=41)
+// Total height = 41mm
+
+// Parameters for linear_extrude
+$fn = 64;
+
+// Helper function to create a single barb profile
+// z_start: starting Z position
+// h: height of the barb
+// d_start: diameter at the bottom (z_start)
+// d_end: diameter at the top (z_start + h)
+// The profile grows linearly from d_start to d_end, then steps back to d_start.
+// Since we are rotating around Z, we define the profile in the XZ plane (X is radius).
+// We will build the part using rotate_extrude or by stacking linear_extrudes of polygons.
+// Stacking linear_extrudes of polygons is easier for the "step back" feature.
+
+// Function to generate the polygon for a single barb
+// Returns a list of points for linear_extrude
+// The barb goes from z=0 to z=h in local coordinates.
+// Radius goes from r_start to r_end linearly, then steps back to r_start.
+// To make it printable and robust, we define the profile carefully.
+// Profile points:
+// 1. (r_start, 0)
+// 2. (r_end, h)
+// 3. (r_start, h)  <-- Step back
+// 4. (r_start, 0)  <-- Close loop
+// Note: OpenSCAD linear_extrude expects a closed 2D shape.
+// However, for rotationally symmetric parts, it's often easier to use rotate_extrude with a path or
+// stack cylinders/cones. But the "step back" makes it non-convex in a way that simple cylinders don't handle well if we just stack.
+// Actually, a single linear_extrude of a polygon is perfect.
+
+// Let's define the polygon for a barb.
+// We need to be careful with the "step back".
+// The outer surface is defined by the line from (r_start, 0) to (r_end, h).
+// The "step back" is a vertical line at z=h from r_end to r_start.
+// The bottom is at z=0.
+// The polygon must be closed.
+// Points:
+// [r_start, 0]
+// [r_end, h]
+// [r_start, h]
+// [r_start, 0]
+
+// We will build the main body using difference() to cut the bore.
+
+module barb_profile(r_start, r_end, h) {
+    // Define the 2D polygon for the barb profile
+    // Using a polygon that represents the cross-section to be extruded?
+    // No, linear_extrude extrudes a 2D shape along Z.
+    // If we use linear_extrude, the shape is in XY.
+    // Let's define the shape in XY.
+    // Radius is X. Height is Y (which becomes Z after extrude).
+    // Wait, linear_extrude moves along Z. So the base shape is in XY.
+    // Let's define the profile in the XZ plane? No, linear_extrude takes a 2D object in XY.
+    // So we define the profile in XY, where X is radius, Y is height.
+    // Then we rotate_extrude? No, linear_extrude creates a solid by moving the 2D shape along Z.
+    // If we want a rotationally symmetric part, we should use rotate_extrude on a 2D profile in XY.
+    
+    // Let's use rotate_extrude.
+    // Profile in XY plane:
+    // X is radius, Y is height (Z).
+    // Points:
+    // [r_start, 0]
+    // [r_end, h]
+    // [r_start, h]
+    // [r_start, 0]
+    // This forms a triangle-like shape with a vertical side.
+    
+    // However, rotate_extrude creates a solid of revolution.
+    // If we use this polygon, it will create a solid.
+    // We must ensure the polygon is closed and valid.
+    
+    // Let's create the polygon for one barb.
+    // We need to be careful: the "step back" creates an overhang.
+    // For FDM, this is fine if printed upright.
+    
+    // Polygon points for rotate_extrude profile:
+    // We define the right half of the cross-section.
+    // X >= 0.
+    pts = [
+        [r_start, 0],
+        [r_end, h],
+        [r_start, h],
+        [r_start, 0]
+    ];
+    return polygon(pts);
+}
+
+// Build the 8mm side
+// 2 barbs, each 10mm high.
+// Barb 1: z=0 to z=10. r: 7.5 -> 9.5
+// Barb 2: z=10 to z=20. r: 7.5 -> 9.5
+
+// Build the collar
+// z=20 to z=25. r=6 (dia 12)
+
+// Build the 5mm side
+// 2 barbs, each 8mm high.
+// Barb 1: z=25 to z=33. r: 6.5 -> 5.0
+// Barb 2: z=33 to z=41. r: 6.5 -> 5.0
+
+// We will construct the part by unioning these components.
+// Then subtract the bore.
+
+module build_part() {
+    union() {
+        // 8mm Tubing Side
+        for (i = [0 : num_barbs_8 - 1]) {
+            z_base = i * h_barb_8;
+            // Create the barb profile
+            // We use rotate_extrude on a polygon
+            // The polygon is defined in XY, where X is radius, Y is height (Z)
+            // We need to translate the profile to the correct Z height?
+            // No, rotate_extrude creates the solid based on the profile's Y coordinate as Z.
+            // So we just need to define the profile with Y starting at 0, and then translate the entire solid up.
+            
+            // Define profile for this barb
+            // r_start = dia_8_bottom, r_end = dia_8_top
+            // But wait, the second barb starts at z=10.
+            // The profile for the second barb is identical to the first, just shifted in Z.
+            
+            // Let's create a module for a single barb at z=0
+            module single_barb(r_start, r_end, h) {
+                pts = [
+                    [r_start, 0],
+                    [r_end, h],
+                    [r_start, h],
+                    [r_start, 0]
+                ];
+                rotate_extrude() {
+                    polygon(pts);
+                }
+            }
+            
+            // However, we can't define a module inside a loop easily without nesting.
+            // Let's just use rotate_extrude directly.
+            
+            // Barb 1
+            if (i == 0) {
+                translate([0, 0, z_base]) {
+                    rotate_extrude() {
+                        polygon([
+                            [dia_8_bottom, 0],
+                            [dia_8_top, h_barb_8],
+                            [dia_8_bottom, h_barb_8],
+                            [dia

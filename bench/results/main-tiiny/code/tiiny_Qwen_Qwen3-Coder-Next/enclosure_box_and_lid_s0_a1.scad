@@ -1,0 +1,78 @@
+// Enclosure for Arduino-based temperature logger
+// Part 1: Box (base)
+// Part 2: Lid (with lip for sliding fit)
+
+$fn = 64;
+
+// Box outer dimensions
+box_outer_x = 70;
+box_outer_y = 50;
+box_outer_z = 30;
+
+// Wall and floor thickness
+wall_thick = 2;
+floor_thick = 2;
+
+// Lid dimensions
+lid_thickness = 2;
+lid_lip_height = 4;
+lid_lip_thickness = 1.5;
+lid_lip_clearance = 0.2; // clearance on each side
+
+// Compute inner dimensions of box (for reference)
+box_inner_x = box_outer_x - 2 * wall_thick;
+box_inner_y = box_outer_y - 2 * wall_thick;
+box_inner_z = box_outer_z - floor_thick;
+
+// Compute lid lip outer dimensions (box inner minus clearance on each side)
+lid_lip_outer_x = box_inner_x - 2 * lid_lip_clearance;
+lid_lip_outer_y = box_inner_y - 2 * lid_lip_clearance;
+
+// Box (Part 1)
+module box_part() {
+    // Outer shell
+    difference() {
+        // Outer box
+        cube([box_outer_x, box_outer_y, box_outer_z]);
+        
+        // Hollow out interior (walls and top open)
+        translate([wall_thick, wall_thick, floor_thick])
+            cube([box_inner_x, box_inner_y, box_outer_z - floor_thick + 0.01]);
+    }
+}
+
+// Lid (Part 2) - printed upside down (so lip is on top of plate)
+module lid_part() {
+    // Base plate
+    plate = cube([box_outer_x, box_outer_y, lid_thickness]);
+    
+    // Lip (rectangular, centered on plate, on top of plate)
+    // Lip is 1.5 mm thick wall, 4 mm tall, outer size 65.6 x 45.6 mm
+    // Centered on plate: plate is 70x50, lip is 65.6x45.6
+    // So lip offset from center = (70 - 65.6)/2 = 2.2 mm in X, (50 - 45.6)/2 = 2.2 mm in Y
+    lip_x_offset = (box_outer_x - lid_lip_outer_x) / 2;
+    lip_y_offset = (box_outer_y - lid_lip_outer_y) / 2;
+    
+    lip = translate([lip_x_offset, lip_y_offset, lid_thickness])
+          cube([lid_lip_outer_x, lid_lip_outer_y, lid_lip_height]);
+    
+    // Combine plate and lip
+    union() {
+        plate;
+        lip;
+    }
+}
+
+// Position parts side by side with gap
+// Box on left, lid on right (+X side)
+box_x_pos = - (box_outer_x + gap) / 2;
+lid_x_pos = box_x_pos + box_outer_x + gap;
+
+// Render both parts
+translate([box_x_pos, 0, 0]) {
+    box_part();
+}
+
+translate([lid_x_pos, 0, 0]) {
+    lid_part();
+}

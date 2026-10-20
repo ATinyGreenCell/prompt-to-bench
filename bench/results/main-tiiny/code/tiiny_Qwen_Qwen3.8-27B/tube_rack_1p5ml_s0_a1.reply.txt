@@ -1,0 +1,41 @@
+```openscad
+// Bench rack for 1.5 mL microcentrifuge tubes
+// Solid block with 24 vertical holes (4 rows x 6 columns)
+
+// Block dimensions
+block_length = 106;   // X
+block_width  = 72;    // Y
+block_height = 30;    // Z
+
+// Hole grid parameters
+rows = 4;             // along Y
+cols = 6;             // along X
+pitch  = 16;          // centre-to-centre spacing in both X and Y
+hole_d = 11.2;        // hole diameter
+hole_depth = 25;      // depth from top (open at top, closed at bottom)
+floor    = 5;         // solid floor thickness (block_height - hole_depth)
+
+// Derived values
+half_len = block_length / 2;
+half_wid = block_width  / 2;
+
+$fn = 64;
+
+// Main solid block, resting on z=0, centred on origin in X and Y
+difference() {
+    // Outer block
+    translate([-half_len, -half_wid, 0])
+        cube([block_length, block_width, block_height]);
+
+    // 24 vertical holes, open at top, closed at bottom
+    for (i = 0; i < cols; i++) {
+        for (j = 0; j < rows; j++) {
+            x = (i - (cols - 1) / 2) * pitch;
+            y = (j - (rows - 1) / 2) * pitch;
+            // Cylinder extends 1 mm above the top face to ensure a clean cut
+            translate([x, y, block_height - hole_depth])
+                cylinder(h = hole_depth + 1, d = hole_d, $fn = 64);
+        }
+    }
+}
+```

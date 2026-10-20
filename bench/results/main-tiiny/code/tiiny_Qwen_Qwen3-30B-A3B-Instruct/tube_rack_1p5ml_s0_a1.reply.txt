@@ -1,0 +1,71 @@
+```openscad
+// Bench rack for 1.5 mL microcentrifuge tubes
+// Corrected to match specifications exactly
+
+// Overall block dimensions
+length_x = 106;    // Length along X axis
+width_y = 72;       // Width along Y axis
+height_z = 30;      // Height along Z axis
+
+// Hole grid parameters
+hole_diameter = 11.2;         // Diameter of each hole
+hole_depth = 25;              // Depth of each hole (from top)
+floor_thickness = 5;          // Solid floor thickness at bottom of hole
+hole_spacing_x = 16;        // Center-to-center spacing along X
+hole_spacing_y = 16;        // Center-to-center spacing along Y
+num_rows_y = 4;               // Number of rows along Y (4 rows)
+num_cols_x = 6;               // Number of columns along X (6 columns)
+
+// Ensure the block sits on the XY plane (z = 0) and builds upward
+// The original model was centered at z = 0, but we want the base at z = 0
+// So we shift the entire model so that the bottom is at z = 0
+
+// Recalculate grid centering offsets
+grid_center_x = length_x / 2;
+grid_center_y = width_y / 2;
+
+// Calculate starting positions for hole grid (to center it)
+start_x = grid_center_x - ((num_cols_x - 1) * hole_spacing_x) / 2;
+start_y = grid_center_y - ((num_rows_y - 1) * hole_spacing_y) / 2;
+
+// Set resolution for smooth holes
+$fn = 64;
+
+// Main block: solid rectangular prism, sitting on XY plane (z = 0), height = 30 mm
+// So it goes from z = 0 to z = 30
+cube([length_x, width_y, height_z], center = false);
+
+// Create holes using difference
+difference() {
+    // Main block (from z = 0 to z = 30)
+    cube([length_x, width_y, height_z], center = false);
+
+    // Subtract cylinders for each hole
+    for (i = [0 : num_cols_x - 1]) {
+        for (j = [0 : num_rows_y - 1]) {
+            // Calculate hole center
+            hole_x = start_x + i * hole_spacing_x;
+            hole_y = start_y + j * hole_spacing_y;
+            hole_z_top = height_z;  // Top of hole at z = 30
+            hole_z_bottom = hole_z_top - hole_depth;  // Bottom of hole at z = 5 (since hole_depth = 25)
+
+            // Cylinder for hole: from z = hole_z_bottom to z = hole_z_top
+            // Extend slightly beyond to ensure clean cut (0.1 mm extra)
+            cylinder(
+                h = hole_depth + 0.1,
+                d = hole_diameter,
+                center = false,
+                $fn = 64
+            );
+            translate([hole_x, hole_y, hole_z_bottom]) {
+                cylinder(
+                    h = hole_depth + 0.1,
+                    d = hole_diameter,
+                    center = false,
+                    $fn = 64
+                );
+            }
+        }
+    }
+}
+```

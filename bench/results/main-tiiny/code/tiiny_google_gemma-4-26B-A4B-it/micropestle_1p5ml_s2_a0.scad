@@ -1,0 +1,86 @@
+// Pestle for 1.5 mL microcentrifuge tube
+// Designed for FDM printing, standing upright
+
+// --- Dimensions ---
+handle_diameter = 8;          // Diameter of the cylindrical handle
+handle_height = 45;           // Height of the handle from z=0
+cone_base_diameter = 8;        // Diameter at the start of the taper
+cone_tip_diameter = 3;         // Diameter at the end of the taper
+cone_height = 62 - 45;         // Vertical height of the conical section
+tip_diameter = 3;             // Diameter of the spherical tip
+tip_center_z = 62;            // Z-coordinate of the sphere center
+
+groove_width = 2;             // Width of each groove in Z
+groove_depth = 1;             // Depth of each groove into the handle
+groove_z_positions = [10, 15, 20, 25]; // Z-centers for the four grooves
+
+// --- Resolution ---
+$fn = 64;
+
+// --- Main Construction ---
+union() {
+    // 1. The Handle
+    difference() {
+        // Main cylinder
+        cylinder(d = handle_diameter, h = handle_height);
+        
+        // 2. The Grooves (Subtracted from handle)
+        for (z_pos = groove_z_positions) {
+            translate([0, 0, z_pos - groove_width/2])
+                // We use a torus-like subtraction via a cylinder 
+                // but since it's a simple groove, a cylinder is easier.
+                // To ensure a clean cut, we make the cutting cylinder larger than the handle.
+                cylinder(d = handle_diameter + 2, h = groove_width + 0.1, center = true);
+                // Note: The above cylinder is centered at z_pos. 
+                // To align with the user's "2mm wide" requirement:
+                // We translate the cylinder so its center is at z_pos.
+                // However, the cylinder command above is slightly messy with center=true.
+                // Let's rewrite the groove logic for precision.
+        }
+    }
+    
+    // Corrected Groove Logic (re-implementing to ensure precision)
+    // We will use a difference() block for the whole handle to be safe.
+}
+
+// --- Final Assembly Logic ---
+// To avoid the messy logic above, let's structure the whole part properly.
+
+module pestle() {
+    difference() {
+        // Base Shape: Handle + Cone + Tip
+        union() {
+            // Handle
+            cylinder(d = handle_diameter, h = handle_height);
+            
+            // Cone
+            translate([0, 0, handle_height])
+                cylinder_taper(d1 = cone_base_diameter, d2 = cone_tip_diameter, h = cone_height);
+            
+            // Rounded Tip
+            translate([0, 0, tip_center_z])
+                sphere(d = tip_diameter);
+        }
+
+        // Subtract Grooves
+        for (z_pos = groove_z_positions) {
+            translate([0, 0, z_pos - groove_width/2])
+                // The cutting cylinder is slightly larger than the handle to ensure a clean cut
+                cylinder(d = handle_diameter + 2, h = groove_width + 0.1);
+        }
+    }
+}
+
+// Helper module for the tapered cone
+module cylinder_taper(d1, d2, h) {
+    // Using a hull of two cylinders to create a perfect taper
+    hull() {
+        translate([0, 0, 0])
+            cylinder(d = d1, h = 0.01);
+        translate([0, 0, h])
+            cylinder(d = d2, h = 0.01);
+    }
+}
+
+// Execute the model
+pestle();

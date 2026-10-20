@@ -1,0 +1,23 @@
+```openscad
+// 96‑tube PCR rack – dimensions in millimetres
+X = 127.76;          // block length (X)
+Y = 85.48;           // block width  (Y)
+Z = 20;              // block height (Z)
+
+hole_d = 6.2;       // tube hole diameter
+hole_r = hole_d/2;  // tube hole radius
+
+spacing = 9.0;       // centre‑to‑centre spacing of holes
+rows   = 8;          // number of rows (along Y)
+cols   = 12;         // number of columns (along X)
+
+offsetX = 14.38;     // X distance from left edge to first hole centre
+offsetY = 11.24;     // Y distance from back edge to first hole centre
+
+chamfer_leg = 5;    // length of 45° chamfer legs
+extra = 1;          // amount (mm) to extend cuts beyond the block faces
+
+$fn = 64;           // resolution for circles and extrusions
+
+module rack() {
+    // Main block (resting on XY plane, centred on

@@ -1,0 +1,35 @@
+// Named variables at the top
+spine_x = 70;       // Spine length in X (mm)
+spine_y = 12;       // Spine width in Y (mm)
+spine_z = 1.5;      // Plate thickness in Z (mm)
+tooth_x = 5.0;      // Tooth width in X (mm)
+tooth_y = 12;       // Tooth length in Y (mm)
+gap_x = 1.5;        // Gap between neighbouring teeth in X (mm)
+num_teeth = 10;     // Number of teeth
+
+// Derived layout calculations
+spine_x_half = spine_x / 2;
+total_tooth_width = num_teeth * tooth_x + (num_teeth - 1) * gap_x;
+margin_x = (spine_x - total_tooth_width) / 2;
+tooth_start_x = -spine_x_half + margin_x;
+tooth_pitch = tooth_x + gap_x;
+
+$fn = 64;
+
+// Print orientation: rests on XY plane at z=0, builds upward in +Z
+// Spine: X [-35, 35], Y [0, 12]
+// Teeth: hang from Y=0 edge in -Y direction, Y [-12, 0]
+union() {
+    // Spine (back bar)
+    translate([-spine_x_half, 0, 0]) {
+        cube([spine_x, spine_y, spine_z]);
+    }
+
+    // Teeth row
+    for (i = [0 : num_teeth - 1]) {
+        tx = tooth_start_x + i * tooth_pitch;
+        translate([tx, -tooth_y, 0]) {
+            cube([tooth_x, tooth_y, spine_z]);
+        }
+    }
+}

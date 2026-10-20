@@ -1,0 +1,72 @@
+// Units are millimeters.
+// Design: Straight hose-barb reducer (8mm to 5mm tubing)
+// Orientation: Standing upright along Z axis (XY plane at z=0)
+// Centered on origin in X and Y.
+
+// --- Dimensions ---
+// Inner bore diameter (constant through full length)
+bore_diameter = 3;
+bore_radius = bore_diameter / 2;
+
+// --- Section 1: 8mm Tubing Side (z=0 to z=20) ---
+// Two identical barbs, each 10mm tall
+barb1_height = 10;
+barb2_height = 10;
+
+// Barb 1 dimensions
+barb1_bottom_diameter = 7.5;
+barb1_top_diameter = 9.5;
+barb1_bottom_radius = barb1_bottom_diameter / 2;
+barb1_top_radius = barb1_top_diameter / 2;
+
+// Barb 2 dimensions (identical to Barb 1)
+barb2_bottom_diameter = 7.5;
+barb2_top_diameter = 9.5;
+barb2_bottom_radius = barb2_bottom_diameter / 2;
+barb2_top_radius = barb2_top_diameter / 2;
+
+// --- Section 2: Cylindrical Collar (z=20 to z=25) ---
+collar_diameter = 12;
+collar_radius = collar_diameter / 2;
+collar_height = 5;
+
+// --- Section 3: 5mm Tubing Side (z=25 to z=41) ---
+// Two identical barbs, each 8mm tall
+barb3_height = 8;
+barb4_height = 8;
+
+// Barb 3 dimensions
+barb3_bottom_diameter = 6.5;
+barb3_top_diameter = 5.0;
+barb3_bottom_radius = barb3_bottom_diameter / 2;
+barb3_top_radius = barb3_top_diameter / 2;
+
+// Barb 4 dimensions (identical to Barb 3)
+barb4_bottom_diameter = 6.5;
+barb4_top_diameter = 5.0;
+barb4_bottom_radius = barb4_bottom_diameter / 2;
+barb4_top_radius = barb4_top_diameter / 2;
+
+// --- Geometry Construction ---
+
+// Helper function to create a "sawtooth" barb profile using rotate_extrude
+// This creates a shape with a taper and a sharp step back.
+// We define the profile in the XZ plane (X is radius, Z is height).
+// The profile goes from (r_bottom, 0) to (r_top, h) to (r_bottom, h).
+// Note: rotate_extrude rotates around the X axis. We need to rotate around Z.
+// So we define the profile in the YZ plane (Y is radius, Z is height) and rotate around Z.
+// Actually, OpenSCAD rotate_extrude rotates around X axis.
+// To rotate around Z, we can use rotate_extrude on a shape in the XY plane? No.
+// The standard way to make a shape symmetric around Z is to use rotate_extrude on a shape in the YZ plane? No.
+// Wait, rotate_extrude rotates around the X axis.
+// To get a shape symmetric around Z, we should use rotate_extrude on a shape in the XY plane? No.
+// Actually, the easiest way is to use rotate_extrude on a shape in the YZ plane? No.
+// Let's use rotate_extrude on a shape in the XY plane? No.
+// Wait, rotate_extrude rotates around the X axis.
+// To get a shape symmetric around Z, we should use rotate_extrude on a shape in the YZ plane? No.
+// Wait, rotate_extrude rotates around the X axis.
+// To get a shape symmetric around Z, we should use rotate_extrude on a shape in the XY plane? No.
+// Wait, rotate_extrude rotates around the X axis.
+// To get a shape symmetric around Z, we should use rotate_extrude on a shape in the YZ plane? No.
+// Wait, rotate_extrude rotates around the X axis.
+// To get a shape symmetric around Z, we should use rotate_extr

@@ -1,0 +1,93 @@
+Looking at the measurement report again, I see the issue: the report shows the cone's outer diameter at z=47.51 as 55.79 mm, but it should be 60 mm at z=50 (the top). The slice at z=47.51 is 2.5 mm below the top, so the outer diameter should be slightly less than 60 mm, but let's calculate exactly:
+
+The cone goes from z=20 to z=50 (30 mm height), with outer diameter going from 10 mm to 60 mm. So the diameter increases by 50 mm over 30 mm height, or 50/30 = 5/3 mm per mm height.
+
+At z=47.51 (which is 27.51 mm above z=20), the outer diameter should be:
+10 + (5/3) * 27.51 = 10 + 45.85 = 55.85 mm
+
+The report shows 55.79 mm, which is very close (0.06 mm difference), likely due to rounding in the report.
+
+But wait - the report says "body sizes (X x Y x Z): 60.00 x 60.00 x 50.01" which means the bounding box is 60 mm in X and Y, so the outer diameter at the top should be 60 mm. And the slice at z=47.51 shows 55.79 mm, which is correct for that height.
+
+The real issue is that the report says "SOLID: 2 separate bodies". This is a problem because the spout and cone should be connected as one solid body. The issue is that the cone starts at z=20, but the spout ends at z=20, and there might be a tiny gap due to the +0.01 and -0.01 offsets.
+
+Let me check the spout and cone connection:
+- Spout: cylinder from z=0 to z=20+0.01 = z=20.01
+- Cone: starts at z=20, but the difference operation has the outer cone from z=20 to z=20+30+0.01 = z=50.01, and the inner cone from z=20-0.01 = z=19.99 to z=20+0.02 = z=20.02
+
+The problem is that the cone's inner cylinder starts at z=19.99, which goes below the spout's top, but the spout's inner cylinder goes to z=20.02. This should connect properly.
+
+Actually, the "2 separate bodies" warning is likely because the spout and cone are not properly merged. In OpenSCAD, when you do `spout(); cone();`, if they don't share a common face (due to floating point precision), OpenSCAD may treat them as separate bodies.
+
+The fix is to ensure the cone and spout are properly unioned. Since we're using difference() inside each module, and then just calling them, we need to make sure they are combined with union().
+
+But wait - the report says "SOLID: 2 separate bodies, watertight (valid solid)". This means each part is watertight, but they're not connected. The issue is that the spout's top face (at z=20.01) and the cone's bottom face (at z=20) don't perfectly overlap due to the 0.01 offsets.
+
+Let me adjust the offsets to ensure they connect:
+- Spout: cylinder from z=0 to z=20 (no need for +0.01 in height, just make it exactly 20)
+- Cone: start at z=20, and make sure the inner cylinder starts at z=20-0.01 to ensure it cuts through the spout's top.
+
+Actually, the standard practice is to make cutting objects extend 0.1 mm past the faces they cut. Let me revise:
+
+For the spout:
+- Outer cylinder: h = 20
+- Inner cylinder: h = 20 + 0.1
+
+For the cone:
+- Outer cylinder: h = 30
+- Inner cylinder: h = 30 + 0.1, starting at z = 20 - 0.01
+
+But the main issue is the "2 separate bodies". To fix this, I'll use union() to explicitly combine the spout and cone.
+
+```openscad
+// Lab Funnel Design
+// Wall thickness: 1.6 mm
+// Spout: 10 mm outer diameter, 20 mm tall (z = 0 to z = 20)
+// Cone: 10 mm outer diameter at z = 20, 60 mm outer diameter at z = 50
+
+$fn = 64;
+
+wall_thickness = 1.6;
+spout_height = 20;
+spout_outer_diameter = 10;
+spout_inner_diameter = spout_outer_diameter - 2 * wall_thickness;
+cone_height = 30; // from z=20 to z=50
+cone_top_outer_diameter = spout_outer_diameter;
+cone_bottom_outer_diameter = 60;
+cone_top_inner_diameter = spout_inner_diameter;
+cone_bottom_inner_diameter = cone_bottom_outer_diameter - 2 * wall_thickness;
+
+// Spout (cylinder with hole)
+module spout() {
+    difference() {
+        cylinder(h = spout_height, d = spout_outer_diameter, center = false);
+        translate([0, 0, -0.1]) 
+            cylinder(h = spout_height + 0.2, d = spout_inner_diameter, center = false);
+    }
+}
+
+// Cone (frustum with hole)
+module cone() {
+    translate([0, 0, spout_height]) {
+        difference() {
+            // Outer cone
+            cylinder(h = cone_height, 
+                     r1 = cone_top_outer_diameter / 2, 
+                     r2 = cone_bottom_outer_diameter / 2, 
+                     center = false);
+            // Inner cone (with correct wall thickness)
+            translate([0, 0, -0.1]) 
+                cylinder(h = cone_height + 0.2, 
+                         r1 = cone_top_inner_diameter / 2, 
+                         r2 = cone_bottom_inner_diameter / 2, 
+                         center = false);
+        }
+    }
+}
+
+// Build the funnel as a single union
+union() {
+    spout();
+    cone();
+}
+```

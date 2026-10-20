@@ -1,0 +1,33 @@
+$fn = 64;
+
+// Dimensions
+OUTER_X = 90;
+OUTER_Y = 90;
+TOP_Z = 2;
+WALL_THICK = 2.5;
+WALL_H = 40;
+PITCH = 71.5;
+HOLE_R = 2.25;
+NOTCH_W = 12;
+NOTCH_H = 8;
+NOTCH_Z_START = 32;
+
+difference() {
+    // Outer solid box
+    cube([OUTER_X, OUTER_Y, WALL_H]);
+    
+    // Inner hollow void
+    translate([WALL_THICK, WALL_THICK, TOP_Z]) 
+        cube([OUTER_X - 2*WALL_THICK, OUTER_Y - 2*WALL_THICK, WALL_H - TOP_Z + 0.01]);
+        
+    // Screw holes
+    for (x = [-PITCH/2, PITCH/2]) {
+        for (y = [-PITCH/2, PITCH/2]) {
+            translate([x, y, 2]) cylinder(r=HOLE_R, h=2.01);
+        }
+    }
+    
+    // Cable notch
+    translate([-NOTCH_W/2, 45 - WALL_THICK, NOTCH_Z_START]) 
+        cube([NOTCH_W, WALL_THICK + 0.01, NOTCH_H + 0.01]);
+}

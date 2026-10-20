@@ -1,0 +1,70 @@
+// Parameters (mm)
+thickness_top = 2;               // top plate thickness
+wall_thickness = 2.5;            // wall thickness
+height_total   = 40;              // overall height (from bed to open edge)
+outer_size    = 90;               // outer X and Y dimensions
+hole_dia      = 4.5;              // M4 screw hole diameter
+hole_pattern  = 71.5;            // spacing of the four mounting holes (square pattern)
+cable_notch_width = 12;          // width of cable notch
+cable_notch_depth = 8;           // depth of notch down from open edge (z = 32 → 40)
+cable_notch_extra = 0.02;        // extra material to ensure cut is not coplanar
+cut_extra = 0.1;                 // generic extra for all cutting bodies
+
+$fn = 64;                         // smoothness for cylinders & circles
+
+// ---------- Helper modules ----------
+module top_plate() {
+    // 90 × 90 mm plate, centered, thickness 2 mm
+    translate([-outer_size/2, -outer_size/2, 0])
+        cube([outer_size, outer_size, thickness_top]);
+}
+
+module walls() {
+    // Outer box (from top plate up to full height)
+    outer_h = height_total - thickness_top;
+    translate([-outer_size/2, -outer_size/2, thickness_top])
+        cube([outer_size, outer_size, outer_h + cut_extra]); // extend a bit beyond top
+
+    // Inner cavity to be removed (slightly larger to avoid coplanar faces)
+    inner_size = outer_size - 2*wall_thickness;
+    translate([-inner_size/2, -inner_size/2, thickness_top])
+        cube([inner_size, inner_size, outer_h + cut_extra]);
+}
+
+// ---------- Main solid ----------
+module housing() {
+    // Union of top plate and walls, then subtract inner cavity, holes and cable notch
+    union() {
+        top_plate();
+        // Build walls as a thick shell (outer minus inner)
+        difference() {
+            // outer shell
+            translate([-outer_size/2, -outer_size/2, thickness_top])
+                cube([outer_size, outer_size, height_total - thickness_top + cut_extra]);
+            // inner cavity (slightly larger)
+            translate([-(outer_size-2*wall_thickness)/2, -(outer_size-2*wall_thickness)/2,
+                      thickness_top - cut_extra])
+                cube([outer_size-2*wall_thickness, outer_size-2*wall_thickness,
+                      height_total - thickness_top + 2*cut_extra]);
+        }
+    }
+
+    // Subtract mounting holes (through the whole part)
+    for (dx = [-hole_pattern/2, hole_pattern/2])
+        for (dy = [-hole_pattern/2, hole_pattern/2])
+            translate([dx, dy, -cut_extra])
+                cylinder(h = height_total + 2*cut_extra, r = hole_dia/2, center = false);
+    
+    // Subtract cable notch from the front wall (y = +outer_size/2)
+    // Notch dimensions: width × depth × height
+    // depth = wall_thickness + extra, height = cable_notch_depth + extra
+    translate([-cable_notch_width/2,
+              outer_size/2 - wall_thickness - cable_notch_extra,
+              height_total - cable_notch_depth - cut_extra])
+        cube([cable_notch_width,
+              wall_thickness + 2*cable_notch_extra,
+              cable_notch_depth + 2*cut_extra]);
+}
+
+// ---------- Render ----------
+housing();

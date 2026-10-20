@@ -1,0 +1,54 @@
+// Sowing template for 90 mm Petri dish
+// Flat disc, 85 mm diameter, 2 mm thick
+// 7x7 grid of 3 mm diameter through-holes, 9 mm centre-to-centre spacing
+// Orientation notch: 10 mm wide (X), 4 mm deep (Y) on +Y side
+
+// Dimensions
+disk_diameter = 85;
+disk_thickness = 2;
+hole_diameter = 3;
+hole_spacing = 9;
+grid_size = 7;
+notch_width = 10;
+notch_depth = 4;
+
+// Create the base disc
+disk = cylinder(d = disk_diameter, h = disk_thickness, $fn = 64);
+
+// Create the grid of holes
+hole_positions = [
+  for (i = [0 : grid_size - 1]) 
+    for (j = [0 : grid_size - 1]) 
+      [i * hole_spacing - (grid_size - 1) * hole_spacing / 2, j * hole_spacing - (grid_size - 1) * hole_spacing / 2]
+];
+
+// Create the holes
+holes = [
+  for (pos = hole_positions) 
+    translate([pos[0], pos[1], 0]) 
+      cylinder(d = hole_diameter, h = disk_thickness + 0.02, $fn = 64)
+];
+
+// Create the orientation notch
+notch = translate([
+  -(notch_width / 2),
+  disk_diameter / 2 - notch_depth - 0.01,
+  0
+]) 
+  cube([notch_width, notch_depth + 0.02, disk_thickness + 0.02]);
+
+// Combine all parts
+assembly = union() {
+  disk;
+  difference() {
+    union() {
+      for (h = holes) {
+        h;
+      }
+    }
+    notch;
+  }
+}
+
+// Render the final part
+assembly;

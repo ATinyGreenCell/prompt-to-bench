@@ -1,0 +1,46 @@
+$fn = 64;
+
+// Dimensions
+outer_width = 90;
+outer_height = 90;
+total_height = 40;
+plate_thickness = 2;
+wall_thickness = 2.5;
+hole_diameter = 4.5;
+hole_pattern_size = 71.5;
+notch_width = 12;
+notch_depth = 8;
+
+// Calculated positions
+half_outer = outer_width / 2;
+half_inner = (outer_width - 2 * wall_thickness) / 2;
+hole_offset = hole_pattern_size / 2;
+notch_center_y = half_outer - wall_thickness / 2;
+notch_center_z = total_height - notch_depth / 2;
+
+difference() {
+    // Main Body
+    translate([0, 0, total_height / 2])
+        cube([outer_width, outer_height, total_height]);
+
+    // Inner Cavity Cut
+    // Extends past Z=2 (plate) and Z=40 (open top)
+    // Extends past X=±42.5 and Y=±42.5 (inner walls)
+    translate([0, 0, 1.99])
+        cube([outer_width - 2 * wall_thickness + 0.02, 
+              outer_height - 2 * wall_thickness + 0.02, 
+              total_height - 2 + 0.02]);
+
+    // Screw Holes
+    for(i = [-1, 1], j = [-1, 1]) {
+        translate([i * hole_offset, j * hole_offset, 1])
+            cylinder(d = hole_diameter, h = plate_thickness + 0.02);
+    }
+
+    // Cable Notch Cut
+    // Located in the front wall (Y = +42.5 to +45)
+    // Centred along the wall (X = 0)
+    // Depth 8mm from open edge (Z = 32 to 40)
+    translate([0, notch_center_y, notch_center_z])
+        cube([notch_width + 0.02, wall_thickness + 0.02, notch_depth + 0.02]);
+}

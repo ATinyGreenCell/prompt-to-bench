@@ -1,0 +1,64 @@
+// Dimensions for 50 mL Falcon Tubes Rack
+// Units: mm
+
+// Plate Dimensions
+plate_x = 130;
+plate_y = 90;
+plate_z = 4;
+
+// Hole Dimensions
+hole_diameter = 30.5;
+hole_spacing_x = 40;
+hole_spacing_y = 40;
+
+// Wall Dimensions
+wall_thickness = 4;
+wall_height = 70;
+
+// Derived Positions
+hole_offset_x = hole_spacing_x / 2;
+hole_offset_y = hole_spacing_y / 2;
+
+// Render
+$fn = 64;
+
+// Main Body
+module rack_body() {
+    union() {
+        // Base Plate
+        cube([plate_x, plate_y, plate_z], center=true);
+        
+        // Walls
+        // Left Wall
+        translate([-plate_x/2, 0, plate_z/2])
+            cube([plate_z, plate_y, wall_height], center=true);
+            
+        // Right Wall
+        translate([plate_x/2, 0, plate_z/2])
+            cube([plate_z, plate_y, wall_height], center=true);
+    }
+}
+
+// Cutouts
+module cutouts() {
+    // Calculate grid positions
+    // Row 1 (y = -40)
+    translate([0, -hole_offset_y, 0])
+        for (i = [-1, 0, 1]) {
+            translate([i * hole_spacing_x, 0, 0])
+                cylinder(d = hole_diameter, h = plate_z + 1, center=true);
+        }
+    
+    // Row 2 (y = +40)
+    translate([0, hole_offset_y, 0])
+        for (i = [-1, 0, 1]) {
+            translate([i * hole_spacing_x, 0, 0])
+                cylinder(d = hole_diameter, h = plate_z + 1, center=true);
+        }
+}
+
+// Assembly
+difference() {
+    rack_body();
+    cutouts();
+}

@@ -1,0 +1,42 @@
+```openscad
+// Parameters (all in mm)
+disc_diameter   = 85;          // Overall disc diameter
+disc_thickness  = 2;           // Disc thickness
+hole_diameter   = 3;           // Diameter of each through‑hole
+hole_spacing    = 9;           // Centre‑to‑centre spacing of the hole grid
+grid_count      = 7;           // Number of holes along X and Y (odd → centered)
+notch_width     = 10;          // Width of orientation notch (X direction)
+notch_depth     = 4;           // Depth of notch into the rim (Y direction)
+cut_extra       = 0.5;         // Extra material removed beyond faces (to avoid coplanar)
+$fn = 64;                     // Resolution for circles and cylinders
+
+// Derived values
+disc_radius = disc_diameter/2;
+hole_radius = hole_diameter/2;
+grid_half  = floor(grid_count/2);   // e.g. 3 for a 7×7 grid
+
+// Main model
+difference() {
+    // --- Disc (solid) -------------------------------------------------
+    cylinder(h = disc_thickness,
+             r = disc_radius,
+             center = false);
+
+    // --- Notch (rectangular cut) --------------------------------------
+    translate([0,
+               disc_radius - notch_depth/2,
+               -cut_extra])
+        linear_extrude(height = disc_thickness + 2*cut_extra)
+            square([notch_width, notch_depth], center = true);
+
+    // --- Through‑holes (cylindrical cuts) -------------------------------
+    for (i = -grid_half; i <= grid_half; i = i + 1)
+        for (j = -grid_half; j <= grid_half; j = j + 1)
+            translate([i*hole_spacing,
+                       j*hole_spacing,
+                       -cut_extra])
+                cylinder(h = disc_thickness + 2*cut_extra,
+                         r = hole_radius,
+                         center = false);
+}
+```

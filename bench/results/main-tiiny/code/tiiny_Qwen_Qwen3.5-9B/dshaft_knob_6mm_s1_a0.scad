@@ -1,0 +1,141 @@
+$fn = 128;
+
+// --- Dimensions ---
+// Shaft diameter (for reference)
+$shaft_diameter = 6;
+
+// Knob overall dimensions
+$knob_diameter = 30;
+$knob_height = 15;
+
+// D-shaft bore dimensions
+// Total depth of bore
+$bore_depth = 12;
+// Diameter of the circular part of the bore
+$bore_circle_diameter = 6.2;
+// Distance from the flat side of the D to the opposite side (chord length)
+$bore_flat_to_edge = 4.7;
+
+// Grip grooves dimensions
+$groove_count = 18;
+$groove_diameter = 2;
+$groove_height = $knob_height; // Full height
+
+// Top pointer groove dimensions
+$pointer_width = 1.5;
+$pointer_depth = 1;
+$pointer_radius = $pointer_width / 2;
+
+// --- Variables for D-shape calculation ---
+// Calculate the radius of the full circle based on the diameter
+$bore_circle_radius = $bore_circle_diameter / 2;
+
+// Calculate the offset of the flat side from the center of the circle.
+// Distance from center to the flat side = Radius - (Flat_to_edge / 2)
+$bore_flat_offset = ($bore_circle_radius - ($bore_flat_to_edge / 2));
+
+// --- Main Construction ---
+
+module knob() {
+    // 1. Create the main cylinder body
+    difference() {
+        // Base Cylinder
+        cylinder(
+            h = $knob_height,
+            r = $knob_diameter / 2,
+            center = true
+        );
+
+        // 2. Cut the D-shaped blind bore
+        // We translate the hole to the correct position on the Z axis
+        translate([0, 0, -$bore_depth]) {
+            difference() {
+                // The full circular hole
+                cylinder(
+                    h = $bore_depth + 0.1, // Extend slightly past bottom to ensure clean cut
+                    r = $bore_circle_radius,
+                    center = true
+                );
+
+                // The flat side of the D-shape
+                // This is a rectangular prism cut into the cylinder
+                translate([0, $bore_flat_offset, 0]) {
+                    // Extend slightly past top and bottom
+                    cube([
+                        $bore_circle_diameter, 
+                        $bore_depth + 0.1, 
+                        $bore_circle_diameter 
+                    ]);
+                }
+            }
+        }
+
+        // 3. Cut the 18 vertical grip grooves
+        // These are half-cylinders centered on the outer surface
+        for (i = [0 : $groove_count - 1]) {
+            angle = (i / $groove_count) * 360;
+            translate([0, 0, 0]) {
+                rotate([0, 0, angle]) {
+                    // Create a half-cylinder groove
+                    // Radius of the half-cylinder is half the groove diameter
+                    r_groove = $groove_diameter / 2;
+                    
+                    difference() {
+                        // The full cylinder that defines the groove volume
+                        cylinder(
+                            h = $groove_height,
+                            r = r_groove,
+                            center = true
+                        );
+                        
+                        // The flat face of the half-cylinder (to make it a half-cylinder)
+                        // This face is on the inside of the knob
+                        translate([r_groove, 0, 0]) {
+                            cube([
+                                2 * r_groove, // Width covers the diameter
+                                $groove_height,
+                                $knob_diameter // Length covers the full knob height
+                            ]);
+                        }
+                    }
+                }
+            }
+        }
+
+        // 4. Cut the top pointer groove
+        // Runs from center to edge, 1.5mm wide, 1mm deep
+        // Located on the same side as the flat of the D (positive Y side relative to the D cut)
+        translate([0, 0, $knob_height - $pointer_depth]) {
+            difference() {
+                // The block to remove: A cylinder segment or a swept shape
+                // We can model this as a cylinder of width $pointer_width and depth $pointer_depth
+                // centered at the top face, extending downwards.
+                
+                // Since it's a groove on the surface, we subtract a cylinder 
+                // that is $pointer_width wide and $pointer_depth deep.
+                
+                // Position: Centered at X=0, Y=$pointer_radius (edge of knob), Z at top surface
+                // Actually, let's define the volume to remove directly.
+                // It is a cylinder of diameter $pointer_width, height $pointer_depth.
+                // Its center is at Y = $knob_diameter/2 - $pointer_radius.
+                
+                translate([
+                    0, 
+                    ($knob_diameter / 2) - $pointer_radius, 
+                    $knob_height - $pointer_depth
+                ]) {
+                    cylinder(
+                        h = $pointer_depth,
+                        r = $pointer_radius,
+                        center = true
+                    );
+                }
+            }
+        }
+    }
+}
+
+// Render the knob centered on the origin
+translate([0, 0, 0]) {
+    knob();
+}

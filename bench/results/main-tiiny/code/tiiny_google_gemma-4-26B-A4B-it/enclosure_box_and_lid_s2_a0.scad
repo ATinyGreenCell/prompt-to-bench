@@ -1,0 +1,117 @@
+// --- Dimensions: Box ---
+box_width = 70;          // Outer width (X)
+box_depth = 50;          // Outer depth (Y)
+box_height = 30;        // Outer height (Z)
+box_wall_thick = 2;      // Wall thickness
+box_floor_thick = 2;     // Floor thickness
+
+// --- Dimensions: Lid ---
+lid_plate_w = 70;        // Plate width (X)
+lid_plate_d = 50;        // Plate depth (Y)
+lid_plate_h = 2;         // Plate thickness (Z)
+lid_lip_w = 65.6;        // Lip outer width (X)
+lid_lip_d = 45.6;        // Lip outer depth (Y)
+lid_lip_h = 4;           // Lip height (Z)
+lid_lip_thick = 1.5;     // Lip wall thickness
+
+// --- Layout ---
+gap = 10;                // Gap between parts on print bed
+$fn = 64;                // Smoothness for curves
+
+// --- Part 1: The Box ---
+// Positioned at origin (centered on X/Y)
+translate(0, 0, 0) {
+    difference() {
+        // Main outer body
+        cube([box_width, box_depth, box_height], center = true);
+        
+        // Hollow interior
+        // We subtract a slightly larger cube to ensure clean cuts
+        translate([0, 0, box_floor_thick])
+            cube([box_width - 2*box_wall_thick + 0.1, 
+                  box_depth - 2*box_wall_thick + 0.1, 
+                  box_height], center = true);
+    }
+}
+
+// --- Part 2: The Lid ---
+// Printed upside down (Z=0 is the top surface of the lip)
+// Placed on the +X side of the box with a gap
+translate(box_width + gap, 0, 0) {
+    // We rotate 180 on X so the plate sits on the bed (Z=0)
+    // and the lip grows upwards from the plate.
+    // However, the prompt says "printed upside down: a plate... lying on the bed"
+    // This implies the plate is the bottom layer.
+    
+    union() {
+        // The Plate (Base of the lid)
+        cube([lid_plate_w, lid_plate_d, lid_plate_h], center = true);
+        
+        // The Lip (The part that slides into the box)
+        // To print "upside down" with the plate on the bed, 
+        // the lip must be built on top of the plate.
+        // If the user meant the lip is the part touching the bed, 
+        // they would have said "lip on the bed". 
+        // "A plate... lying on the bed, with a rectangular lip on top of it"
+        // means Plate is Z=0 to Z=2, Lip is Z=2 to Z=6.
+        
+        translate([0, 0, lid_plate_h/2 + lid_lip_h/2])
+        difference() {
+            // Outer volume of the lip
+            cube([lid_lip_w, lid_lip_d, lid_lip_h], center = true);
+            
+            // Inner hollow of the lip
+            cube([lid_lip_w - 2*lid_lip_thick, 
+                  lid_lip_d - 2*lid_lip_thick, 
+                  lid_lip_h + 0.1], center = true);
+        }
+    }
+}
+
+// Note on orientation: 
+// The box is centered at 0,0,0. 
+// The lid is translated to (box_width + gap, 0, 0).
+// To ensure the box sits on the bed (Z=0), we must adjust the box translation.
+// Since the box is centered at 0,0,0, the bottom is at -box_height/2.
+// Let's fix the box position so it rests on Z=0.
+
+// RE-CALCULATING BOX POSITION FOR Z=0 BASE
+// (The code above is the logic, here is the corrected final assembly)
+
+/* 
+   Final Assembly Logic:
+   Box: 
+     Base at Z=0. 
+     Center at (0, 0, box_height/2)
+   Lid:
+     Base at Z=0.
+     Center at (box_width + gap, 0, lid_plate_h/2 + lid_lip_h/2)
+*/
+
+// --- RE-WRITTEN ASSEMBLY FOR CORRECT PRINTING ---
+
+// 1. The Box
+translate(0, 0, box_height/2)
+difference() {
+    cube([box_width, box_depth, box_height], center = true);
+    translate([0, 0, box_floor_thick])
+        cube([box_width - 2*box_wall_thick + 0.1, 
+              box_depth - 2*box_wall_thick + 0.1, 
+              box_height], center = true);
+}
+
+// 2. The Lid
+translate(box_width + gap, 0, (lid_plate_h + lid_lip_h)/2)
+union() {
+    // Plate
+    translate([0, 0, -lid_lip_h/2])
+        cube([lid_plate_w, lid_plate_d, lid_plate_h], center = true);
+    
+    // Lip
+    difference() {
+        cube([lid_lip_w, lid_lip_d, lid_lip_h], center = true);
+        cube([lid_lip_w - 2*lid_lip_thick, 
+              lid_lip_d - 2*lid_lip_thick, 
+              lid_lip_h + 0.1], center = true);
+    }
+}

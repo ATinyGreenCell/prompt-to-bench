@@ -167,10 +167,19 @@ def harness_cases():
         if r["task"] == "tube_rack_1p5ml":
             r["needs_rerun"] = True
     open(res, "w").writelines(json.dumps(r) + "\n" for r in recs)
+    code = os.path.join(run_dir, "code", "fake_1")
+    shutil.copy(os.path.join(code, "tube_rack_1p5ml_s0_a0.scad"), os.path.join(code, "tube_rack_1p5ml_s0_a2.scad"))
     run(base, [good])
     tube = [json.loads(line) for line in open(res) if '"tube_rack_1p5ml"' in line]
     check("needs_rerun conversation is redone on resume",
           not Fake.script and len(tube) == 2 and not tube[-1].get("needs_rerun"), str([len(tube), Fake.script[:1]]))
+    kept = sorted(os.listdir(os.path.join(code, "superseded"))) if os.path.isdir(os.path.join(code, "superseded")) else []
+    old = sorted(os.listdir(os.path.join(code, "superseded", kept[0]))) if kept else []
+    check("a redone conversation's old files are moved aside, and no stale later attempt stays",
+          kept == [tube[0]["finished"].replace("-", "").replace(":", "").replace("T", "")]
+          and "tube_rack_1p5ml_s0_a0.scad" in old and "tube_rack_1p5ml_s0_a2.scad" in old
+          and not os.path.exists(os.path.join(code, "tube_rack_1p5ml_s0_a2.scad"))
+          and os.path.exists(os.path.join(code, "tube_rack_1p5ml_s0_a0.scad")), str([kept, old]))
     # 2c: a model whose tasks are all done is skipped without asking the server for it (it may be deleted)
     def gone(m, wait_s=0):
         raise SystemExit(f"model {m!r} is not installed")
@@ -656,6 +665,68 @@ def rescore_analyze_edges():
         shutil.rmtree(tmp)
 
 
+# ------------------------------------------------------------------ readers behind the §6.4 tables, box redaction
+def stats_redact_edges():
+    import sample_stats
+    tmp = tempfile.mkdtemp()
+    old = sample_stats.HERE
+    sample_stats.HERE = tmp
+    try:
+        def rec(task, s, fin, **kw):
+            return json.dumps({"model": "m", "task": task, "sample": s, "attempts": [], "finished": fin, **kw})
+        for d in ("two", "two-g0", "two-gemma"):
+            os.makedirs(os.path.join(tmp, "results", d))
+        passed_twice = [{"attempt": 0, "passed": False}, {"attempt": 1, "passed": True}, {"attempt": 2, "passed": True}]
+        with open(os.path.join(tmp, "results", "two", "results.jsonl"), "w") as fh:
+            fh.write("\n".join([rec("a", 0, "2026-10-19T11:00:00", passed=True),   # redone: the newer record wins
+                                rec("a", 0, "2026-10-19T10:00:00", passed=False),  # even when it comes first
+                                rec("b", 0, "2026-10-19T10:00:00", needs_rerun=True),  # flagged: left out
+                                rec("c", 0, "2026-10-19T13:00:00", needs_rerun=True),  # flagged here; g0's stays
+                                rec("a", 1, "2026-10-19T09:00:00"), "",
+                                '{"model": "m", "task": "d", "sample": 0, "attem',  # half-written line: skipped
+                                "[]", json.dumps({"model": "m", "task": "e", "attempts": []}),  # not records
+                                rec("f", 0, "2026-10-19T09:00:00", attempts=passed_twice)]) + "\n")
+        with open(os.path.join(tmp, "results", "two-g0", "results.jsonl"), "w") as fh:
+            fh.write(rec("c", 0, "2026-10-19T12:00:00") + "\n")
+        with open(os.path.join(tmp, "results", "two-gemma", "results.jsonl"), "w") as fh:  # another run, not a split
+            fh.write(rec("g", 0, "2026-10-19T12:00:00") + "\n")
+        rows = sample_stats.rows_for("two")
+        got = sorted((r["task"], r["sample"], r.get("passed"), len(r["attempts"])) for r in rows)
+        check("sample_stats: newest record per conversation, flagged and damaged ones left out, split folders read, "
+              "attempts after a (rescored) pass dropped, another run's folder ignored",
+              got == [("a", 0, True, 0), ("a", 1, None, 0), ("c", 0, None, 0), ("f", 0, None, 2)], str(got))
+    finally:
+        sample_stats.HERE = old
+        shutil.rmtree(tmp)
+    sys.path.insert(0, os.path.join(ROOT, "meta"))
+    import redact_results as R
+    home = "/home/someone"
+    pats = R.patterns(home)
+    box = {"tiiny_status": "Device: 192.168.0.10\nConnected: True\n", "load": {"npu_mb": 16170.0},
+           "bridge": "http://127.0.0.1:11435", "harness": {"path": home + "/tiny/x"}, "tags": [{"version": 20260907}],
+           "note": "  kept as written ", "other": home + "else/x and " + home + ".bak", "public": "8.8.8.8",
+           "cgnat": "100.64.1.2 and 169.254.3.4", home + "/k": "key", "bare": home,
+           "nested": "/data" + home + "/x", "url": "file://" + home + "/x"}
+    out = R.walk(box, pats)
+    check("redact_results: private IPs (CGNAT, link-local too), home paths and keys redacted; whitespace, numbers, "
+          "localhost, public addresses and lookalike paths kept; idempotent",
+          out["tiiny_status"] == "Device: [private-ip]\nConnected: True\n" and out["load"] == {"npu_mb": 16170.0}
+          and out["bridge"] == "http://127.0.0.1:11435" and out["harness"]["path"] == "~/tiny/x"
+          and out["tags"] == [{"version": 20260907}] and out["note"] == "  kept as written "
+          and out["other"] == box["other"] and out["public"] == "8.8.8.8"
+          and out["cgnat"] == "[private-ip] and [private-ip]" and out.get("~/k") == "key" and out["bare"] == "~"
+          and out["nested"] == box["nested"] and out["url"] == "file://~/x"
+          and R.walk(out, pats) == out, str(out))
+    check("redact_results: HOME=/ or empty never rewrites paths",
+          R.walk({"p": "/usr/bin/x"}, R.patterns("/")) == {"p": "/usr/bin/x"}
+          and R.walk({"p": "/usr/bin/x"}, R.patterns("")) == {"p": "/usr/bin/x"})
+    try:
+        R.walk({"10.0.0.1": 1, "10.0.0.2": 2}, pats)
+        check("redact_results: keys that redact alike are an error, not a lost value", False)
+    except ValueError:
+        check("redact_results: keys that redact alike are an error, not a lost value", True)
+
+
 def tool_edges():
     env = {**os.environ, "OPENSCAD": "/nonexistent/openscad", "PRUSASLICER": "/nonexistent/prusa-slicer"}
     for script, want in (("slice_library.py", "PrusaSlicer command not found"), ("render_designs.py", "OpenSCAD not found")):
@@ -703,6 +774,7 @@ if __name__ == "__main__":
     harness_edges()
     ollama_edges()
     rescore_analyze_edges()
+    stats_redact_edges()
     tool_edges()
     print(f"\n{'ALL PASS' if not FAILS else str(len(FAILS)) + ' FAILED: ' + ', '.join(FAILS)}")
     sys.exit(1 if FAILS else 0)

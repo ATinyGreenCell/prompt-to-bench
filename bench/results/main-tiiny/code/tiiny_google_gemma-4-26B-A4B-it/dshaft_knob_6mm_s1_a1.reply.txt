@@ -1,0 +1,83 @@
+```openscad
+// --- Parameters ---
+// Knob Dimensions
+knob_diameter = 30.0;          // Total diameter of the knob
+knob_height = 15.0;            // Total height of the knob
+
+// D-Shaft Bore (Blind Bore)
+bore_circle_dia = 6.2;         // Diameter of the circular part of the D-bore
+bore_flat_width = 4.7;         // Distance from flat to opposite side
+bore_depth = 12.0;             // How deep the D-bore goes into the knob
+
+// Grip Grooves
+num_grooves = 18;              // Number of vertical grooves
+groove_dia = 2.0;              // Diameter of the half-cylinder groove
+
+// Pointer Groove (Top Face)
+pointer_width = 1.5;           // Width of the pointer groove
+pointer_depth = 1.0;           // Depth of the pointer groove
+
+// Resolution
+fn_val = 64;                   // Smoothness for cylinders
+
+// --- Calculations ---
+knob_radius = knob_diameter / 2;
+bore_radius = bore_circle_dia / 2;
+groove_radius = groove_dia / 2;
+
+// To create a D-shape: 
+// We take a cylinder of bore_radius and subtract a cylinder of the same radius 
+// that is offset so that its edge is at the desired flat position.
+// The distance from center to the flat is bore_flat_width / 2.
+// The offset required for the subtraction cylinder is: 
+// offset = bore_radius - (bore_flat_width / 2)
+bore_offset = bore_radius - (bore_flat_width / 2);
+
+// --- Main Model ---
+
+difference() {
+    // 1. Main Knob Body
+    cylinder(h = knob_height, d = knob_diameter, $fn = fn_val);
+
+    // 2. D-Shaft Blind Bore
+    // We use a union of two cylinders to create the D-shape, then subtract it.
+    // However, it's cleaner to define the D-shape as a single object to subtract.
+    translate([0, 0, -0.01]) {
+        difference() {
+            // The main circular part of the bore
+            cylinder(h = bore_depth + 0.01, d = bore_circle_dia, $fn = fn_val);
+            
+            // The subtraction cylinder that creates the flat side
+            // We offset it so the edge of the subtraction cylinder is at the flat position
+            translate([bore_offset, 0, -0.01])
+                cylinder(h = bore_depth + 0.02, d = bore_circle_dia, $fn = fn_val);
+        }
+    }
+
+    // 3. Vertical Grip Grooves
+    // 18 evenly spaced vertical grooves around the outer surface
+    for (i = [0 : num_grooves - 1]) {
+        angle = i * (360 / num_grooves);
+        rotate([0, 0, angle])
+            translate([knob_radius, 0, 0])
+                // We use a cylinder of diameter 2mm, centered on the surface.
+                // Since it's a half-cylinder, we use a cylinder and subtract the part outside.
+                // But the prompt says "2mm diameter half-cylinder centred on the outer surface".
+                // This means the center of the 2mm cylinder lies on the circumference.
+                cylinder(h = knob_height + 2, d = groove_dia, $fn = fn_val);
+    }
+
+    // 4. Pointer Groove (Top Face)
+    // 1.5mm wide, 1mm deep, from center to outer edge, on the same side as the flat.
+    // The flat is at x = -2.35 (if we used the subtraction logic above).
+    // To align with the "flat side", we rotate the pointer to the negative X axis.
+    rotate([0, 0, 180]) // Align with the flat side
+    translate([0, -pointer_width / 2, knob_height - pointer_depth])
+        cube([knob_radius + 1, pointer_width, pointer_depth + 0.01]);
+}
+
+// Note on Grip Grooves: 
+// The cylinder in the loop is centered on the edge. 
+// Because it's a difference() operation, the part of the cylinder 
+// inside the knob is removed, creating the groove.
+```

@@ -1,0 +1,62 @@
+Looking at the measurement report and comparing with the specification:
+
+1. **Thickness issue**: The report shows Z from -0.75 to 1.50 (total 2.25mm), but specification requires 1.5mm thickness. This indicates the cube() calls are centered, so the Z extent is ±thickness/2, but the lowest point should be at z=0 (bed level), not z=-0.75.
+
+2. **Y position issue**: The report shows Y from -18.00 to 6.00 (size 24.00mm). Let's verify:
+   - Spine is 12mm wide, centered at Y=0, so spine goes from Y=-6 to Y=+6
+   - Teeth are 12mm long and hang in -Y direction from the spine edge (which is at Y=-6), so teeth should go from Y=-6 to Y=-18
+   - So total Y range should be -18 to +6, which matches the report ✓
+
+3. **X position issue**: Report shows X from -35 to +35 (size 70mm), which matches spine_length=70mm ✓
+
+4. **Critical issue**: The report shows the part's lowest point at z=-0.75, but it should start at z=0 (bed level). This means the cubes are being centered at Z=0, but we need them positioned so the bottom is at z=0.
+
+The problem is in how I'm using `center=true` in cube() calls. When I use `center=true`, the cube is centered at the origin, so for thickness=1.5, it goes from z=-0.75 to z=0.75. But the spine should go from z=0 to z=1.5.
+
+I need to:
+- Position the spine with z=0 as the bottom (so translate to [0, 0, thickness/2] with center=true, or use center=false with z=0)
+- Position the teeth with z=0 as the bottom (so they should be at z=0 to z=thickness)
+
+Let me rewrite with proper Z positioning.
+
+```openscad
+// 10-well comb for agarose gel casting
+// Print orientation: flat on XY plane, Z = 0
+
+$fn = 64;
+
+// Dimensions
+thickness = 1.5;        // Z thickness (mm)
+spine_length = 70;      // X length of spine (mm)
+spine_width = 12;       // Y width of spine (mm)
+tooth_width = 5.0;      // X width of each tooth (mm)
+tooth_length = 12;      // Y length of each tooth (mm)
+gap_width = 1.5;        // X gap between neighbouring teeth (mm)
+num_teeth = 10;         // number of teeth
+
+// Calculate total width of teeth + gaps
+total_tooth_width = num_teeth * tooth_width;
+total_gap_width = (num_teeth - 1) * gap_width;
+teeth_row_width = total_tooth_width + total_gap_width;
+
+// Build the comb - position so bottom is at z=0
+union() {
+    // Spine (back bar) - positioned at z=0 to z=thickness
+    translate([0, 0, thickness/2])
+        cube([spine_length, spine_width, thickness], center = true);
+    
+    // Teeth - positioned at z=0 to z=thickness
+    for (i = [0 : num_teeth - 1]) {
+        // Calculate X position of each tooth
+        // Teeth are centered on the spine, so first tooth starts at:
+        // -teeth_row_width/2 + tooth_width/2
+        x_pos = -teeth_row_width/2 + i * (tooth_width + gap_width) + tooth_width/2;
+        
+        // Position tooth: centered in X, extending from spine edge (-Y direction)
+        // Spine edge is at Y = -spine_width/2 (since spine is centered at Y=0)
+        // Translate to position tooth with bottom at z=0
+        translate([x_pos, -spine_width/2 - tooth_length/2, thickness/2])
+            cube([tooth_width, tooth_length, thickness], center = true);
+    }
+}
+```

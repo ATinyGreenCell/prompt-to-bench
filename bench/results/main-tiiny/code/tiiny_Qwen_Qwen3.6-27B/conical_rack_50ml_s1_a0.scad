@@ -1,0 +1,42 @@
+// Dimensions (mm)
+plate_x = 130;
+plate_y = 90;
+plate_z = 4;
+
+hole_dia = 30.5;
+hole_r = hole_dia / 2;
+
+// Grid layout
+hole_spacing_x = 40;
+hole_spacing_y = 40;
+
+// Walls
+wall_height = 70;
+wall_thickness = 4;
+
+// Quality
+$fn = 64;
+
+// Main plate
+translate([-plate_x/2, -plate_y/2, 0])
+    cube([plate_x, plate_y, plate_z]);
+
+// Walls along the long edges (Y direction edges, i.e., at y = -plate_y/2 and y = plate_y/2)
+// Left wall (at y = -plate_y/2)
+translate([-plate_x/2, -plate_y/2, plate_z])
+    cube([plate_x, wall_thickness, wall_height]);
+
+// Right wall (at y = plate_y/2 - wall_thickness to be flush with edge)
+translate([-plate_x/2, plate_y/2 - wall_thickness, plate_z])
+    cube([plate_x, wall_thickness, wall_height]);
+
+// Holes: 2 rows (Y) x 3 columns (X)
+// Centred on plate
+// X positions: -40, 0, +40
+// Y positions: -20, +20
+for (xi = [-1, 0, 1]) {
+    for (yi = [-1, 1]) {
+        translate([xi * hole_spacing_x, yi * hole_spacing_y, -0.5])
+            cylinder(r = hole_r, h = plate_z + 1, center = true);
+    }
+}

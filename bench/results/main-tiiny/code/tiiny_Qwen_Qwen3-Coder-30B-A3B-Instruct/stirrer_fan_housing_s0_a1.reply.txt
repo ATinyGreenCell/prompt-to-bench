@@ -1,0 +1,57 @@
+```openscad
+// DIY magnetic stirrer housing for 80mm PC case fan
+// Print orientation: upside down, top plate on bed (z=0 to 2)
+
+// Dimensions
+outer_width = 90;      // Outer width of housing
+outer_depth = 90;       // Outer depth of housing
+top_thickness = 2;     // Thickness of top plate
+wall_thickness = 2.5;   // Thickness of side walls
+height = 40;           // Total height of housing
+screw_hole_diameter = 4.5; // M4 screw hole diameter
+screw_pattern = 71.5;    // Square pattern for screw holes
+cable_notch_width = 12;  // Width of cable notch
+cable_notch_depth = 8; // Depth of cable notch
+
+// Main housing block
+housing = union() {
+    // Top plate
+    translate([0, 0, top_thickness/2])
+        cube([outer_width, outer_depth, top_thickness], center=true);
+    
+    // Side walls
+    // Front wall
+    translate([0, outer_depth/2, (height-top_thickness)/2 + top_thickness/2])
+        cube([outer_width, wall_thickness, height-top_thickness], center=true);
+    
+    // Back wall
+    translate([0, -outer_depth/2, (height-top_thickness)/2 + top_thickness/2])
+        cube([outer_width, wall_thickness, height-top_thickness], center=true);
+    
+    // Left wall
+    translate([-outer_width/2, 0, (height-top_thickness)/2 + top_thickness/2])
+        cube([wall_thickness, outer_depth, height-top_thickness], center=true);
+    
+    // Right wall
+    translate([outer_width/2, 0, (height-top_thickness)/2 + top_thickness/2])
+        cube([wall_thickness, outer_depth, height-top_thickness], center=true);
+    
+    // Cable notch in front wall
+    translate([0, outer_depth/2, height-cable_notch_depth/2])
+        cube([cable_notch_width, wall_thickness+0.1, cable_notch_depth], center=true);
+};
+
+// Screw holes
+screw_holes = union() {
+    for (x = [-1, 1], y = [-1, 1]) {
+        translate([x*(screw_pattern/2), y*(screw_pattern/2), 0])
+            cylinder(h=top_thickness+1, d=screw_hole_diameter, center=true, $fn=64);
+    }
+};
+
+// Final assembly
+difference() {
+    housing;
+    screw_holes;
+}
+```

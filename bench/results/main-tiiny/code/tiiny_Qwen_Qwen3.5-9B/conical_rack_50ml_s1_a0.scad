@@ -1,0 +1,178 @@
+// Rack for six 50 mL conical (Falcon-type) tubes
+// Print orientation: Flat plate on bed (Z=0), walls rising up.
+// Final orientation: Rack stands on walls, tubes inserted from top.
+
+$fn = 128; // High resolution for smooth holes and walls
+
+// --- Dimensions ---
+// Plate dimensions
+plate_length_X = 130; // mm
+plate_width_Y = 90;   // mm
+plate_thickness = 4;  // mm
+
+// Hole dimensions
+hole_diameter = 30.5; // mm (Falcon tube outer diameter)
+hole_count_X = 3;     // 3 holes along X
+hole_count_Y = 2;     // 2 holes along Y
+
+// Hole spacing (centre-to-centre)
+hole_spacing_X = 40;  // mm
+hole_spacing_Y = 40;  // mm
+
+// Wall dimensions
+wall_length_X = 130;  // mm (matches plate length)
+wall_thickness_Y = 4; // mm (matches plate width/thickness)
+wall_height = 70;     // mm (total height from bed)
+
+// --- Variables ---
+// Calculate plate center
+plate_center_X = plate_length_X / 2;
+plate_center_Y = plate_width_Y / 2;
+
+// Calculate hole positions (centered on plate)
+// X positions: 3 holes, 40mm spacing, centered
+hole_x_positions = [
+    plate_center_X - (hole_spacing_X * (hole_count_X - 1)) / 2,
+    plate_center_X,
+    plate_center_X + (hole_spacing_X * (hole_count_X - 1)) / 2
+];
+
+// Y positions: 2 holes, 40mm spacing, centered
+hole_y_positions = [
+    plate_center_Y - (hole_spacing_Y * (hole_count_Y - 1)) / 2,
+    plate_center_Y + (hole_spacing_Y * (hole_count_Y - 1)) / 2
+];
+
+// --- Construction ---
+
+// 1. Base Plate
+// A flat plate 130x90x4 lying on Z=0
+base_plate = translate([0, 0, 0], 
+    cube([plate_length_X, plate_width_Y, plate_thickness])
+);
+
+// 2. Through Holes
+// Create a difference operation to cut holes through the plate
+// Rule 5: Extend cutting shapes slightly past faces (0.01mm) to ensure clean cut
+hole_cutting_shape = cylinder(
+    h = plate_thickness + 0.01,
+    r = hole_diameter / 2
+);
+
+// Loop to create holes at calculated positions
+holes = for (x = hole_x_positions, y = hole_y_positions) {
+    translate([x, y, 0], hole_cutting_shape)
+};
+
+// 3. Side Walls
+// Two solid walls running along the long edges (X-axis).
+// Each wall is 130mm long, 4mm thick, rising from Z=0 to Z=70.
+// They are flush with the plate's long edge.
+// Left wall: x = 0 to 130, y = -2 to 2 (centered at Y=0? No, flush with edge)
+// Wait, plate is 90mm wide (Y from -45 to 45).
+// "Flush with the plate's long edge" means the wall is on the perimeter.
+// Left wall: x=0 to 130, y=-45 to -41 (4mm thick).
+// Right wall: x=0 to 130, y=41 to 45 (4mm thick).
+
+// Define wall geometry
+// Wall 1 (Left): Translate to y = -45 - (4/2) = -47? 
+// Let's define the wall block first: 130 x 4 x 70
+wall_block = cube([wall_length_X, wall_thickness_Y, wall_height]);
+
+// Position Left Wall: Centered at X=65, Y = plate_center_Y - plate_width_Y/2 - wall_thickness_Y/2
+// Plate Y range: -45 to 45. Edge is at -45. Wall is 4mm thick.
+// Wall Y range: -47 to -43. Center Y = -45.
+left_wall_pos = [plate_center_X, plate_center_Y - plate_width_Y/2 - wall_thickness_Y/2, 0];
+
+// Position Right Wall: Centered at X=65, Y = plate_center_Y + plate_width_Y/2 + wall_thickness_Y/2
+// Wall Y range: 43 to 47. Center Y = 45.
+right_wall_pos = [plate_center_X, plate_center_Y + plate_width_Y/2 + wall_thickness_Y/2, 0];
+
+// Combine everything
+// Start with the plate with holes
+part = difference([
+    union([
+        base_plate,
+        holes
+    ]),
+    // Cut the walls out of the plate volume so they can be added as separate extrusions if needed,
+    // OR simply build the final shape as: Plate + Holes + Walls.
+    // Since walls are "solid walls... flush with the plate's long edge", they are part of the final object.
+    // We can just union the plate (with holes) and the two wall blocks.
+    
+    // Actually, the prompt says "The plate has six through-holes... Two solid walls run along...".
+    // This implies the final object is the Plate (minus holes) UNION the Walls.
+    // However, the walls are described as rising FROM the plate.
+    // If we just union the plate (with holes) and the walls, the walls will sit on top of the plate material.
+    // But the plate material exists at the edges. The walls are 4mm thick. The plate is 90mm wide.
+    // The walls are ON THE EDGE.
+    // So the final object is: (Plate with holes) UNION (Left Wall) UNION (Right Wall).
+    
+    // Let's refine the logic:
+    // 1. Create the Plate with holes.
+    // 2. Add the Left Wall.
+    // 3. Add the Right Wall.
+    
+    // Wait, if I do Union(Plate_with_holes, Walls), the walls are added.
+    // Do the walls need to be cut from the plate? No, they are additions.
+    // But the plate edges are solid. The walls are 4mm thick.
+    // If the wall is "flush with the plate's long edge", it sits exactly where the edge is.
+    // So the final shape is the Plate (with holes) + the Walls.
+    
+    // Let's construct the Plate with holes first.
+    plate_with_holes = difference([
+        base_plate,
+        holes
+    ]);
+    
+    // Now add walls.
+    // Left Wall
+    translate(left_wall_pos, wall_block),
+    
+    // Right Wall
+    translate(right_wall_pos, wall_block)
+    
+    // Wait, the 'difference' above creates the plate_with_holes.
+    // Then I need to union that with the walls.
+    // The structure should be:
+    // part = union([
+    //     difference([base_plate, holes]),
+    //     translate(left_wall_pos, wall_block),
+    //     translate(right_wall_pos, wall_block)
+    // ]);
+    
+    // However, the prompt says "Two solid walls run along the two long edges... and rises from the plate".
+    // This confirms they are additive features on the plate.
+    
+    // Let's re-verify the "difference" rule.
+    // "In difference(), make every cutting shape extend...".
+    // I used difference to cut holes. That is correct.
+    
+    // Is there any intersection needed? No.
+    // Just Union of (Plate with holes) and (Walls).
+    
+    // Wait, if I just union, the walls are added.
+    // But the plate edges are already there.
+    // The wall is 4mm thick. The plate is 90mm wide.
+    // The wall sits on the 4mm edge.
+    // So the final object has a base of 130x90, with 4mm thick walls rising 70mm high at the ends.
+    
+    // Let's assemble.
+    union([
+        difference([
+            base_plate,
+            holes
+        ]),
+        translate(left_wall_pos, wall_block),
+        translate(right_wall_pos, wall_block)
+    ])
+]);
+
+// Final check on orientation:
+// "Printed upside down and flipped over after printing."
+// "In print orientation: a flat plate... lies on the bed (z = 0 to 4)."
+// "The two short ends stay open."
+// "After flipping, the rack stands on the two walls and the tubes pass through the holes."
+// My model: Plate on Z=0. Walls rise to Z=70.
+// If I print this, the plate is on the bed. The walls are up.
+// If I flip it over (rotate 180 around X or Y axis), the walls will be on

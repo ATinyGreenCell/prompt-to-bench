@@ -1,0 +1,58 @@
+Looking at the measurement report and comparing with the specification:
+
+**Specification:**
+- Collar: 13 mm diameter, 1.5 mm thick (z = 0 to 1.5)
+- Sleeve body: 10.8 mm outer diameter, rises from z = 1.5 to z = 21.5 (so sleeve height = 20.0 mm, not 21.5 mm)
+- Bore: 6.2 mm diameter, through the full height
+- Total height should be 1.5 + 20.0 = 21.5 mm
+
+**Discrepancies found:**
+1. The sleeve height is incorrectly set to 21.5 mm instead of 20.0 mm (the sleeve rises from z=1.5 to z=21.5, so its height is 20.0 mm)
+2. The total height in the report shows 23.02 mm (from z=-0.01 to z=23.01), but should be 21.5 mm
+3. The collar thickness should be exactly 1.5 mm (z=0 to 1.5), but the report shows the lowest point at z=-0.01, indicating the collar extends slightly below z=0 due to the bore extending 0.01 mm past the bottom face
+
+Let me fix these issues:
+- Set sleeve_height = 20.0 mm (so total height = 1.5 + 20.0 = 21.5 mm)
+- Ensure the collar is from z=0 to z=1.5 (collar_thickness = 1.5)
+- The bore should extend 0.01 mm past the bottom (z=-0.01) but the top of the bore should be at z=21.5+0.01=21.51 mm
+
+```openscad
+// Adapter sleeve for 0.2 mL PCR tube in 1.5 mL rack hole
+// Print orientation: upside down (collar on bed)
+
+$fn = 64;
+
+// Dimensions
+collar_diameter = 13;       // mm
+collar_thickness = 1.5;     // mm (z = 0 to 1.5)
+sleeve_outer_diameter = 10.8; // mm
+sleeve_height = 20.0;       // mm (rises from z=1.5 to z=21.5)
+bore_diameter = 6.2;        // mm
+
+// Calculate radii
+collar_radius = collar_diameter / 2;
+sleeve_outer_radius = sleeve_outer_diameter / 2;
+bore_radius = bore_diameter / 2;
+total_height = collar_thickness + sleeve_height;
+
+// Build the adapter
+module adapter_sleeve() {
+    // Collar (bottom part) - from z=0 to z=1.5
+    translate([0, 0, 0]) {
+        cylinder(h = collar_thickness, r = collar_radius, center = false);
+    }
+    
+    // Sleeve body (upper part) - from z=1.5 to z=21.5
+    translate([0, 0, collar_thickness]) {
+        cylinder(h = sleeve_height, r = sleeve_outer_radius, center = false);
+    }
+    
+    // Bore (through-hole) - extends 0.01 mm past both ends
+    translate([0, 0, -0.01]) {
+        cylinder(h = total_height + 0.02, r = bore_radius, center = false);
+    }
+}
+
+// Render the adapter
+adapter_sleeve();
+```

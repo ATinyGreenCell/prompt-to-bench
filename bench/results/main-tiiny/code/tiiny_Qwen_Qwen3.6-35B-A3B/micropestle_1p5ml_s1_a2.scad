@@ -1,0 +1,122 @@
+// --- Dimensions ---
+handle_diam = 8;       // Handle diameter (mm)
+handle_len  = 45;      // Handle length from z=0 to z=45 (mm)
+cone_start_diam = 8;   // Cone diameter at z=45 (mm)
+cone_end_diam   = 3;   // Cone diameter at z=62 (mm)
+cone_len  = 17;        // Cone length (62 - 45) (mm)
+tip_diam = 3;          // Tip sphere diameter (mm)
+tip_center_z = 62;     // Tip sphere center Z position (mm)
+
+// Groove dimensions
+groove_width = 2;      // Groove width in Z (mm)
+groove_depth = 1;      // Groove depth (mm)
+num_grooves = 4;       // Number of grooves
+
+// Groove center positions
+groove_centers = [10, 15, 20, 25]; // Z positions (mm)
+
+// --- Calculations ---
+handle_r = handle_diam / 2;
+cone_start_r = cone_start_diam / 2;
+cone_end_r = cone_end_diam / 2;
+tip_r = tip_diam / 2;
+
+// Groove geometry
+// The groove is a cutout from the handle.
+// Handle radius is 4mm. Groove depth is 1mm.
+// So the groove cuts into the cylinder from r=3 to r=4.
+// We model the groove as a cylinder of diameter (handle_diam - 2*groove_depth) 
+// but wait, the groove is a circumferential cut.
+// It's easier to model the groove as a cylinder that removes material.
+// The groove is defined by its Z extent and its radial extent.
+// Radial extent: from r = (handle_diam/2 - groove_depth) to r = handle_diam/2.
+// However, OpenSCAD difference() works best with solid cutters.
+// A groove is essentially a cylinder of diameter (handle_diam - 2*groove_depth) 
+// that is slightly taller than the groove width, centered at the groove center.
+// But this would cut a hole through the center if we just subtract a cylinder.
+// No, the groove is only on the surface.
+// To cut a circumferential groove of depth 'd' from a cylinder of radius 'R',
+// we subtract a cylinder of radius 'R - d' that is slightly taller than the groove width.
+// Wait, if we subtract a cylinder of radius R-d, we remove the core.
+// We want to remove the outer shell.
+// So we should subtract a cylinder of radius R, but only the outer part?
+// No, standard way: The groove is a void.
+// The void is a cylinder of diameter (handle_diam - 2*groove_depth) ? No.
+// The groove removes material from r = (R - depth) to r = R.
+// So the remaining material is r < (R - depth).
+// Therefore, the cutter for the groove is a cylinder of diameter (handle_diam - 2*groove_depth).
+// Let's verify:
+// Original handle: r <= 4.
+// Groove depth 1mm.
+// Remaining radius at groove: 3mm.
+// So we subtract a cylinder of diameter 6mm (radius 3mm).
+// This leaves the outer 1mm ring? No, it removes the inner 3mm core.
+// That's wrong. We want to keep the inner core and remove the outer ring.
+// So the groove is a cutout. The cutout is a cylinder of diameter (handle_diam - 2*groove_depth) ?
+// No, if I subtract a cylinder of diameter 6mm from a cylinder of diameter 8mm,
+// I am left with a tube of thickness 1mm. That is exactly the groove!
+// Yes. So the cutter for each groove is a cylinder of diameter (handle_diam - 2*groove_depth).
+// Diameter of cutter = 8 - 2*1 = 6mm.
+// Height of cutter = groove_width + 0.02 (to ensure full cut) = 2.02mm.
+// Centered at groove_centers.
+
+groove_cutter_diam = handle_diam - 2 * groove_depth;
+groove_cutter_height = groove_width + 0.02;
+
+// --- Build Part ---
+module pestle() {
+    $fn = 64;
+    
+    // 1. Handle
+    handle = cylinder(r=handle_r, h=handle_len, center=false);
+    
+    // 2. Cone
+    // The cone starts at z=45, radius=4. Ends at z=62, radius=1.5.
+    cone = cylinder(r1=cone_start_r, r2=cone_end_r, h=cone_len, center=false);
+    
+    // 3. Tip
+    // Sphere centered at z=62, radius=1.5.
+    // We need to union this with the cone.
+    // The cone ends at z=62. The sphere is centered at z=62.
+    // The bottom of the sphere is at z=60.5.
+    // The cone covers z=45 to z=62.
+    // The sphere covers z=60.5 to z=63.5.
+    // Union will handle the overlap.
+    tip = sphere(r=tip_r, center=true);
+    
+    // Combine main body
+    body = union() {
+        handle;
+        translate([0,0,45]) cone;
+        translate([0,0,tip_center_z]) tip;
+    };
+    
+    // 4. Grooves
+    // Subtract grooves from the handle part only.
+    // We can subtract them from the whole body, but they are only on the handle.
+    // Since the cone and tip are smaller than the handle, subtracting from the whole body
+    // is safe as long as the groove cutters don't intersect the cone/tip.
+    // Groove centers: 10, 15, 20, 25.
+    // Groove height: 2.02mm.
+    // Top of highest groove: 25 + 1.01 = 26.01mm.
+    // Handle ends at 45mm. Cone starts at 45mm.
+    // So grooves are well within the handle.
+    
+    cutters = [];
+    for (z_center = groove_centers) {
+        cutter = cylinder(r=groove_cutter_diam/2, h=groove_cutter_height, center=true);
+        cutters = concat(cutters, [translate([0,0,z_center]) cutter]);
+    }
+    
+    // Final part
+    part = difference() {
+        body;
+        for (c = cutters) {
+            c;
+        }
+    };
+    
+    part;
+}
+
+pestle();

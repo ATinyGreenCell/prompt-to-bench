@@ -1,0 +1,81 @@
+// Snap-on clip for 12.7 mm lab stand rod and 6 mm ID tubing
+// Printed flat: 10 mm tall extrusion (Z) of a 2-D profile in the XY plane.
+
+// Extrusion height (Z)
+extrusion_height = 10;
+
+// Rod ring dimensions
+rod_ring_id = 12.7;          // Inner diameter of rod ring
+rod_ring_wall = 3;           // Wall thickness of rod ring
+rod_ring_od = rod_ring_id + 2 * rod_ring_wall; // Outer diameter of rod ring (18.7)
+
+// Rod ring opening dimensions
+rod_opening_width = 10;      // Width of the opening on the -X side
+rod_opening_half_width = rod_opening_width / 2;
+
+// Tubing ring dimensions
+tubing_ring_id = 6;          // Inner diameter of tubing ring
+tubing_ring_wall = 2;        // Wall thickness of tubing ring
+tubing_ring_od = tubing_ring_id + 2 * tubing_ring_wall; // Outer diameter of tubing ring (10)
+tubing_ring_center_x = 15;   // X position of tubing ring center
+
+// Tubing ring opening dimensions
+tubing_opening_width = 4.5;  // Width of the opening on the +X side
+tubing_opening_half_width = tubing_opening_width / 2;
+
+// Bridge dimensions
+bridge_x_start = 8;          // Start X of the bridge
+bridge_x_end = 12;           // End X of the bridge
+bridge_width = 6;            // Width of the bridge in Y
+bridge_half_width = bridge_width / 2;
+
+// Resolution for curved shapes
+$fn = 64;
+
+// Extrude the profile to create the 3D part
+linear_extrude(height = extrusion_height, center = false, convexity = 10)
+{
+    // Union of all profile parts
+    union()
+    {
+        // Rod ring centered at origin with opening on -X side
+        difference()
+        {
+            // Outer circle of rod ring
+            circle(d = rod_ring_od);
+            
+            // Inner hole of rod ring
+            circle(d = rod_ring_id);
+            
+            // Opening cut on -X side: x < 0 and -5 < y < 5
+            // The spec says: "everything with x < 0 and -5 < y < 5 is removed from this ring"
+            // We cut a large rectangle covering x < 0 and y in [-5, 5]
+            // To ensure it cuts through the ring completely, we extend it far to the left
+            translate([-rod_ring_od - 1, 0])
+                square([rod_ring_od + 1, rod_opening_width + 0.02], center = true);
+        }
+        
+        // Tubing ring centered at (15, 0) with opening on +X side
+        translate([tubing_ring_center_x, 0])
+        difference()
+        {
+            // Outer circle of tubing ring
+            circle(d = tubing_ring_od);
+            
+            // Inner hole of tubing ring
+            circle(d = tubing_ring_id);
+            
+            // Opening cut on +X side: x > 15 and -2.25 < y < 2.25
+            // The spec says: "x > 15 and -2.25 < y < 2.25"
+            // We cut a large rectangle covering x > 0 (relative to center) and y in [-2.25, 2.25]
+            // To ensure it cuts through the ring completely, we extend it far to the right
+            translate([tubing_ring_od + 1, 0])
+                square([tubing_ring_od + 1, tubing_opening_width + 0.02], center = true);
+        }
+        
+        // Bridge connecting the two rings
+        // Spec: "solid bridge 6 mm wide (Y) between x = 8 and x = 12"
+        translate([(bridge_x_start + bridge_x_end) / 2, 0])
+            square([bridge_x_end - bridge_x_start, bridge_width], center = true);
+    }
+}

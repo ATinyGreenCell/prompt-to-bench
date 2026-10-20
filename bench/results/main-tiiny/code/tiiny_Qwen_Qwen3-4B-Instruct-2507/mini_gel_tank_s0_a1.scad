@@ -1,0 +1,142 @@
+// Buffer tank for mini horizontal gel-electrophoresis box
+// Dimensions in millimeters
+
+// Outer dimensions of the tank
+outer_X = 120;
+outer_Y = 70;
+outer_Z = 40;
+
+// Wall and floor thickness
+wall_thickness = 3;
+floor_thickness = 3;
+
+// Platform dimensions (inner dimensions)
+platform_length_X = 60;
+platform_width_Y = 70; // spans full inner Y
+platform_height = 10; // 10 mm above inner floor (at z = 13)
+platform_z_position = 13; // z = 13 mm (inner floor + 10 mm platform)
+
+// Electrode hole: 2 mm diameter, horizontal, along X, at y=0, z=30
+hole_diameter = 2;
+hole_depth = 3; // hole goes through the wall thickness
+hole_z_position = 30; // at z = 30 mm (within the tank)
+
+// Inner dimensions (after subtracting walls and floor)
+inner_X = outer_X - 2 * wall_thickness;
+inner_Y = outer_Y - 2 * wall_thickness;
+inner_Z = outer_Z - wall_thickness - floor_thickness;
+
+// Create the outer tank base (open top, with walls and floor)
+// Start with the outer rectangular box
+tank_base = cube([outer_X, outer_Y, outer_Z], center=true);
+
+// Subtract the inner volume to create walls and floor
+inner_box = cube([inner_X, inner_Y, inner_Z], center=true);
+tank_with_walls_and_floor = difference() {
+    tank_base;
+    inner_box;
+};
+
+// Add the raised platform at the center in X, full Y, 10 mm high
+// Platform is centered in X, spans full Y, at z = 13 to z = 23
+platform = cube([platform_length_X, platform_width_Y, platform_height], center=true);
+// Translate to center of the tank in X and Y, at z = 13
+platform_translated = translate([0, 0, platform_z_position]) 
+    platform;
+
+// Now drill holes in each end wall (at y=0, z=30) for electrode wires
+// Holes are 2 mm diameter, horizontal, along X, at y=0, z=30
+// The hole goes through the wall thickness (3 mm), from z=27 to z=30
+
+// Create a cylinder for the hole (diameter 2 mm, depth 3 mm, aligned with X-axis)
+// First, hole at left end wall (x=0, y=0, z=27 to z=30)
+// The hole is in the wall, so we place it at x=0, y=0, z=27, and extend in X
+
+// Translate to left end wall: at x=0, y=0, z=27
+// Rotate to align with X-axis (so cylinder extends in X)
+hole_left = translate([0, 0, 27]) 
+    rotate([0, 0, 90]) // rotate to align with X-axis
+    cylinder(d=hole_diameter/2, h=hole_depth, center=true, $fn=64);
+
+// Hole at right end wall (x=outer_X, y=0, z=27 to z=30)
+hole_right = translate([outer_X, 0, 27]) 
+    rotate([0, 0, 90]) // rotate to align with X-axis
+    cylinder(d=hole_diameter/2, h=hole_depth, center=true, $fn=64);
+
+// Final part: start with the tank with walls and floor, subtract the platform (if needed)
+// But we are building the platform as a raised structure, so we need to add it to the tank
+
+// Actually, the platform should be a solid added to the tank, not subtracted
+// So we use union to combine the tank and the platform
+
+// Correct approach: start with the tank with walls and floor, then add the platform
+// But the platform is inside the tank, so we use union
+
+// However, the platform is a solid that is part of the tank, so we build it as a separate object and union
+
+// Final design: tank with walls and floor, plus the platform, plus the electrode holes
+
+// First, create the tank with walls and floor
+tank_with_walls_and_floor = difference() {
+    cube([outer_X, outer_Y, outer_Z], center=true);
+    cube([inner_X, inner_Y, inner_Z], center=true);
+};
+
+// Add the platform (raised structure)
+platform_union = union() {
+    tank_with_walls_and_floor;
+    platform_translated;
+};
+
+// Add the electrode holes (in the end walls)
+// The holes are drilled in the wall, so they are part of the tank structure
+
+// Create the final part by adding the holes to the platform_union
+final_part = union() {
+    platform_union;
+    hole_left;
+    hole_right;
+};
+
+// Output the final part
+// Since we are using union, and the holes are small, we ensure they are properly placed
+
+// Final version: build the tank, add the platform, and add the holes
+
+// Correct and complete version:
+
+// Start with the outer tank
+outer_tank = cube([outer_X, outer_Y, outer_Z], center=true);
+
+// Subtract the inner volume to create walls and floor
+inner_tank = cube([inner_X, inner_Y, inner_Z], center=true);
+tank_with_walls_floor = difference() {
+    outer_tank;
+    inner_tank;
+};
+
+// Add the platform (raised structure)
+platform = cube([platform_length_X, platform_width_Y, platform_height], center=true);
+platform_translated = translate([0, 0, platform_z_position]) platform;
+
+// Add the electrode holes (in end walls)
+// Hole at left end wall: at x=0, y=0, z=27 to z=30, 2 mm diameter, 3 mm deep, along X
+hole_left = translate([0, 0, 27]) 
+    rotate([0, 0, 90]) 
+    cylinder(d=hole_diameter/2, h=hole_depth, $fn=64);
+
+// Hole at right end wall: at x=outer_X, y=0, z=27 to z=30
+hole_right = translate([outer_X, 0, 27]) 
+    rotate([0, 0, 90]) 
+    cylinder(d=hole_diameter/2, h=hole_depth, $fn=64);
+
+// Final part: union of tank, platform, and holes
+final_part = union() {
+    tank_with_walls_floor;
+    platform_translated;
+    hole_left;
+    hole_right;
+};
+
+// Output the final part
+final_part;

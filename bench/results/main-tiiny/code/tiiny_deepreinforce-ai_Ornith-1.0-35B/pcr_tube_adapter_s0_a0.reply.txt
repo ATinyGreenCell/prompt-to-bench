@@ -1,0 +1,28 @@
+```openscad
+// Adapter sleeve: 0.2 mL PCR tube in 1.5 mL rack hole
+// Print orientation: collar on bed (z=0), sleeve rises upward
+
+// --- Dimensions (mm) ---
+COLLAR_OD       = 13.0;   // Collar outer diameter
+COLLAR_THICK    = 1.5;    // Collar thickness (z-height)
+SLEEVE_OD       = 10.8;   // Sleeve outer diameter
+SLEEVE_HEIGHT   = 21.5;  // Total height from z=0 to top
+BORE_DIA         = 6.2;   // Inner bore diameter
+
+// --- Derived ---
+COLLAR_R         = COLLAR_OD / 2;
+SLEEVE_R         = SLEEVE_OD / 2;
+BORE_R           = BORE_DIA / 2;
+
+// --- Build ---
+difference() {
+    union() {
+        // Collar (on bed)
+        cylinder(h = COLLAR_THICK, r = COLLAR_R, $fn = 64);
+        // Sleeve body (rises from collar to total height)
+        cylinder(h = SLEEVE_HEIGHT, r = SLEEVE_R, $fn = 64);
+    }
+    // Bore through full height (extend slightly past faces)
+    cylinder(h = SLEEVE_HEIGHT + 0.02, r = BORE_R, $fn = 64);
+}
+```

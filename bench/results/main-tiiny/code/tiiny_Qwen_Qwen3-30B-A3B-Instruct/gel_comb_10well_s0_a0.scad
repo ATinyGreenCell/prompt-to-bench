@@ -1,0 +1,76 @@
+// 10-well agarose gel comb parameters
+$fn = 64;
+
+// Overall dimensions
+spine_length = 70;    // X direction
+spine_width = 12;   // Y direction
+tooth_width = 5.0;    // X direction (width of each tooth)
+tooth_length = 12;      // Y direction (length of each tooth)
+gap_between_teeth = 1.5; // Y direction gap between adjacent teeth
+num_teeth = 10;
+comb_thickness = 1.5;     // Z direction (thickness of the comb)
+
+// Calculate total tooth + gap length for alignment
+total_tooth_and_gap_length = num_teeth * tooth_length + (num_teeth - 1) * gap_between_teeth;
+
+// Center the tooth row on the spine in X direction
+// Spine is 70 mm long in X, tooth row is (num_teeth * tooth_length + (num_teeth - 1) * gap_between_teeth) mm long
+// So we need to offset the tooth row so that it's centered on the spine in X
+tooth_row_length = total_tooth_and_gap_length;
+offset_x = (spine_length - tooth_row_length) / 2;
+
+// Define the spine (back bar) - centered on origin in X and Y
+spine = cube([spine_length, spine_width, comb_thickness], center = true);
+
+// Create the teeth as a list of positions along the -Y edge of the spine
+// The spine's -Y edge is at Y = -spine_width/2
+// The teeth extend from Y = -spine_width/2 - tooth_length to Y = -spine_width/2
+// But we'll build each tooth as a cube and position it accordingly
+
+// We'll use a for loop to generate each tooth
+teeth = union() {
+  for (i = [0 : num_teeth - 1]) {
+    // Calculate Y position for this tooth: start from the first tooth at Y = -spine_width/2 - tooth_length
+    // Then add (tooth_length + gap_between_teeth) for each subsequent tooth
+    tooth_y_start = -spine_width/2 - tooth_length - i * (tooth_length + gap_between_teeth);
+    tooth_y_end = -spine_width/2 - i * (tooth_length + gap_between_teeth);
+    
+    // X position: offset so that the tooth row is centered on the spine
+    tooth_x_start = -spine_length/2 + offset_x + i * (tooth_width + gap_between_teeth);
+    tooth_x_end = tooth_x_start + tooth_width;
+    
+    // Create the tooth as a cube centered in X and Y at the correct position
+    translate([0, (tooth_y_start + tooth_y_end)/2, 0]) {
+      cube([tooth_width, tooth_length, comb_thickness], center = true);
+    }
+  }
+}
+
+// Combine spine and teeth
+difference() {
+  // Spine
+  translate([0, 0, 0]) {
+    cube([spine_length, spine_width, comb_thickness], center = true);
+  }
+  
+  // Subtract teeth from spine to create the comb shape
+  // But actually, we want to union the teeth with the spine, so we do:
+  // Instead, we'll build the final comb as the union of the spine and the teeth
+  // But since the teeth are already placed correctly, we can just union them.
+  // However, to ensure clean subtraction (if needed), we do:
+  // Actually, we don't need difference here — we want union.
+  // So we'll just use union() for the final shape.
+}
+
+// Final comb is the union of spine and teeth
+// But we already have `teeth` as a union of all tooth cubes.
+// So we do:
+union() {
+  // Spine
+  translate([0, 0, 0]) {
+    cube([spine_length, spine_width, comb_thickness], center = true);
+  }
+  
+  // Teeth (already computed in union)
+  teeth;
+}

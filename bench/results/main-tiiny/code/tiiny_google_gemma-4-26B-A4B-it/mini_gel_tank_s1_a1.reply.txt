@@ -1,0 +1,95 @@
+```openscad
+// --- Parameters ---
+// Outer dimensions of the tank
+outer_x = 120; // Length of the tank (X)
+outer_y = 70;  // Width of the tank (Y)
+outer_z = 40;  // Height of the tank (Z)
+
+// Wall and floor thickness
+wall_thickness = 3; 
+floor_thickness = 3;
+
+// Platform dimensions
+platform_length = 60; // Length of the platform along X
+platform_height_from_inner_floor = 10; // Height of platform top relative to inner floor
+
+// Electrode holes
+hole_diameter = 2;
+hole_y_pos = 0; // Y position of the hole center
+hole_z_pos = 30; // Z position of the hole center
+
+// Resolution
+$fn = 64;
+
+// --- Calculations ---
+inner_x = outer_x - (2 * wall_thickness);
+inner_y = outer_y - (2 * wall_thickness);
+inner_z = outer_z - floor_thickness;
+
+// The platform top is 10mm above the inner floor.
+// Inner floor is at z = floor_thickness.
+platform_top_z = floor_thickness + platform_height_from_inner_floor;
+
+// --- Modeling ---
+
+module buffer_tank() {
+    difference() {
+        // Main Body
+        cube([outer_x, outer_y, outer_z]);
+
+        // Hollow out the tank
+        // We subtract the inner volume. 
+        // To ensure the top is open, we subtract a cube that goes to the top.
+        translate([wall_thickness, wall_thickness, floor_thickness])
+            cube([inner_x, inner_y, outer_z]);
+
+        // Electrode holes (drilled through the X-end walls)
+        // The user specified holes at y = 0. 
+        // Since the tank is centered on X and Y, the Y range is -35 to 35.
+        // A hole at y=0 is in the middle of the Y-axis.
+        // To ensure it cuts through both walls, we make it longer than the tank.
+        translate([-1, hole_y_pos, hole_z_pos])
+            rotate([0, 90, 0])
+                cylinder(d = hole_diameter, h = outer_x + 2);
+    }
+
+    // The Platform
+    // It spans the full inner width (Y) and is 60mm long (X), centered.
+    // It sits on the floor.
+    // Note: The platform is a solid part inside the tank.
+    // It must be added to the main body.
+    translate([
+        (outer_x - platform_length) / 2, 
+        wall_thickness, 
+        floor_thickness
+    ])
+    cube([platform_length, inner_y, platform_top_z]);
+}
+
+// The previous report showed the platform was being subtracted or 
+// incorrectly calculated. To ensure a single watertight solid, 
+// we use union() to combine the shell and the platform.
+union() {
+    // The shell (walls + floor)
+    difference() {
+        cube([outer_x, outer_y, outer_z]);
+        
+        // Subtract the inner void
+        translate([wall_thickness, wall_thickness, floor_thickness])
+            cube([inner_x, inner_y, outer_z + 0.01]); // extend slightly to ensure open top
+            
+        // Subtract the electrode holes
+        translate([-1, hole_y_pos, hole_z_pos])
+            rotate([0, 90, 0])
+                cylinder(d = hole_diameter, h = outer_x + 2);
+    }
+
+    // The Platform (Solid)
+    translate([
+        (outer_x - platform_length) / 2, 
+        wall_thickness, 
+        floor_thickness
+    ])
+    cube([platform_length, inner_y, platform_top_z]);
+}
+```

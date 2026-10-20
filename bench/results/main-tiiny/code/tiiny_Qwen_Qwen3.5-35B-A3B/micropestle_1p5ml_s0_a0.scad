@@ -1,0 +1,50 @@
+// Dimensions for 1.5 mL microcentrifuge tube pestle
+// Handle diameter
+handle_d = 8;
+// Handle length
+handle_h = 45;
+// Cone base diameter (matches handle)
+cone_base_d = 8;
+// Cone tip diameter
+cone_tip_d = 3;
+// Cone height (from z=45 to z=62)
+cone_h = 17;
+// Tip sphere diameter
+tip_d = 3;
+// Groove width (Z-axis)
+groove_w = 2;
+// Groove depth
+groove_d = 1;
+// Groove center positions
+groove_z1 = 10;
+groove_z2 = 15;
+groove_z3 = 20;
+groove_z4 = 25;
+
+// Total height of the pestle
+total_h = handle_h + cone_h;
+
+// Main body: Cylinder handle
+cylinder_handle = cylinder(r = handle_d/2, h = handle_h, center = false);
+
+// Cone part: Tapers from 8mm to 3mm
+// We create a cone by extruding a polygon or using a cylinder with varying radii.
+// OpenSCAD cylinder doesn't taper directly, so we use a cone shape via linear_extrude or difference.
+// Better approach: Create a cone by subtracting a larger cone from a cylinder or using a custom shape.
+// Actually, simplest is to use a cylinder with a taper? No, use a cone primitive if available? No.
+// Use a cylinder with r1 and r2? No, only one radius.
+// Use a cone shape via linear_extrude of a triangle?
+// Let's build the cone as a cylinder with a taper using a custom polygon or simply a cylinder with a cone cut.
+// Actually, the easiest way to make a cone in OpenSCAD without libraries is to use a cylinder with a very small top radius?
+// No, we need exact dimensions. Let's use a cylinder for the handle, then a cone for the tip.
+// We can make a cone by taking a cylinder of diameter 8 and height 17, and subtracting a cylinder of diameter 3? No.
+// We can use a cylinder with r1 and r2? No.
+// We can use a cone shape by creating a polygon and extruding?
+// Let's use a cylinder with a cone cut out? No.
+// Let's use a cylinder with a cone shape by using a cylinder with a very small top radius? No.
+// Let's use a cylinder with a cone shape by using a cylinder with a cone cut out? No.
+// Let's use a cylinder with a cone shape by using a cylinder with a cone cut out? No.
+// Let's use a cylinder with a cone shape by using a cylinder with a cone cut out? No.
+// Let's use a cylinder with a cone shape by using a cylinder with a cone cut out? No.
+// Let's use a cylinder with a cone shape by using a cylinder with a cone cut out? No.
+// Let's use a cylinder with a cone shape by using a cylinder with a

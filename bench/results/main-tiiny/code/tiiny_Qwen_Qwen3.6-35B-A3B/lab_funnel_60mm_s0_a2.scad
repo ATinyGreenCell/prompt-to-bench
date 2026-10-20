@@ -1,0 +1,59 @@
+// Lab Funnel Dimensions
+// All dimensions in millimetres
+
+// Spout dimensions
+spout_od = 10;        // Outer diameter of the straight spout
+spout_length = 20;    // Length of the straight spout (z=0 to z=20)
+wall_thickness = 1.6; // Wall thickness everywhere
+
+// Cone dimensions
+cone_bottom_od = 10;  // Outer diameter at the bottom of the cone (z=20)
+cone_top_od = 60;     // Outer diameter at the rim of the cone (z=50)
+cone_height = 30;     // Height of the cone (z=20 to z=50)
+total_height = 50;    // Total height of the funnel
+
+// Derived dimensions
+spout_id = spout_od - 2 * wall_thickness; // Inner diameter of the spout
+cone_bottom_id = cone_bottom_od - 2 * wall_thickness; // Inner diameter at cone bottom
+cone_top_id = cone_top_od - 2 * wall_thickness;       // Inner diameter at cone top
+
+// Safety margin for boolean operations to avoid coplanar faces
+margin = 0.1;
+
+// Build the outer shell of the funnel
+// 1. The spout is a cylinder from z=0 to z=20
+spout_outer = cylinder(h=spout_length + margin, d=spout_od, center=false, $fn=64);
+
+// 2. The cone is a frustum from z=20 to z=50
+// We translate it up by spout_length so its base is at z=20
+cone_outer = translate([0, 0, spout_length]) 
+             cylinder(h=cone_height + margin, d1=cone_bottom_od, d2=cone_top_od, center=false, $fn=64);
+
+// Union the outer parts to form the solid body
+funnel_body = union() {
+    spout_outer;
+    cone_outer;
+};
+
+// Build the inner voids (the hole through which liquid flows)
+// 1. The spout void is a cylinder from z=0 to z=20
+// Extend slightly past z=20 to ensure clean cut at the junction
+spout_void = cylinder(h=spout_length + margin, d=spout_id, center=false, $fn=64);
+
+// 2. The cone void is a frustum from z=20 to z=50
+// Translate to start at z=20
+// Extend slightly past z=50 to ensure clean cut at the rim
+cone_void = translate([0, 0, spout_length]) 
+            cylinder(h=cone_height + margin, d1=cone_bottom_id, d2=cone_top_id, center=false, $fn=64);
+
+// Final part: Subtract the voids from the body
+funnel = difference() {
+    funnel_body;
+    spout_void;
+    cone_void;
+};
+
+// Render the final part
+render() {
+    funnel;
+}

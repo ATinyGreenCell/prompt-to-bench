@@ -1,0 +1,78 @@
+```openscad
+// Dimensions in millimeters
+$fn = 64;
+
+// Rod ring: 12.7 mm inner diameter, 3 mm wall => 18.7 mm outer diameter
+rod_ring_inner_d = 12.7;
+rod_ring_wall = 3.0;
+rod_ring_outer_d = rod_ring_inner_d + 2 * rod_ring_wall;
+
+// Tubing ring: 6 mm inner diameter, 2 mm wall => 8 mm outer diameter
+tubing_ring_inner_d = 6.0;
+tubing_ring_wall = 2.0;
+tubing_ring_outer_d = tubing_ring_inner_d + 2 * tubing_ring_wall;
+
+// Opening widths
+rod_opening_width = 10.0;
+tubing_opening_width = 4.5;
+
+// Bridge dimensions
+bridge_width = 6.0;
+bridge_x_start = 8.0;
+bridge_x_end = 12.0;
+
+// Height of the clip (Z direction)
+clip_height = 10.0;
+
+// Create the rod ring (centered at origin)
+// Full ring: outer diameter 18.7 mm, so width 18.7 mm in X, 20 mm in Y (to allow for opening)
+rod_ring = cube([rod_ring_outer_d, 20, clip_height], center=true);
+
+// Cut out the opening on the -X side: x < 0, y in [-5, 5]
+// This is a rectangle from x = -rod_ring_outer_d/2 to 0, y = -5 to 5, z = 0 to 10
+rod_ring = difference(rod_ring, 
+    translate([-rod_ring_outer_d/2, 0, 0]) 
+    cube([rod_ring_outer_d/2, 10, clip_height])
+);
+
+// Create the tubing ring at (15, 0)
+tubing_ring = cube([tubing_ring_outer_d, 20, clip_height], center=true);
+tubing_ring = translate([15, 0, 0]) tubing_ring;
+
+// Cut out the opening on the +X side: x > 15, y in [-2.25, 2.25]
+// This is a rectangle from x = 15 to 15+4.5, y = -2.25 to 2.25, z = 0 to 10
+tubing_ring = difference(tubing_ring, 
+    translate([15, 0, 0]) 
+    cube([4.5, 4.5, clip_height])
+);
+
+// Create the bridge between x=8 and x=12, 6 mm in Y, 6 mm in Z
+bridge = cube([6, 6, clip_height], center=true);
+bridge = translate([10, 0, 0]) bridge;
+
+// Final part: union of rod ring, tubing ring, and bridge
+// But we need to make sure the bridge is properly aligned and not overlapping
+// The bridge is at x=10, y in [-3,3], so it spans from x=8 to 12 in x, and y from -3 to 3
+// But we defined it as 6 mm wide in Y, so from y=-3 to 3
+// We need to place it at x from 8 to 12, so center at x=10
+// So we define it as:
+bridge = translate([10, 0, 0]) cube([6, 6, clip_height]);
+
+// Now, union all three parts
+// First, the rod ring (centered at origin)
+// Then, the tubing ring (centered at (15,0))
+// Then, the bridge (centered at (10,0))
+
+// But we must ensure no overlaps or gaps
+// The bridge should connect the two rings without blocking their holes.
+
+// Final part: union of all three
+final_clip = union() {
+    rod_ring;
+    tubing_ring;
+    bridge;
+};
+
+// Output the final clip
+final_clip;
+```

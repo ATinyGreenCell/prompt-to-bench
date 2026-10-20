@@ -1,0 +1,12 @@
+// ====================
+// Parameters (mm)
+// ====================
+outer_x = 120;               // outer dimension X
+outer_y = 70;                // outer dimension Y
+outer_z = 40;                // outer dimension Z (height)
+
+wall_thick = 3;              // wall thickness
+floor_thick = 3;             // floor thickness
+
+inner_x = outer_x - 2*wall_thick;   // inner cavity X
+inner_y = outer_y - 2*wall

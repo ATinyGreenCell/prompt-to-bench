@@ -1,0 +1,92 @@
+// Dimensions in millimeters
+$fn = 64;
+
+// Rod ring: 12.7 mm inner diameter, 3 mm wall
+// Inner radius = 6.35 mm, outer radius = 9.35 mm (18.7 mm outer diameter)
+// Centered at origin, with a 10 mm wide opening on the -X side (x < 0, -5 < y < 5)
+
+// Tubing ring: 6 mm inner diameter, 2 mm wall
+// Inner radius = 3 mm, outer radius = 5 mm (10 mm outer diameter)
+// Centered at (15, 0), with a 4.5 mm wide opening on the +X side (x > 15, -2.25 < y < 2.25)
+
+// Bridge: 6 mm wide in Y, between x = 8 and x = 12 (so from x=8 to 12, y=-3 to 3)
+
+// Step 1: Rod ring with hole on the left (x < 0, -5 < y < 5)
+rod_ring = 
+  cylinder(h=10, r=9.35, f=64) 
+  - 
+  // Cut out a 10 mm wide opening on the left: x from -10 to 0, y from -5 to 5, z from 0 to 10
+  cube([10, 10, 10], center=false);
+
+// Step 2: Tubing ring with hole on the right (x > 15, -2.25 < y < 2.25)
+tubing_ring = 
+  translate([15, 0, 0]) 
+  (
+    cylinder(h=10, r=5, f=64) 
+    - 
+    cube([4.5, 4.5, 10], center=false)
+  );
+
+// Step 3: Bridge between x=8 and x=12, y=-3 to 3
+bridge = 
+  cube([6, 6, 10], center=false);
+
+// Final part: union of all three components
+// Place them correctly in space
+
+// Rod ring is centered at origin
+// Tubing ring is at (15,0)
+// Bridge is from x=8 to 12, y=-3 to 3
+
+// Translate the bridge to start at x=8, y=-3
+bridge = 
+  translate([8, -3, 0]) 
+  cube([6, 6, 10], center=false);
+
+// Now assemble all parts
+// We must place the rod ring at origin, tubing ring at (15,0), bridge at (8,-3)
+
+// Final design: union of all three
+union() {
+  // Rod ring with hole
+  rod_ring;
+
+  // Tubing ring with hole
+  tubing_ring;
+
+  // Bridge
+  bridge;
+}
+
+// Correction: the above union is not valid syntax.
+// We must use union() as a function, or just use union.
+
+// Correct final version: use union to combine all three
+
+// Final correct version with proper syntax
+difference() {
+  // Start with the full base (a solid 10mm tall)
+  // We build the part as a difference of a large solid minus cuts, or use union of components
+
+  // Instead, we build the part as a union of three separate parts
+  // All at z=0 to 10
+
+  // Rod ring with hole
+  translate([0, 0, 0]) 
+    cylinder(h=10, r=9.35, f=64) 
+    - 
+    translate([-10, 0, 0]) 
+    cube([10, 10, 10], center=false);
+
+  // Tubing ring with hole
+  translate([15, 0, 0]) 
+    (
+      cylinder(h=10, r=5, f=64) 
+      - 
+      cube([4.5, 4.5, 10], center=false)
+    );
+
+  // Bridge
+  translate([8, -3, 0]) 
+    cube([6, 6, 10], center=false);
+}

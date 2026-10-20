@@ -1,0 +1,63 @@
+The report shows that the grooves are still not being cut correctly. At z=12.50, 17.50, and 22.50, the slice is a full circle (d=7.99) instead of a circle with a rectangular slot cut out. This indicates that the `cube` cutters are still not intersecting the handle cylinder.
+
+The previous fix translated the cube by `handle_radius + 0.01` in X, but the cube was centered in Y. This means the cube was still entirely inside the cylinder. To cut a groove, the cutting shape must intersect the surface of the part on all sides. I have fixed this by translating the cube by `handle_radius + 0.01` in both X and Y.
+
+```openscad
+// Pestle for grinding tissue in a 1.5 mL microcentrifuge tube
+// Units: mm
+
+// Dimensions
+handle_diameter = 8;
+handle_height = 45;
+cone_start_z = 45;
+cone_end_z = 62;
+cone_bottom_diameter = 8;
+cone_top_diameter = 3;
+tip_diameter = 3;
+tip_z = 62;
+groove_width = 2;
+groove_depth = 1;
+groove_z_positions = [10, 15, 20, 25];
+
+// Derived Dimensions
+handle_radius = handle_diameter / 2;
+cone_start_radius = cone_bottom_diameter / 2;
+cone_end_radius = cone_top_diameter / 2;
+tip_radius = tip_diameter / 2;
+
+$fn = 64;
+
+module pestle() {
+    union() {
+        // 1. Cylindrical Handle
+        cylinder(h = handle_height, r = handle_radius, center = false);
+
+        // 2. Tapered Cone
+        // Using linear interpolation for the cone radius
+        translate([0, 0, cone_start_z])
+        cylinder(h = cone_end_z - cone_start_z, 
+                 r1 = cone_start_radius, 
+                 r2 = cone_end_radius, 
+                 center = false);
+
+        // 3. Rounded Tip
+        translate([0, 0, tip_z])
+        sphere(r = tip_radius);
+    }
+}
+
+module grooves() {
+    for (z = groove_z_positions) {
+        // Create a slot shape
+        // Translate the cutter so it intersects the handle cylinder
+        // We move it by handle_radius + 0.01 to ensure it cuts the surface
+        translate([handle_radius + 0.01, handle_radius + 0.01, z])
+        cube([handle_diameter + 2, handle_diameter + 2, groove_width], center = true);
+    }
+}
+
+difference() {
+    pestle();
+    grooves();
+}
+```

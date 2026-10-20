@@ -1,0 +1,69 @@
+$fn = 64;
+
+// Dimensions in mm
+handle_d = 8;
+handle_h = 45;
+cone_top_d = 8;
+cone_bottom_d = 3;
+cone_start_z = 45;
+cone_end_z = 62;
+tip_d = 3;
+tip_center_z = 62;
+
+// Groove dimensions
+num_grooves = 4;
+groove_w = 2; // Width in Z
+groove_d = 1; // Depth
+groove_z = [10, 15, 20, 25]; // Z centers
+
+// Main Body Construction
+difference() {
+    union() {
+        // 1. Handle: Cylinder from z=0 to z=45
+        cylinder(d=handle_d, h=handle_h);
+
+        // 2. Cone: Tapers from 8mm at z=45 to 3mm at z=62
+        // Using rotate_extrude with polygon profile
+        rotate_extrude($fn=64) {
+            // Profile in XY plane: radius vs angle
+            // We need to create a cone that tapers from 8mm to 3mm over 17mm height
+            // Use linear_extrude with a rotated triangle instead
+            translate([0, 0, cone_start_z]) {
+                // Create cone by rotating a triangle
+                // Actually, let's use a different approach - build cone with cylinder and difference
+            }
+        }
+    }
+    
+    // Alternative approach: Build everything as separate parts
+    union() {
+        // Handle
+        cylinder(d=handle_d, h=handle_h);
+        
+        // Cone - build as a separate cylinder with linear taper
+        // Use rotate_extrude with a polygon
+        rotate_extrude($fn=64) {
+            // Create a polygon that defines the cone profile
+            // Points: (0,0) to (4,0) to (1.5,17) to (0,17)
+            // This creates a cone from radius 4 to radius 1.5 over height 17
+            polygon([
+                [0, 0],
+                [handle_d/2, 0],
+                [cone_bottom_d/2, cone_end_z - cone_start_z],
+                [0, cone_end_z - cone_start_z]
+            ]);
+        }
+        
+        // Tip: Sphere centered at z=62
+        translate([0, 0, tip_center_z]) {
+            sphere(d=tip_d);
+        }
+    }
+    
+    // Cut grooves into handle
+    for (i = [0, 1, 2, 3]) {
+        translate([0, 0, groove_z[i]]) {
+            cylinder(d=handle_d + 0.01, h=groove_w);
+        }
+    }
+}

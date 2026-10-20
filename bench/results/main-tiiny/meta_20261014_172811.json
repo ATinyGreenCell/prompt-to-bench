@@ -1,0 +1,27 @@
+{
+ "started": "2026-10-14T17:28:10",
+ "args": {
+  "run": "main-tiiny",
+  "models": [
+   "tiiny/google/gemma-4-26B-A4B-it"
+  ],
+  "tasks": null,
+  "samples": 1,
+  "max_repairs": 2,
+  "feedback": "report",
+  "temperature": 0.2,
+  "prompts": null,
+  "lang": "en",
+  "system": "bench/prompts/system.md",
+  "render_timeout": 120,
+  "seed_base": 1000,
+  "num_predict": 2048,
+  "think": false
+ },
+ "git_commit": "",
+ "host": "enamel",
+ "cpu": "x86_64",
+ "python": "3.14.4",
+ "openscad": "OpenSCAD version 2026.10.01",
+ "ollama": "0.30.11"
+}

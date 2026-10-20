@@ -1,0 +1,36 @@
+$fn = 64; // smoothness for cylinders
+
+// Disc parameters
+disc_d      = 85;   // diameter (mm)
+disc_thick = 2;    // thickness (mm)
+disc_r     = disc_d / 2;
+
+// Hole parameters
+hole_d      = 3;    // diameter (mm)
+hole_r      = hole_d / 2;
+grid_n      = 7;    // 7 × 7 grid
+grid_spacing = 9;  // centre‑to‑centre spacing (mm)
+
+// Notch parameters
+notch_w      = 10;   // width along X (mm)
+notch_d      = 4;    // depth along Y from rim (mm)
+notch_z_offset = 0.01; // offset from disc bottom to avoid coplanar faces
+
+difference() {
+  // Base disc
+  cylinder(d = disc_d, h = disc_thick, center = false);
+
+  // Holes
+  for (i = [0 : grid_n-1]) {
+    for (j = [0 : grid_n-1]) {
+      x = (i - (grid_n-1)/2) * grid_spacing;
+      y = (j - (grid_n-1)/2) * grid_spacing;
+      translate([x, y, notch_z_offset])
+        cylinder(d = hole_d, h = disc_thick + 0.01, center = false);
+    }
+  }
+
+  // Orientation notch (cut into rim on +Y side)
+  translate([-notch_w/2, disc_r - notch_d, notch_z_offset])
+    cube([notch_w, notch_d, disc_thick]);
+}

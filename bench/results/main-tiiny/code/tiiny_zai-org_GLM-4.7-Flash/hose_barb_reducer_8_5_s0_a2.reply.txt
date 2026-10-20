@@ -1,0 +1,85 @@
+```openscad
+$fn = 64;
+
+// --- Dimensions (mm) ---
+// Bore (inner diameter) - common to both tubing sizes
+bore_diameter = 3.0;
+
+// 8 mm tubing section (top)
+barb_8_bottom_od = 7.5;
+barb_8_top_od = 9.5;
+barb_8_height = 10.0;
+barb_8_stack_height = 20.0;
+
+// Transition section
+collar_diameter = 12.0;
+collar_height = 5.0;
+
+// 5 mm tubing section (bottom)
+barb_5_bottom_od = 6.5;
+barb_5_top_od = 5.0;
+barb_5_height = 8.0;
+barb_5_stack_height = 16.0;
+
+// --- Helper Functions ---
+
+// Generates a sawtooth profile for a single barb
+// Parameters:
+//   bottom_od: Outer diameter at the bottom of the barb
+//   top_od: Outer diameter at the top of the barb
+//   height: Total height of the barb
+//   teeth: Number of teeth (sawtooth peaks)
+function barb_profile(bottom_od, top_od, height, teeth) = [
+    for (i = [0 : teeth])
+        let(
+            tooth_height = height / teeth,
+            tooth_base = bottom_od,
+            tooth_tip = i == 0 ? bottom_od : (i == teeth ? top_od : bottom_od + (top_od - bottom_od) * (i / teeth))
+        )
+        // Create a trapezoid for each tooth
+        [
+            [i * tooth_height, tooth_base],
+            [(i + 1) * tooth_height, tooth_base],
+            [(i + 1) * tooth_height, tooth_tip],
+            [i * tooth_height, tooth_tip]
+        ]
+];
+
+// --- Main Part ---
+
+module straight_hose_barb_reducer() {
+    union() {
+        // 1. Top Section: 8 mm tubing barbs
+        translate([0, 0, 0])
+        rotate_extrude(angle = 360) {
+            polygon(barb_profile(barb_8_bottom_od, barb_8_top_od, barb_8_height, 4));
+        }
+
+        // 2. Transition Section: Cylindrical collar
+        translate([0, 0, barb_8_stack_height])
+        cylinder(d = collar_diameter, h = collar_height);
+
+        // 3. Bottom Section: 5 mm tubing barbs
+        translate([0, 0, barb_8_stack_height + collar_height])
+        rotate_extrude(angle = 360) {
+            polygon(barb_profile(barb_5_bottom_od, barb_5_top_od, barb_5_height, 4));
+        }
+    }
+}
+
+// --- Rendering ---
+
+// Create the solid part
+part = straight_hose_barb_reducer();
+
+// Create the bore (cutout) using a cylinder
+// We extend it slightly past the top and bottom to ensure clean cuts
+bore_cutout = cylinder(d = bore_diameter, h = 41 + 2);
+
+// Perform the difference
+difference() {
+    part;
+    translate([0, 0, -1]) bore_cutout; // Extend slightly below
+    translate([0, 0, 42]) bore_cutout; // Extend slightly above
+}
+```

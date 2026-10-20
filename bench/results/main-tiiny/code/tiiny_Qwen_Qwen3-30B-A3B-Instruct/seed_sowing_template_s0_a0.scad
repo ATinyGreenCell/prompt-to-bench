@@ -1,0 +1,57 @@
+// Dimensions and parameters
+$fn = 64; // Ensure smooth curves
+
+// Petri dish inner diameter: 90 mm
+// Template disc: 85 mm diameter, 2 mm thick
+disc_diameter = 85;
+disc_thickness = 2;
+
+// Grid: 7x7 holes, 3 mm diameter, 9 mm center-to-center spacing
+hole_diameter = 3;
+grid_spacing = 9;
+grid_rows = 7;
+grid_cols = 7;
+
+// Notch: 10 mm wide (X), 4 mm deep (Y), on +Y side, centered on Y axis
+notch_width = 10;
+notch_depth = 4;
+
+// Calculate grid center offset (to center grid on disc)
+grid_center_offset = (grid_spacing * (grid_rows - 1)) / 2;
+
+// Create the base disc
+module base_disc() {
+    translate([0, 0, 0])
+    cube([disc_diameter, disc_diameter, disc_thickness], center = true);
+}
+
+// Create the grid of through-holes
+module hole_grid() {
+    for (i = [0 : grid_rows - 1]) {
+        for (j = [0 : grid_cols - 1]) {
+            // Calculate hole center position (offset from center)
+            x = (j - (grid_cols - 1) / 2) * grid_spacing;
+            y = (i - (grid_rows - 1) / 2) * grid_spacing;
+            translate([x, y, 0])
+            cylinder(h = disc_thickness + 1, r = hole_diameter / 2, center = true);
+        }
+    }
+}
+
+// Create the orientation notch on the +Y rim
+module orientation_notch() {
+    // Notch is centered on Y axis, extends 10 mm in X, 4 mm inward from rim
+    notch_half_width = notch_width / 2;
+    notch_inward = disc_diameter / 2 - notch_depth;
+    
+    // Create a rectangular hole from the top, extending slightly beyond the disc
+    translate([0, disc_diameter / 2 - notch_depth, -0.01])
+    cube([notch_width, notch_depth + 1, disc_thickness + 0.02], center = false);
+}
+
+// Assemble the final part: disc with holes and notch
+difference() {
+    base_disc();
+    hole_grid();
+    orientation_notch();
+}

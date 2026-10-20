@@ -1,0 +1,83 @@
+// NEMA 17 L-Shaped Mounting Bracket
+// Units: mm
+
+// --- Dimensions ---
+base_x = 50;       // Base plate width (x: -25 to 25)
+base_y = 45;       // Base plate length (y: 0 to 45)
+base_z = 5;        // Base plate thickness
+
+motor_plate_x = 50; // Motor plate width (x: -25 to 25)
+motor_plate_y = 5;  // Motor plate thickness (y: 0 to 5)
+motor_plate_z = 50; // Motor plate height (z: 0 to 50)
+
+hole_m4_d = 4.5;    // M4 screw hole diameter
+hole_m4_offset_x = -17; // M4 hole 1 x position
+hole_m4_offset_y = 30;  // M4 hole 1 y position
+
+hole_m3_d = 3.4;    // M3 screw hole diameter
+hole_m3_spacing = 31; // M3 screw pattern spacing
+hole_m3_center_z = 28; // M3 hole center z position
+
+gusset_thickness = 5; // Gusset thickness
+gusset_leg_y = 20;    // Gusset leg along +Y
+gusset_leg_z = 20;    // Gusset leg along +Z
+gusset_x_start = -25; // Gusset left edge x
+gusset_x_end = -20;   // Gusset right edge x (left side)
+
+// --- Settings ---
+$fn = 64; // High resolution for curves
+
+// --- Main Body ---
+module main_body() {
+    union() {
+        // Base Plate
+        translate([0, 0, 0])
+            cube([base_x, base_y, base_z]);
+
+        // Vertical Motor Plate
+        translate([0, 0, 0])
+            cube([motor_plate_x, motor_plate_y, motor_plate_z]);
+
+        // Left Gusset
+        translate([gusset_x_start, 0, 0])
+            rotate([0, 0, 90])
+                cube([gusset_thickness, gusset_leg_y, gusset_leg_z]);
+
+        // Right Gusset
+        translate([gusset_x_end, 0, 0])
+            rotate([0, 0, 90])
+                cube([gusset_thickness, gusset_leg_y, gusset_leg_z]);
+    }
+}
+
+// --- Cutouts ---
+module cutouts() {
+    difference() {
+        main_body();
+
+        // 1. M4 Holes in Base Plate
+        // Hole 1
+        translate([hole_m4_offset_x, hole_m4_offset_y, -0.01])
+            cylinder(h = base_z + 0.02, d = hole_m4_d);
+        // Hole 2
+        translate([-hole_m4_offset_x, hole_m4_offset_y, -0.01])
+            cylinder(h = base_z + 0.02, d = hole_m4_d);
+
+        // 2. Motor Boss Hole in Motor Plate
+        // Located at x=0, z=28. Extends through the plate thickness (y=0 to 5).
+        translate([0, 0, hole_m3_center_z - 0.01])
+            cylinder(h = motor_plate_y + 0.02, d = 23);
+
+        // 3. M3 Screw Holes in Motor Plate
+        // Pattern centered at x=0
+        for (x = [-hole_m3_spacing/2, hole_m3_spacing/2]) {
+            for (y = [-hole_m3_spacing/2, hole_m3_spacing/2]) {
+                translate([x, y, hole_m3_center_z - 0.01])
+                    cylinder(h = motor_plate_y + 0.02, d = hole_m3_d);
+            }
+        }
+    }
+}
+
+// --- Render ---
+cutouts();

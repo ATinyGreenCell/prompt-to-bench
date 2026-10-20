@@ -1,0 +1,39 @@
+```openscad
+$fn = 64;
+
+// Disc dimensions
+disc_diameter = 85;     // Diameter of the flat disc (mm)
+disc_height = 2;       // Thickness of the disc (mm)
+
+// Hole grid dimensions
+hole_diameter = 3;     // Diameter of each hole (mm)
+hole_spacing = 9;        // Center-to-center spacing of holes (mm)
+
+// Notch dimensions
+notch_width = 10;      // Width of notch (X direction, mm)
+notch_depth = 4;       // Depth of notch (Y direction, inward from rim, mm)
+
+// Calculate disc radius for notch placement
+disc_radius = disc_diameter / 2;
+
+// Notch placement (Y from rim inward)
+notch_y_start = disc_radius - notch_depth;
+notch_x_start = -notch_width / 2;
+
+difference() {
+  // Main disc (base)
+  cylinder(h = disc_height, d = disc_diameter, center = false);
+  
+  // 7x7 hole grid (subtract holes)
+  for (i = [-3, -2, -1, 0, 1, 2, 3]) {
+    for (j = [-3, -2, -1, 0, 1, 2, 3]) {
+      translate([i * hole_spacing, j * hole_spacing, 0])
+        cylinder(h = disc_height + 0.1, d = hole_diameter, center = false);
+    }
+  }
+  
+  // Rectangular notch on +Y rim (subtract notch)
+  translate([notch_x_start, notch_y_start, 0])
+    cube([notch_width, notch_depth + 0.1, disc_height + 0.1], center = false);
+}
+```

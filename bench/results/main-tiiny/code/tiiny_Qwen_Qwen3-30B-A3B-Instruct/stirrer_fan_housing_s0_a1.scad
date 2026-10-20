@@ -1,0 +1,90 @@
+// Dimensions for DIY magnetic stirrer housing
+$fn = 64;
+
+// Overall dimensions
+outer_width = 90;        // X dimension
+outer_depth = 90;        // Y dimension
+top_thickness = 2;       // Z thickness of top plate
+wall_height = 40;         // Height of walls from top plate
+wall_thickness = 2.5;     // Thickness of side walls
+
+// Screw hole parameters
+screw_diameter = 4.5;      // Diameter of screw holes
+screw_pattern_diameter = 71.5; // Diagonal distance between screw holes (square pattern)
+
+// Cable notch parameters
+notch_width = 12;         // Width of cable notch
+notch_depth = 8;      // Depth of notch from open edge (z = 32 to z = 40)
+notch_position = 45;    // Center of notch along the wall (Y direction)
+
+// Ensure the part is oriented correctly: top plate at z = 0 to 2, and the entire part sits on the bed (z = 0)
+// The original model had the top plate at z = 0 to 2, but the walls extended from z = 0 to 40, and the body was centered at origin.
+// However, the measurement report shows the lowest point at z = -20.00, which is wrong.
+
+// The issue: the walls were centered at origin (z = 0), but the top plate is at z = 0 to 2, so the walls should start at z = 0 and go to z = 40.
+// But the walls were created with `center = true`, so they extend from z = -wall_height/2 to z = wall_height/2, which is -20 to 20.
+// That's why the bounding box goes from z = -20 to 40 — because the walls are centered at z = 0.
+
+// Fix: The entire housing must be shifted so that the top plate lies on the bed (z = 0 to 2), and the walls rise from z = 0 to z = 40.
+// So the walls should be placed from z = 0 to z = 40, not centered at z = 0.
+
+// We'll reposition all parts so that:
+// - The top plate is from z = 0 to 2
+// - The walls extend from z = 0 to 40 (not centered at z = 0)
+
+module housing() {
+    // Top plate (z = 0 to 2), centered at origin in X and Y
+    translate([0, 0, 1]) // Center top plate at z = 1 (so it spans 0 to 2)
+        cube([outer_width, outer_depth, top_thickness], center = true);
+
+    // Four walls: each wall is 2.5 mm thick, and rises from z = 0 to z = 40
+    // So we place each wall at the correct Y or X offset, and set its Z position so it starts at z = 0
+
+    // Front wall (Y = -45 to -45 + wall_thickness), Z = 0 to 40
+    translate([0, -45 + wall_thickness/2, 20]) // Center wall at z = 20 (so it spans 0 to 40)
+        cube([outer_width, wall_thickness, wall_height], center = true);
+
+    // Back wall (Y = 45 - wall_thickness to 45), Z = 0 to 40
+    translate([0, 45 - wall_thickness/2, 20])
+        cube([outer_width, wall_thickness, wall_height], center = true);
+
+    // Left wall (X = -45 to -45 + wall_thickness), Z = 0 to 40
+    translate([-45 + wall_thickness/2, 0, 20])
+        cube([wall_thickness, outer_depth, wall_height], center = true);
+
+    // Right wall (X = 45 - wall_thickness to 45), Z = 0 to 40
+    translate([45 - wall_thickness/2, 0, 20])
+        cube([wall_thickness, outer_depth, wall_height], center = true);
+
+    // Cut screw holes through top plate (z = 0 to 2) using cylinders
+    for (i = [0:1]) {
+        for (j = [0:1]) {
+            screw_x = (i == 0 ? -screw_pattern_diameter/2 : screw_pattern_diameter/2);
+            screw_y = (j == 0 ? -screw_pattern_diameter/2 : screw_pattern_diameter/2);
+
+            // Drill through top plate: from z = -0.1 to 2.1 to ensure full penetration
+            translate([screw_x, screw_y, 1]) // Center of hole at z = 1 (mid of top plate)
+                cylinder(h = top_thickness + 0.2, r = screw_diameter / 2, center = true);
+        }
+    }
+
+    // Cut cable notch in the back wall (Y = 45 - wall_thickness to 45)
+    // Notch is 12 mm wide, centered on X, from z = 32 to z = 40 (8 mm deep from open edge)
+    // The back wall is at Y = 45 - wall_thickness to 45, and spans Z = 0 to 40
+    // We cut a rectangular hole from X = -6 to 6 (12 mm wide), Y = 45 - wall_thickness to 45, Z = 32 to 40
+
+    // Ensure the notch extends slightly beyond the wall to avoid coplanar faces
+    notch_x_min = -notch_width / 2;
+    notch_x_max = notch_width / 2;
+    notch_y_min = 45 - wall_thickness;
+    notch_y_max = 45;
+    notch_z_min = 32;
+    notch_z_max = 40;
+
+    // Cut a cube that extends slightly beyond the wall to ensure full removal
+    translate([0, 45 - wall_thickness/2, 36]) // Center of notch at z = 36 (mid of 32 to 40)
+        cube([notch_width + 0.1, wall_thickness + 0.1, notch_depth + 0.1], center = true);
+}
+
+// Render the housing with correct orientation: top plate on bed (z = 0 to 2), walls from z = 0 to 40
+housing();

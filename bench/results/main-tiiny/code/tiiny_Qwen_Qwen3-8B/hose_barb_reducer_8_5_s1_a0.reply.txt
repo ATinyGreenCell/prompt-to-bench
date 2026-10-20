@@ -1,0 +1,70 @@
+```openscad
+// Dimensions for the hose-barb reducer
+$fn = 64; // For curved shapes to ensure smoothness
+
+// Main dimensions
+bore_diameter = 3; // Diameter of the central bore
+total_length = 41; // Total length of the reducer from z=0 to z=41
+
+// Barbs for 8 mm tubing
+barb_height_8 = 10; // Height of each barb for 8 mm tubing
+barb_outer_diameter_bottom_8 = 7.5; // Bottom outer diameter of barb for 8 mm
+barb_outer_diameter_top_8 = 9.5; // Top outer diameter of barb for 8 mm
+barb_outer_diameter_step_8 = 7.5; // Diameter after step for 8 mm barb
+
+// Barbs for 5 mm tubing
+barb_height_5 = 8; // Height of each barb for 5 mm tubing
+barb_outer_diameter_bottom_5 = 6.5; // Bottom outer diameter of barb for 5 mm
+barb_outer_diameter_top_5 = 5.0; // Top outer diameter of barb for 5 mm
+barb_outer_diameter_step_5 = 6.5; // Diameter after step for 5 mm barb
+
+// Collar dimensions
+collar_diameter = 12; // Diameter of the cylindrical collar
+collar_length = 5; // Length of the collar from z=20 to z=25
+
+// Helper variables for barb geometry
+barb_segment_count = 16; // Number of segments for linear extrusion
+barb_step_offset = 0.5; // Offset for step in barb profile
+
+// Function to create a barb with linear growth and step
+barb = function(diameter_start, diameter_end, height, step_diameter) =
+    linear_extrude(height=height, convexity=10)
+    rotate_extrude(angle=360)
+    difference() {
+        // Create a circular profile with linear growth
+        polygon(points=[[0,0], [diameter_start, 0], [diameter_start, diameter_start], [diameter_end, diameter_end], [diameter_end, 0], [0,0]]);
+        // Subtract a smaller circle at the top to create the step
+        translate([0, 0, height - 0.1]) // Move up slightly to avoid coplanar faces
+        circle(r=step_diameter / 2);
+    };
+
+// Create the 8 mm barbs from z=0 to z=20
+union() {
+    // First 8 mm barb
+    translate([0, 0, 0])
+    barb(barb_outer_diameter_bottom_8, barb_outer_diameter_top_8, barb_height_8, barb_outer_diameter_step_8);
+    
+    // Second 8 mm barb (stacked on top)
+    translate([0, 0, barb_height_8])
+    barb(barb_outer_diameter_bottom_8, barb_outer_diameter_top_8, barb_height_8, barb_outer_diameter_step_8);
+}
+
+// Create the collar from z=20 to z=25
+translate([0, 0, 20])
+cylinder(r=collar_diameter / 2, h=collar_length, $fn=64);
+
+// Create the 5 mm barbs from z=25 to z=41
+union() {
+    // First 5 mm barb
+    translate([0, 0, 25])
+    barb(barb_outer_diameter_bottom_5, barb_outer_diameter_top_5, barb_height_5, barb_outer_diameter_step_5);
+    
+    // Second 5 mm barb (stacked on top)
+    translate([0, 0, 25 + barb_height_5])
+    barb(barb_outer_diameter_bottom_5, barb_outer_diameter_top_5, barb_height_5, barb_outer_diameter_step_5);
+}
+
+// Create the central bore through the entire length
+translate([0, 0, 0])
+cylinder(r=bore_diameter / 2, h=total_length, $fn=64);
+```

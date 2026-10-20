@@ -1,0 +1,80 @@
+// Bench Rack for 1.5 mL Microcentrifuge Tubes
+// Designed for FDM 3D printing. Rests on XY plane at Z=0.
+
+// --- Dimensions (mm) ---
+// Block Dimensions
+$block_length = 106; // X
+$block_width  = 72;  // Y
+$block_height = 30;  // Z
+
+// Grid Configuration
+$grid_rows = 4;      // Rows along Y
+$grid_cols = 6;      // Columns along X
+$grid_spacing_x = 16; // Centre-to-centre spacing X
+$grid_spacing_y = 16; // Centre-to-centre spacing Y
+
+// Hole Dimensions
+$hole_diameter = 11.2;
+$hole_depth    = 25; // Depth of the hole (from top surface)
+$floor_height  = 5;  // Solid floor thickness (30 - 25)
+
+// --- Variables ---
+$fn = 64; // Resolution for curved shapes
+
+// --- Main Module ---
+module bench_rack() {
+    // Calculate the offset to center the grid on the block
+    // Center of block is (0,0). 
+    // We want the first hole at x = -((cols-1)*spacing)/2
+    
+    $x_offset = -(($grid_cols - 1) * $grid_spacing_x / 2);
+    $y_offset = -(($grid_rows - 1) * $grid_spacing_y / 2);
+
+    // Create the holes by subtracting cylinders from the block
+    // We use a loop to generate all holes
+    for (col = [0 : $grid_cols - 1]) {
+        for (row = [0 : $grid_rows - 1]) {
+            
+            // Calculate position of the hole center relative to block center
+            $x_pos = $x_offset + (col * $grid_spacing_x);
+            $y_pos = $y_offset + (row * $grid_spacing_y);
+            
+            // Define the hole geometry
+            // We subtract a cylinder that is slightly larger than the hole diameter
+            // to ensure clean cutting (Rule 5).
+            $cut_diameter = $hole_diameter + 0.1; 
+            $cut_radius = $cut_diameter / 2;
+            
+            // The hole is open at the top (Z = $block_height) and goes down to Z = $floor_height
+            // In OpenSCAD, cylinder height is along Z by default.
+            // We position the cylinder so its top is at the block top.
+            // Cylinder center Z = Top_Z - (Height / 2)
+            $z_pos = ($block_height / 2) - ($hole_depth / 2);
+            
+            difference() {
+                // Start with the solid block
+                translate([0, 0, 0]) 
+                    cube([
+                        $block_length,
+                        $block_width,
+                        $block_height
+                    ]);
+                
+                // Subtract the hole
+                translate([
+                    $x_pos, 
+                    $y_pos, 
+                    $z_pos
+                ]) 
+                    cylinder(
+                        h = $hole_depth,
+                        r = $cut_radius,
+                        $fn = $fn
+                    );
+            }
+        }
+    }
+}
+
+// Instantiate the part
+bench_rack();

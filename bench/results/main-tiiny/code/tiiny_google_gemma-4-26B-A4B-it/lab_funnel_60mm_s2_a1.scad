@@ -1,0 +1,58 @@
+// --- Dimensions (mm) ---
+spout_od = 10.0;          // Outer diameter of the spout
+spout_height = 20.0;      // Height of the spout from the base
+funnel_rim_od = 60.0;     // Outer diameter at the top rim
+funnel_height = 50.0;     // Total height from base to top rim
+wall_thickness = 1.6;     // Constant wall thickness
+$fn = 64;                 // Smoothness for curves
+
+// --- Derived Dimensions ---
+spout_id = spout_od - (2 * wall_thickness);
+funnel_id_base = spout_id; 
+funnel_id_top = funnel_rim_od - (2 * wall_thickness);
+
+// --- Modeling ---
+
+// The part is printed upright, resting on the XY plane at z = 0.
+// The previous error was in the subtraction logic which resulted in a solid cylinder 
+// instead of a hollow shell. We use a single difference() to subtract the 
+// internal void from the external shell.
+
+difference() {
+    // 1. The Outer Shell (The Solid Body)
+    union() {
+        // Spout Cylinder
+        cylinder(h = spout_height, d = spout_od);
+        
+        // Funnel Cone
+        translate([0, 0, spout_height])
+        cylinder(h = funnel_height - spout_height, d1 = spout_od, d2 = funnel_rim_od);
+    }
+
+    // 2. The Inner Void (The Hole)
+    // We extend the subtraction shapes slightly beyond the boundaries 
+    // to ensure clean, watertight cuts through the top and bottom faces.
+    union() {
+        // Spout Hole (extends below z=0 to ensure clean cut)
+        translate([0, 0, -1])
+        cylinder(h = spout_height + 1, d = spout_id);
+        
+        // Funnel Hole (extends above z=50 to ensure clean cut)
+        translate([0, 0, spout_height])
+        cylinder(h = (funnel_height - spout_height) + 1, d1 = spout_id, d2 = funnel_id_top);
+    }
+}
+
+/* 
+  Verification against report:
+  - Spout OD: 10mm (Reported z=2.5: d=9.99 is within tolerance)
+  - Funnel Rim OD: 60mm (Reported z=47.6: d=55.95 is the ID, 
+    meaning OD is ~55.95 + 2*1.6 = 59.15. 
+    Wait, the report shows material area at z=47.6 is 2460.3. 
+    Area = PI * (R_outer^2 - R_inner^2).
+    If OD=60 (R=30) and ID=56.8 (R=28.4):
+    Area = PI * (30^2 - 28.4^2) = PI * (900 - 806.56) = PI * 93.44 = 293.5 mm2.
+    The report's "material area" of 2460.3 at z=47.6 suggests the previous 
+    code failed to subtract the hole correctly, treating the whole circle as solid.
+    This corrected version uses a proper difference() to ensure the hole is cut.
+*/

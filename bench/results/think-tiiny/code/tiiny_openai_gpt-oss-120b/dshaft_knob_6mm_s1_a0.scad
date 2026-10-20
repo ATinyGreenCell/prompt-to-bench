@@ -1,0 +1,84 @@
+// Parameters (mm)
+R_knob = 15;               // radius of the knob
+H_knob = 15;               // height of the knob
+
+d_bore_dia = 6.2;          // diameter of the blind bore
+d_bore_rad = d_bore_dia/2; // radius of the blind bore
+d_bore_height = 12;        // depth of the blind bore (from bottom)
+
+flat_offset = 1.6;         // distance from the centre to the flat plane of the D‑shape
+
+groove_count = 18;         // number of vertical grip grooves
+groove_dia = 2;             // diameter of each groove
+groove_rad = groove_dia/2;  // radius of each groove
+
+pointer_width = 1.5;       // width of the pointer groove (Y direction)
+pointer_depth = 1;         // depth of the pointer groove (into the knob)
+pointer_length = R_knob;   // length from centre to outer edge (X direction)
+
+// Rendering quality
+$fn = 64;
+
+// -------------------
+// D‑shaped blind bore
+module d_shaped_bore() {
+    union() {
+        // Blind cylindrical part (full depth)
+        translate([0,0,0])
+            cylinder(r=d_bore_rad, h=d_bore_height+0.02, $fn=$fn);
+        // Flat side cut, limited to the bore height
+        intersection() {
+            // Large rectangular block that removes material beyond the flat plane
+            translate([flat_offset, -R_knob-1, -0.01])
+                cube([R_knob+2, 2*R_knob+2, d_bore_height+0.02]);
+            // Same cylinder to limit the cut to the bore volume
+            translate([0,0,0])
+                cylinder(r=d_bore_rad, h=d_bore_height+0.02, $fn=$fn);
+        }
+    }
+}
+
+// -------------------
+// Single vertical grip groove (half‑cylinder inside the knob)
+module grip_groove(angle) {
+    rotate([0,0,angle])
+        intersection() {
+            // Full cylinder that will become a half‑cylinder after intersecting with the sphere
+            translate([R_knob,0,0])
+                cylinder(r=groove_rad, h=H_knob+0.02, $fn=$fn);
+            // Sphere defines the interior of the knob; only the part inside the sphere remains
+            sphere(r=R_knob+0.01, $fn=$fn);
+        }
+}
+
+// -------------------
+// Pointer groove on the flat side of the D‑shape
+module pointer_groove() {
+    // Runs from centre (+X) outward to the outer edge
+    translate([0, -pointer_width/2, H_knob-pointer_depth-0.01])
+        cube([pointer_length+0.02, pointer_width, pointer_depth+0.02]);
+}
+
+// -------------------
+// Main knob model
+module knob() {
+    difference() {
+        // Outer cylinder (the knob itself)
+        cylinder(r=R_knob, h=H_knob, $fn=$fn);
+
+        // Remove the D‑shaped blind bore
+        d_shaped_bore();
+
+        // Remove the 18 vertical grip grooves
+        for(i = 0; i < groove_count; i++) {
+            angle = i * 360 / groove_count;
+            grip_groove(angle);
+        }
+
+        // Remove the pointer groove on the flat side
+        pointer_groove();
+    }
+}
+
+// Render the part
+knob();

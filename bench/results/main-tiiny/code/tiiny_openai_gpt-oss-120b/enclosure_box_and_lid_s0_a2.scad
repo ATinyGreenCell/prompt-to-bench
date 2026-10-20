@@ -1,0 +1,23 @@
+// Enclosure box (left) and lid (right) – side by side with 10 mm gap
+// All dimensions are in millimetres
+$fn = 64;                         // smoothness for circles/cylinders
+
+// ---------- Common parameters ----------
+outer_x = 70;          // box and lid plate outer X size
+outer_y = 50;          // box and lid plate outer Y size
+outer_z = 30;          // box outer Z size (height)
+wall   = 2;           // box wall thickness
+floor_thick = 2;      // box floor thickness
+gap    = 10;          // gap between the two parts on the print bed
+clearance = 0.5;      // extra size for subtraction shapes (avoid coplanar faces)
+
+// ---------- Lid specific parameters ----------
+lid_thick   = 2;       // plate thickness of the lid
+lip_outer_x = 65.6;    // outer X size of the lid lip (including walls)
+lip_outer_y = 45.6;    // outer Y size of the lid lip (including walls)
+lip_thick   = 1.5;    // lip wall thickness
+lip_height   = 4;     // lip height (above the plate)
+
+// ---------- Modules ----------
+
+//

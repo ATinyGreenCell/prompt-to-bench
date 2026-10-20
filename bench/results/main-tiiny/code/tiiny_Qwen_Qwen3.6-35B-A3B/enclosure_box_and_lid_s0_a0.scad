@@ -1,0 +1,100 @@
+// --- Dimensions ---
+// Box outer dimensions
+BOX_W = 70;
+BOX_D = 50;
+BOX_H = 30;
+
+// Box wall and floor thickness
+WALL_THK = 2;
+FLOOR_THK = 2;
+
+// Lid plate dimensions (matches box outer footprint)
+LID_W = 70;
+LID_D = 50;
+LID_PLATE_THK = 2;
+
+// Lid lip dimensions (inner sliding part)
+LIP_OUT_W = 65.6;
+LIP_OUT_D = 45.6;
+LIP_THK = 1.5;
+LIP_H = 4;
+
+// Spacing between parts
+GAP = 10;
+
+// --- Calculated Positions ---
+// Box is centred at origin in X/Y
+BOX_X = 0;
+BOX_Y = 0;
+
+// Lid is on the +X side, with GAP distance between them
+// Box right edge is at BOX_W/2. Lid left edge is at BOX_W/2 + GAP.
+// Lid centre X = (BOX_W/2 + GAP) + LID_W/2
+LID_X = (BOX_W / 2) + GAP + (LID_W / 2);
+LID_Y = 0; // Centred in Y
+
+// --- Helper: Box Body ---
+// Built on XY plane, builds up in +Z
+module build_box() {
+    $fn = 64;
+    
+    // 1. Main outer shell
+    // Height includes floor and walls. 
+    // We build a solid block of size BOX_W x BOX_D x BOX_H
+    // Then subtract the inner cavity.
+    union() {
+        // Outer shell
+        cube([BOX_W, BOX_D, BOX_H], center = false);
+        
+        // Inner cavity subtraction
+        // Cavity starts at floor height (FLOOR_THK)
+        // Cavity width/depth is reduced by 2 * WALL_THK
+        // Cavity height is BOX_H - FLOOR_THK (open top)
+        // We extend the cut slightly past the bottom face (z=0) to ensure clean boolean
+        translate([0, 0, -0.01]) {
+            cube([
+                BOX_W - 2 * WALL_THK,
+                BOX_D - 2 * WALL_THK,
+                BOX_H - FLOOR_THK + 0.02 // Extend slightly into floor to cut cleanly
+            ], center = false);
+        }
+    }
+}
+
+// --- Helper: Lid Body ---
+// Printed upside down: Plate lies on bed (z=0), Lip builds up from there.
+// The lip is the part that slides into the box.
+module build_lid() {
+    $fn = 64;
+    
+    union() {
+        // 1. The base plate
+        // Lies on the bed, thickness LID_PLATE_THK
+        cube([LID_W, LID_D, LID_PLATE_THK], center = false);
+        
+        // 2. The lip
+        // Centred on the plate.
+        // Outer dimensions: LIP_OUT_W x LIP_OUT_D
+        // Height: LIP_H
+        // Thickness: LIP_THK (implied by difference between outer and inner lip dimensions)
+        // Since it's a "wall", we model it as a solid block of lip dimensions
+        // sitting on the plate.
+        translate([
+            (LID_W - LIP_OUT_W) / 2,
+            (LID_D - LIP_OUT_D) / 2,
+            LID_PLATE_THK
+        ]) {
+            cube([LIP_OUT_W, LIP_OUT_D, LIP_H], center = false);
+        }
+    }
+}
+
+// --- Main Assembly ---
+// Place parts side by side
+translate([BOX_X, BOX_Y, 0]) {
+    build_box();
+}
+
+translate([LID_X, LID_Y, 0]) {
+    build_lid();
+}

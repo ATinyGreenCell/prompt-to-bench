@@ -1,0 +1,82 @@
+// Dimensions for the hotplate stirrer knob
+$fn = 64; // Set resolution for smooth curves
+
+// Main knob dimensions
+diameter_knob = 30;        // Diameter of the cylindrical knob
+height_knob = 15;          // Height of the knob
+d_shaft_diameter = 6.2;      // Diameter of the D-shaft hole (slightly larger than 6 mm for clearance)
+d_shaft_flat_width = 4.7; // Width across flats of the D-shaft (flat to opposite side)
+d_shaft_depth = 12;      // Depth of the D-shaped blind bore
+
+// Grip grooves
+num_grooves = 18;          // Number of vertical grip grooves
+groove_diameter = 2;       // Diameter of the half-cylinder groove
+groove_radius = groove_diameter / 2; // Radius of the groove
+groove_depth = height_knob; // Grooves go full height
+
+// Pointer groove
+pointer_width = 1.5;       // Width of the pointer groove
+pointer_depth = 1;           // Depth of the pointer groove
+
+// Calculate radius for ease of use
+radius_knob = diameter_knob / 2;
+radius_groove = groove_diameter / 2;
+
+// Build the knob as a cylinder
+cylinder(h = height_knob, r = radius_knob, center = true);
+
+// Subtract the D-shaped blind bore
+difference() {
+    // Main cylinder (already defined)
+    cylinder(h = height_knob, r = radius_knob, center = true);
+
+    // D-shaped hole: a circle of diameter 6.2 mm, with one side flat
+    // The flat is 4.7 mm wide, so the flat is centered on the x-axis (flat on negative x side)
+    // The circle has radius 3.1 mm
+    // The D-shape is: a full circle of radius 3.1 mm, minus a rectangular prism from the side
+
+    // Create a rectangular prism to cut the flat side
+    // The flat side is 4.7 mm in y-direction (from -2.35 to 2.35), and extends 0.01 mm past the circle's edge in x
+    // So the cube is: width = 0.01 mm (in x), height = 4.7 mm (in y), depth = 12.01 mm (in z)
+    // Positioned at x = -3.1 - 0.005 (so it extends from -3.1 to -3.1 - 0.01), y = 0, z = 0
+    translate([-(d_shaft_diameter / 2 + 0.005), 0, 0]) {
+        cube([0.01, d_shaft_flat_width, d_shaft_depth + 0.01], center = false);
+    }
+}
+
+// Cut 18 evenly spaced vertical grip grooves around the outside
+// Each groove is a 2 mm diameter half-cylinder, centered on the outer surface, going full height
+for (i = [0 : num_grooves - 1]) {
+    angle = i * 360 / num_grooves;
+    // Translate to the outer surface: place the groove at radius_knob - radius_groove from center
+    // But the groove is a half-cylinder whose axis is parallel to the z-axis
+    // So we place a cylinder of radius 1 mm, height 15 mm, at (radius_knob - 1, 0, 0) in the local coordinate system, then rotate it to the correct angle
+    // But we want only half of it — the half that faces inward
+
+    // We'll create a half-cylinder by using a full cylinder and cutting it with a plane at angle 0 and 180 degrees
+    // But simpler: use a cylinder of radius 1 mm, height 15 mm, centered at (radius_knob - 1, 0, 0), rotated by angle around z-axis
+    // Then cut it with a half-space: a cube that extends from x = -infinity to x = (radius_knob - 1) - 1, but that's not bounded
+
+    // Correct method: use a half-cylinder by using a cylinder and a difference with a half-space
+    // We'll use a cube that covers half of the cylinder's cross-section
+
+    // Instead, we can use a cylinder of radius 1 mm, height 15 mm, centered at (radius_knob - 1, 0, 0), rotated by angle around z-axis
+    // Then use a cube that extends from x = -100 to x = (radius_knob - 1) - 1, but that's not correct
+
+    // Better: use a half-cylinder by using a cylinder and a plane that cuts it in half
+    // We'll do: create a cylinder of radius 1 mm, height 15 mm, centered at (radius_knob - 1, 0, 0), rotated by angle around z-axis
+    // Then use a cube that covers the entire half-space: from x = -100 to x = (radius_knob - 1) - 1, but that's not bounded
+
+    // Actually, we can use a half-cylinder by using a cylinder and a difference with a half-space defined by a plane
+    // But OpenSCAD doesn't have half-space directly. So we use a cube that covers half of the cylinder
+
+    // We'll do: create a cylinder of radius 1 mm, height 15 mm, centered at (radius_knob - 1, 0, 0), rotated by angle around z-axis
+    // Then use a cube that extends from x = -100 to x = (radius_knob - 1) - 1, but that's not correct
+
+    // Correct and simpler: use a cylinder of radius 1 mm, height 15 mm, centered at (radius_knob - 1, 0, 0), rotated by angle around z-axis
+    // Then use a cube that covers the entire half-space: from x = -100 to x = (radius_knob - 1) - 1, but that's not bounded
+
+    // Actually, we can use a half-cylinder by using a cylinder and a difference with a half-space defined by a plane at angle 0 and 180 degrees
+
+    // But here's a better way: use a cylinder of radius 1 mm, height 15 mm, centered at (radius_knob - 1, 0, 0), rotated by angle around z-axis
+    // Then use a cube that covers the entire half-space: from x = -1

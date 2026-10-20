@@ -1,0 +1,39 @@
+We are designing a comb for agarose gels. The comb is a flat plate 1.5 mm thick (Z) lying on the bed (Z=0 to Z=1.5). The spine (back bar) is 70 mm long (X) and 12 mm wide (Y). The teeth are 10 in number, each 5.0 mm wide (X) and 12 mm long (Y) (extending in the -Y direction from the spine). The gaps between teeth are 1.5 mm, and the teeth row is centered on the spine in X.
+
+ However, the key realization: the entire comb is a single solid. The spine is the main body (from Y=0 to Y=12) and the teeth are attached to the spine's edge at Y=0, extending from Y=0 to Y=-12 (so the teeth are in the -Y direction). Therefore, the entire comb spans Y from -12 to 12 (24 mm) and X from 0 to 70 (70 mm). The teeth row (10 teeth with 9 gaps) spans 10*5.0 + 9*1.5 = 63.5 mm, which is centered on the spine (70 mm), so the spine extends 3.25 mm beyond the teeth row on each side.
+
+ But note: the comb is solid, so the entire comb is a rectangular prism of 70 mm (X) x 24 mm (Y) x 1.5 mm (Z). We center it at the origin in X and Y.
+
+ However, the problem says "the whole comb" is a flat plate. This rectangular prism is flat (only 1.5 mm thick) and has the teeth as part of its structure (the teeth are the bottom part of the comb, from Y=-12 to 0, and the spine is from Y=0 to 12). So the rectangular prism model is correct.
+
+ But to be absolutely clear, the comb's shape in the X-Y plane is a rectangle from X=0 to 70 and Y=-12 to 12. The teeth are the parts of this rectangle that are in Y=-12 to 0, and the spine is Y=0 to 12. The teeth are not separate features; they are the bottom half of the comb.
+
+ Therefore, we model it as a single cube.
+
+ However, the problem says "10 rectangular teeth", but in the solid, the teeth are not distinguished from the spine. But the problem does not require the teeth to be drawn as separate objects. It's a solid comb.
+
+ So the code is as below.
+
+ But note: the problem says "the row of teeth is centred on the spine in X". The spine is 70 mm, so the entire comb is 70 mm in X. The teeth row (63.5 mm) is centered on the spine, so the comb's X dimension is 70 mm and the teeth row is centered within it. The model of a 70x24x1.5 cube centered at the origin is correct.
+
+ Let's write the code accordingly.
+</think>
+
+```openscad
+$fn = 64;
+
+// Dimensions in millimeters
+spine_length = 70.0;      // Length of the spine (X direction)
+spine_width = 12.0;      // Width of the spine (Y direction)
+tooth_width = 5.0;         // Width of each tooth (X direction)
+tooth_length = 12.0;       // Length of each tooth (Y direction, extending in -Y)
+gap = 1.5;               // Gap between adjacent teeth (X direction)
+thickness = 1.5;           // Thickness of the comb (Z direction)
+
+// Total Y dimension: spine_width (Y positive) + tooth_length (Y negative)
+total_Y = spine_width + tooth_length;
+
+// Center the comb at the origin in X and Y
+translate([ -spine_length/2, -total_Y/2, 0 ])
+    cube([spine_length, total_Y, thickness]);
+```

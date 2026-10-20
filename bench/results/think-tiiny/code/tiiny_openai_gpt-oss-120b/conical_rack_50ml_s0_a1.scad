@@ -1,0 +1,67 @@
+// Rack for six 50 mL Falcon tubes
+// All dimensions are in millimetres
+
+$fn = 64;                         // smoothness for circles and cylinders
+
+// Plate (flat plate that lies on the print bed)
+plate_length = 130;   // X direction
+plate_width  = 90;    // Y direction
+plate_thick  = 4;     // Z direction (thickness)
+
+// Hole (tube) dimensions and layout
+hole_dia      = 30.5; // tube outer diameter
+hole_spacing  = 40;   // centre‑to‑centre spacing (both X and Y)
+hole_rows     = 2;    // rows along Y
+hole_cols     = 3;    // columns along X
+
+// Wall dimensions (two long side walls)
+wall_thick = 4;               // thickness in Y
+wall_height = 70 - plate_thick; // rises from plate top (z=4) to z=70
+
+// Helper half‑sizes for centering the plate
+half_len = plate_length/2;
+half_wid = plate_width/2;
+
+// --- Base plate ---------------------------------------------------------
+plate = translate([-half_len, -half_wid, 0])
+        cube([plate_length, plate_width, plate_thick]);
+
+// --- Long side walls -----------------------------------------------------
+// Wall runs along the +Y edge (inner face at Y = +half_wid)
+wall_plus = translate([-half_len, half_wid, plate_thick])
+            cube([plate_length, wall_thick, wall_height]);
+
+// Wall runs along the –Y edge (inner face at Y = –half_wid)
+wall_minus = translate([-half_len, -half_wid - wall_thick, plate_thick])
+             cube([plate_length, wall_thick, wall_height]);
+
+// --- Assemble plate + walls ---------------------------------------------
+rack_body = union() {
+    plate,
+    wall_plus,
+    wall_minus
+};
+
+// --- Through‑holes (extend 0.5 mm beyond each face) --------------------
+hole_cut = union() {
+    // Columns are spaced by hole_spacing, centered → indices -1,0,1
+    // Rows are spaced by hole_spacing/2, centered → indices -1, +1
+    for (i = [-1, 0, 1]) {
+        for (j = [-1, 1]) {
+            translate([ i * hole_spacing,
+                        j * (hole_spacing/2),
+                        -0.5 ])               // extend below plate
+                cylinder(d = hole_dia,
+                         h = plate_thick + 1,   // extend above plate
+                         center = false);
+        }
+    }
+};
+
+// --- Final part (plate + walls) minus holes ----------------------------
+final_part = difference() {
+    rack_body,
+    hole_cut
+};
+
+final_part;

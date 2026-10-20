@@ -1,0 +1,47 @@
+// 10-well Agarose Gel Comb
+// Designed for FDM printing, lying flat on the build plate.
+
+// --- Dimensions (measured with calipers) ---
+comb_thickness = 1.5;   // Z height of the entire comb
+spine_length = 70;      // X length of the back bar (spine)
+spine_width = 12;       // Y width of the back bar
+tooth_width = 5.0;      // X width of each tooth
+tooth_length = 12;      // Y length of each tooth (hangs in -Y)
+gap_width = 1.5;        // Gap between neighbouring teeth
+num_teeth = 10;         // Number of wells/teeth
+
+// --- Derived Calculations ---
+// Total width occupied by teeth and gaps
+total_tooth_row_width = (num_teeth * tooth_width) + ((num_teeth - 1) * gap_width);
+
+// Offset to center the row of teeth on the spine
+// The spine is centered at X=0, so we shift the first tooth to start at -total_tooth_row_width/2
+x_offset = -total_tooth_row_width / 2;
+
+// --- Rendering Settings ---
+$fn = 64; // High resolution for clean edges
+
+// --- Main Construction ---
+union() {
+    // 1. The Spine (Back Bar)
+    // Centered at origin, extending from -spine_length/2 to +spine_length/2 in X
+    // and -spine_width/2 to +spine_width/2 in Y
+    translate([-spine_length / 2, -spine_width / 2, 0])
+        cube([spine_length, spine_width, comb_thickness]);
+
+    // 2. The Teeth
+    // Loop to create each tooth
+    for (i = [0 : num_teeth - 1]) {
+        // Calculate X position for the current tooth
+        current_x = x_offset + (i * (tooth_width + gap_width));
+        
+        // Calculate Y position
+        // Teeth hang in -Y direction from the spine.
+        // The spine ends at Y = -spine_width/2.
+        // So the tooth starts at Y = -spine_width/2 and extends to Y = -spine_width/2 - tooth_length
+        current_y = -spine_width / 2 - tooth_length;
+        
+        translate([current_x, current_y, 0])
+            cube([tooth_width, tooth_length, comb_thickness]);
+    }
+}

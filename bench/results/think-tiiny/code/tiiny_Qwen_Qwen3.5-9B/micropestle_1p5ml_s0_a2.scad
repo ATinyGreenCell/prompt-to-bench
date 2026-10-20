@@ -1,0 +1,50 @@
+$fn = 64;
+
+// Dimensions in mm
+handle_d = 8;
+handle_h = 45;
+cone_top_d = 8;
+cone_bottom_d = 3;
+cone_start_z = 45;
+cone_end_z = 62;
+tip_d = 3;
+tip_center_z = 62;
+
+// Groove dimensions
+num_grooves = 4;
+groove_w = 2; // Width in Z
+groove_d = 1; // Depth
+groove_z = [10, 15, 20, 25]; // Z centers
+
+// Main body construction
+difference() {
+    union() {
+        // Handle: Cylinder from z=0 to z=45
+        cylinder(d=handle_d, h=handle_h);
+        
+        // Cone: Tapers from 8mm at z=45 to 3mm at z=62
+        // Use rotate_extrude with polygon profile rotated 90 degrees to align with Z
+        rotate([90, 0, 0]) {
+            rotate_extrude($fn=64) {
+                polygon([
+                    [0, 0],
+                    [handle_d/2, 0],
+                    [cone_bottom_d/2, cone_end_z - cone_start_z],
+                    [0, cone_end_z - cone_start_z]
+                ]);
+            }
+        }
+        
+        // Tip: Sphere centered at z=62
+        translate([0, 0, tip_center_z]) {
+            sphere(d=tip_d);
+        }
+    }
+    
+    // Cut grooves into handle
+    for (i = [0, 1, 2, 3]) {
+        translate([0, 0, groove_z[i]]) {
+            cylinder(d=handle_d + 0.01, h=groove_w);
+        }
+    }
+}

@@ -1,0 +1,62 @@
+// 10-well comb for agarose gel casting
+// Dimensions in millimetres
+
+// Overall plate thickness
+thickness = 1.5;
+
+// Spine dimensions
+spine_length = 70;
+spine_width = 12;
+
+// Tooth dimensions
+tooth_width = 5.0;
+tooth_length = 12;
+
+// Gap between teeth
+gap_width = 1.5;
+
+// Number of teeth
+num_teeth = 10;
+
+// Calculate total width of teeth and gaps
+total_tooth_width = num_teeth * tooth_width;
+total_gap_width = (num_teeth - 1) * gap_width;
+total_comb_width = total_tooth_width + total_gap_width;
+
+// Centering offset in X
+centering_offset = (spine_length - total_comb_width) / 2;
+
+// Tooth spacing (tooth width + gap)
+tooth_spacing = tooth_width + gap_width;
+
+// Spine base
+spine_base = cube([spine_length, spine_width, thickness], center = true);
+
+// Create teeth using for loop
+teeth = [];
+for (i = [0 : num_teeth - 1]) {
+    // Calculate X position for each tooth (centered on spine)
+    tooth_x = -centering_offset + i * tooth_spacing + tooth_width / 2;
+    // Calculate Y position (teeth hang from spine in -Y direction)
+    tooth_y = -spine_width / 2 - tooth_length / 2;
+    
+    tooth = translate([tooth_x, tooth_y, 0])
+        cube([tooth_width, tooth_length, thickness], center = true);
+    teeth = [teeth, tooth];
+}
+
+// Union all teeth
+teeth_union = union() {
+    for (t = teeth) {
+        t;
+    }
+};
+
+// Combine spine and teeth
+comb = union() {
+    spine_base;
+    teeth_union;
+};
+
+// Final comb with proper orientation (lying flat on XY plane)
+comb;

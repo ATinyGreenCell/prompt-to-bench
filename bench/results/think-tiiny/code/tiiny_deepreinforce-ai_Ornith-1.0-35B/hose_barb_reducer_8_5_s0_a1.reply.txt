@@ -1,0 +1,64 @@
+```openscad
+// Hose-barb reducer: 8mm ID to 5mm ID silicone tubing
+// Print orientation: standing upright on XY plane, builds in +Z
+
+// --- Dimensions (mm) ---
+bore_d = 3;                // Straight bore diameter
+total_h = 41;              // Total height
+
+barb1_h = 10;              // Height of each 8mm barb
+barb1_od_bot = 7.5;        // Bottom OD of 8mm barbs
+barb1_od_top = 9.5;        // Top OD of 8mm barbs
+
+collar_h = 5;              // Height of cylindrical collar
+collar_od = 12;            // Diameter of cylindrical collar
+
+barb2_h = 8;               // Height of each 5mm barb
+barb2_od_bot = 6.5;        // Bottom OD of 5mm barbs
+barb2_od_top = 5.0;        // Top OD of 5mm barbs
+
+// --- Derived Radii ---
+bore_r = bore_d / 2;
+barb1_r_bot = barb1_od_bot / 2;
+barb1_r_top = barb1_od_top / 2;
+collar_r = collar_od / 2;
+barb2_r_bot = barb2_od_bot / 2;
+barb2_r_top = barb2_od_top / 2;
+
+// Build the outer shape using cylinders
+// Bottom section: two barbs for 8mm tubing
+// First barb: z=0 to z=10, r goes from barb1_r_bot to barb1_r_top
+// Second barb: z=10 to z=20, r goes from barb1_r_top to barb1_r_bot
+
+// We can create these as truncated cones
+barb1_first = cylinder(r1 = barb1_r_bot, r2 = barb1_r_top, h = barb1_h, $fn = 64);
+barb1_second = cylinder(r1 = barb1_r_top, r2 = barb1_r_bot, h = barb1_h, $fn = 64);
+
+// Collar: z=20 to z=25, r = collar_r
+collar = cylinder(r = collar_r, h = collar_h, $fn = 64);
+
+// Top section: two barbs for 5mm tubing
+// First barb: z=25 to z=33, r goes from barb2_r_bot to barb2_r_top
+// Second barb: z=33 to z=41, r goes from barb2_r_top to barb2_r_bot
+
+barb2_first = cylinder(r1 = barb2_r_bot, r2 = barb2_r_top, h = barb2_h, $fn = 64);
+barb2_second = cylinder(r1 = barb2_r_top, r2 = barb2_r_bot, h = barb2_h, $fn = 64);
+
+// Combine all parts
+outer_shape = union() {
+  translate([0, 0, 0]) barb1_first;
+  translate([0, 0, barb1_h]) barb1_second;
+  translate([0, 0, barb1_h * 2]) collar;
+  translate([0, 0, barb1_h * 2 + collar_h]) barb2_first;
+  translate([0, 0, barb1_h * 2 + collar_h + barb2_h]) barb2_second;
+};
+
+// Create the bore
+bore_cyl = cylinder(r = bore_r, h = total_h + 0.2, $fn = 64);
+
+// Subtract bore from outer shape
+difference() {
+  outer_shape;
+  translate([0, 0, -0.1]) bore_cyl;
+}
+```

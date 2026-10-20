@@ -1,0 +1,91 @@
+```openscad
+// === Dimensions ===
+// Outer width of the box (X)
+outer_x = 90;
+// Outer depth of the box (Y)
+outer_y = 90;
+// Height of the walls
+wall_height = 40;
+// Thickness of the top plate (base in print orientation)
+plate_thickness = 2;
+// Wall thickness
+wall_thickness = 2.5;
+// Screw hole diameter
+screw_dia = 4.5;
+// Square pattern size for screw holes
+screw_pattern = 71.5;
+// Notch width (along the wall)
+notch_width = 12;
+// Notch depth into the wall (radial)
+notch_depth = 5;
+// Notch bottom Z position
+notch_bottom_z = 32;
+// Notch top Z position (open edge)
+notch_top_z = 40;
+
+// === Calculated ===
+// Inner dimensions
+inner_x = outer_x - 2 * wall_thickness;
+inner_y = outer_y - 2 * wall_thickness;
+
+// Centre of the plate
+cx = outer_x / 2;
+cy = outer_y / 2;
+
+// Screw hole positions (half-pattern)
+hp = screw_pattern / 2;
+
+// === Module: Single screw hole ===
+module screw_hole() {
+    translate([cx - hp, cy - hp, -0.01])
+        cylinder(d = screw_dia, h = plate_thickness + 0.02, $fn = 64);
+    translate([cx + hp, cy - hp, -0.01])
+        cylinder(d = screw_dia, h = plate_thickness + 0.02, $fn = 64);
+    translate([cx - hp, cy + hp, -0.01])
+        cylinder(d = screw_dia, h = plate_thickness + 0.02, $fn = 64);
+    translate([cx + hp, cy + hp, -0.01])
+        cylinder(d = screw_dia, h = plate_thickness + 0.02, $fn = 64);
+}
+
+// === Module: Notch in the +Y wall ===
+module notch() {
+    // Cut a notch in the top (+Y) wall
+    // The wall is at y = outer_y - wall_thickness to y = outer_y
+    // Notch is centred along X at cx
+    // Notch extends from z = notch_bottom_z to z = notch_top_z
+    // Notch depth into the wall is notch_depth
+    translate([cx - notch_width / 2, outer_y - wall_thickness - notch_depth, notch_bottom_z - 0.01])
+        cube([notch_width, notch_depth + 0.02, notch_top_z - notch_bottom_z + 0.02]);
+}
+
+// === Main body ===
+difference() {
+    // Outer box (solid)
+    union() {
+        // Bottom plate
+        cube([outer_x, outer_y, plate_thickness]);
+        // Four walls
+        // Front wall (-Y)
+        cube([outer_x, wall_thickness, wall_height]);
+        // Back wall (+Y)
+        translate([0, outer_y - wall_thickness, 0])
+            cube([outer_x, wall_thickness, wall_height]);
+        // Left wall (-X)
+        translate([0, 0, 0])
+            cube([wall_thickness, outer_y, wall_height]);
+        // Right wall (+X)
+        translate([outer_x - wall_thickness, 0, 0])
+            cube([wall_thickness, outer_y, wall_height]);
+    }
+    
+    // Subtract inner cavity
+    translate([wall_thickness, wall_thickness, plate_thickness])
+        cube([inner_x, inner_y, wall_height - plate_thickness + 0.01]);
+    
+    // Subtract screw holes
+    screw_hole();
+    
+    // Subtract notch
+    notch();
+}
+```

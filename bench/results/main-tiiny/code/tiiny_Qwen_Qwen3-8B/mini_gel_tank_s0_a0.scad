@@ -1,0 +1,55 @@
+// Buffer Tank for Mini Horizontal Gel-Electrophoresis Box
+// Dimensions in millimetres
+
+// Outer dimensions
+tank_length = 120; // X dimension
+tank_width = 70;  // Y dimension
+tank_height = 40; // Z dimension
+
+// Wall thickness
+wall_thickness = 3;
+
+// Platform dimensions
+platform_length = 60; // X dimension
+platform_width = tank_width - 2 * wall_thickness; // Y dimension, inner width
+platform_top_height = 13; // Z position of platform top relative to inner floor
+platform_base_height = platform_top_height - wall_thickness; // Z position of platform base
+
+// Electrode hole dimensions
+electrode_hole_diameter = 2;
+electrode_hole_y_position = 0;
+electrode_hole_z_position = 30;
+
+// Create the main tank body
+tank = cube([tank_length, tank_width, tank_height], center=true);
+
+// Create the inner floor
+inner_floor = cube([tank_length - 2 * wall_thickness, tank_width - 2 * wall_thickness, wall_thickness], center=true);
+
+// Create the platform
+platform = cube([platform_length, platform_width, wall_thickness], center=[platform_length/2, 0, platform_base_height]);
+
+// Create the electrode holes
+electrode_hole_left = cylinder(r=electrode_hole_diameter/2, h=wall_thickness, center=true);
+electrode_hole_right = cylinder(r=electrode_hole_diameter/2, h=wall_thickness, center=true);
+
+// Position the electrode holes
+electrode_hole_left = translate([wall_thickness, electrode_hole_y_position, electrode_hole_z_position]) * electrode_hole_left;
+electrode_hole_right = translate([tank_length - wall_thickness, electrode_hole_y_position, electrode_hole_z_position]) * electrode_hole_right;
+
+// Combine the tank, inner floor, and platform
+main_structure = union() {
+    tank;
+    inner_floor;
+    platform;
+};
+
+// Subtract the electrode holes from the main structure
+final_tank = difference() {
+    main_structure;
+    electrode_hole_left;
+    electrode_hole_right;
+};
+
+// Output the final tank
+final_tank;

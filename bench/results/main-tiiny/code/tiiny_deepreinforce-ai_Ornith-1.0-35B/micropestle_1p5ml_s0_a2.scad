@@ -1,0 +1,51 @@
+// Pestle for 1.5 mL microcentrifuge tube grinding
+// Print orientation: standing upright on XY plane (z=0)
+
+// --- Handle ---
+handle_diameter = 8;      // mm, cylindrical handle diameter
+handle_length = 45;        // mm, handle height from z=0 to z=45
+
+// --- Cone ---
+cone_bottom_diameter = 8;  // mm, matches handle diameter at z=45
+cone_top_diameter = 3;     // mm, at z=62
+cone_height = 62 - 45;     // mm, cone height
+
+// --- Rounded tip ---
+tip_diameter = 3;           // mm, sphere diameter
+tip_center_z = 62;          // mm, sphere center z position
+
+// --- Grip grooves ---
+groove_width = 2;           // mm, groove width in Z
+groove_depth = 1;         // mm, groove depth (radial)
+groove_centers_z = [10, 15, 20, 25];  // mm, center positions of grooves
+
+// --- Groove parameters ---
+groove_radius = handle_diameter / 2;  // mm, handle outer radius
+groove_inner_radius = groove_radius - groove_depth;  // mm, inner radius after cutting
+
+// Build the pestle
+pestle = union() {
+    // Cylindrical handle
+    cylinder(d = handle_diameter, h = handle_length, center = false);
+    
+    // Cone (frustum)
+    cylinder(d1 = cone_bottom_diameter, d2 = cone_top_diameter, h = cone_height, center = false);
+    
+    // Rounded tip (sphere)
+    sphere(d = tip_diameter);
+};
+
+// Cut grooves into the handle
+result = difference(pestle) {
+    for (z_center = groove_centers_z) {
+        // Each groove is a cylinder that extends past the handle surface
+        // The groove is centered at z_center, with width groove_width in Z
+        // It cuts radially inward by groove_depth
+        translate([0, 0, z_center - groove_width / 2]) {
+            cylinder(d = handle_diameter + 0.02, h = groove_width + 0.02, center = false);
+        }
+    }
+};
+
+// Output the result
+result;

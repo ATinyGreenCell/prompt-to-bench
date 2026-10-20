@@ -1,0 +1,113 @@
+```openscad
+// Units are millimeters.
+// Design: Straight hose-barb reducer (8mm to 5mm tubing)
+// Orientation: Standing upright along Z axis (XY plane at z=0)
+// Centered on origin in X and Y.
+
+// --- Dimensions ---
+// Inner bore diameter (constant through full length)
+bore_diameter = 3;
+bore_radius = bore_diameter / 2;
+
+// --- Section 1: 8mm Tubing Side (z=0 to z=20) ---
+// Two identical barbs, each 10mm tall
+barb1_height = 10;
+barb2_height = 10;
+
+// Barb 1 dimensions
+barb1_bottom_diameter = 7.5;
+barb1_top_diameter = 9.5;
+barb1_bottom_radius = barb1_bottom_diameter / 2;
+barb1_top_radius = barb1_top_diameter / 2;
+
+// Barb 2 dimensions (identical to Barb 1)
+barb2_bottom_diameter = 7.5;
+barb2_top_diameter = 9.5;
+barb2_bottom_radius = barb2_bottom_diameter / 2;
+barb2_top_radius = barb2_top_diameter / 2;
+
+// --- Section 2: Cylindrical Collar (z=20 to z=25) ---
+collar_diameter = 12;
+collar_radius = collar_diameter / 2;
+collar_height = 5;
+
+// --- Section 3: 5mm Tubing Side (z=25 to z=41) ---
+// Two identical barbs, each 8mm tall
+barb3_height = 8;
+barb4_height = 8;
+
+// Barb 3 dimensions
+barb3_bottom_diameter = 6.5;
+barb3_top_diameter = 5.0;
+barb3_bottom_radius = barb3_bottom_diameter / 2;
+barb3_top_radius = barb3_top_diameter / 2;
+
+// Barb 4 dimensions (identical to Barb 3)
+barb4_bottom_diameter = 6.5;
+barb4_top_diameter = 5.0;
+barb4_bottom_radius = barb4_bottom_diameter / 2;
+barb4_top_radius = barb4_top_diameter / 2;
+
+// --- Geometry Construction ---
+
+// Create the 2D profile in the YZ plane (Y = radius, Z = height)
+// This profile will be rotated around X axis to create Z-symmetric shape
+// Then we rotate 90 degrees around X to align Z with build direction
+
+// Define the outer profile polygon points (Y = radius, Z = height)
+outer_profile = [
+    // Section 1: Barb 1 (z=0 to z=10)
+    [barb1_bottom_radius, 0],
+    [barb1_top_radius, barb1_height],
+    [barb1_bottom_radius, barb1_height],
+    
+    // Section 1: Barb 2 (z=10 to z=20)
+    [barb2_bottom_radius, barb1_height],
+    [barb2_top_radius, barb1_height + barb2_height],
+    [barb2_bottom_radius, barb1_height + barb2_height],
+    
+    // Section 2: Collar (z=20 to z=25)
+    [collar_radius, barb1_height + barb2_height],
+    [collar_radius, barb1_height + barb2_height + collar_height],
+    
+    // Section 3: Barb 3 (z=25 to z=33)
+    [barb3_bottom_radius, barb1_height + barb2_height + collar_height],
+    [barb3_top_radius, barb1_height + barb2_height + collar_height + barb3_height],
+    [barb3_bottom_radius, barb1_height + barb2_height + collar_height + barb3_height],
+    
+    // Section 3: Barb 4 (z=33 to z=41)
+    [barb4_bottom_radius, barb1_height + barb2_height + collar_height + barb3_height],
+    [barb4_top_radius, barb1_height + barb2_height + collar_height + barb3_height + barb4_height],
+    [barb4_bottom_radius, barb1_height + barb2_height + collar_height + barb3_height + barb4_height]
+];
+
+// Create the outer shape using rotate_extrude
+// First create the 2D profile in YZ plane
+outer_2d = polygon(outer_profile);
+
+// Rotate around X axis to create 3D shape
+outer_shape = rotate_extrude(angle = 360, center = false) {
+    outer_2d;
+};
+
+// Rotate 90 degrees around X to align Z with build direction
+outer_shape = rotate([90, 0, 0]) {
+    outer_shape;
+};
+
+// Create the inner bore
+bore_shape = cylinder(r = bore_radius, h = barb1_height + barb2_height + collar_height + barb3_height + barb4_height, center = false);
+
+// Subtract the bore from the outer shape
+final_shape = difference() {
+    outer_shape;
+    translate([0, 0, -0.01]) {
+        bore_shape;
+    }
+};
+
+// Render the final shape
+render() {
+    final_shape;
+}
+```

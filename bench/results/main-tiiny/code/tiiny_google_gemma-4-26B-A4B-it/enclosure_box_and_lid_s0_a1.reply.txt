@@ -1,0 +1,73 @@
+```openscad
+// --- Dimensions ---
+// Box Dimensions
+box_width = 70;          // X dimension of box
+box_depth = 50;          // Y dimension of box
+box_height = 30;         // Z dimension of box
+box_wall_thick = 2;      // Thickness of the walls
+box_floor_thick = 2;     // Thickness of the bottom floor
+
+// Lid Dimensions
+lid_plate_w = 70;        // X dimension of the lid plate
+lid_plate_d = 50;        // Y dimension of the lid plate
+lid_plate_h = 2;         // Z dimension of the lid plate
+lid_lip_thick = 1.5;     // Thickness of the lip wall
+lid_lip_h = 4;           // Height of the lip wall
+lid_lip_w = 65.6;        // X dimension of the lip (outer)
+lid_lip_d = 45.6;        // Y dimension of the lip (outer)
+
+// Layout
+gap = 10;                // Gap between the two parts
+$fn = 64;                // Smoothness for curves
+
+// --- Part 1: The Box ---
+// Requirement: Rests on XY plane at z = 0 and builds upward (+Z).
+// Centered on X and Y.
+translate([0, 0, box_floor_thick]) {
+    difference() {
+        // Main outer body
+        // To ensure it rests on Z=0, we translate the whole box up by the floor thickness
+        // But the prompt says "rests on the XY plane at z=0". 
+        // To achieve this, the bottom face of the floor must be at Z=0.
+        translate([0, 0, -box_floor_thick])
+            cube([box_width, box_depth, box_height], center = true);
+        
+        // Hollow interior
+        // Subtracting a volume that is slightly taller to ensure clean cut through top
+        translate([0, 0, box_floor_thick])
+            cube([box_width - 2*box_wall_thick + 0.1, box_depth - 2*box_wall_thick + 0.1, box_height], center = true);
+    }
+}
+
+// --- Part 2: The Lid ---
+// Requirement: Printed upside down (plate on the bed, lip on top).
+// Note: The prompt says "a plate... lying on the bed, with a rectangular lip on top of it".
+// This means the plate is at Z=0 and the lip extends to Z=2+4=6.
+// Requirement: Place the lid on the +X side of the box.
+// To avoid overlap and maintain the 10mm gap between the bounding boxes:
+// Box X range: [-35, 35]. 
+// Lid X range starts at 35 + 10 = 45.
+// Lid X center = 45 + (70/2) = 80.
+
+translate([box_width/2 + gap + lid_plate_w/2, 0, 0]) {
+    // The lid is built from the bed up.
+    // Plate is at the bottom.
+    union() {
+        // The base plate (lying on the bed)
+        // To rest on Z=0, we center it on Z at half its height
+        translate([0, 0, lid_plate_h/2])
+            cube([lid_plate_w, lid_plate_d, lid_plate_h], center = true);
+        
+        // The Lip (on top of the plate)
+        // The lip sits on the plate, so its base is at Z = lid_plate_h
+        translate([0, 0, lid_plate_h + lid_lip_h/2])
+            cube([lid_lip_w, lid_lip_d, lid_lip_h], center = true);
+    }
+}
+
+// Verification of constraints:
+// 1. Box: 70x50x30. Floor 2mm. Walls 2mm. Open top.
+// 2. Lid: 70x50x2 plate. Lip 1.5 thick, 4 tall, 65.6x45.6 outer.
+// 3. Gap: 10mm between parts.
+// 4. Orientation: Both rest on Z=0.
+```

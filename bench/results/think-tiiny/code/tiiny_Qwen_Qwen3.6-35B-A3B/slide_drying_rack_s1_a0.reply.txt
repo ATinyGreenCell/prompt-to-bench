@@ -1,0 +1,33 @@
+```openscad
+$fn = 64;
+
+// Block dimensions
+BLOCK_X = 90;       // Length in X
+BLOCK_Y = 45;       // Width in Y
+BLOCK_Z = 20;       // Height in Z
+
+// Slot dimensions
+SLOT_LEN = 77;      // Length along X
+SLOT_WID = 1.6;     // Width along Y
+SLOT_DEPTH = 10;    // Depth from top face
+SLOT_SPACING = 3.5; // Centre-to-centre spacing in Y
+NUM_SLOTS = 10;     // Number of slots
+
+// Extension for boolean cuts to avoid coplanar faces
+EXT = 0.1;
+
+difference() {
+    // Main base block (centred in X/Y, rests on XY plane at z=0)
+    translate([0, 0, BLOCK_Z / 2]) {
+        cube([BLOCK_X, BLOCK_Y, BLOCK_Z], center = true);
+    }
+
+    // Cut slots
+    for (i = [0 : NUM_SLOTS - 1]) {
+        y_center = (i - (NUM_SLOTS - 1) / 2) * SLOT_SPACING;
+        translate([0, y_center, BLOCK_Z - SLOT_DEPTH / 2]) {
+            cube([SLOT_LEN + EXT, SLOT_WID + EXT, SLOT_DEPTH + EXT], center = true);
+        }
+    }
+}
+```

@@ -1,0 +1,54 @@
+```openscad
+// Dimensions for the PCR tube rack
+$fn = 64; // For curved shapes like chamfers
+
+// Overall block dimensions
+block_length = 127.76; // X-axis length
+block_width = 85.48;  // Y-axis width
+block_height = 20;    // Z-axis height
+
+// Hole grid parameters
+num_rows = 8;          // Number of rows (along Y)
+num_cols = 12;        // Number of columns (along X)
+hole_diameter = 6.2; // Diameter of each through-hole
+spacing = 9.0;         // Centre-to-centre spacing between holes
+
+// Position of the first hole (A1)
+first_hole_x = 14.38; // Distance from left edge (X)
+first_hole_y = 11.24; // Distance from back edge (Y)
+
+// Chamfer parameters
+chamfer_length = 5;   // Length of the chamfer leg
+chamfer_angle = 45;  // Angle of the chamfer in degrees
+
+// Calculate hole positions
+holes = [
+  for (row = [0:num_rows-1]) 
+    for (col = [0:num_cols-1]) 
+      [first_hole_x + col * spacing, first_hole_y + row * spacing]
+];
+
+// Create the main block
+block = cube([block_length, block_width, block_height]);
+
+// Create the hole grid
+holes_cylinders = 
+  for (pos = holes) 
+    cylinder(r = hole_diameter / 2, h = block_height, $fn = 64);
+
+// Create the chamfer at the A1 corner
+chamfer = 
+  rotate([0, 0, chamfer_angle]) 
+  translate([-chamfer_length, -chamfer_length, 0]) 
+  cube([chamfer_length, chamfer_length, block_height]);
+
+// Combine the block with the chamfer and holes
+final_rack = union() {
+  block,
+  chamfer,
+  holes_cylinders
+};
+
+// Render the final rack
+final_rack;
+```

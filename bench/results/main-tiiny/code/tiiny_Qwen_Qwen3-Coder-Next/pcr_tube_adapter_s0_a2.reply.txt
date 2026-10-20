@@ -1,0 +1,111 @@
+Looking at the measurement report and comparing with the specification:
+
+**Specification:**
+- Collar: 13 mm diameter, 1.5 mm thick (z = 0 to 1.5)
+- Sleeve body: 10.8 mm outer diameter, rises from z = 1.5 to z = 21.5 (so sleeve height = 20.0 mm)
+- Bore: 6.2 mm diameter, through the full height (z = 0 to 21.5)
+
+**Analysis of discrepancies:**
+
+1. **Collar diameter**: The report shows 12.98 mm at z=0.76 (within collar), which is very close to 13.0 mm (0.02 mm smaller, likely due to $fn=64 approximation). Acceptable.
+
+2. **Collar thickness**: The collar should be exactly 1.5 mm thick (z=0 to 1.5). The report shows the lowest point at z=-0.01, but the collar itself should be from z=0 to z=1.5. The bore extending 0.01 mm below z=0 is correct (to avoid coplanar faces), so this is fine.
+
+3. **Sleeve height**: The specification says the sleeve rises from z=1.5 to z=21.5, so sleeve height = 20.0 mm. The report shows the sleeve outer diameter as 10.79 mm at z=11.51 and z=20.44, which is correct (10.8 mm ≈ 10.79 mm). However, the top of the sleeve should be at z=21.5, but the report shows the bounding box top at z=21.51 (which is correct due to the bore extending 0.01 mm past the top).
+
+4. **Critical issue**: The sleeve height in the code is correct (20.0 mm), but let me verify the total height. The bounding box shows size 21.52 mm (from -0.01 to 21.51), which is correct for total height of 21.5 mm + 0.01 mm for the bore extension.
+
+5. **Slice positions**: The slices at z=0.76, z=11.51, and z=20.44 are within the expected ranges:
+   - z=0.76 is within the collar (0-1.5 mm)
+   - z=11.51 is within the sleeve (1.5-21.5 mm)
+   - z=20.44 is within the sleeve (1.5-21.5 mm)
+
+All the dimensions appear to match the specification. However, I notice the specification says "a straight 6.2 mm diameter bore runs through the full height, open at both ends" - and the current implementation has the bore extending 0.01 mm past both ends, which is correct for avoiding coplanar faces.
+
+Wait - let me re-read the specification more carefully: "Print it upside down: a collar 13 mm in diameter and 1.5 mm thick lies on the bed (z = 0 to 1.5), and the sleeve body, 10.8 mm in outer diameter, rises from the collar to z = 21.5."
+
+This means:
+- Collar: z = 0 to 1.5 (height = 1.5 mm)
+- Sleeve body: z = 1.5 to 21.5 (height = 20.0 mm)
+- Total height = 21.5 mm
+
+The current implementation has total height = 21.52 mm (from -0.01 to 21.51), which is correct for the bore extension.
+
+But looking at the slice at z=20.44: the sleeve should still be present at z=20.44 (which is less than 21.5), and the report shows a solid region with diameter 10.79 mm, which is correct.
+
+Actually, I think the implementation is correct. But let me double-check the sleeve height parameter. In the previous version, I had sleeve_height = 20.0, which should give total height = 1.5 + 20.0 = 21.5 mm.
+
+The bounding box shows size 21.52 mm, which is 21.5 + 0.02 (0.01 for bottom extension and 0.01 for top extension), which is correct.
+
+Given that the report says "SOLID: 1 separate body, watertight (valid solid); volume 2,029 mm3", and the specification is met, I think the implementation is correct.
+
+But wait - the specification says "a straight 6.2 mm diameter bore runs through the full height, open at both ends". The current implementation has the bore as a cylinder from z=-0.01 to z=21.51, which is correct.
+
+Let me check if there's any other issue. The report shows the contact area with the bed as 133 mm2, which is π*(13/2)^2 = π*42.25 ≈ 132.73 mm2, and the report shows 133 mm2, which is correct.
+
+The slice at z=0.76 shows material area 132.5 mm2, which is very close to 132.73 mm2, so the collar diameter is correct.
+
+The slices at z=11.51 and z=20.44 show material area 91.5 mm2, which is π*((10.8/2)^2 - (6.2/2)^2) = π*(29.16 - 9.61) = π*19.55 ≈ 61.4 mm2. Wait, that doesn't match.
+
+Let me calculate the material area correctly:
+- Outer radius of sleeve = 10.8/2 = 5.4 mm
+- Bore radius = 6.2/2 = 3.1 mm
+- Material area = π*(5.4^2 - 3.1^2) = π*(29.16 - 9.61) = π*19.55 ≈ 61.4 mm2
+
+But the report shows 91.5 mm2, which is the area of a solid circle with diameter 10.79 mm: π*(10.79/2)^2 ≈ π*29.1 ≈ 91.4 mm2.
+
+This means the bore is not being subtracted! The report shows "0 holes", which confirms the bore is missing.
+
+So the issue is that the bore is not being subtracted from the solid. In OpenSCAD, I need to use difference() to subtract the bore from the solid.
+
+Let me fix this by using difference() to create the through-hole.
+
+```openscad
+// Adapter sleeve for 0.2 mL PCR tube in 1.5 mL rack hole
+// Print orientation: upside down (collar on bed)
+
+$fn = 64;
+
+// Dimensions
+collar_diameter = 13;       // mm
+collar_thickness = 1.5;     // mm (z = 0 to 1.5)
+sleeve_outer_diameter = 10.8; // mm
+sleeve_height = 20.0;       // mm (rises from z=1.5 to z=21.5)
+bore_diameter = 6.2;        // mm
+
+// Calculate radii
+collar_radius = collar_diameter / 2;
+sleeve_outer_radius = sleeve_outer_diameter / 2;
+bore_radius = bore_diameter / 2;
+total_height = collar_thickness + sleeve_height;
+
+// Build the adapter
+module adapter_sleeve() {
+    // Base solid (collar + sleeve body)
+    base = union() {
+        // Collar (bottom part) - from z=0 to z=1.5
+        translate([0, 0, 0]) {
+            cylinder(h = collar_thickness, r = collar_radius, center = false);
+        }
+        
+        // Sleeve body (upper part) - from z=1.5 to z=21.5
+        translate([0, 0, collar_thickness]) {
+            cylinder(h = sleeve_height, r = sleeve_outer_radius, center = false);
+        }
+    };
+    
+    // Bore (through-hole) - extends 0.01 mm past both ends
+    bore = translate([0, 0, -0.01]) {
+        cylinder(h = total_height + 0.02, r = bore_radius, center = false);
+    };
+    
+    // Subtract bore from base
+    difference() {
+        base;
+        bore;
+    }
+}
+
+// Render the adapter
+adapter_sleeve();
+```

@@ -1,0 +1,76 @@
+$fn = 64;
+
+// Dimensions
+rod_diameter = 12.7;           // Inner diameter of rod ring
+rod_wall = 3;                 // Wall thickness of rod ring
+rod_outer_diameter = rod_diameter + 2 * rod_wall; // 18.7 mm
+
+tubing_inner_diameter = 6;       // Inner diameter of tubing ring
+tubing_wall = 2;               // Wall thickness of tubing ring
+tubing_outer_diameter = tubing_inner_diameter + 2 * tubing_wall; // 10 mm
+
+bridge_width_y = 6;            // Width of bridge in Y direction
+bridge_x_start = 8;         // X start of bridge
+bridge_x_end = 12;          // X end of bridge
+
+// Rod ring: centered at origin, with -X side opening
+rod_ring_inner_radius = rod_diameter / 2;
+rod_ring_outer_radius = rod_outer_diameter / 2;
+
+// Tubing ring: centered at (15, 0), with +X side opening
+tubing_ring_center_x = 15;
+tubing_ring_center_y = 0;
+tubing_ring_inner_radius = tubing_inner_diameter / 2;
+tubing_ring_outer_radius = tubing_outer_diameter / 2;
+
+// Opening dimensions
+rod_opening_width = 10;     // Width of opening on rod ring (-X side)
+rod_opening_y_min = -rod_opening_width / 2;
+rod_opening_y_max = rod_opening_width / 2;
+
+tubing_opening_width = 4.5;     // Width of opening on tubing ring (+X side)
+tubing_opening_y_min = -tubing_opening_width / 2;
+tubing_opening_y_max = tubing_opening_width / 2;
+
+// Bridge: solid between rings, 6 mm wide in Y, from x=8 to x=12
+bridge_y_min = -bridge_width_y / 2;
+bridge_y_max = bridge_width_y / 2;
+
+// Main module: build 2D profile in XY plane, then extrude
+module snap_clip() {
+    // Use linear_extrude to make 3D from 2D profile
+    linear_extrude(height = 10, center = false) {
+        // Rod ring with opening on -X side
+        difference() {
+            // Outer ring (full circle)
+            circle(r = rod_ring_outer_radius, center = [0, 0]);
+            // Inner hole (full circle)
+            circle(r = rod_ring_inner_radius, center = [0, 0]);
+            // Cut out the opening: a rectangle from x = -rod_ring_outer_radius to x = 0, y = -5 to 5
+            // Use a slightly larger rectangle to ensure full cut
+            translate([-rod_ring_outer_radius - 0.1, -rod_opening_width / 2 - 0.1, 0])
+            cube([rod_ring_outer_radius * 2 + 0.2, rod_opening_width + 0.2, 0.1], center = false);
+        }
+
+        // Tubing ring with opening on +X side
+        translate([tubing_ring_center_x, tubing_ring_center_y, 0]) {
+            difference() {
+                // Outer ring (full circle)
+                circle(r = tubing_ring_outer_radius, center = [0, 0]);
+                // Inner hole (full circle)
+                circle(r = tubing_ring_inner_radius, center = [0, 0]);
+                // Cut out the opening: a rectangle from x = 15 to x = 15 + 4.5, y = -2.25 to 2.25
+                translate([tubing_ring_center_x, -tubing_opening_width / 2 - 0.1, 0])
+                cube([tubing_opening_width + 0.2, tubing_opening_width + 0.2, 0.1], center = false);
+            }
+        }
+
+        // Bridge between rings: solid rectangle from x=8 to x=12, y=-3 to 3
+        translate([bridge_x_start + (bridge_x_end - bridge_x_start)/2, 0, 0]) {
+            cube([bridge_x_end - bridge_x_start, bridge_width_y, 0.1], center = false);
+        }
+    }
+}
+
+// Render the clip
+snap_clip();

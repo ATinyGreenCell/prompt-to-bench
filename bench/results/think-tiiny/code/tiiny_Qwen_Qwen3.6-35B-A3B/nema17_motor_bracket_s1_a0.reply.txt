@@ -1,0 +1,91 @@
+```openscad
+$fn = 64;
+
+// Dimensions
+base_x = 50;
+base_y = 45;
+base_z = 5;
+base_hole_x = 17;
+base_hole_y = 30;
+base_hole_dia = 4.5;
+
+vert_x = 50;
+vert_y = 5;
+vert_z = 50;
+
+boss_dia = 23;
+boss_z = 28;
+
+screw_pitch = 31;
+screw_dia = 3.4;
+
+gusset_thickness = 5;
+gusset_y_leg = 20;
+gusset_z_leg = 20;
+gusset_corner_y = 5;
+gusset_corner_z = 5;
+
+// Base Plate
+base = translate([-base_x/2, 0, 0]) cube([base_x, base_y, base_z], center=false);
+
+// Vertical Plate
+vert = translate([-vert_x/2, 0, 0]) cube([vert_x, vert_y, vert_z], center=false);
+
+// Gussets
+// Polygon in XY plane: X -> -Z, Y -> Y
+// Points: (Y, Z) -> (-Z, Y)
+// Corner (5, 5) -> (-5, 5)
+// Leg Y (25, 5) -> (-5, 25)
+// Leg Z (5, 25) -> (-25, 5)
+gusset_poly = [[-5, 5], [-5, 25], [-25, 5]];
+
+gusset_shape = rotate([0, -90, 0]) linear_extrude(height=gusset_thickness) polygon(gusset_poly);
+
+gusset_left = translate([-25, 0, 0]) gusset_shape;
+gusset_right = translate([25, 0, 0]) gusset_shape;
+
+// Union
+part = union() {
+    base;
+    vert;
+    gusset_left;
+    gusset_right;
+};
+
+// Holes
+// Base holes
+// Position: (-17, 30, 2.5)
+// h = 5 + 2 = 7.
+// Center=true gives Z: -1 to 6.
+
+// Boss hole
+// Position: (0, 2.5, 28)
+// h = 5 + 2 = 7.
+// Center=true gives Y: -1 to 6.
+
+// Screw holes
+// Pattern: 31mm square.
+// Offsets: ±15.5.
+// z_offsets: 28 - 15.5 = 12.5, 28 + 15.5 = 43.5.
+// x_offsets: -15.5, 15.5.
+
+difference() {
+    part;
+    // Base holes
+    for (i = [-1, 1]) {
+        translate([i * base_hole_x, base_hole_y, 0]) {
+            rotate([90, 0, 0]) cylinder(d=base_hole_dia, h=base_z + 2, center=true);
+        }
+    }
+    // Boss hole
+    rotate([90, 0, 0]) cylinder(d=boss_dia, h=vert_y + 2, center=true);
+    // Screw holes
+    for (x_off in [-1, 1]) {
+        for (z_off in [-1, 1]) {
+            translate([x_off * screw_pitch/2, 0, boss_z + z_off * screw_pitch/2]) {
+                rotate([90, 0, 0]) cylinder(d=screw_dia, h=vert_y + 2, center=true);
+            }
+        }
+    }
+}
+```

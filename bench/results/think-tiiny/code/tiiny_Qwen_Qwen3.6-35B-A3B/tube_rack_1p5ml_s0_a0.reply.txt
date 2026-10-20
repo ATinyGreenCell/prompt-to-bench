@@ -1,0 +1,47 @@
+```openscad
+// Block dimensions
+BLOCK_X = 106;  // Length in X
+BLOCK_Y = 72;   // Width in Y
+BLOCK_Z = 30;   // Height in Z
+
+// Hole grid parameters
+COLS_X = 6;     // Number of holes along X
+ROWS_Y = 4;     // Number of holes along Y
+SPACING = 16;   // Centre-to-centre spacing in X and Y
+
+// Hole parameters
+HOLE_DIA = 11.2; // Diameter of each hole
+HOLE_DEPTH = 25; // Depth of each hole (leaves 5 mm floor)
+HOLE_DEPTH_EXT = 25.1; // Extends 0.1 mm past the bottom face to avoid coplanar edges
+
+// Calculate grid bounds to centre the holes on the block
+GRID_X = (COLS_X - 1) * SPACING;
+GRID_Y = (ROWS_Y - 1) * SPACING;
+
+// Hole centre coordinates (centred at X=0, Y=0)
+x_pos = [for (i = 0 to COLS_X-1) -GRID_X/2 + i * SPACING];
+y_pos = [for (j = 0 to ROWS_Y-1) -GRID_Y/2 + j * SPACING];
+
+// Ensure round holes
+$fn = 64;
+
+module tube_rack() {
+    difference() {
+        // Solid base block, resting on XY plane at z=0, centred in X and Y
+        translate([-BLOCK_X/2, -BLOCK_Y/2, 0]) {
+            cube([BLOCK_X, BLOCK_Y, BLOCK_Z]);
+        }
+        
+        // Cut holes (open at top, z=30, extending down to z=5)
+        for (x = x_pos) {
+            for (y = y_pos) {
+                translate([x, y, BLOCK_Z - HOLE_DEPTH_EXT]) {
+                    cylinder(d = HOLE_DIA, h = HOLE_DEPTH_EXT, center = false);
+                }
+            }
+        }
+    }
+}
+
+tube_rack();
+```

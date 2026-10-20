@@ -1,0 +1,92 @@
+```openscad
+// PCR Tube Rack (96 Wells)
+// Designed for 0.2 mL tubes in ANSI/SLAS footprint
+// Corrected to ensure grid is centered on the block as per specification
+
+// --- Dimensions ---
+block_length = 127.76;    // X dimension
+block_width = 85.48;      // Y dimension
+block_height = 20.00;     // Z dimension
+
+hole_diameter = 6.2;       // Diameter of the PCR tube holes
+hole_spacing = 9.0;        // Center-to-center distance between holes
+
+rows = 8;                 // Number of rows (A-H)
+cols = 12;                // Number of columns (1-12)
+
+// Specification: The centre of the first hole (A1) is 14.38 mm from the left edge 
+// and 11.24 mm from the back edge.
+// To ensure the grid is centered on the block, we calculate the grid's 
+// bounding box and offset the entire grid so its center matches the block's center.
+offset_x_spec = 14.38;    // Specified distance from left edge to first hole center
+offset_y_spec = 11.24;    // Specified distance from back edge to first hole center
+
+// Chamfer settings
+chamfer_size = 5.0;       // Leg length of the 45-degree chamfer
+
+// --- Constants ---
+$fn = 64;
+
+// --- Implementation ---
+
+module rack() {
+    // Calculate the center of the hole grid based on the first hole's position
+    // relative to the block's corner.
+    // Grid width = (cols - 1) * spacing
+    // Grid height = (rows - 1) * spacing
+    grid_width = (cols - 1) * hole_spacing;
+    grid_height = (rows - 1) * hole_spacing;
+    
+    // The center of the grid relative to the (0,0) corner:
+    // Center_X = offset_x_spec + (grid_width / 2)
+    // Center_Y = offset_y_spec + (grid_height / 2)
+    // However, the prompt states: "so the grid is centred on the block."
+    // This implies the specified offsets are the mechanism to achieve centering.
+    // Let's verify: 
+    // Block center X = 127.76 / 2 = 63.88. 
+    // Grid center X = 14.38 + (11 * 9 / 2) = 14.38 + 49.5 = 63.88. (Matches!)
+    // Block center Y = 85.48 / 2 = 42.74.
+    // Grid center Y = 11.24 + (7 * 9 / 2) = 11.24 + 31.5 = 42.74. (Matches!)
+    
+    difference() {
+        // Main Block
+        cube([block_length, block_width, block_height]);
+
+        // 1. The 96 Vertical Through-Holes
+        for (c = [0 : cols - 1]) {
+            for (r = [0 : rows - 1]) {
+                // X increases from left to right
+                // Y increases from back to front
+                // To match "11.24 from back edge", the first hole is at Y = 11.24
+                pos_x = offset_x_spec + (c * hole_spacing);
+                pos_y = offset_y_spec + (r * hole_spacing);
+                
+                translate([pos_x, pos_y, -0.01]) 
+                    cylinder(d = hole_diameter, h = block_height + 0.02);
+            }
+        }
+
+        // 2. Orientation Chamfer at A1 corner
+        // A1 is the first hole. The corner is (0,0).
+        // The chamfer is on the vertical edge at the A1 corner.
+        // The prompt says "Cut a 45-degree chamfer... off the vertical edge at the A1 corner".
+        // This implies the corner of the block itself.
+        // We use a polygon to cut the corner of the block.
+        // To ensure it's a 45-degree chamfer with 5mm legs:
+        translate([-0.01, -0.01, -0.01])
+        linear_extrude(height = block_height + 0.02)
+        polygon(points=[
+            [0, 0],
+            [chamfer_size, 0],
+            [0, chamfer_size]
+        ]);
+    }
+}
+
+// Render the part
+// Centered on XY as requested. 
+// The block is [127.76, 85.48]. 
+// To center it, we translate by [-length/2, -width/2].
+translate([-block_length/2, -block_width/2, 0])
+    rack();
+```

@@ -45,7 +45,7 @@
  },
  "bridge": "http://127.0.0.1:11435",
  "harness": {
-  "path": "/home/seb/tiny/bench/20261014-sweep/harness",
+  "path": "~/tiny/bench/20261014-sweep/harness",
   "sha256": {
    "bench/checks.py": "6560e743c914f250053535f15ff5a3e263d4f38463625552ba0c7dcdeab311c2",
    "bench/prompts/system.md": "17d921540d27b4245749bcf22297816087f471ec84b08be5e3d56b53bd3730ed",
@@ -56,7 +56,7 @@
   }
  },
  "link": {
-  "host": "192.168.1.153",
+  "host": "[private-ip]",
   "via": "primary",
   "since": "2026-10-15T00:27:25-04:00"
  },

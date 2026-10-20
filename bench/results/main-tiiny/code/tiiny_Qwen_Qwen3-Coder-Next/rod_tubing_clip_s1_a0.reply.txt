@@ -1,0 +1,61 @@
+```openscad
+$fn = 64;
+
+// Dimensions
+rod_id = 12.7;        // inner diameter of rod ring (mm)
+rod_wall = 3;         // wall thickness of rod ring (mm)
+rod_od = rod_id + 2 * rod_wall;  // outer diameter of rod ring (mm)
+rod_opening_width = 10;  // width of opening cut from -X side (mm)
+
+tubing_id = 6;        // inner diameter of tubing ring (mm)
+tubing_wall = 2;      // wall thickness of tubing ring (mm)
+tubing_od = tubing_id + 2 * tubing_wall;  // outer diameter of tubing ring (mm)
+tubing_opening_width = 4.5;  // width of opening cut from +X side (mm)
+
+bridge_x_start = 8;   // start x-coordinate of bridge (mm)
+bridge_x_end = 12;    // end x-coordinate of bridge (mm)
+bridge_width = 6;     // width of bridge in Y-direction (mm)
+
+// Height (Z) for extrusion
+height = 10;
+
+// Rod ring with opening
+module rod_ring_with_opening() {
+    difference() {
+        // Outer circle
+        cylinder(h = height + 0.02, r = rod_od / 2, center = true);
+        // Inner circle (hole)
+        cylinder(h = height + 0.02, r = rod_id / 2, center = true);
+        // Opening cut: remove x < 0 and -5 < y < 5
+        translate([-(rod_od + 10), -5, -0.01])
+            cube([rod_od + 20, 10, height + 0.02]);
+    }
+}
+
+// Tubing ring with opening
+module tubing_ring_with_opening() {
+    translate([15, 0, 0]) {
+        difference() {
+            // Outer circle
+            cylinder(h = height + 0.02, r = tubing_od / 2, center = true);
+            // Inner circle (hole)
+            cylinder(h = height + 0.02, r = tubing_id / 2, center = true);
+            // Opening cut: remove x > 15 and -2.25 < y < 2.25
+            translate([15, 0, -0.01])
+                cube([tubing_od + 10, tubing_opening_width, height + 0.02]);
+        }
+    }
+}
+
+// Solid bridge between rings
+module bridge() {
+    // Bridge is 6 mm wide in Y (from -3 to +3), from x=8 to x=12
+    translate([bridge_x_start, -bridge_width / 2, 0])
+        cube([bridge_x_end - bridge_x_start, bridge_width, height]);
+}
+
+// Assemble the clip
+rod_ring_with_opening();
+tubing_ring_with_opening();
+bridge();
+```

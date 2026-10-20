@@ -1,0 +1,122 @@
+// Dimensions for the drying rack
+base_length = 90;      // X dimension of the base block
+base_width = 45;       // Y dimension of the base block
+base_height = 20;      // Z dimension of the base block
+
+slide_length = 75;     // Length of the microscope slide (fits in X)
+slide_width = 25;      // Width of the microscope slide (fits in Y)
+slide_thickness = 1;   // Thickness of the microscope slide (fits in Z slot depth)
+
+// Slot dimensions
+slot_length = 77;      // Length of the slot (X direction)
+slot_width = 1.6;      // Width of the slot (Y direction)
+slot_depth = 10;       // Depth of the slot (Z direction)
+
+// Slot arrangement
+num_slots = 10;        // Number of slots
+slot_pitch = 3.5;      // Centre-to-centre distance between slots (Y direction)
+
+// Safety margin for boolean operations
+cut_extend = 0.05;
+
+// Calculate slot positions
+// The group is centred on the block in X and Y.
+// Block Y range: -base_width/2 to +base_width/2
+// Slot Y range: -slot_length/2 to +slot_length/2 (since slot runs along X)
+// Wait, the prompt says "slot runs along X". So the slot's long dimension is X.
+// The slot's narrow dimension is Y (width).
+// The slots are spaced in Y.
+
+// Let's verify the slot orientation.
+// "10 parallel slots... each slot runs along X" -> Slot length is along X.
+// "77 mm long" -> X dimension of slot is 77.
+// "1.6 mm wide (Y)" -> Y dimension of slot is 1.6.
+// "10 mm deep" -> Z dimension of slot is 10.
+// "3.5 mm apart centre-to-centre (in Y)" -> Spacing is along Y.
+
+// Centering:
+// Block X: -45 to 45. Slot X: -38.5 to 38.5. (77/2 = 38.5). This fits within 45.
+// Block Y: -22.5 to 22.5.
+// We need to place 10 slots with 3.5 mm pitch.
+// Total width of slot group = (10 - 1) * 3.5 = 31.5 mm.
+// The slots are centred in Y.
+// Y positions:
+// If we have 10 slots, let's index them from 0 to 9.
+// Center of the group is 0.
+// Positions: -15.75, -12.25, ..., 15.75.
+// Let's calculate the first slot's center Y.
+// y_centers = [-(num_slots-1)/2 * pitch, ..., (num_slots-1)/2 * pitch]
+// For 10 slots: indices 0..9.
+// Midpoint is between 4 and 5.
+// y_0 = -4.5 * 3.5 = -15.75
+// y_9 = 4.5 * 3.5 = 15.75
+// This fits within Y range of -22.5 to 22.5.
+
+// Slot X position:
+// Slot length is 77. Block length is 90.
+// Centered in X: X range is -38.5 to 38.5.
+
+// Slot Y position:
+// Slot width is 1.6.
+// Centered at y_center. Y range is y_center - 0.8 to y_center + 0.8.
+
+// Slot Z position:
+// Open at the top. Top of block is Z = 20.
+// Slot goes down 10 mm. So Z range is 10 to 20.
+// To ensure clean boolean subtraction, we extend slightly past the faces.
+// Top face Z=20. Extend up to 20 + cut_extend.
+// Bottom of slot Z=10. Extend down to 10 - cut_extend.
+
+$fn = 64;
+
+module base_block() {
+    cube([base_length, base_width, base_height], center = true);
+}
+
+module slot_cut(y_center) {
+    // Slot runs along X, so X size is slot_length
+    // Slot width is slot_width (Y)
+    // Slot depth is slot_depth (Z)
+    
+    // X: centered at 0
+    x_start = -slot_length/2 - cut_extend;
+    x_end = slot_length/2 + cut_extend;
+    
+    // Y: centered at y_center
+    y_start = y_center - slot_width/2 - cut_extend;
+    y_end = y_center + slot_width/2 + cut_extend;
+    
+    // Z: from top (base_height/2) down to (base_height/2 - slot_depth)
+    // Block top is at Z = base_height/2 = 10.
+    // Slot bottom is at Z = 10 - 10 = 0.
+    // We want the slot to be open at the top.
+    // So the cut goes from Z = 10 + cut_extend down to Z = 0 - cut_extend.
+    z_start = base_height/2 + cut_extend;
+    z_end = base_height/2 - slot_depth - cut_extend;
+    
+    cube([x_end - x_start, y_end - y_start, z_start - z_end], 
+         center = false);
+    // Translate to position
+    translate([0, y_center, (z_start + z_end)/2]) {
+        cube([x_end - x_start, y_end - y_start, z_start - z_end], 
+             center = true);
+    }
+}
+
+module drying_rack() {
+    difference() {
+        base_block();
+        
+        for (i = [0 : num_slots - 1]) {
+            // Calculate Y center for each slot
+            // Symmetric distribution around 0
+            // For even number of slots, the centers are at +/- 0.5 * pitch, +/- 1.5 * pitch, etc.
+            // Formula: y = (i - (num_slots - 1) / 2) * pitch
+            y_c = (i - (num_slots - 1) / 2) * slot_pitch;
+            
+            slot_cut(y_c);
+        }
+    }
+}
+
+drying_rack();

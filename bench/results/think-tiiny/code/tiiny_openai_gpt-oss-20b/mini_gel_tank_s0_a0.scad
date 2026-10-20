@@ -1,0 +1,46 @@
+$fn = 64; // Smooth curves
+
+// ---------- Dimensions ----------
+wall   = 3;   // mm
+floor  = 3;   // mm
+
+outer_X = 120; // mm
+outer_Y = 70;  // mm
+outer_Z = 40;  // mm
+
+inner_X = outer_X - 2*wall; // 114 mm
+inner_Y = outer_Y - 2*wall; // 64 mm
+inner_Z = outer_Z - floor; // 37 mm
+
+// ---------- Platform ----------
+platform_len = 60;          // mm
+platform_wid = inner_Y;      // 64 mm
+platform_hgt = 10;          // mm
+platform_X_center = outer_X/2; // 60 mm
+platform_Z_bottom = floor;  // 3 mm
+
+// ---------- Electrode holes ----------
+electrode_dia = 2;          // mm
+electrode_len = 2*wall + 0.02; // 6.02 mm (extends 0.01 mm beyond wall)
+electrode_y  = 0;           // mm (side of tank)
+electrode_z  = 30;          // mm (height from floor)
+
+// ---------- Build parts ----------
+outer = cube([outer_X, outer_Y, outer_Z]);
+
+inner = translate([wall, wall, floor]) cube([inner_X, inner_Y, inner_Z]);
+
+hole = rotate([0,90,0]) cylinder(h=electrode_len, r=electrode_dia/2, $fn=64);
+
+tank = difference(
+    outer,
+    inner,
+    translate([0, electrode_y, electrode_z]) hole,
+    translate([outer_X, electrode_y, electrode_z]) hole
+);
+
+platform = translate([platform_X_center - platform_len/2, 0, platform_Z_bottom]) cube([platform_len, platform_wid, platform_hgt]);
+
+final = union(tank, platform);
+
+final;

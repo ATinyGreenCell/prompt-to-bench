@@ -1,0 +1,67 @@
+```openscad
+// ---------- Parameters ----------
+plate_x = 130;          // plate length (X) in mm
+plate_y = 90;           // plate width  (Y) in mm
+plate_z = 4;            // plate thickness (Z) in mm
+
+hole_d = 30.5;          // tube hole diameter in mm
+hole_spacing = 40;      // centre‑to‑centre spacing of holes in mm
+
+wall_thick = 4;         // wall thickness (Y) in mm
+wall_top_z = 70;        // final Z height of the wall after printing (mm)
+wall_len = plate_x;    // wall length (X) = plate length
+
+// Derived dimensions
+wall_height = wall_top_z - plate_z;   // wall height above plate (mm)
+wall_center_offset = plate_y/2 + wall_thick/2; // Y offset of wall centre (mm)
+
+// ---------- Modules ----------
+module base_plate() {
+    // Plate centered on origin, lying on Z=0
+    translate([-plate_x/2, -plate_y/2, 0])
+        cube([plate_x, plate_y, plate_z]);
+}
+
+module hole_grid() {
+    // 2 rows (Y) × 3 columns (X) of cylindrical holes
+    // Row positions: -hole_spacing/2 , +hole_spacing/2
+    // Column positions: -hole_spacing , 0 , +hole_spacing
+    for (row = [-1, 1]) {
+        for (col = [-1, 0, 1]) {
+            translate([col*hole_spacing,
+                       row*hole_spacing/2,
+                       -0.5])   // extend below plate by 0.5 mm
+                cylinder(d = hole_d,
+                         h = plate_z + 1,   // extend above plate by 0.5 mm
+                         $fn = 64);
+        }
+    }
+}
+
+module side_walls() {
+    // Two walls along the long edges of the plate
+    // Each wall: 130 mm × 4 mm × wall_height, positioned flush with plate edge
+    // Wall on +Y side
+    translate([-wall_len/2,
+               plate_y/2,          // inner face at +Y edge of plate
+               plate_z])          // start from plate top
+        cube([wall_len, wall_thick, wall_height + 0.5]); // extend upward a bit
+
+    // Wall on –Y side
+    translate([-wall_len/2,
+               -plate_y/2 - wall_thick, // inner face at –Y edge of plate
+               plate_z])
+        cube([wall_len, wall_thick, wall_height + 0.5]); // extend upward a bit
+}
+
+// ---------- Assembly ----------
+union() {
+    // Plate with through‑holes
+    difference() {
+        base_plate();
+        hole_grid();
+    }
+    // Side walls (do not intersect holes)
+    side_walls();
+}
+```

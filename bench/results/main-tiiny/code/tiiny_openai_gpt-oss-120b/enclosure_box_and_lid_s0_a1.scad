@@ -1,0 +1,10 @@
+// OpenSCAD file for a two‑part enclosure (box + lid)
+// All dimensions are in millimetres
+
+$fn = 64; // smoothness for circles and cylinders
+
+// ---------- Box (Part 1) ----------
+outer_x = 70;          // outer X size of the box
+outer_y = 50;          // outer Y size of the box
+outer_z = 30;          // outer Z size of the box (height)
+wall   =

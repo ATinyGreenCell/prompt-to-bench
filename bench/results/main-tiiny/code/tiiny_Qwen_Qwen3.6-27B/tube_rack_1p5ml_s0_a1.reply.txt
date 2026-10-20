@@ -1,0 +1,43 @@
+```openscad
+// Dimensions of the main block
+block_length = 106; // mm (X)
+block_width = 72;   // mm (Y)
+block_height = 30;  // mm (Z)
+
+// Hole grid parameters
+holes_x = 6;        // number of holes along X
+holes_y = 4;        // number of holes along Y
+hole_spacing = 16;  // mm centre-to-centre spacing
+
+// Hole geometry
+hole_diameter = 11.2; // mm
+hole_depth = 25;      // mm (open at top, closed at bottom)
+floor_thickness = 5;  // mm (block_height - hole_depth)
+
+// Rendering quality
+$fn = 64;
+
+// Main solid block
+difference() {
+    // Base block centred on origin
+    translate([-block_length/2, -block_width/2, 0])
+        cube([block_length, block_width, block_height]);
+
+    // Cut out the 24 holes
+    for (i = [0 : holes_x - 1]) {
+        for (j = [0 : holes_y - 1]) {
+            // Calculate centre position for each hole
+            x_pos = (i - (holes_x - 1) / 2) * hole_spacing;
+            y_pos = (j - (holes_y - 1) / 2) * hole_spacing;
+
+            // Cylinder extends slightly past the bottom to ensure clean cut
+            // The hole is open at the top (z=30) and closed at z=5.
+            // So the cylinder should start at z=5 and go up to z=30.
+            // To ensure clean cut at the top, we extend slightly above z=30.
+            // To ensure clean cut at the bottom, we extend slightly below z=5.
+            translate([x_pos, y_pos, 5 - 0.5])
+                cylinder(h = hole_depth + 1.0, r = hole_diameter / 2, center = false);
+        }
+    }
+}
+```

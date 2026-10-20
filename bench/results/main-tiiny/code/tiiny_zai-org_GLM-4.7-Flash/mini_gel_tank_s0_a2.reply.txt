@@ -1,0 +1,72 @@
+```openscad
+$fn = 64;
+
+// --- Dimensions (mm) ---
+outer_x = 120;
+outer_y = 70;
+outer_z = 40;
+wall_thick = 3;
+floor_thick = 3;
+platform_len = 60;
+platform_height = 10;
+inner_floor_z = floor_thick;
+inner_platform_z = inner_floor_z + platform_height;
+electrode_hole_dia = 2;
+electrode_hole_z = 30;
+electrode_hole_y = 0;
+
+// Derived dimensions
+inner_x = outer_x - (2 * wall_thick);
+inner_y = outer_y - (2 * wall_thick);
+inner_z = outer_z - (2 * wall_thick);
+
+// --- Geometry ---
+
+// Main Tank Body (Outer Shell)
+tank_body = union() {
+    // Floor
+    cube([outer_x, outer_y, floor_thick]);
+    // Side Walls
+    translate([0, 0, floor_thick])
+        cube([outer_x, wall_thick, inner_z]);
+    translate([0, outer_y - wall_thick, floor_thick])
+        cube([outer_x, wall_thick, inner_z]);
+    translate([0, 0, floor_thick])
+        cube([wall_thick, outer_y, inner_z]);
+    translate([outer_x - wall_thick, 0, floor_thick])
+        cube([wall_thick, outer_y, inner_z]);
+}
+
+// Electrode Holes (Cutting shapes)
+// We cut these from the side walls before adding the platform
+electrode_holes = union() {
+    // Left Wall Hole (at x = wall_thick)
+    translate([wall_thick, electrode_hole_y, electrode_hole_z])
+        cylinder(d = electrode_hole_dia, h = wall_thick + 1);
+    // Right Wall Hole (at x = outer_x - wall_thick)
+    translate([outer_x - wall_thick, electrode_hole_y, electrode_hole_z])
+        cylinder(d = electrode_hole_dia, h = wall_thick + 1);
+}
+
+// Platform (Raised Solid)
+platform = cube([platform_len, inner_y, platform_height]);
+
+// --- Assembly ---
+
+module buffer_tank() {
+    difference() {
+        // 1. Subtract Electrode Holes from the main body
+        difference() {
+            tank_body;
+            electrode_holes;
+        }
+        
+        // 2. Subtract the Platform from the interior
+        // We translate the platform to sit on the inner floor
+        translate([-(outer_x - platform_len) / 2, 0, inner_floor_z])
+            platform;
+    }
+}
+
+buffer_tank();
+```

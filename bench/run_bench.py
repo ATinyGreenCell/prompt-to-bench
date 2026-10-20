@@ -389,6 +389,18 @@ def run_one(backend, system, task, ref, args, code_dir, tag):
     return attempts
 
 
+def set_aside(code_dir, tag, label):
+    """Before a conversation is done again, move the earlier one's files to code/<model>/superseded/<label>/: the
+    record a rerun supersedes keeps the code its code_sha1 names, and a rerun that needs fewer attempts cannot leave
+    stale later attempts beside its own."""
+    old = sorted(f for f in os.listdir(code_dir) if re.fullmatch(re.escape(tag) + r"_a\d+\.(?:scad|stl|reply\.txt)", f))
+    if old:
+        dest = os.path.join(code_dir, "superseded", label)
+        os.makedirs(dest, exist_ok=True)
+        for f in old:
+            os.replace(os.path.join(code_dir, f), os.path.join(dest, f))
+
+
 # --------------------------------------------------------------------------- main
 
 def main():
@@ -521,9 +533,13 @@ def main():
                 backend = make_backend(model, args.temperature, seed=args.seed_base + 100 * s,
                                        num_predict=args.num_predict, think=args.think, num_ctx=args.num_ctx)
                 args.sample_idx = s
+                tag = f"{t['id']}_s{s}{suffix}"
+                prev = newest.get((model, t["id"], s, args.lang, args.feedback))  # a flagged record being redone
+                set_aside(code_dir, tag, re.sub(r"\D", "", prev[0]) if prev and prev[0]
+                          else f"unrecorded-{dt.datetime.now():%Y%m%d%H%M%S}")  # or an interrupted try's files
                 t0 = time.time()
                 try:
-                    attempts = run_one(backend, system, t, refs[t["id"]], args, code_dir, f"{t['id']}_s{s}{suffix}")
+                    attempts = run_one(backend, system, t, refs[t["id"]], args, code_dir, tag)
                 except InfraError as e:
                     infra_fails += 1
                     print(f"{dt.datetime.now():%H:%M:%S} {model:28s} {t['id']:24s} SKIPPED (runtime error, will rerun "

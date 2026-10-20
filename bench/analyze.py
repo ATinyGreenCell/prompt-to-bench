@@ -25,6 +25,8 @@ import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
+import matplotlib.transforms as mtransforms  # noqa: E402
+from matplotlib.collections import PathCollection  # noqa: E402
 import yaml  # noqa: E402
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -70,7 +72,7 @@ def load_runs():
             except json.JSONDecodeError:
                 continue
             if not isinstance(r, dict) or not {"model", "task", "sample", "attempts"} <= r.keys() \
-                    or not isinstance(r["attempts"], list):
+                    or not isinstance(r["attempts"], list) or not all(isinstance(a, dict) for a in r["attempts"]):
                 continue  # valid JSON but not a record (hand edit, foreign file)
             r["_run"] = run
             # A rescore can turn an earlier attempt into a pass; the attempts after it would never
@@ -437,7 +439,7 @@ def table_categories(records, rows):
             recs = [r for r in records if r["model"] == row["model"] and r["category"] == c]
             k = sum(any(a.get("passed") for a in r["attempts"]) for r in recs)
             cells.append(f"{k}/{len(recs)}" if recs else "-")
-        out.append(f"| {row['label']} | " + " | ".join(cells) + " |")
+        out.append(f"| {row['label']}{'' if row['complete'] else ' *(partial)*'} | " + " | ".join(cells) + " |")
     return "\n".join(out)
 
 
@@ -491,7 +493,8 @@ def table_failures(rows):
     out = ["| Model | " + " | ".join(stages) + " |", "|---|" + "---:|" * len(stages)]
     for r in order_models(rows):
         fs = r["first_stage"]
-        out.append(f"| {r['label']} | " + " | ".join(str(fs.get(s, 0)) for s in stages) + " |")
+        out.append(f"| {r['label']}{'' if r['complete'] else ' *(partial)*'} | "
+                   + " | ".join(str(fs.get(s, 0)) for s in stages) + " |")
     return "\n".join(out)
 
 
@@ -514,7 +517,7 @@ def table_models(models_meta, present=None):
             continue
         if m.get("ours"):  # our fine-tune is a result, not one of the downloaded baselines
             continue
-        size = "hosted" if m.get("hosted") else f"{m['size_gb']:g} GB" if m.get("size_gb") else "-"
+        size = "hosted" if m.get("hosted") else f"{m['size_gb']} GB" if m.get("size_gb") else "-"  # as Tables 3 and 12
         where = "hosted API" if m.get("hosted") else RUNS_ON.get(m.get("runtime"), m.get("runtime"))
         out.append(f"| {m['label']} (`{m['id']}`) | {m['family']} | {params_text(m)} | {size} | {where} | "
                    f"{m.get('licence', '')} |")
@@ -596,7 +599,7 @@ def fig_scale(rows, box_rows, models_meta, th, path, title, n_tasks):
     ax.set_xticklabels([f"{t:g}B" for t in ticks])
     ax.minorticks_off()
     ax.set_xlim(0.35, 170)
-    ax.set_ylim(-0.6, n_tasks + 0.6)
+    ax.set_ylim(-3.0, n_tasks + 0.6)  # room under the zero line for the stacked labels of the low box models
     ax.set_yticks(range(0, n_tasks + 1, 4))
     ax.set_xlabel("Total parameters (log scale)", color=th["ink2"], fontsize=9)
     ax.set_ylabel(f"Tasks passed within 3 tries (of {n_tasks})", color=th["ink2"], fontsize=9)
@@ -611,8 +614,14 @@ def fig_scale(rows, box_rows, models_meta, th, path, title, n_tasks):
     ax.text(0.37, n_tasks / 2 + 0.15, "viability bar: half the tasks", fontsize=8, color=th["ink2"], va="bottom")
     ring = {"edgecolors": th["surface"], "linewidths": 1.2, "zorder": 3}
     lap = [r for r in rows if not r["hosted"] and r["complete"] and total_params(r)]
-    ax.scatter([total_params(r) for r in lap], [r["pass3"] for r in lap], s=46, marker="o", color=th["cat"][0],
-               label="laptop CPU, 4-bit (1 sample)", **ring)
+    # a laptop model outside Ollama (its own `runtime`, e.g. the ternary Bonsai 2 27B) is not a 4-bit point;
+    # an empty runtime means the default, Ollama
+    own = collections.defaultdict(list)
+    for r in lap:
+        own[models_meta.get(r["model"], {}).get("runtime") or None].append(r)
+    if own[None]:
+        ax.scatter([total_params(r) for r in own[None]], [r["pass3"] for r in own[None]], s=46, marker="o",
+                   color=th["cat"][0], label="laptop CPU, 4-bit (1 sample)", **ring)
     box = [r for r in box_rows if r["mean_pass3"] is not None and total_params(r["meta"])]
     for r in box:
         ks = [k for _, k, n in r["per_sample"] if n >= n_tasks]
@@ -620,21 +629,57 @@ def fig_scale(rows, box_rows, models_meta, th, path, title, n_tasks):
             ax.vlines(total_params(r["meta"]), min(ks), max(ks), color=th["cat"][1], linewidth=1.5, zorder=2)
     ax.scatter([total_params(r["meta"]) for r in box], [r["mean_pass3"] for r in box], s=46, marker="s",
                color=th["cat"][1], label="Tiiny NPU box (mean of samples, range)", **ring)
-    placed = []  # (log10 x, y) of labels already drawn: stack labels of nearby points instead of overprinting
-    for r in sorted(box, key=lambda r: (-r["mean_pass3"], total_params(r["meta"]))):
-        if r["mean_pass3"] <= 0:
-            continue  # the zero line is crowded; those models are in the table
-        x, y = total_params(r["meta"]), r["mean_pass3"]
-        k = sum(abs(math.log10(x) - px) < 0.3 and abs(y - py) < 1.2 for px, py in placed)
-        placed.append((math.log10(x), y))
-        left = x > 50  # near the right edge: label on the left of the marker
-        ax.annotate(r["label"], (x, y), xytext=(-7 if left else 7, -3 - 11 * k), textcoords="offset points",
-                    fontsize=8, color=th["ink2"], ha="right" if left else "left",
-                    arrowprops={"arrowstyle": "-", "color": th["muted"], "linewidth": 0.6} if k else None)
+    box_labels = [(r["meta"].get("short_label") or r["label"], total_params(r["meta"]), r["mean_pass3"],
+                   total_params(r["meta"]) > 50, "data")
+                  for r in sorted(box, key=lambda r: (-r["mean_pass3"], total_params(r["meta"])))
+                  if r["mean_pass3"] > 0]  # the zero line is crowded; those models are in the table
+    own_labels = []  # (text, x, y, label on the left?, coordinates), placed below once the layout is fixed
+    nudge = mtransforms.offset_copy(ax.transData, fig=fig, x=-7, y=0, units="points")
+    for i, (runtime, rs) in enumerate(sorted((k, v) for k, v in own.items() if k)):
+        # colours 0 and 1 are the 4-bit laptop and the box; further runtimes vary the marker as well
+        mk, col = ("D", "^", "v", "P")[i % 4], th["cat"][2 + i % (len(th["cat"]) - 2)]
+        for r in rs:  # drawn over the box markers, and nudged left off one at the same place
+            hit = any(abs(math.log10(total_params(r)) - math.log10(total_params(b["meta"]))) < 0.03
+                      and abs(r["pass3"] - b["mean_pass3"]) < 0.6 for b in box)
+            ax.scatter([total_params(r)], [r["pass3"]], s=52, marker=mk, color=col,
+                       transform=nudge if hit else ax.transData, **{**ring, "zorder": 4})
+            own_labels.append((models_meta.get(r["model"], {}).get("short_label") or r["label"], total_params(r),
+                               r["pass3"], True, nudge if hit else "data"))
+        ax.scatter([], [], s=52, marker=mk, color=col, label=f"{RUNS_ON.get(runtime, runtime)} (1 sample)", **ring)
     ax.legend(loc="lower center", bbox_to_anchor=(0.45, 1.0), ncol=2, frameon=False, fontsize=8.5,
               labelcolor=th["ink2"], handletextpad=0.4)
     fig.suptitle(title, x=0.01, ha="left", fontsize=11.5, color=th["ink"], fontweight="bold")
     fig.tight_layout()
+    # Each label goes beside its marker or, if that would overlap a label, a marker or a reference-line caption
+    # already drawn, as few lines lower (else higher) as it takes, with a leader line - measured in the final layout,
+    # so long labels cannot overprint - and inside the plot.
+    renderer = fig.canvas.get_renderer()
+    taken = [t.get_window_extent(renderer) for t in ax.texts]
+    half = 3.5 * fig.dpi / 72
+    for coll in (c for c in ax.collections if isinstance(c, PathCollection)):  # the markers, not the whiskers
+        for xy in coll.get_offset_transform().transform(coll.get_offsets()) if len(coll.get_offsets()) else []:
+            taken.append(mtransforms.Bbox.from_extents(xy[0] - half, xy[1] - half, xy[0] + half, xy[1] + half))
+    frame = ax.get_window_extent(renderer)
+    shifts = [0] + [-11 * d for d in range(1, 7)] + [11 * d for d in range(1, 7)]
+    for text, x, y, left, where in box_labels + own_labels:
+        def put(dy, arrow=False):
+            return ax.annotate(text, (x, y), xycoords=where, xytext=(-7 if left else 7, -3 + dy),
+                               textcoords="offset points", fontsize=8, color=th["ink2"], ha="right" if left else "left",
+                               arrowprops={"arrowstyle": "-", "color": th["muted"], "linewidth": 0.6} if arrow else None)
+        for dy in shifts:
+            ann = put(dy)
+            bb = ann.get_window_extent(renderer)
+            if frame.contains(bb.x0, bb.y0) and frame.contains(bb.x1, bb.y1) and not any(bb.overlaps(t) for t in taken):
+                break
+            ann.remove()
+        else:  # nowhere free: beside the marker after all
+            dy = 0
+            ann = put(0)
+            bb = ann.get_window_extent(renderer)
+        if dy:
+            ann.remove()
+            put(dy, arrow=True)
+        taken.append(bb)
     fig.savefig(path, facecolor=th["surface"])
     plt.close(fig)
 
@@ -735,8 +780,8 @@ def picture(name, alt):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--no-readme", action="store_true")
-    ap.add_argument("--runs", nargs="+", default=["main", "main-claude"],
-                    help="run folders for the main tables (e.g. your own --run name)")
+    ap.add_argument("--runs", nargs="+", default=["main", "main-claude", "ft-scad", "main-bonsai"],
+                    help="run folders for the main tables (e.g. your own --run name); the default gives the paper's")
     ap.add_argument("--lang-runs", nargs="+", default=["lang", "lang-claude"])
     ap.add_argument("--box-runs", nargs="+", default=["main-tiiny"],
                     help="run folders with several samples per task (Tiiny NPU box), reported per sample")

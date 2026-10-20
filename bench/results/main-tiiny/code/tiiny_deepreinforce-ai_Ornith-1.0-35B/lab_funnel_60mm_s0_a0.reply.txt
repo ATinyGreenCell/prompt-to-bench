@@ -1,0 +1,64 @@
+```openscad
+// Lab funnel - printed upright (spout down, wide opening up)
+// Dimensions in mm
+
+// Overall height
+H_FUNNEL = 50;
+
+// Spout length (z = 0 to z = 20)
+H_SPOUT = 20;
+
+// Outer diameter of spout
+OD_SPOUT = 10;
+
+// Outer diameter of rim
+OD_RIM = 60;
+
+// Wall thickness
+T_WALL = 1.6;
+
+// Calculate inner diameter of spout
+ID_SPOUT = OD_SPOUT - 2 * T_WALL;
+
+// Calculate inner diameter of rim
+ID_RIM = OD_RIM - 2 * T_WALL;
+
+// Spout outer cylinder
+spout_outer = cylinder(d = OD_SPOUT, h = H_SPOUT, center = false);
+
+// Spout inner bore
+spout_inner = cylinder(d = ID_SPOUT, h = H_SPOUT + 0.01, center = false);
+
+// Cone outer surface (from OD_SPOUT at z=H_SPOUT to OD_RIM at z=H_FUNNEL)
+cone_outer = cylinder(d1 = OD_SPOUT, d2 = OD_RIM, h = H_FUNNEL - H_SPOUT, center = false);
+
+// Cone inner surface (from ID_SPOUT at z=H_SPOUT to ID_RIM at z=H_FUNNEL)
+cone_inner = cylinder(d1 = ID_SPOUT, d2 = ID_RIM, h = H_FUNNEL - H_SPOUT + 0.01, center = false);
+
+// Build the funnel body (outer shape)
+funnel_body = union() {
+    translate([0, 0, H_SPOUT]) {
+        cone_outer;
+    }
+    spout_outer;
+};
+
+// Build the hollow interior
+funnel_hollow = union() {
+    translate([0, 0, H_SPOUT]) {
+        cone_inner;
+    }
+    spout_inner;
+};
+
+// Subtract hollow from body
+funnel = difference() {
+    funnel_body;
+    funnel_hollow;
+};
+
+// Render
+render() {
+    funnel;
+}
+```

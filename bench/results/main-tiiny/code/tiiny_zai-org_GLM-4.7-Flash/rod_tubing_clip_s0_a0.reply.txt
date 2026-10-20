@@ -1,0 +1,71 @@
+```openscad
+$fn = 64;
+
+// Dimensions
+rod_diameter = 12.7;       // 1/2 inch
+rod_wall = 3.0;            // Wall thickness of rod ring
+rod_ring_z = 10.0;          // Height of the clip
+rod_ring_opening_w = 10.0; // Width of the opening on the -X side
+
+tubing_diameter = 6.0;     // Inner diameter of tubing ring
+tubing_wall = 2.0;         // Wall thickness of tubing ring
+tubing_ring_z = 10.0;      // Height of the clip
+tubing_ring_opening_w = 4.5;// Width of the opening on the +X side
+
+bridge_width = 6.0;        // Width of the bridge in X
+bridge_depth = 6.0;        // Depth of the bridge in Y
+
+// Derived Dimensions
+rod_outer_diameter = rod_diameter + (rod_wall * 2);
+tubing_outer_diameter = tubing_diameter + (tubing_wall * 2);
+tubing_ring_x_pos = 15.0;   // X position of the tubing ring
+tubing_ring_y_pos = 0.0;    // Y position of the tubing ring
+
+// Bridge Geometry
+bridge_x_start = 8.0;
+bridge_x_end = 12.0;
+bridge_y_start = -bridge_depth / 2;
+bridge_y_end = bridge_depth / 2;
+
+module rod_ring() {
+    // Outer cylinder
+    cylinder(d = rod_outer_diameter, h = rod_ring_z, center = true);
+    
+    // Inner cylinder (cutout for rod)
+    cylinder(d = rod_diameter, h = rod_ring_z + 0.1, center = true);
+    
+    // Opening cutout on -X side
+    // We cut a rectangular box that spans the full height and depth
+    translate([-rod_outer_diameter/2 - 0.1, 0, 0])
+        cube([rod_outer_diameter + 0.2, 10, rod_ring_z + 0.1], center = true);
+}
+
+module tubing_ring() {
+    // Outer cylinder
+    cylinder(d = tubing_outer_diameter, h = tubing_ring_z, center = true);
+    
+    // Inner cylinder (cutout for tubing)
+    cylinder(d = tubing_diameter, h = tubing_ring_z + 0.1, center = true);
+    
+    // Opening cutout on +X side
+    translate([tubing_outer_diameter/2 + 0.1, 0, 0])
+        cube([tubing_outer_diameter + 0.2, 5, tubing_ring_z + 0.1], center = true);
+}
+
+module bridge() {
+    // Solid block connecting the two rings
+    translate([bridge_x_start, 0, 0])
+        cube([bridge_width, bridge_depth, rod_ring_z], center = true);
+}
+
+module clip() {
+    union() {
+        rod_ring();
+        tubing_ring();
+        bridge();
+    }
+}
+
+// Render the clip
+clip();
+```

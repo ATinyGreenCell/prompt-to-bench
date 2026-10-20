@@ -1,0 +1,65 @@
+```openscad
+// --- Dimensions (mm) ---
+block_length = 90;      // X dimension of the base block
+block_width = 45;       // Y dimension of the base block
+block_height = 20;      // Z dimension of the base block
+
+slide_length = 75;      // Length of the slide (X direction)
+slide_width = 25;       // Width of the slide (Y direction)
+slide_thickness = 1;    // Thickness of the slide (Z direction)
+
+slot_count = 10;         // Number of slots
+slot_length = 77;       // Length of the slot (X direction)
+slot_width = 1.6;       // Width of the slot (Y direction)
+slot_depth = 10;        // Depth of the slot (Z direction)
+slot_spacing = 3.5;     // Center-to-center distance between slots (Y direction)
+
+// --- Resolution ---
+$fn = 64;
+
+// --- Implementation ---
+
+// The user requested:
+// 1. Part rests on XY plane at Z=0.
+// 2. Centered on the origin in X and Y.
+// 3. 10 parallel slots running along X.
+// 4. Slots are 77mm long, 1.6mm wide, 10mm deep.
+// 5. Slots are 3.5mm apart center-to-center.
+// 6. The group of slots is centered on the block in X and Y.
+
+module drying_rack() {
+    difference() {
+        // Main block body
+        // We use a cube centered at the origin for X and Y, 
+        // but we must ensure it starts at Z=0.
+        translate([-block_length/2, -block_width/2, 0])
+            cube([block_length, block_width, block_height]);
+
+        // Generate the slots
+        for (i = [0 : slot_count - 1]) {
+            // Calculate Y position for the center of the current slot
+            // To center the group of 10 slots (9 gaps) in Y:
+            // Total span of centers = (10 - 1) * 3.5 = 31.5
+            // Y_offset = (i * 3.5) - (31.5 / 2)
+            y_offset = (i * slot_spacing) - ((slot_count - 1) * slot_spacing / 2);
+            
+            // The slots are centered on the block in X.
+            // X_offset = (90 - 77) / 2 = 6.5
+            x_offset = (block_length - slot_length) / 2;
+            
+            // The slots are cut into the top face.
+            // Top face is at Z = block_height.
+            // We cut from Z = block_height down to Z = block_height - slot_depth.
+            // We extend the cutting shape by 0.1mm to ensure no coplanar faces.
+            translate([x_offset, y_offset, block_height - slot_depth + 0.01]) {
+                cube([slot_length, slot_width, slot_depth + 0.01]);
+            }
+        }
+    }
+}
+
+// Final assembly:
+// The module already handles the X, Y, and Z=0 positioning.
+// We just call it.
+drying_rack();
+```

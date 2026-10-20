@@ -1,0 +1,60 @@
+```openscad
+// Dimensions for the 10-well agarose gel comb
+// All measurements in millimetres
+
+// Overall dimensions
+comb_length = 70;    // Length of the spine (X)
+comb_width = 12;     // Width of the spine (Y)
+comb_thickness = 1.5;// Thickness of the plate (Z)
+
+// Tooth dimensions
+tooth_length = 12;   // Length of the tooth (Y)
+tooth_width = 5.0;   // Width of the tooth (X)
+
+// Spacing and positioning
+tooth_gap = 1.5;     // Gap between teeth (Y)
+num_teeth = 10;      // Number of teeth
+
+// Calculate total width of the teeth and gaps
+total_teeth_width = (tooth_width * num_teeth) + (tooth_gap * (num_teeth - 1));
+
+// Calculate offset to center the teeth row on the spine
+// Spine Center X = (Spine Length - Total Width) / 2
+spine_center_offset = (comb_length - total_teeth_width) / 2;
+
+$fn = 64; // High resolution for curved surfaces
+
+// Main body of the comb (Spine)
+module spine() {
+    // The spine is a rectangular block centered on the origin
+    // We subtract the teeth area later to create the holes
+    cube([comb_length, comb_width, comb_thickness], center=true);
+}
+
+// Individual Tooth
+module tooth() {
+    // Teeth are centered on the spine in X
+    // They extend in the -Y direction
+    translate([0, -tooth_length/2, 0])
+    cube([tooth_width, tooth_length, comb_thickness], center=true);
+}
+
+// Build the comb
+module gel_comb() {
+    union() {
+        spine();
+        
+        // Generate teeth grid
+        for (i = [0 : num_teeth - 1]) {
+            // Calculate X position based on spine centering
+            // Spacing logic: Center + (i * (tooth_width + gap))
+            translate([spine_center_offset + (i * (tooth_width + tooth_gap)), 0, 0]) {
+                tooth();
+            }
+        }
+    }
+}
+
+// Render the part
+gel_comb();
+```

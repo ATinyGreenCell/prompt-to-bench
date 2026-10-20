@@ -1,0 +1,109 @@
+// Buffer tank for mini horizontal gel-electrophoresis box
+// Units: millimetres
+
+// --- Outer Dimensions ---
+outer_x = 120;
+outer_y = 70;
+outer_z = 40;
+
+// --- Wall and Floor Thickness ---
+wall_thickness = 3;
+floor_thickness = 3;
+
+// --- Platform Dimensions ---
+platform_length_x = 60;
+platform_height_from_floor = 10;
+// Spans full inner width
+platform_width_y = outer_y - 2 * wall_thickness;
+
+// --- Hole Dimensions ---
+hole_diameter = 2;
+hole_z_pos = 30;
+hole_y_pos = 0;
+
+// --- Calculated Inner Dimensions ---
+inner_x = outer_x - 2 * wall_thickness;
+inner_y = outer_y - 2 * wall_thickness;
+// Inner height is from floor to top of tank
+inner_z = outer_z - floor_thickness;
+
+// --- Platform Position ---
+// Centered in X, spans full Y, top at z = floor_thickness + platform_height_from_floor
+platform_top_z = floor_thickness + platform_height_from_floor;
+platform_bottom_z = floor_thickness;
+platform_center_x = 0;
+platform_center_y = 0;
+
+// --- Helper Functions ---
+// Creates a hollow box with given outer dimensions and wall/floor thickness
+// The box is centered at origin.
+module hollow_box(ox, oy, oz, wt, ft) {
+    // Outer block
+    outer = cube([ox, oy, oz], center = true);
+    
+    // Inner void: starts at ft, goes to oz. Width is ox - 2*wt, Height is oz - ft.
+    // We subtract this void from the outer block.
+    void = translate([0, 0, ft], [ox - 2*wt, oy - 2*wt, oz - ft], center = true);
+    
+    difference() {
+        outer;
+        void;
+    }
+}
+
+// --- Main Construction ---
+
+// 1. Create the main tank shell (hollow box)
+tank_shell = hollow_box(outer_x, outer_y, outer_z, wall_thickness, floor_thickness);
+
+// 2. Create the solid platform
+// It sits on the floor (z = floor_thickness), spans full inner Y, length 60mm centered in X.
+// Height is platform_height_from_floor.
+platform = translate([0, 0, floor_thickness], [platform_length_x, platform_width_y, platform_height_from_floor], center = true);
+
+// 3. Combine tank and platform
+// The platform is inside the tank. We union them.
+// Note: The tank_shell already has the void subtracted. The platform fills part of that void.
+// So we just union the platform to the shell.
+tank_with_platform = union() {
+    tank_shell;
+    platform;
+};
+
+// 4. Drill the electrode holes
+// Holes are drilled through the end walls (X ends) at y=0, z=30.
+// We use a long cylinder to ensure it cuts through the wall thickness.
+// The cylinder needs to be long enough to pass through the wall and a bit more.
+hole_length = outer_y + 10; // Long enough to pass through the Y dimension if oriented along Y?
+// Wait, the hole is along X axis.
+// The hole is at y=0, z=30. It goes through the wall at x = +/- outer_x/2.
+// So the cylinder should be oriented along X.
+// Cylinder parameters: d=2, h= (distance between walls) + margin.
+// Distance between walls = outer_x.
+// We need a cylinder that spans from x = -outer_x/2 - 1 to x = outer_x/2 + 1.
+// Actually, simpler: create a cylinder centered at (0,0,30) with height = outer_x + 2, oriented along X.
+// But OpenSCAD cylinders are along Z by default. We need to rotate.
+
+// Create a cylinder for the hole
+hole_cyl = cylinder(d = hole_diameter, h = outer_x + 2, center = true);
+// Rotate to align with X axis
+hole_cyl_x = rotate([90, 0, 0], hole_cyl);
+
+// Position the holes
+// Left hole: center at (-outer_x/2, 0, hole_z_pos)
+// Right hole: center at (outer_x/2, 0, hole_z_pos)
+hole_left = translate([-outer_x/2, 0, hole_z_pos], hole_cyl_x);
+hole_right = translate([outer_x/2, 0, hole_z_pos], hole_cyl_x);
+
+// 5. Subtract the holes from the tank
+final_part = difference() {
+    tank_with_platform;
+    union() {
+        hole_left;
+        hole_right;
+    }
+};
+
+// Render the final part
+color("LightBlue")
+final_part;

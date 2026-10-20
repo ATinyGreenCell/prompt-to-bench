@@ -1,0 +1,107 @@
+```openscad
+// Buffer tank for mini horizontal gel-electrophoresis box
+// Dimensions in mm
+
+// Outer dimensions
+outer_x = 120;
+outer_y = 70;
+outer_z = 40;
+
+// Wall and floor thickness
+wall_thickness = 3;
+floor_thickness = 3;
+
+// Platform dimensions
+platform_length = 60;
+platform_height_above_inner_floor = 10;
+platform_y_span = "full inner width";
+
+// Electrode hole
+hole_diameter = 2;
+hole_z = 30;
+hole_y = 0;
+
+// Derived dimensions
+inner_x = outer_x - 2 * wall_thickness;
+inner_y = outer_y - 2 * wall_thickness;
+inner_z = outer_z - floor_thickness;
+
+// Platform top Z position
+platform_top_z = floor_thickness + platform_height_above_inner_floor;
+
+// Platform half-length
+platform_half_x = platform_length / 2;
+
+// Hole radius
+hole_radius = hole_diameter / 2;
+
+// Extrusion depth for cutting holes (must extend past faces)
+cut_depth = 1.0;
+
+// Build the part
+difference() {
+    // Main tank body (outer shell)
+    cube([outer_x, outer_y, outer_z], center = false);
+    
+    // Subtract inner cavity (open top)
+    // The cavity starts at z = floor_thickness and goes up to outer_z (open top)
+    translate([wall_thickness, wall_thickness, floor_thickness]) {
+        cube([inner_x, inner_y, outer_z - floor_thickness], center = false);
+    }
+    
+    // Subtract the platform volume from the inner cavity
+    // Platform is centered in X, spans full Y, sits on inner floor
+    // Platform top is at platform_top_z
+    // We need to subtract a block from the inner cavity space
+    // The platform occupies:
+    // X: from (outer_x/2 - platform_half_x) to (outer_x/2 + platform_half_x)
+    // Y: from 0 to outer_y (full span)
+    // Z: from floor_thickness to platform_top_z
+    
+    translate([
+        outer_x / 2 - platform_half_x,
+        0,
+        floor_thickness
+    ]) {
+        cube([
+            platform_length,
+            outer_y,
+            platform_top_z - floor_thickness
+        ], center = false);
+    }
+    
+    // Drill electrode holes through end walls
+    // Hole is at y = 0, z = hole_z, along X axis
+    // We need to cut through the left and right walls
+    // Left wall: x from 0 to wall_thickness
+    // Right wall: x from outer_x - wall_thickness to outer_x
+    
+    // Left hole
+    translate([
+        wall_thickness / 2,
+        hole_y,
+        hole_z
+    ]) {
+        $fn = 64;
+        cylinder(
+            d = hole_diameter + 0.02,
+            h = outer_x + cut_depth,
+            center = true
+        );
+    }
+    
+    // Right hole
+    translate([
+                outer_x - wall_thickness / 2,
+                hole_y,
+                hole_z
+            ]) {
+                $fn = 64;
+                cylinder(
+                    d = hole_diameter + 0.02,
+                    h = outer_x + cut_depth,
+                    center = true
+                );
+            }
+}
+```

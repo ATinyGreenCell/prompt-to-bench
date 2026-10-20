@@ -1,0 +1,102 @@
+// DIY Magnetic Stirrer Housing for 80mm PC Fan
+// Print Orientation: Upside down (Top plate on bed)
+// Units: mm
+
+// --- Dimensions ---
+// Outer footprint of the housing
+W_OUT = 90;
+H_OUT = 90;
+
+// Thickness of the top plate (bottom of the box in print orientation)
+THICK_TOP = 2;
+
+// Height of the walls (Total height 40mm - 2mm top plate)
+H_WALL = 38; 
+
+// Wall thickness
+THICK_WALL = 2.5;
+
+// Fan mounting hole diameter (M4 clearance)
+D_FAN_HOLE = 4.5;
+
+// Fan mounting hole pattern: 71.5mm square, centred on the plate
+PATTERN_SIZE = 71.5;
+
+// Cable notch dimensions
+NOTCH_W = 12;
+NOTCH_H = 8; // Depth from open edge (z=40) down to z=32
+
+// Resolution for curved features
+$fn = 64;
+
+// --- Helper: Create the main box block ---
+module stirrer_housing() {
+    // Total height
+    h_total = THICK_TOP + H_WALL;
+    
+    difference() {
+        // 1. Main Block
+        // Outer size: W_OUT x H_OUT
+        // Height: h_total
+        // Centered at origin for X/Y, sitting on Z=0
+        translate([0, 0, 0])
+            cube([W_OUT, H_OUT, h_total], center = false);
+        
+        // 2. Cut Fan Mounting Holes through the top plate
+        // Pattern: 71.5mm square centred on the 90x90 plate.
+        // Centers are at: +/- 35.75, +/- 35.75
+        // Z range: 0 to THICK_TOP (2mm)
+        
+        // Define the 4 offsets for the square pattern
+        offsets = [
+            [-PATTERN_SIZE/2, -PATTERN_SIZE/2],
+            [-PATTERN_SIZE/2,  PATTERN_SIZE/2],
+            [ PATTERN_SIZE/2, -PATTERN_SIZE/2],
+            [ PATTERN_SIZE/2,  PATTERN_SIZE/2]
+        ];
+        
+        for (p = offsets) {
+            // p[0] is X offset, p[1] is Y offset
+            translate([p[0], p[1], 0])
+                cylinder(
+                    h = THICK_TOP + 0.1, // Extend slightly past top plate to ensure clean cut
+                    r = D_FAN_HOLE/2,
+                    center = true
+                );
+        }
+        
+        // 3. Cut Cable Notch
+        // Location: One wall. Let's choose the wall at X = -W_OUT/2 (Left wall).
+        // Wall Face X coordinate: -45
+        // Notch Width: 12mm. Centred along the wall (Y direction).
+        // Depth: 8mm from the open edge (z=40) down to z=32.
+        
+        // We define a cutting box that represents the void.
+        // Dimensions: [Width, Height, Depth]
+        // Width: NOTCH_W (12)
+        // Height: H_OUT (90) - must cover the full height of the wall to cut through it cleanly
+        // Depth: NOTCH_H (8) + epsilon to ensure it cuts through the wall thickness
+        
+        // Position:
+        // X: Centered on the wall face. The wall face is at X = -45.
+        // The notch width is 12. So it spans from -45 - 6 to -45 + 6.
+        // Y: Centered on the wall. Wall height is 90. Center is 0.
+        // Z: From 32 to 40.
+        
+        translate([
+            -W_OUT/2 - NOTCH_W/2, // X start of notch (-45 - 6 = -51)
+            -NOTCH_H/2,           // Y center (0)
+            32                    // Z start of notch
+        ])
+            cube([
+                NOTCH_W,          // Width 12
+                H_OUT,            // Height 90 (covers full wall)
+                NOTCH_H + 0.1     // Depth 8 + epsilon to cut through wall thickness
+            ]);
+    }
+}
+
+// --- Main Assembly ---
+// Center the part on the origin as requested
+translate([0, 0, 0])
+    stirrer_housing();

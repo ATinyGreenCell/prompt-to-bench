@@ -1,0 +1,81 @@
+// Dimensions
+BLOCK_X = 127.76;
+BLOCK_Y = 85.48;
+BLOCK_Z = 20;
+HOLE_DIA = 6.2;
+COLS = 12;
+ROWS = 8;
+SPACING_X = 9.0;
+SPACING_Y = 9.0;
+OFFSET_X = 14.38;
+OFFSET_Y = 11.24;
+CHAMFER_LEN = 5;
+
+// Hole positions
+// A1 is at (OFFSET_X, OFFSET_Y) in the block's coordinate system.
+// X coordinates: OFFSET_X + i * SPACING_X for i in 0..COLS-1
+// Y coordinates: OFFSET_Y + j * SPACING_Y for j in 0..ROWS-1
+
+module hole() {
+    $fn = 64;
+    // Extend past the faces by 0.1mm to ensure clean boolean operations
+    // The block is 20mm tall. We cut through from top (z=20) to bottom (z=0).
+    cylinder(h = BLOCK_Z + 0.1, d = HOLE_DIA, center = false);
+}
+
+module rack() {
+    // 1. Main Block
+    // Resting on XY plane at z=0
+    block = cube([BLOCK_X, BLOCK_Y, BLOCK_Z], center = false);
+    
+    // 2. Holes
+    // We will subtract the holes from the block.
+    // To keep the code clean, we create a union of all holes.
+    holes = union() {
+        for (i = [0 : COLS - 1]) {
+            for (j = [0 : ROWS - 1]) {
+                x = OFFSET_X + i * SPACING_X;
+                y = OFFSET_Y + j * SPACING_Y;
+                translate([x, y, 0]) {
+                    hole();
+                }
+            }
+        }
+    };
+    
+    // 3. Chamfer
+    // 45-degree chamfer with 5mm legs off the vertical edge at the A1 corner.
+    // A1 is at (OFFSET_X, OFFSET_Y).
+    // The chamfer removes material from the corner of the block at (0,0).
+    // It cuts a triangular prism from the corner.
+    // The cut plane is defined by x + y = CHAMFER_LEN.
+    // We remove the region where x >= 0, y >= 0, x + y <= CHAMFER_LEN.
+    chamfer_cut = translate([0, 0, 0]) {
+        polyhedron(
+            points = [
+                [0, 0, 0],
+                [CHAMFER_LEN, 0, 0],
+                [0, CHAMFER_LEN, 0],
+                [0, 0, BLOCK_Z],
+                [CHAMFER_LEN, 0, BLOCK_Z],
+                [0, CHAMFER_LEN, BLOCK_Z]
+            ],
+            faces = [
+                [0, 1, 2], // Bottom triangle
+                [3, 5, 4], // Top triangle
+                [0, 1, 4, 3], // Side face (x-axis)
+                [0, 2, 5, 3], // Side face (y-axis)
+                [1, 2, 5, 4]  // Chamfer face
+            ]
+        );
+    };
+    
+    // Combine block, subtract holes, subtract chamfer
+    difference() {
+        block;
+        holes;
+        chamfer_cut;
+    }
+}
+
+rack();

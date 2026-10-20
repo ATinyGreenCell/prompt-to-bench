@@ -1,0 +1,98 @@
+```openscad
+// Buffer tank for mini horizontal gel-electrophoresis box
+// Units: millimetres
+
+// --- Outer Dimensions ---
+outer_x = 120;
+outer_y = 70;
+outer_z = 40;
+
+// --- Wall and Floor Thickness ---
+wall_thickness = 3;
+floor_thickness = 3;
+
+// --- Platform Dimensions ---
+platform_length_x = 60;
+platform_height_from_floor = 10;
+// Spans full inner width
+platform_width_y = outer_y - 2 * wall_thickness;
+
+// --- Hole Dimensions ---
+hole_diameter = 2;
+hole_z_pos = 30;
+hole_y_pos = 0;
+
+// --- Calculated Inner Dimensions ---
+inner_x = outer_x - 2 * wall_thickness;
+inner_y = outer_y - 2 * wall_thickness;
+// Inner height is from floor to top of tank
+inner_z = outer_z - floor_thickness;
+
+// --- Platform Position ---
+// Centered in X, spans full Y, top at z = floor_thickness + platform_height_from_floor
+platform_top_z = floor_thickness + platform_height_from_floor;
+platform_bottom_z = floor_thickness;
+platform_center_x = 0;
+platform_center_y = 0;
+
+// --- Main Construction ---
+
+// 1. Create the main tank shell (hollow box)
+// We build the shell by taking the outer block and subtracting the inner void.
+// The inner void starts at floor_thickness and goes up to outer_z.
+// The void dimensions are (outer_x - 2*wall_thickness) x (outer_y - 2*wall_thickness) x (outer_z - floor_thickness).
+outer_block = cube([outer_x, outer_y, outer_z], center = true);
+
+void_cavity = translate([0, 0, floor_thickness], [inner_x, inner_y, inner_z], center = true);
+
+tank_shell = difference() {
+    outer_block;
+    void_cavity;
+};
+
+// 2. Create the solid platform
+// It sits on the floor (z = floor_thickness), spans full inner Y, length 60mm centered in X.
+// Height is platform_height_from_floor.
+platform = translate([0, 0, floor_thickness], [platform_length_x, platform_width_y, platform_height_from_floor], center = true);
+
+// 3. Combine tank and platform
+// The platform is inside the tank. We union them.
+tank_with_platform = union() {
+    tank_shell;
+    platform;
+};
+
+// 4. Drill the electrode holes
+// Holes are drilled through the end walls (X ends) at y=0, z=30.
+// The hole is along the X axis.
+// We create a cylinder oriented along X.
+// Cylinder diameter = 2mm.
+// Length needs to be slightly larger than the distance between the walls to ensure clean cut.
+// Distance between walls = outer_x.
+// We add a small margin (1mm) to ensure it cuts through completely.
+hole_length = outer_x + 2;
+
+// Create the cylinder (default orientation is Z, we need X)
+hole_cyl = cylinder(d = hole_diameter, h = hole_length, center = true);
+// Rotate to align with X axis (rotate 90 degrees around Y axis)
+hole_cyl_x = rotate([0, 90, 0], hole_cyl);
+
+// Position the holes
+// Left hole: center at (-outer_x/2, 0, hole_z_pos)
+// Right hole: center at (outer_x/2, 0, hole_z_pos)
+hole_left = translate([-outer_x/2, 0, hole_z_pos], hole_cyl_x);
+hole_right = translate([outer_x/2, 0, hole_z_pos], hole_cyl_x);
+
+// 5. Subtract the holes from the tank
+final_part = difference() {
+    tank_with_platform;
+    union() {
+        hole_left;
+        hole_right;
+    }
+};
+
+// Render the final part
+color("LightBlue")
+final_part;
+```

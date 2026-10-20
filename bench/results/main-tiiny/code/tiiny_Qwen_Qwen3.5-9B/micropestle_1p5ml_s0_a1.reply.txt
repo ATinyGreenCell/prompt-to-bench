@@ -1,0 +1,137 @@
+```openscad
+$fn = 128; // High resolution for smooth curves and accurate hole sizes
+
+// --- Dimensions ---
+// Handle
+d_handle = 8;      // Diameter of handle (mm)
+h_handle = 45;     // Height of handle (mm)
+
+// Cone
+d_cone_top = 8;    // Top diameter of cone (matches handle) (mm)
+d_cone_bot = 3;    // Bottom diameter of cone (mm)
+h_cone = 17;       // Height of cone (62 - 45) (mm)
+
+// Tip
+d_tip = 3;         // Diameter of spherical tip (mm)
+z_tip_center = 62; // Z-coordinate of sphere center (mm)
+
+// Grooves
+n_grooves = 4;     // Number of circumferential grooves
+w_groove = 2;      // Width of groove in Z (mm)
+d_groove = 1;      // Depth of groove (mm)
+z_grooves = [10, 15, 20, 25]; // Z-centers of the 4 grooves
+
+// --- Construction ---
+
+module handle() {
+    // Main cylinder body
+    cylinder(h = h_handle, r = d_handle / 2, center = [0, 0, h_handle / 2]);
+}
+
+module cone() {
+    // Cone tapering from 8mm to 3mm over 17mm height.
+    // We use rotate_extrude on a line segment in the XZ plane.
+    // To do this, we define the path in the XY plane but orient it correctly.
+    // Actually, the easiest way to make a cone along Z is to use a polygon in the XZ plane
+    // and linear_extrude along Y, then rotate 90 degrees? No.
+    // Standard method: rotate_extrude takes a path in XY plane and rotates around Z.
+    // We want a shape along Z. So we define the profile in the XZ plane, 
+    // but we must map X->X, Z->Y for the extrusion, then rotate back?
+    // Simpler: Use linear_extrude with a polygon in the XZ plane, then rotate 90 deg around X?
+    // Let's use the most robust method: difference of cylinders or a specific polygon extrusion.
+    
+    // Let's use linear_extrude with a polygon in the XZ plane.
+    // The polygon defines the cross-section in XZ. We extrude along Y.
+    // Then we rotate the whole thing 90 degrees around X so the extrusion is along Z.
+    
+    // Profile in XZ plane:
+    // Points: (x, z)
+    // Start: x = d_cone_top/2, z = 0
+    // End:   x = d_cone_bot/2, z = h_cone
+    // Close: x = d_cone_bot/2, z = 0 (to close the loop for the solid)
+    // Wait, rotate_extrude creates a solid of revolution.
+    // If we define a path from (r1, 0) to (r2, h) and close it to (r2, 0) and (r1, 0),
+    // the area between the line and the Z-axis is rotated.
+    
+    // Let's try:
+    // 1. Create a polygon in XZ plane: [(d_cone_top/2, 0), (d_cone_bot/2, h_cone), (d_cone_bot/2, 0)]
+    // 2. linear_extrude along Y (height = h_cone? No, the polygon height is h_cone).
+    //    Wait, linear_extrude extrudes perpendicular to the polygon plane.
+    //    If polygon is in XZ, extrusion is along Y.
+    //    The length of extrusion must be defined.
+    //    But we want the cone to be 17mm tall.
+    //    So the polygon height (Z range) should be 17mm.
+    //    And we extrude along Y for 0 length? No.
+    
+    // Correct approach for a cone along Z:
+    // Use rotate_extrude with a path in the XY plane where Y represents the height (Z in final).
+    // Path: (x, y) -> (radius, height)
+    // Start: (d_cone_top/2, 0)
+    // End:   (d_cone_bot/2, h_cone)
+    // Close: (d_cone_bot/2, 0) -> (d_cone_top/2, 0) ? No.
+    // The area to rotate is between the line and the Y-axis (which becomes Z).
+    // So the path must enclose the area.
+    // Points: (d_cone_top/2, 0) -> (d_cone_bot/2, h_cone) -> (d_cone_bot/2, 0) -> (d_cone_top/2, 0).
+    // This creates a triangle. Rotating it around the Y-axis (which we will map to Z) gives the cone.
+    
+    // Let's implement this:
+    // We need to rotate the result 90 degrees so the Y-axis of the profile becomes the Z-axis of the part.
+    // Actually, rotate_extrude rotates around Z.
+    // If we define the path in the XY plane, the resulting solid is along Z.
+    // So:
+    // x = radius
+    // y = height (along Z)
+    // Path: (d_cone_top/2, 0) -> (d_cone_bot/2, h_cone) -> (d_cone_bot/2, 0) -> (d_cone_top/2, 0)
+    // This works perfectly.
+    
+    rotate_extrude($fn = 64) {
+        // Define the path in XY plane. X is radius, Y is height (Z in final part).
+        // We need to close the loop.
+        // Start at top: radius = 4, height = 0
+        // End at bottom: radius = 1.5, height = 17
+        // Close the loop back to start radius at height 0?
+        // The area is between the line and the Y-axis.
+        // So we need the path to go: (4,0) -> (1.5, 17) -> (1.5, 0) -> (4, 0).
+        // This creates a triangle.
+        
+        polygon = [
+            [d_cone_top / 2, 0],
+            [d_cone_bot / 2, h_cone],
+            [d_cone_bot / 2, 0],
+            [d_cone_top / 2, 0]
+        ];
+        
+        // We need to ensure the polygon is closed properly for the command.
+        // The last point should be the first point for some commands, but polygon handles it.
+        // However, to be safe and explicit:
+        // The path is: (4,0) to (1.5, 17) to (1.5, 0) to (4, 0).
+        // This defines the area.
+        
+        // Wait, the standard way to make a cone with rotate_extrude is:
+        // translate([0, h_cone/2]) { // Center the cone vertically? No, let's build it from 0 to h_cone.
+        //   polygon = [[d_cone_top/2, 0], [d_cone_bot/2, h_cone], [d_cone_bot/2, 0]];
+        //   // This is not closed.
+        // }
+        // Let's use the explicit closed loop.
+        
+        // Actually, simpler:
+        // translate([0, h_cone/2]) {
+        //   rotate_extrude($fn=64) {
+        //     polygon = [[d_cone_top/2, -h_cone/2], [d_cone_bot/2, h_cone/2], [d_cone_bot/2, -h_cone/2]];
+        //   }
+        // }
+        // This centers the cone at z=0.
+        
+        // Let's center the cone at z = 45 + h_cone/2 = 58.5.
+        // So we build the cone from z = -h_cone/2 to z = h_cone/2 locally, then translate.
+        
+        // Local cone:
+        // Top (z=0 relative to cone center): radius = 4
+        // Bottom (z=17 relative to cone center): radius = 1.5
+        // Center of cone is at z = 45 + 8.5 = 53.5.
+        
+        // Let's build the cone centered at z=0 locally.
+        // Top: z = -8.5, r = 4
+        // Bottom: z = 8.5, r = 1.5
+        
+        // Path for rotate_extr

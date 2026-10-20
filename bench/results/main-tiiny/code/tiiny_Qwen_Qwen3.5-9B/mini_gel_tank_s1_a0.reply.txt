@@ -1,0 +1,126 @@
+```openscad
+$fn = 128;
+
+// --- Dimensions ---
+// Outer dimensions
+D_X_OUT = 120; // mm
+D_Y_OUT = 70;  // mm
+D_Z_OUT = 40;  // mm
+
+// Wall and floor thickness
+WALL_THICK = 3; // mm
+FLOOR_THICK = 3; // mm
+
+// Platform dimensions
+P_L_X = 60;     // mm (Length in X, centred)
+P_W_Y = D_Y_OUT; // mm (Spans full inner width)
+P_H = 10;       // mm (Height above inner floor)
+
+// Hole dimensions
+HOLE_D = 2;     // mm diameter
+HOLE_Y = 0;     // mm position
+HOLE_Z = 30;    // mm position
+HOLE_COUNT = 2; // Two holes (left and right ends)
+
+// --- Calculated Inner Dimensions ---
+// Inner X = Outer X - 2*Wall
+D_X_IN = D_X_OUT - 2 * WALL_THICK;
+// Inner Y = Outer Y - 2*Wall
+D_Y_IN = D_Y_OUT - 2 * WALL_THICK;
+// Inner Z (floor level) = Outer Z - Floor
+Z_FLOOR = D_Z_OUT - FLOOR_THICK;
+
+// --- Main Tank Body ---
+// Create the open-top rectangular tank.
+// We build the outer box, then subtract the inner void.
+// To ensure clean cuts, the subtraction shape extends slightly past the void.
+
+// 1. Outer Shell
+tank_outer = translate([0, 0, 0])
+    cube([D_X_OUT, D_Y_OUT, D_Z_OUT], center = false);
+
+// 2. Inner Void (Subtraction)
+// The void starts at the floor level and goes up to the top.
+// We add a small offset (0.1mm) to ensure the cut is clean and not coplanar.
+void_offset = 0.1;
+void_height = D_Z_OUT - FLOOR_THICK + void_offset;
+void_x_start = WALL_THICK - void_offset;
+void_x_end = D_X_OUT - WALL_THICK + void_offset;
+void_y_start = WALL_THICK - void_offset;
+void_y_end = D_Y_OUT - WALL_THICK + void_offset;
+
+inner_void = translate([void_x_start, void_y_start, FLOOR_THICK])
+    cube([void_x_end - void_x_start, void_y_end - void_y_start, void_height], center = false);
+
+// Combine to get the tank shell
+tank = union([tank_outer, inner_void]);
+
+// --- Raised Platform ---
+// The platform sits on the inner floor.
+// Position: Centred in X, spans full Y, starts at Z = FLOOR_THICK.
+// Top Z = FLOOR_THICK + P_H.
+// We subtract this from the tank to create the "raised" effect (making the surrounding area lower relative to the platform, 
+// or rather, the platform is a solid protrusion).
+// Actually, simpler logic: The tank is one piece. The platform is a solid block added on top of the floor area.
+// Since we are doing boolean operations on a single solid 'tank', we can just add the platform volume to the union.
+
+platform_pos_x = (D_X_OUT - P_L_X) / 2;
+platform_pos_y = (D_Y_OUT - P_W_Y) / 2; // Should be 0 since P_W_Y = D_Y_OUT
+platform_z_start = FLOOR_THICK;
+platform_z_end = FLOOR_THICK + P_H;
+
+platform = translate([platform_pos_x, platform_pos_y, platform_z_start])
+    cube([P_L_X, P_W_Y, P_H], center = false);
+
+// Combine Tank and Platform
+final_part = union([tank, platform]);
+
+// --- Electrode Holes ---
+// Drilling horizontal holes along X at specific Y and Z.
+// Since the tank is a single solid, we can use difference() to cut these holes.
+// Hole center: Y = HOLE_Y, Z = HOLE_Z.
+// Hole extends along X. We need to cut through the entire length of the tank.
+// To ensure clean cuts, we extend the cutter slightly past the tank ends.
+
+hole_cutter_x_start = -WALL_THICK - 0.1;
+hole_cutter_x_end = D_X_OUT + WALL_THICK + 0.1;
+hole_cutter_y = HOLE_Y;
+hole_cutter_z = HOLE_Z;
+hole_radius = HOLE_D / 2;
+
+// Create the hole cutter shape (cylinder)
+// We create two cylinders, one for each end, or one long cylinder?
+// The prompt says "Through each end wall... drill a 2 mm diameter horizontal hole".
+// This implies two separate holes, one near x=0 and one near x=120.
+// Let's position them symmetrically or at the very ends? 
+// "Through each end wall" usually implies the wall itself. Let's place them centered in the wall thickness or just at the face.
+// Given the coordinate system (0 to 120), the walls are at x=0 and x=120.
+// Let's place the centers at the very ends of the inner volume to be safe, or just at the faces.
+// Let's assume the hole is centered on the face of the end wall.
+// End wall 1 center: x = WALL_THICK/2 ? Or just x=0? 
+// Usually, holes are drilled through the wall. Let's center the hole in the wall thickness.
+// Wall thickness is 3mm. Center is 1.5mm.
+// Hole 1 X center: 1.5
+// Hole 2 X center: 120 - 1.5 = 118.5
+
+hole_x1 = WALL_THICK / 2;
+hole_x2 = D_X_OUT - WALL_THICK / 2;
+
+// Function to create a hole cutter
+// We will use a loop to generate the two cutters.
+hole_cutters = [];
+for (i = [0, 1]) {
+    x_pos = (i == 0) ? hole_x1 : hole_x2;
+    cutter = translate([x_pos, hole_cutter_y, hole_cutter_z])
+        cylinder(h = D_X_OUT + 10, r = hole_radius, $fn = 64);
+    hole_cutters.push(cutter);
+}
+
+// Apply holes
+final_part = difference([final_part, hole_cutters]);
+
+// --- Final Output ---
+// Center the part on the origin as requested (it is already built from 0 to 120, so we translate it)
+translate([(D_X_OUT)/2, (D_Y_OUT)/2, 0])
+    final_part;
+```

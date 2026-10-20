@@ -1,0 +1,48 @@
+$fn = 64;
+
+// Dimensions (mm)
+outer_size = 90;           // Outer X and Y size of the housing
+plate_thickness = 2;       // Thickness of the top plate (stirring surface)
+wall_thickness = 2.5;      // Thickness of the walls
+wall_height = 40;          // Height of the walls
+hole_diameter = 4.5;       // Diameter of mounting holes for M4 screws
+hole_pattern_size = 71.5;  // Distance between hole centers (square pattern)
+notch_width = 12;          // Width of the cable notch
+notch_depth = 8;           // Depth of the cable notch
+notch_z_start = 32;        // Z start of the notch (from bottom of wall)
+notch_z_end = 40;          // Z end of the notch
+
+// Main Housing Assembly
+union() {
+    // 1. Top Plate
+    // Centered at z=0, thickness 2mm
+    translate([0, 0, plate_thickness/2])
+    cube([outer_size, outer_size, plate_thickness], center=true);
+
+    // 2. Walls
+    // Front Wall
+    translate([-outer_size/2 - wall_thickness/2, 0, plate_thickness])
+    cube([wall_thickness, outer_size, wall_height]);
+    // Back Wall
+    translate([outer_size/2 - wall_thickness/2, 0, plate_thickness])
+    cube([wall_thickness, outer_size, wall_height]);
+    // Left Wall
+    translate([0, -outer_size/2 - wall_thickness/2, plate_thickness])
+    cube([outer_size, wall_thickness, wall_height]);
+    // Right Wall
+    translate([0, outer_size/2 - wall_thickness/2, plate_thickness])
+    cube([outer_size, wall_thickness, wall_height]);
+
+    // 3. Fan Mounting Holes
+    // Loop through the 4 corners of the 71.5mm square pattern
+    for (x = [-hole_pattern_size/2, hole_pattern_size/2])
+        for (y = [-hole_pattern_size/2, hole_pattern_size/2])
+            translate([x, y, plate_thickness])
+            cylinder(h=plate_thickness + 0.1, r=hole_diameter/2, center=true);
+}
+
+// 4. Cable Notch (Cutout)
+// Cut from the Front Wall (negative X side)
+// Centered on the wall (x = -outer_size/2)
+translate([-outer_size/2, 0, (notch_z_start + notch_z_end)/2])
+cube([notch_width, outer_size, notch_depth], center=true);

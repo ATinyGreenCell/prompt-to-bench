@@ -1,0 +1,67 @@
+```openscad
+// Adapter sleeve for 0.2 mL PCR tube in a 1.5 mL rack hole
+// Designed to fit 0.2 mL tube into a 1.5 mL rack hole
+// Print orientation: collar on z=0 to z=1.5, body from z=1.5 to z=21.5
+// Bore: 6.2 mm diameter, full height, open at both ends
+
+$fn = 64;
+
+// Dimensions in millimeters
+collar_diameter = 13.0;           // diameter of the collar at z=0 to z=1.5
+collar_thickness = 1.5;          // height of collar
+sleeve_outer_diameter = 10.8;    // outer diameter of sleeve body (from z=1.5 to z=21.5)
+sleeve_height = 21.5 - 1.5;     // height of sleeve body (21.5 - 1.5 = 20.0 mm)
+bore_diameter = 6.2;             // diameter of the central bore
+
+// Center the part at origin in X and Y
+// The collar is a cylinder of diameter 13mm and height 1.5mm, centered at origin
+// The sleeve body is a cylinder of outer diameter 10.8mm, height 20.0mm, rising from z=1.5 to z=21.5
+
+// Create the collar (bottom part)
+collar = cylinder(d = collar_diameter / 2, h = collar_thickness, center = true);
+
+// Create the sleeve body (rises from z=1.5 to z=21.5)
+// It is a cylinder of outer diameter 10.8mm, so radius 5.4mm
+// Centered at origin, extending from z=1.5 to z=21.5
+sleeve_body = cylinder(d = sleeve_outer_diameter / 2, h = sleeve_height, center = true, translate = [0, 0, 1.5]);
+
+// Create the central bore (6.2mm diameter, full height from z=0 to z=21.5)
+// The bore goes through the entire part, open at both ends
+bore = cylinder(d = bore_diameter / 2, h = 21.5, center = true);
+
+// The final part is the collar + sleeve body, with a hole drilled through the center
+// We use difference: start with the collar and sleeve body, then subtract the bore
+// But note: the bore must go through the entire height, so we must ensure it cuts through both parts
+
+// First, create the full structure: collar + sleeve body
+// The collar is from z=0 to z=1.5, the sleeve from z=1.5 to z=21.5
+// So we create a union of both
+full_sleeve = union() {
+    collar;
+    sleeve_body;
+};
+
+// Now subtract the central bore (6.2mm diameter, full height)
+// The bore extends from z=0 to z=21.5, so we subtract it from the full structure
+// To avoid coplanar faces, we extend the bore slightly beyond the faces
+// Since the bore is open at both ends, we just subtract it from the full structure
+// The hole will be 6.2mm in diameter, centered, going through the entire height
+
+// Final part: full sleeve with central bore
+final_adapter = difference() {
+    full_sleeve;
+    // Translate the bore to be centered and extend from z=0 to z=21.5
+    // The bore is centered at origin, full height
+    cylinder(d = bore_diameter / 2, h = 21.5, center = true);
+};
+
+// Output the final adapter
+// The part is centered at origin, with collar at z=0 to 1.5, body from 1.5 to 21.5
+// and a 6.2mm bore through the center
+// This allows a 0.2 mL tube to sit in a 1.5 mL rack hole
+// The 13mm collar fits into the 1.5 mL rack hole, and the 10.8mm outer diameter sleeve
+// provides a snug fit for the 0.2 mL tube above.
+
+// Final output
+final_adapter;
+```

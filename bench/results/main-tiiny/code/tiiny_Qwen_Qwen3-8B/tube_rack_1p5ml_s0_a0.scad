@@ -1,0 +1,47 @@
+// Dimensions for the bench rack
+block_length = 106; // X dimension
+block_width = 72;   // Y dimension
+block_height = 30;  // Z dimension
+
+hole_diameter = 11.2; // Diameter of each hole
+hole_depth = 25;       // Depth of each hole
+hole_spacing_x = 16;   // Centre-to-centre spacing along X
+hole_spacing_y = 16;   // Centre-to-centre spacing along Y
+num_holes_per_row = 6; // Number of holes along X
+num_rows = 4;          // Number of rows along Y
+floor_thickness = 5;   // Thickness of the solid floor at the bottom
+
+// Calculate the position of the hole grid to be centred on the block
+hole_grid_offset_x = (block_length - num_holes_per_row * hole_spacing_x) / 2;
+hole_grid_offset_y = (block_width - num_rows * hole_spacing_y) / 2;
+
+// Create the main block
+block = cube([block_length, block_width, block_height]);
+
+// Create the solid floor at the bottom
+floor = cube([block_length, block_width, floor_thickness]);
+
+// Create the holes
+holes = [];
+for (i = [0:num_rows-1]) {
+  for (j = [0:num_holes_per_row-1]) {
+    // Calculate the position of each hole
+    hole_x = hole_grid_offset_x + j * hole_spacing_x;
+    hole_y = hole_grid_offset_y + i * hole_spacing_y;
+    // Create a cylinder for each hole, with a small offset to avoid coplanar faces
+    hole = cylinder(r = hole_diameter / 2, h = hole_depth, $fn = 64);
+    // Translate the cylinder to the correct position
+    hole = translate([hole_x, hole_y, 0]) * hole;
+    holes = union() * holes + hole;
+  }
+}
+
+// Combine the block, floor, and holes
+final_rack = difference() {
+  block;
+  floor;
+  holes;
+};
+
+// Output the final rack
+final_rack;

@@ -1,0 +1,41 @@
+```openscad
+// Dimensions
+plate_x = 130;      // Length of plate and walls (X)
+plate_y = 90;       // Width of plate (Y)
+plate_z = 4;        // Thickness of plate (Z)
+hole_dia = 30.5;    // Diameter of tube holes
+hole_r = hole_dia / 2;
+spacing_x = 40;     // Centre-to-centre spacing in X
+spacing_y = 40;     // Centre-to-centre spacing in Y
+wall_x = 130;       // Length of walls (X)
+wall_y = 4;         // Thickness of walls (Y)
+wall_top_z = 70;    // Height of walls from bed (Z)
+
+// Hole centers
+x_centers = [ -spacing_x, 0, spacing_x ];
+y_centers = [ -spacing_y/2, spacing_y/2 ];
+
+// Module for the solid body
+module rack_body() {
+    // Plate on bed (z=0 to 4)
+    translate([0, 0, plate_z/2]) cube([plate_x, plate_y, plate_z], center=false);
+    
+    // Walls along long edges (Y = +/- 45)
+    // Wall 1: Y from -45 to -41
+    translate([-wall_x/2, -plate_y/2, plate_z]) cube([wall_x, wall_y, wall_top_z - plate_z], center=false);
+    // Wall 2: Y from 41 to 45
+    translate([-wall_x/2, plate_y/2 - wall_y, plate_z]) cube([wall_x, wall_y, wall_top_z - plate_z], center=false);
+}
+
+// Build the rack with holes
+$fn = 64;
+difference() {
+    rack_body();
+    for (x = x_centers) {
+        for (y = y_centers) {
+            // Extend holes slightly past plate faces
+            translate([x, y, -0.25]) cylinder(r=hole_r, h=4.5, center=false);
+        }
+    }
+}
+```

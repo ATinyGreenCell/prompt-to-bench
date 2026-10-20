@@ -1,0 +1,93 @@
+```scad
+// Enclosure for Arduino-based temperature logger
+// Part 1: Box (base)
+// Part 2: Lid (with lip)
+
+// Global settings
+$fn = 64; // High resolution for curves
+
+// Box dimensions (outer)
+box_outer_x = 70;
+box_outer_y = 50;
+box_outer_z = 30;
+
+// Wall and floor thickness
+wall_thick = 2;
+floor_thick = 2;
+
+// Lid dimensions
+lid_plate_z = 2;
+lid_lip_height = 4;
+lid_lip_thick = 1.5;
+lid_clearance = 0.2; // clearance on each side
+
+// Gap between parts for printing
+gap = 10;
+
+// Compute inner dimensions of box
+box_inner_x = box_outer_x - 2 * wall_thick;
+box_inner_y = box_outer_y - 2 * wall_thick;
+box_inner_z = box_outer_z - floor_thick;
+
+// Compute lid lip outer dimensions (to fit into box with clearance)
+lid_lip_outer_x = box_inner_x - 2 * lid_clearance;
+lid_lip_outer_y = box_inner_y - 2 * lid_clearance;
+
+// Positioning: Box centered at origin, lid on +X side with gap
+box_x_pos = -box_outer_x / 2;
+box_y_pos = 0;
+lid_x_pos = box_x_pos + box_outer_x + gap + lid_lip_outer_x / 2;
+lid_y_pos = 0;
+
+// Part 1: Box (base)
+module box_part() {
+    // Outer shell
+    difference() {
+        // Outer box
+        translate([box_x_pos, box_y_pos, 0])
+            cube([box_outer_x, box_outer_y, box_outer_z]);
+        
+        // Inner cavity (hollow)
+        translate([box_x_pos + wall_thick, box_y_pos + wall_thick, floor_thick])
+            cube([box_inner_x, box_inner_y, box_inner_z + 0.1]);
+        
+        // Remove bottom face (open top, no bottom needed for hollowing)
+        // Already handled by cavity starting at floor_thick
+    }
+    
+    // Floor (solid base)
+    translate([box_x_pos, box_y_pos, 0])
+        cube([box_outer_x, box_outer_y, floor_thick]);
+}
+
+// Part 2: Lid (printed upside down)
+module lid_part() {
+    // Plate (base of lid)
+    translate([lid_x_pos - lid_lip_outer_x / 2, lid_y_pos - lid_lip_outer_y / 2, 0])
+        cube([lid_lip_outer_x, lid_lip_outer_y, lid_plate_z]);
+    
+    // Lip (upward from plate, printed upside down)
+    // Lip outer dimensions: lid_lip_outer_x x lid_lip_outer_y
+    // Lip thickness: lid_lip_thick
+    // Lip height: lid_lip_height
+    
+    // Compute lip position relative to plate
+    lip_x = lid_x_pos - lid_lip_outer_x / 2 + lid_lip_thick;
+    lip_y = lid_y_pos - lid_lip_outer_y / 2 + lid_lip_thick;
+    lip_width = lid_lip_outer_x - 2 * lid_lip_thick;
+    lip_depth = lid_lip_outer_y - 2 * lid_lip_thick;
+    
+    // Lip (as a hollow rectangular tube on top of plate)
+    // Since printed upside down, the lip will be on the bottom when assembled
+    translate([lid_x_pos - lid_lip_outer_x / 2, lid_y_pos - lid_lip_outer_y / 2, lid_plate_z])
+        cube([lid_lip_outer_x, lid_lip_outer_y, lid_lip_height]);
+    
+    // Hollow out the lip (to create the inner cavity for sliding fit)
+    translate([lid_x_pos - lid_lip_outer_x / 2 + lid_lip_thick, lid_y_pos - lid_lip_outer_y / 2 + lid_lip_thick, lid_plate_z + 0.01])
+        cube([lid_lip_outer_x - 2 * lid_lip_thick, lid_lip_outer_y - 2 * lid_lip_thick, lid_lip_height + 0.1]);
+}
+
+// Render both parts
+box_part();
+lid_part();
+```

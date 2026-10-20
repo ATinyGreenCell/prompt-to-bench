@@ -1,0 +1,33 @@
+// Parameters (mm)
+plate_x = 130;          // Plate length (X direction)
+plate_y = 90;           // Plate width  (Y direction)
+plate_thick = 4;        // Plate thickness (Z direction)
+hole_d = 30.5;          // Diameter of tube holes
+hole_spacing = 40;      // Centre‑to‑centre spacing of holes (both X and Y)
+wall_thick = 4;         // Thickness of the side walls (Y direction)
+wall_height = 70;       // Total height of the side walls (Z direction)
+$fn = 64;                // Resolution for circles and cylinders
+
+// Plate (flat base)
+module plate() {
+    translate([-plate_x/2, -plate_y/2, 0])
+        cube([plate_x, plate_y, plate_thick]);
+}
+
+// Side walls (flush with long edges of the plate)
+module side_walls() {
+    // Height of the wall above the plate
+    wall_z = wall_height - plate_thick; // extra height above the 4 mm plate
+    // Positive‑Y wall (inner face at Y = +plate_y/2)
+    translate([-plate_x/2,  plate_y/2, plate_thick])
+        cube([plate_x, wall_thick, wall_z]);
+    // Negative‑Y wall (inner face at Y = –plate_y/2)
+    translate([-plate_x/2, -plate_y/2 - wall_thick, plate_thick])
+        cube([plate_x, wall_thick, wall_z]);
+}
+
+// Holes (through the plate only)
+module plate_holes() {
+    // Cylinder height a little larger than the plate to avoid coplanar faces
+    cyl_h = plate_thick + 0.2;   // +0.1 mm on each side
+    cyl_z = -0.

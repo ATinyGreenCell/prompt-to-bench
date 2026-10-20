@@ -1,0 +1,53 @@
+```openscad
+// Sowing Template for 90 mm Petri Dish
+// Units: millimetres
+
+// Base dimensions
+template_diameter = 85;
+template_thickness = 2;
+
+// Hole grid dimensions
+hole_diameter = 3;
+hole_spacing = 9;
+grid_size = 7;
+
+// Notch dimensions
+notch_width = 10;
+notch_depth = 4;
+
+// Global setting for curved shapes to ensure roundness
+$fn = 64;
+
+// Calculate derived dimensions
+base_radius = template_diameter / 2;
+hole_radius = hole_diameter / 2;
+notch_center_y = base_radius - (notch_depth / 2);
+
+// Base disc
+base_disc = cylinder(h=template_thickness, r=base_radius, center=false);
+
+// Holes
+holes = [
+    for (i = [0:grid_size-1])
+        for (j = [0:grid_size-1])
+            translate([
+                -((grid_size-1) * hole_spacing) / 2 + i * hole_spacing,
+                -((grid_size-1) * hole_spacing) / 2 + j * hole_spacing,
+                0
+            ])
+            cylinder(h=template_thickness + 0.1, r=hole_radius, center=false)
+];
+
+// Notch cutout
+notch_cut = translate([0, base_radius - notch_depth, 0])
+            cube([notch_width, notch_depth + 0.1, template_thickness + 0.1], center=false);
+
+// Final model
+difference() {
+    base_disc;
+    for (h = holes) {
+        h;
+    }
+    notch_cut;
+}
+```

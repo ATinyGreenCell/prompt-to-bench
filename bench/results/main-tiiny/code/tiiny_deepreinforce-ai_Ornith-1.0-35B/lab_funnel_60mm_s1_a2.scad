@@ -1,0 +1,49 @@
+// Lab funnel - printed upright (spout down, wide opening up)
+// Dimensions in mm, measured with calipers
+
+// Spout (straight tube) dimensions
+spout_od = 10;          // Outer diameter of spout
+spout_length = 20;       // Length of spout (z = 0 to z = 20)
+wall_thickness = 1.6;   // Wall thickness everywhere
+
+// Cone (funnel body) dimensions
+cone_bottom_od = 10;    // Outer diameter at bottom of cone (z = 20, matches spout)
+cone_top_od = 60;       // Outer diameter at rim (z = 50)
+cone_height = 30;        // Height of cone (z = 20 to z = 50)
+
+// Derived dimensions
+spout_id = spout_od - 2 * wall_thickness;  // Inner diameter of spout (6.8 mm)
+cone_bottom_id = cone_bottom_od - 2 * wall_thickness;  // Inner diameter at cone bottom
+cone_top_id = cone_top_od - 2 * wall_thickness;        // Inner diameter at cone top
+
+// Spout: outer cylinder
+spout_outer = cylinder(d = spout_od, h = spout_length, center = false, $fn = 64);
+
+// Spout: inner bore (extends slightly past faces to avoid coplanar surfaces)
+spout_inner = cylinder(d = spout_id, h = spout_length + 0.02, center = false, $fn = 64);
+
+// Cone: outer frustum
+cone_outer = translate([0, 0, spout_length])
+    cylinder(d1 = cone_bottom_od, d2 = cone_top_od, h = cone_height, center = false, $fn = 64);
+
+// Cone: inner frustum (bore)
+cone_inner = translate([0, 0, spout_length])
+    cylinder(d1 = cone_bottom_id, d2 = cone_top_id, h = cone_height + 0.02, center = false, $fn = 64);
+
+// Combine spout and cone into single solid
+funnel_body = union() {
+    spout_outer;
+    cone_outer;
+};
+
+// Hollow out the funnel
+funnel = difference() {
+    funnel_body;
+    spout_inner;
+    cone_inner;
+};
+
+// Render the final part
+render() {
+    funnel;
+}

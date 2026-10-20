@@ -1,0 +1,194 @@
+```openscad
+// Dimensions
+// Lab stand rod
+rod_id = 12.7;
+rod_wall = 3;
+rod_od = rod_id + 2 * rod_wall; // 18.7
+
+// Tubing
+tube_id = 6;
+tube_wall = 2;
+tube_od = tube_id + 2 * tube_wall; // 10
+
+// Clip geometry
+clip_height = 10; // Z extrusion height
+bridge_width_y = 6;
+bridge_x_start = 8;
+bridge_x_end = 12;
+
+// Rod ring opening
+rod_opening_width = 10; // Y width
+rod_opening_half = rod_opening_width / 2; // 5
+rod_opening_x_limit = 0; // Everything with x < 0 is removed
+
+// Tubing ring opening
+tube_opening_width = 4.5; // Y width
+tube_opening_half = tube_opening_width / 2; // 2.25
+tube_opening_x_limit = 15; // Everything with x > 15 is removed
+
+// Positions
+rod_center = [0, 0];
+tube_center = [15, 0];
+
+// Extrusion height
+h = clip_height;
+
+// Safety margin for boolean operations
+eps = 0.05;
+
+// Helper function to create a ring with an opening
+// center: [x, y]
+// id: inner diameter
+// od: outer diameter
+// opening_x_limit: cut everything with x < limit (for rod) or x > limit (for tube)
+// opening_half_y: half width of the opening in Y
+// is_positive_x_cut: true if we cut x > limit, false if we cut x < limit
+module ring_with_opening(center, id, od, opening_x_limit, opening_half_y, is_positive_x_cut) {
+    // Create the full ring
+    difference() {
+        // Outer cylinder
+        cylinder(d = od, h = h, center = false);
+        // Inner hole
+        cylinder(d = id, h = h + 1, center = false);
+        
+        // The opening cut
+        // We need to remove a rectangular slot from the ring
+        // The slot must extend beyond the ring's outer and inner boundaries in X and Y
+        
+        // Calculate the X extent of the ring at the opening
+        // The ring exists from x = center_x - od/2 to center_x + od/2
+        // We want to remove the material where x is within the opening limits
+        
+        // Define the cutting box
+        // Y extent: must cover the opening and extend slightly beyond to ensure clean cut
+        cut_y = opening_half_y + 1;
+        
+        // X extent: must cover the entire width of the ring segment being removed
+        // and extend beyond the inner and outer radii to ensure the hole is open
+        
+        if (is_positive_x_cut) {
+            // Cut x > opening_x_limit
+            // The ring exists up to center_x + od/2
+            // We need to cut from opening_x_limit to center_x + od/2 + eps
+            // And extend Y to cover the ring's Y range at that X
+            
+            // To ensure the cut removes the entire "lip" of the ring, 
+            // we make the cut box wide enough in X and tall enough in Y
+            
+            // The maximum Y extent of the ring at any X is sqrt((od/2)^2 - (x - cx)^2)
+            // But for simplicity and robustness, we can make the cut box span the full Y diameter
+            // and extend X beyond the ring's outer edge.
+            
+            cut_x_start = opening_x_limit;
+            cut_x_end = center[0] + od/2 + eps;
+            cut_y_span = od + 2 * eps;
+            
+            translate([cut_x_start, 0, 0]) {
+                cube([cut_x_end - cut_x_start, cut_y_span, h + 1], center = true);
+            }
+        } else {
+            // Cut x < opening_x_limit
+            // The ring exists down to center_x - od/2
+            // We need to cut from center_x - od/2 - eps to opening_x_limit
+            
+            cut_x_start = center[0] - od/2 - eps;
+            cut_x_end = opening_x_limit;
+            cut_y_span = od + 2 * eps;
+            
+            translate([cut_x_start, 0, 0]) {
+                cube([cut_x_end - cut_x_start, cut_y_span, h + 1], center = true);
+            }
+        }
+    }
+}
+
+// Build the two rings
+// Rod ring: center [0,0], id 12.7, od 18.7, cut x < 0, opening y half 5
+rod_ring = ring_with_opening(
+    center = rod_center,
+    id = rod_id,
+    od = rod_od,
+    opening_x_limit = rod_opening_x_limit,
+    opening_half_y = rod_opening_half,
+    is_positive_x_cut = false
+);
+
+// Tubing ring: center [15,0], id 6, od 10, cut x > 15, opening y half 2.25
+tube_ring = ring_with_opening(
+    center = tube_center,
+    id = tube_id,
+    od = tube_od,
+    opening_x_limit = tube_opening_x_limit,
+    opening_half_y = tube_opening_half,
+    is_positive_x_cut = true
+);
+
+// Bridge
+// Solid bridge 6 mm wide (Y) between x = 8 and x = 12
+// It joins the two rings. We need to ensure it connects to the rings.
+// The bridge should be a simple rectangular block.
+// To avoid self-intersection issues or floating geometry, we union it with the rings.
+// However, since the rings have openings, we must ensure the bridge doesn't block the openings.
+// The problem states: "joins the two rings without blocking either ring's hole".
+// The rod ring hole is at x < 0. The bridge is at x=8..12. No conflict.
+// The tube ring hole is at x > 15. The bridge is at x=8..12. No conflict.
+// So a simple block is fine.
+
+bridge = translate([0, 0, 0]) {
+    cube([
+        bridge_x_end - bridge_x_start, // X length: 12 - 8 = 4
+        bridge_width_y,                 // Y width: 6
+        h                               // Z height: 10
+    ], center = false);
+}
+
+// Position the bridge
+// The bridge is defined from x=8 to x=12.
+// We need to place it such that it connects the rod ring (center 0) and tube ring (center 15).
+// The rod ring extends from x = -9.35 to x = 9.35.
+// The tube ring extends from x = 15 - 5 = 10 to x = 15 + 5 = 20.
+// The bridge is from x=8 to x=12.
+// It overlaps with the rod ring (x=8 to 9.35) and the tube ring (x=10 to 12).
+// This is good. It connects them.
+
+// Final assembly
+union() {
+    // Rod ring
+    translate([0, 0, 0]) {
+        ring_with_opening(
+            center = rod_center,
+            id = rod_id,
+            od = rod_od,
+            opening_x_limit = rod_opening_x_limit,
+            opening_half_y = rod_opening_half,
+            is_positive_x_cut = false
+        );
+    }
+    
+    // Tube ring
+    translate([0, 0, 0]) {
+        ring_with_opening(
+            center = tube_center,
+            id = tube_id,
+            od = tube_od,
+            opening_x_limit = tube_opening_x_limit,
+            opening_half_y = tube_opening_half,
+            is_positive_x_cut = true
+        );
+    }
+    
+    // Bridge
+    // The bridge is defined in local coordinates as x=8..12, y=-3..3, z=0..10
+    // We place it at the origin because the rings are also at the origin (relative to their centers)
+    // Wait, the rings are at [0,0] and [15,0].
+    // The bridge should be placed at x=8..12, y=-3..3, z=0..10.
+    // Since the rings are centered at [0,0] and [15,0], and the bridge is a separate object,
+    // we just translate the bridge to its position.
+    // The bridge's X range is 8 to 12.
+    // The bridge's Y range is -3 to 3 (width 6, centered at 0).
+    // The bridge's Z range is 0 to 10.
+    
+    translate([0, 0, 0]) {
+        cube([
+            bridge_x_end - bridge_x_start,
+            bridge_width_y

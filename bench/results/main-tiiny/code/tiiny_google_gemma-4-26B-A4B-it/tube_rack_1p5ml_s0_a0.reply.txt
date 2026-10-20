@@ -1,0 +1,53 @@
+```openscad
+// --- Dimensions (mm) ---
+block_length = 106;      // X dimension
+block_width = 72;        // Y dimension
+block_height = 30;       // Z dimension
+
+holes_x = 6;             // Number of holes along X
+holes_y = 4;             // Number of holes along Y
+hole_diameter = 11.2;    // Diameter of the tube holes
+hole_depth = 25;         // Depth of the holes
+hole_spacing = 16;       // Center-to-center distance (X and Y)
+
+// --- Internal Calculations ---
+// Calculate the bounding box of the hole grid to center it
+grid_width = (holes_x - 1) * hole_spacing;
+grid_depth = (holes_y - 1) * hole_spacing;
+
+// Offset to center the grid on the block
+offset_x = (block_length - grid_width) / 2;
+offset_y = (block_width - grid_depth) / 2;
+
+// Tolerance for boolean operations (to prevent coplanar artifacts)
+tol = 0.1;
+
+// --- Rendering ---
+$fn = 64;
+
+module microcentrifuge_rack() {
+    difference() {
+        // Main Block
+        cube([block_length, block_width, block_height]);
+
+        // Subtract the holes
+        // We iterate through the grid and place cylinders
+        for (i = [0 : holes_x - 1]) {
+            for (j = [0 : holes_y - 1]) {
+                // Calculate position for each hole
+                // We add tol to the Z-axis to ensure the hole cuts through the top
+                translate([
+                    offset_x + (i * hole_spacing), 
+                    offset_y + (j * hole_spacing), 
+                    block_height - hole_depth + 0.01 // Start slightly inside to ensure clean cut
+                ])
+                cylinder(d = hole_diameter, h = hole_depth + 0.01);
+            }
+        }
+    }
+}
+
+// Execute the module
+// The part is modeled resting on the XY plane at Z=0
+microcentrifuge_rack();
+```

@@ -1,0 +1,12 @@
+model,label,sample,n_tasks,pass3,pass1,render1,mean_best_score,minutes,gen_tok_s,attempts,cut_off,think
+tiiny/google/gemma-4-26B-A4B-it,Gemma 4 26B-A4B,0,16,10,8,11,0.768,408.7,16.6,31,15,True
+tiiny/openai/gpt-oss-120b,gpt-oss-120b,0,16,8,2,6,0.554,111.3,15.5,41,0,True
+tiiny/openai/gpt-oss-120b,gpt-oss-120b,1,16,9,3,9,0.641,108.3,15.1,38,0,True
+tiiny/Qwen/Qwen3.6-35B-A3B,Qwen3.6 35B-A3B,0,16,6,4,7,0.586,205.1,22.5,39,0,True
+tiiny/Qwen/Qwen3.6-35B-A3B,Qwen3.6 35B-A3B,1,14,5,4,6,0.628,178.3,23.0,33,1,True
+tiiny/deepreinforce-ai/Ornith-1.0-35B,Ornith-1.0 35B (MoE),0,16,4,2,8,0.463,159.4,21.7,43,0,True
+tiiny/openai/gpt-oss-20b,gpt-oss-20b,0,16,4,2,4,0.381,535.4,18.1,42,27,True
+tiiny/Qwen/Qwen3-30B-A3B-Thinking,Qwen3 30B-A3B Thinking-2507,0,16,3,0,2,0.188,267.6,21.2,46,1,True
+tiiny/Qwen/Qwen3.5-35B-A3B,Qwen3.5 35B-A3B,0,16,2,1,4,0.174,152.4,26.4,46,1,True
+tiiny/Qwen/Qwen3.5-9B,Qwen3.5 9B (Tiiny),0,16,1,1,6,0.454,278.4,17.4,46,5,True
+tiiny/zai-org/GLM-4.7-Flash,GLM-4.7-Flash 30B-A3B,0,16,1,1,9,0.375,963.5,9.2,46,27,True

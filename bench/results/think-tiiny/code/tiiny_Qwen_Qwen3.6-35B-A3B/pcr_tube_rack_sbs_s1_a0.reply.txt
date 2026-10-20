@@ -1,0 +1,42 @@
+```openscad
+// PCR Tube Rack - 96 Well
+// Dimensions in mm
+
+BLOCK_X = 127.76;
+BLOCK_Y = 85.48;
+BLOCK_Z = 20;
+
+HOLE_DIA = 6.2;
+COLS = 12;
+ROWS = 8;
+SPACING_X = 9.0;
+SPACING_Y = 9.0;
+A1_X = 14.38;
+A1_Y = 11.24;
+
+CHAMFER_LEN = 5;
+
+module rack() {
+    difference() {
+        // Main block
+        cube([BLOCK_X, BLOCK_Y, BLOCK_Z], center=false);
+        
+        // Chamfer at A1 corner (back-left)
+        linear_extrude(height=BLOCK_Z + 0.01) {
+            polygon([[0,0], [CHAMFER_LEN, 0], [0, CHAMFER_LEN]]);
+        }
+        
+        // 96 holes
+        for (i = [0 : COLS-1]) {
+            for (j = [0 : ROWS-1]) {
+                $fn = 64;
+                translate([A1_X + i * SPACING_X, A1_Y + j * SPACING_Y, 0]) {
+                    cylinder(d=HOLE_DIA, h=BLOCK_Z + 0.01, center=false);
+                }
+            }
+        }
+    }
+}
+
+rack();
+```

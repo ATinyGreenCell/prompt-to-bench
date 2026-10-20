@@ -1,0 +1,66 @@
+// Pestle for 1.5 mL microcentrifuge tube, printed standing upright
+// All dimensions in millimetres
+
+// Handle
+handle_d = 8;        // handle diameter
+handle_r = handle_d / 2;  // handle radius (4 mm)
+handle_z0 = 0;       // handle bottom z
+handle_z1 = 45;      // handle top z
+
+// Cone (taper)
+cone_d_bot = 8;      // cone diameter at z=45
+cone_d_top = 3;     // cone diameter at z=62
+cone_z0 = 45;       // cone bottom z
+cone_z1 = 62;       // cone top z
+
+// Rounded tip
+tip_d = 3;          // sphere diameter
+tip_r = tip_d / 2;  // sphere radius (1.5 mm)
+tip_z = 62;         // sphere centre z
+
+// Grip grooves
+groove_w = 2;       // groove width in Z
+groove_depth = 1;   // groove depth (radial)
+groove_zs = [10, 15, 20, 25];  // groove centre z positions
+
+// Curvature quality
+$fn = 64;
+
+// Build the pestle body
+pestle = union() {
+    // (1) Cylindrical handle
+    translate([0, 0, handle_z0])
+        cylinder(h = handle_z1 - handle_z0, r = handle_r, $fn = $fn);
+
+    // (2) Cone tapering from 8 mm to 3 mm
+    translate([0, 0, cone_z0])
+        cylinder(h = cone_z1 - cone_z0, r1 = cone_d_bot / 2, r2 = cone_d_top / 2, $fn = $fn);
+
+    // (3) Rounded tip sphere
+    translate([0, 0, tip_z])
+        sphere(r = tip_r, $fn = $fn);
+};
+
+// Cut four circumferential grooves into the handle
+// Each groove is an annular ring cutter that wraps around the handle.
+// The cutter extends 0.5 mm past the handle in Z on each side (total 3 mm > 2 mm groove width)
+// and extends 1 mm past the handle radius to ensure a clean cut.
+
+// Final pestle: body minus grooves
+difference() {
+    pestle;
+    for (gz = groove_zs) {
+        // Outer radius of cutter: handle_r + 1 (extends 1 mm past handle surface)
+        // Inner radius of cutter: handle_r - groove_depth (cuts 1 mm into handle)
+        // Z extent: from gz - groove_w/2 - 0.5 to gz + groove_w/2 + 0.5
+        // This makes the cutter 3 mm tall, 0.5 mm past each edge of the 2 mm groove
+        difference() {
+            // Outer cylinder of the ring cutter
+            translate([0, 0, gz - groove_w/2 - 0.5])
+                cylinder(h = groove_w + 1, r = handle_r + 1, $fn = $fn);
+            // Inner cylinder to make it a ring
+            translate([0, 0, gz - groove_w/2 - 0.5 - 0.01])
+                cylinder(h = groove_w + 1 + 0.02, r = handle_r - groove_depth, $fn = $fn);
+        }
+    }
+}

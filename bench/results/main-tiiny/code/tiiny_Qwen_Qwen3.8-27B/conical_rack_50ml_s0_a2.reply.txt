@@ -1,0 +1,47 @@
+```openscad
+// 50 mL conical tube rack – printed upside-down, flipped after printing.
+// Print orientation: 4 mm plate on the bed (z 0..4), two long walls rising to z 70.
+// After flipping: rack stands on the two walls; tubes pass through the 30.5 mm holes.
+
+// ---- Dimensions (mm) ----
+plate_x   = 130;   // plate length along X
+plate_y   =  90;   // plate width  along Y
+plate_t   =   4;   // plate thickness (z 0..4 in print orientation)
+wall_t    =   4;   // wall thickness along Y (flush with long edges)
+wall_h    =  70;   // wall height above the bed (z 0..70 in print orientation)
+hole_d    = 30.5;  // through-hole diameter for 50 mL conical tubes
+hole_r    = hole_d / 2;
+pitch     =  40;   // centre-to-centre spacing of holes in both X and Y
+
+// Hole centre positions: 2 rows (Y) x 3 columns (X), centred on the plate.
+xs = [-pitch, 0, pitch];
+ys = [-pitch/2, pitch/2];
+
+$fn = 64;
+
+// ---- Body: plate + two long walls (union) ----
+body = union() {
+    // Flat plate on the bed
+    translate([-plate_x/2, -plate_y/2, 0])
+        cube([plate_x, plate_y, plate_t]);
+
+    // Two solid walls along the long (X) edges, flush with the plate edges.
+    // Left wall  (negative Y side)
+    translate([-plate_x/2, -plate_y/2, 0])
+        cube([plate_x, wall_t, wall_h]);
+    // Right wall (positive Y side)
+    translate([-plate_x/2,  plate_y/2 - wall_t, 0])
+        cube([plate_x, wall_t, wall_h]);
+};
+
+// ---- Six through-holes (cut through the plate; walls are outside the holes) ----
+holes = for (x = xs, y = ys)
+    translate([x, y, -1])          // extend 1 mm past each face (z -1 .. 5)
+        cylinder(h = plate_t + 2, d = hole_d, $fn = $fn);
+
+// ---- Final solid ----
+difference() {
+    body;
+    holes;
+}
+```
