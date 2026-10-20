@@ -1,6 +1,6 @@
 model,label,sample,n_tasks,pass3,pass1,render1,mean_best_score,minutes,gen_tok_s,attempts,cut_off,think
 tiiny/google/gemma-4-26B-A4B-it,Gemma 4 26B-A4B,0,16,9,4,16,0.893,36.0,17.8,36,0,False
-tiiny/google/gemma-4-26B-A4B-it,Gemma 4 26B-A4B,1,16,7,2,15,0.813,40.2,17.8,39,1,False
+tiiny/google/gemma-4-26B-A4B-it,Gemma 4 26B-A4B,1,16,7,2,15,0.817,40.2,17.8,39,1,False
 tiiny/google/gemma-4-26B-A4B-it,Gemma 4 26B-A4B,2,16,12,3,13,0.907,35.4,18.6,35,2,False
 tiiny/Qwen/Qwen3.6-27B,Qwen3.6 27B,0,16,5,3,16,0.668,81.7,6.1,40,0,False
 tiiny/Qwen/Qwen3.6-27B,Qwen3.6 27B,1,16,6,3,15,0.754,79.2,6.0,40,0,False
@@ -16,10 +16,10 @@ tiiny/Qwen/Qwen3.6-35B-A3B,Qwen3.6 35B-A3B,0,16,0,0,9,0.383,41.6,26.3,48,17,Fals
 tiiny/Qwen/Qwen3.6-35B-A3B,Qwen3.6 35B-A3B,1,16,3,1,7,0.352,47.2,23.4,45,13,False
 tiiny/Qwen/Qwen3-30B-A3B-Instruct,Qwen3 30B-A3B Instruct-2507,0,16,0,0,9,0.295,39.6,22.9,48,10,False
 tiiny/Qwen/Qwen3-30B-A3B-Instruct,Qwen3 30B-A3B Instruct-2507,1,16,2,2,7,0.298,33.3,22.8,44,10,False
+tiiny/Qwen/Qwen3.5-9B,Qwen3.5 9B (Tiiny),0,16,2,0,8,0.343,57.5,17.4,47,12,False
+tiiny/Qwen/Qwen3.5-9B,Qwen3.5 9B (Tiiny),1,16,0,0,4,0.146,58.1,17.2,48,12,False
 tiiny/Qwen/Qwen3.5-35B-A3B,Qwen3.5 35B-A3B,0,16,2,1,3,0.176,34.3,25.8,46,19,False
 tiiny/Qwen/Qwen3.5-35B-A3B,Qwen3.5 35B-A3B,1,16,0,0,7,0.165,37.1,25.7,48,18,False
-tiiny/Qwen/Qwen3.5-9B,Qwen3.5 9B (Tiiny),0,16,1,0,8,0.336,57.5,17.4,47,12,False
-tiiny/Qwen/Qwen3.5-9B,Qwen3.5 9B (Tiiny),1,16,0,0,4,0.146,58.1,17.2,48,12,False
 tiiny/zai-org/GLM-4.7-Flash,GLM-4.7-Flash 30B-A3B,0,16,0,0,13,0.257,39.3,12.8,48,0,False
 tiiny/zai-org/GLM-4.7-Flash,GLM-4.7-Flash 30B-A3B,1,16,0,0,14,0.409,42.1,12.7,48,0,False
 tiiny/Qwen/Qwen3-Coder-30B-A3B-Instruct,Qwen3-Coder 30B-A3B,0,16,0,0,4,0.103,14.8,24.6,48,0,False

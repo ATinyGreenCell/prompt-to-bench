@@ -119,16 +119,16 @@ Table 8 (GPU tier, 8 samples per task; in-family / held-out split of the 16 task
 | `scadcoder-qwen3.5-9b-v11` | v9 + batch C for ten of its families: 474 distilled pairs and 421 of v9 seed 1's own failed attempts with report and reference, x2; four families held out (`build_v11.py`, MASK_EARLIER=1) | 3/8 · 1/8 | - |
 | `scadcoder-qwen3.5-9b-v11-seed1` | v11's data and settings, seed 1 instead of 0 (a replicate: `SEED=1`) | 4/8 · 1/8 | - |
 
-The stock base passes 2/8 · 1/8 with thinking off. Every fine-tune renders 88-99% of first attempts but rarely changes
+The stock base passes 3/8 · 1/8 with thinking off. Every fine-tune renders 88-99% of first attempts but rarely changes
 its file after feedback (6-15% of repair turns through v8, vs 84% for the base), except those trained on their own
-failures: v9 27% and, retrained with seed 1, 43% with three passes won by repair (as many as the base); v10, also
+failures: v9 27% and, retrained with seed 1, 43% with three passes won by repair (one fewer than the base's four); v10, also
 trained on its own passing repairs, 36% and one, within v9's spread. The training run itself moves these numbers: v5
 retrained with seed 1 passed 3 tasks instead of 5, neither held-out one (the slide rack went from 7/8 samples to 0/8),
 and changed its file after 8% of feedback messages instead of 15%; v9 retrained passed 5 instead of 2. On batch C (674
 new descriptions from 14 families, 13 of them unseen, `rft/onpolicy/`) both v9 runs changed their file after 34-39% of
 feedback and fixed 2.1-3.5% of failures, against 14-17% and 0.1-0.3% for both v5 runs. A better prompt instead of
 training (`bench/harness_search.py`: OpenSCAD idioms, two worked examples, checklist feedback) lifted the stock base
-from 2 to 6 tasks in eight samples on the GPU (5 in-family, 1 held out), but added nothing reliable to v9 seed 1
+from 3 to 6 tasks in eight samples on the GPU (5 in-family, 1 held out), but added nothing reliable to v9 seed 1
 (paper Tables 10-11). v11 (`build_v11.py`: v9's data + batch C for ten families, as plain examples and as v9 seed 1's
 own failures; four families held out), trained with seeds 0 and 1, passed 4 and 5 tasks (both with the held-out slide
 rack), won 3 passes by repair in each run and changed its file after 42-44% of feedback - level with v9's better run
