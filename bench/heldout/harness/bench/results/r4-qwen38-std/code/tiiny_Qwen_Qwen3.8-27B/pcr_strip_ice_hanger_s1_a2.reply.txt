@@ -1,0 +1,73 @@
+```openscad
+// 8-tube PCR strip holder that hooks over a 12 mm ice-bucket wall
+// Printed as used: rests on XY plane (z=0), builds upward (+Z), centred on x=0.
+
+// ---- dimensions (mm) ----
+wall_thick      = 12;   // bucket wall thickness (gap the U must clear)
+leg_thick       = 4;    // thickness of each U leg (inner & outer)
+leg_height      = 50;   // z-extent of both legs (0..50)
+bridge_height   = 4;    // z-extent of the top bridge (46..50)
+gap             = 12.5; // clear gap between inner & outer legs for the wall
+extrude_len     = 84;   // length of the part along X (centred on x=0)
+
+ledge_thick     = 6;    // z-extent of the flat ledge (0..6)
+ledge_depth     = 30;   // ledge reaches from y=0 to y=-30 (into the ice)
+
+hole_dia        = 6.4;  // vertical through-hole diameter for the tubes
+hole_pitch      = 9;    // spacing between adjacent holes along X
+hole_y          = -15;  // Y position of the tube holes on the ledge
+n_holes         = 8;    // number of tube holes
+
+$fn = 64;
+
+// ---- derived profile coordinates (YZ plane, x=0) ----
+y_inner_lo  = 0;                 // inner leg: y = 0 .. 4
+y_inner_hi  = y_inner_lo + leg_thick;          // 4
+y_outer_lo  = y_inner_hi + gap;               // 16.5  (gap 12.5 for the 12 mm wall)
+y_outer_hi  = y_outer_lo + leg_thick;         // 20.5
+z_bridge_lo = leg_height - bridge_height;     // 46
+z_bridge_hi = leg_height;                     // 50
+
+// ---- the upside-down U profile (in the YZ plane) ----
+profile_pts = [
+    [y_inner_lo, 0],
+    [y_inner_hi, 0],
+    [y_inner_hi, z_bridge_lo],
+    [y_outer_lo, z_bridge_lo],
+    [y_outer_lo, 0],
+    [y_outer_hi, 0],
+    [y_outer_hi, z_bridge_hi],
+    [y_inner_lo, z_bridge_hi]
+];
+
+// ---- flat ledge (foot of the inner leg, reaching toward -Y into the ice) ----
+ledge_pts = [
+    [0, 0],
+    [0, ledge_thick],
+    [-ledge_depth, ledge_thick],
+    [-ledge_depth, 0]
+];
+
+// ---- tube holes (vertical, through the ledge) ----
+hole_x = [for (i = 0 : n_holes - 1)] (i - (n_holes - 1) / 2) * hole_pitch;
+
+// ---- build the part ----
+difference() {
+    union() {
+        // U-shaped hook, extruded along X and centred on x=0
+        translate([-extrude_len / 2, 0, 0])
+            linear_extrude(extrude_len, twist = 0, scale = 1, center = false)
+                polygon(profile_pts);
+
+        // flat ledge, extruded along X and centred on x=0
+        translate([-extrude_len / 2, 0, 0])
+            linear_extrude(extrude_len, twist = 0, scale = 1, center = false)
+                polygon(ledge_pts);
+    }
+
+    // eight vertical 6.4 mm through-holes in the ledge, 9 mm apart, centred, at y=-15
+    for (x = hole_x)
+        translate([x, hole_y, -1])
+            cylinder(h = ledge_thick + 2, r = hole_dia / 2, $fn = 64);
+}
+```

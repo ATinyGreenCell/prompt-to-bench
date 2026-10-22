@@ -1,0 +1,54 @@
+```openscad
+// 12-cuvette rack, printed standing on its base (z = 0 to 25)
+$fn = 64;
+
+// ---- overall envelope ----
+base_w   = 112;   // X size of base & deck plates
+base_d   = 44;    // Y size of base & deck plates
+base_t   = 3;     // base plate thickness (z 0..3)
+deck_t   = 3;     // deck plate thickness (z 22..25)
+wall_h   = 25;    // total height of end walls & ribs (z 0..25)
+
+// ---- end walls (flush with short ends, 3 mm thick) ----
+ew_t     = 3;     // end wall thickness
+ew_x     = base_w/2 - ew_t/2;   // centre x of each end wall (±54.5)
+
+// ---- internal ribs (2.5 mm thick, centred at given x) ----
+rib_t    = 2.5;
+rib_x    = [-36, -18, 0, 18, 36];
+
+// ---- deck through-holes (13 x 13 mm, sides parallel to edges) ----
+hole_s   = 13;    // square hole side
+pitch    = 18;    // centre-to-centre spacing in X and Y
+n_x      = 6;     // holes per row (along X)
+n_y      = 2;     // number of rows (along Y)
+
+// ---- base plate (z 0..3) ----
+translate([0, 0, base_t/2])
+    cube([base_w, base_d, base_t], center = true);
+
+// ---- deck plate (z 22..25) with 12 square through-holes ----
+translate([0, 0, 22 + deck_t/2])
+    difference() {
+        cube([base_w, base_d, deck_t], center = true);
+        for (i = [0 : n_x - 1])
+        for (j = [0 : n_y - 1]) {
+            hx = (i - (n_x - 1)/2) * pitch;   // centred on deck in X
+            hy = (j - (n_y - 1)/2) * pitch;   // centred on deck in Y
+            translate([hx, hy, 0])
+                cube([hole_s, hole_s, deck_t + 2], center = true); // 1 mm past each face
+        }
+    }
+
+// ---- two 3 mm end walls (z 0..25) ----
+for (sx = [-1, 1]) {
+    translate([sx * ew_x, 0, wall_h/2])
+        cube([ew_t, base_d, wall_h], center = true);
+}
+
+// ---- five 2.5 mm internal ribs (z 0..25) ----
+for (rx = rib_x) {
+    translate([rx, 0, wall_h/2])
+        cube([rib_t, base_d, wall_h], center = true);
+}
+```

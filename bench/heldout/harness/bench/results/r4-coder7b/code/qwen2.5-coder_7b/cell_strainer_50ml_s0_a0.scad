@@ -1,0 +1,48 @@
+// Dimensions in millimeters
+outer_diameter = 25;
+wall_thickness = 1.2;
+bore_diameter = outer_diameter - wall_thickness * 2;
+floor_height = 1.2;
+collar_start_z = 26;
+collar_end_z = 30;
+rim_diameter = 33;
+vent_width = 3;
+grid_spacing = 2;
+hole_radius = 0.5;
+max_hole_distance_from_axis = 10;
+
+// Calculate the number of holes
+num_x_holes = floor(max_hole_distance_from_axis / grid_spacing) * 2 + 1;
+num_y_holes = num_x_holes;
+
+// Create the main tube
+tube = cylinder(h = 32, r = bore_diameter / 2);
+
+// Create the floor with holes
+floor = cylinder(h = floor_height, r = outer_diameter / 2);
+for (x = [-max_hole_distance_from_axis:max_hole_distance_from_axis:grid_spacing]) {
+    for (y = [-max_hole_distance_from_axis:max_hole_distance_from_axis:grid_spacing]) {
+        if (sqrt(x * x + y * y) <= max_hole_distance_from_axis) {
+            floor -= translate([x, y, 0]) * cylinder(h = floor_height + 1, r = hole_radius);
+        }
+    }
+}
+
+// Create the collar
+collar_cone = rotate_extrude($fn = 64) polygon(points = [[-outer_diameter / 2, 0], [-rim_diameter / 2, 0], [rim_diameter / 2, 0], [outer_diameter / 2, 0]], paths = [[0, 1, 2, 3]]);
+collar_cone = translate([0, 0, collar_start_z]) * rotate_extrude($fn = 64) polygon(points = [[-rim_diameter / 2, 0], [-outer_diameter / 2, 0], [outer_diameter / 2, 0], [rim_diameter / 2, 0]], paths = [[0, 1, 2, 3]]);
+
+// Create the vent notches
+vent_notch = translate([vent_width / 2, 0, collar_start_z]) * linear_extrude(height = 8) rectangle(w = vent_width, h = bore_diameter);
+vent_notch -= translate([-vent_width / 2, 0, collar_start_z]) * linear_extrude(height = 8) rectangle(w = vent_width, h = bore_diameter);
+
+// Combine all parts
+result = union() {
+    tube;
+    floor;
+    collar_cone;
+    vent_notch;
+};
+
+// Render the result
+render(result);

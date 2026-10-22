@@ -1,0 +1,78 @@
+The report shows the part is 23 mm tall (z = 0..23) and the sleeves/skirt extend 1 mm past the plate top, so the "through-holes" cut 1 mm into the sleeve/skirt walls, leaving 1 mm stubs above the plate. The spec wants the sleeves and skirt to rise exactly to z = 20 (17 mm above the 3 mm plate) and the holes to be clean through-holes in the plate only. I'll fix the sleeve/skirt heights and make the hole cuts stop at the plate top.
+
+```openscad
+// Float for 7 x 15 mL conical tubes, printed upside down.
+// Rests on the XY plane at z = 0 and builds upward (+Z).
+// Centred on the origin in X and Y.
+
+$fn = 64;
+
+// ---- Plate (flat hexagon, 2 flats parallel to X axis) ----
+plate_af = 90;   // across flats (mm)
+plate_t  = 3;    // plate thickness (mm)
+
+// ---- Tube sleeves (7 x 17.5 mm holes, 2 mm wall) ----
+hole_d   = 17.5; // through-hole diameter (mm)
+sleeve_od= 21.5; // sleeve outside diameter (mm)  (17.5 + 2*2)
+sleeve_h = 17;   // sleeve height above plate (mm)  -> top at z = 20
+
+// ---- Hexagonal skirt (2 mm wall, sides parallel to plate) ----
+skirt_af = 84;   // across flats, outside (mm)  (90 - 2*3)
+skirt_t  = 2;    // skirt wall thickness (mm)
+skirt_h  = 17;   // skirt height above plate (mm)  -> top at z = 20
+
+// ---- Hole pattern: 1 centre + 6 on a 54 mm circle, 60 deg apart, first on +X ----
+ring_d   = 54;   // circle diameter (mm)
+ring_r   = ring_d / 2;   // 27 mm
+
+// ---- Helper: regular hexagon, 'across flats' = 2*apothem, two flats parallel to X ----
+module hexagon(af) {
+    a = af / 2;                 // apothem
+    R = a / cos(30);            // circumradius
+    pts = [for (i = [0:5]) [R * cos(60 * i), R * sin(60 * i)]];
+    polygon(pts);
+}
+
+// ---- Helper: one tube sleeve (outer cylinder minus through-hole) ----
+module sleeve() {
+    difference() {
+        cylinder(h = sleeve_h, d = sleeve_od);
+        cylinder(h = sleeve_h + 1, d = hole_d);   // 1 mm past top, 1 mm below bottom
+    }
+}
+
+// ---- Helper: hexagonal skirt (outer hexagon minus inner hexagon) ----
+module skirt() {
+    difference() {
+        linear_extrude(h = skirt_h) hexagon(skirt_af);   // outer, 84 across flats
+        linear_extrude(h = skirt_h + 1) hexagon(skirt_af - 2 * skirt_t); // inner, 80 across flats
+    }
+}
+
+// ---- Build the float ----
+difference() {
+    union() {
+        // Flat hexagonal plate, z = 0 to 3
+        linear_extrude(h = plate_t) hexagon(plate_af);
+
+        // Seven sleeves rising from the plate top (z = 3) to z = 20
+        translate([0, 0, plate_t]) {
+            sleeve();                                   // centre hole
+            for (i = [0:5]) {
+                translate([ring_r * cos(60 * i), ring_r * sin(60 * i), 0])
+                    sleeve();                           // six on 54 mm circle
+            }
+        }
+
+        // Hexagonal skirt rising from the plate top (z = 3) to z = 20
+        translate([0, 0, plate_t]) skirt();
+    }
+
+    // Seven 17.5 mm through-holes, cut through the plate only (1 mm past each face)
+    for (i = [0:6]) {
+        p = (i == 0) ? [0, 0] : [ring_r * cos(60 * i), ring_r * sin(60 * i)];
+        translate([p[0], p[1], -1])
+            cylinder(h = plate_t + 2, d = hole_d);
+    }
+}
+```

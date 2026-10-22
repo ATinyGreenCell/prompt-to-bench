@@ -1,0 +1,120 @@
+```openscad
+// --- Dimensions ---
+rack_length = 130;    // Total length along X (mm)
+rack_depth = 60;      // Total depth along Y (mm)
+rack_height = 45;     // Total height along Z (mm)
+
+tube_hole_diameter = 17.5; // Diameter of the tube hole (mm)
+tube_hole_radius = tube_hole_diameter / 2;
+tube_hole_depth = 40;    // Depth of the cylindrical cut (mm)
+
+num_tubes = 5;         // Number of tubes to hold
+spacing_x = 24;        // Distance between centers of holes along X (mm)
+
+tilt_angle = 30;       // Tilt angle in degrees from vertical (YZ plane)
+
+// --- Constants ---
+$fn = 64; // High resolution for curves
+
+// --- Base Block Definition ---
+module base_block() {
+    cube([rack_length, rack_depth, rack_height], center = true);
+}
+
+// --- Hole Geometry Calculation ---
+// The holes are centered along X. We need to find the starting X positions.
+// Total span for 5 tubes: (5-1) * spacing_x = 4 * 24 = 96 mm.
+// Centered on origin, so start offset is -96/2 = -48 mm from center.
+module hole_positions() {
+    for (i = [0 : num_tubes - 1]) {
+        x_pos = (-((num_tubes - 1) * spacing_x) / 2) + (i * spacing_x);
+        // The holes are centered on the block, so X is relative to origin.
+        translate([x_pos, 0, 0]) {
+            // We will define the cylinder cut later using transformations
+        }
+    }
+}
+
+// --- Hole Cutting Module ---
+module tube_hole(center_x) {
+    // The hole axis starts at Z = rack_height/2 (top face center) and goes down.
+    // It is tilted 30 degrees in the YZ plane, moving towards +Y.
+    // Rotation around X-axis by -tilt_angle tilts it towards +Y.
+
+    // 1. Define the cylinder shape (the material to be removed)
+    cylinder(h = tube_hole_depth, r = tube_hole_radius, center = true);
+
+    // 2. Apply transformations:
+    // a) Translate X to the correct position
+    translate([center_x, 0, 0]) {
+        // b) Rotate around the X-axis by -tilt_angle (to tilt it towards +Y)
+        rotate([0, -tilt_angle, 0]) {
+            // c) Translate along the axis of the cylinder to position its entry point correctly.
+            // The hole enters at Z = rack_height/2. Since the cylinder is centered on its own origin,
+            // we need to move it so that its top face aligns with the top surface of the block (Z=rack_height/2).
+
+            // When tilted by -30 degrees around X:
+            // The Z-axis maps to a vector in the YZ plane.
+            // The entry point is at Z = rack_height/2.
+            // We need the cylinder's center to be positioned such that its top face (at z=tube_hole_depth/2 relative to its local origin)
+            // aligns with the block's top surface, considering the tilt.
+
+            // Let's simplify: The hole axis starts at Z = rack_height/2 on the XY plane projection.
+            // The cylinder length is tube_hole_depth.
+            // We want the center of the cylinder to be positioned such that its exit point is inside the block, and its entry point is flush with the top surface (Z=rack_height/2).
+
+            // If we align the cylinder's local Z-axis with the tilted axis:
+            // The distance from the origin along the tilted axis to the entry face must be 0.
+            // Since the tilt is in YZ plane, the projection of the center onto the XY plane will shift.
+
+            // Let's use a simpler approach for positioning: Define the cylinder centered at its final position, and then translate it so its top surface hits Z=rack_height/2.
+
+            // The axis vector direction (normalized):
+            // Original Z-axis = [0, 0, 1]
+            // Rotated by -30 deg around X: New Z' = [0, sin(30), cos(30)] (if we rotate the coordinate system)
+            // Or, if rotating the object: The local Z axis becomes [0, sin(tilt_angle), cos(tilt_angle)].
+
+            // We want the cylinder to start at Z=rack_height/2.
+            // If we center the cylinder at (X_center, Y_center, Z_center) in world coordinates, its top face is defined by the intersection of the tilted axis with a plane perpendicular to it, located at distance tube_hole_depth/2 from the center along the axis.
+
+            // For simplicity and robustness against floating point errors, we will use linear extrusion for the cut path if possible, but since the hole must be cylindrical (constant radius), rotation is necessary.
+
+            // Let's place the cylinder such that its local Z-axis points along the tilt direction:
+            // The center of the cylinder needs to be translated so that when rotated, its top face aligns with Z=rack_height/2.
+
+            // Center offset calculation (Approximation based on geometry):
+            // If we rotate by -30 degrees around X, the local Z-axis becomes [0, sin(30), cos(30)].
+            // The center of the cylinder should be placed such that its top face is at Z=rack_height/2.
+
+            // Let's place the cylinder centered vertically (Z=0) and then translate it up so its bottom edge aligns with the required entry point, accounting for tilt.
+            // Since we are cutting *into* the block from the top surface (Z = rack_height/2), we need to position the center of the cylinder such that the plane perpendicular to the axis passing through Z=rack_height/2 is one end face.
+
+            // The distance along the tilted axis from the entry point to the center is tube_hole_depth / 2.
+            // In world coordinates, this offset vector (from entry point) is:
+            // Offset = [0, (tube_hole_depth/2)*sin(tilt_angle), (tube_hole_depth/2)*cos(tilt_angle)]
+
+            // Entry point in world coords: [center_x, 0, rack_height/2]
+            // Center of cylinder required: [center_x, (tube_hole_depth/2)*sin(tilt_angle), rack_height/2 - (tube_hole_depth/2)*cos(tilt_angle)]
+
+            translate([0, (tube_hole_depth/2) * sin(tilt_angle), -(tube_hole_depth/2) * cos(tilt_angle)]) {
+                // Now the cylinder is centered correctly relative to its entry point on Z=rack_height/2.
+                cylinder(h = tube_hole_depth, r = tube_hole_radius);
+            }
+        }
+    }
+}
+
+// --- Final Assembly ---
+difference() {
+    // 1. The solid block
+    base_block();
+
+    // 2. Subtract the five holes
+    union() {
+        for (i = [0 : num_tubes - 1]) {
+            x_pos = (-((num_tubes - 1) * spacing_x) / 2) + (i * spacing_x);
+            tube_hole(center_x = x_pos);
+        }
+    }
+}
+```

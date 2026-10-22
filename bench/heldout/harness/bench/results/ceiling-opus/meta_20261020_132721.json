@@ -1,0 +1,27 @@
+{
+ "started": "2026-10-20T13:27:20",
+ "args": {
+  "run": "ceiling-opus",
+  "models": [
+   "claude:claude-opus-5-5"
+  ],
+  "tasks": null,
+  "samples": 1,
+  "max_repairs": 6,
+  "feedback": "report",
+  "temperature": null,
+  "prompts": null,
+  "lang": "en",
+  "system": "bench/prompts/system.md",
+  "render_timeout": 120,
+  "seed_base": null,
+  "num_predict": null,
+  "think": false,
+  "num_ctx": 8192
+ },
+ "git_commit": "bfd9986f16a9b06193527850a3eab2004ad9d9b8",
+ "host": "enamel",
+ "cpu": "x86_64",
+ "python": "3.14.4",
+ "openscad": "OpenSCAD version 2026.10.01"
+}

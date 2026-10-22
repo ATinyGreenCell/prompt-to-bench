@@ -1,0 +1,87 @@
+```openscad
+// --- Dimensions ---
+plate_thickness = 3;           // Thickness of the base plate
+hexagon_across_flats = 90;      // Width of the hexagonal plate (flat-to-flat)
+skirt_across_flats = 84;        // Width of the hexagonal skirt (flat-to-flat)
+skirt_wall_thickness = 2;       // Thickness of the skirt wall
+skirt_height = 20;              // Height of the skirt and sleeves
+
+hole_diameter = 17.5;           // Diameter of the conical tube holes
+hole_spacing_diameter = 54;     // Diameter of the circle passing through hole centers
+sleeve_outer_diameter = 21.5;   // Outside diameter of the sleeves
+sleeve_wall_thickness = 2;      // Wall thickness of the sleeves
+sleeve_height = 20;             // Height of the sleeves
+
+// --- Constants ---
+$fn = 64;
+
+// --- Helper Modules ---
+
+// Function to calculate the radius of a hexagon given the distance across flats
+function hex_radius(across_flats) = (across_flats / 2) / cos(30);
+
+// Module to create a hexagonal prism
+module hexagon_prism(across_flats, height) {
+    r = hex_radius(across_flats);
+    // We use 6 sides. To ensure flats are parallel to X axis, 
+    // we rotate the polygon or the extrusion.
+    // A standard polygon with 6 vertices at 0, 60, 120... has points on X axis.
+    // To have flats parallel to X, we rotate 30 degrees.
+    rotate([0, 0, 30])
+    cylinder(h = height, r = r, $fn = 6);
+}
+
+// --- Main Construction ---
+// The user requested the part be printed "upside down".
+// However, the instructions say: "A flat plate... lies on the bed (z = 0 to 3)".
+// This implies the plate is the base of the print. 
+// I will model it exactly as described: Plate at Z=0, features rising to Z=20.
+// When the user "flips it for use", the skirt/sleeves will trap air.
+
+union() {
+    // 1. The Base Plate
+    // A hexagon with 90mm across flats.
+    hexagon_prism(hexagon_across_flats, plate_thickness);
+
+    // 2. The Sleeves and Skirt
+    // We use a union for the positive features, then subtract the holes.
+    difference() {
+        union() {
+            // The Hexagonal Skirt
+            hexagon_prism(skirt_across_flats, skirt_height + plate_thickness);
+
+            // The 7 Sleeves
+            // Center sleeve
+            cylinder(h = sleeve_height + plate_thickness, d = sleeve_outer_diameter);
+
+            // 6 Peripheral sleeves
+            for (i = [0 : 5]) {
+                angle = i * 60;
+                rotate([0, 0, angle])
+                translate([hole_spacing_diameter / 2, 0, 0])
+                cylinder(h = sleeve_height + plate_thickness, d = sleeve_outer_diameter);
+            }
+        }
+
+        // --- Subtraction: The Holes ---
+        // We subtract the holes from the entire assembly.
+        // To ensure clean cuts, we extend the cylinders slightly.
+        
+        // Center hole
+        translate([0, 0, -0.01])
+        cylinder(h = plate_thickness + sleeve_height + 2, d = hole_diameter);
+
+        // Peripheral holes
+        for (i = [0 : 5]) {
+            angle = i * 60;
+            rotate([0, 0, angle])
+            translate([hole_spacing_diameter / 2, 0, -0.01])
+            cylinder(h = plate_thickness + sleeve_height + 2, d = hole_diameter);
+        }
+    }
+}
+
+// Note on orientation: 
+// The model is built with the plate at Z=0. 
+// To use it as a float, the user will flip it so the skirt/sleeves face down.
+```

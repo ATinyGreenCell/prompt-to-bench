@@ -1,0 +1,584 @@
+#!/usr/bin/env python3
+"""Run the Prompt-to-Bench benchmark: model writes OpenSCAD -> render -> hidden checks -> repair loop.
+
+    python bench/run_bench.py --run main --models qwen2.5-coder:1.5b qwen3.5:4b-q4_K_M
+    python bench/run_bench.py --run main --models claude:claude-haiku-4-5
+    python bench/run_bench.py --run feedback-generic --feedback generic --models ...
+
+Every (model, task, sample) is one conversation:
+  attempt 0  system prompt + task prompt -> code
+  attempt n  if the part failed the hidden checks, the model gets feedback and tries again
+             (up to --max-repairs times). Feedback never contains the hidden checks:
+               report  - OpenSCAD messages, or the generic scadreport geometry report
+               generic - OpenSCAD messages, or "it does not match the spec, try again"
+               checklist - report, plus the error messages turned into instructions: common causes of a
+                         parser error, a request to list each specified value beside the report's before
+                         rewriting, and a warning when the file came back unchanged (harness search, §6.4)
+Results are appended to bench/results/<run>/results.jsonl (one line per conversation),
+so an interrupted run can simply be restarted. Generated files go to .../code/.
+
+Backends: Ollama (local, default) and "claude:<model-id>" via the Claude Code CLI (`claude -p`).
+"""
+import argparse
+import datetime as dt
+import fcntl
+import hashlib
+import http.client
+import json
+import os
+import platform
+import re
+import shutil
+import subprocess
+import sys
+import tempfile
+import time
+import urllib.error
+import urllib.request
+
+import yaml
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+ROOT = os.path.dirname(HERE)
+sys.path.insert(0, HERE)
+sys.path.insert(0, os.path.join(ROOT, "tools"))
+from checks import evaluate, ref_problems  # noqa: E402
+from scadreport import analyse, format_report, keep_messages, load_mesh, openscad_missing, render  # noqa: E402
+
+OLLAMA = os.environ.get("OLLAMA_HOST", "http://localhost:11434")
+if "://" not in OLLAMA:  # the ollama CLI also accepts OLLAMA_HOST=host:port
+    OLLAMA = "http://" + OLLAMA
+# A remote Ollama behind a reverse proxy (e.g. RunPod's) may bot-block the default Python-urllib
+# User-Agent with HTTP 403; send a plain one. Transport header only - the requests are identical.
+_ua_opener = urllib.request.build_opener()
+_ua_opener.addheaders = [("User-Agent", "curl/8.5.0")]
+urllib.request.install_opener(_ua_opener)
+FENCE = re.compile(r"```[ \t]*+([A-Za-z0-9_+-]*+)[^\n]*+\n(.*?)```", re.S)  # possessive: linear on long lines
+SCAD_HINT = re.compile(r"\b(cube|cylinder|difference|union|module|linear_extrude|rotate_extrude|polygon)\s*\(")
+ASK = "Reply with the complete corrected file in a single ```openscad code block."
+# --feedback checklist only (the default report feedback is unchanged)
+SYNTAX_HINTS = ("Common causes: syntax from Python or C that OpenSCAD does not have (a list comprehension is "
+                "[for (i = [0 : n - 1]) expression]; there is no continue, break, while, return or +=; a function "
+                "is function f(x) = expression;), a missing ; or } just before the line named, a 2D shape (square, "
+                "circle, polygon) used without linear_extrude or rotate_extrude, or a module that is not built in. ")
+CHECKLIST = ("Check the part against the specification before you write the file. In plain text, without code, list "
+             "every size, count, spacing and position the specification gives, each with the value the report shows "
+             "for it (or \"not shown\"), and mark each line OK or WRONG. Then change the code for every WRONG line. ")
+UNCHANGED = "Your last file was identical to the one before it, so it built the same part again: change it this time. "
+
+
+# --------------------------------------------------------------------------- code extraction
+
+def strip_think(text):
+    """Drop reasoning blocks, including one that never closed (the reply was cut off inside it) and
+    one whose opening tag the chat template wrote itself, so the reply holds only the closing tag."""
+    text = re.sub(r"<think>.*?(</think>|$)", "", text, flags=re.S)
+    return text.rsplit("</think>", 1)[1] if "</think>" in text else text
+
+
+def extract_code(text):
+    """Return (code, how) from a model reply."""
+    text = strip_think(text or "")
+    blocks = [(lang, b) for lang, b in FENCE.findall(text) if b.strip()]
+    if blocks:
+        labelled = [b for lang, b in blocks if lang.lower() in ("openscad", "scad")]
+        cands = labelled or [b for _, b in blocks]
+        return max(cands, key=len).strip(), "fenced"
+    if FENCE.search(text):  # only empty code blocks
+        return None, "none"
+    m = re.search(r"```[^\n]*\n(.*)$", text, re.S)
+    if m:
+        return m.group(1).strip(), "unterminated"
+    if SCAD_HINT.search(text):
+        return text.strip(), "bare"
+    return None, "none"
+
+
+# --------------------------------------------------------------------------- backends
+
+def code_block_complete(text):
+    """A closed ```...``` block containing OpenSCAD code has been emitted."""
+    return any(SCAD_HINT.search(b) for _, b in FENCE.findall(strip_think(text)))
+
+
+def repeating(text, k=150, reps=3):
+    """The last k characters already occur `reps` times: the model is looping."""
+    return len(text) >= k * (reps + 1) and text.count(text[-k:]) >= reps
+
+
+THINK = {}  # model -> False (thinking switched off) or None (model has no thinking switch)
+
+
+class InfraError(RuntimeError):
+    """The runtime (Ollama server, Claude CLI) failed - not the model. Never scored."""
+
+
+class StreamError(RuntimeError):
+    """The server sent an error event in the middle of a streamed reply (runner crash, model
+    unloaded, context overflow). The partial reply is discarded and the request retried."""
+
+
+def ollama_ready(model, wait_s=300):
+    """Wait for the Ollama server (it may still be starting after a reboot) and check the model exists."""
+    t0 = time.time()
+    while True:
+        try:
+            tags = json.load(urllib.request.urlopen(f"{OLLAMA}/api/tags", timeout=10))
+            names = {m["name"] for m in tags.get("models", [])}
+            if model not in names and f"{model}:latest" not in names:
+                raise SystemExit(f"model {model!r} is not installed - run: ollama pull {model}")
+            return
+        except (urllib.error.HTTPError, ValueError) as e:
+            if not isinstance(e, urllib.error.HTTPError) or e.code < 500:
+                raise SystemExit(f"{OLLAMA} did not answer like an Ollama server ({e}) - check OLLAMA_HOST")
+            if time.time() - t0 > wait_s:
+                raise SystemExit(f"Ollama at {OLLAMA} keeps failing ({e}) - restart it with `ollama serve`")
+            time.sleep(5)
+        except (urllib.error.URLError, ConnectionError, TimeoutError, OSError):
+            if time.time() - t0 > wait_s:
+                raise SystemExit(f"Ollama is not reachable at {OLLAMA} - start it with `ollama serve`")
+            time.sleep(5)
+
+
+class Ollama:
+    def __init__(self, model, temperature, seed, num_ctx=8192, num_predict=2048, think=False):
+        self.model, self.think = model, THINK.get(model, think)
+        self.opts = {"temperature": temperature, "top_p": 0.95, "seed": seed,
+                     "num_ctx": num_ctx, "num_predict": num_predict}
+        self.messages = []
+
+    def _post(self, body):
+        """Stream the reply; stop early once a complete OpenSCAD block has arrived or the
+        model is stuck repeating itself (closing the stream makes Ollama stop generating)."""
+        req = urllib.request.Request(f"{OLLAMA}/api/chat", data=json.dumps(body).encode(),
+                                     headers={"Content-Type": "application/json"})
+        parts, thinking, final, stop, n, err = [], [], None, None, 0, None
+        t0, t_first = time.time(), None
+        with urllib.request.urlopen(req, timeout=3600) as resp:
+            for line in resp:
+                if not line.strip():
+                    continue
+                ev = json.loads(line)
+                msg = (ev.get("message") or {}) if isinstance(ev, dict) else None
+                if not isinstance(msg, dict):
+                    raise StreamError(f"unexpected line in the reply stream: {line[:80]!r}")
+                err = err or ev.get("error")
+                if msg.get("content") or msg.get("thinking"):
+                    n += 1
+                    t_first = t_first or time.time()
+                parts.append(msg.get("content") or "")
+                thinking.append(msg.get("thinking") or "")
+                if ev.get("done"):
+                    final = ev
+                    break
+                if n % 16 == 0:
+                    text = "".join(parts)
+                    if code_block_complete(text):
+                        stop = "code_block_complete"
+                    elif repeating(text):
+                        stop = "repetition"
+                    if stop:
+                        break
+        if err:
+            raise StreamError(str(err)[:300])
+        if final is None and stop is None:  # the server closed the stream before saying "done"
+            raise StreamError("the reply stream ended before the server finished it")
+        text = "".join(parts)
+        if final is None:  # we stopped the stream ourselves: estimate the stats
+            now = time.time()
+            final = {"eval_count": n, "eval_duration": int((now - (t_first or now)) * 1e9),
+                     "prompt_eval_count": None, "prompt_eval_duration": int(((t_first or now) - t0) * 1e9),
+                     "load_duration": 0, "done_reason": stop}
+        final["message"] = {"content": text, "thinking": "".join(thinking)}
+        return final
+
+    def chat(self, system, user):
+        msgs = (self.messages or [{"role": "system", "content": system}]) + [{"role": "user", "content": user}]
+        body = {"model": self.model, "messages": msgs, "stream": True,
+                "options": self.opts, "keep_alive": "30m"}
+        if self.think is not None:
+            body["think"] = self.think
+        t0, r, attempt = time.time(), None, 0
+        while r is None:  # server hiccups (restart, OOM, dropped socket) are retried, 4 attempts in all
+            try:
+                r = self._post(body)
+                break
+            except urllib.error.HTTPError as e:
+                msg = e.read().decode(errors="replace")
+                if "think" in msg.lower() and "think" in body:
+                    self.think = THINK[self.model] = None  # model has no thinking switch; not an attempt
+                    body.pop("think")
+                    continue
+                if e.code < 500 or attempt == 3:
+                    raise InfraError(f"Ollama HTTP {e.code}: {msg[:300]}") from e
+            except StreamError as e:
+                if "think" in str(e).lower() and "think" in body:
+                    self.think = THINK[self.model] = None
+                    body.pop("think")
+                    continue
+                if attempt == 3:
+                    raise InfraError(f"Ollama stream failed: {e}") from e
+            except (urllib.error.URLError, ConnectionError, TimeoutError, OSError, json.JSONDecodeError,
+                    http.client.HTTPException) as e:  # HTTPException: e.g. IncompleteRead mid-chunk
+                if attempt == 3:
+                    raise InfraError(f"Ollama connection failed: {e!r}") from e
+            attempt += 1
+            time.sleep(15 * attempt)
+            ollama_ready(self.model)
+        self.messages = msgs  # commit the turn only once it succeeded
+        wall = time.time() - t0
+        msg = r.get("message", {})
+        text = msg.get("content", "")
+        self.messages.append({"role": "assistant", "content": text})
+        return text, {
+            "wall_s": round(wall, 2),
+            "prompt_tokens": r.get("prompt_eval_count"),  # None when we stopped the stream early
+            "prompt_s": round(r.get("prompt_eval_duration", 0) / 1e9, 2),
+            "gen_tokens": r.get("eval_count", 0),
+            "gen_s": round(r.get("eval_duration", 0) / 1e9, 2),
+            "load_s": round(r.get("load_duration", 0) / 1e9, 2),
+            "thinking_chars": len(msg.get("thinking") or ""),
+            "done_reason": r.get("done_reason"),
+        }
+
+    def close(self):
+        try:
+            body = {"model": self.model, "keep_alive": 0}
+            req = urllib.request.Request(f"{OLLAMA}/api/generate", data=json.dumps(body).encode(),
+                                         headers={"Content-Type": "application/json"})
+            urllib.request.urlopen(req, timeout=60).read()
+        except Exception:  # noqa: BLE001
+            pass
+
+
+class ClaudeCLI:
+    """Claude via Claude Code print mode: replaced system prompt, no tools, no MCP, no settings."""
+
+    def __init__(self, model, **_):
+        self.model, self.session = model, None
+        self.cwd = tempfile.mkdtemp(prefix="p2b_claude_")
+        self.think = None
+
+    def chat(self, system, user):
+        cmd = ["claude", "-p", "--model", self.model, "--system-prompt", system, "--tools", "",
+               "--strict-mcp-config", "--setting-sources", "", "--output-format", "json"]
+        if self.session:
+            cmd += ["--resume", self.session]
+        cmd.append(user)
+        t0 = time.time()
+        for attempt in range(4):  # rate limits and network errors: back off, never score
+            try:
+                p = subprocess.run(cmd, capture_output=True, text=True, timeout=1800, cwd=self.cwd)
+                d = json.loads(p.stdout)
+            except FileNotFoundError as e:
+                raise SystemExit("Claude Code CLI (`claude`) not found - install it or put it on PATH") from e
+            except (json.JSONDecodeError, subprocess.TimeoutExpired) as e:
+                d = {"is_error": True, "result": str(e)[-500:]}
+            if not isinstance(d, dict):
+                d = {"is_error": True, "result": str(d)[-500:]}
+            if not d.get("is_error"):
+                break
+            time.sleep(60 * (attempt + 1))
+        if d.get("is_error"):
+            raise InfraError(f"claude CLI error: {d.get('result')}")
+        self.session = d.get("session_id")
+        u = d.get("usage", {})
+        return d.get("result", ""), {
+            "wall_s": round(time.time() - t0, 2),
+            "prompt_tokens": u.get("input_tokens", 0) + u.get("cache_read_input_tokens", 0) + u.get("cache_creation_input_tokens", 0),
+            "gen_tokens": u.get("output_tokens", 0),
+            "thinking_tokens": (u.get("output_tokens_details") or {}).get("thinking_tokens"),
+            "api_ms": d.get("duration_api_ms"),
+        }
+
+    def close(self):
+        """Delete this conversation's Claude Code session files so they don't clutter `claude --resume`."""
+        enc = re.sub(r"[^A-Za-z0-9]", "-", self.cwd)
+        shutil.rmtree(os.path.join(os.path.expanduser("~/.claude/projects"), enc), ignore_errors=True)
+        shutil.rmtree(self.cwd, ignore_errors=True)
+
+
+def method_model(name):
+    """`template:<model>` or `features:<model>` (bench/smallmodels): the Ollama model inside a method, else None."""
+    head, _, rest = name.partition(":")
+    return rest if head in ("template", "features") and rest else None
+
+
+def make_backend(name, temperature, seed, num_predict=2048, think=False, num_ctx=8192):
+    if name.startswith("claude:"):
+        return ClaudeCLI(name.split(":", 1)[1])
+    if method_model(name):  # the model fills in JSON and the method builds the file (bench/smallmodels)
+        sys.path.insert(0, os.path.join(HERE, "smallmodels"))
+        import plugins
+        return plugins.make(name, temperature, seed, num_ctx=num_ctx, think=think, infra_error=InfraError)
+    return Ollama(name, temperature, seed, num_ctx=num_ctx, num_predict=num_predict, think=think)
+
+
+# --------------------------------------------------------------------------- one conversation
+
+def feedback_message(kind, render_res, report_text, how, unchanged=False):
+    if how == "none":
+        return "I could not find any OpenSCAD code in your reply. " + ASK
+    again = UNCHANGED if kind == "checklist" and unchanged else ""
+    if not render_res["ok"]:
+        msgs = "\n".join(keep_messages(render_res["messages"], 15)) or render_res["log"][-800:]
+        hints = SYNTAX_HINTS if kind == "checklist" else ""
+        return ("OpenSCAD could not build a printable part from your file. Its messages were:\n"
+                f"{msgs}\n{hints}{again}Fix the problem. " + ASK)
+    if kind == "report":
+        return ("Your file rendered. This is a measurement report of the part it produces:\n\n"
+                f"{report_text}\n\nCompare every number in the report with the specification. "
+                "Find what does not match and fix it. " + ASK)
+    if kind == "checklist":
+        return ("Your file rendered. This is a measurement report of the part it produces:\n\n"
+                f"{report_text}\n\n{CHECKLIST}{again}" + ASK)
+    return ("Your file rendered, but the part does not match the specification. "
+            "Re-read the specification carefully and fix the design. " + ASK)
+
+
+def run_one(backend, system, task, ref, args, code_dir, tag):
+    attempts = []
+    user = task["prompt_used"]
+    for a in range(args.max_repairs + 1):
+        rec = {"attempt": a}
+        if hasattr(backend, "opts"):  # fresh sampling noise for every attempt
+            backend.opts["seed"] = args.seed_base + 100 * args.sample_idx + a
+        text, usage = backend.chat(system, user)  # InfraError propagates: the task is retried later
+        text = text or ""
+        code, how = extract_code(text)
+        rec.update({"usage": usage, "extract": how, "reply_chars": len(text),
+                    "code_lines": code.count("\n") + 1 if code else 0,
+                    "code_sha1": hashlib.sha1(code.encode(errors="surrogatepass")).hexdigest()[:12] if code else None,
+                    # libraries make results machine-dependent (and break the starter prompt's rule 4)
+                    "uses_library": bool(code and re.search(r"^\s*(include|use)\s*<", code, re.M))})
+        base = os.path.join(code_dir, f"{tag}_a{a}")  # never str.replace on the path: a folder may contain ".scad"
+        path, stl = base + ".scad", base + ".stl"
+        with open(path, "w", encoding="utf-8", errors="replace") as fh:
+            fh.write(code or f"// no code found in reply\n/*\n{text[:4000]}\n*/\n")
+        with open(base + ".reply.txt", "w", encoding="utf-8", errors="replace") as fh:
+            fh.write(text)
+        if code:
+            try:
+                rr = render(path, stl, timeout=args.render_timeout)
+            except FileNotFoundError as e:
+                raise SystemExit("OpenSCAD not found - put it on PATH or set $OPENSCAD") from e
+        else:
+            rr = {"ok": False, "messages": ["no code"], "log": "", "seconds": 0}
+        # keep the decisive messages (errors, "top level object is empty") if there are more than 10
+        key = lambda m: not (m.startswith("ERROR") or "top level" in m or "not a 3D" in m)  # noqa: E731
+        rec["render"] = {"ok": rr["ok"], "messages": sorted(rr["messages"], key=key)[:10], "seconds": rr["seconds"]}
+        report_text, result = None, None
+        if rr["ok"]:
+            try:
+                mesh = load_mesh(stl)
+                result = evaluate(mesh, task, ref)
+            except Exception as e:  # noqa: BLE001
+                result = None
+                rr["ok"] = False
+                rr["messages"].append(f"ERROR: mesh analysis failed: {e}")
+                rec["render"]["ok"] = False
+                rec["render"]["messages"].append(f"ERROR: mesh analysis failed: {e}")
+            if result is not None and args.feedback in ("report", "checklist") and not result["passed"]:
+                try:  # a failed report must not undo a verdict: the model then gets the generic feedback
+                    report_text = format_report(rr, analyse(mesh))
+                except Exception as e:  # noqa: BLE001
+                    rec["report_error"] = repr(e)[:300]
+        if os.path.exists(stl):
+            os.remove(stl)  # keep the repo small; .scad files are enough to reproduce
+        rec["check"] = result
+        rec["passed"] = bool(result and result["passed"])
+        rec["score"] = result["score"] if result else 0.0
+        attempts.append(rec)
+        if rec["passed"] or a == args.max_repairs:
+            break
+        kind = ("generic" if args.feedback in ("report", "checklist") and rr["ok"] and report_text is None
+                else args.feedback)
+        unchanged = len(attempts) > 1 and rec["code_sha1"] is not None and rec["code_sha1"] == attempts[-2]["code_sha1"]
+        user = feedback_message(kind, rr, report_text, how, unchanged)
+        rec["feedback"] = user
+    return attempts
+
+
+def set_aside(code_dir, tag, label):
+    """Before a conversation is done again, move the earlier one's files to code/<model>/superseded/<label>/: the
+    record a rerun supersedes keeps the code its code_sha1 names, and a rerun that needs fewer attempts cannot leave
+    stale later attempts beside its own."""
+    old = sorted(f for f in os.listdir(code_dir) if re.fullmatch(re.escape(tag) + r"_a\d+\.(?:scad|stl|reply\.txt)", f))
+    if old:
+        dest = os.path.join(code_dir, "superseded", label)
+        os.makedirs(dest, exist_ok=True)
+        for f in old:
+            os.replace(os.path.join(code_dir, f), os.path.join(dest, f))
+
+
+# --------------------------------------------------------------------------- main
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--run", required=True, help="results sub-directory name")
+    ap.add_argument("--models", nargs="+", required=True)
+    ap.add_argument("--tasks", nargs="*", help="task ids (default: all)")
+    ap.add_argument("--samples", type=int, default=1)
+    ap.add_argument("--max-repairs", type=int, default=2)
+    ap.add_argument("--feedback", choices=["report", "generic", "checklist"], default="report")
+    ap.add_argument("--temperature", type=float, default=0.2)
+    ap.add_argument("--prompts", default=None, help="YAML with translated prompts {lang: {task_id: prompt}}")
+    ap.add_argument("--lang", default="en")
+    ap.add_argument("--system", default=os.path.join(HERE, "prompts", "system.md"))
+    ap.add_argument("--render-timeout", type=int, default=120)
+    ap.add_argument("--seed-base", type=int, default=1000)
+    ap.add_argument("--num-predict", type=int, default=2048, help="max reply tokens (local models)")
+    ap.add_argument("--think", action="store_true", help="let local models think (default: thinking off)")
+    ap.add_argument("--num-ctx", type=int, default=8192,
+                    help="context window requested from Ollama (the Tiiny bridge ignores it: models get their full window)")
+    args = ap.parse_args()
+    args.models = list(dict.fromkeys(args.models))  # the same model twice would write two records per task
+    if not re.fullmatch(r"[A-Za-z0-9_][A-Za-z0-9._-]*", args.run):
+        ap.error(f"--run must be a plain folder name, not {args.run!r}")
+    if args.samples < 1 or args.max_repairs < 0 or args.render_timeout < 1 or args.num_ctx < 1 or args.num_predict < 1:
+        ap.error("need --samples >= 1, --max-repairs >= 0, --render-timeout >= 1, --num-ctx >= 1, --num-predict >= 1")
+    folders = {}
+    for m in args.models:  # two names that mean the same model, or share a code folder, would overwrite files
+        same = folders.setdefault(re.sub(r"[^A-Za-z0-9._-]+", "_", re.sub(r":latest$", "", m)), m)
+        if same != m:
+            ap.error(f"--models {same!r} and {m!r} are the same model or share a code folder - keep one")
+    if args.num_predict + 2000 > args.num_ctx and not all(m.startswith(("claude:", "tiiny/")) for m in args.models):
+        print(f"warning: --num-predict {args.num_predict} plus the prompt may not fit --num-ctx {args.num_ctx}; "
+              "Ollama would cut the reply or drop the start of the conversation - raise --num-ctx", file=sys.stderr)
+    for f in [args.system] + ([args.prompts] if args.prompts else []):
+        if not os.path.isfile(f):
+            ap.error(f"no such file: {f}")
+
+    tasks = yaml.safe_load(open(os.path.join(HERE, "tasks.yaml")))
+    if args.tasks:
+        unknown = sorted(set(args.tasks) - {t["id"] for t in tasks})
+        if unknown:
+            raise SystemExit(f"unknown task id(s): {', '.join(unknown)} (see bench/tasks.yaml)")
+        tasks = [t for t in tasks if t["id"] in args.tasks]
+    refs = json.load(open(os.path.join(HERE, "reference_stats.json")))
+    for t in tasks:  # a broken reference would be scored as the model's failure
+        if ref_problems(t, refs.get(t["id"])):
+            raise SystemExit(f"{t['id']}: {ref_problems(t, refs.get(t['id']))} - run bench/build_refs.py")
+    if openscad_missing():
+        raise SystemExit(openscad_missing())
+    if any(m.startswith("claude:") for m in args.models) and shutil.which("claude") is None:
+        raise SystemExit("Claude Code CLI (`claude`) not found - install it or put it on PATH")
+    system = open(args.system).read().strip()
+    translated = {}
+    if args.prompts and args.lang != "en":
+        translated = (yaml.safe_load(open(args.prompts)) or {}).get(args.lang)
+        if not isinstance(translated, dict):
+            raise SystemExit(f"{args.prompts} has no {args.lang!r} section")
+    if args.lang != "en":
+        missing = [t["id"] for t in tasks if t["id"] not in translated]
+        if missing:  # never silently fall back to English and call it another language
+            raise SystemExit(f"no {args.lang} translation for: {', '.join(missing)}")
+    for t in tasks:
+        t["prompt_used"] = translated.get(t["id"], t["prompt"]) if args.lang != "en" else t["prompt"]
+
+    out_dir = os.path.join(HERE, "results", args.run)
+    os.makedirs(os.path.join(out_dir, "code"), exist_ok=True)
+    res_path = os.path.join(out_dir, "results.jsonl")
+    lock = open(os.path.join(out_dir, ".lock"), "w")
+    try:  # two copies of the same run would duplicate work and interleave records
+        fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError:
+        raise SystemExit(f"another run_bench.py is already writing {out_dir} - not starting a second one")
+    done, newest = set(), {}
+    if os.path.exists(res_path):
+        lines = open(res_path, errors="replace").read().splitlines(keepends=True)
+        good = []
+        for line in lines:
+            try:
+                r = json.loads(line)
+                key = (r["model"], r["task"], r["sample"], r.get("lang", "en"), r.get("feedback", "report"))
+            except (json.JSONDecodeError, KeyError, TypeError):  # half-written line from a crash or power loss
+                continue
+            good.append(line if line.endswith("\n") else line + "\n")
+            if key not in newest or str(r.get("finished", "")) >= newest[key][0]:
+                newest[key] = (str(r.get("finished", "")), bool(r.get("needs_rerun")))
+        # a conversation a rescore flagged needs_rerun is redone; the new record supersedes it
+        done = {k for k, (_, rerun) in newest.items() if not rerun}
+        if len(good) != len(lines):
+            print(f"dropped {len(lines) - len(good)} damaged line(s) from {res_path}; those tasks will rerun")
+        if len(good) != len(lines) or (lines and not lines[-1].endswith("\n")):  # next append starts a fresh line
+            with open(res_path + ".tmp", "w") as fh:  # write-then-rename: a full disk cannot eat the good lines
+                fh.writelines(good)
+                fh.flush()
+                os.fsync(fh.fileno())
+            os.replace(res_path + ".tmp", res_path)
+    margs = {k: (os.path.relpath(v, ROOT) if isinstance(v, str) and v.startswith(ROOT) else v) for k, v in vars(args).items()}
+    if all(m.startswith("claude:") for m in args.models):  # the CLI sets neither; the API defaults apply
+        margs.update(temperature=None, num_predict=None, seed_base=None)
+    commit = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True, cwd=ROOT).stdout.strip()
+    dirty = bool(subprocess.run(["git", "status", "--porcelain", "--untracked-files=no", "--", "bench", "tools",
+                                 ":!bench/results", ":!bench/logs"], capture_output=True, text=True,
+                                cwd=ROOT).stdout.strip())
+    meta = {"started": dt.datetime.now().isoformat(timespec="seconds"), "args": margs,
+            "git_commit": commit + ("+uncommitted-changes" if dirty else ""),
+            "host": platform.node(), "cpu": platform.processor() or platform.machine(),
+            "python": platform.python_version()}
+    try:
+        meta["openscad"] = subprocess.run(["openscad", "--version"], capture_output=True, text=True).stderr.strip()
+        meta["ollama"] = json.load(urllib.request.urlopen(f"{OLLAMA}/api/version", timeout=5))["version"]
+    except Exception:  # noqa: BLE001
+        pass
+    with open(os.path.join(out_dir, f"meta_{dt.datetime.now():%Y%m%d_%H%M%S}.json"), "w") as fh:
+        json.dump(meta, fh, indent=1)
+
+    suffix = "".join(f"_{x}" for x, default in ((args.lang, "en"), (args.feedback, "report")) if x != default)
+    infra_fails = 0
+    for model in args.models:
+        if all((model, t["id"], s, args.lang, args.feedback) in done for s in range(args.samples) for t in tasks):
+            continue  # finished already: no need for the model to still be installed
+        if not model.startswith("claude:"):
+            ollama_ready(method_model(model) or model)
+        safe = re.sub(r"[^A-Za-z0-9._-]+", "_", model)
+        code_dir = os.path.join(out_dir, "code", safe)
+        os.makedirs(code_dir, exist_ok=True)
+        for s in range(args.samples):
+            for t in tasks:
+                if (model, t["id"], s, args.lang, args.feedback) in done:
+                    continue
+                backend = make_backend(model, args.temperature, seed=args.seed_base + 100 * s,
+                                       num_predict=args.num_predict, think=args.think, num_ctx=args.num_ctx)
+                args.sample_idx = s
+                tag = f"{t['id']}_s{s}{suffix}"
+                prev = newest.get((model, t["id"], s, args.lang, args.feedback))  # a flagged record being redone
+                set_aside(code_dir, tag, re.sub(r"\D", "", prev[0]) if prev and prev[0]
+                          else f"unrecorded-{dt.datetime.now():%Y%m%d%H%M%S}")  # or an interrupted try's files
+                t0 = time.time()
+                try:
+                    attempts = run_one(backend, system, t, refs[t["id"]], args, code_dir, tag)
+                except InfraError as e:
+                    infra_fails += 1
+                    print(f"{dt.datetime.now():%H:%M:%S} {model:28s} {t['id']:24s} SKIPPED (runtime error, will rerun "
+                          f"next time): {e}", flush=True)
+                    if infra_fails >= 3:
+                        raise SystemExit("3 runtime errors in a row - stopping; fix the runtime and rerun to resume")
+                    continue
+                finally:
+                    backend.close() if model.startswith("claude:") else None
+                infra_fails = 0
+                rec = {"model": model, "task": t["id"], "category": t["category"], "sample": s,
+                       "lang": args.lang, "feedback": args.feedback, "max_repairs": args.max_repairs,
+                       "passed": any(a.get("passed") for a in attempts),
+                       "first_pass": bool(attempts and attempts[0].get("passed")),
+                       "attempts_used": len(attempts), "wall_s": round(time.time() - t0, 1),
+                       "think": getattr(backend, "think", None), "attempts": attempts,
+                       "finished": dt.datetime.now().isoformat(timespec="seconds")}
+                with open(res_path, "a") as fh:  # one write + fsync: survives power loss
+                    fh.write(json.dumps(rec) + "\n")
+                    fh.flush()
+                    os.fsync(fh.fileno())
+                done.add((model, t["id"], s, args.lang, args.feedback))
+                flag = "PASS" if rec["passed"] else "fail"
+                print(f"{dt.datetime.now():%H:%M:%S} {model:28s} {t['id']:24s} s{s} {flag} "
+                      f"after {len(attempts)} attempt(s), best score "
+                      f"{max(a.get('score', 0) for a in attempts):.2f}, {rec['wall_s']:.0f}s", flush=True)
+        if not model.startswith("claude:"):
+            make_backend(model, 0, 0).close()
+
+
+if __name__ == "__main__":
+    main()

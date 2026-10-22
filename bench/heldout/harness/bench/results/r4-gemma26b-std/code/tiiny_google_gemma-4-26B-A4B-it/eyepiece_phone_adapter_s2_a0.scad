@@ -1,0 +1,77 @@
+// --- Dimensions ---
+plate_width = 80;          // X dimension of the plate
+plate_depth = 60;          // Y dimension of the plate
+plate_thickness = 3;       // Z thickness of the plate
+
+camera_hole_x = -20;       // X position of camera hole
+camera_hole_y = 10;        // Y position of camera hole
+camera_hole_dia = 12;      // Diameter of camera hole
+
+sleeve_outer_dia = 36.6;   // Outer diameter of the sleeve
+sleeve_height = 31 - 3;    // Total height of the sleeve (z=3 to z=31)
+sleeve_start_z = 3;        // Z starting position of the sleeve
+
+stop_bore_dia = 22;        // Diameter of the inner stop (z=3 to z=11)
+stop_bore_height = 11 - 3; // Height of the stop section
+
+eyepiece_bore_dia = 30.6;  // Diameter of the eyepiece sleeve (z=11 to z=31)
+
+screw_hole_dia = 2.5;       // Diameter of the radial centering holes
+screw_hole_z = 21;         // Z height of the screw holes
+num_screws = 3;            // Number of radial holes
+screw_angle_step = 360 / num_screws;
+
+// --- Constants ---
+$fn = 64; // Smoothness for cylinders
+
+// --- Main Assembly ---
+
+union() {
+    // 1. The Base Plate
+    difference() {
+        // Main plate body
+        translate([-plate_width/2, -plate_depth/2, 0])
+            cube([plate_width, plate_depth, plate_thickness]);
+        
+        // Camera hole (extended to ensure clean cut)
+        translate([camera_hole_x, camera_hole_y, -0.01])
+            cylinder(h = plate_thickness + 0.02, d = camera_hole_dia);
+    }
+
+    // 2. The Sleeve
+    translate([0, 0, sleeve_start_z])
+    difference() {
+        // Outer sleeve body
+        cylinder(h = sleeve_height, d = sleeve_outer_dia);
+        
+        // Inner Bore (The combined hole)
+        // We use a union of two cylinders to define the internal void
+        union() {
+            // Bottom stop section (z=3 to z=11 relative to sleeve base)
+            cylinder(h = stop_bore_height + 0.01, d = stop_bore_dia);
+            
+            // Top eyepiece section (z=11 to z=31 relative to sleeve base)
+            // Note: The prompt says 22mm bore is z=3 to z=11, and 30.6mm is z=11 to top.
+            // This means the 22mm hole is the "stop" and the 30.6mm is the "sleeve".
+            // However, a 22mm hole inside a 30.6mm hole is just a step.
+            // Let's model the internal void as the union of the two diameters.
+            translate([0, 0, stop_bore_height - 0.01])
+                cylinder(h = (sleeve_height - stop_bore_height) + 0.02, d = eyepiece_bore_dia);
+        }
+        
+        // Radial Screw Holes
+        // The prompt asks for 2.5mm holes through the sleeve wall.
+        // Since they are "centering screws", they usually go through the wall to the center.
+        for (i = [0 : num_screws - 1]) {
+            rotate([0, 0, i * screw_angle_step])
+            translate([0, 0, screw_hole_z - sleeve_start_z - 0.5]) // Center on Z
+            rotate([0, 90, 0]) // Rotate to point along X axis
+            cylinder(h = sleeve_outer_dia + 1, d = screw_hole_dia);
+        }
+    }
+}
+
+// Note on Screw Holes: 
+// The prompt specifies "pointing in the +X direction" for the first hole.
+// In OpenSCAD, a cylinder at the origin rotated 90 deg on Y points along X.
+// To ensure the first hole is at 0 degrees (pointing +X), we use the loop as written.

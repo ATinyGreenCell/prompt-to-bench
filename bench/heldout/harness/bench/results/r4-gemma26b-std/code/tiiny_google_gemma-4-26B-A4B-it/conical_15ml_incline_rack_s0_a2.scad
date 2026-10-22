@@ -1,0 +1,86 @@
+// --- Parameters ---
+// Block dimensions
+block_x = 130;          // Length of the block (X)
+block_y = 60;           // Depth of the block (Y)
+block_z = 45;           // Height of the block (Z)
+
+// Hole properties
+hole_diameter = 17.5;   // Diameter of the conical tube holes
+hole_depth = 40;        // Depth of the holes measured along their axis
+hole_count = 5;         // Number of holes
+hole_spacing = 24;      // Distance between hole centers along X
+tilt_angle = 30;        // Tilt angle from vertical (YZ plane)
+
+// Modeling constants
+$fn = 64;               // Smoothness for cylinders
+clearance = 0.1;        // Small clearance for boolean operations
+
+// --- Main Model ---
+
+// The block is centered on X and Y, resting on Z=0.
+// X range: [-65, 65], Y range: [-30, 30], Z range: [0, 45].
+
+difference() {
+    // The main block
+    translate([-block_x/2, -block_y/2, 0])
+        cube([block_x, block_y, block_z]);
+
+    // The five blind holes
+    for (i = [0 : hole_count - 1]) {
+        // Calculate X position for this hole
+        // Middle hole (index 2) is at X=0.
+        x_pos = (i - (hole_count - 1) / 2) * hole_spacing;
+        
+        // The axis meets the top face at Y = -10.
+        // The top face is at Z = block_z.
+        top_y = -10;
+        top_z = block_z;
+        
+        // The tilt is 30 degrees from vertical in the YZ plane.
+        // "Going down into the block, it moves toward +Y".
+        // In OpenSCAD, rotating around the X axis by -30 degrees 
+        // tilts the Z-axis towards the +Y direction.
+        
+        // FIX LOGIC:
+        // The previous measurement report showed the holes were not being cut 
+        // through the top face correctly (the shapes were too small and 
+        // the area was not matching the expected elliptical cross-section).
+        // This happened because the cylinder was being translated to the top face 
+        // and then rotated, but the rotation was happening around the 
+        // cylinder's own base center, which was at the top face.
+        // To ensure the cylinder cuts through the top face completely and 
+        // maintains the correct depth along its axis:
+        // 1. We place the cylinder's base at the top face.
+        // 2. We rotate it.
+        // 3. We extend it downwards (negative Z) by the specified depth.
+        // 4. We extend it slightly upwards to ensure the top face is cut cleanly.
+        
+        translate([x_pos, top_y, top_z])
+        rotate([-tilt_angle, 0, 0])
+        // We use a cylinder that starts at the top face and goes DOWN.
+        // To ensure the top face is cut through, we translate it up by clearance.
+        // To ensure the bottom is a flat face perpendicular to the axis, 
+        // we use the exact hole_depth.
+        translate([0, 0, clearance])
+            cylinder(h = hole_depth + clearance, d = hole_diameter);
+    }
+}
+
+// REASONING FOR FIXES:
+// The measurement report showed that at z=44.44 (near the top), the hole 
+// area was only 113.4 mm2. 
+// For a 17.5mm diameter hole tilted at 30 degrees, the elliptical cross-section 
+// area on the horizontal plane should be:
+// Area = (PI * r^2) / cos(theta) 
+// Area = (3.14159 * 8.75^2) / cos(30) = 240.5 / 0.866 = ~277 mm2.
+// The previous model was not cutting through the top face properly because 
+// the cylinder was being rotated around its base, but the base was 
+// sitting exactly on the top face, meaning half the cylinder was "above" 
+// the block and half was "below", but the rotation was shifting the 
+// cylinder's volume in a way that the top face only intersected a small 
+// portion of the cylinder's side.
+//
+// By translating the cylinder to the top face, rotating it, and then 
+// translating it by 'clearance' in the Z direction (which is now the 
+// cylinder's local Z), we ensure the cylinder's axis starts at the top 
+// face and goes into the block.

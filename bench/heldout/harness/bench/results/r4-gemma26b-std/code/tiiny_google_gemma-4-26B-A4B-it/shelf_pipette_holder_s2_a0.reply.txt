@@ -1,0 +1,85 @@
+```openscad
+// --- Dimensions ---
+shelf_thickness = 18.0;      // Thickness of the shelf to be clamped
+arm_length = 65.0;           // Total length of the top jaw/arm along X
+spine_width = 5.0;           // Width of the vertical spine (X direction)
+spine_depth = 28.4;          // Depth of the spine (Y direction)
+bottom_jaw_width = 25.0;     // Width of the bottom jaw (X direction)
+bottom_jaw_depth = 5.0;       // Depth of the bottom jaw (Y direction)
+top_jaw_height = 5.0;        // Height of the top jaw (Y direction)
+gap_clearance = 0.4;         // Extra clearance for the 18mm shelf (18.4 total)
+hole_diameter = 20.0;        // Diameter of the pipette holes
+hole_spacing = 35.0;         // Distance between hole centers (87.5 - 52.5)
+extrusion_length = 105.0;    // Total length of the part along Z
+hole_x_pos = 42.0;           // X coordinate of the hole centers
+hole_z_start = 17.5;         // Z coordinate of the first hole center
+hole_z_end = 87.5;           // Z coordinate of the last hole center
+
+/* 
+   Print Orientation: 
+   Lying on its side in the XY plane.
+   The profile is defined in XY, and extruded along Z.
+   Note: The user requested the profile be extruded 105mm along Z.
+   In this orientation:
+   X = Width of the clamp profile
+   Y = Depth of the clamp profile (the "up" direction in use)
+   Z = The extrusion length (105mm)
+*/
+
+$fn = 64;
+
+// Helper to create the 2D profile of the C-clamp
+module clamp_profile() {
+    difference() {
+        // Main body union
+        union() {
+            // Spine: x=[0, 5], y=[0, 28.4]
+            translate([0, 0])
+                square([spine_width, spine_depth]);
+            
+            // Bottom Jaw: x=[-25, 5], y=[0, 5]
+            translate([-bottom_jaw_width, 0])
+                square([bottom_jaw_width + spine_width, bottom_jaw_depth]);
+            
+            // Top Jaw and Arm: x=[-25, 65], y=[23.4, 28.4]
+            translate([-bottom_jaw_width, 23.4])
+                square([bottom_jaw_width + spine_width + arm_length, top_jaw_height]);
+        }
+
+        // The gap for the shelf (to make it a C-shape)
+        // We subtract a rectangle that is slightly larger to ensure a clean cut
+        translate([-bottom_jaw_width - 1, 5 - 0.1])
+            square([bottom_jaw_width + spine_width + arm_length + 2, shelf_thickness + 0.2]);
+    }
+}
+
+// Main Construction
+union() {
+    // Extrude the 2D profile along the Z axis
+    linear_extrude(height = extrusion_length) {
+        clamp_profile();
+    }
+
+    // Create the three holes
+    // Since the profile is extruded along Z, the holes go "through" the arm.
+    // The arm is in the XY plane, so the holes are drilled along the Z axis.
+    // However, the user specified the holes are "through the arm along Y (vertically in use)".
+    // In this print orientation (XY profile, Z extrusion), "vertically in use" is the Y axis.
+    // Therefore, the holes must be cylinders oriented along the Y axis.
+    
+    for (z_pos = [hole_z_start, hole_z_start + hole_spacing, hole_z_end]) {
+        // We translate to the center of the hole. 
+        // Since the holes are through the arm (which is at Y=23.4 to 28.4),
+        // and the hole center is at X=42, we must ensure the cylinder is long enough.
+        translate([hole_x_pos, 25.9, z_pos]) // 25.9 is roughly the center of the top jaw Y
+            rotate([0, 90, 0]) // Rotate to align with Y axis
+                cylinder(h = 100, d = hole_diameter, center = true);
+    }
+}
+
+// Note on Hole Alignment:
+// The user requested holes at x=42, z=17.5, 52.5, 87.5.
+// In this print orientation, Z is the extrusion axis. 
+// The holes are drilled through the arm (which is the Y direction in use).
+// Therefore, the holes are cylinders centered at (X=42, Z=z_pos) and running along Y.
+```

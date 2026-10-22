@@ -1,0 +1,81 @@
+```openscad
+// --- Parameters ---
+// Block Dimensions
+block_x = 60;           // Total length (X)
+block_y = 24;           // Total width (Y)
+block_z = 16;           // Total height (Z)
+
+// Channel Dimensions
+channel_dia = 3;        // Diameter of internal channels
+inlet_socket_dia = 4.2; // Diameter of inlet socket
+inlet_socket_depth = 8; // Depth of inlet socket
+outlet_socket_dia = 4.2; // Diameter of outlet sockets
+outlet_socket_depth = 6; // Depth of outlet sockets
+
+// Screw Holes
+screw_hole_dia = 3.4;    // Diameter for M3 screw holes
+screw_x_pos = 25;       // X position of screw holes
+screw_y_pos = -6;       // Y position of screw holes
+screw_hole_depth = 20;  // Depth (through-hole)
+
+// Internal Geometry Positions
+inlet_x = -30;          // Center of the -X face
+inlet_y = 0;            // Centered on Y (user specified y=0, but block is centered, so we use 0)
+main_channel_end_x = 15; // Where the main channel stops
+
+outlet_x_coords = [-15, 0, 15]; // X positions of the three outlet branches
+outlet_y_start = 0;         // Start of branch from center
+outlet_y_end = 12;          // End of branch at the +Y face (half of block_y)
+
+// Resolution
+$fn = 64;
+
+// --- Main Assembly ---
+
+difference() {
+    // The Main Block
+    translate([-block_x/2, -block_y/2, 0])
+        cube([block_x, block_y, block_z]);
+
+    // 1. Inlet Socket (on -X face)
+    translate([inlet_x, inlet_y, block_z/2])
+        rotate([0, 90, 0])
+            cylinder(h = inlet_socket_depth + 1, d = inlet_socket_dia);
+
+    // 2. Main Channel (running along X)
+    translate([-block_x/2 + 0.1, inlet_y, block_z/2])
+        rotate([0, 90, 0])
+            cylinder(h = main_channel_end_x - (-block_x/2) + 1, d = channel_dia);
+
+    // 3. Outlet Sockets (on +Y face)
+    for (x_pos = outlet_x_coords) {
+        translate([x_pos, block_y/2, block_z/2])
+            rotate([90, 0, 0])
+                cylinder(h = outlet_socket_depth + 1, d = outlet_socket_dia);
+    }
+
+    // 4. Outlet Channels (branching from main channel to +Y face)
+    // Note: The main channel stops at x=15. 
+    // The outlets are at x=-15, 0, 15.
+    for (x_pos = outlet_x_coords) {
+        translate([x_pos, 0, block_z/2])
+            cylinder(h = block_y/2 + 1, d = channel_dia);
+    }
+
+    // 5. Screw Holes (Vertical through-holes)
+    // User specified x = -25 and 25, y = -6.
+    // Since block is centered, we use these relative to origin.
+    for (x_pos = [-25, 25]) {
+        translate([x_pos, screw_y_pos, -1])
+            cylinder(h = block_z + 2, d = screw_hole_dia);
+    }
+}
+
+// Note on Orientation:
+// The block is centered on X and Y. 
+// Block X range: [-30, 30]
+// Block Y range: [-12, 12]
+// Block Z range: [0, 16]
+// Inlet is at x = -30 (the -X face).
+// Outlets are at y = 12 (the +Y face).
+```

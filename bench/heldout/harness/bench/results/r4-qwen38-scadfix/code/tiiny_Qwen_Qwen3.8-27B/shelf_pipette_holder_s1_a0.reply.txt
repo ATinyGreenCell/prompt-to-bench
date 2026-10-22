@@ -1,0 +1,49 @@
+```openscad
+// 3D-printable pipette clamp holder for an 18 mm shelf.
+// Printed lying on its side: 2-D profile in XY, extruded 105 mm along Z.
+// In use: +Y is up, +X points away from the shelf, Z is the 105 mm length.
+
+// ---- Dimensions (mm) ----
+shelf_thickness = 18;      // shelf thickness the clamp grips
+gap = 18.4;                // opening between jaws (shelf + clearance)
+jaw_t = 5;                 // jaw thickness (top & bottom)
+spine_w = 5;               // spine thickness (x = 0..5)
+spine_h = 28.4;            // spine height (y = 0..28.4)
+bottom_jaw_x0 = -25;       // bottom jaw starts at x = -25
+bottom_jaw_x1 = 5;         // bottom jaw ends at x = 5
+top_jaw_x0 = -25;          // top jaw + arm starts at x = -25
+top_jaw_x1 = 65;           // top jaw + arm ends at x = 65
+extrude_len = 105;         // length along Z (the 3 pipettes)
+
+// Pipette holes: 20 mm dia, through the arm along Y (vertical in use)
+hole_d = 20;
+hole_x = 42;               // hole centre in X (inside the arm)
+hole_z = [17.5, 52.5, 87.5]; // hole centres along Z
+
+$fn = 64;
+
+// ---- 2-D profile (XY plane) ----
+// Spine: x 0..5, y 0..28.4
+// Bottom jaw: x -25..5, y 0..5
+// Top jaw + arm: x -25..65, y 23.4..28.4
+module profile() { union() {
+    square([spine_w, spine_h], origin=[0, 0]);
+    square([bottom_jaw_x1 - bottom_jaw_x0, jaw_t], origin=[bottom_jaw_x0, 0]);
+    square([top_jaw_x1 - top_jaw_x0, jaw_t], origin=[top_jaw_x0, gap]);
+} }
+
+// ---- Extrude the profile along Z, then drill the 3 pipette holes ----
+difference() {
+    linear_extrude(extrude_len) profile();
+
+    for (z = hole_z) {
+        // Hole axis is along Y (vertical in use).
+        // Cylinder default axis is Z, so rotate 90° about X to point it along Y.
+        // Place it so it spans the full arm thickness (y 23.4..28.4) with 1 mm
+        // overhang on each side to guarantee a clean cut through the arm.
+        translate([hole_x, gap - jaw_t - 1, z])
+            rotate([90, 0, 0])
+                cylinder(h = jaw_t + 2, d = hole_d, $fn = 64);
+    }
+}
+```

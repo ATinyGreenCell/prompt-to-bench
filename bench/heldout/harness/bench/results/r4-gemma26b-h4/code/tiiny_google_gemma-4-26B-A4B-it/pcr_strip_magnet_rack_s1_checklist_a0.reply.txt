@@ -1,0 +1,65 @@
+```openscad
+// Magnetic Bead Rack for 8-tube strip
+// Designed for 0.2 mL PCR tubes with magnet pockets
+
+// --- Dimensions ---
+L = 80.0;            // Block length (X)
+W = 24.0;            // Block width (Y)
+H = 20.0;            // Block height (Z)
+
+tube_count = 8;      // Number of tubes
+tube_spacing = 9.0;  // Center-to-center distance of tubes
+tube_top_d = 6.4;    // Diameter of tube at top
+tube_bot_d = 3.0;    // Diameter of tube at bottom
+tube_z_top = 20.0;   // Top face of block
+tube_z_mid = 12.0;   // Transition point from cylinder to cone
+tube_z_bot = 2.0;    // Bottom of the conical part
+
+mag_len = 60.4;      // Magnet length (X)
+mag_wid = 3.3;       // Magnet width (Y)
+mag_h   = 10.2;      // Magnet height (Z)
+mag_y_offset = 6.0;  // Y offset for magnet centers
+
+$fn = 64;
+
+// --- Geometry Construction ---
+
+// Main Block
+difference() {
+    // The solid block
+    translate([-L/2, -W/2, 0])
+        cube([L, W, H]);
+
+    // Tube Seats
+    // Centered on Y=0. Spacing is 9mm. 
+    // To center the group of 8 tubes:
+    // Total span = (7 * 9) = 63mm. 
+    // Start X = -63/2 = -31.5
+    for (i = [0 : tube_count - 1]) {
+        let(x_pos = (i - (tube_count - 1) / 2) * tube_spacing) {
+            translate([x_pos, 0, tube_z_top]) {
+                // Cylindrical part (from top down to z=12)
+                // Note: z=12 in block height is z=8 in local coordinates if top is 20
+                // But the prompt says "down to z=12", implying absolute Z.
+                // If block is 20mm tall, top is Z=20. 
+                // Cylinder from Z=20 down to Z=12.
+                cylinder(h = 20 - 12 + 0.1, d = tube_top_d);
+                
+                // Conical part (from Z=12 down to Z=2)
+                // Height of cone = 12 - 2 = 10
+                translate([0, 0, - (20 - 12)])
+                    cylinder(h = 12 - 2 + 0.1, d1 = tube_top_d, d2 = tube_bot_d);
+            }
+        }
+    }
+
+    // Magnet Pockets
+    // Centered at y = -6 and y = 6. Open at bottom (z=0).
+    // Pocket is 60.4 x 3.3 x 10.2.
+    // Since it's open at the bottom, we subtract from z=0 to z=10.2
+    for (sy = [-mag_y_offset, mag_y_offset]) {
+        translate([-mag_len/2, sy - mag_wid/2, -0.1])
+            cube([mag_len, mag_wid, mag_h + 0.1]);
+    }
+}
+```

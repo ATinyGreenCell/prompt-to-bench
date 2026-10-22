@@ -1,0 +1,52 @@
+Looking at the measurement report, I can see a critical issue with the hole positioning. The specification requires holes that "go down into the block, it moves toward +Y", but the measurement data shows:
+
+- At z=42.75 (near top): grid centre at y = -12.97
+- At z=34.24 (mid-height): grid centre at y = -16.20
+
+This indicates the holes are tilting toward **-Y** instead of **+Y**. The holes should have y-values closer to -10 near the top and increase toward +10 as they go deeper.
+
+The error is in the rotation angle. I used 150°, but the correct rotation matrix calculation shows:
+
+For rotation by θ around X-axis: (0,0,1) → (0, **-sin(θ)**, cos(θ))
+
+Setting -sin(θ) = 0.5 and cos(θ) = -0.866 gives θ = **210°** (or -150°), not 150°.
+
+With the correct rotation of 210°:
+- At z=42.75: y = -10 + 2.25×tan(30°) ≈ -8.70 ✓ (toward +Y as going down)
+- At z=34.24: y = -10 + 10.76×tan(30°) ≈ -3.79 ✓
+
+```openscad
+// Dimensions
+block_length = 130;      // X dimension
+block_depth = 60;        // Y dimension
+block_height = 45;       // Z dimension
+hole_diameter = 17.5;    // diameter of each hole
+hole_radius = hole_diameter / 2;
+hole_depth = 40;         // depth along the axis
+hole_count = 5;
+hole_spacing = 24;       // spacing between hole centers (X direction)
+y_opening = -10;         // Y position where hole opens
+fn_value = 64;           // fragment number for smooth curves
+
+// Calculate hole positions along X
+total_span = (hole_count - 1) * hole_spacing;
+start_x = -total_span / 2;
+
+// Main structure with five angled holes
+difference() {
+    // Solid rectangular block
+    translate([-block_length / 2, -block_depth / 2, 0])
+        cube([block_length, block_depth, block_height]);
+    
+    // Subtract the five blind holes
+    for (i = [0 : hole_count - 1]) {
+        x_pos = start_x + i * hole_spacing;
+        
+        // Each hole: cylinder rotated 210° around X-axis
+        // (30° from vertical, tilting toward +Y as it goes down)
+        translate([x_pos, y_opening, block_height])
+        rotate([210, 0, 0])
+        cylinder(r=hole_radius, h=hole_depth, $fn=fn_value);
+    }
+}
+```

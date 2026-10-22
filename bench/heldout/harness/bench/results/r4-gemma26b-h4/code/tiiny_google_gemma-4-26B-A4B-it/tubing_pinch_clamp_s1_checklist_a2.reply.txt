@@ -1,0 +1,142 @@
+```openscad
+// Pinch clamp for silicone tubing (up to 6.4 mm)
+// Designed for FDM printing: printed flat in the XY plane.
+
+// --- Dimensions ---
+thickness = 8.0;           // Extrusion height (Z)
+lower_len = 50.0;          // Length of lower jaw bar
+lower_wid = 4.0;           // Width of lower jaw bar
+lower_tongue_len = 6.0;    // Length of lower jaw tongue
+lower_tongue_y_start = 2.5;
+lower_tongue_y_end = 4.0;
+
+upper_len = 60.0;          // Length of upper jaw bar
+upper_wid = 4.0;           // Width of upper jaw bar
+upper_y_start = 12.0;
+upper_y_end = 16.0;
+
+hinge_center_x = 0;
+hinge_center_y = 8;
+hinge_r_inner = 7.2;
+hinge_r_outer = 8.0;
+
+ridge_radius = 1.5;
+ridge_x_pos = 27.5;
+
+latch_leg_x_start = 57.0;
+latch_leg_x_end = 60.0;
+latch_leg_y_start = 4.5;
+latch_leg_y_end = 12.0;
+
+latch_nose_x_start = 54.5;
+latch_nose_x_end = 57.0;
+latch_nose_y_start = 4.5;
+latch_nose_y_end = 5.5;
+latch_nose_z_offset = 0.5; // Height above the tongue
+
+$fn = 64;
+
+// --- Modules ---
+
+module hinge_half_ring() {
+    // A half-ring on the x < 0 side, centered at (0, 8)
+    // We create the ring using a difference of two cylinders, 
+    // then use a cube to cut it so only the x < 0 part remains.
+    difference() {
+        // Outer cylinder
+        translate([hinge_center_x, hinge_center_y, 0])
+            cylinder(h = thickness, r = hinge_r_outer);
+        
+        // Inner cylinder
+        translate([hinge_center_x, hinge_center_y, -1])
+            cylinder(h = thickness + 2, r = hinge_r_inner);
+            
+        // Cut the right side (x > 0) to leave only the half-ring on the left
+        translate([hinge_center_x - 0.01, hinge_center_y - hinge_r_outer - 1, -1])
+            cube([hinge_r_outer + 1, hinge_r_outer * 2 + 2, thickness + 2]);
+    }
+}
+
+module ridge_along_x(y_pos, z_pos, r) {
+    // A half-round ridge along the X axis.
+    // The axis is at (x, y_pos, z_pos). 
+    // We use a cylinder and rotate it to lie along X.
+    // To make it a "half-round" protruding from the face, 
+    // we position the cylinder so its center is on the face.
+    translate([ridge_x_pos, y_pos, z_pos])
+    rotate([0, 90, 0])
+    cylinder(h = 1.0, r = r); // This is a placeholder for the logic below
+}
+
+// --- Final Assembly ---
+
+union() {
+    // 1. Lower Jaw Bar
+    cube([lower_len, lower_wid, thickness]);
+    
+    // 2. Lower Jaw Tongue
+    translate([lower_len, lower_tongue_y_start, 0])
+        cube([lower_tongue_len, lower_tongue_wid, thickness]);
+        
+    // 3. Upper Jaw Bar
+    translate([0, upper_y_start, 0])
+        cube([upper_len, upper_wid, thickness]);
+        
+    // 4. Hinge
+    hinge_half_ring();
+    
+    // 5. Latch Leg
+    translate([latch_leg_x_start, latch_leg_y_start, 0])
+        cube([latch_leg_x_end - latch_leg_x_start, latch_leg_y_end - latch_leg_y_start, thickness]);
+        
+    // 6. Latch Nose
+    // "0.5 mm above the tongue" -> tongue is at z=thickness, so nose is at z=thickness + 0.5
+    translate([latch_nose_x_start, latch_nose_y_start, thickness + latch_nose_z_offset])
+        cube([latch_nose_x_end - latch_nose_x_start, latch_nose_y_end - latch_nose_y_start, 0.5]);
+
+    // 7. Ridges (Half-cylinders along X axis)
+    // The ridges are "half-round" on the inner faces.
+    // Inner face of lower jaw is at y = 4.
+    // Inner face of upper jaw is at y = 12.
+    // The ridge is centered at x = 27.5.
+    
+    // Lower Ridge: axis at y=4, z=thickness/2. 
+    // To make it a half-cylinder protruding from y=4, we place the cylinder center at y=4.
+    translate([ridge_x_pos - 0.5, 4, thickness/2])
+    rotate([0, 90, 0])
+    cylinder(h = 1.0, r = ridge_radius); // This is just a placeholder for the logic below
+    
+    // Let's use a more robust way to draw the ridge:
+    // A ridge is a cylinder of length 1.0 (to cover the x=27.5 point) 
+    // centered at x=27.5.
+    
+    // Lower Ridge
+    translate([ridge_x_pos - 0.5, 4, thickness/2])
+    rotate([0, 90, 0])
+    cylinder(h = 1.0, r = ridge_radius);
+
+    // Upper Ridge
+    translate([ridge_x_pos - 0.5, 12, thickness/2])
+    rotate([0, 90, 0])
+    cylinder(h = 1.0, r = ridge_radius);
+}
+
+// Re-writing the ridge logic to be correct and integrated into the union
+// The previous attempt had a placeholder. Let's do it properly.
+// We will use a difference to ensure the ridges are truly "half-round" 
+// by subtracting the part of the cylinder that is inside the jaw.
+// But since we want them to be part of the solid, we use union and 
+// ensure the cylinder is positioned so only the outer half is visible.
+
+// Corrected Ridge Implementation:
+// We'll use a union of the jaw and the ridge, but we need to make sure 
+// the ridge is a half-cylinder. A cylinder with radius 1.5 centered at y=4 
+// will have half its volume at y<4 and half at y>4.
+// Since the jaw is at y=0 to 4, the part at y>4 is the "ridge".
+
+// Final assembly with correct ridges:
+// (Replacing the previous union block)
+```
+
+```openscad
+//

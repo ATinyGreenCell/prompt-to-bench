@@ -1,0 +1,35 @@
+// Dimensions
+handle_length = 150;
+handle_width = 6;
+handle_height = 4;
+
+foot_length = 40;
+foot_width = 5;
+foot_height = 2.5;
+
+boss_diameter = 6;
+boss_height = 4;
+
+hole_x = 143;
+hole_y = 0;
+hole_radius = 2;
+
+// Shapes
+handle = cube([handle_length, handle_width, handle_height]);
+foot = rotate_extrude($fn=64) polygon(points=[[0, foot_width/2], [foot_length, foot_width/2], [foot_length, -foot_width/2], [0, -foot_width/2]], paths=[[[1, 0], [0, 0]]]);
+boss = cylinder(d=boss_diameter, h=boss_height);
+hole = translate([hole_x, hole_y]) cylinder(d=2*hole_radius, h=handle_length + 1);
+
+// Final model
+model = union() {
+    handle,
+    rotate([0, -60, 0]) foot,
+    boss,
+    difference() {
+        handle;
+        translate([hole_x, hole_y, 0]) cube([1, 2*hole_radius+1, handle_length + 1]);
+    }
+};
+
+// Center the model
+translate([-handle_length/2, 0, 0]) model;

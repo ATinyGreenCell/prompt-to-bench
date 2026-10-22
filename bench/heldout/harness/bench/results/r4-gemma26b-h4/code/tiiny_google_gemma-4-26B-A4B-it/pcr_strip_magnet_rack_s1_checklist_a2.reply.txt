@@ -1,0 +1,73 @@
+The measurement report shows that the tube seats are still being subtracted incorrectly. Specifically, the cylindrical part (which should be $6.4\text{ mm}$ from $z=20$ to $z=12$) is appearing at $z=16$ with a diameter of $6.39\text{ mm}$, and the conical part is appearing at $z=6.1$ with a diameter of $3.33\text{ mm}$. This is because the `cylinder` command in OpenSCAD builds from the base upwards, and my previous `translate` logic was placing the base of the cylinder at $z=12$ (making it go from $z=12$ to $z=20$) and the base of the cone at $z=2$ (making it go from $z=2$ to $z=12$). However, the subtraction logic was overlapping in a way that caused the diameters to be sampled at the wrong heights in the report.
+
+**Specification Check:**
+- Block: 80 mm (X) OK
+- Block: 24 mm (Y) OK
+- Block: 20 mm (Z) OK
+- Tube seats: 8 count OK
+- Tube spacing: 9 mm center-to-center OK
+- Tube seat: 6.4 mm diameter from top ($z=20$) to $z=12$ WRONG (Report shows $d=6.39$ at $z=16$ and $z=19$, but the geometry is shifted)
+- Tube seat: 3 mm diameter at $z=2$ WRONG (Report shows $d=3.33$ at $z=11.1$)
+- Tube seat: 2 mm floor (ends at $z=2$) OK
+- Magnet pockets: 60.4 (X), 3.3 (Y), 10.2 (Z) OK
+- Magnet pockets: Centered at $y = -6$ and $y = 6$ OK
+- Magnet pockets: Open at bottom ($z=0$ to $10.2$) OK
+
+**Correction Plan:**
+The issue is the `translate` and `cylinder` combination. To ensure the cylinder is exactly from $z=12$ to $z=20$, I will translate to $z=12$ and set height to $8$. To ensure the cone is exactly from $z=2$ to $z=12$, I will translate to $z=2$ and set height to $10$. I will also ensure the cylinder and cone are perfectly aligned by using the same $x, y$ and ensuring the cone's top diameter matches the cylinder's diameter.
+
+```openscad
+// Magnetic Bead Rack for 8-tube strip
+// Corrected tube seat geometry to match exact Z-heights and diameters
+
+// --- Dimensions ---
+L = 80.0;            // Block length (X)
+W = 24.0;            // Block width (Y)
+H = 20.0;            // Block height (Z)
+
+tube_count = 8;      // Number of tubes
+tube_spacing = 9.0;  // Center-to-center distance of tubes
+tube_top_d = 6.4;    // Diameter of tube at top
+tube_bot_d = 3.0;    // Diameter of tube at bottom
+tube_z_top = 20.0;   // Top face of block
+tube_z_mid = 12.0;   // Transition point from cylinder to cone
+tube_z_bot = 2.0;    // Bottom of the conical part
+
+mag_len = 60.4;      // Magnet length (X)
+mag_wid = 3.3;       // Magnet width (Y)
+mag_h   = 10.2;      // Magnet height (Z)
+mag_y_offset = 6.0;  // Y offset for magnet centers
+
+$fn = 64;
+
+// --- Geometry Construction ---
+
+difference() {
+    // Main Block
+    translate([-L/2, -W/2, 0])
+        cube([L, W, H]);
+
+    // Tube Seats
+    for (i = [0 : tube_count - 1]) {
+        let(x_pos = (i - (tube_count - 1) / 2) * tube_spacing) {
+            // 1. Cylindrical part: from Z=12 to Z=20
+            // Height = 20 - 12 = 8
+            translate([x_pos, 0, tube_z_mid])
+                cylinder(h = tube_z_top - tube_z_mid + 0.01, d = tube_top_d);
+            
+            // 2. Conical part: from Z=2 to Z=12
+            // Height = 12 - 2 = 10
+            // d1 is bottom (at Z=2), d2 is top (at Z=12)
+            translate([x_pos, 0, tube_z_bot])
+                cylinder(h = tube_z_mid - tube_z_bot + 0.01, d1 = tube_bot_d, d2 = tube_top_d);
+        }
+    }
+
+    // Magnet Pockets
+    // Centered at y = -6 and y = 6. Open at bottom (z=0).
+    for (sy = [-mag_y_offset, mag_y_offset]) {
+        translate([-mag_len/2, sy - mag_wid/2, -0.1])
+            cube([mag_len, mag_wid, mag_h + 0.1]);
+    }
+}
+```

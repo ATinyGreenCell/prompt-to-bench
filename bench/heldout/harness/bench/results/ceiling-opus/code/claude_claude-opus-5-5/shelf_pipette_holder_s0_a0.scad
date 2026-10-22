@@ -1,0 +1,54 @@
+// Shelf-edge clamp holder for 3 single-channel pipettes
+// Printed lying on its side: profile in XY, extruded along Z.
+// In use: +Y is up, +X points away from the shelf.
+
+$fn = 96;
+
+// ---- Overall ----
+length      = 105;    // extrusion length along Z
+
+// ---- Spine ----
+spine_x0    = 0;      // spine inner face X
+spine_x1    = 5;      // spine outer face X
+spine_y0    = 0;      // spine bottom Y
+spine_y1    = 28.4;   // spine top Y
+
+// ---- Bottom jaw ----
+bjaw_x0     = -25;    // bottom jaw tip X
+bjaw_x1     = 5;      // bottom jaw end X (joins spine)
+bjaw_y0     = 0;      // bottom jaw bottom Y
+bjaw_y1     = 5;      // bottom jaw top Y
+
+// ---- Top jaw + arm ----
+arm_x0      = -25;    // top jaw tip X
+arm_x1      = 65;     // arm front end X
+arm_y0      = 23.4;   // top jaw / arm underside Y (18.4 mm shelf gap)
+arm_y1      = 28.4;   // top jaw / arm top Y
+
+// ---- Pipette holes ----
+hole_d      = 20;                 // pipette hole diameter
+hole_x      = 42;                 // hole centre X
+hole_z      = [17.5, 52.5, 87.5]; // hole centres along Z
+cut_extra   = 1;                  // overshoot for clean cuts
+
+difference() {
+    // Clamp body: 2-D profile extruded along Z
+    linear_extrude(height = length)
+        union() {
+            // spine
+            translate([spine_x0, spine_y0])
+                square([spine_x1 - spine_x0, spine_y1 - spine_y0]);
+            // bottom jaw
+            translate([bjaw_x0, bjaw_y0])
+                square([bjaw_x1 - bjaw_x0, bjaw_y1 - bjaw_y0]);
+            // top jaw and forward arm
+            translate([arm_x0, arm_y0])
+                square([arm_x1 - arm_x0, arm_y1 - arm_y0]);
+        }
+
+    // Pipette holes through the arm along Y
+    for (z = hole_z)
+        translate([hole_x, arm_y0 - cut_extra, z])
+            rotate([-90, 0, 0])
+                cylinder(d = hole_d, h = (arm_y1 - arm_y0) + 2 * cut_extra);
+}

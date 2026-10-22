@@ -1,0 +1,85 @@
+```openscad
+// Manifold block: 1-in / 3-out, FDM print orientation (rests on XY, z=0)
+
+// ---- Block dimensions (measured with calipers) ----
+L = 60;   // length along X
+W = 24;   // width  along Y
+H = 16;   // height along Z
+
+// ---- Channel / socket dimensions ----
+d_ch   = 3.0;   // main + branch channel bore diameter
+d_sock = 4.2;   // socket bore diameter (for 4 mm tubing)
+z_mid  = 8.0;   // mid-plane height (channels lie here)
+
+// ---- Inlet socket (on -X face, y = 0) ----
+inlet_depth = 8.0;
+
+// ---- Outlet sockets (on +Y face) ----
+outlet_depth = 6.0;
+
+// ---- Branch (outlet channel) start X positions ----
+branch_x = [-15, 0, 15];
+
+// ---- Screw through-holes (M3 clearance) ----
+d_screw = 3.4;
+screw_x = [-25, 25];
+screw_y = -6;
+
+// ---- Main channel end (closed, inside block) ----
+main_end_x = 15;
+
+$fn = 64;
+
+// ============================
+//  SOLID BLOCK
+// ============================
+block = translate([-L/2, -W/2, 0]) cube([L, W, H]);
+
+// ============================
+//  CUTTING TOOL (union of all bores)
+// ============================
+cut = union() {
+
+    // ---- Inlet socket: 4.2 mm dia, 8 mm deep, on -X face at y=0, z=8 ----
+    // Axis along X, from x = -30 (face) to x = -22 (bottom)
+    translate([-30, 0, z_mid])
+        rotate([0, 90, 0])
+            cylinder(h = inlet_depth, d = d_sock, $fn = 64);
+
+    // ---- Main channel: 3 mm dia, along X from x=-22 to x=15, at y=0, z=8 ----
+    // Length = 37, start x = -22
+    translate([-22, 0, z_mid])
+        rotate([0, 90, 0])
+            cylinder(h = 37, d = d_ch, $fn = 64);
+
+    // ---- Three outlet branches: 3 mm dia, along +Y from y=0 to y=12 ----
+    for (bx = branch_x) {
+        // Each branch starts at its x, y=0, z=8 and runs +Y to the +Y face (y=12)
+        // Length = 12
+        translate([bx, 0, z_mid])
+            rotate([90, 0, 0])
+                cylinder(h = 12, d = d_ch, $fn = 64);
+
+        // ---- Outlet socket: 4.2 mm dia, 6 mm deep, on +Y face at y=12, z=8 ----
+        // Axis along Y, from y = 12 (face) to y = 6 (bottom)
+        translate([bx, 12, z_mid])
+            rotate([90, 0, 0])
+                cylinder(h = outlet_depth, d = d_sock, $fn = 64);
+    }
+
+    // ---- Two M3 clearance through-holes: 3.4 mm dia, vertical (Z) ----
+    for (sx = screw_x) {
+        // Extend 1 mm past top and bottom to guarantee clean cut
+        translate([sx, screw_y, -1])
+            cylinder(h = H + 2, d = d_screw, $fn = 64);
+    }
+};
+
+// ============================
+//  FINAL PART
+// ============================
+difference() {
+    block;
+    cut;
+}
+```

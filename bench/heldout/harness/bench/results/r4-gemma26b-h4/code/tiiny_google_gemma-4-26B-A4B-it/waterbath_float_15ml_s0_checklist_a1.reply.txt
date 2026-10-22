@@ -1,0 +1,110 @@
+The measurement report reveals a discrepancy in the orientation of the hexagon. The specification requires the hexagon to have two flats parallel to the X axis. In the previous code, the `rotate([0, 0, 30])` applied to a hexagon where the first vertex was at 0 degrees resulted in a hexagon with two vertices on the X axis (points), not two flats. To have flats parallel to X, the hexagon must be rotated by 0 degrees (if the first vertex is at 30 degrees) or 30 degrees (if the first vertex is at 0 degrees) depending on the definition. However, looking at the bounding box `Y -51.96 .. 51.96`, the width is `103.92`. For a hexagon with across-flats $D=90$, the across-corners (vertex-to-vertex) is $D / \cos(30^\circ) \approx 103.92$. Since the Y-dimension is the larger one, the flats are currently parallel to the X axis, but the bounding box shows the width (X) is 90 and height (Y) is 103.92. The specification says "90 mm across the flats with two flats parallel to the X axis". This means the distance between the top and bottom flat edges is 90mm.
+
+Wait, looking at the report: `X -45.00 .. 45.00 (size 90.00)`. This means the X-dimension is 90. If the X-dimension is the "across flats" dimension, then the flats are parallel to the Y axis. The user wants flats parallel to the X axis. Therefore, the X-dimension should be the "across corners" dimension ($90 / \cos(30^\circ) \approx 103.92$) and the Y-dimension should be 90.
+
+Let's re-evaluate the specification:
+1. Hexagon 90 mm across flats: OK (Report shows size 90 in X, but orientation is wrong)
+2. Two flats parallel to X axis: WRONG (Report shows X=90, meaning flats are parallel to Y)
+3. 3 mm thick: OK
+4. Seven 17.5 mm through-holes: OK
+5. One at center: OK
+6. Six on 54 mm diameter circle: OK
+7. 60 degrees apart: OK
+8. First on +X axis: OK
+9. Sleeve 2 mm wall (21.5 mm OD): OK
+10. Sleeve height 20 mm: OK (Report shows Z up to 23, which is 3+20)
+11. Hexagonal skirt 2 mm wall: OK
+12. Skirt 84 mm across flats: OK
+13. Skirt 3 mm in from plate edge: OK (90 - 84 = 6; 6/2 = 3)
+14. Skirt sides parallel to plate sides: OK
+
+Correction needed: Rotate the hexagon so the flats are parallel to the X axis. This means the "across flats" dimension (90) should be the Y-dimension.
+
+```openscad
+// Float for seven 15 mL conical tubes
+// Designed to be printed upside down (flat plate at z=0)
+
+// --- Dimensions ---
+plate_across_flats = 90.0; // Distance between parallel sides of the hexagonal plate
+plate_thickness    = 3.0;  // Thickness of the base plate
+tube_hole_d        = 17.5; // Diameter of the conical tube holes
+tube_sleeve_od     = 21.5; // Outside diameter of the sleeves
+tube_sleeve_wall   = 2.0;  // Wall thickness of the sleeves
+tube_sleeve_h      = 20.0; // Height of the sleeves and skirt
+
+circle_dia         = 54.0; // Diameter of the circle of holes
+skirt_across_flats  = 84.0; // Distance between parallel sides of the hexagonal skirt
+skirt_wall         = 2.0;  // Wall thickness of the skirt
+
+$fn = 64;
+
+// --- Helper Modules ---
+
+// Generates a regular hexagon based on "across flats" dimension
+// To ensure flats are parallel to X, we define the polygon such that 
+// the distance between top and bottom edges is d_flats.
+module hexagon_flat(d_flats, height) {
+    // Apothem (distance from center to midpoint of side) is d_flats / 2
+    // Radius to vertex R = apothem / cos(30)
+    r_vertex = (d_flats / 2) / cos(30);
+    
+    linear_extrude(height = height)
+    // To have flats parallel to X, the vertices should be at 30, 90, 150...
+    // This places the midpoints of the sides at 0, 60, 120... (on the X axis)
+    // Wait, if midpoints are on X axis, flats are parallel to Y.
+    // To have flats parallel to X, midpoints must be at 90, 270...
+    // So we rotate the standard polygon by 30 degrees.
+    rotate([0, 0, 30])
+    polygon(points = [
+        [r_vertex * cos(0),   r_vertex * sin(0)],
+        [r_vertex * cos(60),  r_vertex * sin(60)],
+        [r_vertex * cos(120), r_vertex * sin(120)],
+        [r_vertex * cos(180), r_vertex * sin(180)],
+        [r_vertex * cos(240), r_vertex * sin(240)],
+        [r_vertex * cos(300), r_vertex * sin(300)]
+    ]);
+}
+
+// --- Main Construction ---
+
+union() {
+    // 1. The Base Plate
+    // The hexagon_flat module already includes the 30 deg rotation to ensure 
+    // the flats are parallel to the X axis.
+    hexagon_flat(plate_across_flats, plate_thickness);
+
+    // 2. The Sleeves and Skirt
+    difference() {
+        union() {
+            // The Hexagonal Skirt
+            hexagon_flat(skirt_across_flats, tube_sleeve_h + plate_thickness);
+
+            // The Seven Sleeves
+            // Center sleeve
+            cylinder(h = tube_sleeve_h + plate_thickness, d = tube_sleeve_od);
+
+            // Six peripheral sleeves
+            for (i = [0 : 5]) {
+                angle = i * 60;
+                // The first hole is on the +X axis (0 degrees)
+                rotate([0, 0, angle])
+                translate([circle_dia / 2, 0, 0])
+                cylinder(h = tube_sleeve_h + plate_thickness, d = tube_sleeve_od);
+            }
+        }
+
+        // 3. The Holes
+        // Center hole
+        translate([0, 0, -0.01])
+        cylinder(h = plate_thickness + tube_sleeve_h + 0.02, d = tube_hole_d);
+
+        // Peripheral holes
+        for (i = [0 : 5]) {
+            angle = i * 60;
+            rotate([0, 0, angle])
+            translate([circle_dia / 2, 0, -0.01])
+            cylinder(h = plate_thickness + tube_sleeve_h + 0.02, d = tube_hole_d);
+        }
+    }
+}
+```

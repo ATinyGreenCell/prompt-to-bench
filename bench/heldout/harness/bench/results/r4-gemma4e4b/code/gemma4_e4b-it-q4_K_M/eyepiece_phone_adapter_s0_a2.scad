@@ -1,0 +1,91 @@
+// --- Dimensions ---
+
+// Base Plate dimensions
+plate_length_x = 80;  // X dimension of the flat plate (mm)
+plate_width_y = 60;   // Y dimension of the flat plate (mm)
+plate_thickness = 3;  // Z thickness of the flat plate (mm)
+
+// Camera Hole dimensions
+camera_hole_diameter = 12; // Diameter of the hole for the phone camera (mm)
+camera_hole_x = -20;       // X position of the camera hole center (mm)
+camera_hole_y = 10;        // Y position of the camera hole center (mm)
+
+// Sleeve dimensions
+sleeve_outer_diameter = 36.6; // Outer diameter of the round sleeve (mm)
+sleeve_inner_bore_stop_z = 11; // Z height where inner bore changes (mm)
+sleeve_inner_bore_start_z = 3;  // Z height where inner bore starts (mm)
+sleeve_inner_bore_diameter = 22; // Diameter of the stop bore (mm)
+sleeve_outer_top_diameter = 30.6; // Diameter for eyepiece sliding section (mm)
+
+// Screw hole dimensions
+screw_hole_diameter = 2.5;  // Diameter for M3 centering screws (mm)
+screw_hole_z_level = 21;    // Z height where screw holes are located (mm)
+num_screws = 3;             // Number of radial mounting screws
+
+// Total sleeve height calculation: The top must accommodate the required features. Since the last feature is at Z=21, and we need space above it for the eyepiece to slide over, let's set the total height such that the top surface is clearly defined, ensuring all internal cuts are covered. We will use a height of 34mm (Z=0 to Z=34) for the sleeve structure relative to its base at Z=0 in the module, which translates to Z=3+31=34 overall if we consider the top surface needed.
+total_sleeve_height = 32; // Height from Z=3 up to Z=35 (if plate is 3mm thick)
+
+// --- Constants ---
+$fn = 64; // High resolution for curves
+
+// --- Modules ---
+
+// Module to create the main plate
+module base_plate() {
+    cube([plate_length_x, plate_width_y, plate_thickness]);
+}
+
+// Module to cut the camera hole through the plate
+module camera_hole_cutter() {
+    translate([camera_hole_x, camera_hole_y, -0.1]) { // Extend slightly below Z=0
+        cylinder(h = plate_thickness + 0.2, r = camera_hole_diameter / 2);
+    }
+}
+
+// Module to create the sleeve structure
+module round_sleeve() {
+    // The sleeve is centered on the X/Y plane of the hole for placement later
+    translate([0, 0, 0]) { // Sleeve starts at Z=0 relative to its own module origin (which will be translated by plate_thickness)
+
+        difference() {
+            // 1. Outer shape (full height) - Using the largest OD for the main body structure
+            cylinder(h = total_sleeve_height + 0.2, r = sleeve_outer_diameter / 2);
+
+            // 2. Inner bore section 1 (Stop: Z=3 to Z=11)
+            translate([0, 0, sleeve_inner_bore_start_z]) {
+                cylinder(h = sleeve_inner_bore_stop_z - sleeve_inner_bore_start_z + 0.2, r = sleeve_inner_bore_diameter / 2);
+            }
+
+            // 3. Inner bore section 2 (Eyepiece slide: Z=11 to Top)
+            translate([0, 0, sleeve_inner_bore_stop_z]) {
+                cylinder(h = total_sleeve_height - sleeve_inner_bore_stop_z + 0.2, r = sleeve_outer_top_diameter / 2);
+            }
+
+            // 4. Screw holes (Radial cuts through the wall at Z=21)
+            for (i = [0 : num_screws - 1]) {
+                angle = i * (360 / num_screws);
+                rotate([0, 0, angle]) {
+                    // Cut a hole centered on the sleeve axis, extending through the wall thickness.
+                    translate([0, 0, screw_hole_z_level - 0.1]) {
+                        cylinder(h = 1.0 + 0.2, r = screw_hole_diameter / 2);
+                    }
+                }
+            }
+        }
+    }
+}
+
+// --- Assembly ---
+
+difference() {
+    // 1. Base Plate (rests on Z=0)
+    base_plate();
+
+    // 2. Cut Camera Hole in the plate
+    camera_hole_cutter();
+
+    // 3. Sleeve structure placed on top of the plate (starts at Z=plate_thickness)
+    translate([camera_hole_x, camera_hole_y, plate_thickness]) {
+        round_sleeve();
+    }
+}

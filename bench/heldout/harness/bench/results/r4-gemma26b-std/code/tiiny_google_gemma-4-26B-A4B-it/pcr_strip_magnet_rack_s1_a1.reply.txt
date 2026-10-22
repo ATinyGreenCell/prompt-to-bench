@@ -1,0 +1,101 @@
+```openscad
+// Magnetic Bead Rack for 8-tube PCR strip
+// Corrected version based on measurement report analysis
+
+// --- Dimensions ---
+block_x = 80.0;           // Length of the block (X)
+block_y = 24.0;           // Width of the block (Y)
+block_z = 20.0;           // Height of the block (Z)
+
+tube_count = 8;           // Number of tubes
+tube_spacing = 9.0;       // Center-to-center spacing of tubes
+tube_top_dia = 6.4;       // Diameter of the top of the tube seat
+tube_bottom_dia = 3.0;    // Diameter of the bottom of the tube seat
+tube_seat_depth = 12.0;   // Depth of the cylindrical part (from top)
+tube_floor_z = 2.0;       // Height of the floor at the bottom of the seat
+
+magnet_count = 2;         // Number of magnet pockets
+magnet_len = 60.4;        // Length of the magnet (X)
+magnet_wid = 3.3;         // Width of the magnet (Y)
+magnet_h = 10.2;          // Height of the magnet (Z)
+magnet_offset_y = 6.0;    // Y-offset for magnet centers (6 and -6)
+
+// --- Constants ---
+$fn = 64;                 // Smoothness for curves
+
+// --- Main Assembly ---
+difference() {
+    // The main block
+    translate([-block_x/2, -block_y/2, 0])
+        cube([block_x, block_y, block_z]);
+
+    // 1. Tube Seats
+    // Centered on the block along X and at y = 0
+    // The seat starts at top (z=20) and goes down to z=2.
+    // The cylindrical part is 6.4mm dia from z=20 down to z=12.
+    // The conical part goes from z=12 down to z=2.
+    for (i = [0 : tube_count - 1]) {
+        // Calculate X position: 
+        // Total span is (7 * 9) = 63. 
+        // Center of block is 0. 
+        // First tube center = -31.5, Last = 31.5.
+        x_pos = -((tube_count - 1) * tube_spacing / 2) + (i * tube_spacing);
+        
+        translate([x_pos, 0, 0])
+            tube_seat_geometry(tube_top_dia, tube_bottom_dia, tube_seat_depth, tube_floor_z, block_z);
+    }
+
+    // 2. Magnet Pockets
+    // Centered at y = 6 and y = -6, open at bottom (z=0)
+    // Dimensions: 60.4 x 3.3 x 10.2
+    for (m_y = [-magnet_offset_y, magnet_offset_y]) {
+        translate([-magnet_len/2, m_y - magnet_wid/2, -0.1]) 
+            cube([magnet_len, magnet_wid, magnet_h + 0.1]);
+    }
+}
+
+// --- Modules ---
+
+module tube_seat_geometry(top_d, bot_d, cyl_depth, floor_z, block_z) {
+    // The seat is a combination of a cylinder and a cone.
+    // It is subtracted from the block.
+    
+    // Part 1: The cylinder (top part)
+    // From z = block_z down to z = (block_z - cyl_depth)
+    // Note: User specified "6.4mm hole from top face down to z=12"
+    // This implies the cylinder ends at z=12.
+    
+    // Part 2: The cone (bottom part)
+    // From z = 12 down to z = 2.
+    
+    // To ensure clean cuts, we use a hull of two cylinders.
+    // We extend the top cylinder slightly above the block_z.
+    
+    hull() {
+        // Top of the hole (at block_z)
+        translate([0, 0, block_z + 0.1])
+            cylinder(h = 0.1, d = top_d);
+        
+        // The transition point (at z = 12)
+        translate([0, 0, 12.0])
+            cylinder(h = 0.1, d = top_d);
+            
+        // The bottom of the hole (at z = 2)
+        translate([0, 0, floor_z])
+            cylinder(h = 0.1, d = bot_d);
+    }
+    
+    // Note: The hull above creates a single conical shape from top_d to bot_d.
+    // However, the user specified a cylindrical part (6.4mm) then a cone.
+    // Let's refine the subtraction to match the specific geometry.
+}
+
+// RE-RE-WRITTEN MAIN BLOCK FOR EXACT GEOMETRY MATCHING
+// The previous module logic was slightly flawed for a "cylinder then cone" shape.
+// I will use a single difference inside the loop to be precise.
+
+// --- FINAL CORRECTED CODE ---
+```
+
+```openscad
+// Magnetic Bead Rack for 8

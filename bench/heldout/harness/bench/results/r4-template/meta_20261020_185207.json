@@ -1,0 +1,28 @@
+{
+ "started": "2026-10-20T18:52:06",
+ "args": {
+  "run": "r4-template",
+  "models": [
+   "template:qwen2.5-coder:7b"
+  ],
+  "tasks": null,
+  "samples": 1,
+  "max_repairs": 2,
+  "feedback": "report",
+  "temperature": 0.2,
+  "prompts": null,
+  "lang": "en",
+  "system": "bench/prompts/system.md",
+  "render_timeout": 120,
+  "seed_base": 1000,
+  "num_predict": 2048,
+  "think": false,
+  "num_ctx": 8192
+ },
+ "git_commit": "95fd54df0c1cd92ecf0f806b701698b0bcc3dbc6",
+ "host": "enamel",
+ "cpu": "x86_64",
+ "python": "3.14.4",
+ "openscad": "OpenSCAD version 2026.10.01",
+ "ollama": "0.30.11"
+}

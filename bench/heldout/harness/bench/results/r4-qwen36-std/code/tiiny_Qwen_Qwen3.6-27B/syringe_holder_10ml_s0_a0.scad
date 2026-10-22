@@ -1,0 +1,117 @@
+// Wall-mounted 10 mL Syringe Holder
+// Designed for FDM 3D printing
+
+// --- Dimensions (measured with calipers) ---
+block_w = 50;   // Width (X)
+block_d = 30;   // Depth (Y)
+block_h = 40;   // Height (Z)
+
+// Barrel channel
+barrel_dia = 16;      // Syringe barrel diameter
+channel_w = 16.5;     // Channel width (clearance)
+channel_r = channel_w / 2; // Radius of the semi-circular back
+
+// Flange slot
+flange_w = 34;        // Slot width (X)
+flange_h = 2.6;       // Slot height (Z)
+flange_z_start = 30;  // Bottom of slot
+flange_y_end = 11;    // Depth of slot from front (y = -15)
+
+// Wall screws
+screw_dia = 4.5;      // Hole diameter for M4 screws
+screw_x = 19;         // X position of screw holes
+screw_z = 15;         // Z position of screw holes
+
+// --- Settings ---
+$fn = 64; // High resolution for round holes
+
+// --- Main Block ---
+// Centered at origin: X [-25, 25], Y [-15, 15], Z [0, 40]
+difference() {
+    // Solid block
+    translate([-block_w/2, -block_d/2, 0])
+        cube([block_w, block_d, block_h]);
+
+    // --- Barrel Channel ---
+    // Runs full height (Z: 0 to 40+), full depth (Y: -15 to 15+)
+    // Back is semi-circle at y=15 (relative to block center y=0, so y=15 is back face)
+    // Wait, the prompt says: "back face (y = 15) against the wall"
+    // And "back end is a half-circle ... centred at x = 0, y = 0"
+    // This implies the coordinate system for the channel description might be local or I need to be careful.
+    // Let's re-read carefully: "block ... centred on the origin ... back face (y = 15)".
+    // So the block occupies Y from -15 to 15.
+    // "back end is a half-circle ... centred at x = 0, y = 0".
+    // If the center is y=0, and it's the "back end", that's confusing because y=0 is the middle of the block.
+    // However, usually "back end" of a channel implies the end against the wall.
+    // If the semi-circle is centered at y=0, it spans y=-8.25 to y=8.25.
+    // But the prompt says "straight sides run forward to the front face (y = -15)".
+    // This implies the channel is defined such that the semi-circle is at the "back" of the channel geometry,
+    // but the prompt explicitly says "centred at x = 0, y = 0".
+    // Let's assume the prompt means the semi-circle is centered at the geometric center of the block (0,0),
+    // and the "straight sides" extend from the ends of the semi-circle (y=0 +/- 8.25) towards the front (y=-15).
+    // This would leave the region from y=8.25 to y=15 (the wall) as solid material, which is fine for structural integrity.
+    // The syringe slides in from the front (y=-15).
+    
+    // Channel Geometry:
+    // 1. Semi-circle at back (centered at 0,0, radius 8.25).
+    // 2. Rectangular slot from the semi-circle ends to the front face.
+    // The semi-circle spans Y from -8.25 to 8.25.
+    // The straight sides are at X = -8.25 and X = 8.25.
+    // They run from Y = -8.25 (tangent point? No, semi-circle ends are at y=0 if centered at 0? No.)
+    // A semi-circle centered at (0,0) with radius R.
+    // If it's the "back end", and the wall is at y=15, a semi-circle at y=0 is in the middle.
+    // Let's look at the shape: "half-circle ... centred at x = 0, y = 0".
+    // If it's a half-circle, which way does it face?
+    // Usually, a barrel channel has a semi-circular back to cradle the syringe.
+    // If the center is (0,0), the arc goes from (-8.25, 0) to (8.25, 0) via (0, 8.25) or (0, -8.25)?
+    // Given the wall is at y=15, the "back" of the channel should be towards positive Y.
+    // So the semi-circle likely bulges towards positive Y? Or is flat at Y=0?
+    // "Straight sides run forward to the front face (y = -15)".
+    // This implies the straight sides are parallel to Y.
+    // If the semi-circle is centered at (0,0), its extent in Y is +/- 8.25.
+    // If the straight sides run to y=-15, they must start at the "equator" of the circle?
+    // Let's assume the standard design: The channel is a prism with a semi-circular cross-section at the back.
+    // If the center is (0,0), and it's a "back end", it likely means the semi-circle is in the plane Y=0? No, that's a slice.
+    // It means the volume is defined by:
+    // For Y > 0: Semi-circular cross section?
+    // For Y < 0: Rectangular cross section?
+    // Let's construct the channel as a union of:
+    // 1. A cylinder (semi-circle) centered at (0,0,20) with radius 8.25, cut in half?
+    // 2. A rectangular slot.
+    
+    // Interpretation: The channel is a single void.
+    // The "back end" is the part closest to the wall.
+    // The prompt says the semi-circle is centered at (0,0).
+    // The straight sides run to y=-15.
+    // This implies the channel consists of:
+    // - A semi-cylinder of radius 8.25, centered at (0,0,20), oriented along Y? No, along Z.
+    // - The semi-circle is in the XY plane? No, the channel runs through the height (Z).
+    // - So the cross-section in XY is the shape.
+    // - The shape is a semi-circle centered at (0,0) with radius 8.25.
+    // - Which half? The one towards the wall (positive Y)? Or negative?
+    // - "Straight sides run forward to the front face (y = -15)".
+    // - This implies the straight sides are at X = -8.25 and X = 8.25.
+    // - They run from the "end" of the semi-circle to y=-15.
+    // - If the semi-circle is centered at (0,0), the "ends" of the straight sides would logically be at Y=0 if the semi-circle is the half towards Y>0?
+    // - Or if the semi-circle is the half towards Y<0?
+    // - If the semi-circle is towards Y>0 (wall side), it spans Y=0 to Y=8.25.
+    // - Then the straight sides would run from Y=0 to Y=-15.
+    // - This creates a channel that is semi-circular at the back (Y=0 to 8.25) and rectangular in the front (Y=-15 to 0).
+    // - This fits the description "back end is a half-circle... straight sides run forward".
+    
+    // So, Channel Cross-Section:
+    // Union of:
+    // 1. Semi-circle: Center (0,0), Radius 8.25, Y >= 0.
+    // 2. Rectangle: X from -8.25 to 8.25, Y from -15 to 0.
+    
+    // We will extrude this shape along Z from 0 to 40.
+    
+    translate([0, 0, 0])
+        linear_extrude(height = block_h + 1, center = false)
+        union() {
+            // Semi-circle part (Y >= 0)
+            intersection() {
+                circle(r = channel_r);
+                square([-channel_r, 0], center = false); // Only Y >= 0
+            }
+            // Rectangular

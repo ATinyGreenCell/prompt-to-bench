@@ -1,0 +1,71 @@
+// 1.5 mL microcentrifuge tube stand for an analytical balance
+// Printed standing up: rests on the XY plane at z = 0, builds in +Z,
+// centred on the origin in X and Y.
+
+$fn = 64;
+
+// Base disc
+base_d = 50;   // base disc diameter
+base_h = 4;    // base disc height (z = 0 .. 4)
+
+// Cone (base -> column)
+cone_d0 = 50;  // cone diameter at z = 4
+cone_d1 = 22;  // cone diameter at z = 14
+cone_z0 = 4;   // cone bottom z
+cone_z1 = 14;  // cone top z
+
+// Column
+col_d = 22;    // column diameter
+col_z0 = 14;   // column bottom z
+col_z1 = 33;   // column top z
+
+// Tube seat (bore)
+seat_d = 11;   // seat diameter (z = 33 .. 23)
+seat_z0 = 23;  // seat bottom z
+seat_z1 = 33;  // seat top z (open at top)
+
+tip_d = 3;     // tip-cone diameter at z = 6
+tip_z0 = 6;    // tip-cone bottom z (solid below this)
+tip_z1 = 23;   // tip-cone top z
+
+// Viewing window (cut through +X wall)
+win_w = 4;     // window width in Y
+win_z0 = 18;   // window bottom z
+win_z1 = 30;   // window top z
+
+// ---- Solid body (union of the three stacked sections) ----
+body = union() {
+    // Base disc
+    translate([0, 0, 0])
+        cylinder(h = base_h, d = base_d);
+
+    // Cone narrowing 50 -> 22
+    translate([0, 0, cone_z0])
+        cylinder(h = cone_z1 - cone_z0, d1 = cone_d0, d2 = cone_d1);
+
+    // Column
+    translate([0, 0, col_z0])
+        cylinder(h = col_z1 - col_z0, d = col_d);
+};
+
+// ---- Tube seat bore (cut from the top down the axis) ----
+seat = union() {
+    // Cylindrical seat, z = 23 .. 33 (extended 1 mm above the top to break coplanarity)
+    translate([0, 0, seat_z0])
+        cylinder(h = (seat_z1 + 1) - seat_z0, d = seat_d);
+
+    // Cone following the tube's conical tip, z = 6 .. 23 (extended 1 mm below into the solid)
+    translate([0, 0, tip_z0 - 1])
+        cylinder(h = (tip_z1 + 1) - (tip_z0 - 1), d1 = tip_d, d2 = seat_d);
+};
+
+// ---- Viewing window (straight through the +X wall) ----
+window = translate([0, -win_w / 2, win_z0])
+    cube([100, win_w, win_z1 - win_z0]);
+
+// ---- Final part ----
+difference() {
+    body;
+    seat;
+    window;
+}

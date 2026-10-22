@@ -1,0 +1,55 @@
+```openscad
+// 5-tube rack, 30-degree lean, FDM-printable
+// Units: mm. Print orientation: block rests on XY plane at z=0, centred in X and Y.
+
+// ---- named dimensions ----
+L_block   = 130;   // block length along X
+W_block   = 60;    // block depth along Y
+H_block   = 45;    // block height along Z
+
+n_tubes   = 5;     // number of tubes
+pitch_x   = 24;    // spacing between tube axes along X
+d_hole    = 17.5;  // hole diameter (square to axis)
+r_hole    = d_hole / 2;
+depth_hole = 40;   // hole depth along its axis from top face
+y_top     = -10;   // Y coordinate where each axis meets the top face
+lean_deg  = 30;    // lean from vertical, in YZ plane (down into block toward +Y)
+
+// ---- geometry ----
+// Axis direction: unit vector pointing down into the block.
+// Tilt 30 deg from vertical in YZ plane, moving toward +Y as it goes down.
+dir_x = 0;
+dir_y = sin(lean_deg);
+dir_z = -cos(lean_deg);
+
+// X positions of the five axes, centred on the block.
+xs = [for(i = 0 : n_tubes-1) (i - (n_tubes-1)/2) * pitch_x];
+
+// ---- solid block ----
+block = cube([L_block, W_block, H_block], center=[0,0,0]) ;
+
+// ---- blind holes ----
+// Each hole is a cylinder of diameter d_hole, length depth_hole,
+// with a flat end square to the axis.  The axis starts at the top face
+// (z = H_block/2) at y = y_top and points down into the block along
+// (dir_x, dir_y, dir_z).  The cylinder is built from its centre, so the
+// centre is offset by depth_hole/2 along the axis from the top face.
+holes = union(
+  for(x in xs)
+    translate([x, y_top, H_block/2])
+      rotate([0, 0, 0])
+        translate([0, 0, -depth_hole/2])
+          cylinder(
+            h = depth_hole,
+            d = d_hole,
+            $fn = 64,
+            center = true
+          )
+);
+
+// ---- final part ----
+difference() {
+  block;
+  holes;
+}
+```

@@ -1,0 +1,68 @@
+// Coarse cell strainer for a 50 mL conical tube
+// Printed upright, round about Z, resting on z = 0
+
+$fn = 64;
+
+// ---- Dimensions (mm) ----
+wall = 1.2;                 // wall / floor thickness
+cup_od = 25.0;              // cup outer diameter
+cup_bore = cup_od - 2*wall; // 22.6 mm bore
+cup_h = 32.0;               // cup height (z = 0..32)
+floor_h = 1.2;              // floor thickness (z = 0..1.2)
+
+cone_z0 = 26.0;             // cone starts
+cone_z1 = 30.0;             // cone ends / rim starts
+cone_d0 = 25.0;             // cone base diameter
+cone_d1 = 33.0;             // cone top / rim diameter
+rim_h = cup_h - cone_z1;    // rim height (30..32)
+
+// ---- Hole grid ----
+hole_d = 1.0;               // hole diameter
+grid = 2.0;                 // square grid pitch
+grid_n = 10;                // holes within 10 mm of axis -> 81 holes
+grid_off = (grid_n - 1) * grid / 2; // 10 mm
+
+// ---- Vent notches ----
+vent_w = 3.0;               // notch width
+vent_cut = 12.5;            // remove collar/rim beyond this radius
+vent_z0 = 25.0;             // notch starts
+
+// ---- Base cup (tube + floor) ----
+cup = difference(
+    cylinder(h = cup_h, d = cup_od, $fn = $fn),
+    cylinder(h = cup_h - floor_h + 0.01, d = cup_bore, $fn = $fn,
+             center = false,
+             translate = [0, 0, floor_h])
+);
+
+// ---- Collar: 45° cone + rim ----
+collar = union(
+    // 45-degree cone (z 26..30)
+    linear_extrude(height = cone_z1 - cone_z0, center = false,
+                   convexity = 1, scale = [cone_d1 / cone_d0, cone_d1 / cone_d0, 1])
+        translate([0, 0, cone_z0])
+            circle(d = cone_d0, $fn = $fn),
+    // rim (z 30..32)
+    translate([0, 0, cone_z1])
+        cylinder(h = rim_h, d = cone_d1, $fn = $fn)
+);
+
+// ---- Strainer body (cup + collar) ----
+body = union(cup, collar);
+
+// ---- Floor holes (81, 2 mm grid, centred) ----
+holes = for (i = [0:grid_n], j = [0:grid_n])
+    translate([i*grid - grid_off, j*grid - grid_off, -0.01])
+        cylinder(h = floor_h + 0.02, d = hole_d, $fn = $fn);
+
+// ---- Vent notches (+X and -X) ----
+vents = for (s = [1, -1])
+    translate([s * vent_cut, -vent_w/2, vent_z0 - 0.01])
+        cube([vent_cut + 1, vent_w, (cup_h - vent_z0) + 0.02]);
+
+// ---- Final part ----
+difference(
+    body,
+    union(holes),
+    union(vents)
+);

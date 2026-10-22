@@ -1,0 +1,55 @@
+```openscad
+// 8-tube round-bottom holder (2 mL tubes)
+// Round puck, 80 mm dia, 26 mm tall, flat label side at x = 34.
+// 8 seats on a 50 mm dia circle, first on +X.
+// Each seat: 11.2 mm dia hole, half-sphere bottom, lowest point 20 mm below top (z = 6).
+
+$fn = 64;
+
+// Puck
+puck_d   = 80;   // outer diameter
+puck_r   = puck_d / 2;   // 40 mm
+puck_h   = 26;   // height
+cut_x    = 34;   // label-side flat plane (remove x > cut_x)
+
+// Seat / tube
+tube_d   = 11.2; // tube outer diameter
+tube_r   = tube_d / 2;   // 5.6 mm
+seat_depth = 20;         // lowest point below top face
+top_z    = puck_h;       // 26
+bottom_z = top_z - seat_depth;   // 6
+
+// Seat layout
+ring_d   = 50;   // circle diameter for seat centres
+ring_r   = ring_d / 2;   // 25 mm
+n_seats  = 8;
+
+// Base puck (full cylinder, then flat side cut)
+puck = difference(
+    cylinder(h = puck_h, r = puck_r, $fn = $fn),
+    translate([cut_x, -puck_r - 1, -1])
+        cube([puck_r + 1, 2 * puck_r + 2, puck_h + 2])
+);
+
+// One seat cutter: half-sphere bottom + cylindrical bore, extending 1 mm above top
+seat_cutter = union(
+    // half-sphere (bottom of the seat)
+    intersection(
+        sphere(r = tube_r, $fn = $fn),
+        translate([0, 0, -tube_r])
+            cube([2 * tube_r + 0.01, 2 * tube_r + 0.01, tube_r + 0.01], center = [false, false, true])
+    ),
+    // cylindrical bore from sphere top up past the top face
+    translate([0, 0, 0])
+        cylinder(h = tube_r + 1, r = tube_r, $fn = $fn)
+);
+
+// Cut all 8 seats, evenly spaced, first on +X
+difference(
+    puck,
+    for (i = [0 : n_seats - 1])
+        rotate([0, 0, i * 360 / n_seats])
+            translate([ring_r, 0, bottom_z])
+                seat_cutter
+);
+```

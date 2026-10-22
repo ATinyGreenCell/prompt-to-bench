@@ -1,0 +1,86 @@
+// --- Dimensions ---
+base_width_x = 112;       // Total width of the base plate (X)
+base_depth_y = 44;        // Total depth of the base plate (Y)
+base_thickness = 3;       // Thickness of the base plate (Z)
+
+deck_width_x = 112;       // Total width of the deck plate (X)
+deck_depth_y = 44;        // Total depth of the deck plate (Y)
+deck_z_start = 22;        // Z-coordinate where the deck starts
+deck_thickness = 3;       // Thickness of the deck plate (Z)
+
+end_wall_thickness = 3;   // Thickness of the two end walls
+rib_thickness = 2.5;      // Thickness of the five internal ribs
+wall_height = 25;         // Total height of the upright walls (Z)
+
+// Hole dimensions (for 12.5mm cuvettes)
+hole_size = 13;           // Width and depth of the square holes
+hole_spacing_x = 18;      // Center-to-center spacing along X
+hole_spacing_y = 18;      // Center-to-center spacing along Y
+rows = 2;                 // Number of rows along Y
+cols = 6;                 // Number of columns along X
+
+/* [Render Settings] */
+$fn = 64;
+
+// --- Main Assembly ---
+
+// We use a union of all solid parts, then subtract the holes from the whole.
+difference() {
+    union() {
+        // 1. The Base Plate
+        // Positioned to sit on the bed from z=0 to z=3
+        translate([0, 0, base_thickness/2])
+            cube([base_width_x, base_depth_y, base_thickness], center = true);
+
+        // 2. The Deck Plate
+        // Positioned to sit from z=22 to z=25
+        translate([0, 0, deck_z_start + deck_thickness/2])
+            cube([deck_width_x, deck_depth_y, deck_thickness], center = true);
+
+        // 3. The Upright Walls (End walls and Ribs)
+        // These run from z=0 to z=25
+        // We use a union to combine all vertical elements
+        union() {
+            // Two End Walls
+            // Flush with short ends (X = +/- 56)
+            // To be flush with the 112mm edge, the center is at +/- (56 - 1.5)
+            translate([-(base_width_x/2 - end_wall_thickness/2), 0, wall_height/2])
+                cube([end_wall_thickness, base_depth_y, wall_height], center = true);
+            
+            translate([(base_width_x/2 - end_wall_thickness/2), 0, wall_height/2])
+                cube([end_wall_thickness, base_depth_y, wall_height], center = true);
+
+            // Five Ribs
+            // Rib positions: -36, -18, 0, 18, 36
+            rib_positions_x = [-36, -18, 0, 18, 36];
+            for (rx = rib_positions_x) {
+                translate([rx, 0, wall_height/2])
+                    cube([rib_thickness, base_depth_y, wall_height], center = true);
+            }
+        }
+    }
+
+    // 4. The 12 Square Through-Holes
+    // Holes are cut through the deck plate (z=22 to z=25)
+    // We make the cutter taller than the deck to ensure a clean cut.
+    
+    // Calculate starting offset to center the grid on the deck
+    // Grid width = (cols-1)*spacing_x = 5 * 18 = 90
+    // Grid height = (rows-1)*spacing_y = 1 * 18 = 18
+    offset_x = (deck_width_x - (cols - 1) * hole_spacing_x) / 2;
+    offset_y = (deck_depth_y - (rows - 1) * hole_spacing_y) / 2;
+
+    // The cutter is centered on the deck's Z center (23.5)
+    // and extends past the deck's top and bottom.
+    translate([0, 0, deck_z_start + deck_thickness/2])
+    for (i = [0 : cols - 1]) {
+        for (j = [0 : rows - 1]) {
+            translate([
+                offset_x + i * hole_spacing_x, 
+                offset_y + j * hole_spacing_y, 
+                0
+            ])
+            cube([hole_size, hole_size, deck_thickness + 2], center = true);
+        }
+    }
+}

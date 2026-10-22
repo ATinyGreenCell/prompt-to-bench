@@ -1,0 +1,239 @@
+{
+ "pcr_strip_magnet_rack": {
+  "design_center": [
+   0.0,
+   0.0
+  ],
+  "zmin": 0.0,
+  "volume": 30833.267403799913,
+  "size": [
+   80.0,
+   24.0,
+   20.0
+  ],
+  "material_area": {}
+ },
+ "cuvette_rack_2x6": {
+  "design_center": [
+   0.0,
+   0.0
+  ],
+  "zmin": 0.0,
+  "volume": 38950.0,
+  "size": [
+   112.0,
+   44.0,
+   25.0
+  ],
+  "material_area": {}
+ },
+ "petri_dish_rack_upright": {
+  "design_center": [
+   0.0,
+   0.0
+  ],
+  "zmin": 0.0,
+  "volume": 321914.1187322401,
+  "size": [
+   203.0,
+   80.0,
+   60.0
+  ],
+  "material_area": {}
+ },
+ "syringe_holder_10ml": {
+  "design_center": [
+   0.0,
+   0.0
+  ],
+  "zmin": 0.0,
+  "volume": 43497.89812381511,
+  "size": [
+   50.0,
+   30.0,
+   40.0
+  ],
+  "material_area": {
+   "22": 1145.6639890448841
+  }
+ },
+ "eyepiece_phone_adapter": {
+  "design_center": [
+   0.0,
+   0.0
+  ],
+  "zmin": 0.0,
+  "volume": 25720.226824224566,
+  "size": [
+   80.0,
+   60.0,
+   31.0
+  ],
+  "material_area": {}
+ },
+ "shelf_pipette_holder": {
+  "design_center": [
+   20.0,
+   14.199999809265137
+  ],
+  "zmin": 0.0,
+  "volume": 67950.97422990431,
+  "size": [
+   90.0,
+   28.399999618530273,
+   105.0
+  ],
+  "material_area": {
+   "35": 691.9999980926513
+  }
+ },
+ "waterbath_float_15ml": {
+  "design_center": [
+   0.0,
+   0.0
+  ],
+  "zmin": 0.0,
+  "volume": 40224.56508900968,
+  "size": [
+   103.92304992675781,
+   90.0,
+   20.0
+  ],
+  "material_area": {
+   "1.5": 5332.310354966713
+  }
+ },
+ "tubing_manifold_1to3": {
+  "design_center": [
+   0.0,
+   0.0
+  ],
+  "zmin": 0.0,
+  "volume": 22026.882461080615,
+  "size": [
+   60.0,
+   24.0,
+   16.0
+  ],
+  "material_area": {}
+ },
+ "microtube_balance_stand": {
+  "design_center": [
+   0.0,
+   0.0
+  ],
+  "zmin": 0.0,
+  "volume": 23804.851014856744,
+  "size": [
+   50.0,
+   50.0,
+   33.0
+  ],
+  "material_area": {}
+ },
+ "roundbottom_tube_puck_2ml": {
+  "design_center": [
+   -3.0,
+   0.0
+  ],
+  "zmin": 0.0,
+  "volume": 111955.95397842361,
+  "size": [
+   74.0,
+   80.0,
+   26.0
+  ],
+  "material_area": {
+   "3": 4854.53668831957
+  }
+ },
+ "conical_15ml_incline_rack": {
+  "design_center": [
+   0.0,
+   0.0
+  ],
+  "zmin": 0.0,
+  "volume": 302928.69961369794,
+  "size": [
+   130.0,
+   60.0,
+   45.0
+  ],
+  "material_area": {}
+ },
+ "conical_50ml_carrier": {
+  "design_center": [
+   0.0,
+   10.0
+  ],
+  "zmin": 0.0,
+  "volume": 243698.0081480334,
+  "size": [
+   100.0,
+   110.0,
+   160.0
+  ],
+  "material_area": {}
+ },
+ "pcr_strip_ice_hanger": {
+  "design_center": [
+   0.0,
+   -4.75
+  ],
+  "zmin": 0.0,
+  "volume": 51380.25034809215,
+  "size": [
+   84.0,
+   50.5,
+   50.0
+  ],
+  "material_area": {}
+ },
+ "hockey_stick_spreader": {
+  "design_center": [
+   63.91746807098389,
+   16.44550895690918
+  ],
+  "zmin": 0.0,
+  "volume": 4073.692721548999,
+  "size": [
+   172.16506385803223,
+   38.89101791381836,
+   4.0
+  ],
+  "material_area": {
+   "1.25": 1088.5104550914523,
+   "3.25": 901.6110558792335
+  }
+ },
+ "cell_strainer_50ml": {
+  "design_center": [
+   0.0,
+   0.0
+  ],
+  "zmin": 0.0,
+  "volume": 4607.208373963641,
+  "size": [
+   32.8583984375,
+   33.0,
+   32.0
+  ],
+  "material_area": {}
+ },
+ "tubing_pinch_clamp": {
+  "design_center": [
+   26.0,
+   8.0
+  ],
+  "zmin": 0.0,
+  "volume": 4001.1330079456,
+  "size": [
+   68.0,
+   16.0,
+   8.0
+  ],
+  "material_area": {
+   "4": 500.1416259932001
+  }
+ }
+}

@@ -1,0 +1,87 @@
+// Pinch clamp for silicone tubing (up to 6.4 mm across)
+// Printed flat: 2-D profile in XY plane, extruded 8 mm along Z
+
+// === Dimensions (mm) ===
+extrusion_height = 8;          // Extrusion height along Z
+lower_jaw_x_start = 0;         // Lower jaw x start
+lower_jaw_x_end = 50;          // Lower jaw x end (before tongue)
+lower_jaw_y_start = 0;         // Lower jaw y start
+lower_jaw_y_end = 4;           // Lower jaw y end
+tongue_x_start = 50;           // Tongue x start
+tongue_x_end = 56;             // Tongue x end
+tongue_y_start = 2.5;          // Tongue y start
+tongue_y_end = 4;              // Tongue y end
+upper_jaw_x_start = 0;         // Upper jaw x start
+upper_jaw_x_end = 60;          // Upper jaw x end
+upper_jaw_y_start = 12;        // Upper jaw y start
+upper_jaw_y_end = 16;          // Upper jaw y end
+hinge_center_x = 0;            // Hinge center x
+hinge_center_y = 8;            // Hinge center y
+hinge_inner_r = 7.2;           // Hinge inner radius
+hinge_outer_r = 8;             // Hinge outer radius
+ridge_radius = 1.5;            // Pinch ridge radius
+ridge_x = 27.5;                // Ridge x position
+lower_ridge_y = 4;             // Lower jaw ridge center y
+upper_ridge_y = 12;            // Upper jaw ridge center y
+latch_leg_x_start = 57;        // Latch leg x start
+latch_leg_x_end = 60;          // Latch leg x end
+latch_leg_y_start = 4.5;       // Latch leg y start
+latch_leg_y_end = 12;          // Latch leg y end
+latch_nose_x_start = 54.5;     // Latch nose x start
+latch_nose_x_end = 57;         // Latch nose x end
+latch_nose_y_start = 4.5;      // Latch nose y start
+latch_nose_y_end = 5.5;        // Latch nose y end
+
+$fn = 64;
+
+linear_extrude(height = extrusion_height, convexity = 10) {
+    union() {
+        // Lower jaw bar
+        translate([lower_jaw_x_start, lower_jaw_y_start])
+            square([lower_jaw_x_end - lower_jaw_x_start, lower_jaw_y_end - lower_jaw_y_start]);
+
+        // Tongue
+        translate([tongue_x_start, tongue_y_start])
+            square([tongue_x_end - tongue_x_start, tongue_y_end - tongue_y_start]);
+
+        // Upper jaw bar
+        translate([upper_jaw_x_start, upper_jaw_y_start])
+            square([upper_jaw_x_end - upper_jaw_x_start, upper_jaw_y_end - upper_jaw_y_start]);
+
+        // Hinge: half-ring on x < 0 side, centered at (0, 8)
+        // Outer half-circle (x < 0)
+        translate([hinge_center_x, hinge_center_y])
+            rotate([0, 0, 0])
+            circle(r = hinge_outer_r);
+        // Inner half-circle cutout (x < 0)
+        translate([hinge_center_x, hinge_center_y])
+            circle(r = hinge_inner_r);
+        // Block the right half (x > 0) of the hinge area
+        translate([-hinge_outer_r, hinge_center_y - hinge_outer_r])
+            square([hinge_outer_r, 2 * hinge_outer_r]);
+
+        // Lower jaw pinch ridge: half-round on inner face (top side, facing upper jaw)
+        // Centered at (ridge_x, lower_ridge_y), radius ridge_radius
+        // The ridge sits on the top edge of the lower jaw (y = 4)
+        translate([ridge_x, lower_ridge_y])
+            circle(r = ridge_radius);
+
+        // Upper jaw pinch ridge: half-round on inner face (bottom side, facing lower jaw)
+        // Centered at (ridge_x, upper_ridge_y), radius ridge_radius
+        // The ridge sits on the bottom edge of the upper jaw (y = 12)
+        translate([ridge_x, upper_ridge_y])
+            circle(r = ridge_radius);
+
+        // Latch leg
+        translate([latch_leg_x_start, latch_leg_y_start])
+            square([latch_leg_x_end - latch_leg_x_start, latch_leg_y_end - latch_leg_y_start]);
+
+        // Latch nose
+        translate([latch_nose_x_start, latch_nose_y_start])
+            square([latch_nose_x_end - latch_nose_x_start, latch_nose_y_end - latch_nose_y_start]);
+    }
+
+    // Cut out the right half of the hinge to make it a half-ring on x < 0 only
+    // This is handled by the union above, but we need to ensure the hinge is only on x < 0
+    // The block above handles this by adding a square that covers x > 0 of the hinge area
+}

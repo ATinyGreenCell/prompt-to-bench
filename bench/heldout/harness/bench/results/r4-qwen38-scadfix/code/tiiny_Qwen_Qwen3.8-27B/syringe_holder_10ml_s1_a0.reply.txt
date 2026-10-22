@@ -1,0 +1,64 @@
+```openscad
+// Wall-mounted 10 mL syringe holder (tip-down, printed as used)
+// Block: 50 (X) x 30 (Y) x 40 (Z), centred on origin, back face at y = +15 against wall.
+
+$fn = 64;
+
+// ---- Block dimensions ----
+W = 50;          // block width  (X)
+D = 30;          // block depth   (Y)
+H = 40;          // block height  (Z)
+
+// ---- Barrel channel (vertical, full height, slides in from front) ----
+bc_w   = 16.5;   // channel width (X)
+bc_r   = 8.25;   // back half-circle radius (bc_w / 2)
+bc_y0  = 0;      // centre of back half-circle (y)
+bc_y1  = -15;    // straight sides run to the front face
+
+// ---- Flange slot (cut in from front face) ----
+fs_w   = 34;     // slot width (X, centred)
+fs_z0  = 30;     // slot bottom (z)
+fs_z1  = 32.6;   // slot top (z)  -> 2.6 mm tall
+fs_y0  = -15;    // front face
+fs_y1  = 11;     // slot back end (y)
+
+// ---- M4 wall-screw clearance holes (through, along Y) ----
+hs_d   = 4.5;    // hole diameter
+hs_x   = [-19, 19];  // hole centres (x)
+hs_z   = 15;         // hole centres (z)
+
+// ---- Base block ----
+module block() { translate([-W/2, -D/2, 0]) cube([W, D, H]); }
+
+// ---- Barrel channel cutter (extends 1 mm past every face it cuts) ----
+// Back half-circle (centre x=0, y=0, r=8.25) + rectangular body to the front face.
+module bc_cut() { union() {
+    translate([0, bc_y0, -1])
+        cylinder(h = H + 2,
+                 r1 = bc_r, r2 = bc_r,
+                 $fn = $fn,
+                 center = true);
+    translate([-bc_w/2, bc_y1 - 1, -1])
+        cube([bc_w, (bc_y0 - bc_y1) + 1, H + 2]);
+} }
+
+// ---- Flange slot cutter (extends 1 mm past front face and back end) ----
+module fs_cut() { translate([-fs_w/2, fs_y1 - 1, fs_z0 - 1])
+    cube([fs_w, (fs_y0 - fs_y1) + 1, (fs_z1 - fs_z0) + 2]); }
+
+// ---- Screw clearance holes (extend 1 mm past front and back faces) ----
+module screw_cuts() { for (i = [0 : len(hs_x) - 1])
+    translate([hs_x[i], -D/2 - 1, hs_z])
+        cylinder(h = D + 2,
+                 r1 = hs_d / 2, r2 = hs_d / 2,
+                 $fn = $fn,
+                 center = true); }
+
+// ---- Final part ----
+difference() {
+    block();
+    bc_cut();
+    fs_cut();
+    screw_cuts();
+}
+```

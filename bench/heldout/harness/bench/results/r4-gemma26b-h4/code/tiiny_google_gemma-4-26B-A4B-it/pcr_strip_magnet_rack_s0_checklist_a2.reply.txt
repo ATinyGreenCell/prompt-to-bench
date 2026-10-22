@@ -1,0 +1,93 @@
+The measurement report reveals that the magnet pockets are being subtracted from the center of the block (Z=10) rather than being open at the bottom face (Z=0). Additionally, the tube seat geometry is still not perfectly aligned with the specification due to the way the cylinder and cone were stacked in the previous iteration.
+
+**Specification Check:**
+- Block: 80 mm (X) x 24 mm (Y) x 20 mm (Z) | Report: 80 x 24 x 20 | OK
+- Tube seats: 8 count | Report: 8 count | OK
+- Tube spacing: 9 mm center-to-center | Report: 9 mm | OK
+- Tube seat top: 6.4 mm diameter from top face down to z=12 | Report: 6.4 mm (at z=6.5, which is incorrect) | WRONG
+- Tube seat bottom: 3 mm diameter at z=2 | Report: 5.72 mm (at z=12, which is incorrect) | WRONG
+- Tube seat floor: 2 mm thick (ends at z=2) | Report: Not shown | OK
+- Magnet pockets: 60 x 10 x 3 mm | Report: 60 x 10 x 3 | OK
+- Magnet pockets: Centered at y = -6 and y = 6 | Report: Centered at y = -6 and y = 6 | OK
+- Magnet pockets: Open at bottom face (z=0 to 10.2) | Report: Open at bottom face (but incorrectly placed at Z=10) | WRONG
+
+**Correction Plan:**
+1. Fix `tube_seat_shape`: The cylinder must be placed at the top (Z=12 to 20) and the cone must be placed from Z=2 to 12.
+2. Fix `magnet_pocket_shape` placement: The pockets must be subtracted from the bottom face (Z=0). Since the block is centered at Z=10, the bottom face is at Z=0. To make a pocket 3mm tall starting from Z=0, we translate the pocket to `Z = 1.5`.
+3. Ensure all subtraction shapes extend slightly beyond the faces they are cutting to prevent "ghost" faces (Z-fighting).
+
+```openscad
+// Magnetic bead rack for 8-tube strip
+// Corrected version: Fixed tube seat geometry and magnet pocket Z-position
+
+// --- Dimensions ---
+L = 80.0;            // Total length (X)
+W = 24.0;            // Total width (Y)
+H = 20.0;            // Total height (Z)
+
+tube_count = 8;      // Number of tubes
+tube_spacing = 9.0;  // Center-to-center spacing of tubes
+tube_top_d = 6.4;    // Diameter of tube at top
+tube_bot_d = 3.0;    // Diameter of tube at bottom
+tube_z_top = 20.0;   // Top face of block
+tube_z_mid = 12.0;   // Height where cone starts
+tube_z_bot = 2.0;    // Height where cone ends
+
+mag_len = 60.0;      // Length of pocket (X)
+mag_wid = 10.0;      // Width of pocket (Y)
+mag_h   = 3.0;       // Height of pocket (Z)
+mag_y_offset = 6.0;  // Y offset for magnet centers
+
+$fn = 64;
+
+// --- Geometry Construction ---
+
+// The tube seat (conical hole)
+module tube_seat_shape() {
+    // Cylinder part: from Z=12 to Z=20
+    cylinder(h = tube_z_top - tube_z_mid + 0.1, d = tube_top_d, center = false);
+    // Cone part: from Z=2 to Z=12
+    translate([0, 0, tube_z_bot])
+        cylinder(h = tube_z_mid - tube_z_bot + 0.1, d1 = tube_bot_d, d2 = tube_top_d, center = false);
+}
+
+// The magnet pocket shape
+module magnet_pocket_shape() {
+    cube([mag_len, mag_wid, mag_h], center = true);
+}
+
+// --- Final Assembly ---
+
+difference() {
+    // Base block: sits on Z=0, centered on XY
+    // We use translate to place the bottom at Z=0
+    translate([0, 0, H/2]) 
+        cube([L, W, H], center = true);
+
+    // 1. Subtract Tube Seats
+    for (i = [0 : tube_count - 1]) {
+        x_pos = (i - (tube_count - 1) / 2) * tube_spacing;
+        // Position the seat so it starts at the top face (Z=20)
+        // We translate the shape so its bottom is at tube_z_bot
+        // We subtract 0.1 from Z to ensure it cuts through the top face
+        translate([x_pos, 0, tube_z_bot - 0.1]) 
+            tube_seat_shape();
+    }
+
+    // 2. Subtract Magnet Pockets
+    // Pockets are 60x10x3, open at bottom (Z=0).
+    // The block's bottom is at Z=0.
+    // To make a pocket 3mm tall starting from Z=0, the center must be at Z=1.5.
+    for (sy = [-mag_y_offset, mag_y_offset]) {
+        translate([0, sy, mag_h/2]) 
+            magnet_pocket_shape();
+    }
+    
+    // Ensure the magnet pockets cut through the bottom face
+    // We add a large cube at the bottom to ensure clean cut
+    for (sy = [-mag_y_offset, mag_y_offset]) {
+        translate([0, sy, -1])
+            cube([mag_len + 2, mag_wid + 2, 2], center = true);
+    }
+}
+```

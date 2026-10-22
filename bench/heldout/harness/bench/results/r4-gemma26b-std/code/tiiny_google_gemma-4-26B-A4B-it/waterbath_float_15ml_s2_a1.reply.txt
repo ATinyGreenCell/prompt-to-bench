@@ -1,0 +1,85 @@
+```openscad
+// --- Dimensions ---
+plate_thickness = 3;           // Thickness of the base plate
+hexagon_across_flats = 90;      // Width of the hexagonal plate (flat-to-flat)
+skirt_across_flats = 84;        // Width of the hexagonal skirt (flat-to-flat)
+skirt_wall_thickness = 2;       // Thickness of the skirt wall
+skirt_height = 20;              // Height of the skirt (from plate top)
+
+hole_diameter = 17.5;           // Diameter of the conical tube holes
+hole_spacing_diameter = 54;     // Diameter of the circle passing through hole centers
+sleeve_outer_diameter = 21.5;   // Outside diameter of the sleeves
+sleeve_height = 20;             // Height of the sleeves (from plate top)
+
+// --- Constants ---
+$fn = 64;
+
+// --- Helper Modules ---
+
+// Function to calculate the radius of a hexagon given the distance across flats
+function hex_radius(across_flats) = (across_flats / 2) / cos(30);
+
+// Module to create a hexagonal prism
+// To ensure flats are parallel to X axis, we rotate 30 degrees.
+module hexagon_prism(across_flats, height) {
+    r = hex_radius(across_flats);
+    rotate([0, 0, 30])
+    cylinder(h = height, r = r, $fn = 6);
+}
+
+// --- Main Construction ---
+// The part is built with the plate at Z=0. 
+// The user will flip it for use so the skirt/sleeves trap air.
+
+union() {
+    // 1. The Base Plate
+    // A hexagon with 90mm across flats.
+    hexagon_prism(hexagon_across_flats, plate_thickness);
+
+    // 2. The Sleeves and Skirt
+    // We use a union for the positive features, then subtract the holes.
+    difference() {
+        union() {
+            // The Hexagonal Skirt
+            // Rises from the plate (z=3) to z=23.
+            translate([0, 0, plate_thickness])
+            hexagon_prism(skirt_across_flats, skirt_height);
+
+            // The 7 Sleeves
+            // Center sleeve
+            translate([0, 0, plate_thickness])
+            cylinder(h = sleeve_height, d = sleeve_outer_diameter);
+
+            // 6 Peripheral sleeves
+            for (i = [0 : 5]) {
+                angle = i * 60;
+                rotate([0, 0, angle])
+                translate([hole_spacing_diameter / 2, 0, plate_thickness])
+                cylinder(h = sleeve_height, d = sleeve_outer_diameter);
+            }
+        }
+
+        // --- Subtraction: The Holes ---
+        // Holes must pass through the plate AND the sleeves.
+        // We extend the cylinders slightly to ensure clean cuts.
+        
+        // Center hole
+        translate([0, 0, -0.01])
+        cylinder(h = plate_thickness + sleeve_height + 0.02, d = hole_diameter);
+
+        // Peripheral holes
+        for (i = [0 : 5]) {
+            angle = i * 60;
+            rotate([0, 0, angle])
+            translate([hole_spacing_diameter / 2, 0, -0.01])
+            cylinder(h = plate_thickness + sleeve_height + 0.02, d = hole_diameter);
+        }
+    }
+}
+
+// Verification of geometry:
+// Plate: Z=0 to 3.
+// Skirt/Sleeves: Z=3 to 23.
+// Total Height: 23mm.
+// Hexagon orientation: 30 deg rotation ensures flats are parallel to X axis.
+```

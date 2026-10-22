@@ -1,0 +1,76 @@
+// Adapter: phone camera over microscope eyepiece (30 mm OD), printed phone-side down.
+// All dimensions in mm, taken from caliper measurements.
+
+$fn = 64;
+
+// ---- Plate ----
+plate_w   = 80;   // plate width  (X)
+plate_d   = 60;   // plate depth  (Y)
+plate_t   = 3;    // plate thickness (z = 0..3)
+cam_hole_d = 12;  // camera through-hole diameter
+cam_hole_x = -20; // camera hole centre X
+cam_hole_y =  10; // camera hole centre Y
+
+// ---- Sleeve (centred on origin, same axis as the camera hole) ----
+sleeve_od  = 36.6;  // sleeve outer diameter
+sleeve_z0  = 3;     // sleeve bottom (sits on plate top)
+sleeve_z1  = 31;    // sleeve top (open)
+sleeve_h   = sleeve_z1 - sleeve_z0;  // sleeve height = 28
+
+bore1_d    = 22;    // lower bore (camera-to-eyepiece stop)
+bore1_z0   = 3;     // lower bore start
+bore1_z1   = 11;    // lower bore end
+
+bore2_d    = 30.6;  // upper bore (slides over 30 mm eyepiece)
+bore2_z0   = 11;    // upper bore start
+bore2_z1   = 31;    // upper bore end (open top)
+
+// ---- M3 centring-screw holes (radial, through sleeve wall) ----
+screw_hole_d = 2.5;  // hole diameter for M3 screws
+screw_z      = 21;   // hole axis height
+screw_r      = sleeve_od / 2;  // radial distance from sleeve axis to hole centre
+screw_angles = [0, 120, 240];  // 1st hole points +X
+
+// ============================
+//  BUILD
+// ============================
+
+// 1. Base plate (centred on origin, z = 0..3)
+module plate() { translate([0, 0, 0])
+        cube([plate_w, plate_d, plate_t], center = [true, true, false]); }
+
+// 2. Sleeve outer cylinder (z = 3..31) centred on the origin (camera-hole axis)
+module sleeve_outer() { translate([0, 0, sleeve_z0])
+              cylinder(h = sleeve_h, d = sleeve_od); }
+
+// 3. Camera through-hole in plate (extends 1 mm past each face)
+module cam_hole() { translate([cam_hole_x, cam_hole_y, -1])
+           cylinder(h = plate_t + 2, d = cam_hole_d); }
+
+// 4. Lower bore (stop) – extends 1 mm below plate to clear the camera hole
+module bore1() { translate([0, 0, bore1_z0 - 1])
+        cylinder(h = (bore1_z1 - bore1_z0) + 1, d = bore1_d); }
+
+// 5. Upper bore (slides over eyepiece) – extends 1 mm past open top
+module bore2() { translate([0, 0, bore2_z0])
+        cylinder(h = (bore2_z1 - bore2_z0) + 1, d = bore2_d); }
+
+// 6. Radial M3 screw holes (3 × 2.5 mm, 120° apart, 1st in +X)
+module screw_holes() { for (a = screw_angles)
+    translate([0, 0, screw_z])
+    rotate([0, 90, a])
+    cylinder(h = sleeve_od + 2, d = screw_hole_d, center = true); }
+
+// ============================
+//  FINAL SOLID
+// ============================
+difference() {
+    union() {
+        plate();
+        sleeve_outer();
+    }
+    cam_hole();
+    bore1();
+    bore2();
+    screw_holes();
+}

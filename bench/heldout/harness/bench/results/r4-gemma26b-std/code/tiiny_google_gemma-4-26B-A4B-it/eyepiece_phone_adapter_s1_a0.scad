@@ -1,0 +1,73 @@
+// --- Dimensions ---
+plate_width = 80;          // X dimension of the plate
+plate_depth = 60;          // Y dimension of the plate
+plate_thickness = 3;       // Z thickness of the plate
+
+camera_hole_dia = 12;       // Diameter of the camera hole
+camera_hole_x = -20;        // X position of camera hole
+camera_hole_y = 10;         // Y position of camera hole
+
+sleeve_outer_dia = 36.6;    // Outer diameter of the sleeve
+sleeve_height = 31 - 3;     // Total height of the sleeve (from z=3 to z=31)
+
+stop_bore_dia = 22;         // Diameter of the lower bore (the stop)
+stop_bore_height = 11 - 3;  // Height of the lower bore section
+
+eyepiece_bore_dia = 30.6;   // Diameter of the upper bore (to fit eyepiece)
+
+screw_hole_dia = 2.5;       // Diameter of the M3 centering screw holes
+screw_hole_z = 21;          // Z height of the screw holes
+screw_count = 3;            // Number of radial holes
+screw_angle_step = 120;     // Degrees between holes
+
+// --- Constants ---
+$fn = 64; // Smoothness for cylinders
+
+// --- Implementation ---
+
+// The part is printed phone side down, meaning the plate is on the bed (z=0)
+// and the sleeve builds upward (+Z).
+
+module adapter() {
+    difference() {
+        union() {
+            // 1. The Base Plate
+            translate([-plate_width/2, -plate_depth/2, 0])
+                cube([plate_width, plate_depth, plate_thickness]);
+
+            // 2. The Sleeve
+            translate([0, 0, plate_thickness])
+                cylinder(h=sleeve_height, d=sleeve_outer_dia);
+        }
+
+        // --- Subtraction Operations ---
+
+        // 3. The Camera Hole (through the plate)
+        // We extend the hole slightly in Z to ensure a clean cut
+        translate([camera_hole_x, camera_hole_y, -0.01])
+            cylinder(h=plate_thickness + 0.02, d=camera_hole_dia);
+
+        // 4. The Lower Bore (the stop)
+        // Extends slightly below the plate to ensure clean cut
+        translate([0, 0, plate_thickness - 0.01])
+            cylinder(h=stop_bore_height + 0.01, d=stop_bore_dia);
+
+        // 5. The Upper Bore (eyepiece fit)
+        // Extends slightly above the top of the sleeve
+        translate([0, 0, plate_thickness + stop_bore_height - 0.01])
+            cylinder(h=sleeve_height - stop_bore_height + 0.02, d=eyepiece_bore_dia);
+
+        // 6. Radial Screw Holes
+        // Three holes, 120 degrees apart, first one at 0 degrees (+X direction)
+        for (i = [0 : screw_count - 1]) {
+            rotate([0, 0, i * screw_angle_step])
+            translate([0, 0, screw_hole_z])
+            // We use a very long cylinder to ensure it cuts through the wall completely
+            rotate([0, 90, 0])
+            cylinder(h=sleeve_outer_dia + 2, d=screw_hole_dia);
+        }
+    }
+}
+
+// Render the part
+adapter();

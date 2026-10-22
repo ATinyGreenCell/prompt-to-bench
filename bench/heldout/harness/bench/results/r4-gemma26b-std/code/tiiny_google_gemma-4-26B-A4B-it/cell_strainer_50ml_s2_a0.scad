@@ -1,0 +1,96 @@
+// --- Parameters ---
+// Main Tube Dimensions
+outer_diameter = 25.0;      // OD of the main tube
+wall_thickness = 1.2;       // Wall thickness of the main tube
+bore_diameter = 22.6;       // Internal diameter (OD - 2*wall)
+tube_height = 32.0;         // Height of the main tube body
+
+// Floor Dimensions
+floor_thickness = 1.2;       // Thickness of the bottom floor
+
+// Flare/Collar Dimensions
+flare_start_z = 26.0;       // Z height where the flare begins
+flare_end_z = 30.0;         // Z height where the flare ends
+flare_top_diameter = 33.0;  // Diameter at the top of the flare
+rim_height_start = 30.0;    // Z height where the rim starts
+rim_height_end = 32.0;      // Z height where the rim ends
+rim_diameter = 33.0;        // Diameter of the rim
+
+// Hole Grid Dimensions
+hole_diameter = 1.0;        // Diameter of the strainer holes
+grid_spacing = 2.0;         // Distance between hole centers (square grid)
+max_hole_radius = 10.0;     // Maximum distance from axis for a hole center
+
+// Vent Notch Dimensions
+notch_width = 3.0;          // Width of the vent notches on X axis
+notch_cut_radius = 12.5;    // Radius from axis where notches begin cutting
+notch_start_z = 25.0;       // Z height where notches start cutting
+
+// Resolution
+$fn = 64;
+
+// --- Implementation ---
+
+module strainer() {
+    difference() {
+        // 1. MAIN BODY (Outer Shell)
+        union() {
+            // Main Tube Cylinder
+            cylinder(h = tube_height, d = outer_diameter);
+            
+            // Flare Section (45-degree cone)
+            // The user specified a 45-degree cone from 25mm at z=26 to 33mm at z=30.
+            // This implies a slope of 1:1 (45 deg) if the radius increases by 4mm over 4mm height.
+            // Radius at z=26 is 12.5. Radius at z=30 is 16.5. 
+            // (16.5 - 12.5) / (30 - 26) = 4 / 4 = 1.0 (45 degrees).
+            hull() {
+                translate([0, 0, flare_start_z])
+                    cylinder(h = 0.01, d = outer_diameter);
+                translate([0, 0, flare_end_z])
+                    cylinder(h = 0.01, d = flare_top_diameter);
+            }
+            
+            // Rim Section
+            translate([0, 0, flare_end_z])
+                cylinder(h = rim_height_end - flare_end_z, d = rim_diameter);
+        }
+
+        // 2. INTERNAL BORE (Subtraction)
+        // We subtract the bore from the bottom up to the top of the tube
+        translate([0, 0, -0.01])
+            cylinder(h = tube_height + 0.01, d = bore_diameter);
+
+        // 3. VENT NOTCHES (Subtraction)
+        // Removes collar and rim beyond 12.5mm from axis on +X and -X
+        // We use a large cube to cut the sides
+        for (side = [-1, 1]) {
+            translate([side * (notch_cut_radius + notch_width/2), -notch_width/2, notch_start_z - 0.01])
+                cube([notch_width, notch_width, tube_height + 1]);
+        }
+        // Note: The prompt asks to remove the collar/rim beyond 12.5mm. 
+        // Since the rim is 33mm (radius 16.5), a notch 3mm wide at 12.5mm radius 
+        // effectively cuts the "ears" off the rim.
+        // To strictly follow "remove collar and rim beyond 12.5mm on X sides":
+        for (side = [-1, 1]) {
+            translate([side * (notch_cut_radius), -notch_width/2, notch_start_z - 0.01])
+                cube([outer_diameter + 10, notch_width, tube_height + 1]);
+        }
+
+        // 4. FLOOR HOLES (Subtraction)
+        // Grid of holes on the floor
+        // One hole at center, then grid up to 10mm radius.
+        // Grid is 2mm square. Max index is roughly 10/2 = 5.
+        for (x = [-10 : 2 : 10]) {
+            for (y = [-10 : 2 : 10]) {
+                // Check if center is within 10mm of axis
+                if (sqrt(x*x + y*y) <= max_hole_radius) {
+                    translate([x, y, -0.01])
+                        cylinder(h = floor_thickness + 0.02, d = hole_diameter);
+                }
+            }
+        }
+    }
+}
+
+// Render the part
+strainer();

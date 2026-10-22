@@ -1,0 +1,83 @@
+The measurement report reveals a significant error in the geometry of the tube seats. The report shows that at $z=1.30$, the holes have a diameter of $6.13\text{ mm}$ (which is half the intended $11.2\text{ mm}$), and at $z=18.80$, the holes suddenly jump to $11.2\text{ mm}$. This indicates the `tube_seat` module was being used as a "positive" shape inside a `union` within a `difference` block, but the logic for the hemispherical bottom was incorrectly positioned or sized, causing the holes to be "inverted" or incorrectly subtracted. Additionally, the report shows the holes are centered at $z=25$ (the top), but the specification requires the bottom of the sphere to be at $z=6$.
+
+**Specification Check:**
+- Puck diameter 80 mm: OK (Report: 80.00)
+- Puck height 26 mm: OK (Report: 26.00)
+- Flat cut at $x = 34$: OK (Report: X max 34.00)
+- Eight seats: OK (Report: 8 holes)
+- Seats on 50 mm diameter circle: OK (Report: centres at 25.0)
+- First seat on +X axis: OK (Report: centre at (25, 0))
+- Hole diameter 11.2 mm: WRONG (Report: $z=1.30$ shows $d=6.13$)
+- Lowest point of seat at $z = 6$: WRONG (Report: $z=18.80$ is the first full diameter, implying the sphere is not correctly placed)
+
+**Correction Strategy:**
+The `tube_seat` must be a single continuous subtraction shape. To ensure the bottom of the sphere is at $z=6$, the sphere's center must be at $z = 6 + \text{radius}$. The cylinder part must then extend from the top face ($z=26$) down to the top of the sphere.
+
+```openscad
+// Corrected Round tube holder for 2 mL round-bottom tubes
+// Designed for FDM printing, resting on the XY plane.
+
+// --- Dimensions ---
+puck_diameter = 80.0;    // Diameter of the main puck
+puck_height   = 26.0;    // Total height of the puck
+flat_cut_x    = 34.0;    // The plane x = 34 is the boundary; everything > 34 is removed
+
+tube_diameter  = 11.2;   // Diameter of the tube hole
+tube_radius    = tube_diameter / 2;
+seat_bottom_z  = 6.0;    // The lowest point of the seat (hemisphere) must be at z = 6
+
+seat_circle_d  = 50.0;   // Diameter of the circle on which tube seats are centered
+num_seats      = 8;      // Number of tubes to hold
+
+$fn = 128;               // High resolution for smooth curves
+
+// --- Calculations ---
+seat_circle_r = seat_circle_d / 2;
+// The sphere's lowest point is at seat_bottom_z. 
+// Therefore, the center of the sphere is at seat_bottom_z + tube_radius.
+sphere_center_z = seat_bottom_z + tube_radius;
+
+// --- Geometry Construction ---
+
+module tube_seat_subtraction() {
+    // This module defines the volume to be REMOVED from the puck.
+    union() {
+        // 1. The cylindrical hole. 
+        // It goes from the top face (puck_height) down to the sphere center.
+        // We extend it slightly below the sphere center to ensure a clean cut.
+        translate([0, 0, sphere_center_z - 0.1])
+            cylinder(h = puck_height - sphere_center_z + 0.1, d = tube_diameter);
+        
+        // 2. The hemispherical bottom.
+        // The sphere is centered such that its bottom is at seat_bottom_z.
+        translate([0, 0, sphere_center_z])
+            sphere(d = tube_diameter);
+    }
+}
+
+// Main Assembly
+difference() {
+    // 1. The Base Puck
+    difference() {
+        cylinder(h = puck_height, d = puck_diameter);
+        
+        // Cut off everything beyond x = 34
+        // We use a large cube to ensure the cut is clean.
+        translate([flat_cut_x, -puck_diameter/2 - 1, -1])
+            cube([puck_diameter, puck_diameter + 2, puck_height + 2]);
+    }
+
+    // 2. The Tube Seats
+    // We place 8 seats on a circle of diameter 50mm, starting at +X axis (0 degrees).
+    for (i = [0 : num_seats - 1]) {
+        angle = i * (360 / num_seats);
+        
+        // Calculate position on the circle
+        pos_x = seat_circle_r * cos(angle);
+        pos_y = seat_circle_r * sin(angle);
+        
+        translate([pos_x, pos_y, 0])
+            tube_seat_subtraction();
+    }
+}
+```

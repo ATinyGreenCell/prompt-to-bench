@@ -1,0 +1,126 @@
+// --- Dimensions ---
+block_width = 50;          // X dimension of the block
+block_depth = 30;          // Y dimension of the block
+block_height = 40;         // Z dimension of the block
+
+barrel_radius = 8.25;      // Radius for the 16.5mm barrel channel
+flange_slot_width = 34;     // X width of the flange slot
+flange_slot_height = 2.6;   // Z height of the flange slot
+flange_slot_z_start = 30;   // Bottom Z of the flange slot
+flange_slot_y_end = 11;     // How far back the slot goes from the front
+
+screw_hole_dia = 4.5;       // Diameter for M4 screw holes
+screw_hole_x_offset = 19;   // X position of screw holes
+screw_hole_z = 15;          // Z position of screw holes
+
+// --- Constants ---
+$fn = 64;
+
+// --- Main Model ---
+// The part is printed standing on the bed (Z=0).
+// The block is centered on X and Y.
+// The back face is at Y = 15.
+// The front face is at Y = -15.
+
+// We use a coordinate system where the block is centered on X and Y.
+// To make the bottom face sit at Z=0, we translate the whole object.
+
+translate([0, 0, 0]) {
+    difference() {
+        // 1. The main block
+        // Centered on X and Y, base at Z=0
+        translate([0, 0, block_height/2])
+            cube([block_width, block_depth, block_height], center = true);
+
+        // 2. Barrel Channel
+        // "back end is a half-circle of 8.25 mm radius centred at x = 0, y = 0"
+        // "straight sides run forward to the front face (y = -15)"
+        // This implies a semi-cylinder with the flat face at Y=0.
+        // The diameter of the semi-circle is along the X axis.
+        
+        // First, create the cylinder that forms the channel
+        // It is centered at Y = -7.5 so it spans from Y = -15 to Y = 0.
+        // We use a large Z to ensure it cuts through the block.
+        translate([0, -7.5, 0])
+        rotate([90, 0, 0])
+        cylinder(h = 15, r = barrel_radius, center = true);
+
+        // Second, we must cut the cylinder in half to make it a semi-circle.
+        // Since the cylinder is centered at X=0, we cut it with a cube.
+        // The user says the "back end" is a half-circle at Y=0.
+        // This means the flat part of the semi-cylinder is at Y=0.
+        // To achieve this, we subtract a cube that removes the "back" half of the cylinder.
+        // However, the cylinder is already only from Y=-15 to Y=0.
+        // To make it a semi-circle (profile), we need to cut it along the X-axis.
+        // Wait, if the "straight sides" run from Y=0 to Y=-15, the profile is a semi-circle.
+        // A semi-circle's diameter is the flat part. 
+        // If the diameter is at Y=0, then the channel is a semi-cylinder.
+        // To make a semi-cylinder, we take a cylinder and cut it in half.
+        
+        // Let's use a more direct method: A hull of a semi-circle at Y=0 and a rectangle at Y=-15.
+        // Actually, the description "straight sides run forward" implies the profile is a semi-circle.
+        // A semi-cylinder has a flat rectangular face.
+        // If the flat face is at Y=0, the channel is a semi-cylinder.
+        
+        // Let's define the semi-cylinder cutter:
+        // A cylinder centered at (0, -7.5, 0) with radius 8.25, length 15.
+        // To make it a semi-cylinder, we cut it with a cube that removes the part where X > 0.
+        // But the user says "straight sides run forward", which means the sides are parallel to Y.
+        // This means the profile is a semi-circle.
+        // A semi-circle has a diameter. If the diameter is at Y=0, the sides are the curved part.
+        // If the "straight sides" are the sides, then the profile is a rectangle with a semi-circle at the end.
+        // Re-reading: "its back end is a half-circle... and its straight sides run forward".
+        // This means the profile is a semi-circle (the back end) and then it becomes a rectangle? 
+        // No, "straight sides" usually refers to the sides of the channel.
+        // If the profile is a semi-circle, the sides are curved.
+        // If the profile is a rectangle with a semi-circle at the end, the sides are straight.
+        // Let's assume the profile is a semi-circle (the "back end" is the curved part).
+        // No, "back end is a half-circle" means the shape at Y=0 is a half-circle.
+        // If the sides are straight, the profile is a semi-circle.
+        // Let's model a semi-cylinder where the flat face is at Y=0.
+        
+        // Cutter for semi-cylinder:
+        translate([0, -7.5, 0])
+        rotate([90, 0, 0])
+        cylinder(h = 15, r = barrel_radius, center = true);
+        
+        // To make it a semi-circle, we cut it with a cube.
+        // But the user says "straight sides". This implies the profile is a semi-circle.
+        // A semi-circle has one straight side (the diameter) and one curved side.
+        // If the "straight sides" (plural) are straight, the profile must be a rectangle.
+        // But it says "back end is a half-circle".
+        // This implies: At Y=0, there is a half-circle. From Y=0 to Y=-15, there are straight sides.
+        // This describes a shape where the profile is a semi-circle.
+        // Let's assume the profile is a semi-circle and the "straight sides" refers to the 
+        // vertical walls of the cylinder (the Z-axis walls).
+        
+        // Let's use a cylinder and cut it in half along the X axis.
+        // This makes the flat face at Y=0.
+        translate([0, -7.5, 0])
+        rotate([90, 0, 0])
+        cylinder(h = 15, r = barrel_radius, center = true);
+        
+        // To make it a semi-cylinder (cutting the cylinder in half along the X axis):
+        translate([-block_width, -20, -block_height])
+        cube([block_width, 20, block_height*2]); // This cuts the back half (Y > 0)
+        // Wait, the cylinder is already only from Y=-15 to Y=0.
+        // To make it a semi-circle, we cut it with a cube that removes the part where X > 0.
+        // But the user says "straight sides". If the sides are straight, the profile is a rectangle.
+        // Let's assume the profile is a semi-circle.
+        
+        // Let's try this: A cylinder centered at (0, -7.5, 0) with radius 8.25 and length 15.
+        // Then we cut it with a cube to make it a semi-cylinder.
+        // The flat face of the semi-cylinder will be at Y=0.
+        // To do this, we subtract a cube that covers the area where X > 0.
+        translate([-block_width, -20, -block_height])
+        cube([block_width, 40, block_height*2]); // This is not working.
+        
+        // Let's use a simpler approach for the semi-cylinder:
+        // A cylinder at (0, -7.5, 0) with radius 8.25 and length 15.
+        // Then subtract a cube that removes the part where X > 0.
+        // But the user says "straight sides". If the sides are straight, the profile is a rectangle.
+        // If the profile is a semi-circle, the sides are curved.
+        // Let's assume the profile is a semi-circle.
+        
+        // Corrected Channel Subtraction:
+        // 1. A cylinder centered at (

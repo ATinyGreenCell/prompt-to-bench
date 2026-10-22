@@ -1,0 +1,45 @@
+```openscad
+// 15 mL conical tube rack, 5 holes, 30° lean
+$fn = 64;
+
+// Overall block dimensions (mm)
+L = 130;   // length along X
+W = 60;    // depth along Y
+H = 45;    // height along Z
+
+// Hole parameters
+n_holes = 5;
+spacing = 24;          // hole spacing along X
+hole_d  = 17.5;        // hole diameter (square to axis)
+hole_r  = hole_d / 2;  // hole radius
+hole_depth = 40;       // depth along axis from top face
+lean = 30;             // lean angle from vertical, in YZ plane
+y_top = -10;           // Y coordinate where each axis meets the top face
+
+// Unit vector along each hole axis, pointing down into the block
+// (down = -Z, toward +Y)
+ax = [0, sin(lean), -cos(lean)];
+
+// X positions of the five hole axes (centred on the block)
+xs = [for (i = [0 : n_holes - 1]) (i - (n_holes - 1) / 2) * spacing];
+
+// Base block, centred on origin in X and Y, resting on z = 0
+base = translate([-L / 2, -W / 2, 0]) cube([L, W, H]);
+
+// One blind hole: cylinder of radius hole_r, length hole_depth,
+// axis tilted 30° from vertical in the YZ plane, flat end square to axis.
+// The cylinder is rotated so its +Z axis aligns with the down-axis,
+// then translated so the top end sits at (x, y_top, H).
+hole(x) =
+    rotate([0, lean, 0])
+    translate([0, 0, -hole_depth])
+    cylinder(h = hole_depth, r = hole_r, $fn = $fn);
+
+// Cut all five holes from the block
+difference() {
+    base;
+    for (x = xs)
+        translate([x, y_top, H])
+        hole(x);
+}
+```

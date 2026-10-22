@@ -1,0 +1,64 @@
+```openscad
+// 12-cuvette open-sided rack, printed standing on its base.
+// Units: mm.
+
+// --- Named dimensions (measured with calipers) ---
+base_x   = 112;   // base plate length along X
+base_y   = 44;    // base plate depth along Y
+base_t   = 3;     // base plate thickness (z = 0..3)
+deck_z0  = 22;    // deck plate bottom
+deck_z1  = 25;    // deck plate top
+deck_t   = deck_z1 - deck_z0;   // deck thickness (3 mm)
+wall_h   = 25;    // upright wall height (z = 0..25)
+end_w    = 3;     // end wall thickness (X)
+rib_w    = 2.5;   // rib thickness (X)
+rib_x    = [-36, -18, 0, 18, 36];  // rib centre positions along X
+hole_s   = 13;    // square hole side
+hole_cx  = 18;    // hole centre spacing along X
+hole_cy  = 18;    // hole centre spacing along Y
+n_x      = 6;     // holes per row (along X)
+n_y      = 2;     // rows (along Y)
+
+$fn = 64;
+
+// --- Base plate (z = 0..3), centred on origin ---
+base = translate([0, 0, 0])
+    cube([base_x, base_y, base_t], center = true);
+
+// --- Deck plate (z = 22..25), centred on origin ---
+deck = translate([0, 0, (deck_z0 + deck_z1) / 2])
+    cube([base_x, base_y, deck_t], center = true);
+
+// --- Upright walls (z = 0..25), full Y depth ---
+// Two 3 mm end walls flush with the short ends
+end_walls = [for (x = [-base_x / 2 + end_w / 2, base_x / 2 - end_w / 2])
+    translate([x, 0, wall_h / 2])
+        cube([end_w, base_y, wall_h], center = true)
+];
+
+// Five 2.5 mm ribs at the given X centres
+ribs = [for (x = rib_x)
+    translate([x, 0, wall_h / 2])
+        cube([rib_w, base_y, wall_h], center = true)
+];
+
+// --- 12 square through-holes in the deck (2 rows x 6), centred on the deck ---
+// Hole centres: x = -45,-27,-9,9,27,45 ; y = -9,9
+hole_cutters = [for (i = [0 : n_x - 1], j = [0 : n_y - 1])
+    x = (i - (n_x - 1) / 2) * hole_cx;
+    y = (j - (n_y - 1) / 2) * hole_cy;
+    translate([x, y, (deck_z0 + deck_z1) / 2])
+        cube([hole_s, hole_s, deck_t + 0.02], center = true)  // 0.01 past each face
+];
+
+// --- Assemble the rack ---
+union() {
+    base;
+    difference() {
+        deck;
+        hole_cutters;
+    }
+    end_walls;
+    ribs;
+}
+```

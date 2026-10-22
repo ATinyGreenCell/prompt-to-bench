@@ -1,0 +1,554 @@
+# Prompt-to-Bench held-out task set (HO-16): 16 further biology-lab parts, 4 per category,
+# written after the main study and kept blind to the method development that followed.
+# Same schema and checker as bench/tasks.yaml: `prompt` is exactly what the model sees (after the
+# system prompt); `checks` are hidden and written in the design frame of `reference` (the part as
+# the prompt describes it, lowest point at z = 0). Reference values for relative checks (volume,
+# slice areas) come from the rendered references - see bench/heldout/build_refs_heldout.py.
+# `reference` paths are relative to the repository root.
+
+- id: pcr_strip_magnet_rack
+  category: tools
+  title: Magnetic bead rack for an 8-tube PCR strip
+  short: magnet rack
+  reference: bench/heldout/reference/pcr_strip_magnet_rack.scad
+  skills: [cone-bottomed blind seats, pockets open at the bottom face, mixed hole shapes]
+  prompt: >-
+    Design a magnetic bead rack for one 8-tube strip of 0.2 mL PCR tubes. It is a solid block 80
+    mm long (X), 24 mm wide (Y) and 20 mm tall (Z), standing on the bed and centred on the origin
+    in X and Y. Along y = 0 it has 8 tube seats, 9 mm apart centre-to-centre and centred on the
+    block. Each seat is a 6.4 mm hole from the top face down to z = 12 that then narrows as a cone
+    to 3 mm in diameter at z = 2, where it ends (a 2 mm floor). Beside the row, centred at y = -6
+    and y = 6, are two pockets for 60 x 10 x 3 mm bar magnets, each 60.4 mm long (X), 3.3 mm wide
+    (Y) and 10.2 mm tall, centred in X and open at the bottom face (z = 0 to 10.2).
+  checks:
+    - bbox: {size: [80, 24, 20], tol: 0.5}
+    - bodies: 1
+    - slice: {z: 16, islands: 1, holes: 8, hole_d: [6.4, 0.3],
+              hole_grid: {nx: 8, ny: 1, px: 9, py: 9}, tol: 0.4}
+    - slice: {z: 7, islands: 1, holes: 10,
+              hole_rects: [[60.4, 3.3], [60.4, 3.3], [4.7, 4.7], [4.7, 4.7], [4.7, 4.7], [4.7, 4.7],
+                           [4.7, 4.7], [4.7, 4.7], [4.7, 4.7], [4.7, 4.7]], rect_tol: 0.3,
+              hole_centers: [[-31.5, 0], [-22.5, 0], [-13.5, 0], [-4.5, 0], [4.5, 0], [13.5, 0],
+                             [22.5, 0], [31.5, 0], [0, 6], [0, -6]], tol: 0.4}
+    - slice: {z: 3.5, holes: 10, hole_rects: [[60.4, 3.3], [60.4, 3.3], [3.51, 3.51], [3.51, 3.51],
+                                             [3.51, 3.51], [3.51, 3.51], [3.51, 3.51], [3.51, 3.51],
+                                             [3.51, 3.51], [3.51, 3.51]], rect_tol: 0.3}   # the cone, low down
+    - slice: {z: 1.4, islands: 1, holes: 2}     # seats end at z = 2, within 0.6 mm
+    - slice: {z: 2.6, holes: 10}
+    - slice: {z: 9.6, holes: 10}                # pockets 10.2 tall, within 0.6 mm
+    - slice: {z: 10.8, islands: 1, holes: 8}
+    - bores: {z: [0.15, 9.9], at: [[0, 6], [0, -6], [25, 6], [-25, -6]]}   # pockets open at the bottom
+    - probes: {empty: [[0, 4.65, 5], [0, 7.35, 5], [0, -4.65, 5], [0, -7.35, 5],
+                       [29.9, 6, 5], [-29.9, 6, 5], [29.9, -6, 5], [-29.9, -6, 5], [31.5, 0, 19.7]],
+               solid: [[0, 4.05, 5], [0, 7.95, 5], [0, -4.05, 5], [0, -7.95, 5],
+                       [30.5, 6, 5], [-30.5, 6, 5], [30.5, -6, 5], [-30.5, -6, 5], [0, 6, 11]]}   # pocket faces
+    - volume: {rel_tol: 0.05}
+
+- id: cuvette_rack_2x6
+  category: benchware
+  title: Open-sided rack for 12 square cuvettes
+  short: cuvette rack
+  reference: bench/heldout/reference/cuvette_rack_2x6.scad
+  skills: [two plates joined by walls, square through-holes, open sides]
+  prompt: >-
+    Design an open-sided rack for twelve standard 12.5 mm square cuvettes, printed standing on its
+    base. A base plate 112 mm (X) by 44 mm (Y) and 3 mm thick lies on the bed (z = 0 to 3),
+    centred on the origin, and a deck plate of the same size lies above it from z = 22 to z = 25.
+    Seven upright walls, as deep as the plates and running from z = 0 to 25, join them: two 3 mm
+    end walls flush with the short ends, and five 2.5 mm ribs centred at x = -36, -18, 0, 18 and
+    36. The long front and back sides stay open. The deck has 12 square through-holes, 13 x 13 mm
+    with their sides parallel to the plate edges, in 2 rows (along Y) of 6 (along X), 18 mm
+    centre-to-centre in both directions and centred on the deck.
+  checks:
+    - bbox: {size: [112, 44, 25], tol: 0.5}
+    - bodies: 1
+    - slice: {z: 23.5, islands: 1, holes: 12, hole_area: [169, 0.05],
+              hole_rects: [[13, 13], [13, 13], [13, 13], [13, 13], [13, 13], [13, 13],
+                           [13, 13], [13, 13], [13, 13], [13, 13], [13, 13], [13, 13]], rect_tol: 0.3,
+              hole_grid: {nx: 6, ny: 2, px: 18, py: 18}, tol: 0.4}
+    - slice: {z: 12, islands: 7, holes: 0,
+              island_rects: [[44, 3], [44, 3], [44, 2.5], [44, 2.5], [44, 2.5], [44, 2.5], [44, 2.5]], island_tol: 0.3}
+    - line: {z: 12, from: [-57, 0], to: [57, 0], intervals: 7}
+    - slice: {z: 1.5, islands: 1, holes: 0}
+    - slice: {z: 2.4, islands: 1}               # base plate 3 mm, within 0.6 mm
+    - slice: {z: 3.6, islands: 7}
+    - slice: {z: 21.4, islands: 7}              # deck from z = 22, within 0.6 mm
+    - slice: {z: 22.6, islands: 1, holes: 12}
+    - probes: {solid: [[0, 0, 12], [18, 0, 12], [-18, 0, 12], [36, 0, 12], [-36, 0, 12], [54.5, 0, 12], [-54.5, 0, 12],
+                       [0.95, 0, 12], [-0.95, 0, 12], [36.95, 0, 12], [35.05, 0, 12], [53.3, 0, 12], [-53.3, 0, 12],
+                       [0, 21.7, 12], [0, -21.7, 12]],
+               empty: [[9, 0, 12], [-27, 0, 12], [45, 0, 12], [1.55, 0, 12], [-1.55, 0, 12], [37.55, 0, 12],
+                       [34.45, 0, 12], [52.7, 0, 12], [-52.7, 0, 12], [9, 21.7, 12], [9, -21.7, 12],
+                       [-45, 21.7, 12], [27, -21.7, 12]]}   # ribs and end walls in place, front and back open
+    - probes: {empty: [[15.2, 9, 23.5], [2.8, 9, 23.5], [9, 15.2, 23.5], [9, 2.8, 23.5]],
+               solid: [[15.8, 9, 23.5], [2.2, 9, 23.5], [9, 15.8, 23.5], [9, 2.2, 23.5]]}   # a 13 mm hole, edge to edge
+    - volume: {rel_tol: 0.05}
+
+- id: petri_dish_rack_upright
+  category: benchware
+  title: Upright rack for ten 90 mm Petri dishes
+  short: Petri rack
+  reference: bench/heldout/reference/petri_dish_rack_upright.scad
+  skills: [cylindrical cradle cut, thin divider plates, 1-D array]
+  prompt: >-
+    Design a rack that holds ten 90 mm Petri dishes standing on edge, printed as used. The base is
+    a block 203 mm long (X), 80 mm wide (Y) and 20 mm tall, centred on the origin in X and Y. A
+    curved cradle for the dish rims is cut along its whole length: the inside of a cylinder of
+    radius 46 mm whose axis runs along X at y = 0, z = 52, so the cradle bottoms out at z = 6.
+    Eleven solid divider plates, each 3 mm thick (X) and as wide as the base (80 mm in Y), rise
+    from z = 0 to z = 60 at x = -100, -80, ..., 100 (20 mm apart, centred on the base); the cradle
+    is not cut through them. This leaves ten 17 mm wide slots, one dish in each.
+  checks:
+    - bbox: {size: [203, 80, 60], tol: 0.5}
+    - bodies: 1
+    - slice: {z: 40, islands: 11, holes: 0,
+              island_rects: [[80, 3], [80, 3], [80, 3], [80, 3], [80, 3], [80, 3], [80, 3], [80, 3],
+                             [80, 3], [80, 3], [80, 3]], island_tol: 0.3}
+    - line: {z: 40, from: [-103, 0], to: [103, 0], intervals: 11, length: [3, 0.3]}
+    - slice: {z: 16, islands: 1, holes: 10,
+              hole_rects: [[57.27, 17], [57.27, 17], [57.27, 17], [57.27, 17], [57.27, 17],
+                           [57.27, 17], [57.27, 17], [57.27, 17], [57.27, 17], [57.27, 17]], rect_tol: 0.4,
+              hole_grid: {nx: 10, ny: 1, px: 20, py: 20}, tol: 0.4}
+    - slice: {z: 19, holes: 10,
+              hole_rects: [[64.09, 17], [64.09, 17], [64.09, 17], [64.09, 17], [64.09, 17],
+                           [64.09, 17], [64.09, 17], [64.09, 17], [64.09, 17], [64.09, 17]], rect_tol: 0.4}   # the cradle's radius and height
+    - slice: {z: 3, islands: 1, holes: 0}
+    - slice: {z: 5.4, holes: 0}                 # cradle bottom at z = 6, within 0.6 mm
+    - slice: {z: 6.6, holes: 10}
+    - slice: {z: 19.4, islands: 1}              # base top at z = 20, within 0.6 mm
+    - slice: {z: 20.6, islands: 11}
+    - probes: {empty: [[10, 0, 40], [-90, 0, 40], [1.8, 0, 40], [-1.8, 0, 40], [98.2, 0, 40], [-98.2, 0, 40],
+                       [50, 0, 10], [50, 30, 18.5]],
+               solid: [[0, 0, 40], [100, 0, 59.7], [1.2, 0, 40], [-1.2, 0, 40], [98.8, 0, 40], [-98.8, 0, 40],
+                       [0, 0, 10], [50, 0, 5.4], [50, 37, 18.5]]}   # divider faces; dividers fill the cradle
+    - volume: {rel_tol: 0.05}
+
+- id: syringe_holder_10ml
+  category: hardware
+  title: Wall holder for a 10 mL syringe
+  short: syringe holder
+  reference: bench/heldout/reference/syringe_holder_10ml.scad
+  skills: [open-fronted U channel, horizontal slot from a side face, holes through a side wall]
+  prompt: >-
+    Design a wall-mounted holder in which a 10 mL syringe (barrel 16 mm across, finger flange 2 mm
+    thick and about 32 mm wide) hangs upright, tip down. It is printed as used: a block 50 mm wide
+    (X), 30 mm deep (Y) and 40 mm tall (Z), standing on the bed and centred on the origin in X and
+    Y, with its back face (y = 15) against the wall. A 16.5 mm wide vertical barrel channel runs
+    through the full height: its back end is a half-circle of 8.25 mm radius centred at x = 0, y =
+    0, and its straight sides run forward to the front face (y = -15), so the syringe slides in
+    from the front. A flange slot, 34 mm wide (X, centred) and 2.6 mm tall (z = 30 to 32.6), is
+    cut in from the front face back to y = 11. Two 4.5 mm holes for M4 wall screws go straight
+    through from front to back (along Y) at x = -19 and 19, z = 15.
+  checks:
+    - bbox: {size: [50, 30, 40], tol: 0.5}
+    - bodies: 1
+    - slice: {z: 22, islands: 1, holes: 0, material_area: 0.03}
+    - line: {z: 22, from: [-26, 0], to: [26, 0], intervals: 2, length: [16.75, 0.3]}
+    - line: {z: 22, from: [0, -16], to: [0, 16], intervals: 1, length: [6.75, 0.3]}
+    - probes: {solid: [[6.2, 6.2, 22], [-6.2, 6.2, 22], [8.55, -10, 22], [-8.55, -10, 22]],
+               empty: [[5.6, 5.6, 22], [-5.6, 5.6, 22], [7.95, -10, 22], [-7.95, -10, 22], [0, -14.8, 22]]}   # half-circle back, straight sides, open front
+    - bores: {z: [0.15, 39.85], at: [[0, 0], [0, -10], [7, -5]]}   # the channel is open over the full height
+    - probes: {empty: [[16.7, 0, 31.3], [-16.7, 0, 31.3], [16.7, -14.7, 31.3], [12, 10.7, 31.3], [0, 10.7, 31.3],
+                       [12, 0, 30.3], [12, 0, 32.3]],
+               solid: [[17.3, 0, 31.3], [-17.3, 0, 31.3], [12, 11.3, 31.3], [0, 11.3, 31.3],
+                       [12, 0, 29.7], [12, 0, 32.9], [12, 0, 36]]}   # flange slot 34 x 2.6, back to y = 11
+    - slice: {z: 15, islands: 3}                # the screw holes cut right through the block
+    - probes: {empty: [[19, 0, 15], [-19, 0, 15], [19, -14.7, 15], [-19, 14.7, 15], [20.95, 0, 15], [17.05, 0, 15],
+                       [19, 0, 16.95], [19, 0, 13.05], [-20.95, 0, 15], [-17.05, 0, 15]],
+               solid: [[21.55, 0, 15], [16.45, 0, 15], [19, 0, 17.55], [19, 0, 12.45], [-21.55, 0, 15], [-16.45, 0, 15],
+                       [-19, 0, 17.55], [-19, 0, 12.45]]}   # 4.5 mm screw holes
+    - volume: {rel_tol: 0.05}
+
+- id: eyepiece_phone_adapter
+  category: hardware
+  title: Phone adapter for a 30 mm microscope eyepiece
+  short: eyepiece adapter
+  reference: bench/heldout/reference/eyepiece_phone_adapter.scad
+  skills: [off-centre feature on a plate, stepped bore, radial holes]
+  prompt: >-
+    Design an adapter that holds a phone camera over a microscope eyepiece with a 30 mm outer
+    diameter, printed phone side down. A flat plate 80 mm (X) by 60 mm (Y) and 3 mm thick lies on
+    the bed (z = 0 to 3), centred on the origin, with a 12 mm camera hole through it at x = -20, y
+    = 10. On the plate, on the camera-hole axis, stands a round sleeve of 36.6 mm outer diameter
+    from z = 3 to z = 31. Its bore is 22 mm in diameter from z = 3 to z = 11 (a stop that sets the
+    eyepiece's distance from the camera) and 30.6 mm from z = 11 to the open top, so it slides
+    over the eyepiece. Three radial 2.5 mm holes for M3 centring screws go through the sleeve wall
+    at z = 21, 120 degrees apart, the first pointing in the +X direction.
+  checks:
+    - bbox: {size: [80, 60, 31], tol: 0.5}
+    - bodies: 1
+    - slice: {z: 1.5, islands: 1, holes: 1, hole_d: [12, 0.3], hole_centers: [[-20, 10]], tol: 0.4}
+    - slice: {z: 7, islands: 1, holes: 1, island_d: [36.6, 0.3], hole_d: [22, 0.3], hole_centers: [[-20, 10]], tol: 0.4}
+    - slice: {z: 15, islands: 1, holes: 1, island_d: [36.6, 0.3], hole_d: [30.6, 0.3], hole_centers: [[-20, 10]], tol: 0.4}
+    - slice: {z: 27, islands: 1, holes: 1, island_d: [36.6, 0.3], hole_d: [30.6, 0.3]}
+    - slice: {z: 10.4, hole_d: [22, 0.3]}       # the step at z = 11, within 0.6 mm
+    - slice: {z: 11.6, hole_d: [30.6, 0.3]}
+    - slice: {z: 21, islands: 3, holes: 0}      # three radial holes cut the sleeve wall
+    - arc: {z: 21, center: [-20, 10], r: 16.8, gaps: 3}
+    - probes: {empty: [[-3.2, 10, 21], [-28.4, 24.549, 21], [-28.4, -4.549, 21],
+                       [-3.2, 10, 21.95], [-3.2, 10, 20.05], [-3.2, 10.95, 21], [-3.2, 9.05, 21]],
+               solid: [[-11.6, 24.549, 21], [-36.8, 10, 21], [-11.6, -4.549, 21],
+                       [-3.2, 10, 22.55], [-3.2, 10, 19.45], [-3.2, 11.55, 21], [-3.2, 8.45, 21]]}   # 2.5 mm, first on +X, 120 deg
+    - bores: {z: [0.15, 30.85], at: [[-20, 10]]}   # the optical path is open
+    - volume: {rel_tol: 0.05}
+
+- id: shelf_pipette_holder
+  category: quick-fixes
+  title: Shelf-edge clamp holder for 3 pipettes
+  short: pipette holder
+  reference: bench/heldout/reference/shelf_pipette_holder.scad
+  skills: [print on the side, 2-D clamp profile, holes across the extrusion]
+  prompt: >-
+    Design a holder that clamps onto the front edge of an 18 mm thick shelf and holds 3
+    single-channel pipettes hanging upright in front of it. It is printed lying on its side: a 2-D
+    profile in the XY plane, extruded 105 mm along Z (in use, +Y is up and +X points away from the
+    shelf). The profile is a C-shaped clamp whose top jaw continues forward as an arm: a spine
+    from x = 0 to 5, y = 0 to 28.4; a bottom jaw from x = -25 to 5, y = 0 to 5; and a top jaw and
+    arm from x = -25 to 65, y = 23.4 to 28.4, which leaves an 18.4 mm gap for the shelf. Three
+    round 20 mm holes go through the arm along Y (vertically in use), centred at x = 42 and z =
+    17.5, 52.5 and 87.5.
+  checks:
+    - bbox: {size: [90, 28.4, 105], tol: 0.3}   # 0.3: the 18.4 mm clearance gap sets the 28.4
+    - bodies: 1
+    - slice: {z: 35, islands: 1, holes: 0, material_area: 0.03}
+    - slice: {z: 17.5, islands: 2}              # each hole cuts the arm in two at its centre height
+    - slice: {z: 52.5, islands: 2}
+    - slice: {z: 87.5, islands: 2}
+    - line: {z: 35, from: [-12, -1], to: [-12, 30], intervals: 2, length: [5, 0.3]}   # two 5 mm jaws
+    - line: {z: 35, from: [-26, 2.5], to: [6, 2.5], intervals: 1, length: [30, 0.4]}  # bottom jaw x = -25 .. 5
+    - line: {z: 35, from: [6, 25.9], to: [66, 25.9], intervals: 1, length: [59, 0.4]} # arm to x = 65
+    - probes: {empty: [[-12, 14, 35], [-12, 5.3, 35], [-12, 23.1, 35], [-0.3, 14, 35], [-24.5, 14, 35]],
+               solid: [[-12, 4.7, 35], [-12, 23.7, 35], [0.3, 14, 35], [4.7, 14, 35], [-24.7, 2.5, 35], [-24.7, 25.9, 35]]}   # the 18.4 mm shelf gap
+    - probes: {empty: [[42, 25.9, 17.5], [51.7, 25.9, 17.5], [32.3, 25.9, 17.5], [42, 25.9, 27.2], [42, 25.9, 7.8],
+                       [42, 25.9, 52.5], [51.7, 25.9, 52.5], [32.3, 25.9, 52.5], [42, 25.9, 62.2], [42, 25.9, 42.8],
+                       [42, 25.9, 87.5], [51.7, 25.9, 87.5], [32.3, 25.9, 87.5], [42, 25.9, 97.2], [42, 25.9, 77.8]],
+               solid: [[52.3, 25.9, 17.5], [31.7, 25.9, 17.5], [42, 25.9, 27.8], [42, 25.9, 7.2],
+                       [52.3, 25.9, 52.5], [31.7, 25.9, 52.5], [42, 25.9, 62.8], [42, 25.9, 42.2],
+                       [52.3, 25.9, 87.5], [31.7, 25.9, 87.5], [42, 25.9, 97.8], [42, 25.9, 77.2]]}   # three 20 mm holes
+    - volume: {rel_tol: 0.05}
+
+- id: waterbath_float_15ml
+  category: tools
+  title: Water-bath float for seven 15 mL tubes
+  short: float
+  reference: bench/heldout/reference/waterbath_float_15ml.scad
+  skills: [hexagon, polar hole pattern, thin sleeves and skirt, print inverted]
+  prompt: >-
+    Design a float that holds seven 15 mL conical tubes upright in a water bath, printed upside
+    down. A flat plate, a regular hexagon 90 mm across the flats with two flats parallel to the X
+    axis and 3 mm thick, lies on the bed (z = 0 to 3), centred on the origin. It has seven 17.5 mm
+    through-holes: one at the centre and six on a 54 mm diameter circle, 60 degrees apart, the
+    first on the +X axis. Around each hole a sleeve with a 2 mm wall (21.5 mm outside) rises from
+    the plate to z = 20. A hexagonal skirt with a 2 mm wall, 84 mm across the flats outside (3 mm
+    in from the plate's edge, its sides parallel to the plate's), also rises from the plate to z =
+    20. Flipped for use, the skirt and sleeves trap air under the plate, so it floats.
+  checks:
+    - bbox: {size: [103.92, 90, 20], tol: 0.5}
+    - bodies: 1
+    - slice: {z: 1.5, islands: 1, holes: 7, hole_d: [17.5, 0.3], material_area: 0.03,
+              hole_centers: [[0, 0], [27, 0], [13.5, 23.383], [-13.5, 23.383], [-27, 0], [-13.5, -23.383], [13.5, -23.383]], tol: 0.4}
+    - probes: {solid: [[40, 18, 1.5], [25, 44.7, 1.5], [51.3, 0, 1.5]],
+               empty: [[45, 18, 1.5], [28, 44.7, 1.5], [49, 6, 1.5]]}   # a hexagon, not a disc or a rectangle
+    - slice: {z: 12, islands: 8, holes: 8,
+              island_rects: [[96.99, 84], [21.5, 21.5], [21.5, 21.5], [21.5, 21.5], [21.5, 21.5], [21.5, 21.5],
+                             [21.5, 21.5], [21.5, 21.5]], island_tol: 0.4,
+              hole_rects: [[92.38, 80], [17.5, 17.5], [17.5, 17.5], [17.5, 17.5], [17.5, 17.5], [17.5, 17.5],
+                           [17.5, 17.5], [17.5, 17.5]], rect_tol: 0.4,
+              hole_centers: [[0, 0], [0, 0], [27, 0], [13.5, 23.383], [-13.5, 23.383], [-27, 0], [-13.5, -23.383], [13.5, -23.383]], tol: 0.4}
+    - probes: {empty: [[0, 43.5, 12], [0, -43.5, 12], [0, 39.7, 12], [44, 22, 12]],
+               solid: [[0, 41, 12], [0, -41, 12], [0, 44.5, 1.5]]}   # skirt 84 across the flats outside, 3 mm in from the edge
+    - slice: {z: 2.4, islands: 1}               # plate 3 mm, within 0.6 mm
+    - slice: {z: 3.6, islands: 8}
+    - bores: {z: [0.15, 19.85], at: [[0, 0], [27, 0], [13.5, 23.383], [-13.5, 23.383], [-27, 0], [-13.5, -23.383], [13.5, -23.383]]}
+    - volume: {rel_tol: 0.05}
+
+- id: tubing_manifold_1to3
+  category: hardware
+  title: 1-to-3 tubing manifold block
+  short: manifold
+  reference: bench/heldout/reference/tubing_manifold_1to3.scad
+  skills: [internal channels, horizontal sockets, closed channel end]
+  prompt: >-
+    Design a manifold block that splits one tubing line into three. It is a solid block 60 mm long
+    (X), 24 mm wide (Y) and 16 mm tall, lying on the bed and centred on the origin in X and Y. All
+    channels are 3 mm in diameter and lie in the mid-plane z = 8. The inlet, on the -X end face at
+    y = 0, is a 4.2 mm socket 8 mm deep for 4 mm tubing; from it the main channel runs along X to
+    x = 15, where it stops, closed, inside the block. Three outlet channels branch off it at x =
+    -15, 0 and 15 and run in the +Y direction to the +Y face, each ending there in a 4.2 mm socket
+    6 mm deep. Two 3.4 mm vertical through-holes for M3 screws go through the block at x = -25 and
+    25, y = -6.
+  checks:
+    - bbox: {size: [60, 24, 16], tol: 0.5}
+    - bodies: 1
+    - slice: {z: 4, islands: 1, holes: 2, hole_d: [3.4, 0.3], hole_centers: [[-25, -6], [25, -6]], tol: 0.4}
+    - slice: {z: 12, islands: 1, holes: 2, hole_d: [3.4, 0.3]}
+    - slice: {z: 8, islands: 4, holes: 2}       # the channel network splits the mid-plane into 4 pieces
+    - probes: {empty: [[-10, 0, 8], [-10, 0, 9.2], [-10, 0, 6.8], [-10, 1.2, 8], [-10, -1.2, 8], [-29.8, 0, 8]],
+               solid: [[-10, 0, 9.8], [-10, 0, 6.2], [-10, 1.8, 8], [-10, -1.8, 8], [17.5, 0, 8], [22, 0, 8]]}   # 3 mm main channel, closed past x = 15
+    - probes: {empty: [[-26, 0, 9.8], [-22.6, 0, 9.8], [-26, 1.8, 8]],
+               solid: [[-26, 0, 10.4], [-21.4, 0, 9.8], [-26, 2.4, 8]]}   # inlet socket 4.2 x 8
+    - probes: {empty: [[-15, 3, 8], [-13.8, 3, 8], [-16.2, 3, 8], [-15, 6.6, 9.8], [-15, 11.8, 8],
+                       [0, 3, 8], [1.2, 3, 8], [-1.2, 3, 8], [0, 6.6, 9.8], [0, 11.8, 8],
+                       [15, 3, 8], [16.2, 3, 8], [13.8, 3, 8], [15, 6.6, 9.8], [15, 11.8, 8]],
+               solid: [[-13.2, 3, 8], [-16.8, 3, 8], [-15, 5.4, 9.8], [-15, 8, 10.4],
+                       [1.8, 3, 8], [-1.8, 3, 8], [0, 5.4, 9.8], [0, 8, 10.4],
+                       [16.8, 3, 8], [13.2, 3, 8], [15, 5.4, 9.8], [15, 8, 10.4]]}   # three outlets with 4.2 x 6 sockets
+    - bores: {z: [0.15, 15.85], at: [[-25, -6], [25, -6]]}
+    - volume: {rel_tol: 0.05}
+
+- id: microtube_balance_stand
+  category: quick-fixes
+  title: Balance stand for one 1.5 mL tube
+  short: balance stand
+  reference: bench/heldout/reference/microtube_balance_stand.scad
+  skills: [revolved profile, conical seat, side window]
+  prompt: >-
+    Design a stand that holds one 1.5 mL microcentrifuge tube upright on an analytical balance,
+    printed standing up. It is round about the Z axis: a base disc 50 mm in diameter from z = 0 to
+    4, a cone narrowing from 50 mm at z = 4 to 22 mm at z = 14, and a 22 mm column from z = 14 to
+    33. A seat for the tube goes down the axis from the top: 11 mm in diameter from z = 33 down to
+    z = 23, then a cone narrowing to 3 mm at z = 6 that follows the tube's conical tip; below z =
+    6 the stand is solid. A viewing window 4 mm wide (in Y) is cut straight through the column
+    wall on the +X side, from the seat to the outside, between z = 18 and z = 30.
+  checks:
+    - bbox: {size: [50, 50, 33], tol: 0.4}
+    - bodies: 1
+    - slice: {z: 2, islands: 1, holes: 0, island_d: [50, 0.3]}
+    - slice: {z: 9, islands: 1, holes: 1, island_d: [36, 0.4], hole_d: [4.41, 0.3]}
+    - slice: {z: 12, islands: 1, holes: 1, island_d: [27.6, 0.4], hole_d: [5.82, 0.3]}
+    - slice: {z: 16, islands: 1, holes: 1, island_d: [22, 0.3], hole_d: [7.71, 0.3]}
+    - slice: {z: 31.5, islands: 1, holes: 1, island_d: [22, 0.3], hole_d: [11, 0.3]}
+    - slice: {z: 5.4, holes: 0}                 # seat ends at z = 6, within 0.6 mm
+    - slice: {z: 6.6, holes: 1}
+    - probes: {empty: [[-5.2, 0, 25], [-4.5, 0, 20], [0, 5.2, 25], [0, -4.5, 20]],
+               solid: [[-5.8, 0, 25], [-5.1, 0, 20], [0, 5.8, 25], [0, -5.1, 20]]}   # seat beside the window: 11 mm, then the cone
+    - probes: {empty: [[8, 0, 24], [8, 1.7, 24], [8, -1.7, 24], [8, 0, 18.6], [8, 0, 29.4], [10.7, 0, 24]],
+               solid: [[8, 2.3, 24], [8, -2.3, 24], [8, 0, 17.4], [8, 0, 30.6], [-8, 0, 24], [0, 8, 24], [0, -8, 24]]}   # one 4 mm window, z = 18 .. 30
+    - volume: {rel_tol: 0.05}
+
+- id: roundbottom_tube_puck_2ml
+  category: benchware
+  title: Holder for eight 2 mL round-bottom tubes
+  short: round-bottom holder
+  reference: bench/heldout/reference/roundbottom_tube_puck_2ml.scad
+  skills: [hemispherical seat bottoms, polar array, flat cut on a round part]
+  prompt: >-
+    Design a holder that keeps eight 2 mL round-bottom tubes upright, for example while loading
+    beads for bead beating. It is a round puck 80 mm in diameter and 26 mm tall, standing on the
+    bed with its axis on the Z axis, with one side cut off flat for a label: everything beyond the
+    plane x = 34 is removed. Eight seats are cut into the top face, evenly spaced on a 50 mm
+    diameter circle, the first on the +X axis. Each seat is shaped like the tube: an 11.2 mm
+    diameter hole whose bottom is a half-sphere of the same diameter, so its lowest point is 20 mm
+    below the top face, at z = 6.
+  checks:
+    - bbox: {size: [74, 80, 26], tol: 0.4}
+    - bodies: 1
+    - slice: {z: 3, islands: 1, holes: 0, material_area: 0.03}
+    - probes: {solid: [[33.7, 15, 3], [-39.7, 0, 3], [0, 39.7, 3], [-36, 16, 3]],
+               empty: [[-37, 16, 3], [34.3, 0, 3]]}   # round, with the flat at x = 34
+    - slice: {z: 20, islands: 1, holes: 8, hole_d: [11.2, 0.3],
+              hole_centers: [[25, 0], [17.678, 17.678], [0, 25], [-17.678, 17.678], [-25, 0], [-17.678, -17.678],
+                             [0, -25], [17.678, -17.678]], tol: 0.4}
+    - slice: {z: 12, holes: 8, hole_d: [11.2, 0.3]}
+    - slice: {z: 8, holes: 8, hole_d: [8.58, 0.3]}     # the half-sphere bottom
+    - slice: {z: 6.8, holes: 8, hole_d: [5.77, 0.45]}
+    - slice: {z: 5.4, holes: 0}                 # lowest point at z = 6, within 0.6 mm
+    - slice: {z: 6.6, holes: 8}
+    - volume: {rel_tol: 0.05}
+
+- id: conical_15ml_incline_rack
+  category: benchware
+  title: Inclined rack for five 15 mL tubes
+  short: inclined rack
+  reference: bench/heldout/reference/conical_15ml_incline_rack.scad
+  skills: [tilted holes, blind holes, angle from two slices]
+  prompt: >-
+    Design a rack that holds five 15 mL conical tubes at a 30-degree lean, for reading volumes and
+    pipetting off supernatant. It is a solid block 130 mm long (X), 60 mm deep (Y) and 45 mm tall
+    (Z), standing on the bed and centred on the origin in X and Y. It has five blind holes, 24 mm
+    apart along X and centred on the block. Each hole is a cylinder 17.5 mm in diameter (measured
+    square to its axis), 40 mm deep measured along its axis from the top face, with a flat end
+    square to the axis. Each axis meets the top face at y = -10 and is tilted 30 degrees from
+    vertical in the YZ plane: going down into the block, it moves toward +Y.
+  checks:
+    - bbox: {size: [130, 60, 45], tol: 0.5}
+    - bodies: 1
+    - slice: {z: 40, islands: 1, holes: 5, hole_rect: [20.21, 17.5, 0.4, 0.3],
+              hole_centers: [[-48, -7.113], [-24, -7.113], [0, -7.113], [24, -7.113], [48, -7.113]], tol: 0.4}
+    - slice: {z: 20, islands: 1, holes: 5, hole_rect: [20.21, 17.5, 0.4, 0.3],
+              hole_centers: [[-48, 4.434], [-24, 4.434], [0, 4.434], [24, 4.434], [48, 4.434]], tol: 0.4}   # the tilt
+    - slice: {z: 44.4, holes: 5, hole_centers: [[-48, -9.654], [-24, -9.654], [0, -9.654], [24, -9.654], [48, -9.654]], tol: 0.4}
+    - slice: {z: 5.4, islands: 1, holes: 0}     # deepest point at z = 5.98: 40 mm along the axis
+    - slice: {z: 6.6, holes: 5}
+    - probes: {empty: [[0, 9.75, 10.792], [48, 9.75, 10.792], [-24, 9.75, 10.792], [0, -10, 44.7]],
+               solid: [[0, 10.25, 9.926], [48, 10.25, 9.926], [-24, 10.25, 9.926], [12, -10, 40], [0, -25, 40]]}   # flat end square to the axis
+    - volume: {rel_tol: 0.05}
+
+- id: conical_50ml_carrier
+  category: hardware
+  title: Two-part carrier for four 50 mL tubes
+  short: 50 mL carrier
+  reference: bench/heldout/reference/conical_50ml_carrier.scad
+  skills: [two parts on one bed, tall posts, square holes through walls]
+  prompt: >-
+    Design a carrier with a carrying handle for four 50 mL conical tubes, made as two parts
+    printed side by side. Part 1: a base block 90 x 90 mm (X x Y) and 35 mm tall, centred on the
+    origin, with four blind seats 30.5 mm in diameter and 30 mm deep (a 5 mm floor), centred at x
+    = -21 and 21, y = -24 and 24. Two posts, 10 mm thick (X) and 16 mm wide (Y), stand on the base
+    at its two X ends, flush with the end faces and centred on y = 0, and rise to z = 160; each
+    has a square 10.4 x 10.4 mm hole straight through it along X, centred at z = 150. Part 2, the
+    handle: a square bar 10 x 10 mm and 100 mm long, lying on the bed along X and centred on x =
+    0, with a 10 mm gap to the base's +Y face (it spans y = 55 to 65). After printing, the bar is
+    pushed through both posts.
+  checks:
+    - bodies: 2
+    - bbox: {size: [100, 110, 160], tol: 0.6}
+    - body_sizes: {sizes: [[90, 90, 160], [100, 10, 10]], tol: 0.4}
+    - slice: {z: 4.4, islands: 2, holes: 0, island_rects: [[90, 90], [100, 10]], island_tol: 0.4}   # 5 mm floor
+    - slice: {z: 5.6, islands: 2, holes: 4}
+    - slice: {z: 20, islands: 1, holes: 4, hole_d: [30.5, 0.4],
+              hole_centers: [[-21, -24], [21, -24], [-21, 24], [21, 24]], tol: 0.5}
+    - slice: {z: 34.4, islands: 1, holes: 4}    # base top at z = 35, within 0.6 mm
+    - slice: {z: 35.6, islands: 2, holes: 0}
+    - slice: {z: 100, islands: 2, holes: 0, island_rects: [[16, 10], [16, 10]], island_tol: 0.3}
+    - probes: {solid: [[40, 0, 100], [-40, 0, 100], [44.7, 7.7, 100], [-44.7, -7.7, 100], [40, 0, 159.7]],
+               empty: [[34.7, 0, 100], [-34.7, 0, 100], [40, 8.3, 100], [-40, -8.3, 100], [0, 0, 100]]}   # posts flush with the ends
+    - probes: {empty: [[40, 0, 150], [-40, 0, 150], [40, 4.9, 150], [40, -4.9, 150], [40, 0, 154.9], [40, 0, 145.1],
+                       [-40, 4.6, 154.6], [-40, -4.6, 145.4], [44.7, 0, 150], [35.3, 0, 150]],
+               solid: [[40, 5.5, 150], [40, -5.5, 150], [40, 0, 155.5], [40, 0, 144.5], [-40, 5.5, 150], [-40, 0, 144.5]]}   # square 10.4 holes
+    - probes: {solid: [[0, 60, 5], [49.7, 60, 5], [-49.7, 60, 5], [0, 55.3, 5], [0, 64.7, 5], [0, 60, 9.7]],
+               empty: [[0, 54.7, 5], [0, 50, 5], [0, 60, 10.3]]}   # the bar beside the base, 10 mm gap
+    - volume: {rel_tol: 0.05}
+
+- id: pcr_strip_ice_hanger
+  category: quick-fixes
+  title: Ice-bucket hanger for a PCR strip
+  short: ice hanger
+  reference: bench/heldout/reference/pcr_strip_ice_hanger.scad
+  skills: [extruded hook profile, ledge with a row of holes, bridged gap]
+  prompt: >-
+    Design a holder that hangs one 8-tube PCR strip inside an ice bucket by hooking over the
+    bucket's 12 mm thick wall. It is printed as used: a profile in the YZ plane extruded 84 mm
+    along X, centred on x = 0. The profile is an upside-down U that fits over the wall: an inner
+    leg (y = 0 to 4) and an outer leg (y = 16.5 to 20.5), both from z = 0 to z = 50, joined at the
+    top by a bridge from z = 46 to 50, which leaves a 12.5 mm gap for the wall. From the foot of
+    the inner leg a flat ledge, 6 mm thick (z = 0 to 6), reaches toward -Y from y = 0 to y = -30,
+    into the ice. Eight vertical 6.4 mm through-holes in the ledge hold the tubes: 9 mm apart
+    along X, centred, at y = -15.
+  checks:
+    - bbox: {size: [84, 50.5, 50], tol: 0.5}
+    - bodies: 1
+    - slice: {z: 3, islands: 2, holes: 8, hole_d: [6.4, 0.3],
+              hole_grid: {nx: 8, ny: 1, px: 9, py: 9, center: [0, -15]}, tol: 0.4,
+              island_rects: [[84, 34], [84, 4]], island_tol: 0.3}
+    - slice: {z: 25, islands: 2, holes: 0, island_rects: [[84, 4], [84, 4]], island_tol: 0.3}
+    - probes: {solid: [[0, 2, 25], [0, 18.5, 25], [0, 3.7, 25], [0, 16.8, 25], [0, 10, 48]],
+               empty: [[0, 10, 25], [0, 4.3, 25], [0, 16.2, 25], [0, -5, 25], [0, 10, 45.7]]}   # the 12.5 mm wall gap
+    - slice: {z: 48, islands: 1, holes: 0, island_rects: [[84, 20.5]], island_tol: 0.3}
+    - slice: {z: 5.4, holes: 8}                 # ledge 6 mm, within 0.6 mm
+    - slice: {z: 6.6, islands: 2, holes: 0}
+    - slice: {z: 45.4, islands: 2}              # bridge from z = 46, within 0.6 mm
+    - slice: {z: 46.6, islands: 1}
+    - bores: {z: [0.15, 5.85], grid: {nx: 8, ny: 1, px: 9, py: 9, center: [0, -15]}}
+    - volume: {rel_tol: 0.05}
+
+- id: hockey_stick_spreader
+  category: tools
+  title: Hockey-stick cell spreader
+  short: cell spreader
+  reference: bench/heldout/reference/hockey_stick_spreader.scad
+  skills: [rotated bar, two thicknesses, flat part]
+  prompt: >-
+    Design an L-shaped (hockey-stick) cell spreader for plating bacteria, printed lying flat. Two
+    straight bars meet at the origin. The handle is a bar 150 mm long, 6 mm wide and 4 mm thick: x
+    = 0 to 150, y = -3 to 3, z = 0 to 4. The spreading foot is a thinner bar, 40 mm long, 5 mm
+    wide and 2.5 mm thick (z = 0 to 2.5, so its smooth bed side spreads the agar); its centre line
+    starts at the origin and points 120 degrees counter-clockwise from the +X axis, seen from
+    above, so the foot and the handle make a 120-degree angle. A round boss 6 mm in diameter and 4
+    mm tall at the origin joins the bars. A 4 mm hanging hole goes through the handle at x = 143,
+    y = 0.
+  checks:
+    - bbox: {size: [172.17, 38.89, 4], tol: 0.4}
+    - bodies: 1
+    - slice: {z: 1.25, islands: 1, holes: 1, hole_d: [4, 0.3], hole_centers: [[143, 0]], tol: 0.4, material_area: 0.03}
+    - slice: {z: 3.25, islands: 1, holes: 1, material_area: 0.03}   # only the handle and boss are 4 mm thick
+    - line: {z: 1.25, from: [75, -5], to: [75, 5], intervals: 1, length: [6, 0.3]}
+    - line: {z: 1.25, from: [-16.83, 19.151], to: [-8.17, 24.151], intervals: 1, length: [5, 0.3]}   # across the foot
+    - probes: {solid: [[-5, 8.66, 1.25], [-10, 17.321, 1.25], [-17.5, 30.311, 1.25], [-19.75, 34.208, 1.25],
+                       [-14.405, 20.551, 1.25], [-10.595, 22.751, 1.25], [-10, 17.321, 2.2], [-2.5, 0, 3.25]],
+               empty: [[-20.25, 35.074, 1.25], [-14.925, 20.251, 1.25], [-10.075, 23.051, 1.25],
+                       [0, 20, 1.25], [-10, 17.321, 2.8], [-3.3, 0, 3.25]]}   # 40 x 5 foot at 120 deg, 2.5 thick
+    - volume: {rel_tol: 0.05}
+
+- id: cell_strainer_50ml
+  category: tools
+  title: Coarse cell strainer for a 50 mL tube
+  short: cell strainer
+  reference: bench/heldout/reference/cell_strainer_50ml.scad
+  skills: [thin-walled revolved cup, perforated floor, 45-degree collar, vent notches]
+  prompt: >-
+    Design a coarse cell strainer that hangs in the mouth of a 50 mL conical tube, printed upright
+    and round about the Z axis. The cup is a tube with a 25 mm outer diameter and a 1.2 mm wall
+    (22.6 mm bore) from z = 0 to 32, closed by a 1.2 mm floor (z = 0 to 1.2). Near the top, the
+    outside flares into a collar that rests on the tube's rim: a 45-degree cone from 25 mm
+    diameter at z = 26 to 33 mm at z = 30, then a 33 mm rim up to z = 32. The floor has 1.0 mm
+    holes on a 2 mm square grid aligned with X and Y and centred on the axis (one hole at the
+    centre), keeping every hole whose centre is within 10 mm of the axis (81 holes). Two 3 mm wide
+    vent notches, on the +X and -X sides, remove the collar and rim beyond 12.5 mm from the axis
+    from z = 25 up, so air can escape.
+  checks:
+    - bbox: {size: [32.86, 33, 32], tol: 0.4}
+    - bodies: 1
+    - slice: {z: 0.6, islands: 1, holes: 81, hole_d: [1.0, 0.25], island_d: [25, 0.3],
+              hole_centers: [[-10, 0], [-8, -6], [-8, -4], [-8, -2], [-8, 0], [-8, 2], [-8, 4], [-8, 6], [-6, -8], [-6, -6],
+                             [-6, -4], [-6, -2], [-6, 0], [-6, 2], [-6, 4], [-6, 6], [-6, 8], [-4, -8], [-4, -6], [-4, -4],
+                             [-4, -2], [-4, 0], [-4, 2], [-4, 4], [-4, 6], [-4, 8], [-2, -8], [-2, -6], [-2, -4], [-2, -2],
+                             [-2, 0], [-2, 2], [-2, 4], [-2, 6], [-2, 8], [0, -10], [0, -8], [0, -6], [0, -4], [0, -2],
+                             [0, 0], [0, 2], [0, 4], [0, 6], [0, 8], [0, 10], [2, -8], [2, -6], [2, -4], [2, -2],
+                             [2, 0], [2, 2], [2, 4], [2, 6], [2, 8], [4, -8], [4, -6], [4, -4], [4, -2], [4, 0],
+                             [4, 2], [4, 4], [4, 6], [4, 8], [6, -8], [6, -6], [6, -4], [6, -2], [6, 0], [6, 2],
+                             [6, 4], [6, 6], [6, 8], [8, -6], [8, -4], [8, -2], [8, 0], [8, 2], [8, 4], [8, 6],
+                             [10, 0]], tol: 0.3}
+    - slice: {z: 1.6, islands: 1, holes: 1}     # floor 1.2 mm, within 0.4 mm
+    - slice: {z: 15, islands: 1, holes: 1, island_d: [25, 0.3], hole_d: [22.6, 0.3]}
+    - slice: {z: 24, islands: 1, holes: 1, island_d: [25, 0.3], hole_d: [22.6, 0.3]}
+    - slice: {z: 31, islands: 1, holes: 1, hole_d: [22.6, 0.3]}
+    - probes: {solid: [[0, 14.2, 28], [0, -14.2, 28], [0, 13.2, 27], [0, 16.2, 31], [0, -16.2, 31], [0, 12.6, 26.5]],
+               empty: [[0, 14.8, 28], [0, -14.8, 28], [0, 13.8, 27], [0, 16.8, 31], [0, 13.3, 25.5]]}   # 45-degree collar, 33 mm rim
+    - arc: {z: 31, center: [0, 0], r: 15, gaps: 2}
+    - probes: {empty: [[14, 0, 31], [-14, 0, 31], [14, 1.2, 31], [14, -1.2, 31], [13, 0, 27], [13, 0, 29.5], [-13, 0, 29.5]],
+               solid: [[14, 1.8, 31], [14, -1.8, 31], [12.2, 0, 31], [-12.2, 0, 31], [0, 14, 29.5]]}   # 3 mm vents on +-X, through the collar
+    - bores: {z: [0.15, 31.85], at: [[0, 0], [2, 0], [0, 10], [6, 8], [-8, -6]]}   # holes open through the floor
+    - volume: {rel_tol: 0.06}
+
+- id: tubing_pinch_clamp
+  category: quick-fixes
+  title: Tubing pinch clamp with a living hinge
+  short: pinch clamp
+  reference: bench/heldout/reference/tubing_pinch_clamp.scad
+  skills: [flexure, 2-D profile with fine features, snap latch clearance]
+  prompt: >-
+    Design a pinch clamp for silicone tubing (up to 6.4 mm across) with a living hinge and a snap
+    latch, printed flat: one 2-D profile in the XY plane extruded 8 mm along Z. The lower jaw is a
+    bar from x = 0 to 50, y = 0 to 4, ending in a thinner tongue from x = 50 to 56, y = 2.5 to 4.
+    The upper jaw is a bar from x = 0 to 60, y = 12 to 16. On the left the hinge joins the jaws: a
+    half-ring on the x < 0 side, centred at (0, 8), with radii of 7.2 and 8 mm (0.8 mm thick).
+    Each jaw has a half-round pinch ridge of 1.5 mm radius on its inner face at x = 27.5 (centred
+    at y = 4 and y = 12). The latch hangs from the upper jaw's right end: a leg from x = 57 to 60,
+    y = 4.5 to 12, with a nose from x = 54.5 to 57, y = 4.5 to 5.5, 0.5 mm above the tongue;
+    squeezing the jaws snaps the nose under the tongue.
+  checks:
+    - bbox: {size: [68, 16, 8], tol: 0.4}
+    - bodies: 1
+    - slice: {z: 4, islands: 1, holes: 0, material_area: 0.05}
+    - line: {z: 4, from: [-10, 8], to: [-5, 8], intervals: 1, length: [0.8, 0.25]}           # hinge 0.8 mm
+    - line: {z: 4, from: [-4.243, 3.757], to: [-6.718, 1.282], intervals: 1, length: [0.8, 0.25]}
+    - line: {z: 4, from: [20, -1], to: [20, 17], intervals: 2, length: [4, 0.3]}
+    - probes: {empty: [[20, 8, 4], [20, 4.3, 4], [20, 11.7, 4], [45, 8, 4], [-3, 8, 4], [-6.9, 8, 4]],
+               solid: [[20, 3.7, 4], [20, 12.3, 4], [-7.6, 8, 4], [-0.3, 0.4, 4], [-0.3, 15.6, 4], [-7.6, 8, 7.7]]}   # jaws 8 mm apart, hinge
+    - probes: {solid: [[27.5, 5.2, 4], [27.5, 10.8, 4]],
+               empty: [[27.5, 5.8, 4], [27.5, 10.2, 4], [25.7, 5.2, 4], [29.3, 10.8, 4]]}   # 1.5 mm ridges at x = 27.5
+    - probes: {solid: [[53, 3.2, 4], [55.7, 3.2, 4], [49.7, 1, 4], [55.5, 5, 4], [54.8, 5, 4], [58.5, 8, 4], [58.5, 4.8, 4]],
+               empty: [[53, 2.2, 4], [56.3, 3.2, 4], [50.3, 1, 4], [54.2, 5, 4], [55.5, 4.25, 4], [55.5, 5.8, 4],
+                       [58.5, 4.2, 4], [56.7, 8, 4]]}   # tongue, nose 0.5 mm above it, leg
+    - volume: {rel_tol: 0.05}

@@ -1,0 +1,60 @@
+// --- Parameters ---
+// Base dimensions
+base_length = 203;       // X dimension of the base
+base_width = 80;         // Y dimension of the base
+base_height = 20;        // Z dimension of the base
+
+// Cradle dimensions (for 90mm Petri dish)
+dish_radius = 46;        // Radius of the cylinder cutting the cradle
+cradle_axis_y = 0;       // Y position of the cylinder axis
+cradle_axis_z = 52;      // Z position of the cylinder axis
+
+// Divider dimensions
+num_dividers = 11;       // Number of vertical plates
+divider_thickness = 3;   // Thickness of each divider (X direction)
+divider_height = 60;     // Height of dividers (Z direction)
+divider_width = 80;      // Width of dividers (Y direction)
+divider_spacing = 20;    // Distance between divider centers (X direction)
+divider_start_x = -100;  // Starting X position for the first divider
+
+// Resolution
+fn_val = 64;             // Smoothness for cylinders
+
+// --- Implementation ---
+
+// The goal is to create a base with a cradle cut out, 
+// and then add dividers that are NOT cut by the cradle.
+// This ensures the dividers remain solid blocks from Z=0 to Z=60,
+// effectively acting as the walls of the slots without being 
+// hollowed out by the cradle.
+
+union() {
+    // 1. The Base with the Cradle Cutout
+    // We perform the subtraction on the base first.
+    difference() {
+        // The Base Block
+        translate([-base_length/2, -base_width/2, 0])
+            cube([base_length, base_width, base_height]);
+        
+        // The Cradle (Cylinder)
+        // We extend the cylinder length to ensure a clean cut through the base.
+        translate([0, cradle_axis_y, cradle_axis_z])
+            rotate([0, 90, 0])
+                cylinder(h = base_length + 2, r = dish_radius, center = true, $fn = fn_val);
+    }
+
+    // 2. The Divider Plates
+    // These are added via union, so they are not affected by the cradle subtraction.
+    // They rise from Z=0 to Z=60.
+    for (i = [0 : num_dividers - 1]) {
+        translate([divider_start_x + (i * divider_spacing), -divider_width/2, 0])
+            cube([divider_thickness, divider_width, divider_height]);
+    }
+}
+
+// Note on the logic:
+// The prompt specifies: "the cradle is not cut through them [the dividers]".
+// By using union() { (Base - Cradle); Dividers; }, the dividers are added 
+// as solid volumes. Where a divider intersects the cradle's void, 
+// the divider's volume takes precedence, making it "solid" at that location.
+// This creates the 17mm wide slots between the dividers.

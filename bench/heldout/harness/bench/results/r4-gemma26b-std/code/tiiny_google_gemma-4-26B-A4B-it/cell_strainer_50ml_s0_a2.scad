@@ -1,0 +1,90 @@
+// --- Parameters ---
+// Main Tube
+outer_diameter = 25.0;      // OD of the strainer body
+wall_thickness = 1.2;       // Wall thickness of the tube
+bore_diameter = 22.6;       // Internal diameter (25 - 2*1.2)
+tube_height = 32.0;         // Height of the tube body from Z=0
+
+// Floor
+floor_thickness = 1.2;      // Thickness of the bottom floor
+
+// Flare/Collar
+flare_start_z = 26.0;       // Z height where flare begins
+flare_end_z = 30.0;         // Z height where flare ends
+flare_end_dia = 33.0;       // Diameter at the top of the flare
+rim_width = 33.0;           // Diameter of the rim
+rim_height_start = 30.0;    // Z height where rim starts
+rim_height_end = 32.0;      // Z height where rim ends
+
+// Holes (Grid)
+hole_diameter = 1.0;        // Diameter of the strainer holes
+grid_spacing = 2.0;         // Distance between hole centers (square grid)
+max_hole_radius = 10.0;     // Max distance from axis for hole centers
+
+// Vent Notches
+notch_width = 3.0;          // Width of the vent notches
+notch_cut_radius = 12.5;    // Radius from axis where notches cut the rim
+notch_start_z = 25.0;       // Z height where notches begin
+
+// Rendering
+$fn = 64;
+
+// --- Implementation ---
+
+module strainer() {
+    difference() {
+        // 1. Main Body (Outer Shell)
+        union() {
+            // Main Tube Body (Z=0 to 32)
+            cylinder(h = tube_height, d = outer_diameter);
+            
+            // Flare Section (45-degree cone from Z=26 to Z=30)
+            hull() {
+                translate([0, 0, flare_start_z])
+                    cylinder(h = 0.01, d = outer_diameter);
+                translate([0, 0, flare_end_z])
+                    cylinder(h = 0.01, d = flare_end_dia);
+            }
+            
+            // Rim Section (Z=30 to 32)
+            translate([0, 0, flare_end_z])
+                cylinder(h = rim_height_end - flare_end_z, d = rim_width);
+        }
+
+        // 2. Subtract Internal Bore
+        // Subtract from Z=-0.1 to tube_height to ensure clean cut through floor
+        translate([0, 0, -0.1])
+            cylinder(h = tube_height + 0.2, d = bore_diameter);
+
+        // 3. Subtract Floor Holes
+        // Grid centered on axis. One hole at center.
+        // Max radius 10mm. Grid spacing 2mm.
+        for (x = [-10 : grid_spacing : 10]) {
+            for (y = [-10 : grid_spacing : 10]) {
+                // Check if center is within 10mm of axis
+                if (sqrt(x*x + y*y) <= max_hole_radius) {
+                    translate([x, y, -0.1])
+                        cylinder(h = floor_thickness + 0.2, d = hole_diameter);
+                }
+            }
+        }
+
+        // 4. Subtract Vent Notches
+        // "remove the collar and rim beyond 12.5 mm from the axis"
+        // The notches are 3mm wide on +X and -X sides.
+        // To remove material *beyond* 12.5mm radius, we subtract a shape 
+        // that starts at 12.5mm and goes outwards.
+        
+        // Notch on +X side
+        // We use a large cube to ensure it cuts through the entire outer diameter
+        translate([notch_cut_radius, -notch_width/2, notch_start_z - 0.1])
+            cube([outer_diameter, notch_width, tube_height - notch_start_z + 1]);
+            
+        // Notch on -X side
+        translate([-outer_diameter - notch_cut_radius, -notch_width/2, notch_start_z - 0.1])
+            cube([outer_diameter, notch_width, tube_height - notch_start_z + 1]);
+    }
+}
+
+// Render the part
+strainer();

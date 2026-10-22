@@ -1,0 +1,55 @@
+// Dimensions (mm)
+shelf_thickness = 18;
+extrusion_length = 105;
+
+// Profile dimensions
+spine_x_start = 0;
+spine_x_end = 5;
+spine_y_start = 0;
+spine_y_end = 28.4;
+
+bottom_jaw_x_start = -25;
+bottom_jaw_x_end = 5;
+bottom_jaw_y_start = 0;
+bottom_jaw_y_end = 5;
+
+top_jaw_arm_x_start = -25;
+top_jaw_arm_x_end = 65;
+top_jaw_arm_y_start = 23.4;
+top_jaw_arm_y_end = 28.4;
+
+// Hole parameters
+hole_diameter = 20;
+hole_radius = hole_diameter / 2;
+hole_x = 42;
+hole_z_positions = [17.5, 52.5, 87.5];
+
+// Quality
+$fn = 64;
+
+// Build the part
+difference() {
+    // Extrude the C-shaped profile along Z
+    linear_extrude(height = extrusion_length, convexity = 10) {
+        union() {
+            // Spine
+            square([spine_x_end - spine_x_start, spine_y_end - spine_y_start], center = false);
+            translate([spine_x_start, spine_y_start])
+                square([spine_x_end - spine_x_start, spine_y_end - spine_y_start]);
+
+            // Bottom jaw
+            translate([bottom_jaw_x_start, bottom_jaw_y_start])
+                square([bottom_jaw_x_end - bottom_jaw_x_start, bottom_jaw_y_end - bottom_jaw_y_start]);
+
+            // Top jaw and arm
+            translate([top_jaw_arm_x_start, top_jaw_arm_y_start])
+                square([top_jaw_arm_x_end - top_jaw_arm_x_start, top_jaw_arm_y_end - top_jaw_arm_y_start]);
+        }
+    }
+
+    // Cut holes through the arm along Z
+    for (z_pos = hole_z_positions) {
+        translate([hole_x, 0, z_pos])
+            cylinder(h = extrusion_length + 2, r = hole_radius, center = true, $fn = 64);
+    }
+}

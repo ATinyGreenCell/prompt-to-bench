@@ -1,0 +1,54 @@
+The cradle cut is still not appearing in the slices (the base stays a full 203×80 rectangle at z=3 and z=10, and the volume is exactly 16240+6600=22840… actually 430400, meaning the cradle removed nothing). The cause: the cradle cutter is rotated 90° about Y, which maps the cylinder's local +Z axis to world +X — but the cylinder is then translated *before* the rotation in the module's own coordinate frame, so the axis ends up along the wrong direction and the solid never intersects the base. The fix is to build the cylinder along X directly (rotate the cylinder so its axis is X, then translate to y=0, z=52) and make it extend past the base in X so the cut is clean.
+
+```openscad
+// 10-dish rack: 203 x 80 x 20 base, 11 dividers, 10 slots, X-axis cradle
+$fn = 64;
+
+// Base block dimensions
+base_L = 203;   // length along X
+base_W = 80;    // width along Y
+base_H = 20;    // height along Z
+
+// Divider plates
+div_t   = 3;    // thickness along X
+div_H   = 60;   // height above z = 0
+div_W   = 80;   // full base width along Y
+div_xs  = [-100, -80, -60, -40, -20, 0, 20, 40, 60, 80, 100];
+
+// Curved cradle (dish rim) cutter
+crad_R  = 46;   // radius of the dish rim
+crad_cy = 0;    // axis Y position
+crad_cz = 52;   // axis Z position  (bottoms out at z = 6)
+crad_L  = 203;  // full length along X
+
+// Build the solid: base + 11 divider plates, then remove the cradle
+// (the cradle is NOT cut through the dividers, so it is subtracted
+//  from the base only)
+module base_and_dividers() { union() {
+    // Base block, centred on origin in X and Y, resting on z = 0
+    translate([-base_L/2, -base_W/2, 0])
+        cube([base_L, base_W, base_H]);
+
+    // Eleven divider plates rising from z = 0 to z = 60
+    for (dx = div_xs)
+        translate([dx - div_t/2, -div_W/2, 0])
+            cube([div_t, div_W, div_H]);
+} }
+
+// Cradle cutter: a cylinder of radius 46 whose axis runs along X.
+// Rotate the cylinder 90 deg about Y so its local +Z axis points along
+// world +X, then translate the axis to y = 0, z = 52. The cylinder is
+// made 1 mm longer than the base on each end so the cut is clean and no
+// faces are exactly coplanar with the base ends.
+module cradle_cutter() {
+    rotate([90, 0, 0])
+    translate([0, crad_cy, crad_cz])
+    cylinder(h = crad_L + 2, r = crad_R, $fn = $fn);
+}
+
+// Final part: cradle cut from the base only (dividers stay solid)
+difference() {
+    base_and_dividers();
+    cradle_cutter();
+}
+```

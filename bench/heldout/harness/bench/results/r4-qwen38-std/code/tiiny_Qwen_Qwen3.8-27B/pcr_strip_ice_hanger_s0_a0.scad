@@ -1,0 +1,87 @@
+// 8-tube PCR strip holder that hooks over a 12 mm bucket wall
+// Printed as used: rests on XY plane (z=0), builds upward (+Z), centred on x=0.
+
+$fn = 64;
+
+// ---- Wall / hook geometry (YZ profile, extruded along X) ----
+wall_thick   = 12;   // bucket wall thickness (gap the hook must clear)
+inner_leg_y0 = 0;    // inner leg starts at y = 0
+inner_leg_y1 = 4;    // inner leg ends at y = 4  (4 mm thick)
+outer_leg_y0 = 16.5; // outer leg starts at y = 16.5
+outer_leg_y1 = 20.5; // outer leg ends at y = 20.5 (4 mm thick)
+leg_z0       = 0;    // legs start at z = 0
+leg_z1       = 50;   // legs end at z = 50
+bridge_z0    = 46;   // bridge starts at z = 46
+bridge_z1    = 50;   // bridge ends at z = 50 (4 mm thick)
+// gap between inner leg (y=4) and outer leg (y=16.5) = 12.5 mm  -> clears 12 mm wall
+
+// ---- Ledge (flat shelf into the ice, from foot of inner leg toward -Y) ----
+ledge_y0     = -30;  // ledge extends to y = -30
+ledge_y1     = 0;    // ledge meets inner leg at y = 0
+ledge_z0     = 0;    // ledge bottom at z = 0
+ledge_z1     = 6;    // ledge top at z = 6  (6 mm thick)
+
+// ---- Tube holes ----
+hole_d       = 6.4;  // 6.4 mm through-holes
+hole_pitch   = 9;    // 9 mm apart along X
+n_holes      = 8;    // eight holes
+hole_y       = -15;  // centred at y = -15
+hole_z0      = -1;   // extend 1 mm below z=0 so cut passes through ledge
+hole_z1      = 7;    // extend 1 mm above z=6 so cut passes through ledge
+
+// ---- Extrusion length along X ----
+extrude_len  = 84;   // 84 mm long, centred on x = 0
+
+// =====================================================================
+// 1. Build the upside-down-U hook profile in the YZ plane (x = 0)
+//    inner leg + outer leg + top bridge, then extrude 84 mm along X.
+// =====================================================================
+hook = linear_extrude(extrude_len, center = true) {
+    // inner leg
+    polygon([
+        [inner_leg_y0, leg_z0],
+        [inner_leg_y1, leg_z0],
+        [inner_leg_y1, leg_z1],
+        [inner_leg_y0, leg_z1]
+    ]);
+    // outer leg
+    polygon([
+        [outer_leg_y0, leg_z0],
+        [outer_leg_y1, leg_z0],
+        [outer_leg_y1, leg_z1],
+        [outer_leg_y0, leg_z1]
+    ]);
+    // top bridge joining the two legs (spans the 12.5 mm gap)
+    polygon([
+        [inner_leg_y0, bridge_z0],
+        [outer_leg_y1, bridge_z0],
+        [outer_leg_y1, bridge_z1],
+        [inner_leg_y0, bridge_z1]
+    ]);
+};
+
+// =====================================================================
+// 2. Ledge: flat shelf from y = -30 to y = 0, z = 0 to 6, 84 mm long
+// =====================================================================
+ledge = translate([0, ledge_y0, ledge_z0])
+    cube([extrude_len, ledge_y1 - ledge_y0, ledge_z1 - ledge_z0], center = [true, false, false]);
+
+// =====================================================================
+// 3. Eight vertical 6.4 mm through-holes in the ledge, 9 mm apart, centred
+// =====================================================================
+holes = for (i = [0 : n_holes - 1]) {
+    x_pos = (i - (n_holes - 1) / 2.0) * hole_pitch;   // centred on x = 0
+    translate([x_pos, hole_y, hole_z0])
+        cylinder(h = hole_z1 - hole_z0, r = hole_d / 2, $fn = $fn);
+}
+
+// =====================================================================
+// 4. Assemble: union of hook + ledge, then subtract the tube holes
+// =====================================================================
+difference() {
+    union() {
+        hook;
+        ledge;
+    }
+    holes;
+}

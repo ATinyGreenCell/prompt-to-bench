@@ -1,0 +1,48 @@
+```openscad
+// Dimensions (mm)
+block_length_x = 130;
+block_depth_y = 60;
+block_height_z = 45;
+
+// Hole parameters
+hole_diameter = 17.5;
+hole_depth = 40;
+hole_spacing_x = 24;
+num_holes = 5;
+
+// Tilt parameters
+tilt_angle = 30; // degrees from vertical
+top_face_y_offset = -10; // Y position on top face where axis intersects
+
+// Rendering quality
+$fn = 64;
+
+// Main block centered at origin in X/Y, resting on z=0
+// Block spans X: -65 to 65, Y: -30 to 30, Z: 0 to 45
+difference() {
+    // Solid block
+    translate([0, 0, 0])
+    cube([block_length_x, block_depth_y, block_height_z], center = true);
+    
+    // Holes
+    for (i = [-(num_holes-1)/2 : (num_holes-1)/2]) {
+        x_pos = i * hole_spacing_x;
+        
+        // The axis intersects the top face at (x_pos, top_face_y_offset, block_height_z)
+        // Top face is at z = block_height_z = 45
+        top_center = [x_pos, top_face_y_offset, block_height_z];
+        
+        // The hole is tilted 30 degrees from vertical in the YZ plane, moving toward +Y as it goes down
+        // We create a cylinder along the Z axis, then rotate it around the X axis by tilt_angle
+        // This tilts the cylinder toward +Y
+        
+        // The cylinder needs to extend past the block to ensure clean cutting
+        // Depth is 40mm along the axis, so we make it slightly longer (41mm)
+        // We also need to ensure it extends past the bottom of the block in Z
+        
+        translate(top_center)
+        rotate([tilt_angle, 0, 0])
+        cylinder(r = hole_diameter/2, h = hole_depth + 1, center = false);
+    }
+}
+```

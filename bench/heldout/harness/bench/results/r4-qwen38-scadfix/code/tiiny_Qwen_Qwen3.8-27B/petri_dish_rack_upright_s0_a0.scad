@@ -1,0 +1,49 @@
+// 10-slot Petri dish rack, printed as used (rests on XY plane, builds +Z)
+
+// ---- Base block ----
+base_L = 203;   // length along X
+base_W = 80;    // width along Y
+base_H = 20;    // height of the solid base block
+
+// ---- Cradle (cylindrical cutout) ----
+cradle_R = 46;  // radius of the inside of the cradle cylinder
+cradle_cy = 0;  // Y coordinate of the cradle axis
+cradle_cz = 52; // Z coordinate of the cradle axis  (bottoms out at 52 - 46 = 6)
+
+// ---- Divider plates ----
+div_T = 3;      // plate thickness along X
+div_H = 60;     // plate height (z = 0 to 60)
+div_W = 80;     // plate width along Y (same as base)
+div_X = [-100, -80, -60, -40, -20, 0, 20, 40, 60, 80, 100]; // 11 plates, 20 mm apart
+
+// ---- Curved-surface resolution ----
+$fn = 64;
+
+// Base block, centred on origin in X and Y, resting on z = 0
+module base() { translate([-base_L/2, -base_W/2, 0])
+    cube([base_L, base_W, base_H]); }
+
+// Cradle cutter: cylinder axis along X at (y = 0, z = 52), extended 1 mm past each end
+module cradle() { translate([-base_L/2 - 1, cradle_cy, cradle_cz])
+    rotate([90, 0, 0])
+    cylinder(h = base_L + 2, r = cradle_R, center = true); }
+
+// Eleven divider plates (cradle is NOT cut through them)
+module dividers() { for (x = div_X)
+    translate([x - div_T/2, -div_W/2, 0])
+        cube([div_T, div_W, div_H]); }
+
+// Final solid: (base with cradle removed) unioned with the divider plates
+difference() {
+    union() {
+        base();
+    }
+    cradle();
+}
+union() {
+    difference() {
+        base();
+        cradle();
+    }
+    dividers();
+}

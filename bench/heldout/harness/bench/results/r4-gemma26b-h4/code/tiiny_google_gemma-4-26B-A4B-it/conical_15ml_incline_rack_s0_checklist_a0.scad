@@ -1,0 +1,80 @@
+// 15mL Conical Tube Rack
+// Designed for volume reading and pipetting.
+// Features 5 tilted holes at 30 degrees from vertical.
+
+// --- Dimensions ---
+L = 130;             // Length of block (X)
+W = 60;              // Depth of block (Y)
+H = 45;              // Height of block (Z)
+
+num_holes = 5;       // Number of tube holes
+spacing = 24;        // Spacing between hole centers (X)
+hole_d = 17.5;       // Diameter of the holes
+hole_depth = 40;     // Depth of the holes along their axis
+
+tilt_angle = 30;     // Tilt angle from vertical (Z-axis)
+tilt_offset_y = -10; // Y-offset of the hole entry point from the center of the block
+
+$fn = 64;
+
+// --- Calculations ---
+// The holes are tilted in the YZ plane. 
+// "Tilted 30 degrees from vertical" means the axis vector is [0, sin(30), -cos(30)] 
+// if we consider Z as vertical and Y as depth.
+// However, the prompt says "going down into the block, it moves toward +Y".
+// This means the axis vector is [0, sin(30), -cos(30)] relative to the Z axis.
+// Let's define the rotation: rotate around X axis.
+// A vertical line is [0, 0, -1]. Rotating it 30 deg around X moves it towards +Y.
+// New vector: [0, sin(30), -cos(30)].
+
+// Calculate the X positions for the holes (centered on the block)
+// For n=5, spacing=24: indices are -2, -1, 0, 1, 2.
+// Positions: -2*24, -1*24, 0, 1*24, 2*24 -> -48, -24, 0, 24, 48.
+hole_x_positions = [for (i = [0 : num_holes - 1]) (i - (num_holes - 1) / 2) * spacing];
+
+// The entry point on the top face (Z = H)
+// The prompt says "Each axis meets the top face at y = -10".
+// This is slightly ambiguous: does it mean the center of the hole is at Y = -10? 
+// Or the hole is offset by -10? 
+// "Each axis meets the top face at y = -10" implies the coordinate Y = -10.
+// However, usually, a rack is centered. If all holes meet at Y = -10, they aren't spread in Y.
+// Re-reading: "Each axis meets the top face at y = -10". 
+// This implies the entry point for every hole is at Y = -10.
+// But the block is 60mm deep (Y from -30 to +30).
+// If the holes are tilted towards +Y, they move from Y = -10 towards Y = +something.
+entry_y = -10; 
+
+module hole_shape() {
+    // We create a cylinder and rotate it.
+    // To ensure it cuts cleanly through the top, we translate it up.
+    rotate([0, tilt_angle, 0]) 
+    cylinder(h = hole_depth, d = hole_d);
+}
+
+// --- Main Construction ---
+
+difference() {
+    // The main block
+    // Centered on X and Y, sits on Z=0.
+    translate([-L/2, -W/2, 0])
+    cube([L, W, H]);
+
+    // The holes
+    for (x_pos = hole_x_positions) {
+        // The axis meets the top face (Z=H) at (x_pos, entry_y, H)
+        // We translate the hole to the entry point.
+        // Since the cylinder is created from Z=0 upwards, we must translate it 
+        // so its base is at the top face and then rotate.
+        // A better way: translate to entry point, rotate, then translate down to compensate.
+        
+        translate([x_pos, entry_y, H])
+        rotate([0, tilt_angle, 0])
+        translate([0, 0, 0.01]) // Small overlap to ensure clean cut
+        cylinder(h = hole_depth + 0.01, d = hole_d);
+    }
+}
+
+// Note on "Flat end square to the axis": 
+// A standard cylinder in OpenSCAD has a flat end. 
+// By using a cylinder for the subtraction, the bottom of the hole is flat 
+// and perpendicular to the axis of the hole.

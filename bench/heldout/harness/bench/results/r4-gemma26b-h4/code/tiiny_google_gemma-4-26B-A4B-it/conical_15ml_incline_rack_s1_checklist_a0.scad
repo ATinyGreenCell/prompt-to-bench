@@ -1,0 +1,75 @@
+// 15mL Conical Tube Rack
+// Designed for easy volume reading and supernatant removal.
+
+// --- Dimensions ---
+L = 130;            // Length along X (mm)
+W = 60;             // Depth along Y (mm)
+H = 45;             // Height along Z (mm)
+
+num_holes = 5;      // Number of tube holes
+spacing = 24;       // Spacing between hole centers along X (mm)
+
+hole_d = 17.5;      // Diameter of the holes (mm)
+hole_depth = 40;    // Depth of the holes (mm)
+tilt_angle = 30;    // Tilt angle from vertical (degrees)
+
+// --- Parameters ---
+$fn = 64;
+
+// Calculate the starting X position to center the holes
+// The holes are centered on the block, so the middle hole is at X=0.
+// The offset for the first hole is -( (num_holes - 1) / 2 ) * spacing
+hole_x_start = -(num_holes - 1) / 2 * spacing;
+
+// The user specified: "Each axis meets the top face at y = -10"
+// In OpenSCAD, the top face is at Z = H. 
+// However, the user used Y for depth and Z for height. 
+// I will follow the user's coordinate system: X=Length, Y=Depth, Z=Height.
+// "Each axis meets the top face at y = -10" implies the hole is offset 
+// from the center of the Y-axis.
+y_offset = -10; 
+
+// --- Modeling ---
+
+// The block is centered on X and Y, sitting on Z=0.
+// To center a block of [L, W, H] on X and Y:
+// translate([-L/2, -W/2, 0]) cube([L, W, H]);
+
+difference() {
+    // The main block
+    translate([-L/2, -W/2, 0])
+        cube([L, W, H]);
+
+    // The five blind holes
+    for (i = [0 : num_holes - 1]) {
+        let (
+            current_x = hole_x_start + (i * spacing),
+            current_y = y_offset,
+            current_z = H // Start at the top face
+        )
+        // We use a rotation to tilt the cylinder.
+        // The axis is tilted 30 degrees from vertical (Z) in the YZ plane.
+        // "going down into the block, it moves toward +Y"
+        // This means the rotation is around the X axis.
+        // A positive rotation around X moves +Y as Z decreases.
+        // However, standard rotation: rotate([30, 0, 0]) tilts the Z axis towards Y.
+        
+        translate([current_x, current_y, current_z])
+        rotate([tilt_angle, 0, 0])
+        // To make it a "blind hole" with a flat end, we translate the cylinder 
+        // so its top is at the surface and it extends downwards.
+        // Since we rotate around the top point, the cylinder extends "down and forward".
+        // We must extend the cylinder length to ensure it cuts through the top face.
+        translate([0, 0, 0]) 
+        cylinder(h = hole_depth + 1, d = hole_d);
+    }
+}
+
+// Note on the tilt: 
+// The user requested: "Each axis meets the top face at y = -10 and is tilted 30 degrees from vertical in the YZ plane: going down into the block, it moves toward +Y."
+// In a standard coordinate system where Z is up:
+// A rotation of 30 degrees around the X axis:
+// New Y = Y_old * cos(30) + Z_old * sin(30)
+// New Z = -Y_old * sin(30) + Z_old * cos(30)
+// If we rotate the Z-axis vector [0,0,1] by 30 deg around X, we get [0, sin(30), cos(30)].
+// This moves the axis toward +Y as it goes down.

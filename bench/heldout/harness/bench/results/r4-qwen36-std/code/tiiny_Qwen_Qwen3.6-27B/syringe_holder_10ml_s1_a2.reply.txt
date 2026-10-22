@@ -1,0 +1,118 @@
+```openscad
+// Wall-mounted 10 mL Syringe Holder
+// Dimensions measured with calipers
+
+// Block dimensions
+block_w = 50;  // Width (X)
+block_d = 30;  // Depth (Y)
+block_h = 40;  // Height (Z)
+
+// Barrel channel
+barrel_dia = 16;       // Syringe barrel diameter
+channel_w = 16.5;      // Channel width (clearance)
+channel_r = channel_w / 2;  // Radius of back half-circle
+
+// Flange slot
+flange_w = 34;         // Slot width (X)
+flange_h = 2.6;        // Slot height (Z)
+flange_z_start = 30;   // Bottom of slot
+flange_y_end = 11;     // Depth from front (y = -15 to y = 11)
+
+// Wall screw holes
+screw_dia = 4.5;       // Hole diameter for M4 screws
+screw_x = 19;          // X position of holes (±)
+screw_z = 15;          // Z position of holes
+
+// Print quality
+$fn = 64;
+
+// Main block, centred on origin in X and Y, resting on z=0
+// X: -25 to 25, Y: -15 to 15, Z: 0 to 40
+difference() {
+    // Solid block
+    translate([-block_w/2, -block_d/2, 0])
+        cube([block_w, block_d, block_h]);
+
+    // Barrel channel: half-circle at back (y=15) extending to front (y=-15)
+    // The half-circle is centred at x=0, y=15 (back face)
+    // We model the channel as a union of a half-cylinder at the back and a rectangular prism
+    
+    // Half-cylinder at the back (cutting into the block from y=15 inward)
+    // Orient cylinder along Y axis, centred at (0, 15, block_h/2)
+    // The cylinder axis is along Y. The radius is channel_r.
+    // To cut a half-circle profile at the back, we need the cylinder to be oriented such that
+    // its circular face is in the XZ plane at y=15.
+    // A cylinder with axis along Y has circular faces in XZ plane.
+    // So rotate([90,0,0]) makes the axis along Y.
+    // We place the center at (0, 15, block_h/2).
+    // The cylinder extends from y=15 - block_h/2 to y=15 + block_h/2? No.
+    // With center=true, it extends h/2 in both directions along the axis.
+    // We want it to cut into the block from y=15 towards y=-15.
+    // So we want the cylinder to cover y from 15 down to -15.
+    // But a cylinder of height block_h centered at y=15 would go from y=15-20=-5 to y=15+20=35.
+    // That's not right. We want the channel to go through the full height in Z, and full depth in Y.
+    // Actually, the channel is a hole through the block.
+    // The "half-circle at the back" means the cross-section at the back face is a half-circle.
+    // The "straight sides" mean the cross-section is a rectangle for the rest of the depth.
+    // So we need to cut:
+    // 1. A half-cylinder at the back. The axis of this cylinder is along Z? No, along Y?
+    //    If the channel runs through the full height (Z), then the hole is vertical?
+    //    No, the syringe hangs upright, tip down. The barrel is vertical.
+    //    So the channel is a vertical slot/hole.
+    //    The cross-section in the XY plane is what matters.
+    //    At the back (y=15), the cross-section is a half-circle of radius 8.25, centred at (0,15).
+    //    This half-circle faces forward (into the block). So it's the left/right half?
+    //    "Half-circle ... centred at x=0, y=0" in the prompt was confusing, but we interpreted as (0,15).
+    //    The half-circle is in the XY plane. The channel extends in Z.
+    //    So we need to extrude this 2D profile in Z.
+    //    Profile: Half-circle at y=15, plus rectangle from y=15-8.25 to y=-15.
+    //    Let's create the 2D profile and linear_extrude it.
+    
+    // 2D Profile for the barrel channel
+    // We'll create a polygon or union of shapes in XY plane, then extrude in Z.
+    // But difference() works with 3D objects. So we'll create 3D cutters.
+    
+    // Cutter 1: Half-cylinder at the back.
+    // Axis along Z? No, the channel is vertical, so the hole is along Z.
+    // The cross-section is in XY.
+    // So we need a prism with the half-circle cross-section, extruded along Z.
+    // A cylinder with axis along Z has circular cross-section in XY.
+    // We want a half-circle. So we can use a cylinder and cut it with a plane, or use a half-cylinder.
+    // OpenSCAD doesn't have a half-cylinder primitive. We can use intersection of cylinder and half-space.
+    // Or, we can model the half-circle as a union of a rectangle and a semi-circle? No.
+    // Let's use a cylinder of radius channel_r, axis along Z, centred at (0, 15, block_h/2).
+    // Then intersect it with a half-space y <= 15? No, the half-circle is at the back, facing forward.
+    // The half-circle is the part of the circle that is inside the block?
+    // The block is y from -15 to 15. The circle is centred at y=15.
+    // The part of the circle inside the block is the half-circle where y <= 15.
+    // So we want to cut the part of the cylinder that is inside the block.
+    // But the cylinder is infinite in Z? No, height block_h.
+    // So, cutter 1: Cylinder(r=channel_r, h=block_h, center=true) at (0, 15, block_h/2).
+    // This cylinder covers y from 15-channel_r to 15+channel_r.
+    // But we only want the part where y <= 15 (inside the block).
+    // The part where y > 15 is outside the block, so it doesn't matter.
+    // So just the cylinder is fine? No, the cylinder is a full circle.
+    // We want to cut a half-circle shape. If we cut a full circle, we'll remove too much material
+    // from the back of the block (y > 15), but that's outside the block anyway.
+    // Wait, the block is y from -15 to 15. The cylinder is centred at y=15.
+    // The cylinder extends from y=15-8.25=6.75 to y=15+8.25=23.25.
+    // The part from y=15 to 23.25 is outside the block. So cutting the full cylinder is equivalent
+    // to cutting the half-circle inside the block.
+    // So, cutter 1 is just a cylinder.
+    
+    translate([0, 15, block_h/2])
+        cylinder(r=channel_r, h=block_h, center=true);
+    
+    // Cutter 2: Rectangular prism for the straight part.
+    // From y = 15 - channel_r = 6.75 to y = -15.
+    // Width = channel_w = 16.5. Height = block_h.
+    // Centre Y = (6.75 + (-15)) / 2 = -4.125.
+    translate([0, -4.125, block_h/2])
+        cube([channel_w, 21.75, block_h], center=true);
+
+    // Flange slot
+    // 34 mm wide (X, centred), 2.6 mm tall (z=30 to 32.6), cut from front (y=-15) back to y=11
+    // Depth of cut: from y=-15 to y=11, so length = 26 mm
+    // Centre Y = (-15 + 11) / 2 = -2
+    // Centre Z = 30 + 2.6/2 = 31.3
+    translate([0, -

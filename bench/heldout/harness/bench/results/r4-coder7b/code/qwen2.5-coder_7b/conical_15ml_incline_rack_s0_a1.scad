@@ -1,0 +1,39 @@
+// Dimensions
+$fn = 64;
+length = 130; // X dimension
+depth = 60; // Y dimension
+height = 45; // Z dimension
+hole_spacing = 24; // Distance between holes along X
+hole_diameter = 17.5; // Diameter of each hole
+hole_depth = 40; // Depth of each hole from the top face
+tilt_angle = 30; // Tilt angle in degrees
+
+// Calculate radius and center position for holes
+radius = hole_diameter / 2;
+center_x = length / 2 - radius;
+
+// Create the main block
+block = cube([length, depth, height]);
+
+// Create the holes with a slight offset to ensure they extend past the faces
+holes = union() {
+    for (i = [0:4]) {
+        translate([center_x + i * hole_spacing, 0, -0.1]) // Slight offset to avoid coplanar faces
+            cylinder(r = radius, h = hole_depth + 0.2, center = true);
+    }
+};
+
+// Tilt the holes along the YZ plane
+tilted_holes = rotate([0, tilt_angle, 0]) {
+    holes;
+};
+
+// Create the final rack by subtracting the tilted holes from the block
+rack = difference() {
+    block;
+    translate([0, -10, 0])
+        tilted_holes;
+};
+
+// Output the rack
+rack;

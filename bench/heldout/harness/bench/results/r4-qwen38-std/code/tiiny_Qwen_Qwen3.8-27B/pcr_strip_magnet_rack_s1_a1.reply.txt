@@ -1,0 +1,71 @@
+```openscad
+// Magnetic bead rack for one 8-tube strip of 0.2 mL PCR tubes
+// Print orientation: rests on XY plane (z = 0), builds upward (+Z), centred on origin in X and Y.
+
+// ---- Block dimensions (measured with calipers) ----
+block_L = 80;   // length along X
+block_W = 24;   // width  along Y
+block_H = 20;   // height along Z
+
+// ---- Tube seats ----
+seat_pitch   = 9;    // centre-to-centre spacing along X
+seat_top_d   = 6.4;  // hole diameter at top face (z = 20)
+seat_top_z   = 20;   // top of the straight bore (block top face)
+seat_cyl_bot = 12;   // z where the straight bore ends and the cone begins
+seat_cone_d  = 3;    // cone exit diameter at z = 2
+seat_cone_z  = 2;    // z where the cone ends (2 mm floor below)
+
+// ---- Bar-magnet pockets (60 x 10 x 3 mm magnets, 0.2 mm clearance) ----
+pocket_L = 60.4;    // length along X
+pocket_W = 3.3;     // width  along Y
+pocket_H = 10.2;    // height along Z (open at bottom, z = 0 to 10.2)
+pocket_y = 6;       // centred at y = -6 and y = +6
+
+// ---- Global ----
+$fn = 64;           // round holes / cones
+
+// ---- Build ----
+module rack() {
+    // Solid block, centred on origin in X and Y, sitting on z = 0
+    block = cube([block_L, block_W, block_H], center = [true, true, false]);
+
+    // 8 tube seats: straight bore 6.4 mm from top down to z = 12,
+    // then a cone narrowing to 3 mm at z = 2 (2 mm floor).
+    module tube_seat() {
+        union() {
+            // straight cylindrical bore
+            cylinder(h = seat_top_z - seat_cyl_bot,
+                     d1 = seat_top_d, d2 = seat_top_d,
+                     center = false);
+            // conical taper from 6.4 mm at z = 12 down to 3 mm at z = 2
+            translate([0, 0, seat_cone_z])
+                cylinder(h = seat_cyl_bot - seat_cone_z,
+                         d1 = seat_cone_d, d2 = seat_top_d,
+                         center = false);
+        }
+    }
+
+    // one bar-magnet pocket, open at the bottom face
+    module magnet_pocket() {
+        cube([pocket_L, pocket_W, pocket_H], center = [true, true, false]);
+    }
+
+    difference() {
+        block;
+
+        // 8 tube seats, 9 mm apart, centred on the block (y = 0)
+        for (i = [-3, -2, -1, 0, 1, 2, 3, 4]) {
+            translate([i * seat_pitch, 0, 0])
+                tube_seat();
+        }
+
+        // two bar-magnet pockets, centred at y = -6 and y = +6
+        for (py = [-pocket_y, pocket_y]) {
+            translate([0, py, 0])
+                magnet_pocket();
+        }
+    }
+}
+
+rack();
+```

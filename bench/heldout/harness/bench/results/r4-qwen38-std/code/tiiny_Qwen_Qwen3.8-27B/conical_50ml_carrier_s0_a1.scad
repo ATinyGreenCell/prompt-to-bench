@@ -1,0 +1,61 @@
+// Carrier for four 50 mL conical tubes, printed in two parts.
+// Part 1: base block with four blind tube seats and two end posts.
+// Part 2: handle bar that slides through both posts after printing.
+
+$fn = 64;
+
+// ---- Part 1: base block ----
+base_w = 90;   // X width of base block
+base_d = 90;   // Y depth of base block
+base_h = 35;   // Z height of base block
+
+seat_d = 30.5; // diameter of each blind tube seat
+seat_depth = 30; // depth of each blind seat (5 mm floor remains)
+seat_x = 21;   // |x| of seat centres
+seat_y = 24;   // |y| of seat centres
+
+post_t = 10;   // X thickness of each post
+post_w = 16;   // Y width of each post
+post_h = 160;  // Z height of each post (top of post)
+post_hole = 10.4; // square hole side, through post along X
+post_hole_z = 150; // Z centre of the square hole
+
+// ---- Part 2: handle bar ----
+bar_s = 10;    // square cross-section of handle bar
+bar_l = 100;   // length of handle bar along X
+bar_y0 = 55;   // Y start of bar (10 mm gap to base +Y face at y=45)
+bar_y1 = 65;   // Y end of bar
+
+// ================= PART 1 =================
+part1 = difference(
+    union(
+        // Base block, centred on origin in X and Y, resting on z=0
+        translate([-base_w/2, -base_d/2, 0])
+            cube([base_w, base_d, base_h]);
+
+        // Two end posts, flush with the +/-X end faces, centred on y=0
+        for (sx = [-1, 1])
+            translate([sx * (base_w/2 - post_t/2), -post_w/2, 0])
+                cube([post_t, post_w, post_h]);
+    ),
+
+    // Four blind tube seats (5 mm floor)
+    for (sx = [-1, 1])
+        for (sy = [-1, 1])
+            translate([sx * seat_x, sy * seat_y, 0])
+                cylinder(h = seat_depth + 1, d = seat_d);
+
+    // Square through-holes in each post, along X, centred at z = post_hole_z
+    for (sx = [-1, 1])
+        translate([sx * (base_w/2 - post_t/2) - 1, -post_hole/2, post_hole_z - post_hole/2])
+            cube([post_t + 2, post_hole, post_hole]);
+);
+
+// ================= PART 2 =================
+// Handle bar lying on the bed along X, centred on x=0, spanning y = 55..65
+part2 = translate([-bar_l/2, bar_y0, 0])
+    cube([bar_l, bar_y1 - bar_y0, bar_s]);
+
+// Print the two parts side by side (handle offset in +Y, no overlap)
+part1;
+part2;

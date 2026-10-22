@@ -1,0 +1,43 @@
+// Dimensions
+$fn = 64;
+barrel_diameter = 16;
+finger_flange_thickness = 2;
+finger_flange_width = 32;
+holder_width = 50;
+holder_depth = 30;
+holder_height = 40;
+channel_radius = 8.25;
+channel_width = 16.5;
+flange_slot_width = 34;
+flange_slot_height = 2.6;
+screw_diameter = 4.5;
+screw_hole_depth = 15;
+
+// Barrel channel
+barrel_channel = cylinder(r=channel_radius, h=holder_height);
+
+// Flange slot
+flange_slot = linear_extrude(height=screw_hole_depth)
+    polygon(points=[[-flange_slot_width/2, -finger_flange_thickness],
+                   [-flange_slot_width/2, 0],
+                   [flange_slot_width/2, 0],
+                   [flange_slot_width/2, -finger_flange_thickness]],
+             paths=[[0,1],[1,2],[2,3],[3,0]]);
+
+// Screw holes
+screw_holes = translate([holder_width/2, 0, screw_hole_depth])
+    cylinder(r=screw_diameter/2, h=holder_height+1);
+
+// Final holder
+holder = difference() {
+    union() {
+        cube(size=[holder_width, holder_depth, holder_height]);
+        barrel_channel;
+        flange_slot;
+    }
+    translate([holder_width/2, 0, screw_hole_depth])
+        cylinder(r=screw_diameter/2 + 0.1, h=holder_height+1);
+}
+
+// Centering and orientation
+translate([-holder_width/2, -holder_depth/2, 0]) holder;

@@ -1,0 +1,101 @@
+```openscad
+// Dimensions (mm) - measured with calipers
+base_dia = 50;
+base_h = 4;
+cone_top_dia = 50;
+cone_bot_dia = 22;
+cone_h = 10; // z=4 to z=14
+col_dia = 22;
+col_h = 19; // z=14 to z=33
+seat_dia = 11;
+seat_h = 10; // z=33 down to z=23
+tip_dia = 3;
+tip_z = 6;
+window_w = 4;
+window_z1 = 18;
+window_z2 = 30;
+
+$fn = 64;
+
+// The previous attempt failed to cut the window because the difference()
+// was applied to the union of solids, but the window cutout was defined
+// incorrectly or the logic was flawed in the previous iteration.
+// Specifically, the window must cut through the column wall.
+// The column is solid from r=0 to r=11.
+// The seat is a hole from r=0 to r=5.5 (for z>23) and a cone for z<23.
+// The window is on the +X side.
+// It goes from the inner surface of the seat to the outer surface of the column.
+// Inner radius at window height (z=18 to 30):
+// For z=18 to 23: The seat is conical. We need the radius of the seat at that Z.
+// For z=23 to 30: The seat is cylindrical, radius = 5.5.
+// The window is 4mm wide in Y.
+// The window cuts from X = seat_radius to X = col_radius + margin.
+
+difference() {
+    union() {
+        // Base disc
+        translate([0, 0, 0])
+          cylinder(h = base_h, r = base_dia / 2, center = false);
+
+        // Cone from z=4 to z=14
+        translate([0, 0, base_h])
+          cylinder(h = cone_h, r1 = cone_top_dia / 2, r2 = cone_bot_dia / 2, center = false);
+
+        // Column from z=14 to z=33
+        translate([0, 0, base_h + cone_h])
+          cylinder(h = col_h, r = col_dia / 2, center = false);
+
+        // Tube seat (cylindrical part) from z=23 to z=33
+        translate([0, 0, tip_z + seat_h])
+          cylinder(h = seat_h, r = seat_dia / 2, center = false);
+
+        // Tube seat (conical part) from z=6 to z=23
+        cone_seat_h = 23 - tip_z;
+        translate([0, 0, tip_z])
+          cylinder(h = cone_seat_h, r1 = tip_dia / 2, r2 = seat_dia / 2, center = false);
+    }
+
+    // Cut out the viewing window
+    // The window is a rectangular slot on the +X side.
+    // Y range: -window_w/2 to +window_w/2
+    // Z range: window_z1 to window_z2
+    // X range: from the inner seat surface to the outer column surface + margin
+    
+    // To ensure we cut cleanly through the varying inner radius (cone vs cylinder),
+    // we can define the cut as a box that starts at the minimum inner radius (tip_dia/2 = 1.5)
+    // and extends to the outer radius + margin.
+    // However, the spec says "from the seat to the outside".
+    // The seat inner radius varies.
+    // At z=18, the seat is conical.
+    // Radius at z=18:
+    // Cone goes from r=1.5 at z=6 to r=5.5 at z=23.
+    // Height of cone = 17.
+    // z=18 is 12mm above z=6.
+    // r(z) = 1.5 + (5.5-1.5)*(z-6)/17
+    // r(18) = 1.5 + 4*(12/17) = 1.5 + 2.82 = 4.32 mm.
+    // At z=23, r=5.5.
+    // At z=30, r=5.5.
+    
+    // If we cut from X=1.5 (tip radius) to X=12 (outer+margin), we will cut into the solid
+    // below the seat surface for z<23, which is wrong (the stand is solid below z=6, but the seat is hollow above z=6).
+    // Wait, the spec says "below z=6 the stand is solid".
+    // The seat is hollow from z=6 to z=33.
+    // So the window should cut through the wall thickness.
+    // The wall thickness is (col_radius - seat_radius).
+    // We need to cut from X = seat_radius to X = col_radius + margin.
+    
+    // Since the seat radius varies with Z, a simple box won't perfectly match the inner surface.
+    // However, for a 3D print, a simple box cut is often sufficient if it doesn't leave too much material.
+    // But to be precise, we can use a linear_extrude or a custom shape.
+    // Given the constraints, let's use a box that covers the maximum inner radius (5.5) to ensure we don't cut into the seat volume.
+    // If we start the cut at X=5.5, we might leave a small amount of material at z=18 where the seat is narrower (4.32).
+    // To be safe and clean, let's start the cut at X=1.5 (the narrowest point) and extend to X=12.
+    // This will cut through the solid part of the stand below the seat? No, the seat is hollow.
+    // The difference() removes material. If we remove material from X=1.5 to 12, we are removing the wall.
+    // Is there solid material at X=1.5? No, the seat is hollow there.
+    // So cutting from 1.5 to 12 is safe and ensures the window goes all the way to the inner surface.
+    
+    translate([1.5, -window_w / 2, window_z1])
+      cube([col_dia / 2 + 1 - 1.5, window_w, window_z2 - window_z1 + 0.02]);
+}
+```

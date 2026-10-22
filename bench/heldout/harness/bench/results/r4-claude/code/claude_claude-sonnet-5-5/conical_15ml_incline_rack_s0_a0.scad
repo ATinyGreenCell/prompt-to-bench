@@ -1,0 +1,28 @@
+// Tilted 15 mL conical tube rack (5 tubes, 30 degree lean)
+
+$fn = 64;
+
+block_x = 130;        // block length along X
+block_y = 60;         // block depth along Y
+block_z = 45;         // block height along Z
+
+n_holes = 5;          // number of tube holes
+pitch = 24;           // hole spacing along X
+hole_d = 17.5;        // hole diameter (square to axis)
+hole_depth = 40;      // depth along axis from top face
+tilt = 30;            // lean from vertical, in YZ plane
+entry_y = -10;        // y where axis meets top face
+overshoot = 10;       // cutter extension above the top face along axis
+
+difference() {
+    translate([-block_x/2, -block_y/2, 0])
+        cube([block_x, block_y, block_z]);
+
+    for (i = [0 : n_holes - 1]) {
+        x = (i - (n_holes - 1)/2) * pitch;
+        translate([x, entry_y, block_z])
+            rotate([tilt, 0, 0])
+                translate([0, 0, -hole_depth])
+                    cylinder(d = hole_d, h = hole_depth + overshoot, $fn = 96);
+    }
+}

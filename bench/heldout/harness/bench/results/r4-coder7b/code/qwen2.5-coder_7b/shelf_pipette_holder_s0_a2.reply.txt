@@ -1,0 +1,41 @@
+```openscad
+// Dimensions
+shelf_thickness = 18;
+clamp_width = 28.4;
+clamp_height = 5;
+arm_length = 65 - clamp_width;
+arm_gap = 18.4;
+hole_diameter = 20;
+hole_depth = 105;
+
+// C-shaped clamp profile
+spine = translate([0, 0, shelf_thickness]) cube([5, clamp_height, shelf_thickness]);
+bottom_jaw = translate([-25, 0, shelf_thickness]) cube([30, clamp_height, shelf_thickness]);
+top_jaw_arm = translate([-25, clamp_height, shelf_thickness]) cube([90, 5, shelf_thickness]);
+
+// Arm with holes
+arm = translate([0, clamp_height + (clamp_width - arm_gap) / 2, shelf_thickness])
+    linear_extrude(height=arm_length)
+    square(size=[arm_gap, hole_diameter], center=true);
+
+// Holes in the arm
+holes = for (i = [0:2]) 
+    translate([42 + i * 10, clamp_height + (clamp_width - arm_gap) / 2, shelf_thickness])
+    cylinder(r=hole_diameter/2, h=hole_depth+0.05);
+
+// Final model
+model = union() {
+    spine;
+    bottom_jaw;
+    top_jaw_arm;
+    arm;
+    holes;
+};
+
+// Extrude the model along Z-axis
+final_model = linear_extrude(height=105)
+    model;
+
+// Render the final model
+render(final_model);
+```

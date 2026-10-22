@@ -1,0 +1,135 @@
+// --- Dimensions ---
+
+// Base Plate Dimensions
+plate_thickness = 3;          // Thickness of the hexagonal base plate (mm)
+hex_across_flats = 90;        // Distance across flats of the main hexagon (mm)
+
+// Hole/Sleeve Dimensions
+hole_diameter = 17.5;         // Diameter of the through-holes (mm)
+sleeve_wall_thickness = 2;    // Wall thickness of the sleeves (mm)
+sleeve_outer_diameter = hole_diameter + 2 * sleeve_wall_thickness; // Outer diameter of the sleeve (mm)
+
+// Hole Placement
+center_hole_radius = 0;       // Center hole offset from origin (for center hole)
+outer_circle_diameter = 54;   // Diameter of the circle for outer holes (mm)
+outer_circle_radius = outer_circle_diameter / 2; // Radius of the circle for outer holes (mm)
+num_outer_holes = 6;          // Number of outer holes
+
+// Sleeve Height
+sleeve_height = 20;           // Height to which sleeves rise (mm)
+
+// Skirt Dimensions
+skirt_wall_thickness = 2;     // Wall thickness of the skirt (mm)
+skirt_across_flats = 84;      // Distance across flats of the outer hexagonal skirt (mm)
+skirt_inward_offset = 3;      // How far in from the plate edge the skirt starts (mm)
+
+// Global settings
+$fn = 64;
+
+// --- Helper Functions and Modules ---
+
+// Function to create a regular hexagon centered at origin
+module hex(across_flats, thickness) {
+    // The distance from center to vertex (R) is across_flats / sqrt(3)
+    radius_to_vertex = across_flats / sqrt(3);
+    return linear_extrude(height = thickness)
+           polygon(points = [
+               [radius_to_vertex, 0],
+               [radius_to_vertex * cos(60), radius_to_vertex * sin(60)],
+               [radius_to_vertex * cos(120), radius_to_vertex * sin(120)],
+               [radius_to_vertex * cos(180), radius_to_vertex * sin(180)],
+               [radius_to_vertex * cos(240), radius_to_vertex * sin(240)],
+               [radius_to_vertex * cos(300), radius_to_vertex * sin(300)]
+           ]);
+}
+
+// Function to create a hexagonal prism (for the skirt)
+module hex_prism(across_flats, height, wall_thickness) {
+    // Outer hexagon shape
+    outer_radius = across_flats / sqrt(3);
+    outer_shape = polygon(points = [
+        [outer_radius, 0],
+        [outer_radius * cos(60), outer_radius * sin(60)],
+        [outer_radius * cos(120), outer_radius * sin(120)],
+        [outer_radius * cos(180), outer_radius * sin(180)],
+        [outer_radius * cos(240), outer_radius * sin(240)],
+        [outer_radius * cos(300), outer_radius * sin(300)]
+    ]);
+
+    // Inner hexagon shape (to define the wall thickness)
+    // The apothem of the outer hex is across_flats / 2.
+    // The inner apothem must be reduced by the wall thickness.
+    inner_apothem = (across_flats / 2) - wall_thickness;
+    // Convert inner apothem to radius-to-vertex for polygon definition: R = a / cos(30)
+    inner_radius_to_vertex = inner_apothem / cos(30);
+
+    inner_shape = polygon(points = [
+        [inner_radius_to_vertex, 0],
+        [inner_radius_to_vertex * cos(60), inner_radius_to_vertex * sin(60)],
+        [inner_radius_to_vertex * cos(120), inner_radius_to_vertex * sin(120)],
+        [inner_radius_to_vertex * cos(180), inner_radius_to_vertex * sin(180)],
+        [inner_radius_to_vertex * cos(240), inner_radius_to_vertex * sin(240)],
+        [inner_radius_to_vertex * cos(300), inner_radius_to_vertex * sin(300)]
+    ]);
+
+    // Extrude the difference to create the wall structure
+    difference() {
+        linear_extrude(height = height) outer_shape;
+        // Translate slightly down so the cut starts exactly at z=0 plane of the skirt base
+        translate([0, 0, -0.1]) linear_extrude(height = height + 0.2) inner_shape;
+    }
+}
+
+// --- Main Assembly ---
+
+difference() {
+    // 1. Base Plate (Solid block)
+    hex(hex_across_flats, plate_thickness);
+
+    // 2. Cut Holes in the Base Plate
+    // Center hole
+    translate([0, 0, -0.1]) cylinder(r = hole_diameter / 2 + 0.01, h = plate_thickness + 0.2);
+
+    // Outer holes (6 of them)
+    for (i = [0 : num_outer_holes - 1]) {
+        angle = i * (360 / num_outer_holes);
+        translate([outer_circle_radius * cos(angle), outer_circle_radius * sin(angle), -0.1])
+            cylinder(r = hole_diameter / 2 + 0.01, h = plate_thickness + 0.2);
+    }
+
+    // 3. Cut out the space for sleeves (Holes extending up to sleeve_height)
+    // These cuts must go through the base plate and into the volume where sleeves will be added.
+    for (i = [0 : num_outer_holes - 1]) {
+        angle = i * (360 / num_outer_holes);
+        translate([outer_circle_radius * cos(angle), outer_circle_radius * sin(angle), plate_thickness + 0.01])
+            cylinder(r = sleeve_outer_diameter / 2 + 0.01, h = sleeve_height - plate_thickness + 0.2);
+    }
+
+    // Center hole cut through sleeves (if needed)
+    translate([0, 0, plate_thickness + 0.01])
+        cylinder(r = sleeve_outer_diameter / 2 + 0.01, h = sleeve_height - plate_thickness + 0.2);
+
+
+    // --- Add Features (Unioned on top of the base structure) ---
+
+    union() {
+        // 4. Sleeves (Rises from the holes to z=20)
+        // Center Sleeve
+        translate([0, 0, plate_thickness])
+            cylinder(r = sleeve_outer_diameter / 2, h = sleeve_height - plate_thickness);
+
+        // Outer Sleeves
+        for (i = [0 : num_outer_holes - 1]) {
+            angle = i * (360 / num_outer_holes);
+            translate([outer_circle_radius * cos(angle), outer_circle_radius * sin(angle), plate_thickness])
+                rotate([0, 0, angle])
+                cylinder(r = sleeve_outer_diameter / 2, h = sleeve_height - plate_thickness);
+        }
+
+        // 5. Hexagonal Skirt (Rises from the base plate edge to z=20)
+        // The skirt is a hollow prism structure attached to the plate.
+        translate([0, 0, plate_thickness]) {
+            hex_prism(skirt_across_flats, sleeve_height - plate_thickness, skirt_wall_thickness);
+        }
+    }
+}

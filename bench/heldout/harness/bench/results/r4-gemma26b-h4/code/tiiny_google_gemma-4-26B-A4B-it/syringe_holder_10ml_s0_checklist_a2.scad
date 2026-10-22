@@ -1,0 +1,65 @@
+// Wall-mounted syringe holder for 10mL syringe
+// Corrected geometry based on measurement report and specification.
+
+// --- Dimensions ---
+block_w      = 50.0;    // Block width (X)
+block_d      = 30.0;    // Block depth (Y)
+block_h      = 40.0;    // Block height (Z)
+
+barrel_dia   = 16.5;    // Diameter of the syringe barrel channel
+barrel_rad   = barrel_dia / 2;
+
+flange_w      = 34.0;    // Width of the flange slot (X)
+flange_h      = 2.6;     // Height of the flange slot (Z)
+flange_z_min  = 30.0;    // Bottom of the flange slot (Z)
+flange_y_end  = 11.0;    // How far back the slot goes (Y)
+
+screw_hole_d  = 4.5;     // Diameter for M4 screws
+screw_x_pos   = 19.0;    // X offset for screw holes
+screw_z_pos   = 15.0;    // Z height for screw holes
+
+$fn = 64;
+
+// --- Modeling ---
+
+difference() {
+    // 1. The main block
+    // Centered on X and Y, sitting on Z=0.
+    // X: [-25, 25], Y: [-15, 15], Z: [0, 40]
+    translate([-block_w/2, -block_d/2, 0])
+        cube([block_w, block_d, block_h]);
+
+    // 2. The barrel channel
+    // Specification: "back end is a half-circle of 8.25mm radius centred at x=0, y=0"
+    // "straight sides run forward to the front face (y = -15)"
+    // This describes a semi-cylinder whose flat face is at y=0 and curved part is at y=-8.25.
+    // The cylinder axis is along Y.
+    
+    // First, create the semi-cylinder by taking a cylinder and cutting it in half.
+    // We place the cylinder such that its center axis is at x=0, y=0.
+    // To make it a "half-circle" at the back (y=0), we use a cube to cut the cylinder.
+    translate([0, 0, -1]) // Extend slightly in Z
+    rotate([0, 90, 0])    // Rotate to align axis with Y
+    difference() {
+        cylinder(h = block_d + 2, d = barrel_dia);
+        // Cut the cylinder in half. 
+        // The specification says the "back end" (the end of the hole) is a half-circle at y=0.
+        // This implies the channel occupies the space from y=-15 to y=0.
+        // To achieve this, we subtract the part of the cylinder where y > 0.
+        translate([-barrel_rad, -1, -1])
+            cube([barrel_dia * 2, barrel_rad + 2, block_h + 2]);
+    }
+
+    // 3. The flange slot
+    // Width 34mm (X), Height 2.6mm (Z), from front face (y=-15) to y=11.
+    translate([-flange_w/2, -block_d/2 - 1, flange_z_min])
+        cube([flange_w, (flange_y_end - (-block_d/2)) + 2, flange_h + 1]);
+
+    // 4. The screw holes
+    // Two 4.5mm holes through the block along the Y axis at x = +/- 19, z = 15.
+    for (sx = [-screw_x_pos, screw_x_pos]) {
+        translate([sx, -block_d/2 - 1, screw_z_pos])
+            rotate([0, 90, 0])
+                cylinder(h = block_d + 2, d = screw_hole_d);
+    }
+}

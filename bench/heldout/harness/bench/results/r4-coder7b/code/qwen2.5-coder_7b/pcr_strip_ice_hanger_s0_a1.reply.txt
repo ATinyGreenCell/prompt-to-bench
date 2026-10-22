@@ -1,0 +1,29 @@
+```openscad
+// Dimensions
+wall_thickness = 12; // mm
+bridge_height = 4; // mm
+inner_leg_length = 4; // mm
+outer_leg_length = 4; // mm
+ledge_height = 6; // mm
+tube_hole_diameter = 6.4; // mm
+tube_hole_spacing = 9; // mm
+total_length = 84; // mm
+
+// Shapes
+inner_leg = cylinder(r=wall_thickness/2, h=bridge_height+inner_leg_length, center=true);
+outer_leg = cylinder(r=(wall_thickness+1)/2, h=bridge_height+outer_leg_length, center=true);
+bridge = cube([wall_thickness, bridge_height, 4]);
+ledge = cube([30, ledge_height, tube_hole_diameter/2], center=true);
+tube_holes = for (i=[-9:9]) translate([i*tube_hole_spacing, -15, 0]) cylinder(r=tube_hole_diameter/2, h=total_length+1, center=true);
+
+// Final model
+holder = inner_leg + outer_leg + translate([0, bridge_height, 0]) bridge + translate([0, ledge_height-bridge_height, 0]) ledge - tube_holes;
+difference() {
+    holder;
+    // Extend cutting shapes slightly to avoid coplanar faces
+    translate([0, 0, -1]) inner_leg;
+    translate([0, 0, -1]) outer_leg;
+    translate([0, bridge_height-1, 0]) bridge;
+    translate([0, ledge_height-bridge_height-1, 0]) ledge;
+}
+```

@@ -1,0 +1,81 @@
+```openscad
+// 50 mL conical tube carrier – two parts printed side by side
+// Part 1: base block + two posts (handle posts)
+// Part 2: square handle bar (pushed through the posts after printing)
+
+// ---- Part 1: base block ----
+base_w = 90;          // X width of base block
+base_d = 90;          // Y depth of base block
+base_h = 35;          // Z height of base block
+
+seat_d = 30.5;        // diameter of each blind tube seat
+seat_depth = 30;      // depth of each blind seat (5 mm floor remains)
+
+// Seat centres (x, y)
+seat_x = [-21, 21];
+seat_y = [-24, 24];
+
+// ---- Part 1: posts ----
+post_t = 10;          // post thickness along X
+post_w = 16;          // post width along Y
+post_h = 160;         // post height (z = 0 to 160)
+post_hole = 10.4;     // square hole side, through along X
+post_hole_z = 150;    // centre height of the square hole
+
+// ---- Part 2: handle bar ----
+bar_t = 10;           // bar thickness along X
+bar_w = 10;           // bar width along Y
+bar_l = 100;          // bar length along X
+bar_y0 = 55;          // bar Y start (10 mm gap to base +Y face at y=45)
+bar_y1 = 65;          // bar Y end
+
+$fn = 64;
+
+// ================= PART 1 =================
+part1 = union() {
+    // Base block, centred on origin in X and Y
+    translate([-base_w/2, -base_d/2, 0])
+        cube([base_w, base_d, base_h]);
+
+    // Four blind tube seats (cut from the top, 5 mm floor)
+    for (sx = seat_x)
+        for (sy = seat_y)
+            translate([sx, sy, base_h - seat_depth + 0.01])
+                cylinder(h = seat_depth + 1, d = seat_d);
+
+    // Two posts, flush with the +X and -X end faces, centred on y = 0
+    // +X post
+    translate([base_w/2 - post_t, -post_w/2, 0])
+        cube([post_t, post_w, post_h]);
+    // -X post
+    translate([-base_w/2, -post_w/2, 0])
+        cube([post_t, post_w, post_h]);
+};
+
+// Cut the square through-holes in both posts (along X, centred at z = 150)
+part1 = difference() {
+    part1;
+
+    // +X post hole (extends 1 mm past each face along X)
+    translate([base_w/2 - post_t - 1, -post_hole/2, post_hole_z - post_hole/2])
+        cube([post_t + 2, post_hole, post_hole]);
+
+    // -X post hole (extends 1 mm past each face along X)
+    translate([-base_w/2 - 1, -post_hole/2, post_hole_z - post_hole/2])
+        cube([post_t + 2, post_hole, post_hole]);
+};
+
+// ================= PART 2 =================
+// Square handle bar lying on the bed along X, centred on x = 0,
+// spanning y = 55 to 65 (10 mm gap to the base +Y face at y = 45)
+module part2() { translate([-bar_l/2, bar_y0, 0])
+    cube([bar_l, bar_w, bar_t]); }
+
+// ================= OUTPUT =================
+// Part 1 (base + posts) centred on the origin
+part1;
+
+// Part 2 (handle bar) printed side by side, offset in +X
+translate([120, 0, 0])
+    part2();
+```

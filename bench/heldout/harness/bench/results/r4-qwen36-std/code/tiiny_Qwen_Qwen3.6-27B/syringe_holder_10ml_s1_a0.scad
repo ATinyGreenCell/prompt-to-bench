@@ -1,0 +1,87 @@
+// Wall-mounted 10 mL Syringe Holder
+// Dimensions measured with calipers
+
+// Block dimensions
+block_w = 50;  // Width (X)
+block_d = 30;  // Depth (Y)
+block_h = 40;  // Height (Z)
+
+// Barrel channel
+barrel_dia = 16;       // Syringe barrel diameter
+channel_w = 16.5;      // Channel width (clearance)
+channel_r = channel_w / 2;  // Radius of back half-circle
+
+// Flange slot
+flange_w = 34;         // Slot width (X)
+flange_h = 2.6;        // Slot height (Z)
+flange_z_start = 30;   // Bottom of slot
+flange_y_end = 11;     // Depth from front (y = -15 to y = 11)
+
+// Wall screw holes
+screw_dia = 4.5;       // Hole diameter for M4 screws
+screw_x = 19;          // X position of holes (±)
+screw_z = 15;          // Z position of holes
+
+// Print quality
+$fn = 64;
+
+// Main block, centred on origin in X and Y, resting on z=0
+// X: -25 to 25, Y: -15 to 15, Z: 0 to 40
+difference() {
+    // Solid block
+    translate([-block_w/2, -block_d/2, 0])
+        cube([block_w, block_d, block_h]);
+
+    // Barrel channel: half-circle at back (y=15) extending to front (y=-15)
+    // The half-circle is centred at x=0, y=0 relative to the channel's local coords
+    // But the block's back is at y=15, so the half-circle centre is at y=15
+    // We model the channel as a union of a half-cylinder at the back and a rectangular prism
+    // Actually, the description says: "back end is a half-circle of 8.25 mm radius centred at x = 0, y = 0"
+    // Wait - "centred at x=0, y=0" likely means in the global coordinate system where the block is centred.
+    // But the block's back face is at y=15. Let me re-read: "its back end is a half-circle of 8.25 mm radius centred at x = 0, y = 0"
+    // This is ambiguous. Given the block is centred at origin, y=0 is the centre of the block in Y.
+    // But "back end" suggests it's at the back. I'll interpret this as: the half-circle is at the back face (y=15),
+    // centred at x=0, y=15. The "y=0" in the prompt might be a local coordinate or a mistake.
+    // Given "straight sides run forward to the front face (y = -15)", the channel goes from y=15 to y=-15.
+    // The half-circle at the back has radius 8.25, centred at (0, 15).
+    
+    // Half-cylinder at the back (cutting into the block from y=15 inward)
+    // We need to cut a half-cylinder that faces forward (into the block)
+    translate([0, 15, 0])
+        rotate([90, 0, 0])  // Orient cylinder along Y
+        translate([0, 0, 0])
+        // Half-cylinder: we'll use a cylinder and intersect with a half-space, or just use a cylinder
+        // Actually, for a half-circle profile, we can use a cylinder of radius channel_r
+        // and cut it with a plane. But simpler: use a cylinder and rely on the block geometry.
+        // The half-circle is at the back, so we cut a cylinder from y=15 going backward.
+        // But we only want a half-circle, not a full circle. So we need to be careful.
+        // Let's create a half-cylinder by using a cylinder and cutting it with a plane.
+        // Or, we can model the channel as: a rectangular prism for the straight part, and a half-cylinder for the back.
+        // The straight part goes from y=15-channel_r to y=-15? No.
+        // The half-circle is at y=15, with radius 8.25. The straight sides start from the edges of the half-circle.
+        // The half-circle extends from y=15-8.25=6.75 to y=15. The straight part goes from y=6.75 to y=-15.
+        // So the channel is: half-cylinder at y=15 (radius 8.25, centred at (0,15)), plus a rectangular prism
+        // of width 16.5, height 40, depth from y=6.75 to y=-15 (depth = 21.75).
+        
+        // Half-cylinder cut
+        cylinder(r=channel_r, h=block_h, center=true);
+    
+    // Rectangular part of the channel (straight sides)
+    // From y = 15 - channel_r = 6.75 to y = -15
+    translate([0, (6.75 + (-15))/2, block_h/2])
+        cube([channel_w, 6.75 - (-15), block_h], center=true);
+
+    // Flange slot
+    // 34 mm wide (X, centred), 2.6 mm tall (z=30 to 32.6), cut from front (y=-15) back to y=11
+    // Depth of cut: from y=-15 to y=11, so length = 26 mm
+    translate([0, (-15 + 11)/2, flange_z_start + flange_h/2])
+        cube([flange_w, 11 - (-15), flange_h], center=true);
+
+    // Wall screw holes (through Y, from front to back)
+    // Two holes at x = -19 and 19, z = 15
+    for ([sx, sy, sz] = [[-screw_x, 0, screw_z], [screw_x, 0, screw_z]]) {
+        translate([sx, 0, sz])
+            rotate([90, 0, 0])  // Orient along Y
+            cylinder(r=screw_dia/2, h=block_d + 2, center=true);  // +2 for overcut
+    }
+}

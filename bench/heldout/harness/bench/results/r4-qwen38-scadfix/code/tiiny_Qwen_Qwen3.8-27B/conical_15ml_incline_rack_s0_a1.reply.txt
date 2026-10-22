@@ -1,0 +1,60 @@
+```openscad
+// 15 mL conical tube rack – 5 holes, 30° lean, FDM print orientation
+// Block rests on the XY plane (z = 0) and is centred on the origin in X and Y.
+
+$fn = 64;
+
+// ---- Block dimensions (measured with calipers) ----
+L = 130;   // length along X
+W = 60;    // depth along Y
+H = 45;    // height along Z
+
+// ---- Hole parameters ----
+n_holes   = 5;
+spacing   = 24;   // hole-to-hole pitch along X
+hole_d    = 17.5; // cylinder diameter, square to its axis
+hole_r    = hole_d / 2;
+hole_depth = 40;  // depth measured along the hole axis, from the top face
+
+// ---- Lean geometry ----
+// Each axis meets the top face at y = -10 and is tilted 30° from vertical
+// in the YZ plane; going down into the block it moves toward +Y.
+// A 30° tilt from vertical means the axis makes 60° with the +Z direction,
+// so the unit vector along the axis (downward) is (0, sin30, -cos30).
+tilt_deg  = 30;
+tilt_rad  = tilt_deg * $PI / 180;
+axis_dir  = [0, sin(tilt_rad), -cos(tilt_rad)]; // unit vector, down into block
+
+// Entry point of each hole on the top face (z = H, y = -10)
+y_entry   = -10;
+
+// ---- Build the solid block ----
+module block() { translate([-L/2, -W/2, 0]) cube([L, W, H]); }
+
+// ---- Build the five blind holes and subtract them ----
+// Each hole is a cylinder of radius hole_r and length hole_depth,
+// whose axis is tilted 30° from vertical in the YZ plane.
+// We model each hole as a cylinder aligned to +Z, then rotate it so its
+// axis follows the required direction, and translate it so the top of
+// the cylinder sits at the entry point on the top face.
+
+// The cylinder primitive is built along +Z. We need its axis to point
+// along axis_dir = (0, sin30, -cos30). A rotation about the X axis by
+// -30° maps +Z to (0, sin30, -cos30).
+// After rotation, the cylinder extends from the origin along axis_dir.
+// We want the *top* of the cylinder (the end at distance hole_depth along
+// the axis) to be at the entry point (x_i, y_entry, H).
+// So we translate the rotated cylinder by (x_i, y_entry, H) - hole_depth * axis_dir.
+
+difference() {
+    block();
+    for (i = [0 : n_holes-1]) {
+        x_i = (i - (n_holes-1)/2) * spacing;  // centred on origin in X
+        // Translate so the far end of the cylinder (top) is at the entry point
+        offset = [x_i, y_entry, H] - hole_depth * axis_dir;
+        translate(offset)
+        rotate([ -tilt_deg, 0, 0 ])  // tilt axis 30° from vertical toward +Y
+        cylinder(h = hole_depth, r = hole_r, $fn = $fn);
+    }
+}
+```

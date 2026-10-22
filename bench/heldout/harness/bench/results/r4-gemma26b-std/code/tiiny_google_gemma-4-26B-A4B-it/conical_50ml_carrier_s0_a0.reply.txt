@@ -1,0 +1,146 @@
+```openscad
+// --- Parameters ---
+
+// Part 1: Base Block Dimensions
+base_width_x = 90;           // X dimension of base
+base_depth_y = 90;           // Y dimension of base
+base_height_z = 35;          // Z dimension of base
+
+// Tube Seat Dimensions (Blind holes)
+seat_diameter = 30.5;         // Diameter of the tube seats
+seat_depth = 30;             // Depth of the seats (leaving 5mm floor)
+seat_x_pos = [-21, 21];       // X coordinates of seats
+seat_y_pos = [-24, 24];       // Y coordinates of seats
+
+// Post Dimensions
+post_thickness_x = 10;        // Thickness of posts along X
+post_width_y = 16;            // Width of posts along Y
+post_height_z = 160;          // Total height of posts
+post_hole_size = 10.4;        // Square hole size
+post_hole_z_center = 150;     // Z center of the square hole
+
+// Part 2: Handle Dimensions
+handle_width_x = 100;         // Length of the handle along X
+handle_thickness_y = 10;      // Thickness of the handle (Y)
+handle_height_z = 10;         // Height of the handle (Z)
+handle_y_start = 55;          // Start Y position (offset from base)
+handle_y_end = 65;            // End Y position
+
+// Resolution
+fn_val = 64;
+
+// --- Part 1: Base and Posts ---
+
+module part_1() {
+    union() {
+        // The Base Block
+        difference() {
+            // Main block
+            cube([base_width_x, base_depth_y, base_height_z], center = true);
+            
+            // The four blind seats
+            for (i = [0:1]) {
+                for (j = [0:1]) {
+                    translate([seat_x_pos[i], seat_y_pos[j], base_height_z/2 - seat_depth + 0.01])
+                        cylinder(h = seat_depth + 0.02, d = seat_diameter, center = true, $fn = fn_val);
+                }
+            }
+        }
+
+        // The two posts
+        // Post 1 (at -X end)
+        translate([-base_width_x/2 + post_thickness_x/2, 0, base_height_z/2 + post_height_z/2])
+            post_geometry();
+            
+        // Post 2 (at +X end)
+        translate([base_width_x/2 - post_thickness_x/2, 0, base_height_z/2 + post_height_z/2])
+            post_geometry();
+    }
+}
+
+module post_geometry() {
+    difference() {
+        // The post body
+        // Note: The post is oriented vertically, so we use a cube and rotate/translate
+        // But the prompt says "rise to z=160" from the base.
+        // The base top is at z=35. So post top is at 35 + 160 = 195.
+        // However, the prompt says "rise to z=160". I will interpret this as the 
+        // total height of the post being 160mm, starting from the base surface.
+        
+        // Let's redefine: The post is a vertical extrusion.
+        // The prompt says "two posts... rise to z=160". 
+        // I will treat the post as a vertical column of height 160.
+        
+        // To keep it simple, I'll build the post as a vertical cuboid.
+        // The prompt says "10mm thick (X) and 16mm wide (Y)".
+        // This implies the cross-section is 10x16.
+        
+        // Since it's "centered on y=0" and "flush with end faces", 
+        // and the base is 90x90, the post is at the edge.
+        
+        // Let's use a local coordinate system for the post to avoid confusion.
+        // The post is a vertical pillar.
+        translate([-post_width_y/2, -post_thickness_x/2, 0])
+            cube([post_width_y, post_thickness_x, post_height_z]);
+            
+        // The square hole through the post along X
+        // The hole is 10.4 x 10.4, centered at z=150 (relative to base? or absolute?)
+        // "centered at z=150" usually implies absolute Z.
+        // The hole is "straight through it along X".
+        // This means the hole's axis is X.
+        // A hole along X in a vertical post is a bit unusual, but I will follow the instruction.
+        // If the hole is along X, the hole is a square prism.
+        
+        translate([-post_width_y/2 - 1, -post_hole_size/2, 150 - post_hole_size/2])
+            cube([post_width_y + 2, post_hole_size, post_hole_size]);
+    }
+}
+
+// Re-calculating Part 1 based on "rise to z=160" and "centered on y=0"
+// The prompt says: "Two posts... stand on the base... rise to z=160".
+// This implies the top of the post is at Z=160.
+// Since the base is 35mm tall, the post height is 160 - 35 = 125mm.
+// However, usually "rise to z=160" means the coordinate Z=160.
+// Let's assume the post is a vertical block from Z=35 to Z=160.
+
+module part_1_final() {
+    // Base
+    difference() {
+        cube([base_width_x, base_depth_y, base_height_z], center = true);
+        for (i = [0:1]) {
+            for (j = [0:1]) {
+                // Subtracting from the top face. 
+                // Base top is at z = 35/2 = 17.5.
+                // Seat depth is 30. Seat floor is 5. So seat goes from z=17.5 down to z=-12.5.
+                // To ensure it's a blind hole, we cut from the top.
+                translate([seat_x_pos[i], seat_y_pos[j], 17.5 - seat_depth + 0.01])
+                    cylinder(h = seat_depth + 0.02, d = seat_diameter, $fn = fn_val);
+            }
+        }
+    }
+
+    // Posts
+    // Post 1: at x = -45 + 5 = -40. Post 2: at x = 45 - 5 = 40.
+    // Wait, "10mm thick (X) and 16mm wide (Y)". 
+    // "Flush with end faces" means the outer face of the post is at x=45 and x=-45.
+    // So post 1 is from x=-45 to x=-35. Post 2 is from x=35 to x=45.
+    // "Centered on y=0" means y goes from -8 to 8.
+    // "Rise to z=160" means the top face is at z=160.
+    // The base top is at z=17.5. So post height is 160 - 17.5 = 142.5.
+    // Wait, the base is 35mm tall. If it's centered on origin, top is at 17.5.
+    // If the post "stands on the base", it starts at z=17.5.
+    
+    for (px = [-base_width_x/2 + post_thickness_x/2, base_width_x/2 - post_thickness_x/2]) {
+        translate([px, 0, 17.5 + (160 - 17.5)/2]) // Center the post in Z
+        rotate([0, 90, 0]) // Rotate to stand vertically
+        difference() {
+            // The post body (now oriented along Z, but we rotated it)
+            // We'll just define it vertically to avoid confusion.
+            // Let's restart the post logic.
+        }
+    }
+}
+
+// --- Final Corrected Logic ---
+
+// Part 1

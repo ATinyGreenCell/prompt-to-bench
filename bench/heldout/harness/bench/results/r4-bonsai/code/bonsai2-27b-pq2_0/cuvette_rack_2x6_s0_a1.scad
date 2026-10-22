@@ -1,0 +1,50 @@
+// Open-sided rack for 12 standard 12.5 mm square cuvettes
+// Base plate: 112 (X) x 44 (Y) x 3 (Z), z = 0..3
+// Deck plate: 112 (X) x 44 (Y) x 3 (Z), z = 22..25
+// 7 upright walls (full depth 44, z = 0..25):
+//   2 end walls 3 mm thick, flush with short ends
+//   5 ribs 2.5 mm thick at x = -36, -18, 0, 18, 36
+// 12 square through-holes 13x13 in deck, 2 rows (Y) x 6 cols (X),
+// 18 mm pitch, centred on deck.
+
+// ---- dimensions ----
+L = 112;          // plate length along X
+W = 44;           // plate width along Y
+T = 3;            // plate thickness
+Z0 = 0;           // base bottom
+Z1 = 3;           // base top
+Z2 = 22;          // deck bottom
+Z3 = 25;          // deck top
+H = 25;           // upright wall height
+EWT = 3;          // end wall thickness
+RIBT = 2.5;       // rib thickness
+RIBX = [-36, -18, 0, 18, 36]; // rib centre x positions
+HOLE = 13;        // square hole side
+PITCH = 18;       // hole pitch (X and Y)
+NROWS = 2;        // rows along Y
+NCOLS = 6;        // cols along X
+
+// ---- geometry ----
+// Base plate
+translate([0, 0, Z0]) cube([L, W, T], center=[true, true, false]);
+
+// Deck plate
+translate([0, 0, Z2]) cube([L, W, T], center=[true, true, false]);
+
+// End walls (flush with short ends, full depth, z = 0..25)
+translate([-L/2, 0, 0]) cube([EWT, W, H], center=[false, true, false]);
+translate([L/2 - EWT, 0, 0]) cube([EWT, W, H], center=[false, true, false]);
+
+// Ribs (centred at given x, full depth, z = 0..25)
+for (x = RIBX)
+    translate([x - RIBT/2, 0, 0]) cube([RIBT, W, H], center=[false, true, false]);
+
+// Square through-holes in deck (13x13, 2 rows x 6 cols, 18 mm pitch, centred)
+for (row = 0; row < NROWS; row++) {
+    for (col = 0; col < NCOLS; col++) {
+        hx = (col - (NCOLS - 1) / 2) * PITCH;
+        hy = (row - (NROWS - 1) / 2) * PITCH;
+        translate([hx, hy, Z2 - 0.01])
+            cube([HOLE, HOLE, T + 0.02], center=[true, true, false]);
+    }
+}

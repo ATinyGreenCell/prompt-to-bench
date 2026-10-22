@@ -1,0 +1,80 @@
+```openscad
+// Pipette Holder Clamp
+// Designed for an 18mm thick shelf.
+// Printed lying on its side (Z is the extrusion direction).
+
+// Dimensions
+shelf_thickness = 18.0;
+spine_x_end     = 5.0;
+spine_y_end     = 28.4;
+bottom_jaw_x_end = 5.0;
+bottom_jaw_y_end = 5.0;
+bottom_jaw_x_start = -25.0;
+
+arm_x_end       = 65.0;
+arm_y_start      = 23.4;
+arm_y_end        = 28.4;
+arm_x_start      = -25.0;
+
+gap_clearance    = 0.4; // Extra clearance for the 18mm shelf
+extrusion_length = 105.0;
+
+// Hole dimensions
+hole_diameter    = 20.0;
+hole_spacing     = 35.0; // 52.5 - 17.5 = 35
+hole_z_start      = 17.5;
+hole_z_end        = 87.5;
+
+// Hole X/Y positioning (relative to the profile)
+// User specified: centered at x = 42 and z = 17.5, 52.5, 87.5.
+// Since we are printing on side, the "Z" in the prompt refers to the extrusion axis.
+// The "Y" in the prompt refers to the vertical axis in use.
+// In the print orientation (XY plane profile, Z extrusion):
+// Profile X = Profile X
+// Profile Y = Profile Y
+// Profile Z = Extrusion direction
+// The holes are "through the arm along Y (vertically in use)".
+// This means the hole axis is the Y axis of the profile.
+
+$fn = 64;
+
+module profile() {
+    difference() {
+        // Main Body
+        union() {
+            // Spine
+            translate([0, 0, 0])
+                cube([spine_x_end, spine_y_end, extrusion_length]);
+            
+            // Bottom Jaw
+            translate([bottom_jaw_x_start, 0, 0])
+                cube([bottom_jaw_x_end - bottom_jaw_x_start, bottom_jaw_y_end, extrusion_length]);
+            
+            // Top Jaw and Arm
+            translate([arm_x_start, arm_y_start, 0])
+                cube([arm_x_end - arm_x_start, arm_y_end - arm_y_start, extrusion_length]);
+        }
+
+        // Shelf Gap (to ensure it fits 18mm)
+        // The gap is between y=5 and y=23.4 (18.4mm). 
+        // We subtract a slightly larger volume to ensure no interference.
+        translate([-30, 5 - gap_clearance, -1])
+            cube([100, shelf_thickness + (gap_clearance * 2), extrusion_length + 2]);
+
+        // Pipette Holes
+        // Holes are through the arm along Y (vertically in use).
+        // In print orientation, the arm is at Y = [23.4, 28.4].
+        // The hole axis is Y.
+        for (z_pos = [hole_z_start, hole_z_start + hole_spacing, hole_z_start + 2 * hole_spacing]) {
+            translate([42, 20, z_pos]) // Centered at x=42, and roughly in the middle of the arm's Y thickness
+                rotate([0, 90, 0])
+                cylinder(h = 100, d = hole_diameter);
+        }
+    }
+}
+
+// Render the part
+// The profile is built in the XY plane and extruded along Z.
+profile();
+
+```

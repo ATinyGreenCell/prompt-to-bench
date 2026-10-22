@@ -1,0 +1,50 @@
+```openscad
+// Coarse cell strainer for a 50 mL conical tube
+$fn = 64;
+
+cup_od        = 25;    // cup outer diameter
+wall          = 1.2;   // wall thickness
+floor_t       = 1.2;   // floor thickness
+cup_h         = 32;    // total height
+collar_start  = 26;    // z where the flare starts
+collar_end    = 30;    // z where the flare reaches full diameter
+rim_d         = 33;    // collar / rim diameter
+hole_d        = 1.0;   // floor hole diameter
+hole_pitch    = 2;     // hole grid pitch
+hole_max_r    = 10;    // max distance of hole centre from axis
+grid_n        = 5;     // grid index range (-n..n)
+vent_w        = 3;     // vent notch width
+vent_r        = 12.5;  // notch removes material beyond this radius
+vent_z        = 25;    // notch starts at this z
+
+bore_d = cup_od - 2*wall;   // 22.6 mm
+
+difference() {
+    // Outer body with collar (revolved profile)
+    rotate_extrude($fn = 128)
+        polygon([
+            [0, 0],
+            [cup_od/2, 0],
+            [cup_od/2, collar_start],
+            [rim_d/2, collar_end],
+            [rim_d/2, cup_h],
+            [0, cup_h]
+        ]);
+
+    // Bore
+    translate([0, 0, floor_t])
+        cylinder(d = bore_d, h = cup_h, $fn = 128);
+
+    // Floor holes on a square grid
+    for (i = [-grid_n : grid_n])
+        for (j = [-grid_n : grid_n])
+            if ((i*i + j*j) * hole_pitch * hole_pitch <= hole_max_r * hole_max_r + 0.0001)
+                translate([i*hole_pitch, j*hole_pitch, -0.5])
+                    cylinder(d = hole_d, h = floor_t + 1, $fn = 32);
+
+    // Vent notches at +X and -X
+    for (s = [-1, 1])
+        translate([s > 0 ? vent_r : -vent_r - 10, -vent_w/2, vent_z])
+            cube([10, vent_w, cup_h - vent_z + 1]);
+}
+```

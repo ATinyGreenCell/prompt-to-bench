@@ -1,0 +1,136 @@
+```openscad
+// PCR Strip Holder for Ice Bucket
+// Designed to hang over a 12mm wall and hold an 8-tube PCR strip.
+// The part is extruded 84mm along the X axis.
+// The profile is in the YZ plane.
+
+// --- Dimensions ---
+length_x        = 84.0;    // Total extrusion length along X
+wall_gap        = 12.5;    // Gap for the bucket wall (16.5 - 4.0)
+inner_leg_h      = 50.0;    // Height of the inner leg
+outer_leg_h      = 50.0;    // Height of the outer leg
+bridge_h         = 4.0;     // Thickness of the top bridge (50 - 46)
+inner_leg_w      = 4.0;     // Width of the inner leg (y = 0 to 4)
+outer_leg_w      = 4.0;     // Width of the outer leg (y = 16.5 to 20.5)
+ledge_thick      = 6.0;     // Thickness of the ledge (z = 0 to 6)
+ledge_depth      = 30.0;    // Depth of the ledge into the ice (y = 0 to -30)
+tube_hole_d      = 6.4;     // Diameter of the PCR tube holes
+tube_hole_pitch  = 9.0;     // Spacing between tube holes along X
+num_tubes        = 8;       // Number of tubes
+
+$fn = 64;
+
+// --- 2D Profile ---
+// We define the profile in the XY plane where:
+// X_2d = Y_profile (the width/depth dimension)
+// Y_2d = Z_profile (the height dimension)
+module profile_2d() {
+    union() {
+        // Inner Leg: y [0, 4], z [0, 50]
+        square([inner_leg_w, inner_leg_h]);
+        
+        // Outer Leg: y [16.5, 20.5], z [0, 50]
+        translate([16.5, 0]) square([outer_leg_w, outer_leg_h]);
+        
+        // Bridge: y [4, 16.5], z [46, 50]
+        translate([4, 46]) square([12.5, bridge_h]);
+        
+        // Ledge: y [-30, 0], z [0, 6]
+        translate([-ledge_depth, 0]) square([ledge_depth, ledge_thick]);
+    }
+}
+
+// --- 3D Construction ---
+// 1. Create the main body by extruding the 2D profile along Z.
+// 2. Rotate the extrusion so it lies along the X axis.
+// 3. Center it on X.
+// 4. Subtract the vertical holes.
+
+difference() {
+    // The Main Body
+    // We extrude the profile along Z (which is the height of the legs).
+    // Then we rotate it 90 degrees around the Y axis so the extrusion direction (Z) becomes X.
+    // We translate it by -length_x/2 to center it on X=0.
+    rotate([90, 0, 0])
+    translate([-length_x/2, 0, 0])
+    linear_extrude(height = length_x) {
+        profile_2d();
+    }
+
+    // The Holes
+    // The holes are vertical (along the Z axis).
+    // In the 2D profile (XY), the ledge is at X [-30, 0] and Y [0, 6].
+    // After the rotation rotate([90, 0, 0]), the original X becomes Z, 
+    // and the original Y becomes Y.
+    // So the ledge is at Z [-30, 0] and Y [0, 6].
+    // The user wants the holes at y = -15 (in the profile's YZ plane).
+    // In our 2D profile, the "Y" of the profile is the "Y" of the world.
+    // Wait, let's re-map:
+    // Profile X -> World Z
+    // Profile Y -> World Y
+    // Profile Z (extrusion) -> World X
+    
+    // Let's use a more robust mapping:
+    // We want holes at:
+    // X_world = centered on 0
+    // Y_world = -15 (the ledge center in the YZ plane)
+    // Z_world = vertical (through the ledge)
+    
+    // In our current rotation:
+    // World X = Profile Z
+    // World Y = Profile Y
+    // World Z = Profile X
+    
+    // User wants holes at:
+    // X_world = centered on 0
+    // Y_world = -15 (ledge depth)
+    // Z_world = vertical (through the ledge)
+    
+    // Let's re-orient the profile to match the user's description exactly:
+    // Profile in YZ plane. Extruded along X.
+    // This means:
+    // World X = Extrusion
+    // World Y = Profile Y
+    // World Z = Profile Z
+    
+    // Let's redefine the 2D profile to be in the YZ plane directly.
+    // Since OpenSCAD 2D is XY, we define it in XY and then rotate.
+    // To make World Z = Profile Z, we use:
+    // 2D_X = Profile Y
+    // 2D_Y = Profile Z
+    // Then rotate 90 deg around Y so 2D_Z becomes World X.
+    
+    // Let's use the mapping:
+    // 2D_X = Profile Y
+    // 2D_Y = Profile Z
+    // Extrude along Z (which becomes World X)
+    // This makes:
+    // World X = Extrusion
+    // World Y = 2D_X = Profile Y
+    // World Z = 2D_Y = Profile Z
+    
+    // This matches the user's request perfectly.
+    // Now, where are the holes?
+    // Holes are vertical (World Z).
+    // They are at Y_world = -15.
+    // They are at X_world = centered on 0.
+    
+    // In our 2D profile:
+    // Y_world = 2D_X. So 2D_X = -15.
+    // X_world = Extrusion. So we need to subtract cylinders along Z.
+    
+    for (i = [0 : num_tubes - 1]) {
+        let (x_pos = (i - (num_tubes - 1) / 2) * tube_hole_pitch)
+        translate([x_pos, -15, -1]) // X_world = x_pos, Y_world = -15
+        cylinder(h = ledge_thick + 2, d = tube_hole_d);
+    }
+}
+
+// Final check on orientation:
+// The extrusion is along X.
+// The profile is in the YZ plane.
+// The ledge is at Y = -30 to 0.
+// The holes are at Y = -15.
+// The holes are vertical (along Z).
+// This matches the request.
+```

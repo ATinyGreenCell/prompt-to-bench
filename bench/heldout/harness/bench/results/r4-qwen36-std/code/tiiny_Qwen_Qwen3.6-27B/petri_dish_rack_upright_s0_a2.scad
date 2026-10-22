@@ -1,0 +1,47 @@
+// Dimensions (mm) - measured with calipers
+base_length = 203;
+base_width = 80;
+base_height = 20;
+
+cradle_radius = 46;
+cradle_axis_y = 0;
+cradle_axis_z = 52;
+
+divider_thickness = 3;
+divider_height = 60;
+num_dividers = 11;
+slot_width = 17; // 20 mm spacing - 3 mm divider = 17 mm slot
+
+// Quality
+$fn = 64;
+
+// Center the base on the origin in X and Y
+base_x = -base_length / 2;
+base_y = -base_width / 2;
+
+// Build the part: Base + Dividers minus Cradle
+difference() {
+    union() {
+        // Base block
+        translate([base_x, base_y, 0])
+            cube([base_length, base_width, base_height]);
+
+        // Divider plates
+        // Dividers at x = -100, -80, ..., 100
+        // These are 20 mm apart, centered on the base
+        // The base is 203 mm long, from -101.5 to 101.5
+        // Dividers are 3 mm thick, so they occupy x ranges like [-101.5, -98.5], etc.
+        for (i = [0 : num_dividers - 1]) {
+            x_pos = -100 + i * 20;
+            translate([x_pos - divider_thickness/2, base_y, 0])
+                cube([divider_thickness, base_width, divider_height]);
+        }
+    }
+    
+    // Cradle cut: cylinder along X axis
+    // Center at y=0, z=52, radius=46
+    // Extend past the base in X direction by 1 mm to ensure clean cut
+    translate([0, cradle_axis_y, cradle_axis_z])
+        rotate([90, 0, 0]) // Rotate so cylinder axis is along X
+        cylinder(r = cradle_radius, h = base_length + 2, center = true);
+}

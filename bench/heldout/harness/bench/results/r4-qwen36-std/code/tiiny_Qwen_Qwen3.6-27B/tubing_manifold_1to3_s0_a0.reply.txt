@@ -1,0 +1,114 @@
+```openscad
+// Manifold Block: 1-to-3 Splitter
+// Dimensions measured in mm
+
+// Block dimensions
+block_len = 60;   // X
+block_wid = 24;   // Y
+block_hgt = 16;   // Z
+
+// Channel geometry
+channel_dia = 3;  // Internal channel diameter
+mid_z = 8;        // Mid-plane height (z)
+
+// Inlet socket (on -X face)
+inlet_socket_dia = 4.2;
+inlet_socket_depth = 8;
+inlet_socket_y = 0;   // Centered in Y on the -X face
+inlet_socket_x = -block_len/2; // On the -X face
+
+// Main channel extent
+main_channel_start_x = -block_len/2; // Starts at inlet
+main_channel_end_x = 15;             // Stops inside block
+
+// Outlet branches
+outlet_branch_x_positions = [-15, 0, 15];
+outlet_socket_dia = 4.2;
+outlet_socket_depth = 6;
+outlet_socket_y = block_wid/2; // On the +Y face
+
+// Mounting holes
+mount_hole_dia = 3.4;
+mount_hole_x_positions = [-25, 25];
+mount_hole_y = -6;
+
+$fn = 64;
+
+// Main block
+translate([-block_len/2, -block_wid/2, 0])
+  cube([block_len, block_wid, block_hgt]);
+
+// --- Channels and Sockets ---
+
+// Helper module to create a cylindrical channel/socket
+// pos: [x, y, z] center
+// dir: direction vector [dx, dy, dz]
+// length: length of cylinder
+// dia: diameter
+module cyl_channel(pos, dir, length, dia) {
+  translate(pos)
+    rotate([90, 0, 0]) // Default is along Z, we'll rotate as needed
+    rotate(v=[0,0,0], a=0) // Placeholder
+    cylinder(h=length, r=dia/2, center=false);
+}
+
+// Better approach: use rotate_extrude or just rotate the cylinder appropriately.
+// Since all channels are horizontal (along X or Y), we can rotate cylinders 90 deg.
+
+// Inlet Socket (on -X face, pointing in +X)
+translate([inlet_socket_x, inlet_socket_y, mid_z])
+  rotate([0, 90, 0]) // Pointing along +X
+  cylinder(h=inlet_socket_depth, r=inlet_socket_dia/2, center=false);
+
+// Main Channel (along +X from inlet to x=15)
+// Starts at inlet_socket_x + inlet_socket_depth? No, the socket is the start.
+// The channel runs from the end of the socket to x=15.
+// Actually, the socket is a counterbore. The channel is the 3mm bore.
+// Let's model the 3mm channel first, then the sockets as larger bores.
+
+// Main 3mm channel: from x = inlet_socket_x to x = main_channel_end_x
+// Length = main_channel_end_x - inlet_socket_x
+main_chan_len = main_channel_end_x - inlet_socket_x;
+main_chan_start_pos = [inlet_socket_x + inlet_socket_depth/2, inlet_socket_y, mid_z]; 
+// Wait, the socket is 8mm deep. The channel should start where the socket ends? 
+// Or is the socket just an enlargement at the end? 
+// "4.2 mm socket 8 mm deep for 4 mm tubing; from it the main channel runs..."
+// This implies the socket is the termination feature. The 3mm channel runs from the 
+// back of the socket to x=15.
+// So 3mm channel starts at x = inlet_socket_x + inlet_socket_depth.
+main_chan_3mm_start_x = inlet_socket_x + inlet_socket_depth;
+main_chan_3mm_len = main_channel_end_x - main_chan_3mm_start_x;
+
+translate([main_chan_3mm_start_x + main_chan_3mm_len/2, inlet_socket_y, mid_z])
+  rotate([0, 90, 0])
+  cylinder(h=main_chan_3mm_len, r=channel_dia/2, center=true);
+
+// Outlet Branches (3mm channels)
+// Each branch goes from the main channel (at specific x) to the +Y face.
+// The main channel is at y = inlet_socket_y = 0.
+// The outlet socket is at y = block_wid/2.
+// So the 3mm channel runs from y=0 to y=(block_wid/2 - outlet_socket_depth).
+// And the socket is the last part.
+
+for (bx = outlet_branch_x_positions) {
+  // 3mm channel
+  branch_len = (block_wid/2 - outlet_socket_depth) - 0; // From y=0 to start of socket
+  branch_center_y = 0 + branch_len/2;
+  
+  translate([bx, branch_center_y, mid_z])
+    rotate([90, 0, 0]) // Pointing along +Y
+    cylinder(h=branch_len, r=channel_dia/2, center=true);
+    
+  // Outlet Socket (4.2mm, 6mm deep) at +Y face
+  socket_center_y = block_wid/2 - outlet_socket_depth/2;
+  translate([bx, socket_center_y, mid_z])
+    rotate([90, 0, 0])
+    cylinder(h=outlet_socket_depth, r=outlet_socket_dia/2, center=true);
+}
+
+// --- Mounting Holes ---
+for (mx = mount_hole_x_positions) {
+  translate([mx, mount_hole_y, block_hgt/2])
+    cylinder(h=block_hgt + 0.02, r=mount_hole_dia/2, center=true); // +0.02 to ensure through-hole
+}
+```

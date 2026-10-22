@@ -1,0 +1,453 @@
+# Task prompts translated for the language ablation (system prompt stays in English,
+# as when a student pastes the tutorial's starter prompt and writes the spec in their
+# own language). Numbers, units, axis names and coordinates are unchanged; decimal
+# points are kept so only the language varies.
+# Translations were drafted with AI assistance and have NOT yet been reviewed by
+# native speakers - corrections are very welcome (see CONTRIBUTING.md).
+
+es:
+  tube_rack_1p5ml: >-
+    Diseña una gradilla de mesa para tubos de microcentrífuga de 1.5 mL. Es un bloque
+    rectangular macizo de 106 mm de largo (X), 72 mm de ancho (Y) y 30 mm de alto (Z).
+    Tiene 24 agujeros verticales dispuestos en 4 filas (a lo largo de Y) de 6 agujeros
+    (a lo largo de X), a 16 mm de centro a centro en ambas direcciones, con la
+    cuadrícula de agujeros centrada en el bloque. Cada agujero tiene 11.2 mm de
+    diámetro y 25 mm de profundidad, abierto por arriba y cerrado por abajo, de modo
+    que queda un fondo macizo de 5 mm.
+  conical_rack_50ml: >-
+    Diseña una gradilla para seis tubos cónicos de 50 mL (tipo Falcon). Se imprime boca
+    abajo y se le da la vuelta después de imprimirla. En la orientación de impresión:
+    una placa plana de 130 mm (X) por 90 mm (Y) y 4 mm de espesor descansa sobre la cama
+    (de z = 0 a 4). La placa tiene seis agujeros pasantes de 30.5 mm de diámetro, en 2
+    filas (a lo largo de Y) de 3 (a lo largo de X), a 40 mm de centro a centro en ambas
+    direcciones, centrados en la placa. Dos paredes macizas recorren los dos bordes
+    largos de la placa: cada pared mide 130 mm de largo (X) y 4 mm de espesor (Y), está
+    alineada con el borde largo de la placa y sube desde la placa hasta z = 70. Los dos
+    extremos cortos quedan abiertos. Una vez volteada, la gradilla se apoya sobre las
+    dos paredes y los tubos pasan por los agujeros.
+  slide_drying_rack: >-
+    Diseña un soporte de secado que sostenga 10 portaobjetos de microscopio
+    (75 x 25 x 1 mm) de pie sobre su borde largo. Es un bloque base macizo de 90 mm de
+    largo (X), 45 mm de ancho (Y) y 20 mm de alto (Z). Corta 10 ranuras paralelas en la
+    cara superior: cada ranura va a lo largo de X, mide 77 mm de largo, 1.6 mm de ancho
+    (Y) y 10 mm de profundidad, y está abierta por arriba. Las ranuras están separadas
+    3.5 mm de centro a centro (en Y) y el grupo de ranuras está centrado en el bloque
+    en X y en Y.
+  pcr_tube_rack_sbs: >-
+    Diseña una gradilla para 96 tubos de PCR (0.2 mL) con la huella estándar de
+    microplaca (ANSI/SLAS): un bloque de 127.76 mm de largo (X), 85.48 mm de ancho (Y)
+    y 20 mm de alto (Z). Tiene 96 agujeros pasantes verticales de 6.2 mm de diámetro,
+    en 8 filas (a lo largo de Y) por 12 columnas (a lo largo de X), separados 9.0 mm de
+    centro a centro. El centro del primer agujero (A1) está a 14.38 mm del borde
+    izquierdo y a 11.24 mm del borde trasero, de modo que la cuadrícula queda centrada
+    en el bloque. Corta un chaflán de 45 grados con catetos de 5 mm en la arista
+    vertical de la esquina de A1 como marca de orientación.
+  gel_comb_10well: >-
+    Diseña un peine de 10 pocillos para preparar geles de agarosa, impreso tumbado.
+    Todo el peine es una placa plana de 1.5 mm de espesor (Z) apoyada sobre la cama.
+    Visto desde arriba, tiene un lomo recto (barra trasera) de 70 mm de largo (X) y
+    12 mm de ancho (Y), y 10 dientes rectangulares que cuelgan de uno de los bordes
+    largos del lomo en la dirección -Y. Cada diente mide 5.0 mm de ancho (X) y 12 mm de
+    largo (Y). Los huecos entre dientes vecinos son de 1.5 mm, y la fila de dientes
+    está centrada en el lomo en X.
+  micropestle_1p5ml: >-
+    Diseña un pistilo para moler tejido dentro de un tubo de microcentrífuga de 1.5 mL,
+    impreso de pie. De abajo hacia arriba: (1) un mango cilíndrico de 8 mm de diámetro
+    desde z = 0 hasta z = 45; (2) un cono que se estrecha de 8 mm de diámetro en z = 45
+    a 3 mm de diámetro en z = 62; (3) una punta redondeada: una esfera de 3 mm de
+    diámetro centrada en z = 62. Para mejorar el agarre, corta cuatro ranuras
+    circunferenciales en el mango, cada una de 2 mm de ancho (en Z) y 1 mm de
+    profundidad, centradas en z = 10, 15, 20 y 25.
+  lab_funnel_60mm: >-
+    Diseña un embudo pequeño de laboratorio, impreso de pie con la abertura ancha
+    arriba. Un tubo de salida recto con 10 mm de diámetro exterior va de z = 0 a z = 20.
+    Encima, un cono se ensancha desde 10 mm de diámetro exterior en z = 20 hasta 60 mm
+    de diámetro exterior en el borde, en z = 50. La pared tiene 1.6 mm de espesor en
+    todas partes (así que el orificio del tubo de salida mide 6.8 mm), y el embudo está
+    abierto arriba y abajo para que el líquido pase de lado a lado.
+  seed_sowing_template: >-
+    Diseña una plantilla de siembra que quepa dentro de una placa de Petri de 90 mm: un
+    disco plano de 85 mm de diámetro y 2 mm de espesor, apoyado sobre la cama. Tiene una
+    cuadrícula de 7 x 7 agujeros pasantes de 3 mm de diámetro, a 9 mm de centro a
+    centro, centrada en el disco. Corta una muesca rectangular de orientación en el
+    borde del lado +Y, centrada en el eje Y: 10 mm de ancho (X) y 4 mm de profundidad
+    (Y, medida desde el borde hacia dentro).
+  dshaft_knob_6mm: >-
+    Diseña una perilla de repuesto para un agitador con placa calefactora que tiene un
+    eje en D de 6 mm. La perilla es un cilindro de 30 mm de diámetro y 15 mm de alto.
+    Se imprime con la cara que mira hacia la placa calefactora apoyada en la cama
+    (z = 0). Desde esa cara inferior, un orificio ciego en forma de D sube 12 mm dentro
+    de la perilla: un círculo de 6.2 mm de diámetro con un lado cortado en plano, de
+    modo que la distancia desde el plano hasta el lado opuesto del círculo es de
+    4.7 mm. Alrededor del exterior, corta 18 ranuras verticales de agarre, igualmente
+    espaciadas, a lo largo de toda la altura; cada ranura es un semicilindro de 2 mm de
+    diámetro centrado en la superficie exterior. En la cara superior, corta una ranura
+    indicadora de 1.5 mm de ancho y 1 mm de profundidad que va desde el centro hasta el
+    borde exterior, del mismo lado que el plano de la D.
+  pcr_tube_adapter: >-
+    Diseña un manguito adaptador que permita colocar un tubo de PCR de 0.2 mL en un
+    agujero de gradilla hecho para tubos de 1.5 mL. Imprímelo boca abajo: un collar de
+    13 mm de diámetro y 1.5 mm de espesor descansa sobre la cama (de z = 0 a 1.5), y el
+    cuerpo del manguito, de 10.8 mm de diámetro exterior, sube desde el collar hasta
+    z = 21.5. Un orificio recto de 6.2 mm de diámetro atraviesa toda la altura, abierto
+    por ambos extremos.
+  hose_barb_reducer_8_5: >-
+    Diseña un reductor recto de espiga para manguera que una un tubo de silicona de
+    8 mm de diámetro interior con otro de 5 mm de diámetro interior. Imprímelo de pie a
+    lo largo de Z. Es redondo (con simetría de rotación alrededor del eje Z) y un
+    orificio de 3 mm lo atraviesa en línea recta a lo largo de toda su longitud. De
+    z = 0 a z = 20: dos espigas idénticas para el tubo de 8 mm, apiladas; cada espiga
+    mide 10 mm de alto y su diámetro exterior crece linealmente de 7.5 mm en su base a
+    9.5 mm en su parte superior, y luego vuelve bruscamente a 7.5 mm (perfil de diente
+    de sierra). De z = 20 a z = 25: un collar cilíndrico de 12 mm de diámetro. De
+    z = 25 a z = 41: dos espigas idénticas para el tubo de 5 mm, apiladas; cada espiga
+    mide 8 mm de alto y su diámetro exterior disminuye linealmente de 6.5 mm en su base
+    a 5.0 mm en su parte superior, y luego vuelve bruscamente a 6.5 mm.
+  rod_tubing_clip: >-
+    Diseña una pinza a presión que sujete un tubo junto a una varilla de soporte de
+    laboratorio de 12.7 mm (1/2 pulgada). Se imprime plana: es una extrusión de 10 mm de
+    alto (Z) de un perfil 2D en el plano XY. El perfil consta de: (1) un anillo para la
+    varilla con 12.7 mm de diámetro interior y pared de 3 mm (18.7 mm de diámetro
+    exterior), centrado en el origen, con una abertura de 10 mm de ancho recortada en
+    su lado -X (se elimina de este anillo todo lo que tenga x < 0 y -5 < y < 5) para que
+    encaje a presión en la varilla; (2) un anillo para el tubo con 6 mm de diámetro
+    interior y pared de 2 mm, centrado en x = 15, y = 0, con una abertura de 4.5 mm de
+    ancho recortada en su lado +X (x > 15 y -2.25 < y < 2.25); (3) un puente macizo de
+    6 mm de ancho (Y) entre x = 8 y x = 12 que une los dos anillos sin bloquear el
+    agujero de ninguno de ellos.
+  stirrer_fan_housing: >-
+    Diseña la carcasa de un agitador magnético casero construido con un ventilador de
+    PC de 80 mm. En uso es una caja abierta puesta boca abajo que cubre el ventilador, y
+    su tapa cerrada es la superficie de agitación. Modélala en la orientación de
+    impresión, es decir, boca abajo: la placa superior de 2 mm de espesor descansa sobre
+    la cama (de z = 0 a 2) y cuatro paredes de 2.5 mm de espesor suben desde ella hasta
+    z = 40, donde la caja está abierta. El tamaño exterior es de 90 x 90 mm (X x Y).
+    Taladra cuatro agujeros de 4.5 mm para tornillos M4 a través de la placa superior,
+    en un patrón cuadrado de 71.5 mm centrado en la placa (los agujeros de montaje del
+    ventilador). En una de las paredes, corta una muesca para el cable de alimentación:
+    12 mm de ancho, centrada a lo largo de la pared, que baja 8 mm desde el borde
+    abierto (de z = 32 a z = 40).
+  nema17_motor_bracket: >-
+    Diseña un soporte en forma de L para un motor paso a paso NEMA 17, por ejemplo para
+    una bomba de jeringa. Orientación de impresión: la placa base descansa sobre la
+    cama. Placa base: x de -25 a 25, y de 0 a 45, z de 0 a 5, con dos agujeros pasantes
+    verticales de 4.5 mm (M4) en (x = -17, y = 30) y (x = 17, y = 30). Placa vertical
+    del motor: x de -25 a 25, y de 0 a 5, z de 0 a 50, de pie sobre el borde trasero de
+    la base. A través de la placa del motor (a lo largo de Y), corta un agujero de 23 mm
+    para el resalte de centrado del motor con su centro en x = 0, z = 28, y cuatro
+    agujeros de 3.4 mm para tornillos M3 en un patrón cuadrado de 31 mm centrado en el
+    agujero del resalte. Añade dos cartelas triangulares de 5 mm de espesor, alineadas
+    con los bordes izquierdo y derecho (x = -25 a -20 y x = 20 a 25): cada una es un
+    triángulo rectángulo en el plano YZ con catetos de 20 mm a lo largo de +Y y 20 mm a
+    lo largo de +Z, con la esquina del ángulo recto en y = 5, z = 5 (donde se unen las
+    placas).
+  enclosure_box_and_lid: >-
+    Diseña una caja de dos piezas para una pequeña placa electrónica (por ejemplo, un
+    registrador de temperatura basado en Arduino). Pon las dos piezas en el mismo
+    archivo, una al lado de la otra sobre la cama con 10 mm de separación, para que se
+    impriman juntas. Pieza 1, la caja: tamaño exterior de 70 x 50 x 30 mm (X x Y x Z),
+    paredes de 2 mm, fondo de 2 mm, abierta por arriba. Pieza 2, la tapa, impresa boca
+    abajo: una placa de 70 x 50 x 2 mm apoyada en la cama, con un reborde rectangular
+    encima: una pared de 1.5 mm de espesor y 4 mm de alto cuyo tamaño exterior es de
+    65.6 x 45.6 mm, centrada en la placa, de modo que encaje en la abertura de la caja
+    con 0.2 mm de holgura por cada lado. Coloca la tapa en el lado +X de la caja.
+  mini_gel_tank: >-
+    Diseña la cubeta de tampón para una mini caja de electroforesis horizontal en gel.
+    Es una cubeta rectangular abierta por arriba con dimensiones exteriores de 120 mm
+    (X) x 70 mm (Y) x 40 mm (Z), paredes de 3 mm y fondo de 3 mm. En el centro de la
+    cubeta, una plataforma elevada maciza para la bandeja del gel ocupa todo el ancho
+    interior (Y) de la cubeta, mide 60 mm de largo en X (centrada) y su parte superior
+    está 10 mm por encima del fondo interior (en z = 13). La plataforma divide el fondo
+    de la cubeta en dos cámaras de tampón, una en cada extremo, que se comunican por
+    encima de la plataforma. A través de cada pared de los extremos (las paredes en los
+    dos extremos de X), taladra un agujero horizontal de 2 mm de diámetro a lo largo de
+    X en y = 0, z = 30 para los cables de los electrodos.
+
+hi:
+  tube_rack_1p5ml: >-
+    1.5 mL माइक्रोसेंट्रीफ्यूज ट्यूबों के लिए एक बेंच रैक डिज़ाइन करें। यह एक ठोस आयताकार
+    ब्लॉक है जो 106 mm लंबा (X), 72 mm चौड़ा (Y) और 30 mm ऊँचा (Z) है। इसमें 24
+    ऊर्ध्वाधर छेद हैं, जो 4 पंक्तियों (Y की दिशा में) में 6-6 छेद (X की दिशा में) के रूप में
+    लगे हैं; दोनों दिशाओं में केंद्र से केंद्र की दूरी 16 mm है, और छेदों का ग्रिड ब्लॉक के
+    बीच में है। हर छेद का व्यास 11.2 mm और गहराई 25 mm है, ऊपर से खुला और नीचे से बंद,
+    ताकि नीचे 5 mm का ठोस तल बचा रहे।
+  conical_rack_50ml: >-
+    छह 50 mL कोनिकल (Falcon जैसी) ट्यूबों के लिए एक रैक डिज़ाइन करें। इसे उल्टा प्रिंट किया
+    जाता है और प्रिंट होने के बाद पलट दिया जाता है। प्रिंट की दिशा में: 130 mm (X) × 90 mm
+    (Y) और 4 mm मोटी एक सपाट प्लेट बेड पर रखी है (z = 0 से 4 तक)। प्लेट में 30.5 mm व्यास
+    के छह आर-पार छेद हैं, 2 पंक्तियों (Y की दिशा में) में 3-3 (X की दिशा में), दोनों दिशाओं
+    में केंद्र से केंद्र 40 mm, और ये प्लेट के बीच में हैं। प्लेट के दोनों लंबे किनारों पर दो ठोस
+    दीवारें हैं: हर दीवार 130 mm लंबी (X) और 4 mm मोटी (Y) है, प्लेट के लंबे किनारे के साथ
+    एक सीध में है, और प्लेट से z = 70 तक ऊपर उठती है। दोनों छोटे सिरे खुले रहते हैं। पलटने
+    के बाद रैक दोनों दीवारों पर खड़ा होता है और ट्यूबें छेदों से होकर गुज़रती हैं।
+  slide_drying_rack: >-
+    एक सुखाने वाला रैक डिज़ाइन करें जो 10 माइक्रोस्कोप स्लाइड (75 × 25 × 1 mm) को उनके
+    लंबे किनारे पर सीधा खड़ा रखे। यह एक ठोस आधार ब्लॉक है: 90 mm लंबा (X), 45 mm चौड़ा
+    (Y) और 20 mm ऊँचा (Z)। ऊपरी सतह में 10 समानांतर खाँचे काटें: हर खाँचा X की दिशा में
+    है, 77 mm लंबा, 1.6 mm चौड़ा (Y) और 10 mm गहरा है, और ऊपर से खुला है। खाँचों के बीच
+    केंद्र से केंद्र की दूरी 3.5 mm (Y में) है, और खाँचों का समूह X और Y दोनों में ब्लॉक के बीच
+    में है।
+  pcr_tube_rack_sbs: >-
+    96 PCR ट्यूबों (0.2 mL) के लिए एक रैक डिज़ाइन करें जिसका फ़ुटप्रिंट मानक माइक्रोप्लेट
+    (ANSI/SLAS) जैसा हो: एक ब्लॉक जो 127.76 mm लंबा (X), 85.48 mm चौड़ा (Y) और 20 mm
+    ऊँचा (Z) है। इसमें 6.2 mm व्यास के 96 ऊर्ध्वाधर आर-पार छेद हैं, 8 पंक्तियों (Y की दिशा
+    में) × 12 स्तंभों (X की दिशा में) में, केंद्र से केंद्र 9.0 mm की दूरी पर। पहले छेद (A1) का
+    केंद्र बाएँ किनारे से 14.38 mm और पिछले किनारे से 11.24 mm पर है, ताकि ग्रिड ब्लॉक के बीच
+    में रहे। दिशा-चिह्न के रूप में A1 वाले कोने के ऊर्ध्वाधर किनारे पर 5 mm भुजाओं वाला
+    45 डिग्री का chamfer (तिरछा कटाव) काटें।
+  gel_comb_10well: >-
+    अगारोज़ जेल ढालने के लिए 10 वेल वाली एक कंघी डिज़ाइन करें, जो लेटी हुई अवस्था में प्रिंट
+    हो। पूरी कंघी 1.5 mm मोटी (Z) एक सपाट प्लेट है जो बेड पर रखी है। ऊपर से देखने पर इसमें
+    एक सीधी रीढ़ (पीछे की पट्टी) है जो 70 mm लंबी (X) और 12 mm चौड़ी (Y) है, और 10
+    आयताकार दाँत हैं जो रीढ़ के एक लंबे किनारे से -Y दिशा में लटकते हैं। हर दाँत 5.0 mm चौड़ा
+    (X) और 12 mm लंबा (Y) है। पास-पास के दाँतों के बीच 1.5 mm का अंतर है, और दाँतों की
+    पंक्ति X में रीढ़ के बीच में है।
+  micropestle_1p5ml: >-
+    1.5 mL माइक्रोसेंट्रीफ्यूज ट्यूब के अंदर ऊतक पीसने के लिए एक मूसल (pestle) डिज़ाइन करें,
+    जो सीधा खड़ा करके प्रिंट हो। नीचे से ऊपर: (1) 8 mm व्यास का एक बेलनाकार हैंडल, z = 0 से
+    z = 45 तक; (2) एक शंकु जो z = 45 पर 8 mm व्यास से घटकर z = 62 पर 3 mm व्यास का हो
+    जाता है; (3) एक गोल सिरा: 3 mm व्यास का एक गोला जिसका केंद्र z = 62 पर है। पकड़ के लिए
+    हैंडल में चार गोलाकार खाँचे काटें, हर खाँचा 2 mm चौड़ा (Z में) और 1 mm गहरा हो, और उनके
+    केंद्र z = 10, 15, 20 और 25 पर हों।
+  lab_funnel_60mm: >-
+    एक छोटी प्रयोगशाला कीप (funnel) डिज़ाइन करें, जो चौड़ा मुँह ऊपर रखकर सीधी प्रिंट हो।
+    10 mm बाहरी व्यास की एक सीधी नली (spout) z = 0 से z = 20 तक जाती है। उसके ऊपर एक शंकु
+    z = 20 पर 10 mm बाहरी व्यास से फैलकर z = 50 पर किनारे पर 60 mm बाहरी व्यास का हो जाता
+    है। दीवार हर जगह 1.6 mm मोटी है (इसलिए नली का भीतरी छेद 6.8 mm है), और कीप ऊपर और
+    नीचे दोनों ओर से खुली है ताकि तरल सीधा बह सके।
+  seed_sowing_template: >-
+    एक बुवाई टेम्पलेट डिज़ाइन करें जो 90 mm की Petri डिश के अंदर आ जाए: 85 mm व्यास और
+    2 mm मोटाई की एक सपाट डिस्क, जो बेड पर रखी है। इसमें 3 mm व्यास के आर-पार छेदों का
+    7 × 7 ग्रिड है, केंद्र से केंद्र 9 mm की दूरी पर, डिस्क के बीच में। दिशा पहचानने के लिए +Y
+    वाली तरफ़ किनारे पर, Y अक्ष के बीचोंबीच, एक आयताकार खाँच काटें: 10 mm चौड़ी (X) और
+    4 mm गहरी (Y, किनारे से अंदर की ओर नापी गई)।
+  dshaft_knob_6mm: >-
+    6 mm D-shaft वाले हॉटप्लेट स्टिरर के लिए एक बदली जाने वाली नॉब डिज़ाइन करें। नॉब 30 mm
+    व्यास और 15 mm ऊँचाई का एक बेलन है। इसे इस तरह प्रिंट किया जाता है कि जो सतह हॉटप्लेट
+    की ओर रहती है वह बेड पर नीचे (z = 0) हो। उस निचली सतह से एक D-आकार का बंद छेद नॉब के
+    अंदर 12 mm ऊपर जाता है: 6.2 mm व्यास का एक वृत्त जिसकी एक तरफ़ सपाट कटी है, ताकि सपाट
+    हिस्से से वृत्त की सामने वाली तरफ़ तक की दूरी 4.7 mm हो। बाहर की ओर पूरी ऊँचाई में 18
+    बराबर दूरी वाले ऊर्ध्वाधर पकड़-खाँचे काटें; हर खाँचा 2 mm व्यास का आधा बेलन है जिसका केंद्र
+    बाहरी सतह पर है। ऊपरी सतह पर 1.5 mm चौड़ा और 1 mm गहरा एक संकेतक खाँचा काटें, जो केंद्र
+    से बाहरी किनारे तक जाए, D के सपाट हिस्से वाली तरफ़।
+  pcr_tube_adapter: >-
+    एक एडेप्टर स्लीव डिज़ाइन करें जिससे 0.2 mL PCR ट्यूब, 1.5 mL ट्यूबों के लिए बने रैक के
+    छेद में बैठ सके। इसे उल्टा प्रिंट करें: 13 mm व्यास और 1.5 mm मोटाई का एक कॉलर बेड पर
+    रखा है (z = 0 से 1.5 तक), और 10.8 mm बाहरी व्यास वाला स्लीव का शरीर कॉलर से z = 21.5
+    तक ऊपर उठता है। 6.2 mm व्यास का एक सीधा छेद पूरी ऊँचाई में आर-पार जाता है, दोनों सिरों पर
+    खुला।
+  hose_barb_reducer_8_5: >-
+    एक सीधा hose-barb रिड्यूसर डिज़ाइन करें जो 8 mm भीतरी व्यास वाली सिलिकॉन ट्यूबिंग को
+    5 mm भीतरी व्यास वाली ट्यूबिंग से जोड़े। इसे Z अक्ष के साथ सीधा खड़ा करके प्रिंट करें। यह
+    गोल है (Z अक्ष के चारों ओर घूर्णन-सममित) और 3 mm का एक छेद इसकी पूरी लंबाई में सीधा
+    आर-पार जाता है। z = 0 से z = 20 तक: 8 mm ट्यूबिंग के लिए दो एक जैसे barb, एक के ऊपर
+    एक; हर barb 10 mm ऊँचा है और उसका बाहरी व्यास नीचे 7.5 mm से रैखिक रूप से बढ़कर ऊपर
+    9.5 mm हो जाता है, फिर सीधे वापस 7.5 mm पर आ जाता है (आरी के दाँत जैसा प्रोफ़ाइल)।
+    z = 20 से z = 25 तक: 12 mm व्यास का एक बेलनाकार कॉलर। z = 25 से z = 41 तक: 5 mm
+    ट्यूबिंग के लिए दो एक जैसे barb, एक के ऊपर एक; हर barb 8 mm ऊँचा है और उसका बाहरी व्यास
+    नीचे 6.5 mm से रैखिक रूप से घटकर ऊपर 5.0 mm हो जाता है, फिर सीधे वापस 6.5 mm पर आ
+    जाता है।
+  rod_tubing_clip: >-
+    एक snap-on क्लिप डिज़ाइन करें जो 12.7 mm (1/2 इंच) के लैब स्टैंड रॉड के पास ट्यूबिंग का
+    एक टुकड़ा पकड़ कर रखे। इसे सपाट प्रिंट किया जाता है: XY तल में एक 2D प्रोफ़ाइल का 10 mm
+    ऊँचा (Z) extrusion। प्रोफ़ाइल में ये हैं: (1) रॉड के लिए एक छल्ला जिसका भीतरी व्यास
+    12.7 mm और दीवार 3 mm (बाहरी व्यास 18.7 mm) है, मूल बिंदु पर केंद्रित, और इसकी -X वाली
+    तरफ़ से 10 mm चौड़ा मुँह काटा गया है (इस छल्ले से वह सब हटा दिया जाता है जहाँ x < 0 और
+    -5 < y < 5 है) ताकि यह रॉड पर चटक कर लग जाए; (2) ट्यूबिंग के लिए एक छल्ला जिसका भीतरी
+    व्यास 6 mm और दीवार 2 mm है, x = 15, y = 0 पर केंद्रित, और इसकी +X वाली तरफ़ से 4.5 mm
+    चौड़ा मुँह काटा गया है (x > 15 और -2.25 < y < 2.25); (3) x = 8 और x = 12 के बीच 6 mm
+    चौड़ा (Y) एक ठोस पुल जो दोनों छल्लों को जोड़ता है, बिना किसी भी छल्ले का छेद बंद किए।
+  stirrer_fan_housing: >-
+    80 mm के PC केस फ़ैन से बने घरेलू (DIY) मैग्नेटिक स्टिरर का आवरण (housing) डिज़ाइन करें।
+    इस्तेमाल के समय यह एक उल्टा रखा खुला डिब्बा है जो फ़ैन को ढकता है, और इसकी बंद ऊपरी सतह
+    ही हिलाने वाली सतह है। इसे प्रिंट की दिशा में, यानी उल्टा मॉडल करें: 2 mm मोटी ऊपरी प्लेट
+    बेड पर रखी है (z = 0 से 2 तक) और 2.5 mm मोटी चार दीवारें उससे z = 40 तक उठती हैं, जहाँ
+    डिब्बा खुला है। बाहरी आकार 90 × 90 mm (X × Y) है। ऊपरी प्लेट में M4 पेंचों के लिए 4.5 mm
+    के चार छेद करें, जो प्लेट के बीच में 71.5 mm के वर्गाकार पैटर्न पर हों (फ़ैन के माउंटिंग
+    छेद)। एक दीवार में बिजली के तार के लिए एक खाँच काटें: 12 mm चौड़ी, दीवार के बीचोंबीच, खुले
+    किनारे से 8 mm नीचे तक (z = 32 से z = 40 तक)।
+  nema17_motor_bracket: >-
+    NEMA 17 स्टेपर मोटर के लिए एक L-आकार का माउंटिंग ब्रैकेट डिज़ाइन करें, उदाहरण के लिए
+    सिरिंज पंप के लिए। प्रिंट की दिशा: आधार प्लेट बेड पर रखी है। आधार प्लेट: x -25 से 25,
+    y 0 से 45, z 0 से 5, जिसमें (x = -17, y = 30) और (x = 17, y = 30) पर 4.5 mm के दो
+    ऊर्ध्वाधर आर-पार छेद (M4) हैं। ऊर्ध्वाधर मोटर प्लेट: x -25 से 25, y 0 से 5, z 0 से 50,
+    जो आधार के पिछले किनारे पर खड़ी है। मोटर प्लेट के आर-पार (Y की दिशा में) मोटर के
+    centring boss के लिए 23 mm का एक छेद काटें जिसका केंद्र x = 0, z = 28 पर हो, और M3
+    पेंचों के लिए 3.4 mm के चार छेद, जो boss वाले छेद पर केंद्रित 31 mm के वर्गाकार पैटर्न पर
+    हों। 5 mm मोटे दो त्रिकोणीय gusset जोड़ें, जो बाएँ और दाएँ किनारों के साथ सीध में हों
+    (x = -25 से -20 और x = 20 से 25): हर एक YZ तल में एक समकोण त्रिभुज है जिसकी भुजाएँ +Y
+    की दिशा में 20 mm और +Z की दिशा में 20 mm हैं, और समकोण वाला कोना y = 5, z = 5 पर है
+    (जहाँ दोनों प्लेटें मिलती हैं)।
+  enclosure_box_and_lid: >-
+    एक छोटे इलेक्ट्रॉनिक बोर्ड (जैसे Arduino पर आधारित तापमान लॉगर) के लिए दो हिस्सों वाला एक
+    डिब्बा (enclosure) डिज़ाइन करें। दोनों हिस्से एक ही फ़ाइल में रखें, बेड पर अगल-बगल, उनके
+    बीच 10 mm का अंतर हो, ताकि दोनों साथ प्रिंट हों। हिस्सा 1, डिब्बा: बाहरी आकार
+    70 × 50 × 30 mm (X × Y × Z), 2 mm दीवारें, 2 mm तल, ऊपर से खुला। हिस्सा 2, ढक्कन, उल्टा
+    प्रिंट होगा: 70 × 50 × 2 mm की एक प्लेट जो बेड पर रखी है, और उसके ऊपर एक आयताकार lip —
+    1.5 mm मोटी, 4 mm ऊँची एक दीवार, जिसका बाहरी आकार 65.6 × 45.6 mm है और जो प्लेट के
+    बीच में है, ताकि यह हर तरफ़ 0.2 mm की ढील के साथ डिब्बे के मुँह में फिसल कर बैठ जाए।
+    ढक्कन को डिब्बे की +X वाली तरफ़ रखें।
+  mini_gel_tank: >-
+    एक मिनी हॉरिज़ॉन्टल जेल-इलेक्ट्रोफ़ोरेसिस बॉक्स के लिए बफ़र टैंक डिज़ाइन करें। यह ऊपर से
+    खुला एक आयताकार टैंक है जिसके बाहरी माप 120 mm (X) × 70 mm (Y) × 40 mm (Z) हैं,
+    दीवारें 3 mm और तल 3 mm। टैंक के बीच में जेल ट्रे के लिए एक ठोस उठा हुआ प्लेटफ़ॉर्म है जो
+    टैंक की पूरी भीतरी चौड़ाई (Y) में फैला है, X में 60 mm लंबा है (बीच में), और इसका ऊपरी
+    हिस्सा भीतरी तल से 10 mm ऊपर है (z = 13 पर)। प्लेटफ़ॉर्म टैंक के निचले हिस्से को दो बफ़र
+    कक्षों में बाँटता है, हर सिरे पर एक, जो प्लेटफ़ॉर्म के ऊपर आपस में जुड़े हैं। हर सिरे की दीवार
+    (X के दोनों सिरों पर वाली दीवारें) के आर-पार, इलेक्ट्रोड तारों के लिए y = 0, z = 30 पर X की
+    दिशा में 2 mm व्यास का एक क्षैतिज छेद करें।
+
+sw:
+  tube_rack_1p5ml: >-
+    Buni kishikio cha mezani cha mirija ya microcentrifuge ya 1.5 mL. Ni bloku imara ya
+    mstatili yenye urefu wa 106 mm (X), upana wa 72 mm (Y) na kimo cha 30 mm (Z). Ina
+    matundu 24 ya wima yaliyopangwa katika safu 4 (kufuata Y) za matundu 6 (kufuata X),
+    umbali wa kitovu hadi kitovu ukiwa 16 mm pande zote mbili, na gridi ya matundu iko
+    katikati ya bloku. Kila tundu lina kipenyo cha 11.2 mm na kina cha 25 mm, liko wazi
+    juu na limefungwa chini, hivyo kubaki na sakafu imara ya 5 mm.
+  conical_rack_50ml: >-
+    Buni kishikio cha mirija sita ya koni ya 50 mL (aina ya Falcon). Kinachapishwa
+    kikiwa kimepinduliwa na kugeuzwa baada ya kuchapishwa. Katika mkao wa kuchapisha:
+    bamba bapa la 130 mm (X) kwa 90 mm (Y) na unene wa 4 mm limelala kwenye kitanda
+    (kutoka z = 0 hadi 4). Bamba lina matundu sita yanayopenya, yenye kipenyo cha
+    30.5 mm, katika safu 2 (kufuata Y) za matundu 3 (kufuata X), umbali wa kitovu hadi
+    kitovu 40 mm pande zote mbili, yakiwa katikati ya bamba. Kuta mbili imara zinafuata
+    kingo mbili ndefu za bamba: kila ukuta una urefu wa 130 mm (X) na unene wa 4 mm (Y),
+    uko sawa na ukingo mrefu wa bamba, na unapanda kutoka kwenye bamba hadi z = 70. Ncha
+    mbili fupi zinabaki wazi. Baada ya kugeuzwa, kishikio kinasimama juu ya kuta hizo
+    mbili na mirija inapita kwenye matundu.
+  slide_drying_rack: >-
+    Buni kishikio cha kukaushia kinachoshikilia slaidi 10 za hadubini (75 x 25 x 1 mm)
+    zikiwa zimesimama wima juu ya ukingo wake mrefu. Ni bloku imara ya msingi yenye
+    urefu wa 90 mm (X), upana wa 45 mm (Y) na kimo cha 20 mm (Z). Kata mifereji 10
+    inayolingana kwenye uso wa juu: kila mfereji unafuata X, una urefu wa 77 mm, upana
+    wa 1.6 mm (Y) na kina cha 10 mm, na uko wazi juu. Umbali kati ya mifereji ni 3.5 mm
+    kitovu hadi kitovu (katika Y), na kundi la mifereji liko katikati ya bloku katika X
+    na Y.
+  pcr_tube_rack_sbs: >-
+    Buni kishikio cha mirija 96 ya PCR (0.2 mL) chenye ukubwa wa sakafu wa microplate wa
+    kawaida (ANSI/SLAS): bloku yenye urefu wa 127.76 mm (X), upana wa 85.48 mm (Y) na
+    kimo cha 20 mm (Z). Ina matundu 96 ya wima yanayopenya, yenye kipenyo cha 6.2 mm,
+    katika safu 8 (kufuata Y) kwa nguzo 12 (kufuata X), umbali wa kitovu hadi kitovu
+    ukiwa 9.0 mm. Kitovu cha tundu la kwanza (A1) kiko 14.38 mm kutoka ukingo wa kushoto
+    na 11.24 mm kutoka ukingo wa nyuma, hivyo gridi iko katikati ya bloku. Kata chamfer
+    ya nyuzi 45 yenye pande za 5 mm kwenye ukingo wa wima wa kona ya A1 kama alama ya
+    mwelekeo.
+  gel_comb_10well: >-
+    Buni kitana cha visima 10 cha kumimina jeli ya agarose, kitakachochapishwa kikiwa
+    kimelala. Kitana chote ni bamba bapa lenye unene wa 1.5 mm (Z) lililolala kwenye
+    kitanda. Ukikiangalia kutoka juu, kina uti wa mgongo ulionyooka (upau wa nyuma) wenye
+    urefu wa 70 mm (X) na upana wa 12 mm (Y), na meno 10 ya mstatili yanayoning'inia
+    kutoka ukingo mmoja mrefu wa uti huo kuelekea upande wa -Y. Kila jino lina upana wa
+    5.0 mm (X) na urefu wa 12 mm (Y). Nafasi kati ya meno jirani ni 1.5 mm, na mstari wa
+    meno uko katikati ya uti wa mgongo katika X.
+  micropestle_1p5ml: >-
+    Buni mchi wa kusaga tishu ndani ya mrija wa microcentrifuge wa 1.5 mL, utakaochapishwa
+    ukiwa umesimama wima. Kutoka chini kwenda juu: (1) mpini wa silinda wenye kipenyo cha
+    8 mm kutoka z = 0 hadi z = 45; (2) koni inayopungua kutoka kipenyo cha 8 mm kwenye
+    z = 45 hadi kipenyo cha 3 mm kwenye z = 62; (3) ncha ya mviringo: tufe lenye kipenyo
+    cha 3 mm ambalo kitovu chake kiko kwenye z = 62. Kwa ajili ya kushika vizuri, kata
+    mifereji minne ya kuzunguka kwenye mpini, kila mmoja ukiwa na upana wa 2 mm (katika Z)
+    na kina cha 1 mm, vitovu vyake vikiwa kwenye z = 10, 15, 20 na 25.
+  lab_funnel_60mm: >-
+    Buni faneli ndogo ya maabara, itakayochapishwa ikiwa imesimama na mdomo mpana ukiwa
+    juu. Mrija ulionyooka wenye kipenyo cha nje cha 10 mm unaanzia z = 0 hadi z = 20. Juu
+    yake, koni inapanuka kutoka kipenyo cha nje cha 10 mm kwenye z = 20 hadi kipenyo cha
+    nje cha 60 mm kwenye ukingo, kwenye z = 50. Ukuta una unene wa 1.6 mm kila mahali
+    (hivyo tundu la mrija lina kipenyo cha 6.8 mm), na faneli iko wazi juu na chini ili
+    kimiminika kipite moja kwa moja.
+  seed_sowing_template: >-
+    Buni kiolezo cha kupandia mbegu kinachokaa ndani ya sahani ya Petri ya 90 mm: diski
+    bapa yenye kipenyo cha 85 mm na unene wa 2 mm, iliyolala kwenye kitanda. Ina gridi ya
+    7 x 7 ya matundu yanayopenya yenye kipenyo cha 3 mm, umbali wa kitovu hadi kitovu
+    ukiwa 9 mm, yakiwa katikati ya diski. Kata mpasuo wa mstatili wa kuonyesha mwelekeo
+    kwenye ukingo upande wa +Y, katikati ya mhimili wa Y: upana wa 10 mm (X) na kina cha
+    4 mm (Y, kipimo kutoka ukingoni kuelekea ndani).
+  dshaft_knob_6mm: >-
+    Buni kifundo mbadala cha kichanganyaji chenye sahani ya moto kilicho na shafti ya umbo
+    la D ya 6 mm. Kifundo ni silinda yenye kipenyo cha 30 mm na kimo cha 15 mm.
+    Kinachapishwa upande unaoelekea sahani ya moto ukiwa chini kwenye kitanda (z = 0).
+    Kutoka uso huo wa chini, tundu lisilopenya lenye umbo la D linapanda 12 mm ndani ya
+    kifundo: duara lenye kipenyo cha 6.2 mm ambalo upande mmoja umekatwa bapa, hivyo umbali
+    kutoka upande bapa hadi upande wa pili wa duara ni 4.7 mm. Kuzunguka upande wa nje,
+    kata mifereji 18 ya wima ya kushikia iliyo na nafasi sawa, kwa kimo chote; kila
+    mfereji ni nusu silinda yenye kipenyo cha 2 mm ambayo kitovu chake kiko kwenye uso wa
+    nje. Kwenye uso wa juu, kata mfereji wa kiashiria wenye upana wa 1.5 mm na kina cha
+    1 mm unaotoka katikati hadi ukingo wa nje, upande ule ule wa sehemu bapa ya D.
+  pcr_tube_adapter: >-
+    Buni mkono wa adapta unaowezesha mrija wa PCR wa 0.2 mL kukaa kwenye tundu la kishikio
+    kilichotengenezwa kwa mirija ya 1.5 mL. Uchapishe ukiwa umepinduliwa: kola yenye
+    kipenyo cha 13 mm na unene wa 1.5 mm imelala kwenye kitanda (kutoka z = 0 hadi 1.5),
+    na mwili wa mkono huo, wenye kipenyo cha nje cha 10.8 mm, unapanda kutoka kwenye kola
+    hadi z = 21.5. Tundu lililonyooka lenye kipenyo cha 6.2 mm linapenya kimo chote,
+    likiwa wazi pande zote mbili.
+  hose_barb_reducer_8_5: >-
+    Buni kipunguzi kilichonyooka cha hose-barb kinachounganisha mrija wa silikoni wenye
+    kipenyo cha ndani cha 8 mm na mrija wenye kipenyo cha ndani cha 5 mm. Kichapishe
+    kikiwa kimesimama wima kufuata Z. Ni cha mviringo (chenye ulinganifu wa mzunguko
+    kuzunguka mhimili wa Z) na tundu la 3 mm linapenya moja kwa moja urefu wake wote.
+    Kutoka z = 0 hadi z = 20: barb mbili zinazofanana kwa ajili ya mrija wa 8 mm, moja juu
+    ya nyingine; kila barb ina kimo cha 10 mm na kipenyo chake cha nje kinaongezeka kwa
+    mstari kutoka 7.5 mm chini yake hadi 9.5 mm juu yake, kisha kinarudi moja kwa moja
+    hadi 7.5 mm (umbo la meno ya msumeno). Kutoka z = 20 hadi z = 25: kola ya silinda
+    yenye kipenyo cha 12 mm. Kutoka z = 25 hadi z = 41: barb mbili zinazofanana kwa ajili
+    ya mrija wa 5 mm, moja juu ya nyingine; kila barb ina kimo cha 8 mm na kipenyo chake
+    cha nje kinapungua kwa mstari kutoka 6.5 mm chini yake hadi 5.0 mm juu yake, kisha
+    kinarudi moja kwa moja hadi 6.5 mm.
+  rod_tubing_clip: >-
+    Buni klipu ya kubana inayoshikilia kipande cha mrija kando ya fimbo ya kisimamo cha
+    maabara ya 12.7 mm (inchi 1/2). Inachapishwa ikiwa imelala: ni extrusion yenye kimo
+    cha 10 mm (Z) ya umbo la 2D katika ndege ya XY. Umbo hilo lina: (1) pete ya fimbo
+    yenye kipenyo cha ndani cha 12.7 mm na ukuta wa 3 mm (kipenyo cha nje 18.7 mm),
+    kitovu chake kikiwa kwenye asili, ikiwa na mwanya wa upana wa 10 mm uliokatwa upande
+    wake wa -X (kila kitu chenye x < 0 na -5 < y < 5 kinaondolewa kwenye pete hii) ili
+    ibane kwenye fimbo; (2) pete ya mrija yenye kipenyo cha ndani cha 6 mm na ukuta wa
+    2 mm, kitovu chake kikiwa x = 15, y = 0, ikiwa na mwanya wa upana wa 4.5 mm uliokatwa
+    upande wake wa +X (x > 15 na -2.25 < y < 2.25); (3) daraja imara lenye upana wa 6 mm
+    (Y) kati ya x = 8 na x = 12 linalounganisha pete hizo mbili bila kuziba tundu la pete
+    yoyote.
+  stirrer_fan_housing: >-
+    Buni kasha la kichanganyaji cha sumaku cha kujitengenezea kilichojengwa kwa feni ya
+    kompyuta ya 80 mm. Kinapotumika ni sanduku lililo wazi lililopinduliwa linalofunika
+    feni, na sehemu yake ya juu iliyofungwa ndiyo uso wa kuchanganyia. Kiunde katika mkao
+    wa kuchapisha, yaani kikiwa kimepinduliwa: bamba la juu lenye unene wa 2 mm limelala
+    kwenye kitanda (kutoka z = 0 hadi 2) na kuta nne zenye unene wa 2.5 mm zinapanda
+    kutoka hapo hadi z = 40, ambapo sanduku liko wazi. Ukubwa wa nje ni 90 x 90 mm
+    (X x Y). Toboa matundu manne ya 4.5 mm kwa ajili ya skrubu za M4 kupitia bamba la juu,
+    katika mpangilio wa mraba wa 71.5 mm ulio katikati ya bamba (matundu ya kufungia
+    feni). Katika ukuta mmoja, kata mpasuo kwa ajili ya waya wa umeme: upana wa 12 mm,
+    katikati ya ukuta, ukishuka 8 mm kutoka ukingo ulio wazi (kutoka z = 32 hadi z = 40).
+  nema17_motor_bracket: >-
+    Buni kishikio chenye umbo la L cha kufungia mota ya stepper ya NEMA 17, kwa mfano kwa
+    pampu ya sindano. Mkao wa kuchapisha: bamba la msingi limelala kwenye kitanda. Bamba
+    la msingi: x kutoka -25 hadi 25, y kutoka 0 hadi 45, z kutoka 0 hadi 5, likiwa na
+    matundu mawili ya wima yanayopenya ya 4.5 mm (M4) kwenye (x = -17, y = 30) na
+    (x = 17, y = 30). Bamba la wima la mota: x kutoka -25 hadi 25, y kutoka 0 hadi 5,
+    z kutoka 0 hadi 50, limesimama kwenye ukingo wa nyuma wa msingi. Kupitia bamba la mota
+    (kufuata Y) kata tundu la 23 mm kwa ajili ya kitovu cha kulinganisha cha mota,
+    kitovu chake kikiwa x = 0, z = 28, na matundu manne ya 3.4 mm kwa ajili ya skrubu za
+    M3 katika mpangilio wa mraba wa 31 mm ulio katikati ya tundu hilo. Ongeza gusset mbili
+    za pembetatu zenye unene wa 5 mm, zilizo sawa na kingo za kushoto na kulia (x = -25
+    hadi -20 na x = 20 hadi 25): kila moja ni pembetatu mraba katika ndege ya YZ yenye
+    pande za 20 mm kufuata +Y na 20 mm kufuata +Z, kona yake ya pembe mraba ikiwa y = 5,
+    z = 5 (mahali mabamba yanapokutana).
+  enclosure_box_and_lid: >-
+    Buni kasha la sehemu mbili kwa ajili ya bodi ndogo ya kielektroniki (kwa mfano
+    kirekodi joto kinachotumia Arduino). Weka sehemu zote mbili kwenye faili moja, kando
+    kwa kando kwenye kitanda zikiwa na nafasi ya 10 mm kati yake, ili zichapishwe pamoja.
+    Sehemu ya 1, sanduku: ukubwa wa nje 70 x 50 x 30 mm (X x Y x Z), kuta za 2 mm,
+    sakafu ya 2 mm, wazi juu. Sehemu ya 2, mfuniko, unaochapishwa ukiwa umepinduliwa:
+    bamba la 70 x 50 x 2 mm lililolala kwenye kitanda, likiwa na ukingo wa mstatili juu
+    yake - ukuta wenye unene wa 1.5 mm na kimo cha 4 mm, ambao ukubwa wake wa nje ni
+    65.6 x 45.6 mm, ulio katikati ya bamba, ili uingie kwenye mdomo wa sanduku ukiwa na
+    nafasi ya 0.2 mm kila upande. Weka mfuniko upande wa +X wa sanduku.
+  mini_gel_tank: >-
+    Buni tangi la bafa kwa ajili ya sanduku dogo la elektroforesisi ya jeli ya mlalo. Ni
+    tangi la mstatili lililo wazi juu lenye vipimo vya nje vya 120 mm (X) x 70 mm (Y) x
+    40 mm (Z), kuta za 3 mm na sakafu ya 3 mm. Katikati ya tangi, jukwaa imara
+    lililoinuliwa kwa ajili ya trei ya jeli linachukua upana wote wa ndani (Y) wa tangi,
+    lina urefu wa 60 mm katika X (likiwa katikati), na sehemu yake ya juu iko 10 mm juu
+    ya sakafu ya ndani (kwenye z = 13). Jukwaa linagawa sehemu ya chini ya tangi kuwa
+    vyumba viwili vya bafa, kimoja kila mwisho, vinavyounganika juu ya jukwaa. Kupitia
+    kila ukuta wa mwisho (kuta zilizo kwenye ncha mbili za X), toboa tundu la mlalo
+    lenye kipenyo cha 2 mm kufuata X kwenye y = 0, z = 30 kwa ajili ya waya za elektrodi.

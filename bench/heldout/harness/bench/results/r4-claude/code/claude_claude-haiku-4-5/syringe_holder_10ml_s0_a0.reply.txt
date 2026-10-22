@@ -1,0 +1,50 @@
+```openscad
+$fn = 64;
+
+// Dimensions
+block_width = 50;      // X
+block_depth = 30;      // Y
+block_height = 40;     // Z
+barrel_radius = 8.25;  // half of 16.5 mm width
+barrel_channel_length = 15;  // from y=0 to y=-15
+flange_slot_width = 34;
+flange_slot_height = 2.6;
+flange_slot_z_start = 30;
+screw_hole_diameter = 4.5;
+screw_hole_x = [-19, 19];
+screw_hole_z = 15;
+
+difference() {
+    // Main block: 50 x 30 x 40, centered on origin in XY, standing on bed (z=0 to 40)
+    cube([block_width, block_depth, block_height], center=true);
+    
+    // Barrel channel: half-cylinder from y=-15 (front) to y=0 (back)
+    // Flat side at z=0, curved side up to z=8.25
+    translate([0, 0, -0.1]) {
+        rotate([90, 0, 0]) {
+            linear_extrude(height = barrel_channel_length + 0.1, center = false) {
+                polygon([
+                    for (angle = [0 : 1 : 180]) 
+                        [barrel_radius * cos(angle), barrel_radius * sin(angle)]
+                ]);
+            }
+        }
+    }
+    
+    // Flange slot: 34 mm wide (centered in X), 2.6 mm tall (z=30 to 32.6)
+    // Cut from front face (y=-15) back to y=11
+    translate([0, -2, 31.3]) {
+        cube([flange_slot_width, 26.1, flange_slot_height], center=true);
+    }
+    
+    // Screw holes: 4.5 mm diameter, at x=-19 and x=19, z=15
+    // Go straight through from front to back (along Y)
+    for (x = screw_hole_x) {
+        translate([x, 0, screw_hole_z]) {
+            rotate([90, 0, 0]) {
+                cylinder(h=30.1, r=screw_hole_diameter/2, center=true);
+            }
+        }
+    }
+}
+```

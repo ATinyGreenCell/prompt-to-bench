@@ -1,0 +1,115 @@
+// --- Dimensions ---
+// Lower Jaw
+jaw_lower_len = 50;          // Length of main lower bar
+jaw_lower_width = 4;         // Width of main lower bar
+tongue_len = 6;              // Length of the tongue part
+tongue_start_x = 50;         // X position where tongue starts
+tongue_y_min = 2.5;          // Y position of tongue bottom
+tongue_y_max = 4;            // Y position of tongue top
+
+// Upper Jaw
+jaw_upper_len = 60;          // Length of upper bar
+jaw_upper_y_min = 12;        // Y position of upper bar bottom
+jaw_upper_y_max = 16;        // Y position of upper bar top
+
+// Hinge (Half-ring)
+hinge_center_x = 0;          // X center of hinge
+hinge_center_y = 8;          // Y center of hinge
+hinge_r_inner = 7.2;         // Inner radius of hinge
+hinge_r_outer = 8.0;         // Outer radius of hinge
+
+// Pinch Ridges
+ridge_radius = 1.5;          // Radius of the half-round ridge
+ridge_x_pos = 27.5;          // X position of the ridge
+
+// Latch
+latch_leg_x_min = 57;         // X start of latch leg
+latch_leg_x_max = 60;         // X end of latch leg
+latch_leg_y_min = 4.5;        // Y start of latch leg
+latch_leg_y_max = 12;         // Y end of latch leg
+latch_nose_x_min = 54.5;      // X start of latch nose
+latch_nose_x_max = 57;        // X end of latch nose
+latch_nose_y_min = 4.5;       // Y start of latch nose
+latch_nose_y_max = 5.5;       // Y end of latch nose
+latch_offset_z = 0.5;        // Z offset for the nose relative to tongue
+
+// General
+thickness = 8;               // Extrusion depth (Z)
+$fn = 64;                    // Smoothness
+
+// --- Construction ---
+
+module pinch_clamp() {
+    // To ensure a single watertight solid, we use union() on all components.
+    // The "nose" is part of the 2D profile extruded 8mm, but the prompt 
+    // specifies it is "0.5mm above the tongue". 
+    // To satisfy "one 2-D profile extruded 8mm" and "0.5mm above", 
+    // the nose must be a feature on the Z-axis. 
+    // To make it one solid, we connect the nose to the leg.
+    
+    union() {
+        // 1. Lower Jaw (Main Bar + Tongue)
+        difference() {
+            union() {
+                // Main bar
+                cube([jaw_lower_len, jaw_lower_width, thickness]);
+                // Tongue
+                translate([tongue_start_x, tongue_y_min, 0])
+                    cube([tongue_len, tongue_y_max - tongue_y_min, thickness]);
+            }
+            
+            // Lower Ridge Cutout (Half-round)
+            // Inner face of lower jaw is at y = 4
+            translate([ridge_x_pos, jaw_lower_width, thickness/2])
+                rotate([0, 90, 0])
+                    cylinder(r = ridge_radius, h = jaw_lower_len + 2, center = true);
+        }
+
+        // 2. Upper Jaw
+        difference() {
+            cube([jaw_upper_len, jaw_upper_y_max - jaw_upper_y_min, thickness]);
+            
+            // Upper Ridge Cutout (Half-round)
+            // Inner face of upper jaw is at y = 12
+            translate([ridge_x_pos, jaw_upper_y_min, thickness/2])
+                rotate([0, 90, 0])
+                    cylinder(r = ridge_radius, h = jaw_upper_len + 2, center = true);
+        }
+
+        // 3. Hinge (Half-ring)
+        difference() {
+            translate([hinge_center_x, hinge_center_y, 0])
+                cylinder(r = hinge_r_outer, h = thickness);
+            translate([hinge_center_x, hinge_center_y, -1])
+                cylinder(r = hinge_r_inner, h = thickness + 2);
+            // Cut the right half to make it a half-ring on the left side
+            translate([hinge_center_x, hinge_center_y - hinge_r_outer - 1, -1])
+                cube([hinge_r_outer * 2 + 2, hinge_r_outer * 2, thickness + 2]);
+        }
+
+        // 4. Latch Leg
+        translate([latch_leg_x_min, latch_leg_y_min, 0])
+            cube([latch_leg_x_max - latch_leg_x_min, latch_leg_y_max - latch_leg_y_min, thickness]);
+
+        // 5. Latch Nose + Connector
+        // To make it one solid, we extrude the nose and connect it to the leg.
+        // The nose is 0.5mm above the tongue (Z=8).
+        union() {
+            // The nose itself
+            translate([latch_nose_x_min, latch_nose_y_min, thickness + latch_offset_z])
+                cube([latch_nose_x_max - latch_nose_x_min, latch_nose_y_max - latch_nose_y_min, thickness]);
+            
+            // Vertical connector to join nose to the leg (making it 1 body)
+            translate([latch_nose_x_min, latch_nose_y_min, 0])
+                cube([latch_nose_x_max - latch_nose_x_min, latch_nose_y_max - latch_nose_y_min, thickness + latch_offset_z]);
+        }
+    }
+}
+
+// Render the part
+// Centered on origin in X and Y.
+// Bounding box calculation:
+// X: hinge is at -8 to 0, jaws go to 60. Total X = 68. Center = 34.
+// Y: 0 to 16. Center = 8.
+translate([-34, -8, 0])
+    pinch_clamp();

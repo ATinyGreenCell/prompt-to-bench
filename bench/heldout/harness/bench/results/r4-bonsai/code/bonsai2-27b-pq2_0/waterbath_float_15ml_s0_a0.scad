@@ -1,0 +1,94 @@
+// 7-tube float for 15 mL conical tubes, printed upside down.
+// Units: mm. Rests on XY plane at z=0, builds upward (+Z).
+
+$fn = 64;
+
+// Plate
+plate_thickness = 3;
+plate_across_flats = 90;
+plate_z_max = 3;
+
+// Holes
+hole_diameter = 17.5;
+hole_z_min = -0.01;
+hole_z_max = plate_z_max + 0.01;
+hole_center_diameter = 54;
+hole_count = 7;
+
+// Sleeves (around each hole)
+sleeve_wall = 2;
+sleeve_od = 21.5;
+sleeve_z_min = 0;
+sleeve_z_max = 20;
+
+// Hexagonal skirt
+skirt_wall = 2;
+skirt_od_across_flats = 84;
+skirt_z_min = 0;
+skirt_z_max = 20;
+
+// Helper: regular hexagon polygon (across flats, flat sides parallel to X axis)
+hexagon(across_flats) {
+    r = across_flats / 2;
+    points = [];
+    for (i = [0:5]) {
+        a = radians(30 + 60 * i);
+        points.push([r * cos(a), r * sin(a)]);
+    }
+    polygon(points = points);
+}
+
+// Helper: hexagonal tube (hollow), axis along Z, from z1 to z2
+hex_tube(od_across_flats, wall, z1, z2) {
+    difference() {
+        translate([0, 0, z1])
+            linear_extrude(height = z2 - z1)
+                hexagon(od_across_flats);
+        translate([0, 0, z1 - 0.01])
+            linear_extrude(height = z2 - z1 + 0.02)
+                hexagon(od_across_flats - 2 * wall);
+    }
+}
+
+// Helper: circular through-hole
+cyl_hole(diameter, z1, z2) {
+    translate([0, 0, z1 - 0.01])
+        cylinder(h = z2 - z1 + 0.02, d = diameter, $fn = $fn);
+}
+
+// Build the part
+union() {
+    // Main plate (hexagon, 90 mm across flats, 3 mm thick)
+    translate([0, 0, 0])
+        linear_extrude(height = plate_thickness)
+            hexagon(plate_across_flats);
+
+    // Seven sleeves (21.5 mm OD, 2 mm wall, z=0 to 20)
+    for (i = [0:hole_count - 1]) {
+        if (i == 0) {
+            // Centre hole
+            sleeve_pos = [0, 0];
+        } else {
+            // Six holes on 54 mm diameter circle, 60 degrees apart, first on +X
+            a = radians(60 * (i - 1));
+            sleeve_pos = [hole_center_diameter / 2 * cos(a), hole_center_diameter / 2 * sin(a)];
+        }
+        translate(sleeve_pos)
+            hex_tube(sleeve_od, sleeve_wall, sleeve_z_min, sleeve_z_max);
+    }
+
+    // Hexagonal skirt (84 mm OD across flats, 2 mm wall, z=0 to 20)
+    hex_tube(skirt_od_across_flats, skirt_wall, skirt_z_min, skirt_z_max);
+
+    // Subtract the seven through-holes (17.5 mm diameter)
+    for (i = [0:hole_count - 1]) {
+        if (i == 0) {
+            hole_pos = [0, 0];
+        } else {
+            a = radians(60 * (i - 1));
+            hole_pos = [hole_center_diameter / 2 * cos(a), hole_center_diameter / 2 * sin(a)];
+        }
+        translate(hole_pos)
+            cyl_hole(hole_diameter, hole_z_min, hole_z_max);
+    }
+}

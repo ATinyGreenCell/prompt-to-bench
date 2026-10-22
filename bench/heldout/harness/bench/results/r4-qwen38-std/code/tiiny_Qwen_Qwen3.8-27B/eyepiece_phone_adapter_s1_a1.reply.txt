@@ -1,0 +1,63 @@
+```openscad
+// Adapter: phone camera over microscope eyepiece (30 mm OD), printed phone-side down.
+// All dimensions in mm.
+
+// ---- Plate (rests on bed, z = 0..3, centred on origin) ----
+plate_x    = 80;   // plate length along X
+plate_y    = 60;   // plate width  along Y
+plate_t    = 3;    // plate thickness
+cam_hole_d = 12;   // camera through-hole diameter
+cam_hole_x = -20;  // camera hole centre X
+cam_hole_y =  10;  // camera hole centre Y
+
+// ---- Sleeve (stands on plate, on the camera-hole axis) ----
+sleeve_od = 36.6;  // sleeve outer diameter
+sleeve_z0 = 3;     // sleeve base (top of plate)
+sleeve_z1 = 11;    // bore step 1 top (22 mm bore)
+sleeve_z2 = 31;    // sleeve top (open)
+bore1_d   = 22;    // lower bore diameter (sets eyepiece distance)
+bore2_d   = 30.6;  // upper bore diameter (slides over 30 mm eyepiece)
+
+// ---- M3 centring screw holes (radial, through sleeve wall) ----
+screw_d   = 2.5;   // hole diameter
+screw_z   = 21;    // hole axis height
+screw_len = 30;    // radial length (extends past both walls)
+
+$fn = 64;
+
+// Base plate with camera through-hole
+plate = difference(
+    translate([-plate_x/2, -plate_y/2, 0])
+        cube([plate_x, plate_y, plate_t]);
+    translate([cam_hole_x, cam_hole_y, -1])
+        cylinder(h = plate_t + 2, d = cam_hole_d);
+);
+
+// Sleeve: outer cylinder minus stepped bore
+sleeve = difference(
+    translate([cam_hole_x, cam_hole_y, sleeve_z0])
+        cylinder(h = sleeve_z2 - sleeve_z0, d = sleeve_od);
+    // lower bore (22 mm) from z=3 to z=11, extended 1 mm below for clean cut
+    translate([cam_hole_x, cam_hole_y, sleeve_z0 - 1])
+        cylinder(h = (sleeve_z1 - sleeve_z0) + 1, d = bore1_d);
+    // upper bore (30.6 mm) from z=11 to open top, extended 1 mm above
+    translate([cam_hole_x, cam_hole_y, sleeve_z1])
+        cylinder(h = (sleeve_z2 - sleeve_z1) + 1, d = bore2_d);
+);
+
+// Three radial M3 holes through the sleeve wall, 120 deg apart, first in +X
+screw_holes = for (i = [0:2])
+    rotate([0, 0, i * 120])
+        translate([cam_hole_x, cam_hole_y, screw_z])
+            rotate([90, 0, 0])
+                cylinder(h = screw_len, d = screw_d);
+
+// Final part
+union() {
+    plate;
+    difference(
+        sleeve;
+        screw_holes;
+    );
+}
+```

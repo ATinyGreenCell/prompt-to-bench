@@ -1,0 +1,67 @@
+// Coarse cell strainer for a 50 mL conical tube
+// Units: millimetres. Printed upright, resting on the XY plane (z = 0), round about Z.
+
+// ---- Named dimensions (measured with calipers) ----
+OD          = 25.0;   // cup outer diameter
+wall        = 1.2;    // cup wall thickness
+bore        = OD - 2*wall;   // 22.6 mm bore
+height      = 32.0;  // total cup height (z = 0 .. 32)
+floor_t     = 1.2;   // floor thickness (z = 0 .. 1.2)
+
+// Collar / rim (45-degree flare that rests on the tube rim)
+cone_z0     = 26.0;  // cone starts at z = 26
+cone_z1     = 30.0;  // cone ends at z = 30
+cone_d0     = 25.0;  // cone base diameter (matches cup OD)
+cone_d1     = 33.0;  // cone top diameter
+rim_z0      = 30.0;  // rim starts at z = 30
+rim_z1      = 32.0;  // rim ends at z = 32 (top)
+rim_d       = 33.0;  // rim diameter
+
+// Floor perforation: 1.0 mm holes on a 2 mm square grid, centred on axis,
+// keep every hole whose centre is within 10 mm of the axis  -> 81 holes
+hole_d      = 1.0;
+grid_pitch  = 2.0;
+grid_n      = 10;    // -10 .. +10  (21 per axis)
+grid_keep   = 10.0;  // keep hole if |x| <= 10 and |y| <= 10
+
+// Vent notches: 3 mm wide, on +X and -X, remove collar/rim beyond 12.5 mm from axis
+vent_w      = 3.0;
+vent_x      = 12.5;  // notch inner edge (12.5 mm from axis)
+vent_z0     = 25.0;  // notches start at z = 25
+vent_z1     = 32.0;  // notches run to the top
+
+// ---- Curvature resolution ----
+$fn = 64;
+
+// ---- Build the solid ----
+difference() {
+    // 1) Outer body: cup tube + 45-degree collar cone + rim
+    union() {
+        // cup tube (z = 0 .. 32)
+        difference() {
+            cylinder(h = height, r = OD/2);
+            translate([0, 0, -0.01])
+                cylinder(h = height + 0.01, r = bore/2);
+        }
+        // 45-degree collar cone (z = 26 .. 30)
+        translate([0, 0, cone_z0])
+            cylinder(h = cone_z1 - cone_z0, r1 = cone_d0/2, r2 = cone_d1/2);
+        // rim (z = 30 .. 32)
+        translate([0, 0, rim_z0])
+            cylinder(h = rim_z1 - rim_z0, r = rim_d/2);
+    }
+
+    // 2) Floor: 1.0 mm holes on a 2 mm square grid, centred, within 10 mm of axis (81 holes)
+    for (i = [-grid_n : grid_n], j = [-grid_n : grid_n]) {
+        if (abs(i*grid_pitch) <= grid_keep && abs(j*grid_pitch) <= grid_keep) {
+            translate([i*grid_pitch, j*grid_pitch, -0.01])
+                cylinder(h = floor_t + 0.01, r = hole_d/2);
+        }
+    }
+
+    // 3) Vent notches: 3 mm wide, +X and -X, remove collar/rim beyond 12.5 mm from axis
+    for (s = [-1, 1]) {
+        translate([s*vent_x, -vent_w/2, vent_z0])
+        cube([10, vent_w, vent_z1 - vent_z0 + 0.01]);
+    }
+}

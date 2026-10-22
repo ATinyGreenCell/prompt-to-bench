@@ -1,0 +1,71 @@
+// 1.5 mL microcentrifuge tube stand for an analytical balance
+// Printed standing up: rests on XY plane at z = 0, builds upward (+Z), centred on origin.
+
+$fn = 64;
+
+// ---- Base disc (z = 0 to 4) ----
+base_d   = 50;   // base disc diameter
+base_h   = 4;    // base disc height
+
+// ---- Cone (z = 4 to 14) ----
+cone_top_d = 22; // cone top diameter
+cone_bot_d = 50; // cone bottom diameter
+cone_h     = 10; // cone height (14 - 4)
+
+// ---- Column (z = 14 to 33) ----
+col_d  = 22;     // column diameter
+col_h  = 19;     // column height (33 - 14)
+
+// ---- Tube seat (cut from top down the axis) ----
+seat_d      = 11; // seat bore diameter (z = 33 down to 23)
+seat_cyl_h  = 10; // straight seat height (33 - 23)
+seat_cone_d = 3;  // seat cone tip diameter at z = 6
+seat_cone_h = 17; // seat cone height (23 - 6)
+
+// ---- Viewing window (cut through +X wall) ----
+win_w  = 4;  // window width in Y
+win_z0 = 18; // window bottom z
+win_z1 = 30; // window top z
+
+// ---- Build the solid stand ----
+module stand() { union() {
+    // Base disc
+    translate([0, 0, 0])
+        cylinder(h = base_h, d = base_d, $fn = $fn);
+
+    // Cone from 50 mm at z = 4 to 22 mm at z = 14
+    translate([0, 0, base_h])
+        cylinder(h = cone_h, d1 = cone_bot_d, d2 = cone_top_d, $fn = $fn);
+
+    // Column from z = 14 to 33
+    translate([0, 0, base_h + cone_h])
+        cylinder(h = col_h, d = col_d, $fn = $fn);
+} }
+
+// ---- Tube seat cutter (extends 1 mm above the top so the cut is clean) ----
+module seat_cutter() { union() {
+    // Straight bore: z = 33 down to 23
+    translate([0, 0, 23])
+        cylinder(h = seat_cyl_h, d = seat_d, $fn = $fn);
+
+    // Cone following the tube tip: 11 mm at z = 23 down to 3 mm at z = 6
+    translate([0, 0, 6])
+        cylinder(h = seat_cone_h, d1 = seat_d, d2 = seat_cone_d, $fn = $fn);
+
+    // 1 mm extension above the top face so the bore is fully open
+    translate([0, 0, 33])
+        cylinder(h = 1, d = seat_d, $fn = $fn);
+} }
+
+// ---- Viewing window cutter (straight through the +X wall) ----
+// A box that starts inside the bore (x = 0) and extends past the outer wall (x = 12),
+// so it cuts a clean slot through the column wall on the +X side.
+module window_cutter() { translate([0, -win_w / 2, win_z0])
+    cube([12, win_w, win_z1 - win_z0]); }
+
+// ---- Final part: stand minus seat and window ----
+difference() {
+    stand();
+    seat_cutter();
+    window_cutter();
+}

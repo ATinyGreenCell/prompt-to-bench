@@ -1,0 +1,56 @@
+// ---------------------------------------------------------------------------
+// 3-pipette shelf clamp, printed on its side.
+// Print orientation: 2-D profile in XY, extruded 105 mm along Z.
+// In use: +Y is up, +X points away from the shelf, Z is the 105 mm length.
+// ---------------------------------------------------------------------------
+
+// --- named dimensions (mm) ---
+shelf_t      = 18;    // shelf thickness the clamp grips
+gap          = 18.4;  // vertical gap left for the shelf (bottom jaw top -> top jaw bottom)
+spine_x0     = 0;     // spine starts at x = 0
+spine_x1     = 5;     // spine ends at x = 5
+spine_y0     = 0;     // spine bottom edge (shelf face)
+spine_y1     = 28.4;  // spine top edge
+bot_x0       = -25;   // bottom jaw starts at x = -25
+bot_x1       = 5;     // bottom jaw ends at x = 5
+bot_y0       = 0;     // bottom jaw bottom edge
+bot_y1       = 5;     // bottom jaw top edge
+top_x0       = -25;   // top jaw / arm starts at x = -25
+top_x1       = 65;    // top jaw / arm ends at x = 65
+top_y0       = 23.4;  // top jaw bottom edge (23.4 = 5 + 18.4)
+top_y1       = 28.4;  // top jaw top edge
+extrude_len  = 105;   // length of the part along Z (the 3 pipettes hang along this)
+hole_d       = 20;    // pipette bore diameter
+hole_x       = 42;    // bore centre x (in the arm)
+hole_z       = [17.5, 52.5, 87.5]; // bore centre z positions
+
+$fn = 64;
+
+// --- 2-D C-shaped profile in the XY plane (union of the three rectangles) ---
+module profile() { union() {
+    // spine: x 0..5, y 0..28.4
+    translate([spine_x0, spine_y0])
+        square([spine_x1 - spine_x0, spine_y1 - spine_y0]);
+    // bottom jaw: x -25..5, y 0..5
+    translate([bot_x0, bot_y0])
+        square([bot_x1 - bot_x0, bot_y1 - bot_y0]);
+    // top jaw + forward arm: x -25..65, y 23.4..28.4
+    translate([top_x0, top_y0])
+        square([top_x1 - top_x0, top_y1 - top_y0]);
+} }
+
+// --- extrude the profile 105 mm along Z, then drill the 3 pipette bores ---
+module part() {
+    difference() {
+        linear_extrude(height = extrude_len)
+            profile();
+
+        for (z = hole_z) {
+            // bore axis is along Z (vertical in use); centred at x = 42, y = 26
+            translate([hole_x, 26, z - 1])
+                cylinder(h = extrude_len + 2, r = hole_d / 2, $fn = 64);
+        }
+    }
+}
+
+part();

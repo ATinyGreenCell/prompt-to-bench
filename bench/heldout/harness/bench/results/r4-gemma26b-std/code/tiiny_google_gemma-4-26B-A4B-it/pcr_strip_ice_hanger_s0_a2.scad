@@ -1,0 +1,99 @@
+// --- Dimensions ---
+// Overall extrusion length along X axis
+length_x = 84; 
+
+// Wall thickness of the bucket (reference)
+wall_thickness = 12; 
+
+// Vertical height of the legs
+leg_height = 50; 
+
+// Thickness of the top bridge
+bridge_thickness = 4; 
+
+// Width of the legs (Y-axis dimension)
+leg_width = 4; 
+
+// Gap between legs (16.5 - 4 = 12.5mm)
+gap_width = 12.5; 
+
+// Ledge thickness (Z-axis dimension)
+ledge_thickness = 6; 
+
+// Ledge depth (Y-axis dimension)
+ledge_depth = 30; 
+
+// PCR tube hole diameter
+hole_diameter = 6.4; 
+
+// PCR tube hole spacing (X-axis)
+hole_spacing_x = 9; 
+
+// Number of tubes
+num_tubes = 8; 
+
+// Number of tubes Y-position (offset from origin)
+hole_y_pos = -15; 
+
+// Smoothness for cylinders
+fn_val = 64;
+
+// --- Implementation ---
+
+// The previous error was caused by a mismatch between the 2D profile 
+// coordinates and the 3D extrusion logic. 
+// The user wants the profile in the YZ plane, extruded along X.
+// This means the 2D polygon coordinates should be [Y, Z].
+// The extrusion height is the X dimension.
+
+module profile_2d() {
+    // We define the profile in the YZ plane.
+    // The X dimension is handled by linear_extrude.
+    union() {
+        // Inner Leg: y=0 to 4, z=0 to 50
+        polygon(points=[[0,0], [4,0], [4,50], [0,50]]);
+        
+        // Outer Leg: y=16.5 to 20.5, z=0 to 50
+        polygon(points=[[16.5,0], [20.5,0], [20.5,50], [16.5,50]]);
+        
+        // Top Bridge: z=46 to 50, y=0 to 20.5
+        polygon(points=[[0,46], [20.5,46], [20.5,50], [0,50]]);
+        
+        // Ledge: z=0 to 6, y=-30 to 0
+        polygon(points=[[-30,0], [0,0], [0,6], [-30,6]]);
+    }
+}
+
+// Final Assembly
+difference() {
+    // 1. Create the main body by extruding the 2D profile along X.
+    // The user specified the part is centered on X=0.
+    // Since linear_extrude builds from Z=0 upwards, we must rotate 
+    // the 2D profile so that the extrusion direction is the X axis.
+    // However, it is simpler to define the profile in XY and extrude in Z,
+    // but the user explicitly asked for the profile in the YZ plane extruded along X.
+    // To achieve "centered on X=0" with linear_extrude (which starts at 0),
+    // we translate the result by -length_x/2.
+    
+    translate([-length_x/2, 0, 0])
+        rotate([0, -90, 0]) // Rotate profile so extrusion is along X
+            linear_extrude(height = length_x)
+                profile_2d();
+
+    // 2. Subtract the tube holes
+    // Holes are 6.4mm diameter, vertical (Z-axis).
+    // They are centered on X, at y = -15.
+    for (i = [0 : num_tubes - 1]) {
+        // Calculate X offset to center the 8 holes
+        // Total span = (7 * 9) = 63. 
+        // Center of span is at (63/2) = 31.5.
+        // We want the group centered on X=0.
+        x_offset = (i * hole_spacing_x) - ((num_tubes - 1) * hole_spacing_x / 2);
+        
+        // The holes are vertical (Z-axis).
+        // We translate the cylinder to the hole position.
+        // The hole is in the ledge (y = -15, z = 0 to 6).
+        translate([x_offset, hole_y_pos, -1]) 
+            cylinder(h = ledge_thickness + 2, d = hole_diameter, $fn = fn_val);
+    }
+}

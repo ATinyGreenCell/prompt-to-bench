@@ -1,0 +1,73 @@
+```openscad
+// --- Parameters ---
+// Block dimensions
+block_x = 130;           // Total length (X)
+block_y = 60;            // Total depth (Y)
+block_z = 45;            // Total height (Z)
+
+// Hole properties
+hole_diameter = 17.5;    // Diameter of the conical tube hole
+hole_depth = 40;         // Depth of the hole along its axis
+num_holes = 5;           // Number of tubes
+hole_spacing = 24;       // Distance between hole centers along X
+
+// Tilt properties
+tilt_angle = 30;         // Angle from vertical in YZ plane
+tilt_y_offset = -10;      // Y-coordinate where the hole axis meets the top face
+
+// Resolution
+fn_val = 64;             // Smoothness for cylinders
+
+// --- Calculations ---
+// The user specified the part rests on the bed at Z=0 and builds upward.
+// The previous error was using cube(center=true), which placed the block at Z = -22.5.
+// We will use a non-centered cube and translate it so the bottom face is at Z=0.
+
+// Calculate the starting X position for the first hole to ensure the set is centered
+hole_span = (num_holes - 1) * hole_spacing;
+first_hole_x = -hole_span / 2;
+
+// --- Modeling ---
+
+// Main Block
+difference() {
+    // The solid block
+    // We place the bottom face at Z=0. 
+    // To center on X and Y, we translate by [-block_x/2, -block_y/2, 0]
+    translate([-block_x/2, -block_y/2, 0])
+        cube([block_x, block_y, block_z]);
+
+    // The five blind holes
+    for (i = [0 : num_holes - 1]) {
+        // Calculate X position for this specific hole
+        current_hole_x = first_hole_x + (i * hole_spacing);
+        
+        // The hole axis is tilted 30 degrees from vertical in the YZ plane.
+        // "Going down into the block, it moves toward +Y"
+        // The top face is at Z = block_z.
+        // The hole axis meets the top face at (current_hole_x, tilt_y_offset, block_z).
+        
+        // To achieve the tilt:
+        // 1. Move to the intersection point on the top face.
+        // 2. Rotate around X axis to tilt the Z axis towards +Y.
+        //    A rotation of -30 degrees around X moves the +Z axis towards +Y.
+        // 3. Translate along the new Z axis to create the depth.
+        
+        translate([current_hole_x, tilt_y_offset, block_z]) 
+        rotate([-tilt_angle, 0, 0]) 
+        // We use a cylinder that is slightly longer and offset to ensure it cuts through the top face cleanly
+        translate([0, 0, 0.01]) 
+        cylinder(h = hole_depth + 1, d = hole_diameter, $fn = fn_val);
+    }
+}
+
+// Verification of requirements:
+// 1. Block: 130x60x45.
+// 2. Centered on X and Y: Handled by translate([-65, -30, 0]).
+// 3. Rests on bed at Z=0: Handled by Z=0 start.
+// 4. 5 holes, 24mm apart, centered on X: Handled by first_hole_x calculation.
+// 5. Hole diameter 17.5mm: Handled.
+// 6. Hole depth 40mm: Handled.
+// 7. Tilt 30 deg in YZ plane, moving toward +Y: Handled by rotate([-30, 0, 0]).
+// 8. Hole axis meets top face at y = -10: Handled by translate([..., -10, block_z]).
+```

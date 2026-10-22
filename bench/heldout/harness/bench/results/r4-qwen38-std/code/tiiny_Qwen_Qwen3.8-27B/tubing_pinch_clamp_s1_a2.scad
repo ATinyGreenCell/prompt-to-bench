@@ -1,0 +1,72 @@
+// Pinch clamp for silicone tubing (up to 6.4 mm across)
+// Printed flat: 2-D profile in XY, extruded 8 mm along Z.
+
+$fn = 64;
+
+// ---- Global dimensions ----
+t = 8;          // extrusion thickness (mm)
+
+// Lower jaw
+lw_x0 = 0;  lw_x1 = 50;   // bar span
+lw_y0 = 0;  lw_y1 = 4;    // bar thickness
+lt_x0 = 50; lt_x1 = 56;   // tongue span
+lt_y0 = 2.5; lt_y1 = 4;   // tongue thickness
+
+// Upper jaw
+uw_x0 = 0;  uw_x1 = 60;   // bar span
+uw_y0 = 12; uw_y1 = 16;   // bar thickness
+
+// Living hinge (half-ring, x < 0 side, centred at (0,8))
+hc_x = 0;  hc_y = 8;      // hinge centre
+hr_in = 7.2;              // inner radius
+hr_out = 8.0;             // outer radius
+
+// Pinch ridges (half-round, inner faces, at x = 27.5)
+pr_x = 27.5;              // ridge centre x
+pr_r = 1.5;               // ridge radius
+pr_low_cy = 4;           // lower ridge centre y (inner face of lower jaw)
+pr_up_cy  = 12;          // upper ridge centre y (inner face of upper jaw)
+
+// Snap latch (hangs from upper jaw right end)
+leg_x0 = 57;  leg_x1 = 60;   // leg span
+leg_y0 = 4.5; leg_y1 = 12;   // leg thickness
+nose_x0 = 54.5; nose_x1 = 57; // nose span
+nose_y0 = 4.5;  nose_y1 = 5.5; // nose thickness (0.5 mm above tongue)
+
+// ---- 2-D profile (union of all features) ----
+profile_final = union() {
+    // Lower jaw bar
+    translate([lw_x0, lw_y0]) square([lw_x1 - lw_x0, lw_y1 - lw_y0]);
+
+    // Lower jaw tongue
+    translate([lt_x0, lt_y0]) square([lt_x1 - lt_x0, lt_y1 - lt_y0]);
+
+    // Upper jaw bar
+    translate([uw_x0, uw_y0]) square([uw_x1 - uw_x0, uw_y1 - uw_y0]);
+
+    // Living hinge: half-ring on x < 0 side
+    intersection() {
+        difference() {
+            translate([hc_x, hc_y]) circle(hr_out);
+            translate([hc_x, hc_y]) circle(hr_in);
+        }
+        // half-plane x < 0 (large square on the left)
+        translate([-100, -100]) square([100, 200]);
+    }
+
+    // Lower pinch ridge (half-round, bulging into the gap, i.e. +y)
+    translate([pr_x, pr_low_cy]) circle(pr_r);
+
+    // Upper pinch ridge (half-round, bulging into the gap, i.e. -y)
+    translate([pr_x, pr_up_cy]) circle(pr_r);
+
+    // Latch leg
+    translate([leg_x0, leg_y0]) square([leg_x1 - leg_x0, leg_y1 - leg_y0]);
+
+    // Latch nose
+    translate([nose_x0, nose_y0]) square([nose_x1 - nose_x0, nose_y1 - nose_y0]);
+};
+
+// ---- Extrude 8 mm along Z, resting on z = 0 ----
+linear_extrude(height = t, center = false, convexity = 10)
+    profile_final;

@@ -1,0 +1,68 @@
+// PCR Strip Holder for Ice Bucket - Corrected
+// Designed to hang over a 12mm wall and hold an 8-tube PCR strip.
+
+// --- Dimensions ---
+length_x      = 84.0;    // Extrusion length along X
+wall_gap      = 12.5;    // Gap for the bucket wall (16.5 - 4.0 = 12.5)
+inner_leg_h    = 50.0;    // Height of the inner leg
+outer_leg_h    = 50.0;    // Height of the outer leg
+leg_thickness  = 4.0;     // Thickness of the legs (20.5 - 16.5 = 4.0)
+bridge_h       = 4.0;     // Height of the top bridge (50 - 46 = 4)
+ledge_thick    = 6.0;     // Thickness of the ledge (z = 0 to 6)
+ledge_depth    = 30.0;    // Depth of the ledge into the ice (y = 0 to -30)
+tube_hole_d    = 6.4;     // Diameter of the PCR tube holes
+tube_pitch     = 9.0;     // Spacing between tube holes along X
+num_tubes      = 8;       // Number of tubes
+
+$fn = 64;
+
+// --- Construction ---
+
+// We build the 2D profile first, then extrude it along X.
+// To avoid the "Mixing 2D and 3D" error, we perform the hole subtraction 
+// on the 2D shape before extruding, or use 3D subtraction on the final part.
+// Here, we will build the 3D part and subtract the 3D holes.
+
+module holder_body() {
+    // The profile is in the YZ plane.
+    // We use a 2D shape and extrude it to create the 3D body.
+    linear_extrude(height = length_x) {
+        difference() {
+            // The main U-shape profile
+            union() {
+                // Inner Leg: y from 0 to 4, z from 0 to 50
+                square([4, inner_leg_h]);
+                
+                // Outer Leg: y from 16.5 to 20.5, z from 0 to 50
+                // Note: Y starts at 16.5. In 2D, we translate.
+                translate([16.5, 0]) square([leg_thickness, outer_leg_h]);
+                
+                // Bridge: y from 4 to 16.5, z from 46 to 50
+                translate([4, 46]) square([12.5, bridge_h]);
+                
+                // Ledge: y from -30 to 0, z from 0 to 6
+                // Note: Y starts at -30. In 2D, we translate.
+                translate([-ledge_depth, 0]) square([ledge_depth, ledge_thick]);
+            }
+        }
+    }
+}
+
+// Final Assembly
+difference() {
+    // Center the part on X
+    translate([-length_x / 2, 0, 0]) holder_body();
+
+    // Subtract the tube holes
+    // Holes are vertical (along Z), centered on X, at y = -15
+    for (i = [0 : num_tubes - 1]) {
+        // Calculate X position: centered on 0
+        let (x_pos = (i - (num_tubes - 1) / 2) * tube_pitch)
+        // Translate to the hole location:
+        // X: x_pos
+        // Y: -15 (relative to the profile's Y=0)
+        // Z: -1 (to ensure clean cut through the 6mm ledge)
+        translate([x_pos, -15, -1]) 
+            cylinder(h = ledge_thick + 2, d = tube_hole_d);
+    }
+}

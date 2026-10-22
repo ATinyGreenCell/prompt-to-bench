@@ -1,0 +1,17 @@
+Features: {"bodies": [{"solids": [{"shape": "extrude", "outline": [[-45, -38.97], [45, -38.97], [45, 38.97], [-45, 38.97]], "h": 3, "at": [0, 0, 0]}, {"shape": "extrude", "outline": [[-42, -19.69], [42, -19.69], [42, 19.69], [-42, 19.69]], "h": 17, "at": [0, 0, 3]}, {"shape": "extrude", "outline": [[-42, -19.69], [42, -19.69], [42, 19.69], [-42, 19.69]], "h": 17, "at": [0, 0, 3], "circle": {"count": 7, "radius": 54, "start_deg": 0}}], "cuts": [{"cut": "hole", "d": 17.5, "depth": null, "at": [0, 0]}, {"cut": "hole", "d": 17.5, "depth": null, "at": [54, 0]}]}]}
+
+```openscad
+// Built by bench/smallmodels/features/compiler.py from a list of features.
+$fn = 64;
+difference() {
+  union() {
+    translate([0, 0, 0]) linear_extrude(height = 3) polygon([[-45, -38.97], [45, -38.97], [45, 38.97], [-45, 38.97]]);
+    translate([0, 0, 3]) linear_extrude(height = 17) polygon([[-42, -19.69], [42, -19.69], [42, 19.69], [-42, 19.69]]);
+    translate([54, 0, 3]) rotate([0, 0, 0]) linear_extrude(height = 17) polygon([[-42, -19.69], [42, -19.69], [42, 19.69], [-42, 19.69]]); translate([33.6684, 42.2189, 3]) rotate([0, 0, 51.4286]) linear_extrude(height = 17) polygon([[-42, -19.69], [42, -19.69], [42, 19.69], [-42, 19.69]]); translate([-12.0161, 52.6461, 3]) rotate([0, 0, 102.8571]) linear_extrude(height = 17) polygon([[-42, -19.69], [42, -19.69], [42, 19.69], [-42, 19.69]]); translate([-48.6523, 23.4297, 3]) rotate([0, 0, 154.2857]) linear_extrude(height = 17) polygon([[-42, -19.69], [42, -19.69], [42, 19.69], [-42, 19.69]]); translate([-48.6523, -23.4297, 3]) rotate([0, 0, 205.7143]) linear_extrude(height = 17) polygon([[-42, -19.69], [42, -19.69], [42, 19.69], [-42, 19.69]]); translate([-12.0161, -52.6461, 3]) rotate([0, 0, 257.1429]) linear_extrude(height = 17) polygon([[-42, -19.69], [42, -19.69], [42, 19.69], [-42, 19.69]]); translate([33.6684, -42.2189, 3]) rotate([0, 0, 308.5714]) linear_extrude(height = 17) polygon([[-42, -19.69], [42, -19.69], [42, 19.69], [-42, 19.69]]);
+  }
+  union() {
+    translate([0, 0, -1]) rotate([0, 0, 0]) cylinder(d = 17.5, h = 22);
+    translate([54, 0, -1]) rotate([0, 0, 0]) cylinder(d = 17.5, h = 22);
+  }
+}
+```

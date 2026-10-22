@@ -1,0 +1,74 @@
+// Magnetic bead rack for one 8-tube strip of 0.2 mL PCR tubes
+// Dimensions measured with calipers
+
+// Block dimensions
+block_length = 80;   // X
+block_width = 24;    // Y
+block_height = 20;   // Z
+
+// Tube seat parameters
+tube_seat_diameter_top = 6.4;
+tube_seat_diameter_bottom = 3;
+tube_seat_depth_top = 12; // depth from top face (z=20) -> hole starts at z=8
+tube_seat_depth_bottom = 2; // depth from top face (z=20) -> hole ends at z=18? 
+// Spec: "narrows as a cone to 3 mm in diameter at z = 2, where it ends (a 2 mm floor)"
+// This implies the bottom of the hole is at z=2.
+// So the cylindrical part is from z=20 down to z=8 (depth 12).
+// The conical part is from z=8 down to z=2.
+// Wait, let's re-read carefully: "6.4 mm hole from the top face down to z = 12 that then narrows as a cone to 3 mm in diameter at z = 2"
+// "down to z = 12" likely means the cylindrical section ends at z=12.
+// "narrows as a cone ... at z = 2" means the conical section ends at z=2.
+// So:
+// Cylinder: z=20 to z=12. Height = 8. Diameter = 6.4.
+// Cone: z=12 to z=2. Height = 10. Top Diameter = 6.4. Bottom Diameter = 3.
+
+tube_spacing = 9; // centre-to-centre
+num_tubes = 8;
+
+// Magnet pocket parameters
+magnet_pocket_length = 60.4; // X
+magnet_pocket_width = 3.3;   // Y
+magnet_pocket_height = 10.2; // Z
+magnet_pocket_y_offset = 6;  // centred at y = -6 and y = 6
+
+$fn = 64;
+
+// Main block
+difference() {
+    // Solid block
+    translate([-block_length/2, -block_width/2, 0])
+        cube([block_length, block_width, block_height]);
+
+    // Tube seats
+    for (i = [0:num_tubes-1]) {
+        x_pos = (i - (num_tubes-1)/2) * tube_spacing;
+        
+        // Cylindrical part (top)
+        // Starts at z = block_height - tube_seat_depth_top = 20 - 12 = 8? 
+        // No, spec says "down to z = 12". So cylinder is from z=20 to z=12.
+        // Height = 20 - 12 = 8.
+        translate([x_pos, 0, 12])
+            cylinder(h = 8 + 0.01, 
+                     r = tube_seat_diameter_top/2, center = false);
+        
+        // Conical part (bottom)
+        // Starts at z = 12, ends at z = 2.
+        // Height = 12 - 2 = 10.
+        // r1 (at z=12) = 6.4/2 = 3.2
+        // r2 (at z=2) = 3/2 = 1.5
+        translate([x_pos, 0, 2])
+            cylinder(h = 10 + 0.01, 
+                     r1 = tube_seat_diameter_top/2, 
+                     r2 = tube_seat_diameter_bottom/2, 
+                     center = false);
+    }
+
+    // Magnet pockets (open at bottom)
+    // Left pocket (y = -6)
+    translate([-magnet_pocket_length/2, -magnet_pocket_y_offset - magnet_pocket_width/2, 0])
+        cube([magnet_pocket_length + 0.01, magnet_pocket_width + 0.01, magnet_pocket_height + 0.01]);
+    
+    // Right pocket (y = 6)
+    translate([-magnet_pocket_length/2, magnet_pocket_y_offset - magnet_pocket_width/2, 0])
+        cube([magnet_pocket_length + 0.01, magnet_pocket_width + 0.01, magnet_pocket_height + 0.01]);
+}

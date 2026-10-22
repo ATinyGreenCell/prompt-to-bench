@@ -1,0 +1,123 @@
+// --- Dimensions ---
+block_x = 130;           // Length of the block (X)
+block_y = 60;            // Depth of the block (Y)
+block_z = 45;            // Height of the block (Z)
+
+num_holes = 5;           // Number of tube holes
+hole_spacing = 24;       // Distance between hole centers (X)
+hole_diameter = 17.5;    // Diameter of the holes
+hole_depth = 40;         // Depth of the holes along their axis
+
+tilt_angle = 30;         // Tilt angle from vertical (degrees)
+tilt_y_offset = -10;     // Y-coordinate where the hole axis meets the top face
+
+// --- Constants ---
+$fn = 64;                // Smoothness for cylinders
+eps = 0.1;               // Small offset for boolean operations
+
+// --- Calculations ---
+// Calculate the starting X positions to center the grid of holes
+// The total span of holes is (num_holes - 1) * hole_spacing
+hole_span = (num_holes - 1) * hole_spacing;
+start_x = -(hole_span / 2);
+
+// Convert angle to radians for math functions
+// The problem states: "tilted 30 degrees from vertical... moving toward +Y"
+// This means the axis vector in YZ plane is (0, sin(30), -cos(30))
+angle_rad = tilt_angle * PI / 180;
+
+// --- Main Model ---
+difference() {
+    // The main block
+    translate([-block_x/2, -block_y/2, 0])
+        cube([block_x, block_y, block_z]);
+
+    // The five blind holes
+    for (i = [0 : num_holes - 1]) {
+        // Calculate X position for this hole
+        current_x = start_x + (i * hole_spacing);
+        
+        // The hole axis starts at the top face (Z = block_z)
+        // and moves down and towards +Y.
+        // We use a cylinder and rotate it.
+        // To tilt "toward +Y" while going "down", the rotation is around X axis.
+        // A positive rotation around X moves +Y towards +Z. 
+        // We want +Y towards -Z. So we rotate by -30 degrees or 30 degrees depending on axis.
+        // Let's define the rotation: 
+        // If we rotate the Z-axis around the X-axis by 'angle', 
+        // the new Z vector is (0, sin(angle), cos(angle)).
+        // We want the hole to go DOWN (-Z) and TOWARDS +Y.
+        // So we rotate by -30 degrees (or 330) around X.
+        
+        translate([current_x, tilt_y_offset, block_z])
+            rotate([-angle_rad, 0, 0]) // Rotate around X to tilt in YZ plane
+                cylinder(h = hole_depth + eps, d = hole_diameter, center = false);
+                
+        // Note: The cylinder is drawn from Z=block_z downwards. 
+        // To ensure it is a "blind hole" with a flat end, we actually need to 
+        // make sure the cylinder is oriented correctly.
+        // Let's redefine the hole placement for clarity:
+    }
+}
+
+// Re-writing the hole logic to be more robust for "blind holes"
+// We will use a union of the block and then subtract the holes.
+// To make the holes "blind" and "flat at the bottom", we subtract 
+// a cylinder that starts at the top and ends at the required depth.
+
+// Corrected Hole Logic:
+// 1. Start at top face (Z = block_z)
+// 2. Tilt 30 degrees towards +Y (Rotation around X axis)
+// 3. Depth is 40mm.
+
+// Let's clear the previous difference and do it properly:
+// (The code below replaces the logic inside the difference block)
+
+/* 
+// REVISED LOGIC FOR THE DIFFERENCE BLOCK:
+difference() {
+    // The main block
+    translate([-block_x/2, -block_y/2, 0])
+        cube([block_x, block_y, block_z]);
+
+    // The five blind holes
+    for (i = [0 : num_holes - 1]) {
+        current_x = start_x + (i * hole_spacing);
+        
+        // We place the cylinder at the top face.
+        // To tilt towards +Y as it goes down, we rotate around X.
+        // A rotation of +30 degrees around X: 
+        // New Y = Z_old * sin(30)
+        // New Z = Z_old * cos(30)
+        // Since we want Z to decrease, we rotate by -30 degrees.
+        
+        translate([current_x, tilt_y_offset, block_z])
+            rotate([-angle_rad, 0, 0])
+                cylinder(h = hole_depth + eps, d = hole_diameter);
+    }
+}
+*/
+
+// Final implementation (Cleaned up)
+module block() {
+    translate([-block_x/2, -block_y/2, 0])
+        cube([block_x, block_y, block_z]);
+}
+
+module holes() {
+    for (i = [0 : num_holes - 1]) {
+        current_x = start_x + (i * hole_spacing);
+        // The cylinder is placed at the top face.
+        // We rotate it around the X axis to tilt it in the YZ plane.
+        // To tilt towards +Y as it goes down, we rotate by -30 degrees.
+        translate([current_x, tilt_y_offset, block_z])
+            rotate([-angle_rad, 0, 0])
+                cylinder(h = hole_depth + eps, d = hole_diameter);
+    }
+}
+
+// Final assembly
+difference() {
+    block();
+    holes();
+}

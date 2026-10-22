@@ -1,0 +1,45 @@
+// Dimensions
+length = 60; // X dimension in mm
+width = 24; // Y dimension in mm
+height = 16; // Z dimension in mm
+
+inlet_diameter = 3; // Diameter of the inlet and outlet channels in mm
+inlet_depth = 8; // Depth of the inlet socket in mm
+outlet_depth = 6; // Depth of the outlet sockets in mm
+screw_hole_diameter = 3.4; // Diameter of the M3 screw holes in mm
+
+// Main block
+block = cube([length, width, height]);
+
+// Inlet channel
+inlet_channel = cylinder(r=inlet_diameter/2, h=inlet_depth+0.1);
+
+// Outlet channels
+outlet_channels = union() {
+    for (x = [-15, 0, 15]) {
+        translate([x, width/2 - inlet_diameter/2, height/2 - outlet_depth/2])
+            cylinder(r=inlet_diameter/2, h=outlet_depth+0.1);
+    }
+};
+
+// Main channel
+main_channel = cylinder(r=inlet_diameter/2, h=height-8);
+
+// Screw holes
+screw_holes = union() {
+    for (x = [-25, 25]) {
+        translate([x, -6, height/2])
+            cylinder(r=screw_hole_diameter/2, h=height+0.1);
+    }
+};
+
+// Final model
+result = difference() {
+    block;
+    inlet_channel;
+    outlet_channels;
+    main_channel;
+    screw_holes;
+};
+
+render(result);

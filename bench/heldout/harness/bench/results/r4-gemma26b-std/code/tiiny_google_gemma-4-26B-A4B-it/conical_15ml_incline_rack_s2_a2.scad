@@ -1,0 +1,63 @@
+// --- Parameters ---
+// Block dimensions
+block_x = 130;           // Total length (X)
+block_y = 60;            // Total depth (Y)
+block_z = 45;            // Total height (Z)
+
+// Hole properties
+hole_diameter = 17.5;    // Diameter of the conical tube hole
+hole_depth = 40;         // Depth of the hole along its axis
+num_holes = 5;           // Number of tubes
+hole_spacing = 24;       // Distance between hole centers along X
+
+// Tilt properties
+tilt_angle = 30;         // Angle from vertical in YZ plane
+tilt_y_offset = -10;      // Y-coordinate where the hole axis meets the top face
+
+// Resolution
+fn_val = 64;             // Smoothness for cylinders
+
+// --- Calculations ---
+// The block is centered on X and Y, resting on Z=0.
+// X range: [-65, 65], Y range: [-30, 30], Z range: [0, 45]
+hole_span = (num_holes - 1) * hole_spacing;
+first_hole_x = -hole_span / 2;
+
+// --- Modeling ---
+
+difference() {
+    // Main Block
+    // Positioned so it rests on Z=0 and is centered on X and Y
+    translate([-block_x/2, -block_y/2, 0])
+        cube([block_x, block_y, block_z]);
+
+    // The five blind holes
+    for (i = [0 : num_holes - 1]) {
+        // Calculate X position for this specific hole
+        current_hole_x = first_hole_x + (i * hole_spacing);
+        
+        // The hole axis meets the top face at (current_hole_x, tilt_y_offset, block_z)
+        // "Going down into the block, it moves toward +Y"
+        // To tilt the Z-axis towards +Y, we rotate around the X-axis.
+        // In OpenSCAD, rotate([angle, 0, 0]) rotates the Z-axis towards the Y-axis 
+        // if the angle is positive. 
+        // Let's verify: rotate([30, 0, 0]) of vector [0,0,1] is [0, sin(30), cos(30)].
+        // This moves the axis towards +Y as Z decreases.
+        
+        translate([current_hole_x, tilt_y_offset, block_z]) 
+        rotate([tilt_angle, 0, 0]) 
+        // We use a cylinder that is slightly longer and offset to ensure it cuts 
+        // through the top face cleanly and has a flat end.
+        // To ensure a flat end at the bottom of the hole, we use a cylinder 
+        // and translate it so the top face of the cylinder is at the top face of the block.
+        // Since we rotated, we must translate along the new Z axis.
+        translate([0, 0, 0.01]) 
+        cylinder(h = hole_depth + 2, d = hole_diameter, $fn = fn_val);
+    }
+}
+
+// Note on the rotation direction:
+// The previous iteration used rotate([-30, 0, 0]) which moved the axis towards -Y.
+// The requirement is "moves toward +Y". 
+// A positive rotation around X moves the +Z axis towards the +Y axis.
+// Therefore, rotate([30, 0, 0]) is the correct transformation.

@@ -1,0 +1,15 @@
+Features: {"bodies": [{"solids": [{"shape": "box", "size": [50, 30, 40], "at": [0, -15, 0]}], "cuts": [{"cut": "hole", "d": 16.5, "depth": 30, "at": [0, 0]}, {"cut": "box", "size": [34, 2.6, 2.6], "at": [0, -15, 30]}]}]}
+
+```openscad
+// Built by bench/smallmodels/features/compiler.py from a list of features.
+$fn = 64;
+difference() {
+  union() {
+    translate([0, -15, 0]) translate([-25, -15, 0]) cube([50, 30, 40]);
+  }
+  union() {
+    translate([0, 0, 9.99]) rotate([0, 0, 0]) cylinder(d = 16.5, h = 30.02);
+    translate([0, -15, 30]) rotate([0, 0, 0]) translate([-17, -1.3, 0]) cube([34, 2.6, 2.6]);
+  }
+}
+```

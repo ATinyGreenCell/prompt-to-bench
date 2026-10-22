@@ -1,0 +1,69 @@
+```openscad
+// --- Parameters ---
+// Block dimensions
+block_x = 130;           // Total length (X)
+block_y = 60;            // Total depth (Y)
+block_z = 45;            // Total height (Z)
+
+// Hole properties
+hole_diameter = 17.5;    // Diameter of the conical tube hole
+hole_depth = 40;         // Depth of the hole along its axis
+num_holes = 5;           // Number of tubes
+hole_spacing = 24;       // Distance between hole centers along X
+
+// Tilt properties
+tilt_angle = 30;         // Angle from vertical in YZ plane
+tilt_y_offset = -10;      // Y-coordinate where the hole axis meets the top face
+
+// Resolution
+fn_val = 64;             // Smoothness for cylinders
+
+// --- Calculations ---
+// Center the block on X and Y, resting on Z=0
+origin_x = 0;
+origin_y = 0;
+origin_z = 0;
+
+// Calculate the starting X position for the first hole to ensure the set is centered
+// Total span of holes = (num_holes - 1) * hole_spacing
+hole_span = (num_holes - 1) * hole_spacing;
+first_hole_x = -hole_span / 2;
+
+// --- Modeling ---
+
+// Main Block
+difference() {
+    // The solid block
+    translate([origin_x, origin_y, origin_z])
+        cube([block_x, block_y, block_z], center = true);
+
+    // The five blind holes
+    for (i = [0 : num_holes - 1]) {
+        // Calculate X position for this specific hole
+        current_hole_x = first_hole_x + (i * hole_spacing);
+        
+        // The hole axis is tilted 30 degrees from vertical in the YZ plane.
+        // "Going down into the block, it moves toward +Y"
+        // This means the rotation is around the X axis.
+        // A 30 degree tilt from vertical (Z) towards +Y means the axis vector 
+        // in YZ plane is (sin(30), -cos(30)).
+        // However, OpenSCAD rotation is around the axis. 
+        // To tilt a cylinder that is standing upright (Z) towards +Y:
+        // We rotate the cylinder around the X axis by 30 degrees.
+        // Since we want it to move towards +Y as it goes down, 
+        // we rotate by -30 degrees if using standard coordinate rotation logic,
+        // but let's define the rotation clearly:
+        // A rotation of 30 degrees around X moves the +Z axis towards the +Y axis.
+        
+        translate([current_hole_x, tilt_y_offset, block_z]) // Move to top face and X position
+        rotate([-tilt_angle, 0, 0]) // Tilt towards +Y as it goes down
+        translate([0, 0, -hole_depth - 1]) // Move down so the "top" of the cylinder is at the face
+        cylinder(h = hole_depth + 2, d = hole_diameter, $fn = fn_val);
+    }
+}
+
+// Note on orientation:
+// The block is centered on X and Y. 
+// The cube is created with center=true, so it spans [-65, 65] in X and [-30, 30] in Y.
+// The holes are subtracted from this volume.
+```

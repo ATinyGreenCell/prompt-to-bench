@@ -1,0 +1,52 @@
+// --- Dimensions (mm) ---
+handle_length = 150;      // Length of the handle bar
+handle_width = 6;         // Width of the handle bar
+handle_thickness = 4;     // Thickness of the handle bar
+foot_length = 40;         // Length of the spreading foot
+foot_width = 5;           // Width of the spreading foot
+foot_thickness = 2.5;     // Thickness of the spreading foot (agar side)
+boss_diameter = 6;        // Diameter of the joining boss
+boss_height = 4;          // Height of the joining boss
+hole_diameter = 4;        // Diameter of the hanging hole
+hole_x_pos = 143;         // X position of the hanging hole
+angle_deg = 120;          // Angle between handle and foot (counter-clockwise from +X)
+
+// --- Constants ---
+$fn = 64;                 // Smoothness for cylinders/circles
+
+// --- Part Construction ---
+
+// The part is built using a difference to subtract the hole from the solid body.
+difference() {
+    // 1. The Solid Body
+    union() {
+        // Handle: x = 0 to 150, y = -3 to 3, z = 0 to 4
+        // We translate by [0, -handle_width/2, 0] to center the width on Y=0
+        translate([0, -handle_width/2, 0])
+            cube([handle_length, handle_width, handle_thickness]);
+
+        // Spreading Foot: 40mm long, 5mm wide, 2.5mm thick.
+        // Center line starts at origin and points 120 degrees from +X.
+        // To ensure the foot is centered on its own width, we translate it.
+        rotate([0, 0, angle_deg])
+            translate([0, -foot_width/2, 0])
+                cube([foot_length, foot_width, foot_thickness]);
+
+        // Boss: 6mm diameter, 4mm tall at the origin.
+        // Centered on X and Y to join the bars.
+        translate([0, 0, 0])
+            cylinder(h = boss_height, d = boss_diameter);
+    }
+
+    // 2. The Hanging Hole
+    // 4mm diameter through the handle at x = 143, y = 0.
+    // We extend the cylinder slightly in Z and X/Y to ensure a clean cut.
+    translate([hole_x_pos, 0, -1])
+        cylinder(h = handle_thickness + 2, d = hole_diameter);
+}
+
+// Note on Geometry:
+// The handle is defined from x=0 to 150.
+// The foot starts at the origin (0,0) and extends at 120 degrees.
+// The boss is centered at (0,0) to bridge the intersection.
+// The hole is at x=143, y=0.

@@ -1,0 +1,36 @@
+// 15 mL conical tube rack - five tubes at a 30 degree lean
+// Units: mm. Prints standing on its base (z = 0), centred in X and Y.
+
+$fn = 96;
+
+// ---- Block ----
+block_len   = 130;   // X length
+block_dep   = 60;    // Y depth
+block_ht    = 45;    // Z height
+
+// ---- Tube holes ----
+n_holes     = 5;     // number of tubes
+hole_pitch  = 24;    // centre-to-centre spacing along X
+hole_d      = 17.5;  // hole diameter, square to its axis
+hole_depth  = 40;    // depth along axis from top face to flat end
+hole_y_top  = -10;   // Y where each axis meets the top face
+tilt_ang    = 30;    // tilt from vertical in YZ plane (down -> +Y)
+hole_extra  = 10;    // extension above top face for a clean cut
+
+module tube_hole() {
+    // rotate([tilt,0,0]) maps +Z to (0, -sin, cos): pointing up and toward -Y,
+    // so going down the axis moves toward +Y as required.
+    translate([0, hole_y_top, block_ht])
+        rotate([tilt_ang, 0, 0])
+            translate([0, 0, -hole_depth])
+                cylinder(d = hole_d, h = hole_depth + hole_extra);
+}
+
+difference() {
+    translate([-block_len / 2, -block_dep / 2, 0])
+        cube([block_len, block_dep, block_ht]);
+
+    for (i = [0 : n_holes - 1])
+        translate([(i - (n_holes - 1) / 2) * hole_pitch, 0, 0])
+            tube_hole();
+}

@@ -1,0 +1,103 @@
+```openscad
+// --- Dimensions in mm ---
+
+// Overall holder dimensions
+holder_diameter = 80;      // Diameter of the main puck (XY plane)
+holder_height = 26;        // Total height of the holder
+cut_plane_x = 34;          // X coordinate where one side is cut off for labeling
+
+// Tube seat dimensions
+tube_hole_diameter = 11.2; // Diameter of the tube hole
+tube_hole_radius = tube_hole_diameter / 2;
+seat_center_circle_diameter = 50; // Diameter of the circle where seats are centered
+seat_center_radius = seat_center_circle_diameter / 2;
+
+// Seat depth and shape
+half_sphere_height = tube_hole_radius; // Height of the half-sphere cut (matches hole radius)
+lowest_point_z = 6;                  // Z coordinate of the lowest point of the seat bottom
+
+// --- Constants ---
+$fn = 100; // High resolution for curves
+
+// --- Calculations ---
+// The top face is at z = holder_height.
+// The center of the tube hole (cylinder part) should be at z = holder_height - half_sphere_height.
+// Since the lowest point must be at z=6, and the total depth is 20mm:
+// Top Z = 26 mm. Lowest point Z = 6 mm. Depth = 20 mm.
+// The center of the cylinder part (the hole) should be at Z_center = 6 + tube_hole_radius.
+
+Z_cylinder_center = lowest_point_z + tube_hole_radius; // 6 + 5.6 = 11.6 mm from the bottom plane (z=0)
+// Check: Top of hole is at Z_cylinder_center + tube_hole_radius = 17.2 mm. This seems wrong based on the prompt description.
+
+/* Re-interpreting the seat geometry:
+The seat is an 11.2mm diameter hole whose bottom is a half-sphere of the same diameter.
+Its lowest point must be at z=6.
+If the tube sits upright, the top opening is at Z_top = holder_height (26 mm).
+The depth of the recess is 20 mm. So the deepest part is at Z_bottom = 26 - 20 = 6 mm.
+
+A half-sphere of radius R=5.6mm has a height of R.
+If the lowest point is at z=6, and this is the bottom of the half-sphere:
+The center of the full sphere would be at Z_center = 6 + R = 11.6 mm.
+The top rim of the seat (where the cylinder starts) would be at Z_top_seat = 6 + 2R = 17.2 mm.
+
+Let's use this derived geometry:
+Z_bottom_of_seat = lowest_point_z; // 6 mm
+Z_center_sphere = lowest_point_z + tube_hole_radius; // 11.6 mm
+Z_top_rim_of_seat = Z_cylinder_center + tube_hole_radius; // 17.2 mm (This is the top of the cylindrical part)
+
+The hole must extend from z=0 up to the top surface (z=26), but we only cut a seat into the top face.
+We will model the seat as a subtraction: A cylinder + a sphere subtracted from the main block.
+*/
+
+// --- Main Body ---
+module holder_body() {
+    difference() {
+        // 1. Base Puck (Cylinder)
+        cylinder(h = holder_height, r = holder_diameter / 2, center = false);
+
+        // 2. Cut side for label (Plane at x=34)
+        // Extend slightly past the body to ensure clean cut
+        translate([cut_plane_x + 0.1, -holder_diameter/2 - 0.1, -0.1])
+        cube([0.2, holder_diameter + 0.2, holder_height + 0.2]);
+    }
+}
+
+// --- Seat Module ---
+module tube_seat(center_x, center_y) {
+    difference() {
+        // 1. Cylindrical Hole (to define the opening and depth)
+        // We cut a cylinder that goes all the way through the holder height for simplicity in subtraction,
+        // but we only care about the shape within the top surface area.
+        translate([center_x, center_y, -0.1])
+        cylinder(h = holder_height + 0.2, r = tube_hole_radius, center = false);
+
+        // 2. Spherical Cut (to form the bottom)
+        // Center of sphere is at Z_center_sphere relative to z=0 plane.
+        translate([center_x, center_y, Z_center_sphere])
+        sphere(r = tube_hole_radius);
+    }
+}
+
+// --- Assembly ---
+module holder() {
+    difference() {
+        // Start with the main body (Puck + Cut)
+        holder_body();
+
+        // Subtract all 8 seats
+        for (i = [0 : 7]) {
+            // Calculate angle: 360 / 8 = 45 degrees per seat. First one at +X axis (angle 0).
+            angle = i * 45;
+            
+            // Polar to Cartesian coordinates for the center of the seat
+            seat_x = seat_center_radius * cos(angle);
+            seat_y = seat_center_radius * sin(angle);
+
+            // Subtract the seat geometry
+            tube_seat(seat_x, seat_y);
+        }
+    }
+}
+
+holder();
+```

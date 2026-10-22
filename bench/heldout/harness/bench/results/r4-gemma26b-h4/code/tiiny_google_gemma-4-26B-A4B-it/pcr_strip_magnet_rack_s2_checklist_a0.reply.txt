@@ -1,0 +1,115 @@
+```openscad
+// Magnetic bead rack for 8-tube strip
+// Designed for 0.2 mL PCR tubes with magnet pockets
+
+// --- Dimensions ---
+L = 80.0;            // Block length (X)
+W = 24.0;            // Block width (Y)
+H = 20.0;            // Block height (Z)
+
+num_tubes = 8;       // Number of tubes
+tube_spacing = 9.0;  // Center-to-center spacing of tubes
+tube_top_d = 6.4;    // Diameter of tube at top
+tube_bot_d = 3.0;    // Diameter of tube at bottom
+tube_z_top = 20.0;   // Top face Z
+tube_z_mid = 12.0;   // Z where diameter changes
+tube_z_bot = 2.0;    // Z where cone ends (2mm floor)
+
+mag_l = 60.4;        // Magnet length (X)
+mag_w = 3.3;         // Magnet width (Y)
+mag_h = 10.2;        // Magnet height (Z)
+mag_y_offset = 6.0;  // Y offset for magnet centers
+
+$fn = 64;
+
+// --- Geometry Construction ---
+
+// Helper for the tube seat shape
+module tube_seat() {
+    // The cylindrical part from top to mid
+    cylinder(h = tube_z_top - tube_z_mid, d = tube_top_d);
+    // The conical part from mid to bottom
+    translate([0, 0, tube_z_mid - 1]) // slight overlap for manifold
+    cylinder(h = tube_z_mid - tube_z_bot + 1, d1 = tube_top_d, d2 = tube_bot_d);
+}
+
+// Main block body
+difference() {
+    // The solid block
+    translate([-L/2, -W/2, 0])
+        cube([L, W, H]);
+
+    // 1. Tube Seats
+    // Centered on Y=0. Spacing is 9mm. 
+    // Total span = (8-1)*9 = 63mm. 
+    // To center: start at -(63/2)
+    for (i = [0 : num_tubes - 1]) {
+        x_pos = (i - (num_tubes - 1) / 2) * tube_spacing;
+        translate([x_pos, 0, tube_z_top])
+            rotate([90, 0, 0]) // Rotate to stand vertically along Z
+            cylinder(h = tube_z_top - tube_z_bot + 1, d1 = tube_top_d, d2 = tube_bot_d);
+            
+        // Note: The prompt describes the seat as a hole from top down to 12, 
+        // then narrowing to 3mm at z=2.
+        // Let's use a more precise subtraction approach:
+    }
+    
+    // Re-calculating tube subtraction for precision
+    for (i = [0 : num_tubes - 1]) {
+        x_pos = (i - (num_tubes - 1) / 2) * tube_spacing;
+        translate([x_pos, 0, tube_z_top]) {
+            // Top cylinder part
+            rotate([90, 0, 0]) 
+                cylinder(h = tube_z_top - tube_z_mid + 0.1, d = tube_top_d);
+            // Conical part
+            translate([0, 0, -(tube_z_top - tube_z_mid)])
+            rotate([90, 0, 0])
+                cylinder(h = tube_z_mid - tube_z_bot + 0.1, d1 = tube_top_d, d2 = tube_bot_d);
+        }
+    }
+
+    // 2. Magnet Pockets
+    // Centered at y = -6 and y = 6. 
+    // Open at bottom (z=0 to 10.2).
+    // Dimensions: 60.4 (X) x 3.3 (Y) x 10.2 (Z)
+    for (sy = [-mag_y_offset, mag_y_offset]) {
+        translate([-mag_l/2, sy - mag_w/2, -0.1])
+            cube([mag_l, mag_w, mag_h + 0.1]);
+    }
+}
+
+// Correcting the tube subtraction logic to match the prompt exactly:
+// "Each seat is a 6.4 mm hole from the top face down to z = 12 that then narrows as a cone to 3 mm in diameter at z = 2"
+// Let's redo the difference block cleanly.
+
+difference() {
+    // Base Block
+    translate([-L/2, -W/2, 0])
+        cube([L, W, H]);
+
+    // Tube Holes
+    for (i = [0 : num_tubes - 1]) {
+        x_pos = (i - (num_tubes - 1) / 2) * tube_spacing;
+        translate([x_pos, 0, 0]) {
+            // Part 1: Cylinder from top (20) down to 12
+            translate([0, 0, 12])
+                cylinder(h = 20 - 12 + 1, d = tube_top_d);
+            // Part 2: Cone from 12 down to 2
+            translate([0, 0, 2])
+                cylinder(h = 12 - 2 + 1, d1 = tube_top_d, d2 = tube_bot_d);
+        }
+    }
+
+    // Magnet Pockets
+    for (sy = [-mag_y_offset, mag_y_offset]) {
+        translate([-mag_l/2, sy - mag_w/2, -0.1])
+            cube([mag_l, mag_w, mag_h + 0.1]);
+    }
+}
+
+// Note: The code above contains two difference blocks for clarity of logic. 
+// The second one is the final intended geometry. 
+// I will clean this up into one single block for the final output.
+```
+
+```

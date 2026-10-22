@@ -1,0 +1,40 @@
+// Ice-bucket hanging PCR strip holder (8 tubes)
+$fn = 64;
+
+length_x      = 84;    // extrusion length along X
+inner_y0      = 0;     // inner leg start y
+inner_t       = 4;     // inner leg thickness
+outer_y0      = 16.5;  // outer leg start y
+outer_t       = 4;     // outer leg thickness
+height        = 50;    // overall height
+bridge_t      = 4;     // bridge thickness (z = 46..50)
+ledge_len     = 30;    // ledge reach toward -Y
+ledge_t       = 6;     // ledge thickness
+hole_d        = 6.4;   // tube hole diameter
+hole_count    = 8;     // number of holes
+hole_pitch    = 9;     // spacing along X
+hole_y        = -15;   // hole centre y
+
+module profile() {
+    // inner leg
+    translate([inner_y0, 0]) square([inner_t, height]);
+    // outer leg
+    translate([outer_y0, 0]) square([outer_t, height]);
+    // bridge
+    translate([inner_y0, height - bridge_t])
+        square([outer_y0 + outer_t - inner_y0, bridge_t]);
+    // ledge
+    translate([-ledge_len, 0]) square([ledge_len + inner_t, ledge_t]);
+}
+
+difference() {
+    // extrude profile (2D x->Y, 2D y->Z) along X, centred
+    rotate([90, 0, 90])
+        translate([0, 0, -length_x / 2])
+            linear_extrude(height = length_x) profile();
+
+    // tube holes
+    for (i = [0 : hole_count - 1])
+        translate([(i - (hole_count - 1) / 2) * hole_pitch, hole_y, -1])
+            cylinder(d = hole_d, h = ledge_t + 2);
+}

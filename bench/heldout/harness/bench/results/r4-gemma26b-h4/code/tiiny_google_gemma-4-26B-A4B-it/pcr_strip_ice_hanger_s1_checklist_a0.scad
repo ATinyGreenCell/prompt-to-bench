@@ -1,0 +1,154 @@
+// PCR Strip Holder for Ice Bucket
+// Designed to hang over a 12mm wall and hold an 8-tube PCR strip.
+
+// --- Dimensions ---
+length_x      = 84.0;    // Total extrusion length along X
+wall_gap      = 12.5;    // Gap for the bucket wall (16.5 - 4.0 = 12.5)
+inner_leg_h    = 50.0;    // Height of the inner leg
+outer_leg_h    = 50.0;    // Height of the outer leg
+bridge_h       = 4.0;     // Thickness of the top bridge (50 - 46)
+inner_leg_w    = 4.0;     // Width of the inner leg (y = 0 to 4)
+outer_leg_w    = 4.0;    // Width of the outer leg (y = 16.5 to 20.5)
+ledge_thick    = 6.0;    // Thickness of the ledge (z = 0 to 6)
+ledge_depth    = 30.0;    // Depth of the ledge into the ice (y = 0 to -30)
+tube_hole_d    = 6.4;     // Diameter of the PCR tube holes
+tube_hole_pitch = 9.0;    // Spacing between tube holes along X
+num_tubes      = 8;       // Number of tubes
+
+$fn = 64;
+
+// --- Calculations ---
+// The profile is defined in the YZ plane.
+// Inner leg: y [0, 4], z [0, 50]
+// Outer leg: y [16.5, 20.5], z [0, 50]
+// Bridge: y [4, 16.5], z [46, 50]
+// Ledge: y [-30, 0], z [0, 6]
+
+module profile_yz() {
+    difference() {
+        // Main U-shape profile
+        union() {
+            // Inner Leg
+            translate([0, 0]) square([inner_leg_w, inner_leg_h]);
+            // Outer Leg
+            translate([16.5, 0]) square([outer_leg_w, outer_leg_h]);
+            // Bridge
+            translate([inner_leg_w, 46]) square([16.5 - inner_leg_w, bridge_h]);
+            // Ledge
+            translate([-ledge_depth, 0]) square([ledge_depth, ledge_thick]);
+        }
+        
+        // Tube holes (drilled through the ledge)
+        // Centered on X: (i - (n-1)/2) * pitch
+        for (i = [0 : num_tubes - 1]) {
+            let (x_pos = (i - (num_tubes - 1) / 2) * tube_hole_pitch)
+            translate([x_pos, -ledge_depth - 1, -1]) 
+                cylinder(h = ledge_thick + 2, d = tube_hole_d);
+        }
+    }
+}
+
+// --- Final Assembly ---
+// The part is extruded along X, centered on X=0.
+// The profile is in the YZ plane.
+// To achieve this, we rotate the profile 90 degrees around X or use linear_extrude.
+
+rotate([0, 0, 0]) // Ensure orientation is correct
+linear_extrude(height = length_x) {
+    // We need to shift the profile so it is centered on X=0.
+    // Since linear_extrude builds along Z by default, we rotate the 2D profile.
+    // However, the prompt says "profile in YZ plane extruded 84mm along X".
+    // In OpenSCAD, linear_extrude(height) extrudes along Z.
+    // To extrude along X, we rotate the 2D shape 90 deg around Y.
+    
+    rotate([0, 90, 0]) 
+    translate([-length_x/2, 0, 0]) // Shift to center on X
+    profile_yz();
+}
+
+// Note on coordinate mapping for the user:
+// The code above uses a 2D profile in the YZ plane, rotates it to face X, 
+// and extrudes. To match the "centered on X" requirement:
+// The 2D profile is drawn, then rotated 90 deg around Y so its 'height' is along X.
+// Then we translate it so the extrusion starts at -length_x/2.
+
+// Corrected approach for clarity:
+// 1. Define 2D profile in XY plane.
+// 2. Extrude along Z.
+// 3. Rotate to align with X.
+
+// Let's rewrite the final block for absolute clarity and correctness:
+
+/* 
+RE-WRITTEN ASSEMBLY LOGIC:
+The user wants the part to sit on the XY plane (z=0) and build upward.
+The profile is in the YZ plane.
+This means the "thickness" of the part (the 84mm) is along the X axis.
+*/
+
+// Clear the previous attempt and use this logic:
+// 1. Create the 2D profile in the YZ plane (using square/polygon).
+// 2. Extrude it along X.
+// 3. To make it sit on Z=0, we must ensure the lowest Z in the profile is 0.
+
+// Since the user said "it rests on the XY plane at z=0 and builds upward (+Z)",
+// and "profile in YZ plane extruded 84mm along X", this implies:
+// X = extrusion direction (84mm)
+// Y = width of the profile (the legs/ledge)
+// Z = height of the profile (the legs/bridge)
+
+// Let's redefine the 2D profile in the YZ plane:
+module profile_2d() {
+    difference() {
+        union() {
+            // Inner Leg (y=0 to 4, z=0 to 50)
+            square([4, 50]);
+            // Outer Leg (y=16.5 to 20.5, z=0 to 50)
+            translate([16.5, 0]) square([4, 50]);
+            // Bridge (y=4 to 16.5, z=46 to 50)
+            translate([4, 46]) square([12.5, 4]);
+            // Ledge (y=-30 to 0, z=0 to 6)
+            translate([-30, 0]) square([30, 6]);
+        }
+        // Tube holes (through the ledge)
+        for (i = [0 : num_tubes - 1]) {
+            let (x_offset = (i - (num_tubes - 1) / 2) * tube_hole_pitch)
+            // We use a circle in 2D, but since we are extruding along X, 
+            // the holes must be "cut" by a shape that spans the X direction.
+            // In 2D, a hole is a circle. When extruded, it becomes a cylinder.
+            // But the holes are vertical (along Z). 
+            // This means the holes are NOT part of the 2D profile.
+            // They are 3D features.
+        }
+    }
+}
+
+// FINAL RE-ARCHITECTURE:
+// 1. Build the 3D U-shape via extrude.
+// 2. Subtract the holes.
+
+// 2D Profile (YZ plane)
+module profile_yz_2d() {
+    union() {
+        square([4, 50]);               // Inner leg
+        translate([16.5, 0]) square([4, 50]); // Outer leg
+        translate([4, 46]) square([12.5, 4]); // Bridge
+        translate([-30, 0]) square([30, 6]);  // Ledge
+    }
+}
+
+// 3D Body
+// We rotate the 2D profile so it lies in the YZ plane, then extrude along X.
+// To center on X, we translate by -length_x/2.
+// To sit on Z=0, the profile's minimum Z must be 0.
+
+// The profile_yz_2d has Z from 0 to 50.
+// The profile_yz_2d has Y from -30 to 20.5.
+// We extrude along X.
+
+// To make it "rest on XY plane at z=0", the YZ profile must be oriented 
+// such that the Z-axis of the profile is the Z-axis of the world.
+
+// Let's use the standard:
+// Extrude 2D shape (in XY) along Z.
+// To get a YZ profile extruded

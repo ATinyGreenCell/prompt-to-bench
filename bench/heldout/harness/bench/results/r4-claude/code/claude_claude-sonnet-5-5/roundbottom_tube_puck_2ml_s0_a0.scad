@@ -1,0 +1,34 @@
+// Tube holder puck for eight 2 mL round-bottom tubes
+
+$fn = 64;
+
+puck_d      = 80;    // puck diameter
+puck_h      = 26;    // puck height
+flat_x      = 34;    // everything beyond x = 34 is removed (label flat)
+n_seats     = 8;     // number of tube seats
+circle_d    = 50;    // seat pitch circle diameter
+seat_d      = 11.2;  // seat hole diameter (and hemisphere diameter)
+seat_depth  = 20;    // depth from top face to lowest point of seat
+over        = 1;     // cutter overshoot past faces
+
+seat_r      = seat_d / 2;
+sphere_z    = puck_h - seat_depth + seat_r;  // hemisphere centre height (z = 11.6)
+
+difference() {
+    // puck with flat side
+    intersection() {
+        cylinder(d = puck_d, h = puck_h, $fn = 128);
+        translate([-puck_d, -puck_d, -over])
+            cube([puck_d + flat_x, 2 * puck_d, puck_h + 2 * over]);
+    }
+
+    // seats
+    for (i = [0 : n_seats - 1])
+        rotate([0, 0, i * 360 / n_seats])
+            translate([circle_d / 2, 0, 0]) {
+                translate([0, 0, sphere_z])
+                    sphere(r = seat_r, $fn = 64);
+                translate([0, 0, sphere_z])
+                    cylinder(r = seat_r, h = puck_h - sphere_z + over, $fn = 64);
+            }
+}

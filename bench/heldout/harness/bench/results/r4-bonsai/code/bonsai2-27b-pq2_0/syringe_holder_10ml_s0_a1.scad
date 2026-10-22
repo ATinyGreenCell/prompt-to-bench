@@ -1,0 +1,57 @@
+// Wall-mounted syringe holder (FDM, mm)
+// Block: 50 (X) x 30 (Y) x 40 (Z), centred in X/Y, z from 0 to 40.
+// Back face at y = +15 against the wall; front face at y = -15.
+
+block_w   = 50;   // width in X
+block_d   = 30;   // depth in Y
+block_h   = 40;   // height in Z
+
+// Barrel channel: 16.5 mm wide, full height, half-circle back end
+barrel_w  = 16.5;
+barrel_r  = barrel_w / 2;   // 8.25 mm radius of half-circle back end
+
+// Finger flange slot: 34 mm wide, 2.6 mm tall, cut from front to y = 11
+flange_w  = 34;
+flange_z0 = 30;
+flange_z1 = 32.6;
+flange_y_end = 11;          // slot extends back to this Y (from front y=-15)
+
+// M4 wall-screw holes: 4.5 mm dia, through in Y, at z = 15
+screw_d   = 4.5;
+screw_x   = 19;
+screw_z   = 15;
+
+// Overhang margin for clean difference cuts (1 mm)
+over = 1;
+
+$fn = 64;
+
+// Base block, centred in X and Y, z = 0..40
+block = cube([block_w, block_d, block_h], center = [true, true, false]);
+
+// Barrel channel: half-circle at back (y=+15) + rectangular prism to front
+// Half-cylinder: extruded half-circle, full height
+barrel_channel = union(
+    linear_extrude(height = block_h, center = false)
+        circle(d = barrel_w, $fn = 64),
+    cube([barrel_w, block_d, block_h], center = [true, true, false])
+);
+
+// Flange slot: 34 wide x 2.6 tall, from front (y=-15) back to y=11
+flange_slot = translate([0, -2, (flange_z0+flange_z1)/2])
+    cube([flange_w, 26 + over, flange_z1 - flange_z0 + over], center = [true, true, true]);
+
+// M4 screw holes: through in Y, at x = +/-19, z = 15
+screw_holes = union(
+    for (xx in [-screw_x, screw_x])
+        translate([xx, 0, screw_z])
+            cylinder(d = screw_d, h = block_d + 2*over, center = true)
+);
+
+// Final part
+difference() {
+    block;
+    barrel_channel;
+    flange_slot;
+    screw_holes;
+}

@@ -1,0 +1,54 @@
+```openscad
+// Dimensions (mm)
+base_diameter = 50;
+base_height = 4;
+
+cone_bottom_diameter = 50;  // at z=4
+cone_top_diameter = 22;     // at z=14
+cone_height = 10;           // from z=4 to z=14
+
+column_diameter = 22;
+column_height = 19;         // from z=14 to z=33
+
+seat_diameter_top = 11;     // from z=33 down to z=23
+seat_top_z = 33;
+seat_cone_start_z = 23;
+
+cone_tip_diameter = 3;
+cone_tip_z = 6;
+
+viewing_window_width = 4;   // in Y direction
+window_z_min = 18;
+window_z_max = 30;
+
+$fn = 64;
+
+// Build the final part
+difference() {
+    // Main shape: base + cone + column
+    union() {
+        // Base disc
+        cylinder(d = base_diameter, h = base_height);
+        
+        // Cone from z=4 to z=14
+        translate([0, 0, base_height])
+            cylinder(d1 = cone_bottom_diameter, d2 = cone_top_diameter, h = cone_height);
+        
+        // Column from z=14 to z=33
+        translate([0, 0, base_height + cone_height])
+            cylinder(d = column_diameter, h = column_height);
+    },
+    
+    // Subtract: cylindrical part of the seat from z=23 to z=33 (diameter 11 mm)
+    translate([0, 0, seat_cone_start_z])
+        cylinder(d = seat_diameter_top, h = seat_top_z - seat_cone_start_z);
+    
+    // Subtract: cone from z=6 to z=23, narrowing from 3 mm to 11 mm
+    translate([0, 0, cone_tip_z])
+        cylinder(d1 = cone_tip_diameter, d2 = seat_diameter_top, h = seat_cone_start_z - cone_tip_z);
+    
+    // Subtract: viewing window (4 mm wide in Y, on +X side, from z=18 to z=30)
+    translate([0, -viewing_window_width/2 - 1, window_z_min - 1])
+        cube([13, viewing_window_width + 2, window_z_max - window_z_min + 2]);
+};
+```

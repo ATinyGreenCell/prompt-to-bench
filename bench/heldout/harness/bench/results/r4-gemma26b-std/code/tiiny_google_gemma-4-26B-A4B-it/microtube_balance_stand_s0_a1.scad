@@ -1,0 +1,61 @@
+// --- Dimensions ---
+base_diameter = 50.0;       // Diameter of the base disc
+base_height = 4.0;          // Height of the base disc
+cone_bottom_dia = 50.0;     // Diameter at the bottom of the cone (z=4)
+cone_top_dia = 22.0;        // Diameter at the top of the cone (z=14)
+cone_height = 10.0;         // Height of the cone section (14 - 4)
+column_diameter = 22.0;      // Diameter of the top column
+column_height = 19.0;        // Height of the column (33 - 14)
+total_height = 33.0;        // Total height of the object
+
+// Tube Seat Dimensions
+seat_top_dia = 11.0;        // Diameter of the cylindrical part of the seat
+seat_top_z = 33.0;          // Z-coordinate at the top of the seat
+seat_mid_z = 23.0;          // Z-coordinate where seat transitions to cone
+seat_mid_dia = 11.0;        // Diameter at the transition point
+seat_bottom_dia = 3.0;      // Diameter at the tip of the seat cone
+seat_bottom_z = 6.0;        // Z-coordinate at the tip of the seat cone
+
+// Viewing Window Dimensions
+window_width_y = 4.0;       // Width of the window in Y direction
+window_height_start = 18.0; // Z-coordinate where window starts
+window_height_end = 30.0;   // Z-coordinate where window ends
+window_offset_x = 0.01;     // Small offset to ensure clean cut
+
+// --- Parameters ---
+$fn = 64;
+
+// --- Main Construction ---
+
+difference() {
+    // THE SOLID BODY
+    union() {
+        // 1. The Base Disc
+        cylinder(d = base_diameter, h = base_height);
+
+        // 2. The Cone Section
+        translate([0, 0, base_height])
+        cylinder(d1 = cone_bottom_dia, d2 = cone_top_dia, h = cone_height);
+
+        // 3. The Top Column
+        translate([0, 0, base_height + cone_height])
+        cylinder(d = column_diameter, h = column_height);
+    }
+
+    // THE TUBE SEAT (Subtracted)
+    // Part 1: Cylindrical seat (z=23 to z=33)
+    translate([0, 0, seat_mid_z])
+    cylinder(d = seat_top_dia, h = seat_top_z - seat_mid_z + 1);
+    
+    // Part 2: Conical seat (z=6 to z=23)
+    translate([0, 0, seat_bottom_z])
+    cylinder(d1 = seat_bottom_dia, d2 = seat_mid_dia, h = seat_mid_z - seat_bottom_z + 1);
+
+    // THE VIEWING WINDOW (Subtracted)
+    // The window is cut through the column wall on the +X side.
+    // It is 4mm wide in Y, meaning it spans from Y = -2 to Y = 2.
+    // It is cut "straight through the column wall on the +X side".
+    // We use a large cube to ensure it cuts through the entire side of the column.
+    translate([column_diameter/2 - 0.1, -window_width_y/2, window_height_start])
+    cube([column_diameter, window_width_y, window_height_end - window_height_start + 1]);
+}

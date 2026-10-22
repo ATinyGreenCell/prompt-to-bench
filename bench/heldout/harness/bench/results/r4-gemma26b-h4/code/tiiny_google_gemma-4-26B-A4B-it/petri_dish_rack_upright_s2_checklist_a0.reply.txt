@@ -1,0 +1,142 @@
+```openscad
+// Petri Dish Rack
+// Designed for 90mm diameter dishes standing on edge.
+
+// Dimensions
+L         = 203;    // Base length (X)
+W         = 80;     // Base width (Y)
+H_base    = 20;     // Base height (Z)
+dish_rad  = 45;     // Radius of 90mm dish
+cradle_r  = 46;     // Radius of the cradle cutout
+cradle_z  = 52;    // Z-coordinate of the cylinder axis
+cradle_y  = 0;     // Y-coordinate of the cylinder axis (centered)
+divider_t = 3;      // Thickness of divider plates
+divider_h  = 60;    // Height of divider plates
+num_slots = 10;     // Number of dishes/slots
+num_divs  = 11;     // Number of divider plates
+
+$fn = 128;
+
+// Calculation for spacing
+// 11 dividers create 10 slots. 
+// Dividers are at x = [-100, -80, ..., 100]
+// This means the distance between divider centers is 20mm.
+// Slot width = 20mm - 3mm = 17mm.
+
+module base() {
+    translate([-L/2, -W/2, 0])
+        cube([L, W, H_base]);
+}
+
+module divider() {
+    // Dividers rise from z=0 to z=60
+    // They are 3mm thick in X, 80mm wide in Y
+    translate([-divider_t/2, -W/2, 0])
+        cube([divider_t, W, divider_h]);
+}
+
+module cradle_cutout() {
+    // The cradle is a cylinder axis along X.
+    // Axis is at y = 0, z = 52.
+    // Radius is 46.
+    // Bottom of cradle: 52 - 46 = 6mm.
+    // The cradle is cut along the whole length.
+    translate([-L/2 - 1, -cradle_r, cradle_z - cradle_r])
+        rotate([0, 90, 0])
+            cylinder(h = L + 2, r = cradle_r);
+}
+
+// Construction
+union() {
+    // The Base
+    base();
+    
+    // The Dividers
+    // Spaced 20mm apart from -100 to 100
+    for (i = [0 : num_divs - 1]) {
+        x_pos = -100 + (i * 20);
+        translate([x_pos, 0, 0])
+            divider();
+    }
+}
+
+// The cradle is subtracted from the union of base and dividers
+// However, the prompt says "the cradle is not cut through them [the dividers]".
+// This implies the cradle only affects the base.
+// But it also says "A curved cradle... is cut along its whole length".
+// To satisfy "the cradle is not cut through them", we subtract the cradle 
+// from the base ONLY, or we use a difference on the whole assembly 
+// but ensure the dividers are added back or the subtraction is limited.
+// Let's follow the logic: Base is cut by cradle. Dividers are solid.
+
+difference() {
+    // We use a union of base and dividers as the main body
+    // But the prompt says "the cradle is not cut through them [the dividers]".
+    // This means the cradle only removes material from the base.
+    
+    union() {
+        base();
+        for (i = [0 : num_divs - 1]) {
+            x_pos = -100 + (i * 20);
+            translate([x_pos, 0, 0])
+                divider();
+        }
+    }
+    
+    // To ensure the cradle does NOT cut the dividers, we must only 
+    // subtract the cradle from the base.
+    // We achieve this by subtracting the cradle from the base, 
+    // then adding the dividers.
+    
+    // Wait, the prompt says: "A curved cradle... is cut along its whole length... 
+    // the cradle is not cut through them [the dividers]."
+    // This is a contradiction if the cradle is cut along the whole length.
+    // If the cradle is cut along the whole length, it would hit the dividers.
+    // If it doesn't cut the dividers, it's not cut along the whole length.
+    // Interpretation: The cradle is a feature of the base, and the dividers 
+    // sit on top/around it, but the dividers themselves remain rectangular 
+    // and are not shaped by the cylinder.
+    
+    // Let's model it as: (Base - Cradle) + Dividers.
+    // This way the cradle only affects the base.
+}
+
+// Corrected logic to match "cradle is not cut through them":
+// 1. Create Base.
+// 2. Subtract Cradle from Base.
+// 3. Add Dividers.
+
+difference() {
+    base();
+    cradle_cutout();
+}
+
+// Re-adding dividers to the final assembly
+// Since I cannot use 'difference' on a 'union' and then add to it 
+// in a single block without complex nesting, I will structure it as:
+// Final = (Base - Cradle) + Dividers
+
+// Let's rewrite the final assembly block:
+
+/* 
+   Final Assembly Structure:
+   union() {
+      difference() {
+         base();
+         cradle_cutout();
+      }
+      for (i = [0 : num_divs - 1]) {
+         x_pos = -100 + (i * 20);
+         translate([x_pos, 0, 0]) divider();
+      }
+   }
+*/
+
+// Redefining the whole file structure for the final render:
+
+// (The code below is the actual rendered output)
+```
+
+```openscad
+// Petri Dish Rack
+// Designed for

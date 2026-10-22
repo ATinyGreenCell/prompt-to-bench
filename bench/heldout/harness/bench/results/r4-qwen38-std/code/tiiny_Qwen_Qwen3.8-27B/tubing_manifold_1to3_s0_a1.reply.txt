@@ -1,0 +1,78 @@
+```openscad
+// Manifold block: 1-in / 3-out, FDM print orientation (rests on XY, builds +Z)
+
+// ---- Block envelope ----
+L = 60;          // length along X
+W = 24;          // width  along Y
+H = 16;          // height along Z (mid-plane z = 8)
+
+// ---- Channel / socket dimensions ----
+d_ch   = 3.0;    // channel bore diameter
+d_sock = 4.2;    // socket bore diameter
+inlet_depth = 8; // inlet socket depth (from -X face)
+out_depth   = 6; // outlet socket depth (from +Y face)
+
+// ---- Feature positions (absolute, block centred on origin) ----
+x_inlet   = -L/2;   // -30, -X face
+x_main_end = 15;    // main channel stops here (closed end)
+x_branch  = [-15, 0, 15];  // branch points along X
+y_out     =  W/2;   //  12, +Y face
+y_inlet   =  0;     // inlet / main channel centreline in Y
+z_mid     =  H/2;   //  8, channel mid-plane
+
+// ---- Screw holes ----
+d_screw = 3.4;      // M3 clearance
+x_screw = [-25, 25];
+y_screw = -6;
+
+// ---- Print quality ----
+$fn = 64;
+
+// ============================
+//  SOLID BLOCK
+// ============================
+block = translate([-L/2, -W/2, 0]) cube([L, W, H]);
+
+// ============================
+//  CUTTING TOOL (union of all bores)
+// ============================
+cut = union() {
+
+    // ---- Inlet socket: 4.2 mm dia, 8 mm deep, from -X face at y=0 ----
+    translate([x_inlet, y_inlet, z_mid])
+        rotate([0, 90, 0])
+            cylinder(h = inlet_depth + 0.05, d = d_sock, $fn = $fn);
+
+    // ---- Main channel: 3 mm dia, from inlet to x = 15 (closed end) ----
+    translate([x_inlet, y_inlet, z_mid])
+        rotate([0, 90, 0])
+            cylinder(h = (x_main_end - x_inlet) + 0.05, d = d_ch, $fn = $fn);
+
+    // ---- Three outlet branches: 3 mm dia, +Y direction to +Y face ----
+    for (xb = x_branch) {
+        // branch channel: from y = 0 to +Y face, 3 mm dia
+        translate([xb, 0, z_mid])
+            rotate([90, 0, 0])
+                cylinder(h = y_out + 0.05, d = d_ch, $fn = $fn);
+
+        // outlet socket: 4.2 mm dia, 6 mm deep, from +Y face
+        translate([xb, y_out, z_mid])
+            rotate([90, 0, 0])
+                cylinder(h = out_depth + 0.05, d = d_sock, $fn = $fn);
+    }
+
+    // ---- Two M3 vertical through-holes ----
+    for (xs = x_screw) {
+        translate([xs, y_screw, -0.05])
+            cylinder(h = H + 0.1, d = d_screw, $fn = $fn);
+    }
+};
+
+// ============================
+//  FINAL PART
+// ============================
+difference() {
+    block;
+    cut;
+}
+```

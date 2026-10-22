@@ -1,0 +1,18 @@
+Features: {"bodies": [{"solids": [{"shape": "cylinder", "d": 50, "h": 4, "at": [0, 0, 0]}, {"shape": "revolve", "profile": [[25, 4], [11, 23], [22, 33]], "at": [0, 0, 0]}, {"shape": "cylinder", "d": 22, "h": 19, "at": [0, 0, 14]}], "cuts": [{"cut": "hole", "d": 11, "depth": 10, "at": [0, 0]}, {"cut": "ring_groove", "d_outer": 22, "depth": 3, "width": 11, "z": 6}, {"cut": "side_hole", "d": 4, "axis": "x", "z": 18, "at": [0, 0]}]}]}
+
+```openscad
+// Built by bench/smallmodels/features/compiler.py from a list of features.
+$fn = 64;
+difference() {
+  union() {
+    translate([0, 0, 0]) cylinder(d = 50, h = 4);
+    translate([0, 0, 0]) rotate_extrude() polygon([[25, 4], [11, 23], [22, 33]]);
+    translate([0, 0, 14]) cylinder(d = 22, h = 19);
+  }
+  union() {
+    translate([0, 0, 22.99]) rotate([0, 0, 0]) cylinder(d = 11, h = 10.02);
+    translate([0, 0, 0.5]) difference() { cylinder(d = 24, h = 11); translate([0, 0, -1]) cylinder(d = 16, h = 13); }
+    translate([0, 0, 18]) rotate([0, 0, 0]) rotate([0, 90, 0]) cylinder(d = 4, h = 1132, center = true);
+  }
+}
+```

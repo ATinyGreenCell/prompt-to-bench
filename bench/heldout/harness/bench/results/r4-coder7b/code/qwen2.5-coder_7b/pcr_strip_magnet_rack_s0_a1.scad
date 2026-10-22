@@ -1,0 +1,36 @@
+// Dimensions
+$fn = 64;
+length = 80; // X dimension
+width = 24; // Y dimension
+height = 20; // Z dimension
+tube_seats = 8;
+seat_spacing = 9; // Centre-to-centre spacing of tube seats
+seat_diameter_top = 6.4; // Diameter at the top of each seat
+seat_diameter_bottom = 3; // Diameter at the bottom of each seat
+seat_height = 12; // Height from the top face to the start of the cone
+magnet_length = 60.4; // X dimension of magnets
+magnet_width = 3.3; // Y dimension of magnets
+magnet_height = 10.2; // Z dimension of magnets
+
+// Tube seat holes
+tube_seats_holes = for (i = [0:tube_seats-1])
+    translate([i * seat_spacing - length / 2 + seat_spacing / 2, 0, 0]) cylinder(r = seat_diameter_top / 2, h = seat_height, center = true);
+
+// Cone part of tube seats
+cone_parts = for (i = [0:tube_seats-1])
+    translate([i * seat_spacing - length / 2 + seat_spacing / 2, 0, seat_height]) cylinder(r1 = seat_diameter_top / 2, r2 = seat_diameter_bottom / 2, h = height - seat_height, center = true);
+
+// Magnet pockets
+magnet_pockets = union() {
+    translate([-length / 2 + magnet_length / 2, -6, 0]) cube([magnet_length, magnet_width, magnet_height], center = true);
+    translate([-length / 2 + magnet_length / 2, 6, 0]) cube([magnet_length, magnet_width, magnet_height], center = true);
+};
+
+// Final model
+difference() {
+    union() {
+        tube_seats_holes;
+        cone_parts;
+    };
+    magnet_pockets;
+}

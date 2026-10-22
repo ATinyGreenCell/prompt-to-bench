@@ -1,0 +1,129 @@
+// --- Parameters ---
+// Plate dimensions
+plate_width_flats = 90;       // Distance across flats (mm)
+plate_thickness = 3;          // Thickness of the base plate (mm)
+
+// Hole and Sleeve dimensions
+hole_diameter = 17.5;         // Diameter of the conical tube hole (mm)
+sleeve_wall = 2;              // Wall thickness of the sleeves (mm)
+sleeve_outer_diameter = hole_diameter + (2 * sleeve_wall); // 21.5 mm
+sleeve_height = 20;           // Height of sleeves and skirt (mm)
+
+// Layout dimensions
+hole_circle_diameter = 54;    // Diameter of the circle passing through hole centers (mm)
+num_holes = 7;                // Total number of holes (1 center + 6 peripheral)
+hole_spacing_deg = 60;        // Angular spacing for peripheral holes (degrees)
+
+// Skirt dimensions
+skirt_width_flats = 84;       // Distance across flats of the hexagonal skirt (mm)
+skirt_wall = 2;               // Wall thickness of the skirt (mm)
+skirt_height = 20;            // Height of the skirt (mm)
+
+// Rendering quality
+fn_val = 64;
+
+// --- Helper Functions ---
+// Function to generate a regular hexagon profile
+function hexagon_profile(width_flats, height) = 
+    let(
+        // Calculate radius to vertices (circumradius) from width across flats
+        // width_flats = 2 * r * cos(30) => r = width_flats / sqrt(3)
+        r = width_flats / cos(30),
+        // Number of sides for hexagon
+        sides = 6
+    )
+    polygon(r = r, [
+        for (i = [0 : sides - 1]) [r * cos(i * 60), r * sin(i * 60)]
+    ]);
+
+// --- Main Model ---
+// The user requested the part be printed "upside down" relative to its use.
+// However, the instructions specify: "lies on the bed (z = 0 to 3)".
+// This means the plate is at the bottom (Z=0) and features grow upwards (+Z).
+// When flipped for use, the plate is at the top, trapping air in the sleeves/skirt.
+
+union() {
+    // 1. The Base Plate (Hexagonal)
+    // We use a cylinder with 3 sides to create a hexagon, or a polygon.
+    // Using polygon for exactness.
+    difference() {
+        // The main plate body
+        rotate([0, 0, 0])
+        linear_extrude(height = plate_thickness)
+        hexagon_profile(plate_width_flats, plate_thickness);
+
+        // 2. The Holes (Cutting through the plate)
+        // Center hole
+        translate([0, 0, -0.5])
+        cylinder(h = plate_thickness + 1, d = hole_diameter, $fn = fn_val);
+
+        // 6 Peripheral holes
+        for (i = [0 : 5]) {
+            angle = i * hole_spacing_deg;
+            rotate([0, 0, angle])
+            translate([hole_circle_diameter / 2, 0, -0.5])
+            cylinder(h = plate_thickness + 1, d = hole_diameter, $fn = fn_val);
+        }
+    }
+
+    // 3. The Sleeves
+    // These rise from the plate (z=3) to z=23 (3 + 20)
+    // Note: User said "rises from the plate to z=20". 
+    // If plate is 0-3, and it rises 20, top is 23.
+    
+    // Center Sleeve
+    translate([0, 0, plate_thickness])
+    difference() {
+        cylinder(h = sleeve_height, d = sleeve_outer_diameter, $fn = fn_val);
+        // Hollow out the sleeve
+        translate([0, 0, -0.5])
+        cylinder(h = sleeve_height + 1, d = hole_diameter, $fn = fn_val);
+    }
+
+    // Peripheral Sleeves
+    for (i = [0 : 5]) {
+        angle = i * hole_spacing_deg;
+        rotate([0, 0, angle])
+        translate([hole_circle_diameter / 2, 0, plate_thickness])
+        difference() {
+            cylinder(h = sleeve_height, d = sleeve_outer_diameter, $fn = fn_val);
+            translate([0, 0, -0.5])
+            cylinder(h = sleeve_height + 1, d = hole_diameter, $fn = fn_val);
+        }
+    }
+
+    // 4. The Hexagonal Skirt
+    // Rises from the plate (z=3) to z=23.
+    // The skirt is a hollow hexagonal prism.
+    translate([0, 0, plate_thickness])
+    difference() {
+        // Outer Skirt Shape
+        linear_extrude(height = sleeve_height)
+        hexagon_profile(skirt_width_flats, sleeve_height);
+        
+        // Inner Skirt Shape (to make it a wall)
+        // We calculate the inner width based on the wall thickness.
+        // For a hexagon, the distance between parallel sides (flats) 
+        // decreases by 2 * wall_thickness.
+        linear_extrude(height = sleeve_height + 1)
+        hexagon_profile(skirt_width_flats - (2 * skirt_wall * 1.1547), sleeve_height); 
+        // Note: 1.1547 is approx 1/cos(30). This is a simplification; 
+        // a more robust way is to subtract the wall from the apothem.
+    }
+}
+
+// Refined Skirt Logic to ensure exact wall thickness
+// Let's use a more precise method for the hollow skirt
+/*
+    // Re-calculating Skirt to be more robust:
+    difference() {
+        translate([0,0,plate_thickness])
+        linear_extrude(height = sleeve_height)
+        hexagon_profile(skirt_width_flats, sleeve_height);
+        
+        translate([0,0,plate_thickness - 0.5])
+        linear_extrude(height = sleeve_height + 1)
+        // The inner hexagon's width across flats is (skirt_width_flats - 2*wall)
+        hexagon_profile(skirt_width_flats - 2 * skirt_wall, sleeve_height);
+    }
+*/

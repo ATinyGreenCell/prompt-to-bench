@@ -1,0 +1,122 @@
+// 90 mm Petri dish rack, printed as used
+// Base: 203 x 80 x 20 mm, centred on origin in X and Y
+// Curved cradle: inside of a cylinder R=46 mm, axis along X at y=0, z=52
+// 11 divider plates 3 mm thick, 80 mm wide, z=0..60, 20 mm apart
+// 10 slots of 17 mm width, one dish per slot
+
+$fn = 64;
+
+// Base block dimensions
+base_len  = 203;   // X
+base_wid  = 80;    // Y
+base_hgt  = 20;    // Z
+
+// Cradle cylinder
+cradle_r  = 46;    // radius of cradle cylinder
+cradle_z  = 52;    // z of cylinder axis
+cradle_y  = 0;     // y of cylinder axis
+
+// Divider plates
+div_thk   = 3;     // thickness in X
+div_wid   = 80;    // width in Y (same as base)
+div_hgt   = 60;    // height in Z
+div_count = 11;    // number of divider plates
+div_start = -100;  // x of first divider
+div_step  = 20;    // spacing between dividers
+
+// Extra margin for cutting shapes (avoid coplanar faces)
+cut_margin = 0.5;
+
+// Build the rack:
+// 1. Base block
+// 2. Union of divider plates
+// 3. Difference with cradle cylinder (cut through base and dividers, but not through dividers themselves)
+//    Actually, the cradle is cut through the base AND through the dividers? 
+//    Re-reading: "the cradle is not cut through them" - meaning the dividers are NOT cut by the cradle.
+//    So the cradle cut only goes through the base block, not through the divider plates.
+//    But wait - the dividers rise from z=0 to z=60, and the cradle cylinder axis is at z=52 with radius 46.
+//    The bottom of the cradle is at z=52-46=6. The top is at z=52+46=98.
+//    The dividers go up to z=60. So the cradle cylinder would intersect the dividers in the region z=6..60.
+//    But the user says "the cradle is not cut through them" - so the dividers remain solid.
+//    This means the cradle cut only removes material from the base block (z=0..20), not from the dividers.
+//    But the base block is only 20 mm tall, and the cradle bottoms out at z=6. So the cradle cut
+//    removes material from the base in the region where the cylinder overlaps the base.
+//    The dividers are separate solid pieces that are NOT cut by the cradle.
+
+// Approach:
+// - Start with base block
+// - Cut the cradle cylinder from the base block only
+// - Union with divider plates (which are not cut)
+
+// The cradle cylinder cut: cylinder of radius 46, axis along X at y=0, z=52
+// We need to cut this from the base block. The cylinder extends along X beyond the base.
+// For the difference, the cutting shape must extend past the faces it cuts.
+
+// Cylinder along X axis: we can use a cylinder with axis along X.
+// In OpenSCAD, cylinder() has axis along Z by default.
+// To get a cylinder along X, we can rotate it 90 degrees around Y.
+// Or use rotate_extrude, or just use a cylinder and rotate.
+
+// Actually, simpler: use a cylinder with height long enough to cover the base in X,
+// and rotate it so its axis is along X.
+
+// Cylinder: radius=46, height=base_len + 2*cut_margin (to extend past both ends in X)
+// Place it so its axis is along X at y=0, z=52.
+// Default cylinder axis is Z. Rotate 90 deg around Y to make axis X.
+// After rotation, the cylinder's local Z becomes global X.
+// The cylinder is centered on its axis by default (height extends from 0 to height along local Z).
+// So we need to translate it so the center of the cylinder (midpoint of its height) is at the desired position.
+
+// Let's think: a cylinder of height H along local Z, centered at origin, goes from z=-H/2 to z=H/2.
+// After rotate(90, Y), local Z -> global X, local X -> global -Z, local Y -> global Y.
+// So the cylinder extends from x=-H/2 to x=H/2, and its cross-section is in the Y-Z plane.
+// We want the axis at y=0, z=52. So after rotation, we translate by (0, 0, 52) to move the axis to z=52.
+// But wait: after rotate(90, Y), the local Z axis points in global X. The local X axis points in global -Z.
+// The cylinder's cross-section (in local X-Y plane) becomes global -Z-Y plane.
+// The center of the cross-section is at local (0,0), which after rotation is at global (0,0,0) for the axis line.
+// Then translating by (0, 0, 52) puts the axis at z=52. Good.
+
+// So: translate(0, 0, cradle_z) rotate(90, Y) cylinder(r=cradle_r, h=base_len+2*cut_margin, center=true)
+// With center=true, the cylinder is centered on its axis, extending from -H/2 to H/2 along local Z (global X).
+
+// For the difference, the cutting cylinder must extend past the base in all directions it cuts.
+// The base is 203 long in X, 80 wide in Y, 20 tall in Z.
+// The cylinder radius is 46, so in Y it extends from -46 to 46 (within the base's -40 to 40? No, base is 80 wide, so -40 to 40).
+// Wait, base is 80 mm wide in Y, so from y=-40 to y=40. Cylinder radius 46 extends from y=-46 to y=46, which is past the base in Y. Good.
+// In Z, the cylinder extends from z=52-46=6 to z=52+46=98. The base is z=0 to z=20. So the cylinder overlaps the base in z=6 to z=20.
+// The cutting shape extends past the base in Z (up to 98) and in Y (to ±46), and in X (to ±(base_len/2 + cut_margin)).
+// This satisfies rule 5.
+
+// Divider plates: 11 plates at x = -100, -80, ..., 100
+// Each plate: 3 mm thick in X, 80 mm wide in Y, 60 mm tall in Z
+// They are centered on the base in Y (from y=-40 to y=40)
+// They rise from z=0 to z=60
+
+// The plates are NOT cut by the cradle. So we just union them.
+
+// Final model:
+// union(
+//   difference(
+//     cube([base_len, base_wid, base_hgt], center=[true, true, false]),
+//     translate(0, 0, cradle_z) rotate(90, Y) cylinder(r=cradle_r, h=base_len+2*cut_margin, center=true)
+//   ),
+//   for (i = 0; i < div_count; i++) {
+//     x_pos = div_start + i * div_step;
+//     translate([x_pos - div_thk/2, -base_wid/2, 0])
+//     cube([div_thk, div_wid, div_hgt])
+//   }
+// )
+
+// Let's write it out:
+
+union() {
+    // Base block with cradle cut
+    difference() {
+        // Base block: 203 x 80 x 20, centered in X and Y, bottom at z=0
+        cube([base_len, base_wid, base_hgt], center=[true, true, false]);
+        
+        // Cradle cutting cylinder: axis along X at y=0, z=52, radius 46
+        // Extend past base in X by cut_margin on each side
+        translate([0, 0, cradle_z])
+        rotate([0, 90, 0])
+        cylinder(r=cradle_r, h=base_len + 2*cut_margin, center=true);

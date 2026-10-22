@@ -1,0 +1,56 @@
+// Wall-mounted holder for a 10 mL syringe (hangs tip-down)
+// Printed as used: standing on bed, back face (y = +15) goes against the wall
+
+$fn = 96;
+
+// ---------------- Block ----------------
+block_w = 50;      // X width
+block_d = 30;      // Y depth
+block_h = 40;      // Z height
+
+// ---------------- Barrel channel ----------------
+chan_w   = 16.5;          // channel width (X)
+chan_r   = chan_w / 2;    // 8.25 mm radius of rear half-circle
+chan_cy  = 0;             // Y of half-circle centre
+
+// ---------------- Flange slot ----------------
+slot_w      = 34;     // X width, centred
+slot_z0     = 30;     // bottom of slot
+slot_h      = 2.6;    // slot height (z = 30 to 32.6)
+slot_back_y = 11;     // slot cut from front face back to this Y
+
+// ---------------- Screw holes ----------------
+screw_d  = 4.5;           // M4 clearance hole
+screw_x  = [-19, 19];     // X positions
+screw_z  = 15;            // Z height
+
+// ---------------- Misc ----------------
+eps = 0.5;   // overshoot for clean cuts
+
+front_y = -block_d / 2;   // -15
+back_y  =  block_d / 2;   // +15
+
+difference() {
+    // Main block
+    translate([-block_w / 2, front_y, 0])
+        cube([block_w, block_d, block_h]);
+
+    // Barrel channel: half-circle at back, straight sides out to the front face
+    translate([0, 0, -eps])
+        linear_extrude(height = block_h + 2 * eps)
+            hull() {
+                translate([0, chan_cy]) circle(r = chan_r);
+                translate([-chan_r, front_y - eps])
+                    square([chan_w, chan_cy - (front_y - eps)]);
+            }
+
+    // Flange slot: from front face back to y = 11
+    translate([-slot_w / 2, front_y - eps, slot_z0])
+        cube([slot_w, (slot_back_y - front_y) + eps, slot_h]);
+
+    // M4 wall-screw holes, front to back along Y
+    for (x = screw_x)
+        translate([x, front_y - eps, screw_z])
+            rotate([-90, 0, 0])
+                cylinder(d = screw_d, h = block_d + 2 * eps);
+}

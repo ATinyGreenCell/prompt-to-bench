@@ -1,0 +1,71 @@
+```openscad
+// Wall-mounted 10 mL syringe holder
+// Print orientation: block stands on the bed (z=0), back face (y=+15) against wall.
+// Centred on origin in X and Y.
+
+$fn = 64;
+
+// ---- Block dimensions (measured with calipers) ----
+block_w = 50;   // X width
+block_d = 30;   // Y depth
+block_h = 40;   // Z height
+
+// ---- Barrel channel (16.5 mm wide vertical slot, full height) ----
+barrel_w   = 16.5;
+barrel_r   = barrel_w / 2;          // 8.25 mm half-circle radius
+barrel_cx  = 0;                     // centre x of the half-circle
+barrel_cy  = 0;                     // centre y of the half-circle (back end)
+barrel_yf  = -block_d / 2;          // front face y = -15 (straight sides run to here)
+
+// ---- Finger-flange slot (34 mm wide, 2.6 mm tall, z 30..32.6, from front to y=11) ----
+flange_w   = 34;
+flange_h   = 2.6;
+flange_z0  = 30;
+flange_yb  = 11;                    // back end of the slot
+
+// ---- M4 wall-screw clearance holes (4.5 mm, through front-to-back) ----
+screw_d    = 4.5;
+screw_x    = 19;                    // holes at x = -19 and +19
+screw_z    = 15;
+
+// ---- Base solid: block standing on the bed, centred in X and Y ----
+module base() { translate([-block_w/2, -block_d/2, 0])
+      cube([block_w, block_d, block_h]); }
+
+// ---- Barrel channel: half-circle (back) + straight sides (to front face) ----
+// The half-circle is centred at (0,0) and opens toward the front (negative Y).
+// The straight sides run from y=0 to y=-15, so the channel is a full-height slot.
+module barrel_channel() { union() {
+    // Half-circle (back end), centred at (0,0), opening toward -Y
+    translate([barrel_cx, barrel_cy, -1])
+        linear_extrude(height = block_h + 2)
+            polygon([
+                [ 0,  0],
+                [ 0,  barrel_r],
+                [ barrel_r,  0],
+                [ 0, -barrel_r],
+                [-barrel_r,  0],
+                [ 0, -barrel_r]
+            ]);
+    // Straight sides from y=0 to y=-15 (front face), full height
+    translate([-barrel_w/2, barrel_yf, -1])
+        cube([barrel_w, -barrel_yf, block_h + 2]);
+} }
+
+// ---- Finger-flange slot: 34 mm wide, 2.6 mm tall, z 30..32.6, y -15..11 ----
+module flange_slot() { translate([-flange_w/2, flange_yb, flange_z0])
+             cube([flange_w, -block_d/2 - flange_yb, flange_h]); }
+
+// ---- M4 screw clearance holes: 4.5 mm dia, through front-to-back (along Y) ----
+module screw_holes() { for (sx = [-screw_x, screw_x])
+    translate([sx, -block_d/2 - 1, screw_z - screw_d/2])
+        cylinder(h = block_d + 2, r = screw_d/2, $fn = $fn); }
+
+// ---- Final part ----
+difference() {
+    base();
+    barrel_channel();
+    flange_slot();
+    screw_holes();
+}
+```

@@ -1,0 +1,66 @@
+// Tubing manifold: 1 inlet -> 3 outlets
+// Print orientation: lying flat on bed, z = 0 at bottom
+
+$fn = 64;
+
+// Block
+block_l = 60;      // length along X
+block_w = 24;      // width along Y
+block_h = 16;      // height along Z
+
+// Channels
+ch_d   = 3;        // channel diameter
+ch_z   = 8;        // channel mid-plane height
+main_end_x = 15;   // main channel closed end (x)
+
+// Inlet socket (-X face, y = 0)
+inlet_sock_d = 4.2;   // socket diameter for 4 mm tubing
+inlet_sock_depth = 8; // socket depth
+
+// Outlets (run +Y to +Y face)
+outlet_x = [-15, 0, 15];  // branch positions
+outlet_sock_d = 4.2;      // socket diameter
+outlet_sock_depth = 6;    // socket depth
+
+// Mounting holes
+screw_d = 3.4;            // M3 clearance
+screw_x = [-25, 25];      // hole x positions
+screw_y = -6;             // hole y position
+
+eps = 0.5;                // overcut for clean differences
+
+difference() {
+    // Solid block
+    translate([-block_l/2, -block_w/2, 0])
+        cube([block_l, block_w, block_h]);
+
+    // Inlet socket
+    translate([-block_l/2 - eps, 0, ch_z])
+        rotate([0, 90, 0])
+            cylinder(d = inlet_sock_d, h = inlet_sock_depth + eps);
+
+    // Main channel from -X face to closed end at x = 15
+    translate([-block_l/2 - eps, 0, ch_z])
+        rotate([0, 90, 0])
+            cylinder(d = ch_d, h = (main_end_x + block_l/2) + eps);
+    // Rounded closed end so channel fully covers the last outlet
+    translate([main_end_x, 0, ch_z])
+        sphere(d = ch_d);
+
+    // Outlet channels and sockets
+    for (x = outlet_x) {
+        // Channel from main line (y = 0) to +Y face
+        translate([x, 0, ch_z])
+            rotate([-90, 0, 0])
+                cylinder(d = ch_d, h = block_w/2 + eps);
+        // Socket at +Y face
+        translate([x, block_w/2 - outlet_sock_depth, ch_z])
+            rotate([-90, 0, 0])
+                cylinder(d = outlet_sock_d, h = outlet_sock_depth + eps);
+    }
+
+    // M3 vertical through-holes
+    for (x = screw_x)
+        translate([x, screw_y, -eps])
+            cylinder(d = screw_d, h = block_h + 2*eps);
+}

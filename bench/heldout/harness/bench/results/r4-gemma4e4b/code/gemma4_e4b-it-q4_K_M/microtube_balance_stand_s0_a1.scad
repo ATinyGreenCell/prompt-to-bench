@@ -1,0 +1,79 @@
+// --- Dimensions in mm ---
+
+// Base dimensions
+base_diameter = 50;      // Diameter of the base disc
+base_height = 4;          // Height of the base disc
+
+// Cone dimensions (Base to Column)
+cone_start_z = 4;         // Z where cone starts
+cone_end_z = 14;          // Z where cone ends
+cone_start_diameter = 50; // Diameter at z=4
+cone_end_diameter = 22;   // Diameter at z=14
+
+// Column dimensions (Cylinder section)
+column_height = 33 - 14;  // Height of the main column (from z=14 to z=33)
+column_diameter = 22;     // Diameter of the column
+
+// Tube Seat dimensions
+seat_start_z = 33;        // Z where tube seat starts
+seat_end_z = 6;           // Z where tube seat ends (Bottom tip is at z=6)
+seat_diameter_top = 11;   // Diameter at z=33
+seat_diameter_bottom = 3; // Diameter at z=6
+
+// Viewing Window dimensions
+window_width = 4;         // Width of the viewing window in Y direction
+window_start_z = 18;      // Start Z for window cut
+window_end_z = 30;        // End Z for window cut
+
+// Tolerance for cutting operations (to avoid coplanar faces)
+tolerance = 0.5;
+
+
+// --- Main Assembly ---
+
+difference() {
+    // 1. Base Disc and Structure (Solid part)
+    union() {
+        // Base disc (Z=0 to Z=4)
+        cylinder(h = base_height, r = base_diameter / 2, $fn = 64);
+
+        // Cone section (Z=4 to Z=14) - Approximated using hull of two spheres/disks for smooth transition
+        hull() {
+            translate([0, 0, cone_start_z]) sphere(r = cone_start_diameter / 2);
+            translate([0, 0, cone_end_z]) sphere(r = cone_end_diameter / 2);
+        }
+
+        // Column section (Z=14 to Z=33) - Cylinder
+        cylinder(h = column_height, r = column_diameter / 2, $fn = 64);
+
+        // Tube Seat Section (Tapered shape from z=33 down to z=6). We use hull between the top and bottom points.
+        hull() {
+            translate([0, 0, seat_start_z]) sphere(r = seat_diameter_top / 2);
+            // The lowest point of the seat is at Z=6. We place the second sphere there.
+            translate([0, 0, seat_end_z]) sphere(r = seat_diameter_bottom / 2);
+        }
+
+    } // End of solid union
+
+    // --- Subtractions (Holes and Windows) ---
+
+    // 2. Tube Seat Cavity Cutout: We subtract the volume defined by the seat profile, ensuring it cuts through the structure below Z=6 if necessary.
+    // The cavity must extend from Z=33 down to Z=6.
+    translate([0, 0, seat_end_z - tolerance]) { // Start cutting slightly below the lowest point of the seat (Z=6)
+        hull() {
+            translate([0, 0, 0]) sphere(r = seat_diameter_top / 2);
+            // The height difference between the two spheres in this hull operation is (seat_start_z - seat_end_z).
+            // We must translate the second sphere correctly relative to the start of the hull operation.
+            translate([0, 0, seat_start_z - seat_end_z]) sphere(r = seat_diameter_bottom / 2);
+        }
+    }
+
+
+    // 3. Viewing Window Cutout (Through the main column wall)
+    // The window is cut through the column wall between Z=18 and Z=30, on the +X side.
+    translate([column_diameter/2 + tolerance, 0, window_start_z]) { // Position cut on the +X side wall (center of cylinder radius)
+        // The cube must be wide enough in Y to cover the specified width (4mm) and tall enough for the Z range.
+        cube([tolerance * 2, window_width + tolerance*2, window_end_z - window_start_z + tolerance], center = true);
+    }
+
+}

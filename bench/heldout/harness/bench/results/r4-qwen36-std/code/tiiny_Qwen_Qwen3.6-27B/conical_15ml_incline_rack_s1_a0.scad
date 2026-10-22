@@ -1,0 +1,70 @@
+// Dimensions (mm)
+block_length_x = 130;
+block_depth_y = 60;
+block_height_z = 45;
+
+// Hole parameters
+hole_diameter = 17.5;
+hole_depth = 40;
+hole_spacing_x = 24;
+num_holes = 5;
+
+// Tilt parameters
+tilt_angle = 30; // degrees from vertical
+top_face_y_offset = -10; // Y position on top face where axis intersects
+
+// Rendering quality
+$fn = 64;
+
+// Main block
+translate([0, 0, 0])
+cube([block_length_x, block_depth_y, block_height_z], center = true);
+
+// Holes
+for (i = [-(num_holes-1)/2 : (num_holes-1)/2]) {
+    x_pos = i * hole_spacing_x;
+    
+    // The axis intersects the top face at (x_pos, top_face_y_offset, block_height_z/2)
+    // The hole is tilted 30 degrees from vertical in the YZ plane, moving toward +Y as it goes down
+    
+    // Calculate the center of the hole at the top face
+    top_center = [x_pos, top_face_y_offset, block_height_z/2];
+    
+    // The hole axis direction: tilted 30 deg from vertical (+Z is up, so vertical is -Z direction into block)
+    // In YZ plane: direction vector has components in +Y and -Z
+    // angle from vertical = 30 deg, so from -Z axis, we rotate 30 deg toward +Y
+    // Direction vector: (0, sin(30), -cos(30))
+    
+    // We need to create a cylinder along this axis
+    // OpenSCAD cylinders are along Z axis by default, so we rotate it
+    
+    // Position the cylinder at the top center, then rotate it so its axis aligns with the tilt
+    // The cylinder will be created along Z, then rotated around X axis by tilt_angle
+    // But we need to be careful about the rotation center
+    
+    // Strategy: 
+    // 1. Place cylinder center at top_center
+    // 2. Rotate around X axis by tilt_angle (so it tilts toward +Y)
+    // 3. The cylinder extends in -Z direction (into the block)
+    
+    // However, rotate_extrude and cylinder rotation can be tricky. Let's use a different approach:
+    // Create the cylinder at origin, oriented along Z, then translate and rotate
+    
+    // The cylinder axis should go from top_center downward at 30 deg from vertical toward +Y
+    // If we rotate a vertical cylinder (along -Z) by tilt_angle around the X axis, 
+    // the top stays at top_center and the bottom moves toward +Y
+    
+    // For the difference operation, we need the cylinder to extend past the block
+    // The hole depth is 40 mm along the axis, so we make the cylinder slightly longer
+    
+    translate(top_center)
+    rotate([tilt_angle, 0, 0])
+    cylinder(r = hole_diameter/2, h = hole_depth + 1, center = false);
+}
+
+// Apply the holes via difference
+// Actually, we need to structure this properly with difference()
+// Let me restructure the code:
+
+// The above code won't work as written because we need difference()
+// Let me rewrite properly:

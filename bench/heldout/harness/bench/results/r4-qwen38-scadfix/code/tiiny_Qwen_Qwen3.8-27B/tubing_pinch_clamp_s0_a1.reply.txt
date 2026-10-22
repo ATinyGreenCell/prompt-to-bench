@@ -1,0 +1,124 @@
+```openscad
+// Pinch clamp for silicone tubing (up to 6.4 mm across)
+// Printed flat: 2-D profile in XY plane, extruded 8 mm along Z.
+
+$fn = 64;
+
+// ---- Global dimensions (mm) ----
+extrude_h   = 8;    // thickness along Z
+
+// Lower jaw
+lower_bar_x0 = 0;   // left end of lower bar
+lower_bar_x1 = 50;  // right end of lower bar
+lower_bar_y0 = 0;   // bottom of lower bar
+lower_bar_y1 = 4;   // top of lower bar
+
+// Lower tongue (thinner, extends past bar)
+tongue_x0 = 50;     // left end of tongue
+tongue_x1 = 56;     // right end of tongue
+tongue_y0 = 2.5;    // bottom of tongue
+tongue_y1 = 4;      // top of tongue
+
+// Upper jaw
+upper_bar_x0 = 0;   // left end of upper bar
+upper_bar_x1 = 60;  // right end of upper bar
+upper_bar_y0 = 12;  // bottom of upper bar
+upper_bar_y1 = 16;  // top of upper bar
+
+// Living hinge (half-ring on x < 0 side, centred at (0,8))
+hinge_cx = 0;       // centre x
+hinge_cy = 8;       // centre y
+hinge_r_out = 8;    // outer radius
+hinge_r_in  = 7.2;  // inner radius (0.8 mm thick)
+
+// Pinch ridges (half-round, 1.5 mm radius, on inner faces at x = 27.5)
+ridge_x = 27.5;     // x position of ridge centres
+ridge_r = 1.5;      // ridge radius
+ridge_lower_cy = 4;  // centre y for lower ridge (top of lower bar)
+ridge_upper_cy = 12; // centre y for upper ridge (bottom of upper bar)
+
+// Snap latch (hangs from upper jaw right end)
+latch_leg_x0 = 57;  // left end of latch leg
+latch_leg_x1 = 60;  // right end of latch leg
+latch_leg_y0 = 4.5; // bottom of latch leg
+latch_leg_y1 = 12;  // top of latch leg
+
+latch_nose_x0 = 54.5; // left end of nose
+latch_nose_x1 = 57;   // right end of nose
+latch_nose_y0 = 4.5;  // bottom of nose
+latch_nose_y1 = 5.5;  // top of nose (0.5 mm above tongue top at y=4)
+
+// ---- Helper: half-ring (annular sector) on the x < 0 side ----
+module half_ring(cx, cy, r_out, r_in) {
+    difference() {
+        // Outer half-disc (left half, x <= cx)
+        translate([cx, cy])
+            intersection(
+                circle(r = r_out),
+                translate([-r_out, 0]) square([r_out, 2 * r_out])
+            );
+        // Inner half-disc (left half, x <= cx)
+        translate([cx, cy])
+            intersection(
+                circle(r = r_in),
+                translate([-r_in, 0]) square([r_in, 2 * r_in])
+            );
+    }
+}
+
+// ---- Helper: half-disc (solid) on the x < 0 side ----
+module half_disc(cx, cy, r) {
+    translate([cx, cy])
+        intersection(
+            circle(r = r),
+            translate([-r, 0]) square([r, 2 * r])
+        );
+}
+
+// ---- Helper: half-disc (solid) on the x > 0 side ----
+module half_disc_right(cx, cy, r) {
+    translate([cx, cy])
+        intersection(
+            circle(r = r),
+            translate([0, -r]) square([r, 2 * r])
+        );
+}
+
+// ---- Build the 2-D profile ----
+module profile() {
+    union() {
+        // Lower jaw bar
+        translate([lower_bar_x0, lower_bar_y0])
+            square([lower_bar_x1 - lower_bar_x0, lower_bar_y1 - lower_bar_y0]);
+
+        // Lower tongue
+        translate([tongue_x0, tongue_y0])
+            square([tongue_x1 - tongue_x0, tongue_y1 - tongue_y0]);
+
+        // Upper jaw bar
+        translate([upper_bar_x0, upper_bar_y0])
+            square([upper_bar_x1 - upper_bar_x0, upper_bar_y1 - upper_bar_y0]);
+
+        // Latch leg
+        translate([latch_leg_x0, latch_leg_y0])
+            square([latch_leg_x1 - latch_leg_x0, latch_leg_y1 - latch_leg_y0]);
+
+        // Latch nose
+        translate([latch_nose_x0, latch_nose_y0])
+            square([latch_nose_x1 - latch_nose_x0, latch_nose_y1 - latch_nose_y0]);
+
+        // Living hinge: half-ring on x < 0 side
+        half_ring(hinge_cx, hinge_cy, hinge_r_out, hinge_r_in);
+
+        // Pinch ridge on lower jaw inner face (top, y = 4): half-disc bulging upward
+        half_disc(ridge_x, ridge_lower_cy, ridge_r);
+
+        // Pinch ridge on upper jaw inner face (bottom, y = 12): half-disc bulging downward
+        half_disc_right(ridge_x, ridge_upper_cy, ridge_r);
+    }
+}
+
+// ---- Extrude along Z ----
+linear_extrude(height = extrude_h)
+    profile();
+```

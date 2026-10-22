@@ -1,0 +1,55 @@
+// 8-seat 2 mL round-bottom tube holder (bead-beating puck)
+// Units: millimetres. Print orientation: rests on XY plane, axis on Z, builds +Z.
+
+$fn = 64;
+
+// Puck body
+puck_d   = 80;   // outer diameter of the round puck
+puck_r   = puck_d / 2;   // 40 mm
+puck_h   = 26;   // total height of the puck (top face at z = 26)
+
+// Flat label side: everything beyond this plane is removed
+label_x  = 34;   // cutting plane x = 34 (16 mm chord from centre)
+
+// Tube seats (8 x 2 mL round-bottom tubes)
+seat_d   = 11.2; // hole / half-sphere diameter
+seat_r   = seat_d / 2;   // 5.6 mm
+seat_top_z = puck_h;     // top face of the puck (z = 26)
+seat_bot_z = 6;          // lowest point of each half-sphere (20 mm below top face)
+seat_cyl_h = seat_top_z - seat_bot_z;   // 20 mm straight cylindrical part of each seat
+
+// Seat layout: 8 seats on a 50 mm diameter circle, first on +X axis
+seat_circle_d = 50;
+seat_circle_r = seat_circle_d / 2;   // 25 mm
+n_seats = 8;
+
+// ---- Base puck: full cylinder, then the label side is cut flat ----
+module puck() {
+    difference() {
+        cylinder(h = puck_h, r = puck_r, $fn = $fn);
+        // cutting slab extends 1 mm past the x = 34 plane and 1 mm past the top
+        translate([-label_x, -puck_r - 1, -1])
+            cube([1, 2 * (puck_r + 1), puck_h + 2]);
+    }
+}
+
+// ---- One seat: 11.2 mm hole with a half-sphere bottom (lowest point z = 6) ----
+module seat() {
+    union() {
+        // straight cylindrical bore from the half-sphere centre up to the top face
+        cylinder(h = seat_cyl_h, r = seat_r, $fn = $fn);
+        // half-sphere bottom, centred at z = 6 so its lowest point is z = 6
+        translate([0, 0, seat_bot_z])
+            sphere(r = seat_r, $fn = $fn);
+    }
+}
+
+// ---- Final part: puck minus the eight seats ----
+difference() {
+    puck();
+    for (i = [0 : n_seats - 1]) {
+        a = i * 360 / n_seats;
+        translate([seat_circle_r * cos(a), seat_circle_r * sin(a), 0])
+            seat();
+    }
+}

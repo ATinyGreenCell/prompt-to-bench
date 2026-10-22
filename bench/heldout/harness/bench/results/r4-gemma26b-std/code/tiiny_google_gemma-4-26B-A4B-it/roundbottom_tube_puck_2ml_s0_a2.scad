@@ -1,0 +1,63 @@
+// --- Parameters ---
+puck_diameter = 80;          // Diameter of the main puck
+puck_height = 26;            // Total height of the puck
+label_cut_x = 34;            // The X coordinate where the side is cut flat
+
+tube_hole_diameter = 11.2;   // Diameter of the tube hole
+tube_seat_radius = tube_hole_diameter / 2;
+tube_depth_total = 20;       // Depth from top face to the bottom of the hemisphere
+tube_center_circle_dia = 50; // Diameter of the circle where tubes are placed
+num_tubes = 8;               // Number of tube seats
+
+// --- Constants ---
+$fn = 64;
+
+// --- Calculations ---
+puck_radius = puck_diameter / 2;
+tube_center_radius = tube_center_circle_dia / 2;
+
+// Specification Check:
+// Top face is at Z = 26.
+// Lowest point of seat is at Z = 6.
+// Total depth = 26 - 6 = 20mm.
+// Hemisphere diameter = 11.2 -> radius = 5.6.
+// If the bottom of the sphere is at Z = 6, the center of the sphere is at Z = 6 + 5.6 = 11.6.
+// The cylindrical part must go from the top (Z=26) down to the sphere center (Z=11.6).
+// Cylinder height = 26 - 11.6 = 14.4mm.
+
+// --- Main Model ---
+difference() {
+    // The main puck body
+    cylinder(h = puck_height, d = puck_diameter, center = false);
+
+    // The label cut (removes everything beyond x = 34)
+    // We extend the cube in X, Y, and Z to ensure a clean cut
+    translate([label_cut_x, -puck_radius - 1, -1])
+        cube([puck_radius + 2, puck_radius * 2 + 2, puck_height + 2]);
+
+    // The eight tube seats
+    for (i = [0 : num_tubes - 1]) {
+        // Calculate angle: first tube on +X axis (0 degrees)
+        angle = i * (360 / num_tubes);
+        
+        // Position of the tube center
+        tx = tube_center_radius * cos(angle);
+        ty = tube_center_radius * sin(angle);
+        
+        // Position the seat at the top face (Z=26)
+        translate([tx, ty, 26]) {
+            // 1. The cylindrical hole
+            // We use a slightly larger height and extend it above Z=26 to ensure a clean cut
+            // The cylinder goes from Z=26 down to Z=11.6.
+            // We'll make it go from Z=26.01 down to Z=11.6 to avoid coplanar issues.
+            translate([0, 0, -14.4])
+                cylinder(h = 14.4 + 0.01, d = tube_hole_diameter);
+            
+            // 2. The hemispherical bottom
+            // Center of sphere is at Z = 11.6. 
+            // Relative to the translate([tx, ty, 26]), the center is at 11.6 - 26 = -14.4.
+            translate([0, 0, -14.4])
+                sphere(d = tube_hole_diameter);
+        }
+    }
+}

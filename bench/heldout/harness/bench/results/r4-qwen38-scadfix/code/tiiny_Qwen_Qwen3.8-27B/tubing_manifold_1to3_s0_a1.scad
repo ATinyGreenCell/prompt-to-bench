@@ -1,0 +1,81 @@
+// Manifold block: 1-in / 3-out, FDM print orientation (rests on XY, z=0)
+
+// ---- Block envelope ----
+L   = 60;   // length along X
+W   = 24;   // width  along Y
+H   = 16;   // height along Z
+
+// ---- Channel / socket geometry ----
+d_ch   = 3;    // channel bore diameter
+d_sock = 4.2;  // socket bore diameter (for 4 mm tubing)
+z_mid  = 8;    // channel mid-plane (H/2)
+
+// Inlet socket: -X face, y = 0, 8 mm deep
+inlet_depth = 8;
+
+// Outlet sockets: +Y face, 6 mm deep
+outlet_depth = 6;
+
+// Screw holes: M3 clearance, vertical through
+d_screw = 3.4;
+
+// Branch / main-channel X positions
+x_inlet = -L/2;          // -30, inlet face
+x_main_end = 15;         // main channel stops here (closed)
+x_branches = [-15, 0, 15]; // three +Y branches
+
+// Screw hole X positions
+x_screws = [-25, 25];
+y_screw  = -6;
+
+$fn = 64;
+
+// ===================== SOLID =====================
+module block() { cube([L, W, H], center = [true, true, false]); }
+
+// ===================== CUTS =====================
+
+// 1) Inlet socket (4.2 mm, 8 mm deep, from -X face at y=0)
+module inlet_sock() {
+    translate([x_inlet - 0.5, 0, z_mid])
+    rotate([0, 90, 0])
+    cylinder(h = inlet_depth + 0.5, d = d_sock);
+}
+
+// 2) Main channel: 3 mm bore along X from inlet to x_main_end (closed end)
+module main_ch() {
+    translate([x_inlet, 0, z_mid])
+    rotate([0, 90, 0])
+    cylinder(h = (x_main_end - x_inlet) + 0.5, d = d_ch);
+}
+
+// 3) Three outlet branches: 3 mm bore along +Y, each ending in a 4.2 mm socket
+module branches() {
+    for (xb = x_branches)
+        union()
+        (
+            // 3 mm channel from branch point to +Y face
+            translate([xb, 0, z_mid])
+            rotate([90, 0, 0])
+            cylinder(h = W/2 + 0.5, d = d_ch),
+            // 4.2 mm socket, 6 mm deep, at +Y face
+            translate([xb, W/2 + 0.5, z_mid])
+            rotate([90, 0, 0])
+            cylinder(h = outlet_depth + 0.5, d = d_sock)
+        );
+}
+
+// 4) Two M3 vertical through-holes
+module screws() {
+    for (xs = x_screws)
+        translate([xs, y_screw, -0.5])
+        cylinder(h = H + 1, d = d_screw);
+}
+
+// ===================== RESULT =====================
+difference()
+    block();
+    inlet_sock();
+    main_ch();
+    branches();
+    screws();

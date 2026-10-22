@@ -1,0 +1,149 @@
+// PCR Strip Holder for Ice Bucket
+// Designed to hang over a 12mm wall and hold an 8-tube PCR strip.
+// The part is extruded 84mm along the X axis.
+// The profile is in the YZ plane.
+
+// --- Dimensions ---
+length_x        = 84.0;    // Total extrusion length along X
+wall_gap        = 12.5;    // Gap for the bucket wall (16.5 - 4.0)
+inner_leg_h      = 50.0;    // Height of the inner leg
+outer_leg_h      = 50.0;    // Height of the outer leg
+bridge_h         = 4.0;     // Thickness of the top bridge (50 - 46)
+inner_leg_w      = 4.0;     // Width of the inner leg (y = 0 to 4)
+outer_leg_w      = 4.0;     // Width of the outer leg (y = 16.5 to 20.5)
+ledge_thick      = 6.0;     // Thickness of the ledge (z = 0 to 6)
+ledge_depth      = 30.0;    // Depth of the ledge into the ice (y = 0 to -30)
+tube_hole_d      = 6.4;     // Diameter of the PCR tube holes
+tube_hole_pitch  = 9.0;     // Spacing between tube holes along X
+num_tubes        = 8;       // Number of tubes
+
+$fn = 64;
+
+// --- 2D Profile in the YZ plane ---
+// We define the profile in the YZ plane. 
+// In OpenSCAD, 2D shapes are in the XY plane. 
+// We will define it in XY and then rotate it to the YZ plane.
+module profile_2d() {
+    union() {
+        // Inner Leg: y [0, 4], z [0, 50] -> mapped to X [0, 4], Y [0, 50]
+        square([inner_leg_w, inner_leg_h]);
+        
+        // Outer Leg: y [16.5, 20.5], z [0, 50] -> mapped to X [16.5, 20.5], Y [0, 50]
+        translate([16.5, 0]) square([outer_leg_w, outer_leg_h]);
+        
+        // Bridge: y [4, 16.5], z [46, 50] -> mapped to X [4, 16.5], Y [46, 50]
+        translate([4, 46]) square([12.5, bridge_h]);
+        
+        // Ledge: y [-30, 0], z [0, 6] -> mapped to X [-30, 0], Y [0, 6]
+        translate([-ledge_depth, 0]) square([ledge_depth, ledge_thick]);
+    }
+}
+
+// --- 3D Construction ---
+// 1. Create the main body by extruding the 2D profile.
+// 2. Rotate the profile so it sits in the YZ plane.
+// 3. Extrude along the X axis.
+// 4. Subtract the vertical holes.
+
+difference() {
+    // Main Body
+    // We rotate the 2D profile 90 degrees around the X axis to move 
+    // the 'height' (originally Y) to the Z axis.
+    // Then we extrude it along the X axis.
+    rotate([0, 0, 0]) // Placeholder for clarity
+    linear_extrude(height = length_x) {
+        rotate([90, 0, 0]) // Rotate profile so Y becomes Z
+        profile_2d();
+    }
+    
+    // The extrusion above actually creates a part where the "thickness" 
+    // is along X. To center it on X, we must translate the whole object.
+    // However, it's cleaner to translate the profile before extrusion.
+    
+    // Let's re-do the body logic to ensure centering and correct orientation.
+}
+
+// Corrected Assembly Logic:
+// We want the extrusion to be along X.
+// In OpenSCAD, linear_extrude(h) goes along Z.
+// So we define the profile in the XY plane, extrude it along Z, 
+// then rotate the whole thing 90 degrees around Y to make it lie along X.
+
+module final_body() {
+    rotate([0, -90, 0]) // Rotate Z-extrusion to lie along X
+    translate([0, 0, 0]) // Adjusting for the rotation
+    linear_extrude(height = length_x) {
+        profile_2d();
+    }
+}
+
+// Since the user wants it centered on X, and the extrusion is 84mm:
+// We will build the body, then use a difference to subtract holes.
+
+difference() {
+    // The Body
+    // We use a translate to center the 84mm extrusion on X=0.
+    // Since the extrusion is along X, we rotate the 2D profile 
+    // so that the extrusion direction (Z) becomes X.
+    translate([0, 0, 0])
+    rotate([0, 90, 0]) // Rotate Z-extrusion to X-axis
+    translate([-length_x/2, 0, 0]) // Center the extrusion on X
+    linear_extrude(height = length_x) {
+        profile_2d();
+    }
+
+    // The Holes
+    // Holes are vertical (along Z). 
+    // They are located on the ledge: y = -15, z = 0 to 6.
+    // In our profile_2d, the ledge is X [-30, 0], Y [0, 6].
+    // After rotation (rotate 90,0,0), the ledge is X [-30, 0], Z [0, 6].
+    // The holes are at Y = -15 (in the original profile, this was X).
+    // Let's map the coordinates carefully:
+    // Original Profile: X_p, Y_p
+    // After rotate([0, 90, 0]): X_new = X_p, Y_new = -Y_p, Z_new = Z_p (approx)
+    // Wait, let's use a simpler approach:
+    // 1. Define profile in XY.
+    // 2. Extrude along Z.
+    // 3. Rotate 90 around Y to make it lie along X.
+    // 4. Holes are vertical (Z).
+    
+    // Let's use the user's coordinate system:
+    // Profile in YZ plane. Extruded 84mm along X.
+    // This means:
+    // X = 0 to 84 (centered at 0, so -42 to 42)
+    // Y = profile Y
+    // Z = profile Z
+    
+    // Let's define the profile in the YZ plane directly using a polygon.
+    // Then extrude along X.
+    
+    // To make it easy:
+    // 1. Define 2D shape in YZ plane.
+    // 2. Extrude along X.
+    // 3. Subtract holes.
+    
+    // Since OpenSCAD 2D is XY, we define the profile in XY and rotate.
+    // Profile: X_p = Y_profile, Y_p = Z_profile.
+    // After rotate([0, 90, 0]): X_new = X_p, Y_new = -Y_p, Z_new = Z_p.
+    // This is getting confusing. Let's stick to one coordinate system.
+    
+    // Let's define the profile in XY:
+    // X_p = Y_profile (0 to 4, 16.5 to 20.5, etc)
+    // Y_p = Z_profile (0 to 50)
+    // Then extrude along Z.
+    // Then rotate 90 around Y to make it lie along X.
+    // Then translate to center on X.
+    
+    // Let's try this:
+    // 1. Define 2D shape in XY where X is the "Y" of the profile and Y is the "Z" of the profile.
+    // 2. Extrude along Z.
+    // 3. Rotate 90 around Y.
+    // 4. Translate to center on X.
+    // 5. Holes are vertical (Z).
+}
+
+// --- FINAL RE-WRITE (Clean and Correct) ---
+
+module profile_xy() {
+    union() {
+        square([inner_leg_w, inner_leg_h]);

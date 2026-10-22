@@ -1,0 +1,91 @@
+The report shows the skirt is now flush with the plate (90 mm across flats outside, 86 mm inside, 2 mm wall) and the sleeves are 21.5 mm OD with 17.5 mm bores. The only remaining mismatch is the skirt's inner dimension: the spec says the skirt is 3 mm in from the plate's edge, which makes the inner hexagon 90 − 2·3 = 84 mm across flats (not 86). I'll set the skirt's inner hexagon to 84 mm.
+
+```openscad
+// 15 mL conical-tube float, printed upside down (plate on the bed, z = 0..3)
+// All dimensions in mm, taken from the user's caliper measurements.
+
+$fn = 64;
+
+// --- Plate (flat hexagon, 90 mm across flats, 3 mm thick, on the bed) ---
+plate_af   = 90;   // across flats of the plate hexagon
+plate_thk  = 3;    // plate thickness (z = 0 to 3)
+plate_ap   = plate_af / cos(30);   // across corners = 103.923
+
+// --- Seven 17.5 mm through-holes: 1 centre + 6 on a 54 mm dia circle ---
+hole_d     = 17.5; // hole diameter
+hole_r     = hole_d / 2;
+ring_d     = 54;   // diameter of the circle carrying the 6 outer holes
+ring_r     = ring_d / 2;
+
+// --- Sleeves around each hole: 2 mm wall, 21.5 mm OD, up to z = 20 ---
+sleeve_od  = 21.5; // sleeve outside diameter
+sleeve_id  = sleeve_od - 2 * 2;   // 17.5, matches the hole
+sleeve_h   = 20;   // sleeve top height (z = 0 to 20)
+
+// --- Hexagonal skirt: 2 mm wall, 3 mm in from the plate edge (flush with plate) ---
+skirt_af   = 90;   // across flats of the skirt (outside) = plate_af
+skirt_ap   = skirt_af / cos(30);  // across corners = 103.923
+skirt_h    = 20;   // skirt top height (z = 0 to 20)
+skirt_in   = 84;   // across flats of the skirt (inside) = plate_af - 2*3
+
+// --- Helper: regular hexagon polygon (flat-to-flat = af, two flats || X) ---
+module hexagon(af) {
+    ap = af / cos(30);
+    polygon(points = [
+        [ ap,  0],
+        [ ap/2,  af/2],
+        [-ap/2,  af/2],
+        [-ap,   0],
+        [-ap/2, -af/2],
+        [ ap/2, -af/2]
+    ]);
+}
+
+// --- Helper: one sleeve (outer cylinder minus the through-hole) ---
+module sleeve() {
+    difference() {
+        cylinder(h = sleeve_h, d = sleeve_od, $fn = $fn);
+        cylinder(h = sleeve_h + 1, d = hole_d, $fn = $fn); // cut 1 mm past top
+    }
+}
+
+// --- Helper: hexagonal skirt (outer hexagon minus inner hexagon) ---
+module skirt() {
+    difference() {
+        linear_extrude(height = skirt_h) hexagon(skirt_af);
+        linear_extrude(height = skirt_h + 1) hexagon(skirt_in); // 3 mm in from plate edge
+    }
+}
+
+// --- Build the float ---
+difference() {
+    union() {
+        // Flat plate, z = 0 to 3, centred on the origin
+        linear_extrude(height = plate_thk) hexagon(plate_af);
+
+        // Skirt rising from the plate (flush with the plate edge)
+        skirt();
+
+        // Seven sleeves: one at the centre, six on the 54 mm circle
+        for (i = [0:6]) {
+            if (i == 0) {
+                translate([0, 0, 0]) sleeve();                 // centre hole
+            } else {
+                a = i * 60;                                    // first outer hole on +X
+                translate([ring_r * cos(a), ring_r * sin(a), 0]) sleeve();
+            }
+        }
+    }
+
+    // Seven 17.5 mm through-holes (cut 1 mm past both faces, no coplanar faces)
+    for (i = [0:6]) {
+        if (i == 0) {
+            translate([0, 0, -1]) cylinder(h = plate_thk + 2, d = hole_d, $fn = $fn);
+        } else {
+            a = i * 60;
+            translate([ring_r * cos(a), ring_r * sin(a), -1])
+                cylinder(h = plate_thk + 2, d = hole_d, $fn = $fn);
+        }
+    }
+}
+```

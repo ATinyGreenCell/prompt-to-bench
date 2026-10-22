@@ -1,0 +1,66 @@
+// Adapter for phone camera over microscope eyepiece
+// Dimensions measured with calipers
+
+// Plate dimensions
+plate_x = 80;
+plate_y = 60;
+plate_z = 3;
+
+// Camera hole
+camera_hole_dia = 12;
+camera_hole_x = -20;
+camera_hole_y = 10;
+
+// Sleeve dimensions
+sleeve_od = 36.6;
+sleeve_id_lower = 22;
+sleeve_id_upper = 30.6;
+sleeve_z_start = 3;
+sleeve_z_stop = 11;
+sleeve_z_top = 31;
+
+// Centering screws
+screw_hole_dia = 2.5;
+screw_z = 21;
+screw_count = 3;
+screw_angle_start = 0; // +X direction
+
+$fn = 64;
+
+// Base plate - positioned at z=0 to z=3, centered on origin
+translate([-plate_x/2, -plate_y/2, 0])
+  cube([plate_x, plate_y, plate_z]);
+
+// Camera hole through plate - extends slightly past plate thickness
+translate([camera_hole_x, camera_hole_y, -0.01])
+  cylinder(h = plate_z + 0.02, r = camera_hole_dia / 2, center = false);
+
+// Sleeve - lower section (z=3 to z=11) with 22mm bore
+translate([0, 0, sleeve_z_start])
+  difference() {
+    cylinder(h = sleeve_z_stop - sleeve_z_start, r = sleeve_od / 2, center = false);
+    cylinder(h = (sleeve_z_stop - sleeve_z_start) + 0.02, r = sleeve_id_lower / 2, center = false);
+  }
+
+// Sleeve - upper section (z=11 to z=31) with 30.6mm bore
+translate([0, 0, sleeve_z_stop])
+  difference() {
+    cylinder(h = sleeve_z_top - sleeve_z_stop, r = sleeve_od / 2, center = false);
+    cylinder(h = (sleeve_z_top - sleeve_z_stop) + 0.02, r = sleeve_id_upper / 2, center = false);
+  }
+
+// Three radial M3 centering screw holes at z=21
+for (i = [0:screw_count-1]) {
+  angle = screw_angle_start + i * (360 / screw_count);
+  // Position on the sleeve wall at radius = sleeve_od/2
+  x = (sleeve_od / 2) * cos(angle);
+  y = (sleeve_od / 2) * sin(angle);
+  
+  // Hole goes radially through the sleeve wall
+  // Wall thickness = (sleeve_od - sleeve_id_upper)/2 for upper section
+  wall_thickness = (sleeve_od - sleeve_id_upper) / 2;
+  
+  translate([x, y, screw_z])
+    rotate([90, 0, -angle]) // Orient hole radially
+    cylinder(h = wall_thickness + 0.02, r = screw_hole_dia / 2, center = true);
+}

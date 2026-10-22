@@ -1,0 +1,95 @@
+The measurement report shows that the cradle is still not being cut correctly. The issue is that the `cradle_cutter` module uses `cylinder(h = base_l + 2, ...)` which, when placed at `translate([0,0,cradle_z])`, centers the cylinder's height on the Z-axis (from $z = 52 - (base\_l+2)/2$ to $z = 52 + (base\_l+2)/2$). Because the cylinder is rotated 90 degrees around Y, its "height" actually extends along the X-axis. However, the `translate([0,0,cradle_z])` is applying the Z-offset *before* the rotation, meaning the axis is at $z=52$, but the cylinder's length is being centered on $x=0$. The report shows the holes are shifted to $x=51.5$, which confirms the geometry is misaligned.
+
+**Specification Check:**
+- Base length 203 mm: OK
+- Base width 80 mm: OK
+- Base height 20 mm: OK
+- Cradle radius 46 mm: OK (The report shows holes/cradle features now, but they are misaligned)
+- Cradle axis at y=0, z=52: WRONG (Report shows holes centered at $x=51.5$, indicating the cylinder is not centered on the X-axis)
+- Cradle bottoms at z=6: OK (Calculated from $52-46$)
+- 11 divider plates: OK
+- Divider thickness 3 mm: OK
+- Divider width 80 mm: OK
+- Divider height 60 mm: OK
+- Divider positions x = -100, -80, ..., 100: OK
+- Cradle not cut through dividers: OK
+
+**Correction Strategy:**
+The cylinder must be centered on the X-axis. To do this, we translate the cylinder by `base_l/2` along its axis of rotation (X) so that its center is at $x=0$.
+
+```openscad
+// Petri Dish Rack
+// Designed for 90mm diameter dishes standing on edge.
+
+// --- Dimensions ---
+base_l      = 203.0;  // Length of base (X)
+base_w      = 80.0;   // Width of base (Y)
+base_h      = 20.0;   // Height of base (Z)
+
+dish_radius = 45.0;   // Radius of 90mm dish
+cradle_r    = 46.0;   // Radius of the cutting cylinder
+cradle_z    = 52.0;   // Z-offset of the cylinder axis (bottoms at 52-46=6mm)
+
+num_dividers = 11;     // Number of vertical plates
+divider_t    = 3.0;    // Thickness of each divider (X)
+divider_h    = 60.0;   // Height of dividers (Z)
+divider_w    = 80.0;   // Width of dividers (Y)
+
+// Spacing calculation: 
+// 11 dividers create 10 slots. 
+// Total length covered by dividers is from -100 to 100.
+x_start      = -100.0;
+x_end        = 100.0;
+x_step       = 20.0;
+
+$fn = 128;
+
+// --- Modeling ---
+
+// The base block
+module base() {
+    // Centered on X and Y, sitting on Z=0
+    translate([-base_l/2, -base_w/2, 0])
+        cube([base_l, base_w, base_h]);
+}
+
+// The vertical dividers
+module dividers() {
+    for (i = [0 : num_dividers - 1]) {
+        x_pos = x_start + (i * x_step);
+        translate([x_pos, -divider_w/2, 0])
+            cube([divider_t, divider_w, divider_h]);
+    }
+}
+
+// The cradle (the curved groove)
+module cradle_cutter() {
+    // To place a cylinder axis at (y=0, z=52) running along X:
+    // 1. We want the cylinder to be centered on X. 
+    // 2. We rotate it to lie along X.
+    // 3. We translate it to the target Z and Y.
+    // 4. We translate it along X by half its length so its center is at x=0.
+    
+    cylinder_len = base_l + 2;
+    translate([0, 0, cradle_z]) // Move to Z axis height
+        rotate([0, 90, 0])      // Rotate to lie along X
+            translate([0, 0, -cylinder_len/2]) // Center the cylinder on X=0
+                cylinder(h = cylinder_len, d = cradle_r * 2);
+}
+
+// Final Assembly
+// Rule: "The cradle is not cut through them [the dividers]"
+// We use union of (Base - Cradle) and (Dividers).
+
+union() {
+    // Part 1: The base with the cradle cut out
+    difference() {
+        base();
+        // Subtract the cradle cutter from the base
+        cradle_cutter();
+    }
+    
+    // Part 2: The solid dividers
+    dividers();
+}
+```

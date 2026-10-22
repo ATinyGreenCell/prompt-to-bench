@@ -1,0 +1,91 @@
+```openscad
+// Pinch clamp for silicone tubing (up to 6.4 mm), printed flat (XY profile, extruded in Z)
+$fn = 64;
+
+// ---- Global dimensions (mm) ----
+extrude_h   = 8;    // thickness along Z (print height)
+
+// Lower jaw
+lower_bar_x0 = 0;   lower_bar_x1 = 50;  lower_bar_y0 = 0;  lower_bar_y1 = 4;
+lower_tong_x0 = 50; lower_tong_x1 = 56; lower_tong_y0 = 2.5; lower_tong_y1 = 4;
+
+// Upper jaw
+upper_bar_x0 = 0;   upper_bar_x1 = 60;  upper_bar_y0 = 12; upper_bar_y1 = 16;
+
+// Living hinge (half-ring on x < 0 side, centred at (0,8), 0.8 mm thick)
+hinge_cx = 0;  hinge_cy = 8;
+hinge_r_out = 8;   // outer radius
+hinge_r_in  = 7.2; // inner radius
+
+// Pinch ridges (half-round, 1.5 mm radius, on inner faces at x = 27.5)
+ridge_x = 27.5;
+ridge_r = 1.5;
+lower_ridge_cy = 4;   // lower jaw inner face
+upper_ridge_cy = 12;  // upper jaw inner face
+
+// Snap latch (hangs from upper jaw right end)
+latch_leg_x0 = 57;  latch_leg_x1 = 60;  latch_leg_y0 = 4.5;  latch_leg_y1 = 12;
+latch_nose_x0 = 54.5; latch_nose_x1 = 57; latch_nose_y0 = 4.5; latch_nose_y1 = 5.5;
+
+// ---- 2-D profile (XY plane) ----
+module profile() { union() {
+    // Lower jaw: bar + thinner tongue
+    square([lower_bar_x1 - lower_bar_x0, lower_bar_y1 - lower_bar_y0], center = false)
+        + translate([lower_bar_x0, lower_bar_y0]) square([lower_bar_x1 - lower_bar_x0, lower_bar_y1 - lower_bar_y0], center = false);
+    // (simpler: explicit rectangles)
+    // Lower bar
+    translate([lower_bar_x0, lower_bar_y0])
+        square([lower_bar_x1 - lower_bar_x0, lower_bar_y1 - lower_bar_y0], center = false);
+    // Lower tongue
+    translate([lower_tong_x0, lower_tong_y0])
+        square([lower_tong_x1 - lower_tong_x0, lower_tong_y1 - lower_tong_y0], center = false);
+
+    // Upper jaw bar
+    translate([upper_bar_x0, upper_bar_y0])
+        square([upper_bar_x1 - upper_bar_x0, upper_bar_y1 - upper_bar_y0], center = false);
+
+    // Living hinge: half-ring (x < 0 side) centred at (0,8), radii 7.2 / 8
+    difference() {
+        // outer half-disc (left half of circle radius 8)
+        intersection() {
+            translate([hinge_cx, hinge_cy]) circle(hinge_r_out);
+            square([hinge_r_out + 0.01, 2 * hinge_r_out + 0.02], center = false)
+                + translate([-hinge_r_out - 0.01, -hinge_r_out - 0.01])
+                  square([hinge_r_out + 0.01, 2 * hinge_r_out + 0.02], center = false);
+        }
+        // inner half-disc (left half of circle radius 7.2)
+        intersection() {
+            translate([hinge_cx, hinge_cy]) circle(hinge_r_in);
+            square([hinge_r_in + 0.01, 2 * hinge_r_in + 0.02], center = false)
+                + translate([-hinge_r_in - 0.01, -hinge_r_in - 0.01])
+                  square([hinge_r_in + 0.01, 2 * hinge_r_in + 0.02], center = false);
+        }
+    }
+
+    // Pinch ridge on lower jaw inner face (half-disc bulging into gap, y > 4)
+    intersection() {
+        translate([ridge_x, lower_ridge_cy]) circle(ridge_r);
+        square([ridge_r + 0.01, ridge_r + 0.01], center = false)
+            + translate([-ridge_r - 0.01, 0]) square([ridge_r + 0.01, ridge_r + 0.01], center = false);
+    }
+
+    // Pinch ridge on upper jaw inner face (half-disc bulging into gap, y < 12)
+    intersection() {
+        translate([ridge_x, upper_ridge_cy]) circle(ridge_r);
+        square([ridge_r + 0.01, ridge_r + 0.01], center = false)
+            + translate([-ridge_r - 0.01, -ridge_r - 0.01]) square([ridge_r + 0.01, ridge_r + 0.01], center = false);
+    }
+
+    // Latch leg
+    translate([latch_leg_x0, latch_leg_y0])
+        square([latch_leg_x1 - latch_leg_x0, latch_leg_y1 - latch_leg_y0], center = false);
+
+    // Latch nose (0.5 mm above tongue top at y=4, i.e. y 4.5..5.5)
+    translate([latch_nose_x0, latch_nose_y0])
+        square([latch_nose_x1 - latch_nose_x0, latch_nose_y1 - latch_nose_y0], center = false);
+} }
+
+// ---- Extrude 8 mm along Z (print orientation: rests on XY plane, builds +Z) ----
+linear_extrude(height = extrude_h)
+    profile();
+```

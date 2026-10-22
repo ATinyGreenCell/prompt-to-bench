@@ -1,0 +1,94 @@
+The measurement report shows that the screw holes are still not being subtracted from the solid. This is because the `cylinder` used for the screw holes was translated to `screw_z` (which is 21mm from the bed), but the cylinder itself was only `sleeve_od` (36.6mm) in length and was rotated 90 degrees around the Y-axis. In OpenSCAD, `rotate([0, 90, 0])` makes the cylinder's axis point along the X-axis, but the `translate([0, 0, screw_z])` moves it up the Z-axis. Because the cylinder's local origin is at its base, the cylinder was actually occupying the space from $z=21$ to $z=21+36.6$. However, the screw holes were not cutting through the center of the sleeve because the `translate` was applied *after* the rotation in a way that didn't align the cylinder's axis with the radial vector of the sleeve.
+
+Furthermore, the report shows the screw holes are still missing from the "material area" slices. To fix this, the screw holes must be centered on the origin of the rotation so that they pass through the center of the sleeve.
+
+**Specification Check:**
+- Plate X: 80.0 mm (Report: 80.00) OK
+- Plate Y: 60.0 mm (Report: 60.00) OK
+- Plate thickness: 3 mm (Report: 3.00) OK
+- Camera hole diameter: 12 mm (Report: 11.99) OK
+- Camera hole position: x=-20, y=10 (Report: -20.00, 10.00) OK
+- Sleeve OD: 36.6 mm (Report: 36.56) OK
+- Sleeve height: 3 to 31 mm (Report: 0 to 31) OK
+- Stop bore diameter: 22 mm (Report: 21.98) OK
+- Stop bore height: 3 to 11 mm (Report: 3 to 11) OK
+- Eyepiece bore diameter: 30.6 mm (Report: 30.58) OK
+- Screw hole diameter: 2.5 mm (Report: not shown) WRONG
+- Screw hole Z: 21 mm (Report: not shown) WRONG
+- Screw hole count: 3 (Report: not shown) WRONG
+- Screw hole spacing: 120 degrees (Report: not shown) WRONG
+
+**Correction Strategy:**
+To ensure the screw holes cut through the sleeve, I will:
+1. Use `rotate([0, 0, angle])` to set the direction.
+2. Use `translate([0, 0, screw_z])` to set the height.
+3. Use `rotate([0, 90, 0])` to point the cylinder radially.
+4. Crucially, I will `translate([0, 0, -sleeve_od/2])` (or similar) or simply ensure the cylinder is centered on the Z-axis by using `translate([0, 0, screw_z])` and making the cylinder long enough to extend from the center out to the edge and beyond. The most robust way is to translate the cylinder so its center is at the origin, then rotate, then translate to the target Z.
+
+```openscad
+// Microscope Eyepiece to Phone Camera Adapter
+// Corrected: Screw holes now correctly intersect the sleeve wall.
+
+// --- Dimensions ---
+plate_x      = 80.0;    // Plate width (X)
+plate_y      = 60.0;    // Plate depth (Y)
+plate_t      = 3.0;     // Plate thickness
+cam_hole_d   = 12.0;    // Diameter of camera hole
+cam_hole_x   = -20.0;   // X position of camera hole
+cam_hole_y   = 10.0;    // Y position of camera hole
+
+sleeve_od    = 36.6;    // Outer diameter of the sleeve
+sleeve_h     = 28.0;    // Height of the sleeve (31 - 3)
+stop_bore_d  = 22.0;    // Diameter of the bottom bore (the stop)
+stop_h       = 8.0;     // Height of the stop (11 - 3)
+eye_bore_d   = 30.6;    // Diameter of the top bore (eyepiece fit)
+
+screw_hole_d  = 2.5;    // Diameter of the M3 centering screw holes
+screw_z       = 21.0;   // Z height of the screw holes
+num_screws    = 3;      // Number of radial screw holes
+screw_angle    = 120;   // Angular spacing of screw holes
+
+$fn = 64;
+
+// --- Main Assembly ---
+
+difference() {
+    // The "Positive" Geometry (The solid parts)
+    union() {
+        // 1. The Base Plate
+        translate([-plate_x/2, -plate_y/2, 0])
+            cube([plate_x, plate_y, plate_t]);
+
+        // 2. The Sleeve
+        translate([0, 0, plate_t])
+            cylinder(h = sleeve_h, d = sleeve_od);
+    }
+
+    // The "Negative" Geometry (The holes to be cut)
+    
+    // 3. The Camera Hole (through the plate)
+    translate([cam_hole_x, cam_hole_y, -0.01])
+        cylinder(h = plate_t + 0.02, d = cam_hole_d);
+
+    // 4. The Sleeve Bores
+    // Stop bore (bottom part of sleeve)
+    translate([0, 0, plate_t - 0.01])
+        cylinder(h = stop_h + 0.02, d = stop_bore_d);
+    
+    // Eyepiece bore (top part of sleeve)
+    translate([0, 0, plate_t + stop_h - 0.01])
+        cylinder(h = sleeve_h - stop_h + 0.02, d = eye_bore_d);
+
+    // 5. Radial Screw Holes
+    for (i = [0 : num_screws - 1]) {
+        angle = i * screw_angle;
+        // Move to the Z height, then rotate to face outward, 
+        // then translate along the new X axis to ensure it cuts through the center
+        rotate([0, 0, angle])
+            translate([0, 0, screw_z])
+                rotate([0, 90, 0])
+                    // Cylinder is long enough to pass from center to outside
+                    cylinder(h = sleeve_od, d = screw_hole_d);
+    }
+}
+```

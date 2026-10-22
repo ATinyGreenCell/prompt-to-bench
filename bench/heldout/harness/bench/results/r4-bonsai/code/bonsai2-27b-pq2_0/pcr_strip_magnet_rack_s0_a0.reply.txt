@@ -1,0 +1,74 @@
+```openscad
+// Magnetic bead rack for one 8-tube strip of 0.2 mL PCR tubes
+// Print orientation: block rests on XY plane at z=0, centred on origin in X and Y.
+
+// Block dimensions
+L_block = 80;   // length along X
+W_block = 24;   // width along Y
+H_block = 20;   // height along Z
+
+// Tube seat parameters
+N_seats = 8;
+pitch = 9;      // centre-to-centre spacing along X
+seat_top_d = 6.4; // diameter at top face (z = H_block)
+seat_bottom_d = 3; // diameter at z = 2
+seat_floor_z = 2;  // cone ends at this height (2 mm floor)
+
+// Magnet pocket parameters
+pocket_len = 60.4; // length along X
+pocket_wid = 3.3;  // width along Y
+pocket_hgt = 10.2; // height from z=0 to z=10.2
+pocket_y = 6;      // centred at y = +/- 6
+
+// Curvature quality
+$fn = 64;
+
+// Base solid block
+block = cube([L_block, W_block, H_block], center = [0, 0, H_block/2]);
+
+// Tube seats: cone from 6.4 mm at top to 3 mm at z=2, open at top
+// Each seat is a cone (cylinder with different top/bottom radii)
+// Top radius = seat_top_d/2, bottom radius = seat_bottom_d/2
+// Height of cone = H_block - seat_floor_z
+// Position: centred on X at each seat, y=0
+// Cone axis along Z, from z=seat_floor_z to z=H_block
+// Use difference to cut from block
+
+// Magnet pockets: open at bottom (z=0), so cut from z=0 to z=pocket_hgt
+// Pocket is a rectangular prism, centred in X, at y = +/- pocket_y
+
+// Build the final part
+part = block;
+
+// Cut tube seats
+for (i = 0; i < N_seats; i++) {
+    x_pos = (i - (N_seats - 1) / 2) * pitch;
+    // Cone: bottom at z=seat_floor_z (radius=seat_bottom_d/2), top at z=H_block (radius=seat_top_d/2)
+    // Use cylinder with r1 (bottom) and r2 (top)
+    // Height = H_block - seat_floor_z
+    // Position: translate to (x_pos, 0, seat_floor_z)
+    part = difference(part, cylinder(
+        h = H_block - seat_floor_z,
+        r1 = seat_bottom_d / 2,
+        r2 = seat_top_d / 2,
+        center = false,
+        $fn = $fn
+    ));
+}
+
+// Cut magnet pockets
+for (y_sign = [-1, 1]) {
+    y_pos = y_sign * pocket_y;
+    // Pocket: 60.4 x 3.3 x 10.2, centred in X, at y = y_pos
+    // Open at bottom: cut from z=0 to z=pocket_hgt
+    // Extend 0.01 mm past faces to avoid coplanar issues
+    // X: from -pocket_len/2 - 0.01 to pocket_len/2 + 0.01
+    // Y: from y_pos - pocket_wid/2 - 0.01 to y_pos + pocket_wid/2 + 0.01
+    // Z: from -0.01 to pocket_hgt + 0.01
+    pocket = cube([pocket_len + 0.02, pocket_wid + 0.02, pocket_hgt + 0.02], center = [0, y_pos, (pocket_hgt - 0.01)/2]);
+    part = difference(part, pocket);
+}
+
+// Final output
+part;
+```

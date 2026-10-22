@@ -1,0 +1,116 @@
+// Wall-mounted syringe holder for 10mL syringe
+// Designed for FDM printing, standing on the XY plane.
+
+// --- Dimensions ---
+block_w = 50.0;      // Block width (X)
+block_d = 30.0;      // Block depth (Y)
+block_h = 40.0;      // Block height (Z)
+
+barrel_dia = 16.5;   // Width of the vertical barrel channel
+barrel_rad = barrel_dia / 2;
+
+flange_w = 34.0;     // Width of the flange slot (X)
+flange_h = 2.6;      // Height of the flange slot (Z)
+flange_z_start = 30.0; // Bottom of the flange slot
+flange_y_depth = 11.0; // How far back the slot goes from the front face
+
+screw_hole_d = 4.5;  // Diameter for M4 screws
+screw_hole_x = 19.0; // Offset of screw holes from center (X)
+screw_hole_z = 15.0; // Height of screw holes (Z)
+
+$fn = 64;
+
+// --- Modeling ---
+
+// The main block is centered on X and Y, sitting on Z=0.
+// Back face is at Y = 15, Front face is at Y = -15.
+// X range: -25 to 25.
+// Y range: -15 to 15.
+// Z range: 0 to 40.
+
+difference() {
+    // The main block
+    translate([-block_w/2, -block_d/2, 0])
+        cube([block_w, block_d, block_h]);
+
+    // 1. Barrel Channel
+    // The back end is a half-circle of radius 8.25 (barrel_rad) centered at x=0, y=0.
+    // The straight sides run forward to the front face (y = -15).
+    // Since the block's center is at y=0, and the back face is at y=15, 
+    // the half-circle is at the center of the block's depth.
+    // However, the prompt says "its back end is a half-circle... centred at x=0, y=0".
+    // This implies the center of the circle is at the center of the block.
+    // To make it a "channel" that runs through the full height:
+    union() {
+        // The half-cylinder part at the back (centered at y=0)
+        // We use a cylinder and rotate it, or use rotate_extrude.
+        // A simpler way: a cylinder centered at y=0, but we only want the part from y=0 to y=15.
+        // Wait, the prompt says "its back end is a half-circle... and its straight sides run forward to the front face".
+        // This implies the "back" of the channel is the curved part.
+        // If the circle is at y=0, the "back" of the channel is at y=0.
+        // But the block's back is at y=15. 
+        // Let's interpret: The channel is a semi-cylinder with the flat part at y=0 
+        // and the curved part extending towards the back (y=15), 
+        // OR the curved part is at y=0 and it extends to y=-15.
+        // "its back end is a half-circle... and its straight sides run forward to the front face (y=-15)"
+        // This means the curve is at the back (y=0) and it extends to y=-15.
+        // But the block goes to y=15. So there is a solid part from y=0 to y=15.
+        
+        // Let's model the channel as:
+        // A cylinder of radius 8.25 centered at (0,0,z) from y=0 to y=-15.
+        // Plus a half-cylinder (the "back end") at y=0.
+        // Actually, the simplest way to describe "straight sides run forward to the front face" 
+        // is a shape defined by: x in [-8.25, 8.25], y in [-15, 0], and a semi-circle at y=0.
+        // But the prompt says the back end is a half-circle at x=0, y=0.
+        // This means the curve is at y=0.
+        // Let's use a hull or a combination.
+        
+        // Correct interpretation: 
+        // The channel is a semi-cylinder. The flat part of the semi-cylinder is at y=0.
+        // The curved part is at y=0? No, "back end is a half-circle".
+        // This means the curve is the "back" of the hole.
+        // If the curve is at y=0, and it runs to y=-15, the "back" of the hole is at y=0.
+        // But the block's back is at y=15.
+        // Let's assume the channel is a semi-cylinder where the flat face is at y=0 
+        // and the curved face is at y=-8.25, and it extends to y=-15.
+        // Wait, "back end is a half-circle... centred at x=0, y=0".
+        // This means the center of the circle is (0,0). 
+        // A half-circle at (0,0) would have its flat side at y=0 and curve at y=-8.25 (or +8.25).
+        // "straight sides run forward to the front face (y=-15)".
+        // This means the channel is a semi-cylinder with the flat side at y=0 
+        // and the curved side at y=-8.25, extending to y=-15.
+        // But the prompt says "its back end is a half-circle". 
+        // In a syringe holder, the "back" is the wall (y=15).
+        // If the back end of the channel is a half-circle at y=0, 
+        // then the channel exists from y=0 to y=-15.
+        // This leaves a 15mm thick solid block between the channel and the wall.
+        
+        // Let's build the channel:
+        // 1. A semi-cylinder from y=0 to y=-15.
+        // 2. The "back end" (at y=0) is the half-circle.
+        // This means the flat part of the semi-cylinder is at y=0.
+        // The curved part is at y=-8.25.
+        // The straight sides are at x = +/- 8.25.
+        // This matches "straight sides run forward to the front face (y=-15)".
+        
+        // Let's use a 2D shape and extrude it.
+        // 2D shape: a rectangle from x=[-8.25, 8.25], y=[-15, 0] 
+        // AND a semi-circle at y=0.
+        // Wait, if the semi-circle is at y=0, and the rectangle is from y=0 to y=-15,
+        // the semi-circle would be at the "back" of the channel.
+        // Let's define the 2D profile:
+        // A rectangle from x=-8.25 to 8.25, y=-15 to 0.
+        // A semi-circle with radius 8.25 centered at (0,0) extending to y=8.25? 
+        // No, "back end is a half-circle... centred at x=0, y=0".
+        // This means the curve is at y=8.25 or y=-8.25.
+        // If the straight sides run to y=-15, the curve must be at y=0.
+        // This is only possible if the semi-circle is the "back" of the hole.
+        // Let's assume the channel profile in XY is:
+        // A rectangle from x=-8.25 to 8.25, y=-15 to 0.
+        // A semi-circle centered at (0,0) with radius 8.25, but only the part where y > 0?
+        // No, that would make the channel 15 + 8.25 mm deep.
+        // Let's try: The channel is a semi-cylinder. 
+        // The flat part of the semi-cylinder is at y=0. 
+        // The curved part is at y=-8.25. 
+        // The straight sides are at x=8.25 and x=-8.25.
+        // The channel extends from y=0 to

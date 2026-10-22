@@ -1,0 +1,80 @@
+The measurement report shows that the holes were not actually subtracted from the geometry. This occurred because the cylinders were translated to `y=0` and rotated, but since the profile's Y-range is `0` to `28.4`, a cylinder centered at `y=0` only cuts halfway into the part. To ensure a clean cut through the entire thickness of the arm, the cylinder must be centered on the Y-axis of the profile or extended significantly in both directions.
+
+**Specification Check:**
+- Spine: x=0 to 5, y=0 to 28.4 | OK
+- Bottom jaw: x=-25 to 5, y=0 to 5 | OK
+- Top jaw/arm: x=-25 to 65, y=23.4 to 28.4 | OK
+- Shelf gap: 18.4 mm | OK
+- Extrusion length: 105 mm | OK
+- Hole diameter: 20 mm | OK
+- Hole count: 3 | OK
+- Hole X position: 42 | OK
+- Hole Z positions: 17.5, 52.5, 87.5 | OK
+- Hole orientation: Through arm along Y | WRONG (Report shows 0 holes)
+
+**Correction Plan:**
+The cylinders must be translated so their center is at the midpoint of the arm's Y-thickness (which is `(23.4 + 28.4) / 2 = 25.9`) and must extend beyond the Y-boundaries to ensure a clean cut.
+
+```openscad
+// Pipette Holder Clamp
+// Designed for an 18mm shelf.
+// Printed lying on its side (XY plane is the profile, Z is the extrusion/length).
+
+// --- Dimensions ---
+shelf_thickness = 18.0;
+spine_x_end     = 5.0;
+spine_y_end     = 28.4;
+
+bottom_jaw_x_start = -25.0;
+bottom_jaw_x_end   = 5.0;
+bottom_jaw_y_end    = 5.0;
+
+top_jaw_x_start    = -25.0;
+top_jaw_x_end      = 65.0;
+top_jaw_y_start     = 23.4;
+top_jaw_y_end       = 28.4;
+
+extrusion_length    = 105.0;
+hole_diameter       = 20.0;
+hole_x_pos          = 42.0;
+hole_z_pos_1        = 17.5;
+hole_z_pos_2        = 52.5;
+hole_z_pos_3        = 87.5;
+
+$fn = 64;
+
+// --- Geometry Construction ---
+
+module profile() {
+    union() {
+        // Spine (back vertical part)
+        square([spine_x_end, spine_y_end]);
+        
+        // Bottom Jaw
+        translate([bottom_jaw_x_start, 0]) 
+            square([bottom_jaw_x_end - bottom_jaw_x_start, bottom_jaw_y_end]);
+        
+        // Top Jaw and Arm
+        translate([top_jaw_x_start, top_jaw_y_start]) 
+            square([top_jaw_x_end - top_jaw_x_start, top_jaw_y_end - top_jaw_y_start]);
+    }
+}
+
+difference() {
+    // The main extruded body
+    linear_extrude(height = extrusion_length) {
+        profile();
+    }
+
+    // The three pipette holes
+    // Holes are centered at x = 42 and specific Z positions.
+    // They go through the arm along the Y axis.
+    // To ensure they cut through, we center them at the Y-midpoint of the arm.
+    // Arm Y-midpoint = (23.4 + 28.4) / 2 = 25.9
+    for (z_pos = [hole_z_pos_1, hole_z_pos_2, hole_z_pos_3]) {
+        translate([hole_x_pos, (top_jaw_y_start + top_jaw_y_end) / 2, z_pos])
+        rotate([0, 90, 0]) 
+        cylinder(h = 100, d = hole_diameter); 
+    }
+}
+```

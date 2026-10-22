@@ -1,0 +1,83 @@
+// Wall-mounted 10 mL syringe holder (tip-down, upright)
+// Print orientation: rests on XY plane at z = 0, builds +Z, centred in X/Y.
+// Back face (y = 15) is the wall side; syringe slides in from the front (y = -15).
+
+// ---- Block dimensions (measured with calipers) ----
+block_w = 50;   // X width
+block_d = 30;   // Y depth
+block_h = 40;   // Z height
+
+// ---- Barrel channel (16.5 mm wide vertical slot, full height) ----
+ch_half_w = 16.5 / 2;   // 8.25 mm half-width
+ch_back_r = 8.25;       // radius of the half-circle at the back end
+ch_back_cy = 0;         // centre of the back half-circle in Y (y = 0)
+ch_front_y = -15;       // straight sides run forward to the front face
+
+// ---- Finger-flange slot (cut in from the front face) ----
+flange_w = 34;          // X width, centred
+flange_h = 2.6;         // Z thickness (2 mm flange + clearance)
+flange_z0 = 30;         // bottom of slot
+flange_z1 = 32.6;       // top of slot
+flange_y0 = -15;        // starts at the front face
+flange_y1 = 11;         // extends back to y = 11
+
+// ---- M4 wall-screw clearance holes (through, along Y) ----
+screw_d = 4.5;          // clearance hole diameter
+screw_z = 15;           // hole centre height
+screw_x = [-19, 19];    // hole centre X positions
+
+// ---- Curvature resolution ----
+$fn = 64;
+
+// =====================================================================
+// 1. Base block, centred on origin in X and Y, sitting on z = 0
+// =====================================================================
+module block() { translate([-block_w / 2, -block_d / 2, 0])
+    cube([block_w, block_d, block_h]); }
+
+// =====================================================================
+// 2. Barrel channel: a full cylinder (back half-circle) unioned with a
+//    cube (forward to the front face). Using two simple, valid solids
+//    (instead of a degenerate 5-point polygon) makes the union robust,
+//    so the difference actually removes the channel.
+//    Both pieces extend 1 mm past the top/bottom faces so the cut is
+//    clean and no faces end up exactly coplanar with the block.
+// =====================================================================
+// 2a. Full cylinder at the back (y = 0); the front half is inside the
+//     block and the union keeps only the back half-circle.
+module channel_back() { translate([0, ch_back_cy, -1])
+    cylinder(h = block_h + 2, r = ch_back_r, $fn = 64); }
+
+// 2b. Cube from y = 0 back to the front face (y = -15).
+module channel_rect() { translate([-ch_half_w, ch_front_y, -1])
+    cube([2 * ch_half_w, -ch_front_y, block_h + 2]); }   // y: -15 .. 0
+
+module barrel_channel() { union() {
+    channel_back();
+    channel_rect();
+} }
+
+// =====================================================================
+// 3. Finger-flange slot: 34 mm wide, 2.6 mm tall, y = -15 .. 11
+//    (extends 1 mm past the front face so the cut is not coplanar)
+// =====================================================================
+module flange_slot() { translate([-flange_w / 2, flange_y0 - 1, flange_z0])
+    cube([flange_w, flange_y1 - flange_y0 + 1, flange_h]); }
+
+// =====================================================================
+// 4. M4 screw clearance holes: 4.5 mm dia, through along Y
+//    (extend 1 mm past both the front and back faces)
+// =====================================================================
+module screw_holes() { for (sx = screw_x)
+    translate([sx, -block_d / 2 - 1, screw_z])
+        cylinder(h = block_d + 2, r = screw_d / 2, $fn = 64); }
+
+// =====================================================================
+// Final part: block minus all cutters
+// =====================================================================
+difference() {
+    block();
+    barrel_channel();
+    flange_slot();
+    screw_holes();
+}

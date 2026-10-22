@@ -1,0 +1,144 @@
+// Float for seven 15 mL conical tubes
+// Designed to be printed upside down (plate on bed, features rising in +Z)
+// The plate sits at Z=0 to Z=3. Features rise to Z=20.
+
+// --- Dimensions ---
+plate_across_flats = 90.0;    // Hexagon plate width (flat-to-flat)
+plate_thickness    = 3.0;     // Thickness of the base plate
+tube_hole_d        = 17.5;    // Diameter of the conical tube holes
+tube_sleeve_od     = 21.5;    // Outside diameter of the tube sleeves
+sleeve_wall        = 2.0;     // Wall thickness of the sleeves
+sleeve_height_total = 20.0;   // Total height from Z=0 to top of features
+tube_circle_d      = 54.0;    // Diameter of the circle passing through tube centers
+skirt_across_flats  = 84.0;   // Width of the hexagonal skirt (flat-to-flat)
+
+$fn = 64;
+
+// --- Helper Modules ---
+
+// A regular hexagon with flats parallel to the X axis.
+// To achieve this, we rotate the cylinder by 30 degrees.
+module hex_plate(across_flats, height) {
+    // The distance from center to vertex (circumradius) is:
+    // r = (across_flats / 2) / cos(30)
+    r_vertex = (across_flats / 2) / cos(30);
+    
+    rotate([0, 0, 30])
+    cylinder(h = height, d = r_vertex * 2, $fn = 6);
+}
+
+// --- Main Construction ---
+
+difference() {
+    // 1. The Solid Body (The "Positive" geometry)
+    union() {
+        // The Base Plate (Z = 0 to 3)
+        hex_plate(plate_across_flats, plate_thickness);
+        
+        // The Skirt (Z = 3 to 20)
+        // It is a hexagonal shell. We create a solid hexagon and subtract a smaller one.
+        // However, the prompt says "a hexagonal skirt with a 2mm wall".
+        // We will build the skirt as a solid extrusion and then subtract the inner void later.
+        translate([0, 0, plate_thickness])
+        hex_plate(skirt_across_flats, sleeve_height_total - plate_thickness);
+        
+        // The Sleeves (Z = 3 to 20)
+        // Center sleeve
+        translate([0, 0, plate_thickness])
+        cylinder(h = sleeve_height_total - plate_thickness, d = tube_sleeve_od);
+        
+        // Six perimeter sleeves
+        for (a = [0, 60, 120, 180, 240, 300]) {
+            translate([tube_circle_d / 2 * cos(a), tube_circle_d / 2 * sin(a), plate_thickness])
+            cylinder(h = sleeve_height_total - plate_thickness, d = tube_sleeve_od);
+        }
+    }
+
+    // 2. The Voids (The "Negative" geometry)
+    
+    // A. The Tube Holes (Through the plate and sleeves)
+    // Center hole
+    translate([0, 0, -1])
+    cylinder(h = plate_thickness + 2, d = tube_hole_d);
+    
+    // Perimeter holes
+    for (a = [0, 60, 120, 180, 240, 300]) {
+        translate([tube_circle_d / 2 * cos(a), tube_circle_d / 2 * sin(a), -1])
+        cylinder(h = plate_thickness + 2, d = tube_hole_d);
+    }
+    
+    // B. The Skirt Interior (To make it a "wall")
+    // The skirt is 2mm thick. The outer width is 84. The inner width is 84 - (2 * wall_thickness_offset).
+    // Since it's a hexagon, we must be careful. The prompt says "2mm wall".
+    // We subtract a hexagon that is smaller than the skirt.
+    // The distance from center to flat is 84/2 = 42.
+    // The inner distance from center to flat is 42 - 2 = 40.
+    inner_skirt_across_flats = skirt_across_flats - (2 * 2 / cos(30)); // This is complex for hex geometry.
+    // Simpler: Subtract a hexagon with across_flats = 84 - 4 = 80.
+    // But the wall is 2mm perpendicular to the face.
+    // Let's use the apothem (distance to face) approach.
+    // Apothem_outer = 84 / 2 = 42.
+    // Apothem_inner = 42 - 2 = 40.
+    // Across_flats_inner = 40 * 2 = 80.
+    
+    translate([0, 0, plate_thickness])
+    rotate([0, 0, 30])
+    cylinder(h = sleeve_height_total - plate_thickness + 1, d = 80 / cos(30), $fn = 6);
+
+    // C. The Sleeve Interiors (To make them "sleeves")
+    // The prompt says "a sleeve with a 2mm wall (21.5mm outside)".
+    // This means the hole inside the sleeve is 21.5 - (2 * 2) = 17.5.
+    // This matches the tube_hole_d exactly. So the tube holes already act as the sleeve interiors.
+    // However, we must ensure the space between the tube holes and the skirt is hollow.
+    // The prompt implies the skirt and sleeves are the only vertical walls.
+    // Therefore, the entire volume between the sleeves and the skirt should be empty.
+    
+    // To achieve this, we subtract a large shape that leaves only the sleeves and skirt.
+    // Actually, the easiest way is to define the "Solid Body" as only the walls.
+    // Let's re-think: The solid is (Plate) + (Sleeve Walls) + (Skirt Walls).
+}
+
+// --- RE-RE-STRUCTURED FOR ACCURACY ---
+// This version builds the parts as thin walls to ensure no "solid" mass is trapped.
+
+module hex_wall(across_flats, wall_thickness, height) {
+    r_vertex = (across_flats / 2) / cos(30);
+    r_inner_vertex = ((across_flats / 2 - wall_thickness) / cos(30));
+    
+    difference() {
+        rotate([0, 0, 30])
+        cylinder(h = height, d = r_vertex * 2, $fn = 6);
+        rotate([0, 0, 30])
+        cylinder(h = height + 1, d = r_inner_vertex * 2, $fn = 6);
+    }
+}
+
+module sleeve_wall(od, wall_thickness, height) {
+    cylinder(h = height, d = od);
+    // We don't subtract here, we use difference in the main block.
+}
+
+// FINAL ASSEMBLY
+difference() {
+    // 1. The Base Plate (Solid)
+    rotate([0, 0, 30])
+    cylinder(h = plate_thickness, d = plate_across_flats / cos(30), $fn = 6);
+    
+    // 2. The Skirt (Wall)
+    translate([0, 0, plate_thickness])
+    hex_wall(skirt_across_flats, 2.0, sleeve_height_total - plate_thickness);
+    
+    // 3. The Sleeves (Walls)
+    // Center sleeve
+    translate([0, 0, plate_thickness])
+    difference() {
+        cylinder(h = sleeve_height_total - plate_thickness, d = tube_sleeve_od);
+        cylinder(h = sleeve_height_total - plate_thickness + 1, d = tube_hole_d);
+    }
+    
+    // Perimeter sleeves
+    for (a = [0, 60, 120, 180, 240, 300]) {
+        translate([tube_circle_d / 2 * cos(a), tube_circle_d / 2 * sin(a), plate_thickness])
+        difference() {
+            cylinder(h = sleeve_height_total - plate_thickness, d = tube_sleeve_od);
+            cylinder(h =

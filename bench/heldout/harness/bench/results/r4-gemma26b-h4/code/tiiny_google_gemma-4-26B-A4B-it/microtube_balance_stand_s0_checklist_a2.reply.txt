@@ -1,0 +1,76 @@
+The measurement report indicates that the geometry is still not matching the specification. The most critical error is that the window is still being subtracted from the center of the part (centered at X=-0.7) rather than being cut through the wall on the +X side. Additionally, the cone and seat dimensions in the report suggest the geometry is not being calculated correctly relative to the Z-axis.
+
+**Specification Check:**
+- Base disc: 50 mm diameter, z=0 to 4. Report: d=49.98, z=0 to 4. OK
+- Cone: 50 mm at z=4 to 22 mm at z=14. Report: d=47.15 at z=5 (Incorrect slope). WRONG
+- Column: 22 mm diameter, z=14 to 33. Report: d=21.99, z=16 to 31. OK
+- Seat (Cylindrical): 11 mm diameter, z=33 down to 23. Report: d=11.00 at z=31.5 (Incorrect Z-position). WRONG
+- Seat (Conical): 11 mm at z=23 down to 3 mm at z=6. Report: d=6.31 at z=16 (Incorrect slope). WRONG
+- Window: 4 mm wide (Y), +X side, z=18 to 30. Report: centered at X=-0.7 (Incorrect position). WRONG
+
+**Corrected Logic:**
+- The cone must be explicitly defined from z=4 to z=14.
+- The cylindrical seat must be from z=23 to z=33.
+- The conical seat must be from z=6 to z=23.
+- The window must be translated so its center is at X = (col_dia/2) and it extends outward to ensure a clean cut through the wall.
+
+```openscad
+// Microcentrifuge tube stand for analytical balance
+// Corrected version to ensure exact Z-heights and +X window placement
+
+// --- Dimensions ---
+base_dia      = 50.0;    // Diameter of the base disc
+base_h        = 4.0;     // Height of the base disc
+cone_bottom_d = 50.0;   // Diameter at z=4
+cone_top_d    = 22.0;   // Diameter at z=14
+cone_h        = 10.0;    // Height of cone (14 - 4)
+col_h         = 19.0;    // Height of column (33 - 14)
+col_dia       = 22.0;    // Diameter of column
+
+tube_seat_dia = 11.0;   // Diameter of cylindrical seat
+seat_cyl_h    = 10.0;   // Height of cylindrical seat (33 - 23)
+tube_tip_dia  = 3.0;    // Diameter at the tip (z=6)
+tip_cone_h    = 17.0;   // Height of tip cone (23 - 6)
+
+window_w      = 4.0;    // Width of window in Y
+window_h      = 12.0;   // Height of window (30 - 18)
+
+$fn = 128;
+
+// --- Assembly ---
+
+difference() {
+    // 1. The Main Body
+    union() {
+        // Base disc: z = 0 to 4
+        cylinder(h = base_h, d = base_dia);
+        
+        // Cone section: z = 4 to 14
+        translate([0, 0, base_h])
+        cylinder(h = cone_h, d1 = cone_bottom_d, d2 = cone_top_d);
+        
+        // Column: z = 14 to 33
+        translate([0, 0, base_h + cone_h])
+        cylinder(h = col_h, d = col_dia);
+    }
+
+    // 2. The Tube Seat (Subtractive)
+    // Cylindrical part: z = 23 to 33
+    // We use a small overlap (0.1) to ensure clean cut
+    translate([0, 0, 33 - seat_cyl_h])
+    cylinder(h = seat_cyl_h + 0.1, d = tube_seat_dia);
+    
+    // Conical part: z = 6 to 23
+    translate([0, 0, 6])
+    cylinder(h = tip_cone_h + 0.1, d1 = tube_seat_dia, d2 = tube_tip_dia);
+
+    // 3. The Viewing Window (Subtractive)
+    // "cut straight through the column wall on the +X side"
+    // "4 mm wide (in Y)"
+    // "between z=18 and z=30"
+    // To place on +X side, we translate the cube so its left face is at X=0.
+    // The cube width in X must be at least the radius of the column to cut through.
+    translate([0, -window_w/2, 18])
+    cube([col_dia, window_w, window_h]);
+}
+```

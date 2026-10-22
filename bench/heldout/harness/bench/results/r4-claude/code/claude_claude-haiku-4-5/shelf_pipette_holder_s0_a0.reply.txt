@@ -1,0 +1,53 @@
+```openscad
+// Dimensions (in millimeters)
+spine_x_min = 0;
+spine_x_max = 5;
+spine_y_min = 0;
+spine_y_max = 28.4;
+
+bottom_jaw_x_min = -25;
+bottom_jaw_x_max = 5;
+bottom_jaw_y_min = 0;
+bottom_jaw_y_max = 5;
+
+top_jaw_x_min = -25;
+top_jaw_x_max = 65;
+top_jaw_y_min = 23.4;
+top_jaw_y_max = 28.4;
+
+extrusion_length = 105; // along Z
+
+hole_diameter = 20;
+hole_radius = hole_diameter / 2;
+hole_x = 42;
+hole_z_positions = [17.5, 52.5, 87.5];
+hole_y_center = (top_jaw_y_min + top_jaw_y_max) / 2;
+hole_y_height = top_jaw_y_max - top_jaw_y_min + 1;
+
+// Build the main clamp shape
+main_shape = union() {
+    // Spine (back part contacting shelf)
+    translate([spine_x_min, spine_y_min, 0])
+        cube([spine_x_max - spine_x_min, spine_y_max - spine_y_min, extrusion_length]);
+    
+    // Bottom jaw (lower part of shelf clamp)
+    translate([bottom_jaw_x_min, bottom_jaw_y_min, 0])
+        cube([bottom_jaw_x_max - bottom_jaw_x_min, bottom_jaw_y_max - bottom_jaw_y_min, extrusion_length]);
+    
+    // Top jaw and arm (upper part and extending forward)
+    translate([top_jaw_x_min, top_jaw_y_min, 0])
+        cube([top_jaw_x_max - top_jaw_x_min, top_jaw_y_max - top_jaw_y_min, extrusion_length]);
+};
+
+// Subtract holes for pipettes
+difference() {
+    main_shape;
+    
+    // Three holes through the arm along Y direction
+    for (z_pos = hole_z_positions) {
+        translate([hole_x, hole_y_center, z_pos])
+            rotate([90, 0, 0])
+            cylinder(h = hole_y_height, r = hole_radius, $fn = 64, center = true);
+    }
+}
+```

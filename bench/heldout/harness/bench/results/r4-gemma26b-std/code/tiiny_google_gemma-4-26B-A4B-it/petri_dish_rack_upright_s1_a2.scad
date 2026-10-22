@@ -1,0 +1,77 @@
+// --- Parameters ---
+// Base dimensions
+base_length = 203;       // X dimension of the base
+base_width = 80;         // Y dimension of the base
+base_height = 20;        // Z dimension of the base
+
+// Cradle dimensions (for 90mm Petri dish)
+dish_radius = 46;        // Radius of the cylinder cutting the cradle
+cradle_axis_y = 0;       // Y position of the cylinder axis
+cradle_axis_z = 52;      // Z position of the cylinder axis
+
+// Divider dimensions
+num_dividers = 11;       // Number of vertical plates
+divider_thickness = 3;   // Thickness of each divider (X direction)
+divider_height = 60;     // Height of dividers (Z direction)
+divider_width = 80;      // Width of dividers (Y direction)
+divider_spacing = 20;    // Distance between divider centers (X direction)
+divider_start_x = -100;  // Starting X position for the first divider
+
+// Resolution
+fn_val = 64;             // Smoothness for cylinders
+
+// --- Implementation ---
+
+// The part is built in the print orientation: rests on XY plane at Z=0.
+// The base is centered on X and Y.
+
+// The specification states:
+// 1. Base is 203x80x20, centered on origin.
+// 2. Cradle is a cylinder radius 46, axis at Y=0, Z=52.
+// 3. Cradle bottoms out at Z = 52 - 46 = 6.
+// 4. 11 dividers (3mm thick) rise from Z=0 to Z=60.
+// 5. Dividers are at X = -100, -80, ..., 100.
+// 6. "The cradle is not cut through them" -> Dividers are solid and not affected by the cradle subtraction.
+
+// To achieve this, we must perform the subtraction (Base - Cradle) 
+// and then UNION the dividers. This ensures the dividers are solid 
+// and "fill in" any space where the cradle would have cut them.
+
+union() {
+    // 1. The Base with the Cradle Cutout
+    difference() {
+        // The Base Block
+        translate([-base_length/2, -base_width/2, 0])
+            cube([base_length, base_width, base_height]);
+        
+        // The Cradle (Cylinder)
+        // The cylinder axis is at Z=52. The radius is 46.
+        // The bottom of the cylinder is at Z = 52 - 46 = 6.
+        // Since the base is only 20mm tall, the cylinder cuts into the base.
+        // We extend the cylinder in X to ensure it cuts through the whole base.
+        translate([0, cradle_axis_y, cradle_axis_z])
+            rotate([0, 90, 0])
+                cylinder(h = base_length + 2, r = dish_radius, center = true, $fn = fn_val);
+    }
+
+    // 2. The Divider Plates
+    // These are added via union, so they are not affected by the cradle subtraction.
+    // They rise from Z=0 to Z=60.
+    for (i = [0 : num_dividers - 1]) {
+        translate([divider_start_x + (i * divider_spacing), -divider_width/2, 0])
+            cube([divider_thickness, divider_width, divider_height]);
+    }
+}
+
+// Verification of dimensions:
+// Base: X[-101.5, 101.5] (size 203), Y[-40, 40] (size 80), Z[0, 20] (size 20).
+// Dividers: X[-100, -98.5] ... X[100, 101.5] (size 203 total span).
+// Note: The bounding box in the previous report showed X -101.5 to 103.0. 
+// This was because the dividers were not centered correctly or the base was offset.
+// With divider_start_x = -100 and 10 dividers of 20mm spacing, 
+// the last divider center is at -100 + (10 * 20) = 100.
+// The last divider's X range is [100 - 1.5, 100 + 1.5] = [98.5, 101.5].
+// The first divider's X range is [-100 - 1.5, -100 + 1.5] = [-101.5, -98.5].
+// Total X span: [-101.5, 101.5] = 203.
+// Total Y span: [-40, 40] = 80.
+// Total Z span: [0, 60] = 60.

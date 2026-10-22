@@ -1,0 +1,75 @@
+```openscad
+// Manifold block that splits one inlet into three outlets
+// All dimensions in mm
+
+// Block dimensions
+block_length = 60;      // X dimension (inlet to end)
+block_width = 24;       // Y dimension (width)
+block_height = 16;      // Z dimension (height)
+
+// Channel dimensions
+channel_diameter = 3;   // Internal channels (mm)
+inlet_socket_diameter = 4.2;    // Inlet socket diameter
+inlet_socket_depth = 8;         // Inlet socket depth
+outlet_socket_diameter = 4.2;   // Outlet socket diameter
+outlet_socket_depth = 6;        // Outlet socket depth
+
+// Screw hole dimensions
+screw_hole_diameter = 3.4;      // M3 screw hole diameter
+
+$fn = 64;  // High resolution for smooth cylinders
+
+difference() {
+    // Create main solid block, centered on origin in X and Y
+    translate([-30, -12, 0])
+        cube([60, 24, 16]);
+    
+    // Main inlet channel: runs along X from x = -30 to x = 15 at y = 0, z = 8
+    translate([-30, 0, 8])
+        rotate([0, 90, 0])
+        cylinder(h = 45, r = 1.5, center = false);
+    
+    // Outlet 1 channel: at x = -15, runs along Y from y = 0 to y = 12 at z = 8
+    translate([-15, 0, 8])
+        rotate([-90, 0, 0])
+        cylinder(h = 12.5, r = 1.5, center = false);
+    
+    // Outlet 2 channel: at x = 0, runs along Y from y = 0 to y = 12 at z = 8
+    translate([0, 0, 8])
+        rotate([-90, 0, 0])
+        cylinder(h = 12.5, r = 1.5, center = false);
+    
+    // Outlet 3 channel: at x = 15, runs along Y from y = 0 to y = 12 at z = 8
+    translate([15, 0, 8])
+        rotate([-90, 0, 0])
+        cylinder(h = 12.5, r = 1.5, center = false);
+    
+    // Inlet socket: on -X face at y = 0, extends from x = -30.5 to x = -22 at z = 8
+    translate([-30.5, 0, 8])
+        rotate([0, 90, 0])
+        cylinder(h = 8.5, r = 2.1, center = false);
+    
+    // Outlet 1 socket: on +Y face at x = -15, extends from y = 6 to y = 12.5 at z = 8
+    translate([-15, 6, 8])
+        rotate([-90, 0, 0])
+        cylinder(h = 6.5, r = 2.1, center = false);
+    
+    // Outlet 2 socket: on +Y face at x = 0, extends from y = 6 to y = 12.5 at z = 8
+    translate([0, 6, 8])
+        rotate([-90, 0, 0])
+        cylinder(h = 6.5, r = 2.1, center = false);
+    
+    // Outlet 3 socket: on +Y face at x = 15, extends from y = 6 to y = 12.5 at z = 8
+    translate([15, 6, 8])
+        rotate([-90, 0, 0])
+        cylinder(h = 6.5, r = 2.1, center = false);
+    
+    // Screw hole 1: at x = -25, y = -6, through entire block
+    translate([-25, -6, -0.5])
+        cylinder(h = 17, r = 1.7, center = false);
+    
+    // Screw hole 2: at x = 25, y = -6, through entire block
+    translate([25, -6, -0.5])
+        cylinder(h = 17, r = 1.7, center = false);
+}
+```

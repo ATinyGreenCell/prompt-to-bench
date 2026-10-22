@@ -1,0 +1,109 @@
+```openscad
+// --- Dimensions ---
+// Lower Jaw
+jaw_lower_len = 50;          // Length of main lower bar
+jaw_lower_width = 4;         // Width of main lower bar
+tongue_len = 6;              // Length of the tongue part
+tongue_start_x = 50;         // X position where tongue starts
+tongue_y_min = 2.5;          // Y position of tongue bottom
+tongue_y_max = 4;            // Y position of tongue top
+
+// Upper Jaw
+jaw_upper_len = 60;          // Length of upper bar
+jaw_upper_y_min = 12;        // Y position of upper bar bottom
+jaw_upper_y_max = 16;        // Y position of upper bar top
+
+// Hinge (Half-ring)
+hinge_center_x = 0;          // X center of hinge
+hinge_center_y = 8;          // Y center of hinge
+hinge_r_inner = 7.2;         // Inner radius of hinge
+hinge_r_outer = 8.0;         // Outer radius of hinge
+
+// Pinch Ridges
+ridge_radius = 1.5;          // Radius of the half-round ridge
+ridge_x_pos = 27.5;          // X position of the ridge
+
+// Latch
+latch_leg_x_min = 57;         // X start of latch leg
+latch_leg_x_max = 60;         // X end of latch leg
+latch_leg_y_min = 4.5;        // Y start of latch leg
+latch_leg_y_max = 12;         // Y end of latch leg
+latch_nose_x_min = 54.5;      // X start of latch nose
+latch_nose_x_max = 57;        // X end of latch nose
+latch_nose_y_min = 4.5;       // Y start of latch nose
+latch_nose_y_max = 5.5;       // Y end of latch nose
+latch_offset_z = 0.5;        // Z offset for the nose relative to tongue
+
+// General
+thickness = 8;               // Extrusion depth (Z)
+$fn = 64;                    // Smoothness
+
+// --- Construction ---
+
+module pinch_clamp() {
+    union() {
+        // 1. Lower Jaw (Main Bar + Tongue)
+        difference() {
+            union() {
+                // Main bar
+                cube([jaw_lower_len, jaw_lower_width, thickness]);
+                // Tongue
+                translate([tongue_start_x, tongue_y_min, 0])
+                    cube([tongue_len, tongue_y_max - tongue_y_min, thickness]);
+            }
+            
+            // Lower Ridge Cutout (Half-round)
+            translate([ridge_x_pos, 0, thickness/2])
+                rotate([90, 0, 0])
+                    cylinder(r = ridge_radius, h = jaw_lower_len + 2, center = true);
+        }
+
+        // 2. Upper Jaw
+        difference() {
+            cube([jaw_upper_len, jaw_upper_y_max - jaw_upper_y_min, thickness]);
+            
+            // Upper Ridge Cutout (Half-round)
+            translate([ridge_x_pos, jaw_upper_y_min, thickness/2])
+                rotate([90, 0, 0])
+                    cylinder(r = ridge_radius, h = jaw_upper_len + 2, center = true);
+        }
+
+        // 3. Hinge (Half-ring)
+        // We create a full ring and subtract the right half to ensure a clean vertical cut at x=0
+        difference() {
+            // Outer ring
+            translate([hinge_center_x, hinge_center_y, 0])
+                cylinder(r = hinge_r_outer, h = thickness);
+            // Inner ring
+            translate([hinge_center_x, hinge_center_y, -1])
+                cylinder(r = hinge_r_inner, h = thickness + 2);
+            // Cut the right half to make it a half-ring on the left side
+            translate([hinge_center_x, hinge_center_y - hinge_r_outer - 1, -1])
+                cube([hinge_r_outer * 2 + 2, hinge_r_outer * 2, thickness + 2]);
+        }
+
+        // 4. Latch Leg
+        translate([latch_leg_x_min, latch_leg_y_min, 0])
+            cube([latch_leg_x_max - latch_leg_x_min, latch_leg_y_max - latch_leg_y_min, thickness]);
+
+        // 5. Latch Nose
+        // The nose is 0.5mm above the tongue. Since the tongue is at Z=0 to 8, 
+        // and the part is printed flat, we model the nose as a separate volume 
+        // that is part of the upper jaw assembly.
+        // Note: To make this a single solid for 3D printing, we use union.
+        translate([latch_nose_x_min, latch_nose_y_min, thickness + latch_offset_z])
+            cube([latch_nose_x_max - latch_nose_x_min, latch_nose_y_max - latch_nose_y_min, thickness]);
+    }
+}
+
+// Render the part
+// The part is centered on X/Y as requested, but the geometry is defined relative to origin.
+// To center the whole bounding box, we'd need to calculate bounds, 
+// but per instructions "centre it on the origin in X and Y" usually implies 
+// the geometry is built around the origin. 
+// Given the hinge is at x=0, we will translate the whole assembly so the hinge center is at 0,0.
+
+translate([0, 0, 0])
+    pinch_clamp();
+
+```

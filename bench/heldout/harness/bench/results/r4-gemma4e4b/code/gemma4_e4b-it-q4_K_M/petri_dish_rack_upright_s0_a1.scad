@@ -1,0 +1,76 @@
+// --- Dimensions ---
+
+// Base dimensions
+base_length = 203;  // X dimension of the base block (mm)
+base_width = 80;    // Y dimension of the base block (mm)
+base_height = 20;   // Z dimension of the base block (mm)
+
+// Petri dish dimensions and cradle geometry
+dish_diameter = 90;  // Diameter of the Petri dishes (mm)
+cradle_radius = 46;  // Inner radius of the cylindrical cradle (mm)
+cradle_axis_y = 0;   // Y coordinate of the cylinder axis (mm)
+cradle_axis_z = 52;  // Z coordinate of the cylinder axis (mm)
+cradle_bottom_z = 6; // Lowest point of the cradle (mm)
+
+// Divider plate dimensions and placement
+divider_thickness = 3; // Thickness of each divider plate (X dimension)
+divider_height = 60;   // Height of the dividers (Z dimension)
+divider_spacing = 20;  // Spacing between divider centers along X (mm)
+
+// Number of dishes/slots
+num_dishes = 10;
+
+// --- Constants ---
+$fn = 64;
+
+// --- Base Block ---
+base = cube([base_length, base_width, base_height]);
+
+// --- Cradle Cutout ---
+// The cradle is a cylinder whose axis runs along X at (y=cradle_axis_y, z=cradle_axis_z).
+// We use difference() to cut this shape out of the base block.
+// To ensure no coplanar faces, we extend the cutter slightly past the base boundaries.
+
+cutter_extension = 1; // Extension for cutting operation
+
+// The cylinder is centered around its axis (cradle_axis_y, cradle_axis_z)
+// We define the cylinder large enough to cut through the entire length of the base block + extension.
+cylinder_cutout = translate([0, cradle_axis_y, cradle_axis_z])
+  cylinder(r = cradle_radius + cutter_extension, h = base_length + 2*cutter_extension, center = true);
+
+// The final base with the cradle cut out
+base_with_cradle = difference() {
+    base;
+    translate([0, 0, 0]) cylinder_cutout; // Translate cutter to origin for difference operation context
+};
+
+
+// --- Divider Plates ---
+
+// Calculate the X positions for the dividers. They are centered on the base (X range: -101.5 to 101.5)
+// The centers should be at -100, -80, ..., 100.
+divider_x_positions = [
+    -100, -80, -60, -40, -20,
+     0,  20,  40,  60,  80, 100
+];
+
+// The dividers are plates of thickness 'divider_thickness' and height 'divider_height'.
+// They span the full width of the base (base_width = 80).
+dividers = union() {
+    for (x_pos = divider_x_positions) {
+        // Translate to position X, centered in Y (-40 to 40), starting at Z=0.
+        translate([x_pos, -base_width/2, 0])
+        cube([divider_thickness, base_width, divider_height]);
+    }
+};
+
+// --- Final Assembly ---
+
+// The dividers must rise from z=0 to z=60. They are placed *after* the cradle cut is made on the base.
+// Since the cradle cuts into the base block (which is only 20mm high), and the dividers go up to 60mm,
+// we union them together. The difference operation in base_with_cradle handles the cutout in the lower section.
+
+final_rack = union() {
+    base_with_cradle;
+    dividers;
+};

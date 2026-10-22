@@ -1,0 +1,62 @@
+// 15 mL conical tube rack – 5 holes, 30° lean, for reading/pipetting
+// Units: mm. Print orientation: rests on XY plane (z = 0), builds +Z, centred on origin in X & Y.
+
+// ---- Block dimensions (measured with calipers) ----
+L = 130;   // block length  (X)
+D = 60;    // block depth   (Y)
+H = 45;    // block height  (Z)
+
+// ---- Hole parameters ----
+n_holes   = 5;      // number of tubes
+spacing   = 24;     // hole-to-hole spacing along X
+hole_d    = 17.5;   // hole diameter, square to its axis
+hole_r    = hole_d / 2;
+hole_depth = 40;    // depth measured along the axis, from the top face
+y_top     = -10;    // Y coordinate where each axis meets the top face
+tilt      = 30;     // lean angle from vertical, in the YZ plane (downward toward +Y)
+
+// ---- Derived geometry ----
+// Unit vector along the hole axis, pointing DOWN into the block.
+// Tilted 30° from vertical in the YZ plane, moving toward +Y as it goes down.
+axis_dir = [0, sin(tilt), -cos(tilt)];
+
+// Point on the axis at the top face (z = H) for a hole at x = x0:
+top_pt(x0) = [x0, y_top, H];
+
+// Point on the axis at the flat bottom of the hole (hole_depth along the axis):
+bot_pt(x0) = top_pt(x0) + axis_dir * hole_depth;
+
+// ---- Main solid ----
+$fn = 64;
+
+// Base block, centred on origin in X and Y, sitting on z = 0
+block = translate([-L/2, -D/2, 0]) cube([L, D, H]);
+
+// Five blind holes, each a cylinder of radius hole_r, length hole_depth,
+// axis tilted 30° in the YZ plane, flat end square to the axis.
+holes = for (i = [0 : n_holes - 1]) {
+    x0 = (i - (n_holes - 1) / 2) * spacing;   // centred on origin in X
+    p_top = top_pt(x0);
+    p_bot = bot_pt(x0);
+    // Cylinder from p_top to p_bot (OpenSCAD cylinder: base at origin, height along +Z)
+    // We place the cylinder base at p_bot and orient its +Z axis along (p_top - p_bot).
+    // Vector from bot to top:
+    v = p_top - p_bot;
+    len = norm(v);
+    // Rotation that maps +Z to v:
+    // angle = acos(dot(v, [0,0,1]) / len)
+    ang = acos(dot(v, [0, 0, 1]) / len);
+    // Axis of rotation is perpendicular to both +Z and v:
+    rot_axis = cross([0, 0, 1], v);
+    rot_axis = rot_axis / norm(rot_axis);
+    // Place and rotate the cylinder:
+    translate(p_bot)
+    rotate(v = rot_axis, a = ang)
+    cylinder(h = len, r = hole_r, $fn = 64);
+}
+
+// Final part: block minus the five holes
+difference() {
+    block;
+    holes;
+}

@@ -1,0 +1,96 @@
+The measurement report reveals several discrepancies between the requested design and the generated geometry. The primary issue was the centering logic and the way the walls were being subtracted/unioned, leading to an asymmetrical part (X -56.00 to 57.50) and incorrect wall placement.
+
+**Specification Check:**
+- Base plate 112 mm (X) by 44 mm (Y) and 3 mm thick: **WRONG** (Report shows X width 113.50)
+- Deck plate 112 mm (X) by 44 mm (Y) and 3 mm thick: **WRONG** (Report shows X width 113.50)
+- Seven upright walls (2 end walls + 5 ribs): **OK**
+- End walls 3 mm thick, flush with short ends: **WRONG** (Report shows offset/asymmetry)
+- Five 2.5 mm ribs at x = -36, -18, 0, 18, 36: **OK**
+- 12 square through-holes 13x13 mm: **OK**
+- Holes in 2 rows (Y) of 6 (X): **OK**
+- Hole spacing 18 mm centre-to-centre: **OK**
+- Holes centered on the deck: **OK**
+
+**Corrections made:**
+1. Fixed the `walls()` module to ensure end walls are exactly at the edges of the 112mm base.
+2. Fixed the `hole_grid()` module to ensure the holes are subtracted from the deck correctly.
+3. Restructured the `difference()` operation to ensure the entire assembly is treated as one solid, with holes subtracted from the deck specifically.
+4. Corrected the X-axis centering so the part is perfectly symmetrical (X -56 to 56).
+
+```openscad
+// Open-sided cuvette rack for twelve 12.5mm square cuvettes
+// Designed for FDM printing, standing on its base.
+
+// --- Dimensions ---
+base_x      = 112.0;  // Length of base plate (X)
+base_y      = 44.0;   // Width of base plate (Y)
+base_z      = 3.0;    // Thickness of base plate
+deck_z_min  = 22.0;   // Bottom of deck plate (Z)
+deck_z_max  = 25.0;   // Top of deck plate (Z)
+wall_thick  = 3.0;    // Thickness of the end walls
+rib_thick   = 2.5;    // Thickness of the internal ribs
+hole_size   = 13.0;   // Size of the square holes (13x13mm)
+hole_pitch  = 18.0;   // Center-to-center spacing of holes
+rows        = 2;      // Number of rows of holes (Y)
+cols        = 6;      // Number of columns of holes (X)
+
+// Rib X-positions (centered on origin)
+rib_x_pos   = [-36, -18, 0, 18, 36];
+
+$fn = 64;
+
+// --- Modules ---
+
+module walls_and_base() {
+    // Base Plate
+    translate([-base_x/2, -base_y/2, 0])
+        cube([base_x, base_y, base_z]);
+
+    // Deck Plate
+    translate([-base_x/2, -base_y/2, deck_z_min])
+        cube([base_x, base_y, deck_z_max - deck_z_min]);
+
+    // End walls (flush with short ends)
+    // Left end wall
+    translate([-base_x/2, -base_y/2, 0])
+        cube([wall_thick, base_y, deck_z_max]);
+    
+    // Right end wall
+    translate([base_x/2 - wall_thick, -base_y/2, 0])
+        cube([wall_thick, base_y, deck_z_max]);
+    
+    // Internal ribs
+    for (rx = rib_x_pos) {
+        translate([rx - (rib_thick/2), -base_y/2, 0])
+            cube([rib_thick, base_y, deck_z_max]);
+    }
+}
+
+module hole_grid() {
+    grid_x_span = (cols - 1) * hole_pitch;
+    grid_y_span = (rows - 1) * hole_pitch;
+    
+    for (i = [0 : cols - 1]) {
+        for (j = [0 : rows - 1]) {
+            // Calculate center of each hole relative to origin (0,0)
+            cx = (i - (cols - 1) / 2.0) * hole_pitch;
+            cy = (j - (rows - 1) / 2.0) * hole_pitch;
+            
+            // Subtract from the deck (Z = 22 to 25)
+            // We extend the hole slightly in Z to ensure a clean cut
+            translate([cx - hole_size/2, cy - hole_size/2, deck_z_min - 0.1])
+                cube([hole_size, hole_size, (deck_z_max - deck_z_min) + 0.2]);
+        }
+    }
+}
+
+// --- Final Assembly ---
+
+difference() {
+    // The main body of the rack
+    walls_and_base();
+    
+    // Subtract the holes from the deck
+    hole_grid();
+}
+```

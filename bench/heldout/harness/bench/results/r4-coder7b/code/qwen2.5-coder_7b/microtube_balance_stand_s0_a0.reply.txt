@@ -1,0 +1,56 @@
+```openscad
+// Dimensions in millimeters
+$fn = 64;
+
+tube_diameter = 15;
+base_radius = 25;
+cone_height = 10;
+cone_bottom_radius = 22;
+column_height = 19;
+seat_top_radius = 5.5;
+seat_bottom_radius = 3;
+window_width = 4;
+window_depth = 17;
+
+// Base disc
+base = cylinder(r=base_radius, h=4);
+
+// Cone narrowing from base to column
+cone = difference() {
+    cylinder(r1=base_radius, r2=cone_bottom_radius, h=cone_height);
+    cylinder(r1=0.01, r2=0.01, h=cone_height+1);
+};
+
+// Column from cone bottom to seat top
+column = cylinder(r1=cone_bottom_radius, r2=seat_top_radius, h=column_height);
+
+// Seat for the tube
+seat = difference() {
+    cylinder(r1=seat_top_radius, r2=seat_bottom_radius, h=10);
+    cylinder(r1=0.01, r2=0.01, h=10+1);
+};
+
+// Viewing window in column wall
+window = linear_extrude(height=window_depth) {
+    polygon(points=[
+        [window_width/2, 0],
+        [-window_width/2, 0],
+        [-window_width/2, -window_width],
+        [window_width/2, -window_width]
+    ]);
+};
+
+// Final stand
+stand = union() {
+    base;
+    cone;
+    column;
+    seat;
+    translate([17.5, 0, 33]) window; // Centered on the X-axis
+};
+
+// Rotate to print standing up
+rotate_extrude()
+translate([0, -25, 0])
+stand;
+```

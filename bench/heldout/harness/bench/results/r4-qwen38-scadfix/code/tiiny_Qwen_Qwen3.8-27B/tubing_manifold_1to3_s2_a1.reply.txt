@@ -1,0 +1,87 @@
+```openscad
+// Manifold block: 1-in / 3-out, FDM print orientation (rests on XY, +Z up)
+
+// ---- Block dimensions (measured with calipers) ----
+L = 60;   // length along X
+W = 24;   // width  along Y
+H = 16;   // height along Z
+
+// ---- Channel / socket dimensions ----
+d_ch   = 3.0;   // internal channel diameter
+d_sock = 4.2;   // socket bore diameter (for 4 mm tubing)
+z_mid  = 8.0;   // mid-plane height of all channels
+
+// ---- Socket depths ----
+inlet_depth  = 8.0;  // inlet socket depth on -X face
+outlet_depth = 6.0;  // outlet socket depth on +Y face
+
+// ---- Branch / main-channel geometry ----
+x_inlet  = -30;  // -X face (inlet axis)
+x_main   = 15;   // main channel runs to here, then closed
+x_branch = [-15, 0, 15];  // branch start X positions
+
+// ---- Screw holes ----
+d_screw = 3.4;  // vertical through-hole diameter (M3 clearance)
+x_screw = [-25, 25];  // X positions
+y_screw = -6;         // Y position
+
+$fn = 64;
+
+// ============================
+// 1. Solid block, centred on origin
+// ============================
+module block() { translate([-L/2, -W/2, 0]) cube([L, W, H]); }
+
+// ============================
+// 2. Internal channels (3 mm dia, mid-plane z=8)
+// ============================
+// Inlet stub: from -X face to x = -15 (meets first branch)
+module inlet_stub() { translate([x_inlet, 0, z_mid])
+    rotate([0, 90, 0])
+    cylinder(h = x_branch[0] - x_inlet, d = d_ch, $fn = $fn); }
+
+// Main channel: from x = -15 to x = 15 (closed at both ends inside block)
+module main_channel() { translate([x_branch[0], 0, z_mid])
+    rotate([0, 90, 0])
+    cylinder(h = x_main - x_branch[0], d = d_ch, $fn = $fn); }
+
+// Three outlet branches: +Y direction, from branch X to +Y face
+module outlet_branches() { for (xb = x_branch)
+    translate([xb, 0, z_mid])
+        rotate([90, 0, 0])
+        cylinder(h = W/2, d = d_ch, $fn = $fn); }
+
+// ============================
+// 3. Sockets (4.2 mm dia, open to face)
+// ============================
+// Inlet socket on -X face, 8 mm deep
+module inlet_socket() { translate([x_inlet, 0, z_mid])
+    rotate([0, 90, 0])
+    cylinder(h = inlet_depth, d = d_sock, $fn = $fn); }
+
+// Outlet sockets on +Y face, 6 mm deep
+module outlet_sockets() { for (xb = x_branch)
+    translate([xb, W/2, z_mid])
+        rotate([90, 0, 0])
+        cylinder(h = outlet_depth, d = d_sock, $fn = $fn); }
+
+// ============================
+// 4. Vertical through-holes for M3 screws
+// ============================
+module screw_holes() { for (xs = x_screw)
+    translate([xs, y_screw, -0.5])
+        cylinder(h = H + 1.0, d = d_screw, $fn = $fn); }
+
+// ============================
+// Final part
+// ============================
+difference() {
+    block();
+    inlet_stub();
+    main_channel();
+    outlet_branches();
+    inlet_socket();
+    outlet_sockets();
+    screw_holes();
+}
+```

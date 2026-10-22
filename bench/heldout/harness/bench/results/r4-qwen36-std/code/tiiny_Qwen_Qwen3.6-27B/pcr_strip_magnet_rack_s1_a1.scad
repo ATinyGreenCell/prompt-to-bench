@@ -1,0 +1,58 @@
+// Magnetic bead rack for one 8-tube strip of 0.2 mL PCR tubes
+// Dimensions measured with calipers
+
+// Block dimensions
+block_length = 80;  // mm (X)
+block_width = 24;   // mm (Y)
+block_height = 20;  // mm (Z)
+
+// Tube seat parameters
+tube_hole_diameter = 6.4;  // mm
+tube_hole_depth = 12;      // mm (from top face z=20 down to z=8)
+tube_cone_bottom_diameter = 3;  // mm
+tube_cone_bottom_z = 2;        // mm (floor thickness 2 mm)
+tube_spacing = 9;              // mm centre-to-centre
+num_tubes = 8;
+
+// Magnet pocket parameters
+magnet_length = 60.4;   // mm (X)
+magnet_width = 3.3;     // mm (Y)
+magnet_height = 10.2;   // mm (Z)
+magnet_y_offset = 6;    // mm (centred at y = -6 and y = 6)
+
+// Rendering quality
+$fn = 64;
+
+// Difference to create holes and pockets
+difference() {
+    // Solid block
+    translate([-block_length/2, -block_width/2, 0])
+        cube([block_length, block_width, block_height]);
+
+    // Tube seats (8 holes)
+    for (i = [0 : num_tubes - 1]) {
+        x_pos = (i - (num_tubes - 1) / 2) * tube_spacing;
+        
+        translate([x_pos, 0, 0]) {
+            // Cylindrical part: from z=8 to z=20
+            // Extend slightly past to ensure clean cut
+            translate([0, 0, 7.99])
+                cylinder(h = tube_hole_depth + 0.02, r = tube_hole_diameter / 2, center = false);
+            
+            // Conical part: from z=2 to z=8
+            // Extend slightly past bottom
+            translate([0, 0, 1.99])
+                cylinder(h = 6.02, r1 = tube_cone_bottom_diameter / 2, r2 = tube_hole_diameter / 2, center = false);
+        }
+    }
+
+    // Magnet pockets (2 pockets at y = -6 and y = 6)
+    for (y_pos = [-magnet_y_offset, magnet_y_offset]) {
+        translate([0, y_pos, 0]) {
+            // Pocket is open at bottom (z=0), extends up to z=10.2
+            // Extend slightly past to ensure clean cut
+            translate([-magnet_length/2, -magnet_width/2, -0.01])
+                cube([magnet_length, magnet_width, magnet_height + 0.02]);
+        }
+    }
+}

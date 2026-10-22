@@ -1,0 +1,16 @@
+23:27:54 bonsai2-27b-pq2_0            pcr_strip_magnet_rack    s0 fail after 3 attempt(s), best score 0.00, 1298s
+23:58:38 bonsai2-27b-pq2_0            cuvette_rack_2x6         s0 fail after 3 attempt(s), best score 0.00, 1844s
+00:25:43 bonsai2-27b-pq2_0            petri_dish_rack_upright  s0 fail after 3 attempt(s), best score 0.00, 1625s
+00:45:15 bonsai2-27b-pq2_0            syringe_holder_10ml      s0 fail after 3 attempt(s), best score 0.00, 1172s
+01:25:37 bonsai2-27b-pq2_0            eyepiece_phone_adapter   s0 fail after 3 attempt(s), best score 0.79, 2422s
+01:43:00 bonsai2-27b-pq2_0            shelf_pipette_holder     s0 fail after 3 attempt(s), best score 0.00, 1042s
+02:06:45 bonsai2-27b-pq2_0            waterbath_float_15ml     s0 fail after 3 attempt(s), best score 0.00, 1425s
+02:28:20 bonsai2-27b-pq2_0            tubing_manifold_1to3     s0 fail after 3 attempt(s), best score 0.00, 1295s
+03:02:53 bonsai2-27b-pq2_0            microtube_balance_stand  s0 fail after 3 attempt(s), best score 0.54, 2073s
+03:20:59 bonsai2-27b-pq2_0            roundbottom_tube_puck_2ml s0 fail after 3 attempt(s), best score 0.00, 1087s
+03:37:35 bonsai2-27b-pq2_0            conical_15ml_incline_rack s0 fail after 3 attempt(s), best score 0.00, 996s
+04:27:31 bonsai2-27b-pq2_0            conical_50ml_carrier     s0 fail after 3 attempt(s), best score 0.26, 2996s
+04:50:17 bonsai2-27b-pq2_0            pcr_strip_ice_hanger     s0 fail after 3 attempt(s), best score 0.00, 1366s
+05:11:52 bonsai2-27b-pq2_0            hockey_stick_spreader    s0 fail after 3 attempt(s), best score 0.00, 1295s
+05:33:25 bonsai2-27b-pq2_0            cell_strainer_50ml       s0 fail after 3 attempt(s), best score 0.00, 1294s
+06:08:54 bonsai2-27b-pq2_0            tubing_pinch_clamp       s0 fail after 3 attempt(s), best score 0.00, 2129s

@@ -1,0 +1,50 @@
+// L-shaped (hockey-stick) cell spreader, printed lying flat on the XY plane.
+// All dimensions in millimetres, measured with calipers.
+
+$fn = 64;
+
+// Handle bar
+handle_len   = 150;   // length along +X
+handle_w     = 6;     // width in Y
+handle_t     = 4;     // thickness in Z (z = 0 to 4)
+
+// Spreading foot bar (thinner, smooth bed side at z = 0)
+foot_len     = 40;    // length along its own axis
+foot_w       = 5;     // width in Y
+foot_t       = 2.5;   // thickness in Z (z = 0 to 2.5)
+foot_angle   = 120;   // CCW from +X, seen from above
+
+// Round boss joining the bars at the origin
+boss_d       = 6;     // diameter
+boss_t       = 4;     // height (z = 0 to 4)
+
+// Hanging hole through the handle
+hole_d       = 4;     // diameter
+hole_x       = 143;   // centre x position
+hole_y       = 0;     // centre y position
+
+// ---- Handle (axis-aligned bar) ----
+handle = translate([-handle_len/2, -handle_w/2, 0])
+    cube([handle_len, handle_w, handle_t]);
+
+// ---- Spreading foot (rotated 120 deg about Z, centre line from origin) ----
+foot = rotate([0, 0, foot_angle])
+    translate([0, -foot_w/2, 0])
+    cube([foot_len, foot_w, foot_t]);
+
+// ---- Round boss at the origin ----
+boss = cylinder(h = boss_t, r = boss_d/2, $fn = $fn);
+
+// ---- Hanging hole (cut through the handle) ----
+hole = translate([hole_x, hole_y, -1])
+    cylinder(h = handle_t + 2, r = hole_d/2, $fn = $fn);
+
+// ---- Assemble: union of the three solids, then subtract the hole ----
+difference() {
+    union() {
+        handle;
+        foot;
+        boss;
+    }
+    hole;
+}

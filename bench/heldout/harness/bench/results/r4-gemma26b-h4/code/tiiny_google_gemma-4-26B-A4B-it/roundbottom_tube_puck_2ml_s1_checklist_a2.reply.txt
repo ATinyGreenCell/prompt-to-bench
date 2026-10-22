@@ -1,0 +1,85 @@
+The measurement report shows that the holes are being subtracted from the bottom of the puck (Z=0 to Z=20) rather than the top (Z=6 to Z=26). This is because the `hole_shape` module was being translated to `puck_height - seat_depth_z` (which is 26 - 20 = 6), but the `hole_shape` itself was built starting from Z=0 and going up, meaning the cylinder was at the bottom and the sphere was at the top. The specification requires the sphere to be at the *bottom* of the hole.
+
+**Specification Check:**
+- Puck diameter: 80 mm | Report: 80.00 (OK)
+- Puck height: 26 mm | Report: 26.00 (OK)
+- Label cut: x > 34 removed | Report: X max 34.00 (OK)
+- Number of seats: 8 | Report: 8 (OK)
+- Seat spacing: 50 mm diameter circle | Report: centers at 25mm radius (OK)
+- First seat position: +X axis | Report: center at (25, 0) (OK)
+- Seat hole diameter: 11.2 mm | Report: 11.20 (OK)
+- Seat lowest point: 20 mm below top face (z = 6) | Report: z=13.20 (WRONG - the holes are appearing at the bottom of the puck, not the top)
+- Seat shape: 11.2mm hole with half-sphere bottom | Report: z=24.70 shows d=7.14 (WRONG - the sphere is at the top of the hole, not the bottom)
+
+**Correction Plan:**
+1. Redefine `hole_shape` so the cylinder is at the top and the hemisphere is at the bottom.
+2. Ensure the total height of the `hole_shape` is exactly `seat_depth_z`.
+3. Translate the `hole_shape` so its top face is at `puck_height`.
+
+```openscad
+// Tube holder for 2 mL round-bottom tubes
+// Designed for FDM printing, resting on the XY plane.
+
+// --- Dimensions ---
+puck_diameter = 80.0;      // Diameter of the main puck
+puck_height   = 26.0;      // Total height of the puck
+flat_cut_x    = 34.0;      // The plane x = 34 is the boundary; everything > 34 is removed
+seat_circle_d  = 50.0;     // Diameter of the circle where tube seats are centered
+seat_hole_d    = 11.2;     // Diameter of the tube hole
+seat_depth_z   = 20.0;     // Depth from top face to the lowest point of the sphere
+num_seats      = 8;        // Number of tubes to hold
+
+$fn = 128;
+
+// --- Calculations ---
+seat_radius = seat_circle_d / 2;
+sphere_r    = seat_hole_d / 2;
+// The cylinder height is the total depth minus the radius of the hemisphere
+cylinder_h = seat_depth_z - sphere_r;
+
+// --- Geometry ---
+
+module hole_shape() {
+    // The hole is a cylinder with a hemisphere at the bottom.
+    // We build it from Z=0 upwards.
+    union() {
+        // The hemispherical bottom (starts at Z=0)
+        // To make it a true hemisphere at the bottom, we use a sphere 
+        // and translate it so its bottom is at Z=0.
+        translate([0, 0, -sphere_r])
+        sphere(d = seat_hole_d);
+        
+        // The cylindrical part (starts at Z=0)
+        cylinder(h = seat_depth_z, d = seat_hole_d);
+    }
+}
+
+// --- Final Assembly ---
+
+difference() {
+    // 1. The main puck
+    cylinder(h = puck_height, d = puck_diameter);
+
+    // 2. The flat cut for the label (everything beyond x = 34 is removed)
+    // We use a large cube to ensure it cuts through the whole puck
+    translate([flat_cut_x, -puck_diameter, -1])
+    cube([puck_diameter, puck_diameter * 2, puck_height + 2]);
+
+    // 3. The eight tube seats
+    for (i = [0 : num_seats - 1]) {
+        // Calculate angle: first on +X axis (0 degrees)
+        angle = i * (360 / num_seats);
+        
+        // Position on the circle
+        x_pos = seat_radius * cos(angle);
+        y_pos = seat_radius * sin(angle);
+        
+        // The hole is cut from the top face (Z = puck_height) downwards.
+        // We translate the hole shape so its top is at puck_height.
+        // Since the hole_shape is built from Z=0 to Z=seat_depth_z,
+        // we translate it to Z = puck_height - seat_depth_z.
+        translate([x_pos, y_pos, puck_height - seat_depth_z])
+        hole_shape();
+    }
+}
+```

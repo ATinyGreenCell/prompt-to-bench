@@ -1,0 +1,123 @@
+```openscad
+// PCR Strip Holder for Ice Bucket
+
+// --- Dimensions ---
+wall_thickness = 12;      // Thickness of the ice bucket wall (mm)
+strip_length = 84;        // Length of the holder along X (mm)
+inner_leg_width = 4;      // Width of the inner leg (Y dimension, mm)
+outer_leg_width = 4;      // Width of the outer leg (Y dimension, mm)
+total_height = 50;        // Main height of the hook structure (mm)
+bridge_start_z = 46;      // Z start for the bridge connection (mm)
+bridge_end_z = 50;        // Z end for the bridge connection (mm)
+gap_for_wall = 12.5;      // Required gap size in Y to fit over the wall (mm)
+
+ledge_thickness = 6;      // Thickness of the bottom ledge (Z dimension, mm)
+ledge_length_y = 30;      // Length of the ledge extending into the ice bucket (-Y direction)
+tube_diameter = 6.4;      // Diameter of the PCR tubes (mm)
+hole_spacing_x = 9;       // Distance between tube centers along X (mm)
+num_tubes = 8;            // Number of tubes to hold
+
+// --- Constants ---
+$fn = 100; // High resolution for curves
+
+/*
+The error "WARNING: Ignoring 3D child object for 2D operation" occurs because linear_extrude expects a 2D profile (defined in XY or YZ) and extrudes it along the third axis.
+Since the part is defined as a profile in YZ, we must use linear_extrude(height=strip_length) to extrude this YZ shape along the X-axis.
+
+The previous code attempted to define 3D shapes inside the linear_extrude block, which caused the error. We must define all components as 2D profiles in YZ and then union/difference them before extrusion.
+*/
+
+module yz_profile() {
+    // This module defines the cross-section shape in the YZ plane (a single slice along X=0).
+    // The final part will be created by extruding this profile 84mm along X.
+
+    difference() {
+        // --- Base Solid Shape (Union of all components) ---
+        union() {
+            // 1. Inner Leg Profile (YZ cross section)
+            translate([0, -(inner_leg_width/2), 0])
+            cube([1, inner_leg_width, total_height]);
+
+            // 2. Outer Leg Profile (YZ cross section) - Positioned relative to the center line of the hook structure
+            // The gap is 12.5mm. Inner leg ends at Y = inner_leg_width/2. Outer leg starts after this + gap.
+            translate([0, inner_leg_width + gap_for_wall - (outer_leg_width/2), 0])
+            cube([1, outer_leg_width, total_height]);
+
+            // 3. Bridge connecting the legs (YZ cross section)
+            // The bridge spans the distance between the inner leg's edge and the outer leg's edge.
+            translate([0, inner_leg_width + gap_for_wall - (outer_leg_width/2), bridge_start_z])
+            cube([1, outer_leg_width - inner_leg_width, bridge_end_z - bridge_start_z]);
+
+            // 4. Ledge Profile (YZ cross section) - Attached to the foot of the inner leg (Y=0)
+            translate([0, -(inner_leg_width/2), 0])
+            cube([1, ledge_length_y, ledge_thickness]);
+        }
+
+        // --- Tube Holes Cutout Profiles ---
+        for (i = [0 : num_tubes - 1]) {
+            // Calculate X position for the center of the hole relative to the profile's origin (X=0)
+            // Since we are extruding along X, these holes must be cut out from the YZ profile at specific X locations.
+            // This requires a more complex approach than simple linear_extrude if the cuts are not centered on the extrusion axis.
+
+            // Re-evaluating: If the part is extruded 84mm along X, all features (like holes) must be defined in the YZ plane and then cut out of the resulting solid block.
+            // We cannot use linear_extrude(height=strip_length) if we need cuts at specific X locations *within* that extrusion length.
+
+            // Solution: Model the entire 3D shape directly using union/difference, rather than relying on linear_extrude for the main body.
+        }
+    }
+}
+
+
+// --- Final Assembly (Modeling in 3D space directly) ---
+
+module pcr_holder_3d() {
+    // Define the base solid structure first (The U-shape + Bridge + Ledge)
+    union() {
+        // 1. Inner Leg (Solid part)
+        translate([0, -(inner_leg_width/2), 0])
+        cube([strip_length, inner_leg_width, total_height]);
+
+        // 2. Outer Leg (Solid part)
+        // Positioned such that the gap is 12.5mm. Inner leg ends at Y = inner_leg_width/2. Outer leg starts after this + gap.
+        translate([0, inner_leg_width + gap_for_wall - (outer_leg_width/2), 0])
+        cube([strip_length, outer_leg_width, total_height]);
+
+        // 3. Bridge connecting the legs (Solid part)
+        // The bridge spans the distance between the inner leg's edge and the outer leg's edge.
+        translate([0, inner_leg_width + gap_for_wall - (outer_leg_width/2), bridge_start_z])
+        cube([strip_length, outer_leg_width - inner_leg_width, bridge_end_z - bridge_start_z]);
+
+        // 4. Ledge (Solid part) - Attached to the foot of the inner leg (Y=0)
+        translate([0, -(inner_leg_width/2), 0])
+        cube([strip_length, ledge_length_y, ledge_thickness]);
+    }
+}
+
+module pcr_holder() {
+    difference() {
+        // Start with the solid structure
+        pcr_holder_3d();
+
+        // Cut out the tube holes
+        for (i = [0 : num_tubes - 1]) {
+            // Calculate X position for the center of the hole. Centered on X=0, spanning strip_length.
+            // The centers are spaced by 9mm, starting from a point that keeps them centered overall.
+            // Total span needed: (num_tubes - 1) * hole_spacing_x = 7 * 9 = 63 mm.
+            // To center this on X=0, the start should be at -31.5mm and end at +31.5mm.
+            start_offset = -( (num_tubes - 1) * hole_spacing_x / 2 );
+            x_pos = start_offset + (i * hole_spacing_x);
+
+            // The holes are in the ledge, centered at Y = -15.
+            y_center = -15;
+
+            translate([x_pos, y_center, 0]) {
+                // Cut a cylinder through the entire thickness of the ledge (ledge_thickness) and slightly beyond for safety.
+                cylinder(h = ledge_thickness + 2, r = tube_diameter / 2);
+            }
+        }
+    }
+}
+
+// Render the final part
+pcr_holder();
+```

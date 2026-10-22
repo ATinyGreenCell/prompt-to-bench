@@ -1,0 +1,83 @@
+// Coarse cell strainer for 50mL conical tube
+// Designed for FDM printing, oriented upright (Z-axis)
+
+// --- Dimensions ---
+od_cup      = 25.0;    // Outer diameter of the main cup
+wall_t      = 1.2;     // Wall thickness
+bore_d      = 22.6;    // Inner diameter of the cup
+cup_h       = 32.0;    // Height of the cup body
+floor_t     = 1.2;     // Thickness of the floor
+hole_d      = 1.0;     // Diameter of the strainer holes
+grid_step   = 2.0;     // Spacing of the hole grid
+max_hole_r  = 10.0;    // Maximum radius for hole centers
+collar_d1   = 25.0;    // Diameter at the start of the flare (z=26)
+collar_d2   = 33.0;    // Diameter at the top of the flare (z=30)
+flare_h     = 4.0;     // Height of the flare (30 - 26)
+rim_d       = 33.0;    // Diameter of the top rim
+rim_h       = 2.0;     // Height of the top rim (32 - 30)
+notch_w     = 3.0;     // Width of the vent notches
+notch_r     = 12.5;    // Radius at which the notch starts cutting
+
+$fn = 128;
+
+// --- Geometry Calculations ---
+// The floor is at z=0 to 1.2. The cup body starts at z=1.2.
+// However, the prompt says "closed by a 1.2mm floor (z=0 to 1.2)". 
+// This implies the bottom of the cup is at z=1.2.
+
+module strainer_body() {
+    difference() {
+        union() {
+            // Main Cup Body
+            cylinder(h = cup_h, d = od_cup);
+            
+            // Flare (45-degree cone)
+            // Starts at z=26 (d=25) to z=30 (d=33)
+            // Since it's a 45-degree cone, the diameter increases by 8mm over 4mm height.
+            // This matches the prompt: 25 to 33 over 4mm.
+            cylinder(h = flare_h, d1 = collar_d1, d2 = collar_d2, center = false);
+            
+            // Top Rim
+            translate([0, 0, 30])
+                cylinder(h = rim_h, d = rim_d);
+        }
+
+        // Hollow out the bore
+        translate([0, 0, -0.01])
+            cylinder(h = cup_h + 0.02, d = bore_d);
+            
+        // Vent Notches
+        // Removes collar and rim beyond 12.5mm from axis from z=25 up.
+        // We use a large cube to cut the sides.
+        for (side = [-1, 1]) {
+            translate([0, 0, 25])
+            rotate([0, 0, (side == 1 ? 0 : 180)])
+            translate([notch_r, -notch_w/2, -0.01])
+            cube([100, notch_w, 10]); // Large enough to clear the rim
+        }
+    }
+}
+
+module floor_holes() {
+    // Grid of holes on the floor
+    // One hole at center, others on 2mm grid
+    // Max radius 10mm. 
+    // Grid indices: -10mm to 10mm in steps of 2mm -> [-10, -8, -6, -4, -2, 0, 2, 4, 6, 8, 10]
+    // This gives 11 points in each direction.
+    
+    for (x = [-10 : grid_step : 10]) {
+        for (y = [-10 : grid_step : 10]) {
+            // Check if center is within 10mm of axis
+            if (sqrt(x*x + y*y) <= max_hole_r) {
+                translate([x, y, -0.01])
+                    cylinder(h = floor_t + 0.02, d = hole_d);
+            }
+        }
+    }
+}
+
+// --- Final Assembly ---
+difference() {
+    strainer_body();
+    floor_holes();
+}

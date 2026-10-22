@@ -1,0 +1,55 @@
+// Open-sided rack for 12 standard 12.5 mm square cuvettes
+// Print orientation: standing on base plate, z = 0 at bed
+
+$fn = 64;
+
+// ---- Plates ----
+plate_x      = 112;   // plate length (X)
+plate_y      = 44;    // plate depth (Y)
+plate_t      = 3;     // plate thickness
+base_z0      = 0;     // base plate bottom
+deck_z0      = 22;    // deck plate bottom
+total_h      = 25;    // overall height (top of deck)
+
+// ---- Walls ----
+end_wall_t   = 3;     // end wall thickness (flush with short ends)
+rib_t        = 2.5;   // internal rib thickness
+rib_x        = [-36, -18, 0, 18, 36]; // rib centre positions
+
+// ---- Cuvette holes ----
+hole_size    = 13;    // square hole side
+hole_pitch   = 18;    // centre-to-centre spacing (X and Y)
+holes_nx     = 6;     // holes along X
+holes_ny     = 2;     // rows along Y
+
+eps          = 0.5;   // cutter overshoot
+
+module rack() {
+    difference() {
+        union() {
+            // Base plate
+            translate([-plate_x/2, -plate_y/2, base_z0])
+                cube([plate_x, plate_y, plate_t]);
+            // Deck plate
+            translate([-plate_x/2, -plate_y/2, deck_z0])
+                cube([plate_x, plate_y, plate_t]);
+            // End walls
+            for (s = [-1, 1])
+                translate([s > 0 ? plate_x/2 - end_wall_t : -plate_x/2, -plate_y/2, 0])
+                    cube([end_wall_t, plate_y, total_h]);
+            // Ribs
+            for (x = rib_x)
+                translate([x - rib_t/2, -plate_y/2, 0])
+                    cube([rib_t, plate_y, total_h]);
+        }
+        // Square cuvette through-holes in deck
+        for (i = [0 : holes_nx - 1])
+            for (j = [0 : holes_ny - 1])
+                translate([(i - (holes_nx - 1)/2) * hole_pitch - hole_size/2,
+                           (j - (holes_ny - 1)/2) * hole_pitch - hole_size/2,
+                           deck_z0 - eps])
+                    cube([hole_size, hole_size, plate_t + 2*eps]);
+    }
+}
+
+rack();

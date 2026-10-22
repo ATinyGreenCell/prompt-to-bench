@@ -1,0 +1,40 @@
+// Petri dish rack - ten 90 mm dishes standing on edge
+// Print orientation: as used, base on XY plane
+
+// ---------- Parameters ----------
+base_len      = 203;   // base length along X (mm)
+base_wid      = 80;    // base width along Y (mm)
+base_h        = 20;    // base height (mm)
+
+cradle_r      = 46;    // cradle cylinder radius (mm)
+cradle_z      = 52;    // cradle cylinder axis height (mm); bottom at z = 6
+cradle_extra  = 1;     // cutter overshoot past base ends (mm)
+
+div_count     = 11;    // number of divider plates
+div_pitch     = 20;    // divider spacing along X (mm)
+div_t         = 3;     // divider thickness in X (mm)
+div_h         = 60;    // divider height (mm)
+div_w         = base_wid; // divider width in Y (mm)
+
+$fn = 128;
+
+// ---------- Derived ----------
+div_x0 = -(div_count - 1) * div_pitch / 2;   // first divider centre (-100)
+
+// ---------- Model ----------
+union() {
+    // Base with cylindrical cradle
+    difference() {
+        translate([-base_len/2, -base_wid/2, 0])
+            cube([base_len, base_wid, base_h]);
+
+        translate([-(base_len/2 + cradle_extra), 0, cradle_z])
+            rotate([0, 90, 0])
+                cylinder(r = cradle_r, h = base_len + 2*cradle_extra);
+    }
+
+    // Solid divider plates (cradle not cut through them)
+    for (i = [0 : div_count - 1])
+        translate([div_x0 + i*div_pitch - div_t/2, -div_w/2, 0])
+            cube([div_t, div_w, div_h]);
+}

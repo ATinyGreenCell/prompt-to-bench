@@ -1,0 +1,75 @@
+// Manifold block: 1-in -> 3-out tubing splitter
+// Units: mm. Print orientation: block rests on XY plane, centred in X/Y.
+
+// ---- Named dimensions ----
+L = 60;      // block length along X
+W = 24;      // block width along Y
+H = 16;      // block height along Z
+midZ = H/2;  // mid-plane where channels lie (z = 8)
+
+// Channel / socket geometry
+dChan = 3.0;     // channel diameter
+rChan = dChan/2;
+dSock = 4.2;     // socket diameter
+rSock = dSock/2;
+dSockIn = 8.0;   // inlet socket depth
+dSockOut = 6.0;  // outlet socket depth
+
+// Branch positions along X (inlet at -X end, branches at these x-centres)
+xBranch = [-15, 0, 15];
+
+// M3 screw through-holes
+dScrew = 3.4;
+rScrew = dScrew/2;
+xScrew = [-25, 25];
+yScrew = -6;
+
+// ---- Build ----
+$fn = 64;
+
+block = cube([L, W, H], center=[0,0,0]);
+
+// Main channel: runs along X from the -X end to x = 15 (closed inside)
+mainChan = cylinder(d=dChan, h=L + 1, center=[0,0,0], axis=[1,0,0])
+    & cube([46, L+1, L+1], center=[-12,0,0]);
+
+// Branch channels: from x = -15, 0, 15 running +Y to the +Y face
+branches = union();
+for (xb in xBranch) {
+    branches = union(branches,
+        cylinder(d=dChan, h=W + 1, center=[0,0,0], axis=[0,1,0])
+        & cube([L+1, 26, L+1], center=[xb, 0, 0])
+    );
+}
+
+// Inlet socket: 4.2 mm dia, 8 mm deep, on -X end face at y=0
+inletSock = cylinder(d=dSock, h=dSockIn + 1, center=[0,0,0], axis=[1,0,0])
+    & cube([10, L+1, L+1], center=[-30, 0, 0]);
+
+// Outlet sockets: 4.2 mm dia, 6 mm deep, on +Y face at each branch x
+outSocks = union();
+for (xb in xBranch) {
+    outSocks = union(outSocks,
+        cylinder(d=dSock, h=dSockOut + 1, center=[0,0,0], axis=[0,1,0])
+        & cube([L+1, 10, L+1], center=[xb, 12, 0])
+    );
+}
+
+// M3 screw through-holes (vertical, through full height)
+screwHoles = union();
+for (xs in xScrew) {
+    screwHoles = union(screwHoles,
+        cylinder(d=dScrew, h=H + 1, center=[0,0,0])
+        & cube([L+1, W+1, H+1], center=[xs, yScrew, 0])
+    );
+}
+
+// Final solid
+difference() {
+    block;
+    mainChan;
+    branches;
+    inletSock;
+    outSocks;
+    screwHoles;
+}

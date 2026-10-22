@@ -1,0 +1,57 @@
+```openscad
+// L-shaped (hockey-stick) cell spreader
+// Designed for FDM printing, lying flat on the XY plane.
+
+// --- Dimensions (mm) ---
+handle_length = 150;        // Length of the handle bar
+handle_width = 6;           // Width of the handle bar
+handle_thickness = 4;       // Thickness of the handle bar
+handle_hole_x = 143;        // X position of the hanging hole
+handle_hole_radius = 2;     // Radius of the 4mm diameter hanging hole
+
+foot_length = 40;           // Length of the spreading foot
+foot_width = 5;             // Width of the spreading foot
+foot_thickness = 2.5;       // Thickness of the spreading foot (agar side)
+
+boss_diameter = 6;          // Diameter of the joining boss
+boss_height = 4;            // Height of the joining boss
+
+angle_deg = 120;            // Angle between handle and foot (counter-clockwise from +X)
+$fn = 64;                   // Smoothness for cylinders/circles
+
+// --- Implementation ---
+
+module spreader() {
+    difference() {
+        union() {
+            // 1. The Handle
+            // Centered on Y, extends from X=0 to X=150
+            translate([handle_length/2, 0, handle_thickness/2])
+                cube([handle_length, handle_width, handle_thickness], center = true);
+            
+            // 2. The Spreading Foot
+            // Rotated 120 degrees from +X axis
+            // We use a hull or a rotated cube to ensure the foot meets the origin correctly
+            rotate([0, 0, angle_deg])
+                translate([foot_length/2, 0, foot_thickness/2])
+                    cube([foot_length, foot_width, foot_thickness], center = true);
+            
+            // 3. The Boss (Joining piece at the origin)
+            // Placed at the origin to bridge the two bars
+            translate([0, 0, boss_height/2])
+                cylinder(h = boss_height, d = boss_diameter, center = true);
+        }
+
+        // 4. The Hanging Hole
+        // Located at x = 143, y = 0, through the handle
+        // We extend the cylinder slightly in Z to ensure a clean cut
+        translate([handle_hole_x, 0, -1])
+            cylinder(h = handle_thickness + 2, d = handle_hole_radius * 2);
+    }
+}
+
+// Render the part
+// The part is designed to be printed lying flat on the XY plane.
+// The handle lies along the X axis.
+spreader();
+```

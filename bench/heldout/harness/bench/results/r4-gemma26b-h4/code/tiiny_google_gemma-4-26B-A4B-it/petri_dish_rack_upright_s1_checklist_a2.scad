@@ -1,0 +1,71 @@
+// Petri Dish Rack
+// Designed for 90mm diameter dishes standing on edge.
+
+// --- Dimensions ---
+base_l      = 203;    // Length of base (X)
+base_w      = 80;     // Width of base (Y)
+base_h      = 20;     // Height of base (Z)
+
+dish_radius = 45;     // Radius of 90mm dish
+cradle_r    = 46;     // Radius of the cradle cut
+cradle_z    = 52;     // Z-coordinate of the cradle cylinder axis
+// cradle_bottom = cradle_z - cradle_r = 6mm
+
+num_dividers = 11;    // Number of divider plates
+divider_t    = 3;     // Thickness of dividers (X)
+divider_h    = 60;    // Height of dividers (Z)
+divider_spacing = 20; // Distance between divider centers (X)
+
+$fn = 128;
+
+// --- Geometry Construction ---
+
+// The base block
+module base() {
+    // Centered on X and Y, sits on Z=0
+    translate([-base_l / 2, -base_w / 2, 0])
+        cube([base_l, base_w, base_h]);
+}
+
+// The divider plates
+module dividers() {
+    // Dividers are placed at x = -100, -80, ..., 100
+    // Formula for center: (i - (n-1)/2) * spacing
+    for (i = [0 : num_dividers - 1]) {
+        x_pos = (i - (num_dividers - 1) / 2) * divider_spacing;
+        // Dividers are 80mm wide (Y) and 60mm tall (Z)
+        // They are centered on Y (from -40 to 40)
+        translate([x_pos, -base_w / 2, 0])
+            cube([divider_t, base_w, divider_h]);
+    }
+}
+
+// The cradle cut (cylindrical groove)
+// The axis runs along X, at y=0, z=52.
+module cradle_cut() {
+    // Cylinder axis is parallel to X. 
+    // We rotate 90 deg around Y to align cylinder axis with X.
+    // We translate to the specified axis position (y=0, z=52).
+    translate([0, 0, cradle_z])
+        rotate([0, 90, 0])
+            cylinder(h = base_l + 2, r = cradle_r);
+}
+
+// --- Final Assembly ---
+
+// The specification states:
+// 1. A curved cradle is cut along the whole length of the base.
+// 2. Eleven solid divider plates rise from z=0 to z=60.
+// 3. The cradle is NOT cut through the dividers.
+// This implies: Part = (Base - Cradle) + Dividers.
+
+union() {
+    // 1. The Base with the cradle cut out
+    difference() {
+        base();
+        cradle_cut();
+    }
+    
+    // 2. The Dividers (added as solid, so they are not cut by the cradle)
+    dividers();
+}

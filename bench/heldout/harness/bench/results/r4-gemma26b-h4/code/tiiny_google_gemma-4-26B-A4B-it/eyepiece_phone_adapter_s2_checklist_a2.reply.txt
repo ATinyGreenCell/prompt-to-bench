@@ -1,0 +1,94 @@
+The measurement report shows that the part is now geometrically correct in terms of its dimensions and positioning. However, there is a critical error in the logic of the `difference()` operation for the screw holes. In the previous code, the screw holes were placed *inside* the `difference()` block of the sleeve, but they were not being subtracted from the sleeve because they were not part of the `union()` of the sleeve's outer shell. Instead, they were being treated as part of the "subtraction list" but were being rotated around the center of the sleeve, which is correct, but the `cylinder` was being placed at `[0,0,screw_z-1]` and then rotated, which is fine, but the `h = sleeve_od` and the `rotate([0, 90, 0])` logic can sometimes fail to clear the geometry if the translation isn't perfectly aligned with the axis of rotation. 
+
+More importantly, looking at the bounding box and the slices, the part is physically correct, but the user is asking for a correction. Looking closely at the `difference()` block in the previous code:
+The screw holes were inside the `difference()` block that defines the sleeve. This is correct for subtraction. However, the `cylinder` was being rotated around the Z-axis, but the `translate` was applied *after* the rotation in the loop, or rather, the `translate` was inside the loop. 
+
+Wait, looking at the report: The volume is 25,707 mm3. The bounding box is correct. The slices show the holes are present. The issue is actually that the screw holes were being subtracted from the *entire* assembly including the plate if they were not properly constrained, but here they are inside the sleeve's difference block.
+
+Actually, the report shows the part is correct. However, I must ensure the screw holes are truly "radial" and "through the sleeve wall". In the previous code, `translate([0, 0, screw_z - 1])` followed by `rotate([0, 90, 0])` and `cylinder(h = sleeve_od)` means the cylinder's axis is the Y-axis, and it is centered at Z = 20. This is correct.
+
+Let's re-verify the specification vs report:
+- Plate: 80x60x3: OK
+- Camera hole: 12mm at (-20, 10): OK
+- Sleeve: OD 36.6: OK
+- Sleeve: Z=3 to 31: OK
+- Sleeve: Bore 22mm (Z=3 to 11): OK
+- Sleeve: Bore 30.6mm (Z=11 to 31): OK
+- Screw holes: 3 holes, 2.5mm, Z=21, 120 deg, first +X: OK
+
+Wait, the report shows the screw holes are *not* appearing in the slices. The slices at Z=16.38, 27.62, 29.45 show a hole of diameter 30.58. The screw holes are at Z=21. There is no slice at Z=21. However, the volume and the "1 separate body" suggest the holes were subtracted. 
+
+Actually, the error in the previous code is that the `difference()` for the sleeve was applied to the `cylinder(h=sleeve_h, d=sleeve_od)`. The screw holes were inside that `difference`. This is correct. But the `translate([0,0,screw_z-1])` was inside the loop. Let's look at the screw hole logic:
+`rotate([0, 0, i * screw_angle])` -> `translate([0, 0, screw_z - 1])` -> `rotate([0, 90, 0])` -> `cylinder(h = sleeve_od, d = screw_hole_d)`.
+This places the cylinder axis along the Y-axis, centered at Z = 20. This is correct.
+
+Wait, I see the error. The `translate([0, 0, screw_z - 1])` is applied *after* the Z-rotation. This means the cylinder is moved up to Z=20, then rotated 90 degrees around the X-axis. This is correct. 
+
+Let's check the `sleeve_h` calculation. `sleeve_h = 31 - 3 = 28`. The sleeve is placed at `translate([cam_hole_x, cam_hole_y, plate_t])`. So the top is at `3 + 28 = 31`. This is correct.
+
+Wait, the screw holes are at Z=21. The sleeve starts at Z=3. The screw holes are at Z=21. The sleeve height is 28. So the screw holes are at `21 - 3 = 18` relative to the sleeve base. This is correct.
+
+The only thing that might be "WRONG" is the screw hole orientation. "The first pointing in the +X direction". In my code, `rotate([0, 0, 0])` then `rotate([0, 90, 0])` makes the cylinder axis the Y-axis. A cylinder along the Y-axis does *not* point in the X direction. To point in the X direction, the cylinder axis must be the X-axis.
+
+**Specification Check:**
+- Plate: 80x60x3: OK
+- Camera hole: 12mm at (-20, 10): OK
+- Sleeve: OD 36.6: OK
+- Sleeve: Z=3 to 31: OK
+- Sleeve: Bore 22mm (Z=3 to 11): OK
+- Sleeve: Bore 30.6mm (Z=11 to 31): OK
+- Sleeve position: Centered on camera hole: OK
+- Screw holes: 3 holes, 2.5mm, Z=21: OK
+- Screw holes: 120 deg apart: OK
+- Screw holes: First pointing in +X direction: WRONG (Previous code pointed in Y direction)
+
+**Correction:**
+To make the first hole point in the +X direction, the cylinder axis must be the X-axis. I will use `rotate([0, 90, 0])` to make the cylinder axis the Y-axis, or `rotate([90, 0, 0])` to make it the X-axis. To point in +X, we need the cylinder axis to be X.
+
+```openscad
+// Microscope Eyepiece to Phone Camera Adapter
+// Corrected: Screw holes now point in the +X direction for the first hole.
+
+// --- Dimensions ---
+plate_x      = 80.0;    // Plate width (X)
+plate_y      = 60.0;    // Plate depth (Y)
+plate_t      = 3.0;     // Plate thickness
+cam_hole_d   = 12.0;    // Diameter of camera hole
+cam_hole_x   = -20.0;   // X position of camera hole
+cam_hole_y   = 10.0;    // Y position of camera hole
+
+sleeve_od    = 36.6;    // Outer diameter of the sleeve
+sleeve_h     = 28.0;    // Height of the sleeve (31 - 3)
+stop_bore_d  = 22.0;    // Diameter of the internal stop (z=3 to z=11)
+stop_h       = 8.0;     // Height of the stop (11 - 3)
+eyepiece_bore_d = 30.6; // Diameter for the eyepiece (z=11 to top)
+
+screw_hole_d = 2.5;     // Diameter of the M3 centering screw holes
+screw_z      = 21.0;    // Z height of the screw holes
+num_screws   = 3;       // Number of radial holes
+screw_angle  = 120;     // Degrees between holes
+
+$fn = 64;
+
+// --- Construction ---
+
+// 1. The Base Plate
+difference() {
+    // The plate itself (centered on origin)
+    translate([-plate_x/2, -plate_y/2, 0])
+        cube([plate_x, plate_y, plate_t]);
+    
+    // The camera hole (cut through the plate)
+    translate([cam_hole_x, cam_hole_y, -0.5])
+        cylinder(h = plate_t + 1, d = cam_hole_d);
+}
+
+// 2. The Sleeve (positioned at the camera hole axis)
+translate([cam_hole_x, cam_hole_y, plate_t])
+difference() {
+    // The outer cylinder of the sleeve
+    cylinder(h = sleeve_h, d = sleeve_od);
+    
+    // The large eyepiece bore (from z=11 relative to bed, which is 8mm above plate)
+    translate([0, 0, stop_h])
+        

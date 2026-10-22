@@ -1,0 +1,63 @@
+```openscad
+// Wall-mounted 10 mL syringe holder (tip-down, printed as used)
+// Units: mm. Rests on XY plane at z = 0, back face (y = 15) against wall.
+
+$fn = 64;
+
+// Block
+block_w = 50;   // X
+block_d = 30;   // Y
+block_h = 40;   // Z
+
+// Barrel channel (16.5 mm wide, full height, half-circle back, straight sides to front)
+barrel_w   = 16.5;
+barrel_r   = barrel_w / 2;   // 8.25 mm
+barrel_cx  = 0;              // x centre
+barrel_cy  = 0;              // y centre of the back half-circle
+barrel_h   = block_h;        // full height
+
+// Flange slot (34 mm wide, 2.6 mm tall, z 30..32.6, front face back to y = 11)
+flange_w   = 34;
+flange_h   = 2.6;
+flange_z0  = 30;
+flange_y0  = -15;            // front face
+flange_y1  = 11;             // back end of slot
+
+// M4 wall-screw clearance holes (4.5 mm, through front-to-back)
+hole_d     = 4.5;
+hole_r     = hole_d / 2;
+hole_x     = [-19, 19];
+hole_z     = 15;
+
+// ---- Base block (centred on origin in X and Y, z 0..40) ----
+block = translate([-block_w/2, -block_d/2, 0])
+    cube([block_w, block_d, block_h]);
+
+// ---- Barrel channel cutter (extends 1 mm past front and back faces) ----
+barrel_cutter = union() {
+    // Back half-circle (centre x=0, y=0, r=8.25)
+    translate([barrel_cx, barrel_cy, 0])
+        cylinder(h = barrel_h, r = barrel_r);
+    // Straight sides running forward to the front face
+    translate([-barrel_w/2, -block_d/2, 0])
+        cube([barrel_w, block_d, barrel_h]);
+};
+
+// ---- Flange slot cutter (extends 1 mm past front face) ----
+flange_cutter = translate([-flange_w/2, flange_y0 - 1, flange_z0])
+    cube([flange_w, (flange_y1 - flange_y0) + 1, flange_h]);
+
+// ---- Wall-screw clearance holes (extend 1 mm past front and back faces) ----
+screw_holes = for (i = [0:1])
+    translate([hole_x[i], -block_d/2 - 1, hole_z])
+        rotate([90, 0, 0])
+            cylinder(h = block_d + 2, r = hole_r);
+
+// ---- Final part ----
+difference() {
+    block;
+    barrel_cutter;
+    flange_cutter;
+    screw_holes;
+}
+```

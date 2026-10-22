@@ -1,0 +1,140 @@
+// Tube holder for 2 mL round-bottom tubes
+// Designed for FDM printing, resting on the XY plane.
+
+// --- Dimensions ---
+puck_diameter = 80.0;      // Diameter of the main puck
+puck_height   = 26.0;      // Total height of the puck
+flat_cut_x    = 34.0;      // The plane x = 34 is the boundary; everything > 34 is removed
+seat_circle_d  = 50.0;     // Diameter of the circle where tube seats are centered
+seat_hole_d    = 11.2;     // Diameter of the tube hole
+seat_depth_z   = 20.0;     // Depth from top face to the lowest point of the sphere
+num_seats      = 8;        // Number of tubes to hold
+
+$fn = 128;
+
+// --- Calculations ---
+puck_radius = puck_diameter / 2;
+seat_radius = seat_circle_d / 2;
+// The seat is a cylinder + a hemisphere. 
+// The hemisphere's radius is seat_hole_d / 2.
+// The cylinder height is (seat_depth_z - seat_hole_d / 2).
+// However, the prompt says the lowest point is 20mm below the top face.
+// If top face is at Z = puck_height, lowest point is at Z = puck_height - 20.
+// The sphere radius is seat_hole_d / 2.
+// The center of the sphere is at Z = (puck_height - 20) + (seat_hole_d / 2).
+
+sphere_r = seat_hole_d / 2;
+cylinder_h = seat_depth_z - sphere_r;
+
+// --- Geometry ---
+
+module tube_seat() {
+    // The seat consists of a cylinder and a hemisphere at the bottom
+    union() {
+        // Cylinder part
+        cylinder(h = cylinder_h, d = seat_hole_d);
+        // Hemisphere part (using rotate_extrude/circle to ensure it's a solid hemisphere)
+        translate([0, 0, cylinder_h])
+        rotate([0, 90, 0])
+        cylinder(h = sphere_r, d = seat_hole_d, center = true); 
+        // Note: Using cylinder with center=true for the sphere part is tricky.
+        // Let's use a simpler approach: a sphere at the bottom.
+    }
+}
+
+// Corrected Seat Module
+module seat_shape() {
+    difference() {
+        // We define the seat as a subtraction from the puck, 
+        // but for the 'union' logic in the difference() below, 
+        // we define the shape of the hole itself.
+        union() {
+            // The cylindrical part
+            cylinder(h = seat_depth_z - sphere_r, d = seat_hole_d);
+            // The hemispherical bottom
+            translate([0, 0, seat_depth_z - sphere_r])
+            sphere(d = seat_hole_d);
+        }
+    }
+}
+
+// Since we are using difference(), we define the "hole" shape.
+module hole_geometry() {
+    // Cylinder part
+    cylinder(h = seat_depth_z - sphere_r + 0.1, d = seat_hole_d);
+    // Sphere part at the bottom
+    translate([0, 0, seat_depth_z - sphere_r])
+    sphere(d = seat_hole_d);
+}
+
+// --- Final Assembly ---
+
+difference() {
+    // 1. The main puck
+    cylinder(h = puck_height, d = puck_diameter);
+
+    // 2. The flat cut for the label (everything beyond x = 34 is removed)
+    // We use a large cube to ensure it cuts through the whole puck
+    translate([flat_cut_x, -puck_diameter, -1])
+    cube([puck_diameter, puck_diameter * 2, puck_height + 2]);
+
+    // 3. The eight tube seats
+    for (i = [0 : num_seats - 1]) {
+        // Calculate angle: first on +X axis (0 degrees)
+        angle = i * (360 / num_seats);
+        
+        // Position on the circle
+        // We use cos/sin to place them on the XY plane
+        x_pos = seat_radius * cos(angle);
+        y_pos = seat_radius * sin(angle);
+        
+        // Translate to position and move to the top face
+        // The hole is cut from the top (Z = puck_height) downwards.
+        // We translate the hole so its top is at puck_height.
+        translate([x_pos, y_pos, puck_height - seat_depth_z])
+        rotate([0, 0, 0]) // No rotation needed for vertical holes
+        difference() {
+            // We need to make sure the hole is "cut" from the top.
+            // We'll use a union of a cylinder and sphere to define the "negative" volume.
+            union() {
+                // Cylinder part
+                cylinder(h = seat_depth_z - sphere_r + 0.1, d = seat_hole_d);
+                // Sphere part at the bottom
+                translate([0, 0, seat_depth_z - sphere_r])
+                sphere(d = seat_hole_d);
+            }
+        }
+    }
+}
+
+// Note: The logic above for the hole is slightly redundant in the loop.
+// Let's clean up the loop to be a simple subtraction.
+
+// RE-WRITTEN ASSEMBLY FOR CLARITY
+// (The above block is the logic, here is the clean version)
+
+/*
+difference() {
+    // The Puck
+    cylinder(h = puck_height, d = puck_diameter);
+    
+    // The Label Cut
+    translate([flat_cut_x, -puck_diameter, -1])
+    cube([puck_diameter, puck_diameter * 2, puck_height + 2]);
+    
+    // The Holes
+    for (i = [0 : num_seats - 1]) {
+        angle = i * (360 / num_seats);
+        x_pos = seat_radius * cos(angle);
+        y_pos = seat_radius * sin(angle);
+        
+        translate([x_pos, y_pos, puck_height - seat_depth_z]) {
+            // Cylinder part of the hole
+            cylinder(h = seat_depth_z - sphere_r + 0.1, d = seat_hole_d);
+            // Sphere part of the hole
+            translate([0, 0, seat_depth_z - sphere_r])
+            sphere(d = seat_hole_d);
+        }
+    }
+}
+*/

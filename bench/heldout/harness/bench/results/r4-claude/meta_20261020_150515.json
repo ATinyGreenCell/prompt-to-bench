@@ -1,0 +1,29 @@
+{
+ "started": "2026-10-20T15:05:14",
+ "args": {
+  "run": "r4-claude",
+  "models": [
+   "claude:claude-sonnet-5-5",
+   "claude:claude-haiku-4-5"
+  ],
+  "tasks": null,
+  "samples": 1,
+  "max_repairs": 2,
+  "feedback": "report",
+  "temperature": null,
+  "prompts": null,
+  "lang": "en",
+  "system": "bench/prompts/system.md",
+  "render_timeout": 120,
+  "seed_base": null,
+  "num_predict": null,
+  "think": false,
+  "num_ctx": 8192
+ },
+ "git_commit": "95fd54df0c1cd92ecf0f806b701698b0bcc3dbc6",
+ "host": "enamel",
+ "cpu": "x86_64",
+ "python": "3.14.4",
+ "openscad": "OpenSCAD version 2026.10.01",
+ "ollama": "0.30.11"
+}

@@ -1,0 +1,67 @@
+```openscad
+// --- Dimensions ---
+length_x = 84;             // Overall extrusion length along X
+gap_width = 12.5;          // Gap for the 12mm wall (16.5 - 4 = 12.5)
+leg_thickness = 4;         // Thickness of the legs (y=0 to 4 and y=16.5 to 20.5)
+leg_height = 50;           // Height of the legs (z=0 to 50)
+bridge_height_start = 46;  // Start of the top bridge (z=46)
+bridge_height_end = 50;    // End of the top bridge (z=50)
+ledge_thickness = 6;       // Thickness of the ledge (z=0 to 6)
+ledge_depth = 30;          // Ledge extends from y=0 to y=-30
+hole_diameter = 6.4;       // Diameter of PCR tube holes
+hole_y_pos = -15;          // Y-coordinate of the holes
+hole_spacing_x = 9;        // Spacing between holes along X
+num_holes = 8;             // Number of holes
+
+// --- Parameters ---
+$fn = 64;
+
+// --- Calculations ---
+// Calculate X offset to center the 8 holes along the 84mm length
+// Total span of holes = (num_holes - 1) * spacing
+hole_span = (num_holes - 1) * hole_spacing_x;
+x_start = -(hole_span / 2);
+
+// --- Modeling ---
+
+module part_geometry() {
+    difference() {
+        union() {
+            // 1. Inner Leg: y = 0 to 4, z = 0 to 50
+            // Extends along X from 0 to 84
+            cube([length_x, leg_thickness, leg_height]);
+            
+            // 2. Outer Leg: y = 16.5 to 20.5, z = 0 to 50
+            // Extends along X from 0 to 84
+            translate([0, 16.5, 0])
+                cube([length_x, 4, leg_height]);
+            
+            // 3. Top Bridge: z = 46 to 50, spanning the gap
+            // Spans from y=0 to y=20.5 to connect the legs
+            translate([0, 0, bridge_height_start])
+                cube([length_x, 20.5, bridge_height_end - bridge_height_start]);
+            
+            // 4. Ledge: y = -30 to 0, z = 0 to 6
+            // Extends along X from 0 to 84
+            translate([0, -ledge_depth, 0])
+                cube([length_x, ledge_depth, ledge_thickness]);
+        }
+
+        // 5. Vertical Holes: 6.4mm through-holes in the ledge
+        // "Vertical" means along the Z axis.
+        // "Through-holes" in the 6mm ledge means they cut from z=0 to z=6.
+        // We use a small epsilon (0.01) to ensure the cut is clean.
+        for (i = [0 : num_holes - 1]) {
+            translate([x_start + (i * hole_spacing_x), hole_y_pos, -0.01])
+                cylinder(d = hole_diameter, h = ledge_thickness + 0.02);
+        }
+    }
+}
+
+// Final Assembly:
+// The part is centered on X=0.
+// The geometry is built from X=0 to X=84, so we translate by -length_x/2.
+// This places the center of the 84mm length at X=0.
+translate([-length_x/2, 0, 0])
+    part_geometry();
+```

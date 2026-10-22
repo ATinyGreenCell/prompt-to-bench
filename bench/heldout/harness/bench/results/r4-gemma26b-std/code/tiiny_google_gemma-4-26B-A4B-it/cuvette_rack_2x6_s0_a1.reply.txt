@@ -1,0 +1,91 @@
+```openscad
+// --- Dimensions ---
+base_width_x = 112;          // X dimension of base and deck
+base_depth_y = 44;           // Y dimension of base and deck
+base_thickness = 3;          // Thickness of base plate
+deck_z_start = 22;           // Z position where deck starts
+deck_thickness = 3;          // Thickness of deck plate
+total_height = 25;           // Total height of the rack
+
+wall_end_thickness = 3;       // Thickness of the two end walls
+wall_rib_thickness = 2.5;     // Thickness of the five internal ribs
+wall_depth = 44;             // Depth of the walls (Y direction)
+
+// Hole dimensions
+hole_size = 13;              // Size of the square cuvette holes
+hole_spacing_x = 18;         // Center-to-center spacing X
+hole_spacing_y = 18;         // Center-to-center spacing Y
+holes_per_row = 6;           // Number of holes along X
+rows = 2;                    // Number of rows along Y
+
+// --- Constants ---
+$fn = 64;
+
+// --- Helper Modules ---
+
+// Module to create the main structural body
+module rack_structure() {
+    union() {
+        // Base Plate
+        translate([-base_width_x/2, -base_depth_y/2, 0])
+            cube([base_width_x, base_depth_y, base_thickness]);
+        
+        // Deck Plate
+        translate([-base_width_x/2, -base_depth_y/2, deck_z_start])
+            cube([base_width_x, base_depth_y, deck_thickness]);
+        
+        // End Walls (Flush with short ends)
+        // Left Wall
+        translate([-base_width_x/2, -base_depth_y/2, 0])
+            cube([wall_end_thickness, base_depth_y, total_height]);
+        // Right Wall
+        translate([base_width_x/2 - wall_end_thickness, -base_depth_y/2, 0])
+            cube([wall_end_thickness, base_depth_y, total_height]);
+            
+        // Internal Ribs
+        // Rib positions provided: -36, -18, 0, 18, 36
+        for (rx = [-36, -18, 0, 18, 36]) {
+            translate([rx - wall_rib_thickness/2, -base_depth_y/2, 0])
+                cube([wall_rib_thickness, base_depth_y, total_height]);
+        }
+    }
+}
+
+// Module to create the holes to be subtracted
+module holes_to_cut() {
+    // The prompt specifies 12 holes (2 rows of 6)
+    // Spacing is 18mm center-to-center.
+    // To center a grid of 6 holes with 18mm spacing:
+    // The distance from the center of the first hole to the center of the last hole is (6-1)*18 = 90mm.
+    // The holes are centered on the deck.
+    
+    for (i = [0 : holes_per_row - 1]) {
+        for (j = [0 : rows - 1]) {
+            // Calculate X position: center of deck (0) + (i - (count-1)/2) * spacing
+            // For i=0: 0 + (0 - 2.5)*18 = -45
+            // For i=5: 0 + (5 - 2.5)*18 = +45
+            x_pos = (i - (holes_per_row - 1) / 2.0) * hole_spacing_x;
+            
+            // Calculate Y position: center of deck (0) + (j - (count-1)/2) * spacing
+            // For j=0: 0 + (0 - 0.5)*18 = -9
+            // For j=1: 0 + (1 - 0.5)*18 = +9
+            y_pos = (j - (rows - 1) / 2.0) * hole_spacing_y;
+            
+            // Subtracting through the deck plate (z=22 to z=25)
+            // We extend the cutting cube slightly to ensure clean cuts
+            translate([x_pos - hole_size/2, y_pos - hole_size/2, deck_z_start - 0.1])
+                cube([hole_size, hole_size, deck_thickness + 0.2]);
+        }
+    }
+}
+
+// --- Final Assembly ---
+
+difference() {
+    // The solid part
+    rack_structure();
+    
+    // The holes cut through the deck
+    holes_to_cut();
+}
+```

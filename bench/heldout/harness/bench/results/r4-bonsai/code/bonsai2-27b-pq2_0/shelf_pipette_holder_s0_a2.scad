@@ -1,0 +1,43 @@
+// 3-pipette holder that clamps onto the front edge of an 18 mm shelf.
+// Printed lying on its side: 2-D profile in XY, extruded 105 mm along Z.
+// In use: +Y is up, +X points away from the shelf.
+
+// ---- named dimensions (mm) ----
+L_arm        = 105;   // extrusion length along Z (depth of holder)
+L_spine      = 5;     // spine thickness (x: 0..5)
+L_bottom     = 5;     // bottom jaw thickness (y: 0..5)
+L_top        = 5;     // top jaw thickness (y: 23.4..28.4)
+L_arm_x      = 65;    // arm extends to x = 65
+L_spine_y    = 28.4;  // spine top edge (y = 28.4)
+L_bottom_x   = -25;   // bottom jaw extends to x = -25
+L_top_x      = -25;   // top jaw extends to x = -25
+L_shelf_gap  = 18.4;  // gap between jaws for the 18 mm shelf
+L_hole_d     = 20;    // pipette hole diameter
+L_hole_x     = 42;    // hole centre x
+L_hole_z1     = 17.5; // first hole centre z
+L_hole_z2     = 52.5; // second hole centre z
+L_hole_z3     = 87.5; // third hole centre z
+L_cut_over   = 1;     // cut-over past faces (mm)
+
+// ---- profile in XY (the C-shaped clamp) ----
+// spine: x 0..5, y 0..28.4
+// bottom jaw: x -25..5, y 0..5
+// top jaw + arm: x -25..65, y 23.4..28.4
+profile = union(
+    cube([L_spine, L_spine_y, 1]),
+    cube([L_spine - L_bottom_x, L_bottom, 1]),
+    cube([L_arm_x - L_top_x, L_top, 1])
+);
+
+// ---- build the solid ----
+$fn = 64;
+
+difference() {
+    linear_extrude(L_arm) profile;
+
+    // three 20 mm pipette holes through the arm (axis along Z)
+    for (z = [L_hole_z1, L_hole_z2, L_hole_z3]) {
+        translate([L_hole_x, L_spine_y/2, z])
+            cylinder(h = L_arm + 2*L_cut_over, d = L_hole_d, center = true);
+    }
+}

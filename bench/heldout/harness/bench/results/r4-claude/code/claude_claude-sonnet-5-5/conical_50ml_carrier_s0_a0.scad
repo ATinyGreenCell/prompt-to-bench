@@ -1,0 +1,53 @@
+// Carrier for four 50 mL conical tubes with handle (two parts, side by side)
+$fn = 64;
+
+// Base
+base_x = 90;          // base length X
+base_y = 90;          // base width Y
+base_h = 35;          // base height
+seat_d = 30.5;        // tube seat diameter
+seat_depth = 30;      // seat depth (5 mm floor)
+seat_x = 21;          // seat X offset (+/-)
+seat_y = 24;          // seat Y offset (+/-)
+
+// Posts
+post_t = 10;          // post thickness X
+post_w = 16;          // post width Y
+post_top = 160;       // post top height
+hole_s = 10.4;        // square hole size
+hole_z = 150;         // hole centre height
+
+// Handle bar
+bar_s = 10;           // bar cross-section
+bar_len = 100;        // bar length along X
+bar_y0 = 55;          // bar start Y (10 mm gap to base +Y face at 45)
+
+// Part 1: base with seats
+module base() {
+    difference() {
+        translate([-base_x/2, -base_y/2, 0]) cube([base_x, base_y, base_h]);
+        for (sx = [-1, 1], sy = [-1, 1])
+            translate([sx*seat_x, sy*seat_y, base_h - seat_depth])
+                cylinder(d = seat_d, h = seat_depth + 1);
+    }
+}
+
+// Posts with square through-holes
+module posts() {
+    for (sx = [-1, 1])
+        difference() {
+            translate([sx > 0 ? base_x/2 - post_t : -base_x/2, -post_w/2, base_h - 1])
+                cube([post_t, post_w, post_top - base_h + 1]);
+            translate([sx*(base_x/2 - post_t/2) - 5.5, -hole_s/2, hole_z - hole_s/2])
+                cube([11, hole_s, hole_s]);
+        }
+}
+
+// Part 2: handle bar
+module handle() {
+    translate([-bar_len/2, bar_y0, 0]) cube([bar_len, bar_s, bar_s]);
+}
+
+base();
+posts();
+handle();

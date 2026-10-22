@@ -1,0 +1,70 @@
+// --- Dimensions ---
+puck_diameter = 80;          // Diameter of the main puck
+puck_height = 26;            // Total height of the puck
+label_cut_x = 34;            // The plane x = 34 is the flat side for the label
+
+tube_hole_diameter = 11.2;   // Diameter of the tube hole
+tube_radius = tube_hole_diameter / 2;
+tube_depth_total = 20;       // Depth from top face to the bottom of the hemisphere
+tube_hemisphere_radius = tube_diameter / 2; // Radius of the bottom half-sphere
+
+seat_circle_diameter = 50;   // Diameter of the circle where tubes are placed
+seat_circle_radius = seat_circle_diameter / 2;
+num_tubes = 8;               // Number of tubes to hold
+
+// --- Constants ---
+$fn = 64;
+
+// --- Main Construction ---
+
+// The holder is built by taking a cylinder and subtracting the label cut and the tube seats
+difference() {
+    // 1. The main puck body
+    cylinder(d = puck_diameter, h = puck_height);
+
+    // 2. The label cut (removes everything beyond x = 34)
+    // We use a large cube to ensure it cuts through the entire side
+    translate([label_cut_x, -puck_diameter/2, -1])
+        cube([puck_diameter, puck_diameter, puck_height + 2]);
+
+    // 3. The eight tube seats
+    for (i = [0 : num_tubes - 1]) {
+        // Calculate angle: 0 degrees is +X axis, incrementing counter-clockwise
+        angle = i * (360 / num_tubes);
+        
+        // Position of the tube center on the XY plane
+        tx = seat_circle_radius * cos(angle);
+        ty = seat_circle_radius * sin(angle);
+        
+        // The seat consists of a cylinder (the hole) and a sphere (the bottom)
+        // We translate the seat to the tube position
+        translate([tx, ty, 0]) {
+            // The cylindrical part of the hole
+            // It starts at the top (z = puck_height) and goes down to the sphere center
+            // The sphere center is at z = puck_height - (tube_depth_total - tube_radius)
+            // Wait, the prompt says: "lowest point is 20mm below the top face, at z = 6"
+            // If puck_height is 26, and lowest point is at z=6, then depth is 20. Correct.
+            // The sphere center is at z = 6 + tube_radius
+            
+            sphere_center_z = puck_height - tube_depth_total + tube_radius;
+            
+            // The cylindrical hole
+            // We extend it slightly above the top to ensure a clean cut
+            translate([0, 0, puck_height - tube_depth_total + tube_radius - 0.01])
+                cylinder(d = tube_hole_diameter, h = tube_depth_total - tube_radius + 0.01);
+            
+            // The hemispherical bottom
+            // The sphere is centered at (0, 0, puck_height - tube_depth_total + tube_radius)
+            // We only need the bottom half, but a full sphere in a difference() works fine.
+            translate([0, 0, puck_height - tube_depth_total + tube_radius])
+                sphere(d = tube_hole_diameter);
+        }
+    }
+}
+
+// Note on geometry:
+// The prompt specifies: "lowest point is 20 mm below the top face, at z = 6"
+// Since puck_height = 26, 26 - 20 = 6. This matches.
+// The sphere radius is 11.2 / 2 = 5.6.
+// The center of the sphere is at z = 6 + 5.6 = 11.6.
+// The cylinder part goes from top (z=26) down to the sphere center (z=11.6).

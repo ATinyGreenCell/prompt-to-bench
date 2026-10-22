@@ -1,0 +1,56 @@
+// Wall-mounted syringe holder for 10mL syringe
+// Designed for FDM printing, standing on the XY plane.
+
+// --- Dimensions ---
+block_w = 50.0;       // Width (X)
+block_d = 30.0;       // Depth (Y)
+block_h = 40.0;       // Height (Z)
+
+barrel_dia = 16.5;    // Diameter of the syringe barrel channel
+barrel_rad = barrel_dia / 2;
+
+flange_w = 34.0;      // Width of the flange slot (X)
+flange_h = 2.6;       // Height of the flange slot (Z)
+flange_z_start = 30.0; // Bottom of the flange slot
+flange_y_end = 11.0;  // How far back the slot goes (Y)
+
+screw_hole_d = 4.5;   // Diameter for M4 screws
+screw_hole_x = 19.0;  // Offset from center for screw holes (X)
+screw_hole_z = 15.0;  // Height of screw holes (Z)
+
+$fn = 64;
+
+// --- Modeling ---
+
+// The main block
+difference() {
+    // Base block centered on XY, sitting on Z=0
+    translate([-block_w/2, -block_d/2, 0])
+        cube([block_w, block_d, block_h]);
+
+    // 1. Syringe Barrel Channel
+    // The back is a half-circle at y=0, sides run to the front face (y=-15)
+    // We use a hull of two half-circles/rectangles to create the channel
+    hull() {
+        // Back half-circle at y = 0
+        translate([0, 0, -1])
+            cylinder(h = block_h + 2, d = barrel_dia);
+        
+        // Front rectangle/extension to ensure it cuts through the front face
+        translate([-barrel_rad, -block_d, -1])
+            cube([barrel_dia, block_d + 1, block_h + 2]);
+    }
+
+    // 2. Flange Slot
+    // Cut from the front face (y = -15) back to y = 11
+    translate([-flange_w/2, -block_d - 1, flange_z_start])
+        cube([flange_w, (block_d/2 + 11) + 1, flange_h]);
+
+    // 3. Screw Holes
+    // Two M4 holes through the block along the Y axis
+    for (sx = [-screw_hole_x, screw_hole_x]) {
+        translate([sx, -block_d - 1, screw_hole_z])
+            rotate([-90, 0, 0])
+                cylinder(h = block_d + 2, d = screw_hole_d);
+    }
+}

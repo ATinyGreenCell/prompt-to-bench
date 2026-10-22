@@ -1,0 +1,115 @@
+```openscad
+// --- Parameters ---
+// Main Tube
+outer_diameter = 25.0;      // OD of the strainer body
+wall_thickness = 1.2;       // Wall thickness of the tube
+bore_diameter = 22.6;       // Internal diameter (OD - 2*wall)
+tube_height = 32.0;         // Height of the tube body from Z=0
+
+// Floor
+floor_thickness = 1.2;      // Thickness of the bottom floor
+
+// Flare/Collar
+flare_start_z = 26.0;       // Z height where flare begins
+flare_end_z = 30.0;         // Z height where flare ends
+flare_end_dia = 33.0;       // Diameter at the top of the flare
+rim_width = 33.0;           // Diameter of the rim (user specified 33mm)
+rim_height_start = 30.0;    // Z height where rim starts
+rim_height_end = 32.0;       // Z height where rim ends
+
+// Holes (Grid)
+hole_diameter = 1.0;        // Diameter of the strainer holes
+grid_spacing = 2.0;         // Distance between hole centers (square grid)
+max_hole_radius = 10.0;     // Max distance from axis for hole centers
+
+// Vent Notches
+notch_width = 3.0;          // Width of the vent notches
+notch_cut_radius = 12.5;    // Radius from axis where notches cut the rim
+notch_start_z = 25.0;       // Z height where notches begin
+
+// Rendering
+$fn = 64;
+
+// --- Implementation ---
+
+module strainer() {
+    difference() {
+        // 1. Main Body (Outer Shell)
+        union() {
+            // Main Tube Body
+            cylinder(h = tube_height, d = outer_diameter);
+            
+            // Flare Section (45-degree cone)
+            // Using hull to create the transition from 25mm to 33mm
+            hull() {
+                translate([0, 0, flare_start_z])
+                    cylinder(h = 0.01, d = outer_diameter);
+                translate([0, 0, flare_end_z])
+                    cylinder(h = 0.01, d = flare_end_dia);
+            }
+            
+            // Rim Section
+            translate([0, 0, flare_end_z])
+                cylinder(h = rim_height_end - flare_end_z, d = rim_width);
+        }
+
+        // 2. Subtract Internal Bore
+        // We subtract from Z = -0.01 to tube_height + 1 to ensure clean cut
+        translate([0, 0, -0.01])
+            cylinder(h = tube_height + 1, d = bore_diameter);
+
+        // 3. Subtract Floor Holes
+        // Grid centered on axis. One hole at center.
+        // Max radius 10mm. Grid spacing 2mm.
+        // We iterate from -10 to 10 in steps of 2.
+        for (x = [-10 : grid_spacing : 10]) {
+            for (y = [-10 : grid_spacing : 10]) {
+                // Check if center is within 10mm of axis
+                if (sqrt(x*x + y*y) <= max_hole_radius) {
+                    translate([x, y, -0.01])
+                        cylinder(h = floor_thickness + 0.02, d = hole_diameter);
+                }
+            }
+        }
+
+        // 4. Subtract Vent Notches
+        // Notches on +X and -X sides, removing material beyond 12.5mm radius
+        // Notch width is 3mm. We use a cube to cut the sides.
+        // We must ensure the notch cuts through the entire outer diameter.
+        
+        // Notch on +X
+        translate([notch_cut_radius, -notch_width/2, notch_start_z - 0.1])
+            cube([outer_diameter, notch_width, tube_height - notch_start_z + 1]);
+            
+        // Notch on -X
+        translate([-outer_diameter - notch_cut_radius, -notch_width/2, notch_start_z - 0.1])
+            cube([outer_diameter, notch_width, tube_height - notch_start_z + 1]);
+            
+        // Note: The prompt says "remove the collar and rim beyond 12.5mm".
+        // This implies the notches are cuts that allow air to escape.
+        // To be safe and follow the "remove beyond 12.5mm" logic:
+        // We create a subtraction block that targets the outer edges.
+        
+        // Refined Notch Logic: 
+        // The user wants to remove material on the X sides where the radius > 12.5.
+        // This is best modeled by subtracting a shape that exists only at the periphery.
+        // However, the prompt says "3mm wide vent notches... remove the collar and rim beyond 12.5mm".
+        // This usually means a slot is cut into the side.
+        
+        // Let's use a more precise notch: A block that cuts the side of the rim.
+        // Since the rim is 33mm diameter (16.5mm radius), and we cut at 12.5mm, 
+        // the notch is 4mm deep into the wall.
+        
+        // Notch +X
+        translate([notch_cut_radius, -notch_width/2, notch_start_z])
+            cube([outer_diameter, notch_width, tube_height]);
+            
+        // Notch -X
+        translate([-outer_diameter, -notch_width/2, notch_start_z])
+            cube([outer_diameter, notch_width, tube_height]);
+    }
+}
+
+// Render the part
+strainer();
+```

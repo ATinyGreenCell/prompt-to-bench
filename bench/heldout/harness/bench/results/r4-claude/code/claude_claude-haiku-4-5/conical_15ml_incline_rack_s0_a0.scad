@@ -1,0 +1,33 @@
+// Dimensions
+block_length = 130;      // X dimension
+block_depth = 60;        // Y dimension
+block_height = 45;       // Z dimension
+hole_diameter = 17.5;    // diameter of each hole
+hole_radius = hole_diameter / 2;
+hole_depth = 40;         // depth along the axis
+hole_count = 5;
+hole_spacing = 24;       // spacing between hole centers (X direction)
+y_opening = -10;         // Y position where hole opens
+fn_value = 64;           // fragment number for smooth curves
+
+// Calculate hole positions along X
+total_span = (hole_count - 1) * hole_spacing;
+start_x = -total_span / 2;
+
+// Main structure with five angled holes
+difference() {
+    // Solid rectangular block
+    translate([-block_length / 2, -block_depth / 2, 0])
+        cube([block_length, block_depth, block_height]);
+    
+    // Subtract the five blind holes
+    for (i = [0 : hole_count - 1]) {
+        x_pos = start_x + i * hole_spacing;
+        
+        // Each hole: cylinder rotated 150° around X-axis
+        // (30° from vertical, tilting toward +Y as it goes down)
+        translate([x_pos, y_opening, block_height])
+        rotate([150, 0, 0])
+        cylinder(r=hole_radius, h=hole_depth, $fn=fn_value);
+    }
+}

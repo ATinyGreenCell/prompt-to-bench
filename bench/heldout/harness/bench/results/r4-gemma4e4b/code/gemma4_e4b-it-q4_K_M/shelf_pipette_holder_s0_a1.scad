@@ -1,0 +1,61 @@
+// --- Dimensions ---
+
+shelf_thickness = 18;      // Thickness of the shelf to clamp onto (mm)
+spine_length_x = 5;        // Length of the spine along X (mm)
+spine_height_y = 28.4;     // Height of the spine/top jaw in Y (mm)
+bottom_jaw_width_x = 25;   // Width of the bottom jaw in X (mm)
+bottom_jaw_height_y = 5;    // Height of the bottom jaw in Y (mm)
+arm_length_x = 65;         // Total length of the top arm in X (mm)
+shelf_gap = 18.4;          // Required gap for the shelf (mm)
+
+pipette_hole_diameter = 20; // Diameter of pipette holes (mm)
+pipette_hole_centers_y[] = [17.5, 52.5, 87.5]; // Y coordinates for the three holes
+
+// --- Global Settings ---
+$fn = 64;
+
+// --- Profile Definition (in XY plane, extruded along Z by 105mm) ---
+module profile_shape() {
+    difference() {
+        // Base shape (Union of the three parts)
+        union() {
+            // Spine: X=0 to 5, Y=0 to 28.4. Modeled as a block for union simplicity.
+            translate([0, 0, 0]) cube([spine_length_x, spine_height_y, shelf_thickness + 1]);
+
+            // Bottom Jaw: X=-25 to 5, Y=0 to 5
+            // Centering the jaw around its center point for easier unioning relative to origin.
+            translate([-bottom_jaw_width_x/2, -bottom_jaw_height_y/2, 0]) cube([bottom_jaw_width_x, bottom_jaw_height_y, shelf_thickness + 1]);
+
+            // Top Jaw and Arm: X=-25 to 65, Y=23.4 to 28.4 (Height difference is 5mm)
+            // The base of the arm starts at Y = spine_height_y - 5 = 23.4
+            translate([-arm_length_x/2, spine_height_y - 5, 0]) cube([arm_length_x, 5, shelf_thickness + 1]);
+        }
+
+        // Cutout for the shelf gap (This cut must remove material where the clamp meets the shelf)
+        // Since the extrusion is along Z (depth), we cut a slot through the entire profile in the X-Y plane.
+        // We assume this cutout runs along the length of the arm/jaw structure to allow clearance for the 18mm shelf.
+        translate([0, 0, -0.5]) // Cut through the entire structure depth (Z)
+        cube([arm_length_x + 2, spine_height_y + 2, shelf_thickness + 2]);
+    }
+}
+
+
+// --- Final Assembly and Features ---
+
+module holder() {
+    difference() {
+        // 1. Main Body (Extruded Profile)
+        linear_extrude(height = 105, center = false) {
+            profile_shape();
+        }
+
+        // 2. Pipette Holes (Cutouts through the arm section along Y)
+        // The holes are centered at X=42 and specific Y values. They must pass through the entire Z extrusion length (105mm).
+        for (y_center = pipette_hole_centers_y) {
+            translate([42, y_center, 0])
+            cylinder(h = 106, r = pipette_hole_diameter / 2); // +1 clearance for cutting
+        }
+    }
+}
+
+holder();

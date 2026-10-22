@@ -1,0 +1,1 @@
+bfd9986f16a9b06193527850a3eab2004ad9d9b8 + working tree of 2026-10-20: harness files copied from bench/ and tools/ as they stood on disk (run_bench.py has uncommitted changes; bench/smallmodels is untracked)

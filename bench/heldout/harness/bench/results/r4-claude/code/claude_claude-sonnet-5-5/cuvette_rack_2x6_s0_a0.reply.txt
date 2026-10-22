@@ -1,0 +1,46 @@
+```openscad
+// Open-sided 12-cuvette rack (print standing on base)
+
+$fn = 64;
+
+plate_x      = 112;   // plate length (X)
+plate_y      = 44;    // plate depth (Y)
+base_t       = 3;     // base plate thickness
+deck_z0      = 22;    // deck bottom height
+deck_z1      = 25;    // deck top height (= total height)
+total_h      = 25;    // wall height
+end_t        = 3;     // end wall thickness
+rib_t        = 2.5;   // rib thickness
+rib_xs       = [-36, -18, 0, 18, 36]; // rib centre positions
+hole_size    = 13;    // square hole side
+pitch        = 18;    // hole centre-to-centre (X and Y)
+n_x          = 6;     // holes along X
+n_y          = 2;     // holes along Y
+eps          = 0.1;   // cutter overshoot
+
+difference() {
+    union() {
+        // base plate
+        translate([-plate_x/2, -plate_y/2, 0])
+            cube([plate_x, plate_y, base_t]);
+        // deck plate
+        translate([-plate_x/2, -plate_y/2, deck_z0])
+            cube([plate_x, plate_y, deck_z1 - deck_z0]);
+        // end walls
+        for (s = [-1, 1])
+            translate([s*(plate_x/2 - end_t/2) - end_t/2, -plate_y/2, 0])
+                cube([end_t, plate_y, total_h]);
+        // ribs
+        for (x = rib_xs)
+            translate([x - rib_t/2, -plate_y/2, 0])
+                cube([rib_t, plate_y, total_h]);
+    }
+    // deck through-holes
+    for (i = [0 : n_x - 1])
+        for (j = [0 : n_y - 1])
+            translate([(i - (n_x - 1)/2) * pitch - hole_size/2,
+                       (j - (n_y - 1)/2) * pitch - hole_size/2,
+                       deck_z0 - eps])
+                cube([hole_size, hole_size, deck_z1 - deck_z0 + 2*eps]);
+}
+```

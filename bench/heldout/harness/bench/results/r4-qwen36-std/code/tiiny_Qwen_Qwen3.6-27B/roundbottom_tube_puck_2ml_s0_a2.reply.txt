@@ -1,0 +1,55 @@
+```openscad
+// Dimensions (mm)
+puck_diameter = 80;
+puck_radius = puck_diameter / 2;
+puck_height = 26;
+label_cut_x = 34; // Everything beyond x = 34 is removed
+
+// Tube seat dimensions
+seat_diameter = 11.2;
+seat_radius = seat_diameter / 2;
+seat_depth = 20; // Lowest point is 20 mm below top face
+seat_circle_diameter = 50;
+seat_circle_radius = seat_circle_diameter / 2;
+num_seats = 8;
+
+// Derived values
+top_z = puck_height;
+lowest_point_z = top_z - seat_depth; // z = 6
+
+$fn = 64;
+
+// Main puck body
+difference() {
+    // Base cylinder
+    cylinder(r = puck_radius, h = puck_height, center = false);
+    
+    // Label cut: remove everything beyond x = 34
+    // We use a large box that extends past the puck in all directions
+    translate([label_cut_x + 1, -puck_radius - 1, -1]) 
+        cube([puck_radius + 1, 2 * puck_radius + 2, puck_height + 2]);
+    
+    // Eight tube seats
+    for (i = [0 : num_seats - 1]) {
+        angle = i * 360 / num_seats;
+        // Position on the 50 mm diameter circle
+        px = seat_circle_radius * cos(angle);
+        py = seat_circle_radius * sin(angle);
+        
+        // Seat consists of a cylindrical hole and a hemispherical bottom
+        // The cylindrical part goes from top_z down to (lowest_point_z + seat_radius)
+        // The hemisphere is centered at (px, py, lowest_point_z + seat_radius)
+        
+        // Cylindrical portion of the seat
+        cyl_hole_height = seat_depth - seat_radius; // 20 - 5.6 = 14.4
+        translate([px, py, top_z - cyl_hole_height])
+            cylinder(r = seat_radius, h = cyl_hole_height + 1, center = false);
+        
+        // Hemispherical bottom (half-sphere)
+        // Center of the sphere is at z = lowest_point_z + seat_radius
+        sphere_center_z = lowest_point_z + seat_radius;
+        translate([px, py, sphere_center_z])
+            sphere(r = seat_radius + 0.01); // +0.01 to ensure clean cut
+    }
+}
+```

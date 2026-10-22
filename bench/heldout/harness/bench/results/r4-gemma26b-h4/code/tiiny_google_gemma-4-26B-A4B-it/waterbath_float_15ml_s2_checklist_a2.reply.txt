@@ -1,0 +1,135 @@
+```openscad
+// Float for seven 15 mL conical tubes
+// Designed to be printed upside down (plate on bed, features rising in +Z)
+// The plate sits at Z=0 to Z=3. Features rise to Z=20.
+
+// --- Dimensions ---
+plate_across_flats = 90.0;    // Hexagon plate width (flat-to-flat)
+plate_thickness    = 3.0;     // Thickness of the base plate
+tube_hole_d        = 17.5;    // Diameter of the conical tube holes
+tube_sleeve_od     = 21.5;    // Outside diameter of the tube sleeves
+sleeve_wall        = 2.0;     // Wall thickness of the sleeves
+sleeve_height_total = 20.0;   // Total height from Z=0 to top of features
+tube_circle_d      = 54.0;    // Diameter of the circle passing through tube centers
+skirt_across_flats  = 84.0;   // Width of the hexagonal skirt (flat-to-flat)
+skirt_wall         = 2.0;     // Wall thickness of the skirt
+
+$fn = 64;
+
+// --- Helper Modules ---
+
+// Generates a regular hexagon with flats parallel to the X axis.
+// We use a polygon to ensure exact control over the geometry.
+module hex_shape(across_flats, height) {
+    // Apothem (distance from center to flat) is across_flats / 2
+    // Circumradius (distance from center to vertex) is apothem / cos(30)
+    r_vertex = (across_flats / 2) / cos(30);
+    
+    // To make flats parallel to X, we rotate the polygon by 30 degrees
+    // or define vertices such that the midpoints of sides are on the Y axis.
+    // A standard hexagon has vertices at 0, 60, 120... 
+    // Rotating by 30 degrees puts the flats at 0, 60, 120... (parallel to Y)
+    // To get flats parallel to X, we rotate by 0 or 60.
+    // Let's use the standard: vertices at 30, 90, 150, 210, 270, 330.
+    // This puts the flats at 0, 60, 120... (parallel to Y).
+    // To get flats parallel to X, we rotate the whole thing by 90 or 30.
+    // The prompt says "two flats parallel to the X axis".
+    // This means the midpoints of two sides are on the Y axis.
+    // This occurs when vertices are at 0, 60, 120...
+    
+    rotate([0, 0, 0])
+    linear_extrude(height = height)
+    for (i = [0 : 5]) {
+        rotate([0, 0, i * 60])
+        polygon(points = [[0, 0], [r_vertex, 0], [r_vertex * cos(60), r_vertex * sin(60)]]);
+    }
+    // Note: The above is a triangle-based approach. Let's use a cleaner polygon.
+}
+
+// Robust Hexagon module
+module regular_hex(across_flats, height) {
+    r_vertex = (across_flats / 2) / cos(30);
+    // Vertices for flats parallel to X: 0, 60, 120... (This makes flats parallel to Y)
+    // Vertices for flats parallel to X: 30, 90, 150... (This makes flats parallel to X)
+    // Wait, if vertices are at 30, 90, 150, then the side between 30 and 150 is vertical (parallel to Y).
+    // If vertices are at 0, 60, 120, then the side between 60 and 120 is horizontal (parallel to X).
+    // Let's use vertices at 0, 60, 120... to get flats parallel to X.
+    
+    linear_extrude(height = height)
+    for (i = [0 : 5]) {
+        rotate([0, 0, i * 60])
+        polygon(points = [[0, 0], [r_vertex, 0], [r_vertex * cos(60), r_vertex * sin(60)]]);
+    }
+    // Actually, the simplest way to define a hexagon with flats parallel to X:
+    // The vertices are at 30, 90, 150, 210, 270, 330.
+}
+
+module hex_solid(across_flats, height) {
+    r_vertex = (across_flats / 2) / cos(30);
+    linear_extrude(height = height)
+    for (i = [0 : 5]) {
+        rotate([0, 0, i * 60 + 30])
+        polygon(points = [[0, 0], [r_vertex, 0], [r_vertex * cos(60), r_vertex * sin(60)]]);
+    }
+    // The above logic is slightly flawed for a single polygon. Let's use the standard:
+}
+
+module correct_hex(across_flats, height) {
+    r_vertex = (across_flats / 2) / cos(30);
+    linear_extrude(height = height)
+    polygon(points = [
+        [r_vertex * cos(30), r_vertex * sin(30)],
+        [r_vertex * cos(90), r_vertex * sin(90)],
+        [r_vertex * cos(150), r_vertex * sin(150)],
+        [r_vertex * cos(210), r_vertex * sin(210)],
+        [r_vertex * cos(270), r_vertex * sin(270)],
+        [r_vertex * cos(330), r_vertex * sin(330)]
+    ]);
+}
+
+// --- Final Assembly ---
+
+difference() {
+    // 1. The Positive Volume
+    union() {
+        // Base Plate
+        correct_hex(plate_across_flats, plate_thickness);
+        
+        // Skirt (Rising from plate to Z=20)
+        translate([0, 0, plate_thickness])
+        correct_hex(skirt_across_flats, sleeve_height_total - plate_thickness);
+        
+        // Sleeves (Rising from plate to Z=20)
+        // Center Sleeve
+        translate([0, 0, plate_thickness])
+        cylinder(h = sleeve_height_total - plate_thickness, d = tube_sleeve_od);
+        
+        // 6 Perimeter Sleeves
+        for (a = [0, 60, 120, 180, 240, 300]) {
+            translate([tube_circle_d / 2 * cos(a), tube_circle_d / 2 * sin(a), plate_thickness])
+            cylinder(h = sleeve_height_total - plate_thickness, d = tube_sleeve_od);
+        }
+    }
+
+    // 2. The Negative Volume (Holes and Voids)
+    
+    // A. Tube Holes (Through the entire height)
+    // Center hole
+    translate([0, 0, -1])
+    cylinder(h = plate_thickness + 2, d = tube_hole_d);
+    
+    // Perimeter holes
+    for (a = [0, 60, 120, 180, 240, 300]) {
+        translate([tube_circle_d / 2 * cos(a), tube_circle_d / 2 * sin(a), -1])
+        cylinder(h = plate_thickness + 2, d = tube_hole_d);
+    }
+    
+    // B. Skirt Interior (To make it a 2mm wall)
+    // The skirt is a hexagonal shell. We subtract a smaller hexagon.
+    // The distance from center to flat is skirt_across_flats / 2.
+    // The inner distance to flat is (skirt_across_flats / 2) - 2.
+    // So inner across_flats = skirt_across_flats - 4.
+    translate([0, 0, plate_thickness])
+    correct_hex(skirt_across_flats - 4, sleeve_height_total - plate_thickness + 1);
+    
+    // C. Sleeve Interiors (Already handled by tube holes, but we must

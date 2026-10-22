@@ -1,0 +1,68 @@
+// Coarse cell strainer for a 50 mL conical tube.
+// Printed upright, resting on the XY plane (z = 0), round about Z.
+
+$fn = 64;
+
+// ---- Body (straight tube) ----
+body_od   = 25.0;   // outer diameter of the straight tube
+wall      = 1.2;    // wall thickness
+bore_d    = body_od - 2*wall;   // 22.6 mm bore
+body_h    = 32.0;   // total height of the cup (z = 0 .. 32)
+floor_h   = 1.2;    // closed floor thickness (z = 0 .. 1.2)
+
+// ---- Collar (45-degree flare that rests on the tube rim) ----
+collar_z0  = 26.0;  // z where the flare starts (25 mm dia)
+collar_z1  = 30.0;  // z where the flare ends (33 mm dia)
+collar_d0  = 25.0;  // diameter at collar_z0
+collar_d1  = 33.0;  // diameter at collar_z1
+rim_d      = 33.0;  // rim diameter (z = 30 .. 32)
+
+// ---- Floor perforation ----
+hole_d    = 1.0;    // hole diameter
+grid      = 2.0;    // square grid pitch (aligned with X and Y)
+grid_r    = 10.0;   // keep every hole whose centre is within this radius
+// 10 / 2 = 5 -> indices -5..5 -> 11 x 11 = 121 candidates;
+// the 40 corner holes (|i|=|j|=5, r = 10*sqrt(2) > 10) are dropped -> 81 holes.
+
+// ---- Vent notches (air escape) ----
+vent_w    = 3.0;    // notch width
+vent_x    = 12.5;   // remove collar/rim beyond this distance from the axis
+vent_z0   = 25.0;   // notches start here and run to the top
+
+// ---- Build ----
+difference() {
+    union() {
+        // Straight tube: outer cylinder minus bore (bore starts above the floor)
+        difference() {
+            cylinder(h = body_h, d = body_od, $fn = $fn);
+            cylinder(h = body_h - floor_h + 0.05, d = bore_d, $fn = $fn,
+                     center = false,
+                     translate = [0, 0, floor_h]);
+        }
+
+        // 45-degree flare (solid cone; the bore is already removed above)
+        cylinder(h = collar_z1 - collar_z0,
+                 d1 = collar_d0, d2 = collar_d1, $fn = $fn,
+                 center = false,
+                 translate = [0, 0, collar_z0]);
+
+        // Rim (solid; bore already removed above)
+        cylinder(h = body_h - collar_z1, d = rim_d, $fn = $fn,
+                 center = false,
+                 translate = [0, 0, collar_z1]);
+    }
+
+    // Floor holes: 11 x 11 grid, keep those within grid_r of the axis (81 holes)
+    for (i = [-5 : 5], j = [-5 : 5]) {
+        if (sqrt(i*i + j*j) * grid <= grid_r) {
+            translate([i*grid, j*grid, -0.05])
+                cylinder(h = floor_h + 0.1, d = hole_d, $fn = $fn, center = false);
+        }
+    }
+
+    // Vent notches on the +X and -X sides, removing collar/rim beyond vent_x
+    for (s = [1, -1]) {
+        translate([s*vent_x, -vent_w/2, vent_z0 - 0.05])
+            cube([1.0, vent_w, (body_h - vent_z0) + 0.1]);
+    }
+}

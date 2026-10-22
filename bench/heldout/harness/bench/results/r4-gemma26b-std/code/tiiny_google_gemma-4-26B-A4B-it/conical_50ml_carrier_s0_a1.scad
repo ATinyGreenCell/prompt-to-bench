@@ -1,0 +1,97 @@
+// --- Parameters ---
+
+// Part 1: Base Block Dimensions
+base_width_x = 90;           // X dimension of base
+base_depth_y = 90;           // Y dimension of base
+base_height_z = 35;          // Z dimension of base
+
+// Tube Seat Dimensions (Blind holes)
+seat_diameter = 30.5;         // Diameter of the tube seats
+seat_depth = 30;             // Depth of the seats (leaving 5mm floor)
+seat_x_pos = [-21, 21];       // X coordinates of seats
+seat_y_pos = [-24, 24];       // Y coordinates of seats
+
+// Post Dimensions
+post_thickness_x = 10;        // Thickness of posts along X
+post_width_y = 16;            // Width of posts along Y
+post_top_z = 160;             // The top of the posts is at Z = 160
+post_hole_size = 10.4;        // Square hole size
+post_hole_z_center = 150;     // Z center of the square hole
+
+// Part 2: Handle Dimensions
+handle_length_x = 100;        // Length of the handle along X
+handle_thickness_y = 10;      // Thickness of the handle (Y)
+handle_height_z = 10;         // Height of the handle (Z)
+handle_y_start = 55;          // Start Y position (offset from base)
+handle_y_end = 65;            // End Y position
+
+// Resolution
+fn_val = 64;
+
+// --- Part 1: Base and Posts ---
+
+module part_1() {
+    // The Base Block
+    difference() {
+        // Main block (centered on origin, Z=0 is bottom)
+        // To make it rest on XY plane at Z=0, we translate it by half height
+        translate([0, 0, base_height_z/2])
+            cube([base_width_x, base_depth_y, base_height_z], center = true);
+        
+        // The four blind seats
+        // Top face of base is at Z = 35.
+        for (i = [0:1]) {
+            for (j = [0:1]) {
+                translate([seat_x_pos[i], seat_y_pos[j], base_height_z - 0.01])
+                    cylinder(h = seat_depth + 0.01, d = seat_diameter, $fn = fn_val);
+            }
+        }
+    }
+
+    // The two posts
+    // Posts stand on the base (Z=35) and rise to Z=160.
+    // Post 1: X from -45 to -35. Post 2: X from 35 to 45.
+    // Centered on Y=0: Y from -8 to 8.
+    for (x_pos = [-base_width_x/2 + post_thickness_x/2, base_width_x/2 - post_thickness_x/2]) {
+        translate([x_pos, 0, base_height_z]) // Start at top of base
+        difference() {
+            // Post body
+            // Note: The prompt says "10mm thick (X) and 16mm wide (Y)". 
+            // To be flush with end faces, the X dimension is the thickness.
+            // We use a cube and center it on Y=0.
+            translate([-post_thickness_x/2, -post_width_y/2, (post_top_z - base_height_z)/2])
+                cube([post_thickness_x, post_width_y, post_top_z - base_height_z]);
+            
+            // The square hole through the post along X
+            // Centered at Z = 150.
+            // Since the post starts at Z=35, the local Z relative to post bottom is 150-35 = 115.
+            translate([-post_thickness_x, -post_hole_size/2, 150 - post_hole_size/2 - 0.01])
+                cube([post_thickness_x + 2, post_hole_size, post_hole_size]);
+        }
+    }
+}
+
+// --- Part 2: Handle ---
+
+module part_2() {
+    // A square bar 10x10mm and 100mm long.
+    // Lying on the bed along X and centered on x=0.
+    // Spans y = 55 to 65.
+    // Since it's 10mm thick (Y), and centered at Y=60, it goes from 55 to 65.
+    // Since it's 10mm high (Z), and rests on bed, it goes from 0 to 10.
+    
+    translate([0, 60, 0]) // Center on X, center on Y (60 is midpoint of 55-65)
+        cube([handle_length_x, handle_thickness_y, handle_height_z], center = true);
+}
+
+// --- Rendering ---
+
+// To view parts separately, comment out one of these.
+// To print, place them side by side on the XY plane.
+
+// Part 1
+part_1();
+
+// Part 2 (offset to be side-by-side for printing)
+translate([0, 110, 0]) 
+    part_2();

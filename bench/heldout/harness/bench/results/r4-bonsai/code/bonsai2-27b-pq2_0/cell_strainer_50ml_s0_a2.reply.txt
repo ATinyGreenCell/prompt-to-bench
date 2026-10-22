@@ -1,0 +1,70 @@
+```openscad
+// Coarse cell strainer for 50 mL conical tube
+// Units: mm. Print upright, resting on XY plane at z=0, centred on origin.
+
+$fn = 64;
+
+// Dimensions
+d_outer      = 25.0;   // cup outer diameter
+wall         = 1.2;    // wall thickness
+d_bore       = 22.6;   // cup bore diameter
+h_cup        = 32.0;   // cup height
+floor_h      = 1.2;    // floor thickness
+h_cone_start = 26.0;   // cone start height
+d_cone_start = 25.0;   // cone start diameter
+h_cone_end   = 30.0;   // cone end height
+d_cone_end   = 33.0;   // cone end diameter
+h_rim        = 32.0;   // rim top height
+hole_d       = 1.0;    // floor hole diameter
+hole_pitch   = 2.0;    // hole grid pitch
+hole_radius  = 10.0;   // max distance of hole centre from axis
+vent_w       = 3.0;    // vent notch width
+vent_z_start = 25.0;   // vent start height
+vent_axis    = 12.5;   // distance from axis where vent begins
+
+// Build the main body: cup + cone + rim
+body = union() {
+    // Cup wall (open top)
+    difference() {
+        cylinder(d = d_outer, h = h_cup);
+        cylinder(d = d_bore, h = h_cup + 0.01);
+    }
+    // Floor
+    cylinder(d = d_outer, h = floor_h);
+    // Cone (45-degree flare)
+    cylinder(d1 = d_cone_start, d2 = d_cone_end, h = h_cone_end - h_cone_start, z = h_cone_start);
+    // Rim
+    cylinder(d = d_cone_end, h = h_rim - h_cone_end, z = h_cone_end);
+}
+
+// Floor holes: 2 mm square grid, centred on axis, within 10 mm of axis
+holes = union() {
+    for (x = -10; x <= 10; x += hole_pitch) {
+        for (y = -10; y <= 10; y += hole_pitch) {
+            if (sqrt(x*x + y*y) <= hole_radius) {
+                translate([x, y, -0.01])
+                    cylinder(d = hole_d, h = floor_h + 0.02, $fn = 64);
+            }
+        }
+    }
+}
+
+// Vent notches: remove collar/rim beyond 12.5 mm from axis, z >= 25
+vents = union() {
+    // +X side
+    translate([vent_axis + vent_w/2, 0, vent_z_start - 0.01])
+        cube([vent_w + 0.02, d_cone_end + 0.02, h_rim - vent_z_start + 0.02]);
+    // -X side
+    translate([-vent_axis - vent_w/2, 0, vent_z_start - 0.01])
+        cube([vent_w + 0.02, d_cone_end + 0.02, h_rim - vent_z_start + 0.02]);
+}
+
+// Final part
+difference() {
+    difference() {
+        body;
+        holes;
+    }
+    vents;
+}
+```

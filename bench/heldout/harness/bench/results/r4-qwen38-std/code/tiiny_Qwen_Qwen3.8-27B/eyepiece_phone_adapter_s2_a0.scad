@@ -1,0 +1,78 @@
+// Adapter: phone camera over microscope eyepiece (30 mm OD), printed phone-side down
+// All dimensions in mm, measured with calipers.
+
+// ---- Plate (bed) ----
+plate_x   = 80;   // plate length along X
+plate_y   = 60;   // plate width along Y
+plate_t   = 3;    // plate thickness (z = 0..3)
+cam_hole_d = 12;  // through-hole for phone camera
+cam_hole_x = -20; // camera hole centre X
+cam_hole_y =  10; // camera hole centre Y
+
+// ---- Sleeve (stands on plate, on camera-hole axis) ----
+sleeve_od  = 36.6; // outer diameter of sleeve
+sleeve_z0  = 3;    // sleeve base (sits on plate top)
+sleeve_z1  = 31;   // sleeve top (open)
+sleeve_h   = sleeve_z1 - sleeve_z0; // 28 mm
+
+// sleeve bore: two diameters
+bore1_d    = 22;   // lower bore (camera-to-eyepiece stop), z = 3..11
+bore1_z0   = 3;
+bore1_z1   = 11;
+bore2_d    = 30.6; // upper bore (slides over 30 mm eyepiece), z = 11..31
+bore2_z0   = 11;
+bore2_z1   = 31;
+
+// ---- M3 centring-screw holes (radial, through sleeve wall) ----
+screw_hole_d = 2.5; // diameter of radial holes
+screw_z      = 21;  // axial height of the radial holes
+screw_n      = 3;   // number of holes, 120 deg apart, first along +X
+
+// ---- Curvature quality ----
+$fn = 64;
+
+// ============================
+//  Build the part
+// ============================
+
+// 1) Flat plate on the bed, centred on origin
+plate = translate([0, 0, 0])
+        cube([plate_x, plate_y, plate_t], center = [true, true, false]);
+
+// 2) Round sleeve standing on the plate, on the camera-hole axis
+sleeve = translate([cam_hole_x, cam_hole_y, sleeve_z0])
+        cylinder(h = sleeve_h, r = sleeve_od / 2, $fn = $fn);
+
+// 3) Bore cuts (extend 1 mm past the faces they cut, per rule 5)
+bore1 = translate([cam_hole_x, cam_hole_y, bore1_z0 - 1])
+        cylinder(h = (bore1_z1 - bore1_z0) + 2, r = bore1_d / 2, $fn = $fn);
+
+bore2 = translate([cam_hole_x, cam_hole_y, bore2_z0 - 1])
+        cylinder(h = (bore2_z1 - bore2_z0) + 2, r = bore2_d / 2, $fn = $fn);
+
+// 4) Radial M3 centring-screw holes, 120 deg apart, first pointing +X
+//    Each hole is a cylinder along a local X axis, long enough to pierce
+//    both walls of the sleeve (length 60 >> sleeve OD 36.6).
+screw_holes = for (i = [0 : screw_n - 1])
+    rotate([0, 0, i * 360 / screw_n])
+    translate([cam_hole_x, cam_hole_y, screw_z])
+    cylinder(h = 60, r = screw_hole_d / 2, $fn = $fn, center = true);
+
+// 5) Camera through-hole in the plate (extends 1 mm past both faces)
+cam_hole = translate([cam_hole_x, cam_hole_y, -1])
+           cylinder(h = plate_t + 2, r = cam_hole_d / 2, $fn = $fn);
+
+// ============================
+//  Assemble
+// ============================
+
+difference() {
+    union() {
+        plate;
+        sleeve;
+    }
+    cam_hole;   // through the plate
+    bore1;      // lower bore (stop)
+    bore2;      // upper bore (slides over eyepiece)
+    screw_holes; // radial M3 holes
+}

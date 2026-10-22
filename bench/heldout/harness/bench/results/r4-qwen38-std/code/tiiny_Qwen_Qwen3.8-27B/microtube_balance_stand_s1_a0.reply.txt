@@ -1,0 +1,76 @@
+```openscad
+// Stand for one 1.5 mL microcentrifuge tube, printed standing up (z = 0 base).
+// All dimensions in millimetres, taken from caliper measurements.
+
+$fn = 64;
+
+// Base disc
+base_d = 50;   // base diameter
+base_h = 4;    // base height (z 0..4)
+
+// Cone (base -> column)
+cone_top_d = 22; // cone top / column diameter
+cone_h = 10;     // cone height (z 4..14)
+
+// Column
+col_d = 22;      // column diameter
+col_h = 19;      // column height (z 14..33)
+
+// Tube seat (bore)
+seat_d = 11;     // seat diameter (z 33..23)
+seat_h = 10;     // seat height
+tip_d = 3;       // tip cone bottom diameter (at z 6)
+tip_h = 17;      // tip cone height (z 6..23)
+
+// Viewing window (cut through +X wall)
+win_w = 4;      // window width in Y
+win_z0 = 18;    // window bottom z
+win_z1 = 30;    // window top z
+
+// Derived
+base_r = base_d / 2;
+cone_top_r = cone_top_d / 2;
+col_r = col_d / 2;
+seat_r = seat_d / 2;
+tip_r = tip_d / 2;
+win_half = win_w / 2;
+win_h = win_z1 - win_z0;
+
+// ---- Build the solid (base + cone + column) ----
+body = union() {
+    // Base disc
+    translate([0, 0, 0])
+        cylinder(h = base_h, r = base_r, $fn = $fn);
+
+    // Cone narrowing from base to column
+    translate([0, 0, base_h])
+        cylinder(h = cone_h, r1 = base_r, r2 = cone_top_r, $fn = $fn);
+
+    // Column
+    translate([0, 0, base_h + cone_h])
+        cylinder(h = col_h, r = col_r, $fn = $fn);
+};
+
+// ---- Cut the tube seat (cylindrical bore + conical tip) ----
+seat = union() {
+    // Cylindrical seat, z 23..33 (extended 1 mm above top to break coplanarity)
+    translate([0, 0, 23])
+        cylinder(h = seat_h + 1, r = seat_r, $fn = $fn);
+
+    // Conical tip following the tube tip, z 6..23 (extended 1 mm below to break coplanarity)
+    translate([0, 0, 6 - 1])
+        cylinder(h = tip_h + 1, r1 = tip_r, r2 = seat_r, $fn = $fn);
+};
+
+// ---- Cut the viewing window through the +X wall ----
+// Box extends past the outer wall in X and past the seat in Y so it cuts cleanly.
+window = translate([0, 0, win_z0])
+    cube([col_r + 1, win_w, win_h], center = [false, true, false]);
+
+// ---- Final part ----
+difference() {
+    body;
+    seat;
+    window;
+}
+```

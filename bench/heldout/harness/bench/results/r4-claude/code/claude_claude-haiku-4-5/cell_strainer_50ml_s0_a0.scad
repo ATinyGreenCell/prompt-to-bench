@@ -1,0 +1,67 @@
+// Dimensions (in mm)
+outer_diameter = 25;           // Outer diameter of tube
+wall_thickness = 1.2;          // Wall thickness
+bore_diameter = 22.6;          // Inner diameter (25 - 2*1.2)
+tube_height = 32;              // Total height
+floor_thickness = 1.2;         // Thickness of floor
+
+// Flare/collar dimensions
+flare_start_z = 26;            // Start of flare
+flare_end_z = 30;              // End of flare
+flare_start_dia = 25;          // Diameter at flare start
+flare_end_dia = 33;            // Diameter at flare end
+rim_height = 32;               // Height of rim top
+
+// Floor holes
+hole_diameter = 1.0;           // Diameter of each hole
+hole_grid_spacing = 2.0;       // Spacing of grid
+hole_radius_limit = 10;        // Max radius for holes (mm)
+
+// Vent notches
+notch_width = 3.0;             // Width of each notch
+notch_radius_limit = 12.5;     // Inner radius of notch (mm)
+notch_start_z = 25;            // Start height of notch
+notch_extend = 20;             // How far notch extends outward
+
+$fn = 64;
+
+difference() {
+    union() {
+        // Main tube body (z = 0 to 26)
+        cylinder(d = outer_diameter, h = flare_start_z);
+        
+        // Flare cone (z = 26 to 30)
+        translate([0, 0, flare_start_z])
+            cylinder(d1 = flare_start_dia, d2 = flare_end_dia, 
+                     h = flare_end_z - flare_start_z);
+        
+        // Rim (z = 30 to 32)
+        translate([0, 0, flare_end_z])
+            cylinder(d = flare_end_dia, h = rim_height - flare_end_z);
+    }
+    
+    // Bore - hollow out above the floor
+    translate([0, 0, floor_thickness])
+        cylinder(d = bore_diameter, h = tube_height - floor_thickness + 0.1);
+    
+    // Floor holes - on 2mm grid within 10mm radius
+    hole_radius = hole_diameter / 2;
+    for (x = [-10 : hole_grid_spacing : 10]) {
+        for (y = [-10 : hole_grid_spacing : 10]) {
+            dist_sq = x*x + y*y;
+            if (dist_sq <= hole_radius_limit * hole_radius_limit) {
+                translate([x, y, -0.1])
+                    cylinder(r = hole_radius, h = floor_thickness + 0.2, $fn = 32);
+            }
+        }
+    }
+    
+    // Vent notches - rectangular cuts on +X and -X sides
+    // +X side notch
+    translate([notch_radius_limit, -notch_width/2, notch_start_z - 0.1])
+        cube([notch_extend, notch_width, rim_height - notch_start_z + 0.2]);
+    
+    // -X side notch
+    translate([-notch_radius_limit - notch_extend, -notch_width/2, notch_start_z - 0.1])
+        cube([notch_extend, notch_width, rim_height - notch_start_z + 0.2]);
+}

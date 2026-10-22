@@ -1,0 +1,56 @@
+```openscad
+// Cuvette Rack Dimensions
+base_x = 112;
+base_y = 44;
+base_z = 3;
+deck_z_start = 22;
+deck_z_end = 25;
+deck_thickness = deck_z_end - deck_z_start;
+wall_thickness_end = 3;
+wall_thickness_rib = 2.5;
+wall_height = 25;
+rib_positions = [-36, -18, 0, 18, 36];
+hole_size = 13;
+hole_spacing = 18;
+num_holes_x = 6;
+num_holes_y = 2;
+
+// Render settings
+$fn = 64;
+
+// Base Plate
+translate([0, 0, 0])
+    cube([base_x, base_y, base_z], center = true);
+
+// Deck Plate
+translate([0, 0, deck_z_start + deck_thickness/2])
+    cube([base_x, base_y, deck_thickness], center = true);
+
+// End Walls (flush with short ends, Y direction)
+// Left end wall at y = -base_y/2
+translate([0, -base_y/2 + wall_thickness_end/2, wall_height/2])
+    cube([base_x, wall_thickness_end, wall_height], center = true);
+
+// Right end wall at y = base_y/2
+translate([0, base_y/2 - wall_thickness_end/2, wall_height/2])
+    cube([base_x, wall_thickness_end, wall_height], center = true);
+
+// Ribs (5 ribs at specified X positions)
+for (x_pos = rib_positions) {
+    translate([x_pos, 0, wall_height/2])
+        cube([wall_thickness_rib, base_y, wall_height], center = true);
+}
+
+// Holes in Deck Plate
+// 2 rows along Y, 6 columns along X
+// Centred on deck, 18 mm spacing
+for (i = [0 : num_holes_x - 1]) {
+    for (j = [0 : num_holes_y - 1]) {
+        x_offset = (i - (num_holes_x - 1) / 2) * hole_spacing;
+        y_offset = (j - (num_holes_y - 1) / 2) * hole_spacing;
+        
+        translate([x_offset, y_offset, deck_z_start + deck_thickness/2])
+            cube([hole_size, hole_size, deck_thickness + 0.1], center = true);
+    }
+}
+```

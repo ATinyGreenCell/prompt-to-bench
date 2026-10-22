@@ -1,0 +1,67 @@
+```openscad
+// Wall-mounted 10 mL syringe holder (tip-down, printed as used)
+// Block: 50 (X) x 30 (Y) x 40 (Z), centred on origin in X/Y, z=0..40, back face at y=15
+
+$fn = 64;
+
+// Block dimensions
+W = 50;   // block width  (X)
+D = 30;   // block depth   (Y)
+H = 40;   // block height  (Z)
+
+// Barrel channel: 16.5 mm wide, half-circle back end r=8.25 centred at (0,0),
+// straight sides run forward to the front face (y = -15), full height.
+ch_w   = 16.5;
+ch_r   = 8.25;
+ch_yf  = -15;   // front face Y (straight sides end here)
+
+// Flange slot: 34 mm wide (X, centred), 2.6 mm tall (z 30..32.6), from front face back to y=11
+fs_w   = 34;
+fs_z0  = 30;
+fs_z1  = 32.6;
+fs_yb  = 11;    // slot back end Y
+
+// M4 wall-screw clearance holes: 4.5 mm dia, through front->back, at x=±19, z=15
+hole_d = 4.5;
+hole_x = 19;
+hole_z = 15;
+
+// ---- Base block ----
+block = translate([-W/2, -D/2, 0]) cube([W, D, H]);
+
+// ---- Barrel channel (half-circle back + straight sides to front face) ----
+// Half-circle: centre (0,0), radius 8.25, spanning y = 0..8.25 (back half, toward wall)
+// Straight sides: x = ±8.25, y = -15..0, full height
+barrel_channel = union() {
+    // half-circle back end
+    linear_extrude(H, center = false)
+        polygon(points = [
+            [-ch_r, 0],
+            [ ch_r, 0],
+            [ ch_r, 0.01],
+            [ 0, ch_r],
+            [-ch_r, 0.01]
+        ]);
+    // straight sides running forward to the front face
+    translate([-ch_r, ch_yf, 0]) cube([ch_w, -ch_yf, H]);
+};
+
+// ---- Flange slot (front face back to y = 11, z 30..32.6) ----
+flange_slot = translate([-fs_w/2, fs_yb, fs_z0]) cube([fs_w, -fs_yb, fs_z1 - fs_z0]);
+
+// ---- M4 screw clearance holes (through Y) ----
+screw_holes = union() {
+    for (hx = [-hole_x, hole_x]) {
+        translate([hx, -D/2 - 1, hole_z])
+            cylinder(h = D + 2, r = hole_d/2, $fn = 64);
+    }
+};
+
+// ---- Final part ----
+difference() {
+    block;
+    barrel_channel;
+    flange_slot;
+    screw_holes;
+}
+```

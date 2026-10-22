@@ -1,0 +1,141 @@
+```openscad
+// Open-sided cuvette rack for twelve 12.5mm square cuvettes
+// Designed for FDM printing, standing on the base plate.
+
+// --- Dimensions ---
+base_x      = 112.0;  // Length of base plate (X)
+base_y      = 44.0;   // Width of base plate (Y)
+base_z      = 3.0;    // Thickness of base plate
+deck_z_min  = 22.0;   // Bottom of deck plate (Z)
+deck_z_max  = 25.0;   // Top of deck plate (Z)
+wall_thick  = 3.0;    // Thickness of the end walls
+rib_thick   = 2.5;    // Thickness of the internal ribs
+hole_size   = 13.0;   // Size of the square holes (13x13mm)
+hole_pitch  = 18.0;   // Center-to-center spacing of holes
+rows        = 2;      // Number of rows of holes (Y)
+cols        = 6;      // Number of columns of holes (X)
+
+// Rib X-positions (centered on origin)
+rib_x_pos   = [-36, -18, 0, 18, 36];
+
+$fn = 64;
+
+// --- Geometry Construction ---
+
+// 1. The Base Plate
+base_plate = [base_x, base_y, base_z];
+
+// 2. The Deck Plate
+deck_plate = [base_x, base_y, deck_z_max - deck_z_min];
+
+// 3. The Walls/Ribs
+// End walls are flush with the short ends (Y direction)
+// Ribs are centered at specific X positions
+module walls() {
+    // End walls
+    translate([-(base_x/2) + (wall_thick/2), -(base_y/2), 0])
+        cube([wall_thick, base_y, deck_z_max]);
+    
+    translate([(base_x/2) - (wall_thick/2), -(base_y/2), 0])
+        cube([wall_thick, base_y, deck_z_max]);
+    
+    // Internal ribs
+    for (rx = rib_x_pos) {
+        translate([rx - (rib_thick/2), -(base_y/2), 0])
+            cube([rib_thick, base_y, deck_z_max]);
+    }
+}
+
+// 4. The Holes (to be subtracted from the deck)
+module holes() {
+    // Calculate starting offset to center the grid on the deck
+    // Grid span = (cols-1)*pitch. Offset = (base_x - span)/2
+    // However, user specified "18mm centre-to-center and centred on the deck"
+    // We calculate the offset based on the grid dimensions.
+    
+    grid_x_span = (cols - 1) * hole_pitch;
+    grid_y_span = (rows - 1) * hole_pitch;
+    
+    offset_x = (base_x - grid_x_span) / 2;
+    offset_y = (base_y - grid_y_span) / 2;
+
+    for (i = [0 : cols - 1]) {
+        for (j = [0 : rows - 1]) {
+            translate([
+                (i * hole_pitch) - (grid_x_span / 2) + (base_x/2) - (base_x/2), // Logic check:
+                // Let's use a simpler approach for centering:
+                // Center of grid is at 0,0.
+                // Hole i,j center is:
+                (i - (cols - 1) / 2.0) * hole_pitch,
+                (j - (rows - 1) / 2.0) * hole_pitch,
+                -1 // Extend below deck
+            ])
+            // Re-calculating translation for clarity:
+            // We want the hole center to be at (i - (cols-1)/2)*pitch
+            // But the loop is relative to the origin.
+            // Let's use the standard centered loop:
+            translate([0,0,0]) // dummy
+            cube([hole_size, hole_size, deck_z_max + 2], center = true); 
+            // Wait, the above is messy. Let's rewrite the hole loop clearly.
+        }
+    }
+}
+
+// Corrected Hole Loop
+module hole_grid() {
+    grid_x_span = (cols - 1) * hole_pitch;
+    grid_y_span = (rows - 1) * hole_pitch;
+    
+    for (i = [0 : cols - 1]) {
+        for (j = [0 : rows - 1]) {
+            // Calculate center of each hole relative to origin (0,0)
+            cx = (i - (cols - 1) / 2.0) * hole_pitch;
+            cy = (j - (rows - 1) / 2.0) * hole_pitch;
+            
+            translate([cx, cy, deck_z_min - 0.01])
+                cube([hole_size, hole_size, deck_z_max - deck_z_min + 0.02]);
+        }
+    }
+}
+
+// --- Final Assembly ---
+
+union() {
+    // Base Plate
+    translate([-base_x/2, -base_y/2, 0])
+        cube([base_x, base_y, base_z]);
+
+    // Deck Plate
+    translate([-base_x/2, -base_y/2, deck_z_min])
+        cube([base_x, base_y, deck_z_max - deck_z_min]);
+
+    // Walls
+    walls();
+}
+
+// Subtract the holes from the deck
+difference() {
+    // We use a dummy union to ensure the difference works on the whole assembly
+    // but we only want to cut the deck.
+    // To be safe, we'll just subtract from the deck specifically.
+    // However, the prompt implies the holes are "through-holes" in the deck.
+    
+    // We'll use a trick: define the whole object, then subtract holes.
+    // But since we are using union for the base, we must be careful.
+    // Let's restructure the final assembly.
+}
+
+// RESTRUCTURED FINAL ASSEMBLY
+// (This is the actual rendered part)
+
+// We will use a single difference block for the whole part
+// to ensure clean subtraction.
+
+// Note: The code below is the actual logic that will be rendered.
+// I will wrap the previous logic into a single block.
+
+// [RE-WRITING ASSEMBLY FOR FINAL OUTPUT]
+```
+
+```openscad
+// Open-

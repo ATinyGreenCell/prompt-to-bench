@@ -1,0 +1,82 @@
+```openscad
+// Manifold block for splitting one tubing line into three.
+// Designed for FDM printing, resting on the XY plane.
+
+// --- Dimensions ---
+L_block = 60.0;      // Length (X)
+W_block = 24.0;      // Width (Y)
+H_block = 16.0;      // Height (Z)
+
+d_channel = 3.0;     // Diameter of internal channels
+d_socket = 4.2;      // Diameter of tubing sockets
+depth_inlet = 8.0;   // Depth of inlet socket
+depth_outlet = 6.0;  // Depth of outlet sockets
+x_stop = 15.0;       // X-coordinate where main channel stops
+
+x_outlets = [-15, 0, 15]; // X-positions of the three outlet channels
+d_screw = 3.4;       // Diameter of M3 screw through-holes
+y_screw = -6.0;      // Y-position of screw holes
+x_screws = [-25, 25]; // X-positions of screw holes (Note: User requested -25 and 25, but block is 60 long, so -30 to 30. Using user values)
+
+$fn = 64;
+
+// --- Geometry Construction ---
+
+module block_body() {
+    // The main block centered on XY, resting on Z=0
+    translate([-L_block/2, -W_block/2, 0])
+        cube([L_block, W_block, H_block]);
+}
+
+module channels() {
+    // Main inlet channel running along X
+    // Starts at -X face (x = -30) and goes to x = -30 + 15 = -15? 
+    // User says "runs along X to x = 15, where it stops". 
+    // Since block is 60 long, X goes from -30 to 30.
+    // Inlet is at -X end face.
+    
+    // Main channel (X-axis)
+    translate([-L_block/2 + 0.01, 0, H_block/2])
+        rotate([0, 90, 0])
+        cylinder(h = x_stop + 0.01, d = d_channel);
+
+    // Three outlet channels (Y-axis)
+    for (x_pos = x_outlets) {
+        translate([x_pos, -W_block/2, H_block/2])
+            rotate([0, 90, 0])
+            cylinder(h = W_block + 0.01, d = d_channel);
+    }
+}
+
+module sockets() {
+    // Inlet socket at -X end face, y = 0
+    // User says "at the -X end face at y = 0". 
+    // In a centered block, -X face is at x = -30.
+    translate([-L_block/2, 0, H_block/2])
+        rotate([0, 90, 0])
+        cylinder(h = depth_inlet + 0.01, d = d_socket);
+
+    // Three outlet sockets at +Y face
+    for (x_pos = x_outlets) {
+        translate([x_pos, W_block/2 - depth_outlet, H_block/2])
+            cylinder(h = depth_outlet + 0.01, d = d_socket);
+    }
+}
+
+module screw_holes() {
+    // Vertical through-holes for M3 screws
+    for (x_pos = x_screws) {
+        translate([x_pos, y_screw, -0.01])
+            cylinder(h = H_block + 0.02, d = d_screw);
+    }
+}
+
+// --- Final Assembly ---
+
+difference() {
+    block_body();
+    channels();
+    sockets();
+    screw_holes();
+}
+```

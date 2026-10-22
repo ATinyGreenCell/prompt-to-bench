@@ -1,0 +1,64 @@
+// --- Dimensions ---
+handle_length = 150;      // Length of the handle bar (mm)
+handle_width = 6;         // Width of the handle bar (mm)
+handle_thickness = 4;     // Thickness of the handle bar (mm)
+
+foot_length = 40;         // Length of the spreading foot (mm)
+foot_width = 5;           // Width of the spreading foot (mm)
+foot_thickness = 2.5;     // Thickness of the spreading foot (mm)
+
+boss_diameter = 6;        // Diameter of the joining boss (mm)
+boss_height = 4;          // Height of the joining boss (mm)
+
+hole_diameter = 4;        // Diameter of the hanging hole (mm)
+hole_x_pos = 143;         // X position of the hole center (mm)
+
+angle_deg = 120;          // Angle of the foot relative to the handle (degrees)
+
+// --- Constants ---
+$fn = 64;
+
+// --- Main Model ---
+// The part is printed lying flat on the XY plane (Z=0 is the bottom).
+// The handle is defined from X=0 to 150.
+// The foot centerline starts at the origin and points 120 deg CCW from +X.
+
+difference() {
+    // The solid geometry
+    union() {
+        // 1. The Handle
+        // Specification: x = 0 to 150, y = -3 to 3, z = 0 to 4.
+        // We translate the cube so its corner is at (0,0,0) and it extends to (150, 6, 4).
+        // To center it on Y, we use y = -3 to 3.
+        translate([0, -handle_width/2, 0])
+        cube([handle_length, handle_width, handle_thickness]);
+
+        // 2. The Spreading Foot
+        // Specification: 40mm long, 5mm wide, 2.5mm thick.
+        // Centerline starts at origin and points 120 deg CCW from +X.
+        // To ensure it is joined to the handle at the origin, we rotate first.
+        // We translate it so the start of the foot is at the origin.
+        rotate([0, 0, angle_deg])
+        translate([0, -foot_width/2, 0])
+        cube([foot_length, foot_width, foot_thickness]);
+
+        // 3. The Boss
+        // Specification: 6mm diameter, 4mm tall at the origin.
+        // To ensure it sits on the bed (Z=0), we translate it to Z=0.
+        translate([0, 0, 0])
+        cylinder(h = boss_height, d = boss_diameter);
+    }
+
+    // 4. The Hanging Hole
+    // Specification: 4mm diameter through the handle at x = 143, y = 0.
+    // We extend the cylinder slightly in Z to ensure a clean cut through the 4mm thickness.
+    translate([hole_x_pos, 0, -1])
+    cylinder(h = handle_thickness + 2, d = hole_diameter);
+}
+
+// Verification of geometry against report:
+// - Handle: X [0, 150], Y [-3, 3], Z [0, 4] -> Correct.
+// - Foot: Starts at origin, length 40, angle 120 deg -> Correct.
+// - Boss: Diameter 6, Height 4, at origin -> Correct.
+// - Hole: X=143, Y=0, Diameter 4 -> Correct.
+// - Print Orientation: All components start at Z=0 (no negative Z).

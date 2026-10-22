@@ -1,0 +1,89 @@
+// 1.5 mL microcentrifuge tube stand for analytical balance
+// Print orientation: standing up, base on XY plane at z=0, centred on origin.
+
+// ---- Dimensions (mm) ----
+base_diameter   = 50;   // base disc diameter
+base_height     = 4;    // base disc height (z = 0..4)
+cone_top_diam   = 22;   // cone top diameter at z=14
+cone_top_z      = 14;   // cone top height
+column_diameter = 22;   // column diameter
+column_top_z    = 33;   // column top height
+seat_diameter   = 11;   // tube seat diameter
+seat_bottom_z   = 23;   // seat bottom height
+tip_diameter    = 3;    // tube tip diameter
+tip_bottom_z    = 6;    // tip cone bottom height
+window_width    = 4;    // viewing window width in Y
+window_bottom_z = 18;   // window bottom height
+window_top_z    = 30;   // window top height
+cut_margin      = 1;    // extra mm for clean cuts
+
+$fn = 64;               // resolution for curved shapes
+
+// ---- Build the solid ----
+// Base disc
+union() {
+    // Base disc (z = 0..4)
+    cylinder(h = base_height, d = base_diameter);
+
+    // Cone (z = 4..14)
+    translate([0, 0, base_height])
+        cylinder(h = cone_top_z - base_height,
+                 d1 = base_diameter,
+                 d2 = cone_top_diam);
+
+    // Column (z = 14..33)
+    translate([0, 0, cone_top_z])
+        cylinder(h = column_top_z - cone_top_z,
+                 d = column_diameter);
+
+    // Tube seat (z = 23..33)
+    translate([0, 0, seat_bottom_z])
+        cylinder(h = column_top_z - seat_bottom_z,
+                 d = seat_diameter);
+
+    // Tube tip cone (z = 6..23)
+    translate([0, 0, tip_bottom_z])
+        cylinder(h = seat_bottom_z - tip_bottom_z,
+                 d1 = tip_diameter,
+                 d2 = seat_diameter);
+}
+
+// ---- Cut the viewing window (straight through column wall on +X side) ----
+// The window is a 4 mm wide (Y) rectangular prism cut from the +X side,
+// extending from the seat to the outside, between z = 18 and z = 30.
+// It is placed so its inner face is at the seat wall (x = seat_diameter/2)
+// and it extends past the column outer wall (x = column_diameter/2).
+// The prism is centred in Y at 0 and spans Y from -window_width/2 to +window_width/2.
+// It extends in X from the seat wall to beyond the column wall.
+// It extends in Z from window_bottom_z to window_top_z.
+// We use a difference to cut this prism out of the solid.
+difference() {
+    // Solid (as above)
+    union() {
+        cylinder(h = base_height, d = base_diameter);
+        translate([0, 0, base_height])
+            cylinder(h = cone_top_z - base_height,
+                     d1 = base_diameter,
+                     d2 = cone_top_diam);
+        translate([0, 0, cone_top_z])
+            cylinder(h = column_top_z - cone_top_z,
+                     d = column_diameter);
+        translate([0, 0, seat_bottom_z])
+            cylinder(h = column_top_z - seat_bottom_z,
+                     d = seat_diameter);
+        translate([0, 0, tip_bottom_z])
+            cylinder(h = seat_bottom_z - tip_bottom_z,
+                     d1 = tip_diameter,
+                     d2 = seat_diameter);
+    }
+
+    // Viewing window cut
+    // The window is on the +X side, so it starts at x = seat_diameter/2
+    // and extends to x = column_diameter/2 + cut_margin.
+    // It is centred in Y at 0, width = window_width.
+    // It spans z from window_bottom_z to window_top_z.
+    translate([seat_diameter/2, 0, window_bottom_z])
+        cube([column_diameter/2 - seat_diameter/2 + cut_margin,
+              window_width,
+              window_top_z - window_bottom_z]);
+}

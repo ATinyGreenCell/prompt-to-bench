@@ -1,0 +1,85 @@
+```openscad
+// 8-tube PCR strip holder that hooks over a 12 mm ice-bucket wall.
+// Printed as used: rests on the XY plane (z = 0), builds upward (+Z),
+// centred on x = 0. The YZ profile is an upside-down U that fits over
+// the wall; a flat ledge extends toward -Y into the ice and carries the
+// eight tube holes.
+
+// ---- dimensions (mm) ----
+$fn = 64;
+
+// overall extrusion of the YZ profile, along X, centred on x = 0
+extrude_len   = 84;
+
+// upside-down U profile (YZ plane)
+inner_leg_y0  = 0;      // inner face of inner leg (against wall)
+inner_leg_y1  = 4;      // outer face of inner leg  (wall thickness = 4)
+outer_leg_y0  = 16.5;   // inner face of outer leg  (gap = 12.5 for the 12 mm wall)
+outer_leg_y1  = 20.5;   // outer face of outer leg  (outer leg thickness = 4)
+leg_z0        = 0;      // bottom of both legs (sits on the XY plane)
+leg_z1        = 50;     // top of both legs
+bridge_z0     = 46;     // bottom of the top bridge
+bridge_z1     = 50;     // top of the top bridge
+
+// flat ledge that reaches toward -Y into the ice
+ledge_y0      = -30;    // far end of the ledge
+ledge_y1      = 0;      // meets the foot of the inner leg
+ledge_z0      = 0;      // bottom of the ledge
+ledge_z1      = 6;      // top of the ledge (6 mm thick)
+
+// eight vertical tube through-holes in the ledge
+n_tubes       = 8;
+hole_d        = 6.4;    // hole diameter
+hole_pitch    = 9;      // spacing along X
+hole_y        = -15;    // hole centre in Y
+hole_z0       = -1;     // extend past the bottom face (z = 0)
+hole_z1       = 7;      // extend past the top face (z = 6)
+
+// ---- solid ----
+difference() {
+    union() {
+        // upside-down U profile in the YZ plane, extruded 84 mm along X
+        linear_extrude(extrude_len, center = true) {
+            // inner leg (y = 0..4, z = 0..50)
+            polygon([
+                [inner_leg_y0, leg_z0],
+                [inner_leg_y1, leg_z0],
+                [inner_leg_y1, leg_z1],
+                [inner_leg_y0, leg_z1]
+            ]);
+            // outer leg (y = 16.5..20.5, z = 0..50)
+            polygon([
+                [outer_leg_y0, leg_z0],
+                [outer_leg_y1, leg_z0],
+                [outer_leg_y1, leg_z1],
+                [outer_leg_y0, leg_z1]
+            ]);
+            // top bridge joining the legs (y = 0..20.5, z = 46..50)
+            polygon([
+                [inner_leg_y0, bridge_z0],
+                [outer_leg_y1, bridge_z0],
+                [outer_leg_y1, bridge_z1],
+                [inner_leg_y0, bridge_z1]
+            ]);
+        }
+
+        // flat ledge toward -Y (y = -30..0, z = 0..6), extruded 84 mm along X
+        linear_extrude(extrude_len, center = true) {
+            polygon([
+                [ledge_y0, ledge_z0],
+                [ledge_y1, ledge_z0],
+                [ledge_y1, ledge_z1],
+                [ledge_y0, ledge_z1]
+            ]);
+        }
+    }
+
+    // eight vertical 6.4 mm through-holes, 9 mm apart along X, centred, at y = -15
+    for (i = [0 : n_tubes - 1]) {
+        x_pos = (i - (n_tubes - 1) / 2) * hole_pitch;
+        translate([x_pos, hole_y, hole_z0]) {
+            cylinder(h = (hole_z1 - hole_z0), r = hole_d / 2, $fn = $fn);
+        }
+    }
+}
+```

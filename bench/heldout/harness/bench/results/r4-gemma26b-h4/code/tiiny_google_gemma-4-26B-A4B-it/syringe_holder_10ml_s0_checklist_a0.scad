@@ -1,0 +1,56 @@
+// Wall-mounted syringe holder for 10mL syringe
+// Designed for FDM printing, resting on the XY plane.
+
+// --- Dimensions ---
+block_w      = 50.0;    // Block width (X)
+block_d      = 30.0;    // Block depth (Y)
+block_h      = 40.0;    // Block height (Z)
+
+barrel_dia   = 16.5;    // Diameter of the syringe barrel channel
+barrel_rad   = barrel_dia / 2;
+
+flange_w      = 34.0;    // Width of the flange slot (X)
+flange_h      = 2.6;     // Height of the flange slot (Z)
+flange_z_min  = 30.0;    // Bottom of the flange slot (Z)
+flange_y_end  = 11.0;    // How far back the slot goes (Y)
+
+screw_hole_d  = 4.5;     // Diameter for M4 screws
+screw_x_pos   = 19.0;    // X offset for screw holes
+screw_z_pos   = 15.0;    // Z height for screw holes
+
+$fn = 64;
+
+// --- Modeling ---
+
+// The main block is centered on X and Y, sitting on Z=0.
+// Back face is at Y = 15, Front face is at Y = -15.
+// Origin (0,0,0) is the center of the bottom face.
+
+difference() {
+    // 1. The main block
+    translate([-block_w/2, -block_d/2, 0])
+        cube([block_w, block_d, block_h]);
+
+    // 2. The barrel channel
+    // A half-circle at the back (y=15) and straight sides to the front (y=-15).
+    // The half-circle is centered at x=0, y=0 (relative to the block center).
+    // Since the block is 30mm deep, Y goes from -15 to 15.
+    // The channel is a semi-cylinder.
+    translate([0, 0, -1]) // Extend slightly for clean cut
+    rotate([90, 0, 0])    // Rotate cylinder to lie along Y axis
+    cylinder(h = block_d + 2, d = barrel_dia);
+
+    // 3. The flange slot
+    // Cut from the front face (y = -15) back to y = 11.
+    // Width is 34mm (X), Height is 2.6mm (Z).
+    translate([-flange_w/2, -block_d/2 - 1, flange_z_min])
+        cube([flange_w, (block_d/2 - flange_y_end) + 1, flange_h + 1]);
+
+    // 4. The screw holes
+    // Two 4.5mm holes through the block along the Y axis.
+    for (sx = [-screw_x_pos, screw_x_pos]) {
+        translate([sx, -block_d/2 - 1, screw_z_pos])
+            rotate([0, 90, 0])
+                cylinder(h = block_d + 2, d = screw_hole_d);
+    }
+}

@@ -1,0 +1,91 @@
+// --- Dimensions ---
+// Part 1: Base Block
+base_width = 90;          // X dimension of base
+base_depth = 90;          // Y dimension of base
+base_height = 35;         // Z dimension of base
+
+// Tube Seats (Blind holes)
+seat_dia = 30.5;          // Diameter of tube seats
+seat_depth = 30;          // Depth of the seat cut
+seat_floor = 5;           // Remaining floor thickness (35 - 30)
+seat_x_pos = [ -21, 21 ]; // X coordinates of seats
+seat_y_pos = [ -24, 24 ]; // Y coordinates of seats
+
+// Posts
+post_thickness = 10;      // X dimension of posts
+post_width = 16;          // Y dimension of posts
+post_height = 160;        // Z height of posts
+post_hole_size = 10.4;    // Square hole dimension (X-axis through-hole)
+post_hole_z = 150;        // Z center of the hole
+
+// Part 2: Handle
+handle_width = 10;        // X dimension of handle
+handle_depth = 10;        // Y dimension of handle
+handle_length = 100;      // X dimension of handle
+handle_y_start = 55;      // Y start position
+handle_y_end = 65;        // Y end position
+
+// General
+$fn = 64;
+
+// --- Part 1: Base and Posts ---
+module part_1() {
+    // Base Block
+    difference() {
+        // Main block
+        cube([base_width, base_depth, base_height], center = true);
+        
+        // Tube Seats (Blind holes)
+        // We translate the center to the specified coordinates. 
+        // Since cube is centered, we adjust for the offset.
+        for (i = [0:1]) {
+            for (j = [0:1]) {
+                translate([seat_x_pos[i], seat_y_pos[j], base_height/2 - seat_depth + 0.01])
+                    cylinder(d = seat_dia, h = seat_depth + 0.02);
+            }
+        }
+    }
+
+    // Posts
+    // Posts are flush with end faces (X = +/- 45). 
+    // Thickness is 10, so they occupy X from 35 to 45 and -45 to -35.
+    // Centered on Y=0.
+    for (side = [-1, 1]) {
+        translate([side * (base_width/2 - post_thickness/2), 0, post_height/2]) {
+            difference() {
+                // Post body
+                cube([post_thickness, post_width, post_height], center = true);
+                
+                // Square hole through X axis
+                // We rotate 90 deg around Y to align hole with X axis
+                rotate([0, 90, 0])
+                    cube([post_thickness + 2, post_hole_size, post_hole_size], center = true);
+            }
+        }
+    }
+}
+
+// --- Part 2: Handle ---
+module part_2() {
+    // Handle is a square bar 10x10x100
+    // Lying on bed along X, centered on X=0.
+    // Spans Y from 55 to 65.
+    // Since it's a 10x10 bar, and Y is 55 to 65, the center is Y=60.
+    // The Z height is 10, so it sits on the bed (Z=0 to 10).
+    
+    translate([0, 60, 5]) // Center Y at 60, Z center at 5
+        cube([handle_length, handle_depth, handle_width], center = true);
+}
+
+// --- Rendering ---
+// To print these side-by-side, we place them on the XY plane.
+// Part 1 is already centered at origin.
+// Part 2 is moved to sit next to Part 1.
+
+// Part 1
+translate([0, 0, 0]) 
+    part_1();
+
+// Part 2 (Moved to avoid collision, placed at Y = 110)
+translate([0, 110, 0]) 
+    part_2();

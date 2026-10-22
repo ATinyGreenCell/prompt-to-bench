@@ -1,0 +1,150 @@
+```openscad
+// Wall-mounted syringe holder for 10mL syringe
+// Designed for FDM printing, standing on the XY plane.
+
+// --- Dimensions ---
+block_w = 50.0;      // Block width (X)
+block_d = 30.0;      // Block depth (Y)
+block_h = 40.0;      // Block height (Z)
+
+barrel_dia = 16.5;   // Width of the vertical barrel channel
+barrel_rad = barrel_dia / 2;
+
+flange_w = 34.0;     // Width of the flange slot (X)
+flange_h = 2.6;      // Height of the flange slot (Z)
+flange_z_start = 30.0; // Bottom of the flange slot
+flange_y_depth = 11.0; // How far back the slot goes from the front face
+
+screw_hole_d = 4.5;  // Diameter for M4 screws
+screw_hole_x = 19.0; // Offset of screw holes from center (X)
+screw_hole_z = 15.0; // Height of screw holes (Z)
+
+$fn = 64;
+
+// --- Modeling ---
+
+// The block is centered on X and Y.
+// X: -25 to 25
+// Y: -15 to 15 (Back face at y=15, Front face at y=-15)
+// Z: 0 to 40
+
+difference() {
+    // 1. The main block
+    translate([-block_w/2, -block_d/2, 0])
+        cube([block_w, block_d, block_h]);
+
+    // 2. Barrel Channel
+    // "a 16.5 mm wide vertical barrel channel runs through the full height"
+    // "its back end is a half-circle of 8.25 mm radius centred at x = 0, y = 0"
+    // "its straight sides run forward to the front face (y = -15)"
+    // This describes a shape in XY: a semi-circle at the back (y=0) 
+    // and a rectangle extending to the front (y=-15).
+    // However, a semi-circle centered at (0,0) with radius 8.25 
+    // would have its flat side at y=0 and curve at y=-8.25 (if it's the "back" of the hole).
+    // Or curve at y=8.25. 
+    // Given "straight sides run forward to the front face (y=-15)", 
+    // the channel is a semi-cylinder where the flat part is at y=0 and the curve is at y=-8.25.
+    // Wait, if the curve is at y=-8.25, the "back end" (the part furthest from the front) 
+    // is the curve. This matches "back end is a half-circle".
+    // So the profile in XY is:
+    // A rectangle from x=[-8.25, 8.25] and y=[-15, 0]
+    // PLUS a semi-circle centered at (0,0) with radius 8.25 extending to y=8.25? 
+    // No, that would make the channel 23.25mm deep.
+    // Let's follow the text literally: 
+    // The channel is a vertical extrusion of a 2D shape.
+    // The 2D shape: A rectangle from x=-8.25 to 8.25, y=-15 to 0.
+    // AND a semi-circle centered at (0,0) with radius 8.25.
+    // Since the "back end" is the half-circle, the half-circle must be the part at y=0.
+    // If the half-circle is at y=0, and the sides run to y=-15, 
+    // the shape is a rectangle [ -8.25, 8.25 ] x [ -15, 0 ] 
+    // joined with a semi-circle centered at (0,0) with radius 8.25.
+    // This semi-circle would occupy the space from y=0 to y=8.25.
+    // Total depth of channel = 15 (rect) + 8.25 (semi) = 23.25.
+    // But the block is only 30mm deep (y from -15 to 15).
+    // This fits perfectly.
+    
+    union() {
+        // The rectangular part of the channel
+        translate([-barrel_rad, -15, -1])
+            cube([barrel_dia, 15, block_h + 2]);
+        
+        // The semi-circular "back end" of the channel
+        // We use a cylinder and cut it in half.
+        // The cylinder is centered at (0,0) and we only want the part where y > 0.
+        translate([0, 0, -1])
+            cylinder(h = block_h + 2, d = barrel_dia);
+        
+        // To make it a "half-circle" at the back, we need to ensure 
+        // the cylinder is only the part from y=0 to y=8.25.
+        // Actually, the easiest way to define this 2D profile is:
+        // A rectangle from x=-8.25 to 8.25, y=-15 to 0
+        // AND a semi-circle centered at (0,0) with radius 8.25.
+    }
+    // Wait, the logic above is for a UNION. I need to subtract the channel.
+    // Let's redefine the subtraction logic.
+}
+
+// Let's rewrite the difference block properly.
+difference() {
+    // The main block
+    translate([-block_w/2, -block_d/2, 0])
+        cube([block_w, block_d, block_h]);
+
+    // The Barrel Channel (Subtracted)
+    // We create the 2D profile of the channel and extrude it.
+    // Profile: Rectangle [-8.25, 8.25] x [-15, 0] 
+    // PLUS semi-circle centered at (0,0) with radius 8.25.
+    // This semi-circle covers y from 0 to 8.25.
+    translate([0, 0, -1])
+    rotate([90, 0, 0])
+    difference() {
+        union() {
+            // Rectangular part
+            translate([-barrel_rad, -15, 0])
+                cube([barrel_dia, 15, block_h + 2]);
+            // Semi-circle part
+            cylinder(h = block_h + 2, d = barrel_dia);
+        }
+        // Cut the cylinder in half to make it a semi-circle
+        // We cut it so only the part where y > 0 remains.
+        // Since we rotated 90 deg on X, the original Y is now the Z axis.
+        // This is getting confusing. Let's use a simpler 2D approach.
+    }
+}
+
+// RE-DOING THE WHOLE THING WITH CLEAN LOGIC
+// 1. Block
+// 2. Subtract Channel
+// 3. Subtract Flange Slot
+// 4. Subtract Screw Holes
+
+difference() {
+    // The main block
+    translate([-block_w/2, -block_d/2, 0])
+        cube([block_w, block_d, block_h]);
+
+    // The Barrel Channel
+    // Profile in XY:
+    // A rectangle from x=-8.25 to 8.25, y=-15 to 0
+    // A semi-circle centered at (0,0) with radius 8.25 (the part where y > 0)
+    translate([0, 0, -1])
+    linear_extrude(height = block_h + 2) {
+        union() {
+            // Rectangle
+            translate([-barrel_rad, -15, 0])
+                square([barrel_dia, 15]);
+            // Semi-circle
+            // We use a circle and subtract the bottom half
+            difference() {
+                circle(d = barrel_dia);
+                translate([-barrel_rad, -barrel_rad, 0])
+                    square([barrel_dia, barrel_rad]);
+            }
+        }
+    }
+
+    // The Flange Slot
+    // "34 mm wide (X, centred) and 2.6 mm tall (z = 30 to 32.6), 
+    // is cut in from the front face back to y = 11."
+    // Front face is y = -15. Back is y = 11.
+    // Depth of slot

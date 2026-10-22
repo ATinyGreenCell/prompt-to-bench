@@ -1,0 +1,87 @@
+// Pinch clamp for silicone tubing (up to 6.4 mm OD)
+// Living hinge + snap latch, printed flat (profile in XY, extruded along Z)
+
+$fn = 96;
+
+// ---- Overall ----
+thick        = 8;      // extrusion depth along Z (mm)
+eps          = 0.01;   // small overlap to fuse touching features
+
+// ---- Lower jaw ----
+lj_x0        = 0;      // lower jaw start x
+lj_x1        = 50;     // lower jaw end x
+lj_y0        = 0;      // lower jaw bottom y
+lj_y1        = 4;      // lower jaw top (inner face) y
+
+// ---- Tongue (end of lower jaw) ----
+tg_x0        = 50;     // tongue start x
+tg_x1        = 56;     // tongue end x
+tg_y0        = 2.5;    // tongue bottom y
+tg_y1        = 4;      // tongue top y
+
+// ---- Upper jaw ----
+uj_x0        = 0;      // upper jaw start x
+uj_x1        = 60;     // upper jaw end x
+uj_y0        = 12;     // upper jaw bottom (inner face) y
+uj_y1        = 16;     // upper jaw top y
+
+// ---- Living hinge (half-ring, x < 0) ----
+hinge_cx     = 0;      // hinge centre x
+hinge_cy     = 8;      // hinge centre y
+hinge_ri     = 7.2;    // hinge inner radius
+hinge_ro     = 8;      // hinge outer radius (0.8 mm wall)
+
+// ---- Pinch ridges ----
+ridge_r      = 1.5;    // ridge radius
+ridge_x      = 27.5;   // ridge centre x
+ridge_ys     = [lj_y1, uj_y0];  // ridge centre y on each jaw inner face
+
+// ---- Latch leg ----
+leg_x0       = 57;     // leg start x
+leg_x1       = 60;     // leg end x
+leg_y0       = 4.5;    // leg bottom y
+leg_y1       = 12;     // leg top y (joins upper jaw)
+
+// ---- Latch nose ----
+nose_x0      = 54.5;   // nose start x
+nose_x1      = 57;     // nose end x (joins leg)
+nose_y0      = 4.5;    // nose bottom y (0.5 mm above tongue)
+nose_y1      = 5.5;    // nose top y
+
+module rect(x0, y0, x1, y1) {
+    translate([x0, y0]) square([x1 - x0, y1 - y0]);
+}
+
+module profile() {
+    union() {
+        // Lower jaw bar
+        rect(lj_x0, lj_y0, lj_x1, lj_y1);
+        // Tongue (slightly overlapped into the jaw)
+        rect(tg_x0 - eps, tg_y0, tg_x1, tg_y1);
+        // Upper jaw bar
+        rect(uj_x0, uj_y0, uj_x1, uj_y1);
+
+        // Living hinge: half-ring on the x < 0 side
+        intersection() {
+            translate([hinge_cx, hinge_cy])
+                difference() {
+                    circle(r = hinge_ro);
+                    circle(r = hinge_ri);
+                }
+            // keep left half, extended slightly into jaws to fuse
+            rect(hinge_cx - hinge_ro - 1, hinge_cy - hinge_ro - 1,
+                 hinge_cx + eps, hinge_cy + hinge_ro + 1);
+        }
+
+        // Pinch ridges (half-rounds; other half buried in jaw)
+        for (y = ridge_ys)
+            translate([ridge_x, y]) circle(r = ridge_r);
+
+        // Latch leg (overlaps upper jaw slightly)
+        rect(leg_x0, leg_y0, leg_x1, leg_y1 + eps);
+        // Latch nose (overlaps leg slightly)
+        rect(nose_x0, nose_y0, nose_x1 + eps, nose_y1);
+    }
+}
+
+linear_extrude(height = thick) profile();

@@ -1,0 +1,59 @@
+// Magnetic bead rack for one 8-tube strip of 0.2 mL PCR tubes
+// Print orientation: rests on XY plane at z=0, builds upward (+Z), centred on origin in X and Y
+
+// Block dimensions
+L = 80;   // block length (X)
+W = 24;   // block width (Y)
+H = 20;   // block height (Z)
+
+// Tube seat parameters
+n_tubes = 8;
+pitch = 9;          // centre-to-centre spacing (X)
+d_top = 6.4;        // hole diameter at top (z = 20)
+d_bot = 3.0;        // hole diameter at bottom of cone (z = 2)
+z_top = 20;         // top of hole (block top face)
+z_bot = 2;          // bottom of hole (2 mm floor)
+
+// Bar magnet pocket parameters
+pocket_L = 60.4;   // pocket length (X)
+pocket_W = 3.3;    // pocket width (Y)
+pocket_H = 10.2;   // pocket height (Z)
+pocket_y = 6;      // |y| of pocket centres (centred at y = -6 and y = 6)
+
+$fn = 64;
+
+// Base block
+module block() { translate([-L/2, -W/2, 0]) cube([L, W, H]); }
+
+// Tube seats: 6.4 mm hole from top down to z=12, then cone to 3 mm at z=2
+// Each seat = cylinder (z=12..20) + cone (z=2..12)
+module tube_seat() { union() {
+    // Straight cylindrical section from z=12 to z=20
+    translate([0, 0, 12])
+        cylinder(h = z_top - 12, r1 = d_top/2, r2 = d_top/2, $fn = $fn);
+    // Conical section from z=2 to z=12, narrowing from 6.4 to 3.0
+    translate([0, 0, z_bot])
+        cylinder(h = 12 - z_bot, r1 = d_bot/2, r2 = d_top/2, $fn = $fn);
+} }
+
+// Bar magnet pocket: open at bottom, centred in X, at given y
+module magnet_pocket() { translate([0, 0, 0])
+    cube([pocket_L, pocket_W, pocket_H], center = [true, true, false]); }
+
+// Assemble: subtract all features from the block
+difference() {
+    block();
+
+    // 8 tube seats along y = 0, 9 mm apart, centred on block
+    for (i = [0 : n_tubes-1]) {
+        x_pos = (i - (n_tubes-1)/2) * pitch;
+        translate([x_pos, 0, 0])
+            tube_seat();
+    }
+
+    // Two bar magnet pockets at y = -6 and y = +6, centred in X
+    for (y_p = [-pocket_y, pocket_y]) {
+        translate([0, y_p, 0])
+            magnet_pocket();
+    }
+}

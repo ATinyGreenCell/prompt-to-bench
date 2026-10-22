@@ -1,0 +1,153 @@
+// --- Parameters ---
+// Base dimensions
+base_length = 203;       // X dimension of the base
+base_width = 80;         // Y dimension of the base
+base_height = 20;        // Z dimension of the base
+
+// Cradle dimensions (for 90mm Petri dish)
+dish_radius = 46;        // Radius of the cylinder cutting the cradle
+cradle_axis_y = 0;       // Y position of the cylinder axis
+cradle_axis_z = 52;      // Z position of the cylinder axis
+cradle_depth_offset = 1; // Extra depth for boolean subtraction
+
+// Divider dimensions
+num_dividers = 11;       // Number of vertical plates
+divider_thickness = 3;   // Thickness of each divider (X direction)
+divider_height = 60;     // Height of dividers (Z direction)
+divider_width = 80;      // Width of dividers (Y direction)
+divider_spacing = 20;    // Distance between divider centers (X direction)
+divider_start_x = -100;  // Starting X position for the first divider
+
+// Resolution
+fn_val = 64;             // Smoothness for cylinders
+
+// --- Implementation ---
+
+// The part is built in the print orientation: rests on XY plane at Z=0.
+// The base is centered on X and Y.
+
+union() {
+    // 1. The Base Block
+    translate([-base_length/2, -base_width/2, 0])
+        cube([base_length, base_width, base_height]);
+
+    // 2. The Divider Plates
+    // We use a loop to place 11 dividers.
+    // The dividers are "solid", meaning they are not cut by the cradle.
+    // To ensure the cradle doesn't cut through them, we place them in a union
+    // with the base, but the cradle subtraction must happen AFTER or 
+    // we must ensure the dividers are not part of the subtraction.
+    // The prompt says "the cradle is not cut through them".
+    // Therefore, we calculate the dividers separately and union them.
+    
+    for (i = [0 : num_dividers - 1]) {
+        translate([divider_start_x + (i * divider_spacing), -divider_width/2, 0])
+            cube([divider_thickness, divider_width, divider_height]);
+    }
+}
+
+// 3. The Cradle Cutout
+// The cradle is a cylinder subtracted from the assembly.
+// To ensure the cradle does NOT cut through the dividers, we must 
+// subtract the cradle ONLY from the base, or use a logic where 
+// the dividers are added back. 
+// However, the prompt says "the cradle is not cut through them".
+// The most robust way to model this is to create the base, subtract the cradle,
+// then union the dividers.
+
+// Let's re-structure the logic to follow the prompt's physical description:
+// "A curved cradle... is cut along its whole length... the cradle is not cut through [the dividers]"
+
+// Corrected Modeling Strategy:
+// Part = (Base - Cradle) + Dividers
+
+// We will use a module to keep it clean.
+// Since I cannot use modules to redefine the whole structure easily in one block 
+// without repeating code, I will use a single difference() block for the base 
+// and then union the dividers.
+
+// RE-WRITING THE MAIN BLOCK FOR LOGICAL ACCURACY:
+
+// We'll use a temporary variable approach to ensure the dividers are not cut.
+// We define the base with the cradle cut out, then union the dividers.
+
+// Note: The prompt says the base is 20mm tall, but the cradle bottoms out at z=6.
+// This means the cradle cuts into the base.
+
+// Final Construction:
+// (Base - Cradle) UNION Dividers
+
+difference() {
+    // The Base
+    translate([-base_length/2, -base_width/2, 0])
+        cube([base_length, base_width, base_height]);
+    
+    // The Cradle (Cylinder)
+    // Axis runs along X, so we rotate the cylinder.
+    // Cylinder is infinite in X for the cut, so we make it longer than the base.
+    translate([0, cradle_axis_y, cradle_axis_z])
+        rotate([0, 90, 0])
+            cylinder(h = base_length + 2, r = dish_radius, center = true, $fn = fn_val);
+}
+
+// Add the dividers on top of the base/cradle assembly
+// They are placed from z=0 to z=60.
+// Since they are "solid" and "the cradle is not cut through them", 
+// they must be unioned AFTER the cradle is subtracted from the base.
+// However, the dividers start at z=0. If they are "not cut", 
+// they must exist as full blocks.
+
+// Wait, if the dividers are "not cut through" by the cradle, 
+// and the cradle is a groove in the base, the dividers must be 
+// placed such that they are not affected by the subtraction.
+// This means the dividers are unioned with the result of (Base - Cradle).
+
+// But if the dividers are placed at x = -100, -80... 
+// and the cradle is at z=52 (axis) with radius 46, the bottom of the cradle is 52-46 = 6.
+// The dividers go from z=0 to z=60.
+// If the dividers are not cut, they will "fill in" the groove where they intersect it.
+// This is exactly what the prompt asks for: "This leaves ten 17 mm wide slots, one dish in each."
+// This implies the dividers act as the walls of the slots.
+
+// Let's refine the divider placement to ensure they are "solid".
+// The code below follows: (Base - Cradle) + Dividers.
+
+// Wait, the prompt says "Eleven solid divider plates... rise from z=0 to z=60".
+// If they are not cut by the cradle, they will be continuous blocks.
+// The cradle is cut from the base.
+// If a divider is at x=-100, and the cradle passes through x=-100,
+// and the divider is NOT cut, the divider will occupy the space where the cradle would be.
+// This would block the dish.
+// UNLESS the dividers are placed BETWEEN the slots.
+// The prompt says: "This leaves ten 17 mm wide slots, one dish in each."
+// This means the dividers are the walls.
+// If the dividers are NOT cut by the cradle, they would block the dish.
+// Therefore, the "not cut through them" must mean the dividers are 
+// added to the base AFTER the cradle is cut, but the dividers themselves 
+// are not subject to the subtraction. 
+// BUT, if the dividers are not cut, they will block the groove.
+// Let's re-read: "Eleven solid divider plates... rise from z=0 to z=60... the cradle is not cut through them."
+// This is a contradiction if the dividers are meant to allow a dish to sit in a groove.
+// UNLESS the dividers are placed such that they don't intersect the groove? 
+// No, the groove is along the whole length.
+// Let's look at the math: 
+// Divider at x=-100. Cradle is at y=0, z=52, r=46. 
+// The groove is a void. If the divider is "not cut", it fills the void.
+// If the divider fills the void, you can't put a dish in.
+// THE ONLY LOGICAL INTERPRETATION:
+// The dividers are the walls, and the "not cut through them" means 
+// the user wants the dividers to be solid blocks, and the cradle 
+// is only cut from the base material, but the dividers are placed 
+// in a way that they define the slots.
+// Actually, the most common way to interpret "the cradle is not cut through them" 
+// in CAD instructions is that the subtraction operation should not apply to the divider objects.
+// If the dividers are not cut, they will be solid. 
+// If they are solid and they intersect the cradle, they will fill the cradle.
+// BUT, if the dividers are the *walls* of the slots, they shouldn't be in the middle of the slot.
+// Let's check the spacing: 11 dividers, 20mm apart = 10 slots.
+// Slot width = 20mm (center to center) - 3mm (divider) = 17mm.
+// This matches the prompt! "This leaves ten 17 mm wide slots".
+// So the dividers are the walls.
+// If the dividers are the walls, they are at x = -100, -80, etc.
+// The cradle is at y=0. The dividers are at y = -40 to 40.
+//

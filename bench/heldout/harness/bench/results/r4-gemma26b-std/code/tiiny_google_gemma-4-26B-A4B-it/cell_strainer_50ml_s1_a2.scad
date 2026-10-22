@@ -1,0 +1,97 @@
+// --- Parameters ---
+// Main tube dimensions
+outer_diameter = 25.0;       // OD of the main tube
+wall_thickness = 1.2;        // Wall thickness of the tube
+bore_diameter = 22.6;        // Inner diameter of the tube
+tube_height = 32.0;          // Height of the main tube body
+
+// Floor dimensions
+floor_thickness = 1.2;        // Thickness of the bottom floor
+
+// Flare/Collar dimensions
+flare_start_z = 26.0;        // Z height where flare begins
+flare_end_z = 30.0;          // Z height where flare ends
+flare_top_diameter = 33.0;   // Diameter at the top of the flare
+rim_height = 32.0;           // Z height of the top rim
+
+// Hole dimensions (for the floor)
+hole_diameter = 1.0;         // Diameter of the strainer holes
+grid_spacing = 2.0;          // Distance between hole centers (square grid)
+max_hole_radius = 10.0;      // Max distance from axis for a hole center
+
+// Vent notch dimensions
+notch_width = 3.0;           // Width of the vent notches
+notch_cut_radius = 12.5;     // Radius from axis where notches start cutting
+notch_start_z = 25.0;        // Z height where notches begin
+
+// Rendering quality
+$fn = 64;
+
+// --- Calculations ---
+// The prompt specifies the tube is 32mm tall. 
+// The floor is 1.2mm thick (z=0 to 1.2).
+// The bore is 22.6mm diameter.
+// The flare is a 45-degree cone from 25mm (z=26) to 33mm (z=30).
+// The rim is 33mm diameter up to z=32.
+
+// --- Main Model ---
+
+difference() {
+    // 1. THE SOLID BODY
+    union() {
+        // Main Tube Body (z=0 to 32)
+        // We build the whole outer shape first
+        cylinder(h = tube_height, d = outer_diameter);
+        
+        // Flare (Conical section from z=26 to z=30)
+        hull() {
+            translate([0, 0, flare_start_z])
+                cylinder(h = 0.01, d = outer_diameter);
+            translate([0, 0, flare_end_z])
+                cylinder(h = 0.01, d = flare_top_diameter);
+        }
+        
+        // Top Rim (z=30 to 32)
+        translate([0, 0, flare_end_z])
+            cylinder(h = rim_height - flare_end_z, d = flare_top_diameter);
+            
+        // The Floor (z=0 to 1.2)
+        // Note: The cylinder above already covers z=0 to 1.2. 
+        // We don't need to add it, but we must ensure the bore doesn't cut it.
+    }
+
+    // 2. THE BORE (Hollow out the inside)
+    // The bore is 22.6mm diameter. 
+    // It must leave a 1.2mm floor at the bottom.
+    // So bore goes from z=1.2 to z=32.
+    translate([0, 0, floor_thickness - 0.01])
+        cylinder(h = tube_height - floor_thickness + 0.02, d = bore_diameter);
+
+    // 3. VENT NOTCHES
+    // "3 mm wide vent notches, on the +X and -X sides, remove the collar and rim 
+    // beyond 12.5 mm from the axis from z = 25 up"
+    // The notch is 3mm wide (along Y) and centered on X.
+    // It removes material from R=12.5 to the outer edge.
+    for (x_sign = [-1, 1]) {
+        translate([x_sign * notch_cut_radius, 0, notch_start_z - 0.01])
+            // We use a cube. To ensure it cuts "beyond 12.5mm", we center the cube on the X axis.
+            // The width is 3mm (Y direction). The depth is 100mm to ensure it clears the part.
+            // The height is from notch_start_z to the top.
+            cube([100, notch_width, tube_height - notch_start_z + 2]);
+    }
+
+    // 4. THE FLOOR HOLES
+    // Grid: 2mm square, centered on axis.
+    // One hole at center (0,0).
+    // Keep holes whose center is within 10mm of axis.
+    // We iterate from -10 to 10 in steps of 2.
+    for (x = [-10 : grid_spacing : 10]) {
+        for (y = [-10 : grid_spacing : 10]) {
+            // Check if center is within 10mm of axis
+            if (sqrt(x*x + y*y) <= 10.0) {
+                translate([x, y, -0.01])
+                    cylinder(h = floor_thickness + 0.02, d = hole_diameter);
+            }
+        }
+    }
+}

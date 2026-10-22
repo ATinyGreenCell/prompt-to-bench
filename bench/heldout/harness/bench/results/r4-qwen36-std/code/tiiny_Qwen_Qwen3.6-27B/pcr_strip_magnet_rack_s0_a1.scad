@@ -1,0 +1,65 @@
+// Magnetic bead rack for one 8-tube strip of 0.2 mL PCR tubes
+// Dimensions measured with calipers
+
+// Block dimensions
+block_length = 80;   // X
+block_width = 24;    // Y
+block_height = 20;   // Z
+
+// Tube seat parameters
+tube_seat_diameter_top = 6.4;
+tube_seat_diameter_bottom = 3;
+tube_seat_depth_top = 12; // z from top (20-12=8)
+tube_seat_depth_bottom = 2; // z from top (20-2=18)
+tube_spacing = 9; // centre-to-centre
+num_tubes = 8;
+
+// Magnet pocket parameters
+magnet_pocket_length = 60.4; // X
+magnet_pocket_width = 3.3;   // Y
+magnet_pocket_height = 10.2; // Z
+magnet_pocket_y_offset = 6;  // centred at y = -6 and y = 6
+
+$fn = 64;
+
+// Main block
+difference() {
+    // Solid block
+    translate([-block_length/2, -block_width/2, 0])
+        cube([block_length, block_width, block_height]);
+
+    // Tube seats
+    for (i = [0:num_tubes-1]) {
+        x_pos = (i - (num_tubes-1)/2) * tube_spacing;
+        
+        // Cylindrical part (top)
+        // Starts at z = block_height - tube_seat_depth_top = 20 - 12 = 8
+        // Ends at z = block_height - tube_seat_depth_bottom = 20 - 2 = 18
+        // Height of cylinder = 18 - 8 = 10
+        translate([x_pos, 0, block_height - tube_seat_depth_top])
+            cylinder(h = tube_seat_depth_top - tube_seat_depth_bottom + 0.01, 
+                     r = tube_seat_diameter_top/2, center = false);
+        
+        // Conical part (bottom)
+        // Starts at z = block_height - tube_seat_depth_bottom = 18
+        // Ends at z = 0 (floor is 2mm thick, so hole goes down to z=2? No, spec says "ends at z=2 where it ends (a 2 mm floor)")
+        // Wait, spec says: "narrows as a cone to 3 mm in diameter at z = 2, where it ends (a 2 mm floor)"
+        // This implies the hole bottom is at z=2.
+        // So the cone goes from z=18 (diameter 6.4) to z=2 (diameter 3).
+        // Height of cone = 18 - 2 = 16.
+        translate([x_pos, 0, 2]) // Start at z=2
+            cylinder(h = (block_height - tube_seat_depth_bottom) - 2 + 0.01, 
+                     r1 = tube_seat_diameter_bottom/2, 
+                     r2 = tube_seat_diameter_top/2, 
+                     center = false);
+    }
+
+    // Magnet pockets (open at bottom)
+    // Left pocket (y = -6)
+    translate([-magnet_pocket_length/2, -magnet_pocket_y_offset - magnet_pocket_width/2, 0])
+        cube([magnet_pocket_length + 0.01, magnet_pocket_width + 0.01, magnet_pocket_height + 0.01]);
+    
+    // Right pocket (y = 6)
+    translate([-magnet_pocket_length/2, magnet_pocket_y_offset - magnet_pocket_width/2, 0])
+        cube([magnet_pocket_length + 0.01, magnet_pocket_width + 0.01, magnet_pocket_height + 0.01]);
+}

@@ -1,0 +1,54 @@
+Looking at the specification and measurement report, I can see the issue: the foot's centerline should start at the origin and point at 120 degrees, but the current code has the transformations in the wrong order.
+
+In OpenSCAD, transformations are applied from innermost to outermost. Currently, the cube is rotated first, then translated—which moves the foot's centerline away from the origin. The correct order should be: translate first (to center the foot on its local Y-axis), then rotate (which will make the centered local Y-axis pass through the origin in the 120° direction).
+
+```openscad
+// Handle dimensions (mm)
+handle_length = 150;
+handle_width = 6;
+handle_thickness = 4;
+
+// Spreading foot dimensions (mm)
+foot_length = 40;
+foot_width = 5;
+foot_thickness = 2.5;
+
+// Boss dimensions (mm)
+boss_diameter = 6;
+boss_height = 4;
+
+// Hole dimensions (mm)
+hole_diameter = 4;
+hole_x = 143;
+
+// Foot angle (degrees, counter-clockwise from +X axis)
+foot_angle = 120;
+
+$fn = 64;
+
+// Main body - union of handle, foot, and boss
+difference() {
+  union() {
+    // Handle: x = 0 to 150, y = -3 to 3, z = 0 to 4
+    translate([0, -handle_width/2, 0]) {
+      cube([handle_length, handle_width, handle_thickness]);
+    }
+    
+    // Spreading foot: 40 mm long, 5 mm wide, 2.5 mm thick, at 120 degrees
+    // Rotate first, then translate - so centerline passes through origin at 120°
+    rotate([0, 0, foot_angle]) {
+      translate([0, -foot_width/2, 0]) {
+        cube([foot_length, foot_width, foot_thickness]);
+      }
+    }
+    
+    // Round boss at origin: 6 mm diameter, 4 mm tall
+    cylinder(d=boss_diameter, h=boss_height);
+  }
+  
+  // Subtract hanging hole at x = 143, y = 0
+  translate([hole_x, 0, -0.5]) {
+    cylinder(d=hole_diameter, h=handle_thickness + 1);
+  }
+}
+```

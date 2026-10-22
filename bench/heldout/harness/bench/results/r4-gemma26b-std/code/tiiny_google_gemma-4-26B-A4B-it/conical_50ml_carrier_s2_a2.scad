@@ -1,0 +1,107 @@
+// --- Dimensions ---
+// Part 1: Base Block
+base_width = 90;          // X dimension of base
+base_depth = 90;          // Y dimension of base
+base_height = 35;         // Z dimension of base
+
+// Tube Seats (Blind holes)
+seat_dia = 30.5;          // Diameter of tube seats
+seat_depth = 30;          // Depth of the seat cut
+seat_floor = 5;           // Remaining floor thickness (35 - 30)
+seat_x_pos = [ -21, 21 ]; // X coordinates of seats
+seat_y_pos = [ -24, 24 ]; // Y coordinates of seats
+
+// Posts
+post_thickness = 10;      // X dimension of posts
+post_width = 16;          // Y dimension of posts
+post_height = 125;        // Z height of posts (160 - 35)
+post_hole_size = 10.4;    // Square hole dimension (X-axis through-hole)
+post_hole_z_abs = 150;    // Absolute Z center of the hole
+
+// Part 2: Handle
+handle_width = 10;        // X dimension of handle
+handle_depth = 10;        // Y dimension of handle
+handle_length = 100;      // X dimension of handle
+handle_y_start = 55;      // Y start position
+handle_y_end = 65;        // Y end position
+
+// General
+$fn = 64;
+
+// --- Part 1: Base and Posts ---
+module part_1() {
+    // The entire part 1 must be a single solid body.
+    // We use union() to combine the base and the posts.
+    union() {
+        // Base Block
+        difference() {
+            // Main block - placed on Z=0
+            cube([base_width, base_depth, base_height]);
+            
+            // Tube Seats (Blind holes)
+            // Centered on X/Y, but we must translate to the specific coordinates.
+            // Since cube is at origin (0,0,0), center is (45, 45, 17.5).
+            // To center seats at seat_x_pos/seat_y_pos, we translate.
+            for (i = [0:1]) {
+                for (j = [0:1]) {
+                    // Translate to seat center. 
+                    // We use seat_depth + 0.01 to ensure it cuts through the top face.
+                    // The seat is blind, so it stops 5mm from the bottom.
+                    translate([
+                        (base_width/2) + seat_x_pos[i], 
+                        (base_depth/2) + seat_y_pos[j], 
+                        base_height - seat_depth + 0.01
+                    ])
+                        cylinder(d = seat_dia, h = seat_depth + 0.02);
+                }
+            }
+        }
+
+        // Posts
+        // Posts stand on the base (Z=35) and rise to Z=160.
+        // Post height = 160 - 35 = 125.
+        // Post center Z = 35 + (125/2) = 97.5.
+        // Post X range: 
+        // Post 1: X from -45 to -35 (centered at -40)
+        // Post 2: X from 35 to 45 (centered at 40)
+        // Post Y range: -8 to 8 (centered at 0)
+        
+        for (side = [-1, 1]) {
+            translate([side * (base_width/2 - post_thickness/2), 0, base_height + post_height/2]) {
+                difference() {
+                    // Post body
+                    cube([post_thickness, post_width, post_height], center = true);
+                    
+                    // Square hole through X axis
+                    // Hole is centered at absolute Z = 150.
+                    // Local Z center = 150 - (base_height + post_height/2)
+                    // Local Z center = 150 - (35 + 62.5) = 52.5
+                    translate([0, 0, 150 - (base_height + post_height/2)])
+                        rotate([0, 90, 0])
+                            cube([post_thickness + 2, post_hole_size, post_hole_size], center = true);
+                }
+            }
+        }
+    }
+}
+
+// --- Part 2: Handle ---
+module part_2() {
+    // Handle: 10x10x100. Lying on bed (Z=0 to 10).
+    // Centered on X=0. Spans Y=55 to 65.
+    // X range is -50 to 50.
+    translate([0, 60, 5])
+        cube([handle_length, handle_depth, handle_width], center = true);
+}
+
+// --- Rendering ---
+// Part 1: Centered on origin in X and Y.
+// To ensure it rests on Z=0, we don't need to translate if we don't use center=true for the base.
+// However, to keep the code clean, I'll use the logic in part_1.
+part_1();
+
+// Part 2: Placed side by side.
+// Part 1 Y max is 45. Part 2 Y is 55 to 65.
+// To avoid collision and ensure they are "side by side" for printing:
+translate([0, 110, 0]) 
+    part_2();

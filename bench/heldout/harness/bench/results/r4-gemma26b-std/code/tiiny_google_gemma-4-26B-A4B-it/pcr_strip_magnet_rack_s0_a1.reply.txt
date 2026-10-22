@@ -1,0 +1,83 @@
+```openscad
+// Magnetic Bead Rack for 8-tube PCR strip
+// Corrected version based on measurement report analysis
+
+// --- Dimensions ---
+block_x = 80.0;          // Total length of the block
+block_y = 24.0;          // Total width of the block
+block_z = 20.0;          // Total height of the block
+
+tube_count = 8;          // Number of tubes
+tube_spacing = 9.0;      // Center-to-center distance between tubes
+tube_hole_dia = 6.4;     // Diameter of the top part of the tube seat
+tube_bottom_dia = 3.0;   // Diameter of the bottom part of the tube seat
+tube_z_top = 20.0;       // Top face of the block (Z)
+tube_z_mid = 12.0;       // Z height where the cone starts
+tube_z_bottom = 2.0;     // Z height where the cone ends
+tube_floor = 2.0;        // Thickness of the floor at the bottom of the seat
+
+magnet_count = 2;        // Number of magnets
+magnet_len = 60.4;       // Length of the magnet (X)
+magnet_wid = 3.3;        // Width of the magnet (Y)
+magnet_h = 10.2;         // Height of the magnet (Z)
+magnet_y_pos1 = -6.0;    // Y position of first magnet center
+magnet_y_pos2 = 6.0;     // Y position of second magnet center
+
+// --- Parameters ---
+$fn = 64;                // Smoothness for cylinders
+eps = 0.01;             // Small offset for clean boolean operations
+
+// --- Main Assembly ---
+difference() {
+    // The main block
+    translate([-block_x/2, -block_y/2, 0])
+        cube([block_x, block_y, block_z]);
+
+    // 1. Tube Seats
+    // The previous report showed holes appearing at z=6.10 and z=11.10, 
+    // suggesting the subtraction logic or geometry was not correctly 
+    // aligned with the top face.
+    // We calculate the X offset to center the 8-tube array (7 intervals of 9mm = 63mm)
+    // within the 80mm block. (80 - 63) / 2 = 8.5mm from the edge.
+    for (i = [0 : tube_count - 1]) {
+        // X position: Start at -40 (left edge) + 8.5 (offset) + half of first tube diameter
+        // However, the spec says "9mm apart centre-to-centre and centred on the block".
+        // Total span is 63mm. Center of block is 0. 
+        // First tube center is at -31.5, last is at +31.5.
+        x_pos = -31.5 + (i * tube_spacing);
+        
+        // We use a single hull to create the conical shape from top to bottom
+        // to ensure the geometry is a single continuous subtraction.
+        translate([x_pos, 0, 0]) {
+            hull() {
+                // Top part of the seat (at z = 20, extending slightly above for clean cut)
+                translate([0, 0, tube_z_mid - eps])
+                    cylinder(h = tube_z_top - tube_z_mid + 2*eps, d = tube_hole_dia);
+                
+                // Bottom part of the seat (at z = 2)
+                translate([0, 0, tube_z_bottom - eps])
+                    cylinder(h = eps, d = tube_bottom_dia);
+            }
+            
+            // The vertical cylinder part from top face down to the cone start
+            translate([0, 0, tube_z_mid])
+                cylinder(h = tube_z_top - tube_z_mid + eps, d = tube_hole_dia);
+        }
+    }
+
+    // 2. Magnet Pockets
+    // Pockets are 60.4 x 3.3 x 10.2. 
+    // They are centered in X (0) and open at the bottom (z=0).
+    // They are located at y = -6 and y = 6.
+    for (m_y = [magnet_y_pos1, magnet_y_pos2]) {
+        translate([-magnet_len/2, m_y - magnet_wid/2, -eps])
+            cube([magnet_len, magnet_wid, magnet_h + eps]);
+    }
+}
+
+// Note on Geometry Fix:
+// The previous report showed 4 holes at z=6.10 and 8 holes at z=11.10.
+// This indicated the subtraction was not correctly removing the volume 
+// from the top down. The new logic uses a hull and a cylinder 
+// explicitly defined from the top face down to the floor.
+```

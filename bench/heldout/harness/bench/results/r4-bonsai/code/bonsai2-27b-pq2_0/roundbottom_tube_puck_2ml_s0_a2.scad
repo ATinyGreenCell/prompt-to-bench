@@ -1,0 +1,63 @@
+// 8x 2 mL round-bottom tube holder
+// Round puck, 80 mm diameter, 26 mm tall, axis on Z, resting on XY plane.
+// Flat label side: remove everything beyond plane x = 34.
+// 8 seats on a 50 mm diameter circle, first on +X axis.
+// Each seat: 11.2 mm diameter hole, bottom is a half-sphere of same diameter,
+// lowest point 20 mm below top face (z = 6).
+
+$fn = 64;
+
+// Puck dimensions
+puck_diameter = 80;
+puck_radius   = puck_diameter / 2;   // 40
+puck_height   = 26;
+
+// Label flat side: remove everything beyond plane x = 34
+label_x       = 34;
+
+// Seat dimensions
+seat_diameter = 11.2;
+seat_radius   = seat_diameter / 2;   // 5.6
+seat_depth    = 20;                  // from top face down to lowest point
+seat_circle_diameter = 50;
+seat_circle_radius   = seat_circle_diameter / 2;  // 25
+num_seats     = 8;
+
+// Top face is at z = puck_height
+top_z = puck_height;
+
+// Seat lowest point is 20 mm below top face
+seat_bottom_z = top_z - seat_depth;  // 6
+
+// Build the puck and cut the label side
+puck = difference(
+    cylinder(d = puck_diameter, h = puck_height, center = false),
+    cube([puck_radius + 1, puck_radius + 1, puck_height + 1], center = [puck_radius + 0.5, 0, puck_height / 2])
+);
+
+// Build the eight seats
+seats = union();
+for (i = 0; i < num_seats; i++) {
+    angle = i * 360 / num_seats;
+    x = seat_circle_radius * cos(angle);
+    y = seat_circle_radius * sin(angle);
+
+    // Seat is a cylinder (from top face down to z = seat_bottom_z + seat_radius)
+    // plus a half-sphere at the bottom (centered at z = seat_bottom_z + seat_radius)
+    // The half-sphere extends from z = seat_bottom_z to z = seat_bottom_z + seat_radius
+    // The cylinder extends from z = seat_bottom_z + seat_radius to z = top_z + 1 (past top face)
+
+    seat_cyl = cylinder(d = seat_diameter, h = top_z - (seat_bottom_z + seat_radius) + 1, center = false);
+    seat_sph = sphere(d = seat_diameter, center = [0, 0, seat_bottom_z + seat_radius]);
+
+    // Combine cylinder and sphere, then translate to seat position
+    seat = union(
+        translate([x, y, seat_bottom_z + seat_radius]) seat_cyl,
+        translate([x, y, seat_bottom_z + seat_radius]) seat_sph
+    );
+
+    seats = union(seats, seat);
+}
+
+// Final model: puck minus seats
+final_model = difference(puck, seats);

@@ -1,0 +1,117 @@
+```openscad
+// PCR Strip Holder for Ice Bucket
+
+// --- Dimensions ---
+wall_thickness = 12;      // Thickness of the ice bucket wall (mm)
+strip_length = 84;        // Length of the holder along X (mm)
+inner_leg_width = 4;      // Width of the inner leg (Y dimension, mm)
+outer_leg_width = 4;      // Width of the outer leg (Y dimension, mm)
+total_height = 50;        // Main height of the hook structure (mm)
+bridge_start_z = 46;      // Z start for the bridge connection (mm)
+bridge_end_z = 50;        // Z end for the bridge connection (mm)
+gap_for_wall = 12.5;      // Required gap size in Y to fit over the wall (mm)
+
+ledge_thickness = 6;      // Thickness of the bottom ledge (Z dimension, mm)
+ledge_length_y = 30;      // Length of the ledge extending into the ice bucket (-Y direction)
+tube_diameter = 6.4;      // Diameter of the PCR tubes (mm)
+hole_spacing_x = 9;       // Distance between tube centers along X (mm)
+num_tubes = 8;            // Number of tubes to hold
+
+// --- Constants ---
+$fn = 100; // High resolution for curves
+
+// --- Geometry Construction ---
+
+module profile() {
+    // The profile is defined in the YZ plane.
+    difference() {
+        // Base shape: A large bounding box encompassing the U-shape and ledge area
+        cube([outer_leg_width + 1, inner_leg_width + 1, total_height + 2]);
+
+        // 1. Cut out the main body space (The 'U' opening)
+        union() {
+            // Inner leg cutout (Y=0 to Y=4) - This is complex because we are defining the solid shape, not subtracting from a block.
+            // Let's define the solid parts instead of using difference on a large block.
+
+            // --- Solid Components Definition ---
+
+            // 1a. Inner Leg (Solid part)
+            translate([0, -(inner_leg_width/2), 0])
+            cube([strip_length, inner_leg_width, total_height]);
+
+            // 1b. Outer Leg (Solid part)
+            translate([0, (gap_for_wall + outer_leg_width/2), 0]) // Positioned relative to the center line of the hook structure
+            cube([strip_length, outer_leg_width, total_height]);
+
+            // 1c. Bridge connecting the legs (Top part)
+            translate([0, gap_for_wall + (outer_leg_width/2 - inner_leg_width/2), bridge_start_z])
+            cube([strip_length, outer_leg_width - inner_leg_width, bridge_end_z - bridge_start_z]);
+
+            // 1d. Ledge extending into the ice bucket (-Y direction)
+            // The ledge starts at Y=0 (the foot of the inner leg) and extends to -ledge_length_y
+            translate([0, -(inner_leg_width/2), 0]) // Aligned with the inner leg base
+            cube([strip_length, ledge_length_y, ledge_thickness]);
+
+        }
+    }
+}
+
+
+// --- Final Assembly and Placement ---
+
+module pcr_holder() {
+    // The profile is extruded along X (Strip Length)
+    linear_extrude(height = strip_length) {
+        // We need to define the 2D cross-section in YZ plane, then extrude it along X.
+        // Since the structure is defined as a profile in YZ and extruded along X=84mm, we model the YZ shape and let linear_extrude handle the extrusion along the X axis (which is the height parameter of linear_extrude).
+
+        // Redefining based on standard OpenSCAD interpretation:
+        // If "profile in the YZ plane extruded 84 mm along X", this means we draw a shape in YZ, and then use linear_extrude(height=84) which extrudes it along Z (if Z is up).
+        // However, the prompt specifies: "rests on the XY plane at z = 0 and builds upward (+Z)". This implies X is the extrusion direction.
+
+        // Let's model the cross-section in YZ, and then use hull/union to create the final shape along X.
+        // Since we are building a single continuous object of length 84mm, using linear_extrude(height=strip_length) on a YZ profile is the correct interpretation for extrusion along X.
+
+        difference() {
+            // --- Main Body (The U-shape + Bridge) ---
+            union() {
+                // Inner Leg (YZ cross section)
+                translate([0, -(inner_leg_width/2), 0])
+                cube([1, inner_leg_width, total_height]);
+
+                // Outer Leg (YZ cross section) - Positioned such that the gap is 12.5mm
+                // The center of the outer leg should be at Y = -(inner_leg_width/2) + 12.5 + (outer_leg_width/2)
+                translate([0, inner_leg_width + gap_for_wall - (outer_leg_width/2), 0])
+                cube([1, outer_leg_width, total_height]);
+
+                // Bridge connecting the legs (YZ cross section)
+                // The bridge spans the gap between the two leg widths.
+                translate([0, inner_leg_width + gap_for_wall - (outer_leg_width/2), bridge_start_z])
+                cube([1, outer_leg_width - inner_leg_width, bridge_end_z - bridge_start_z]);
+
+                // Ledge (YZ cross section) - Attached to the foot of the inner leg (Y=0)
+                translate([0, -(inner_leg_width/2), 0])
+                cube([1, ledge_length_y, ledge_thickness]);
+            }
+
+            // --- Tube Holes Cutout ---
+            for (i = [0 : num_tubes - 1]) {
+                // Calculate X position for the center of the hole
+                x_pos = (-strip_length / 2) + (hole_spacing_x * (i + 1) / 2);
+
+                // The holes are in the ledge, centered at Y = -15.
+                y_center = -15;
+
+                translate([x_pos, y_center, 0]) {
+                    // Cut a cylinder through the entire thickness of the ledge (ledge_thickness) and slightly beyond for safety.
+                    cylinder(h = ledge_thickness + 2, r = tube_diameter / 2);
+                }
+            }
+
+        }
+    }
+}
+
+// Render the final part
+pcr_holder();
+```

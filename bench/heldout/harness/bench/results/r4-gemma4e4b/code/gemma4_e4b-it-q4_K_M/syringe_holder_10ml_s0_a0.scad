@@ -1,0 +1,160 @@
+// Wall-mounted syringe holder design
+
+// --- Global Settings ---
+$fn = 64; // High resolution for curves
+
+// --- Dimensions (in mm) ---
+holder_width = 50;      // Total width of the holder (X dimension)
+holder_depth = 30;      // Total depth of the holder (Y dimension)
+holder_height = 40;     // Total height of the holder (Z dimension)
+
+barrel_diameter = 16;   // Syringe barrel diameter
+barrel_channel_width = 16.5; // Width of the vertical channel
+flange_thickness = 2;   // Thickness of the syringe finger flange
+flange_width = 32;      // Width of the syringe finger flange
+
+wall_screw_hole_diameter = 4.5; // Diameter for M4 wall screws
+wall_screw_hole_z = 15;  // Z position for screw holes
+
+// --- Derived/Internal Dimensions ---
+half_barrel_radius = barrel_diameter / 2; // 8 mm
+channel_back_radius = 8.25; // Radius of the half-circle at the back end of the channel
+flange_slot_width = 34;  // Width of the flange slot (X dimension)
+flange_slot_height = 2.6; // Height of the flange slot (Z dimension)
+flange_slot_start_z = 30; // Start Z for flange slot
+flange_slot_end_z = 32.6; // End Z for flange slot
+
+// --- Positioning Constants ---
+// Holder is centered on origin in X and Y, rests on XY plane (Z=0).
+// Back face is at y = holder_depth / 2 = 15.
+holder_center_x = 0;
+holder_center_y = 0;
+
+// --- Main Body ---
+module holder() {
+    cube([holder_width, holder_depth, holder_height], center = true);
+}
+
+// --- Features to Cut (Subtractions) ---
+
+// 1. Syringe Barrel Channel
+module barrel_channel() {
+    difference() {
+        // The main shape defining the channel volume
+        union() {
+            // A long rectangular prism for the straight sides (running from y=15 to y=-15)
+            cube([barrel_channel_width, holder_depth + 2, holder_height], center = true);
+
+            // A half-cylinder cap at the back end (y = 15)
+            translate([0, holder_depth/2 - channel_back_radius, 0]) {
+                rotate([90, 0, 0]) { // Rotate to align with Y axis for extrusion logic if needed, but here we use a half-cylinder shape
+                    cylinder(h = barrel_channel_width + 1, r = channel_back_radius, center = true);
+                }
+            }
+        }
+    }
+}
+
+// Note on Barrel Channel implementation: The requirement is a vertical channel (along Z) that runs through the full height.
+// However, the description implies the syringe slides in from the front (y=-15) and hangs tip down (Z axis).
+// "A 16.5 mm wide vertical barrel channel runs through the full height: its back end is a half-circle of 8.25 mm radius centred at x = 0, y = 0, and its straight sides run forward to the front face (y = -15), so the syringe slides in from the front."
+// This description suggests the channel runs along the Y axis (depth) for insertion, not vertically through Z. Let's interpret "vertical barrel channel" as meaning it accommodates the vertical orientation of the syringe body, but the *channel itself* is oriented along the depth (Y).
+
+module corrected_barrel_channel() {
+    difference() {
+        // Base shape: A long prism matching the holder dimensions in X and Z, extending through Y.
+        cube([barrel_channel_width, holder_depth + 2, holder_height], center = true);
+
+        // Cut out the half-circle at the back end (y=15) to ensure smooth entry/exit if needed, but based on description, we need a specific shape:
+        // Straight sides run forward to y=-15. Back end is a half-circle centered at (0, 0).
+
+        // Let's model the required cross-section along the Y axis:
+        // It's a rectangle of width=16.5 and height=40, capped by a semi-circle of radius 8.25 at y=15.
+
+        // We will use difference() on the main holder body to cut this shape out.
+    }
+}
+
+
+// Rebuilding the channel cut based strictly on geometry:
+module syringe_channel_cut() {
+    difference() {
+        // The volume we are cutting out must span the full height (Z) and width (X).
+        union() {
+            // 1. Straight section (Rectangle along Y axis, from y=-15 to y=0)
+            cube([barrel_channel_width, holder_depth/2 + channel_back_radius - 1, holder_height], center = true);
+
+            // 2. Curved section at the back end (y=15). This is a half-cylinder shape centered at (0, 15, Z)
+            translate([0, holder_depth/2 + channel_back_radius - 1, 0]) {
+                rotate([90, 0, 0]) { // Rotate so the cylinder axis aligns with Y
+                    // We need a half-cylinder shape that fits the required profile.
+                    // A full cylinder of radius R=8.25 centered at (0, 15) along the Y axis.
+                    cylinder(h = barrel_channel_width + 2, r = channel_back_radius, center = true);
+                }
+            }
+        }
+    }
+}
+
+// Since OpenSCAD's union/difference can be complex for this specific profile, we will use a single swept shape approximation or simpler unions.
+// Given the constraints, let's define the cross-section in the XZ plane and sweep it along Y.
+
+module channel_profile() {
+    // Cross section at any point along Y: A rectangle of width 16.5 and height 40, with a semi-circle cap at y=15.
+    union() {
+        // Rectangular part (covers most of the length)
+        cube([barrel_channel_width, 1, holder_height], center = true);
+
+        // Semi-circular end piece (centered at X=0, Z=0, but we need it to be centered on the Y axis cut)
+        // We will approximate this by cutting a full cylinder and then using difference later if needed.
+    }
+}
+
+
+// Final attempt for channel: Use two parts joined together along Y.
+module syringe_channel() {
+    difference() {
+        // 1. The main holder body (to be cut into)
+        holder();
+
+        // 2. The volume to remove (The Channel)
+        union() {
+            // A long rectangular prism covering the straight section of the channel
+            cube([barrel_channel_width, holder_depth + 2, holder_height], center = true);
+
+            // The curved back end piece: This is a half-cylinder centered at Y=15.
+            // We translate it to start where the rectangle ends (Y = -holder_depth/2) and extend past the front face.
+            translate([0, holder_depth/2 + channel_back_radius - 1, 0]) {
+                rotate([90, 0, 0]) { // Rotate cylinder axis to align with Y direction
+                    cylinder(h = barrel_channel_width + 2, r = channel_back_radius, center = true);
+                }
+            }
+        }
+    }
+}
+
+
+// 3. Flange Slot Cut (Cut from front face back)
+module flange_slot() {
+    difference() {
+        holder(); // Start with the full holder shape
+
+        // The cutting volume: A rectangular prism spanning X=flange_slot_width, Z=flange_slot_height, and Y=depth of cut.
+        translate([0, -holder_depth/2 + 1, flange_slot_start_z]) { // Start slightly inside the front face (y=-15)
+            cube([flange_slot_width, holder_depth + 2, flange_slot_height], center = true);
+        }
+    }
+}
+
+// 4. Wall Screw Holes
+module screw_holes() {
+    difference() {
+        holder(); // Start with the full holder shape
+
+        // Hole at X = -19 mm
+        translate([-19, 0, wall_screw_hole_z]) {
+            cylinder(h = holder_depth + 2, r = wall_screw_hole_diameter / 2 + 0.01, center = true); // Extend slightly past faces
+        }
+
+        // Hole at X = 19 mm
+        translate([

@@ -1,0 +1,51 @@
+```openscad
+// L-shaped (hockey-stick) cell spreader, printed lying flat on the XY plane.
+// All dimensions in millimetres.
+
+$fn = 64;
+
+// Handle bar
+handle_len   = 150;   // length of handle along +X
+handle_w     = 6;     // width of handle in Y
+handle_t     = 4;     // thickness of handle in Z
+
+// Spreading foot bar
+foot_len     = 40;    // length of foot along its own axis
+foot_w       = 5;     // width of foot in its local Y
+foot_t       = 2.5;   // thickness of foot in Z (smooth bed side)
+foot_angle   = 120;   // CCW angle of foot centre line from +X, seen from above
+
+// Round boss at the origin joining the bars
+boss_d       = 6;     // boss diameter
+boss_t       = 4;     // boss height
+
+// Hanging hole through the handle
+hole_d       = 4;     // hole diameter
+hole_x       = 143;   // hole centre X position on the handle
+
+// ---------- Handle (axis-aligned, x = 0..150, y = -3..3, z = 0..4) ----------
+handle = cube([handle_len, handle_w, handle_t], center = [false, true, false]);
+
+// ---------- Spreading foot (local bar rotated 120° about Z) ----------
+// Local bar: x = 0..foot_len, y = -foot_w/2..foot_w/2, z = 0..foot_t
+foot = rotate([0, 0, foot_angle],
+              cube([foot_len, foot_w, foot_t], center = [false, true, false]));
+
+// ---------- Round boss at the origin ----------
+boss = cylinder(h = boss_t, r = boss_d / 2);
+
+// ---------- Hanging hole through the handle ----------
+// Cuts 0.5 mm past each face of the 4 mm-thick handle (z = -0.5 .. 4.5)
+hole = translate([hole_x, 0, -0.5])
+      cylinder(h = handle_t + 1.0, r = hole_d / 2);
+
+// ---------- Assemble ----------
+difference() {
+    union() {
+        handle;
+        foot;
+        boss;
+    }
+    hole;
+}
+```

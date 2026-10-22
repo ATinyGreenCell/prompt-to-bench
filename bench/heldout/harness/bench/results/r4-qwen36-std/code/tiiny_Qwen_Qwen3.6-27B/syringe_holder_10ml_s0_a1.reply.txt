@@ -1,0 +1,71 @@
+```openscad
+// Wall-mounted 10 mL Syringe Holder
+// Designed for FDM 3D printing
+
+// --- Dimensions (measured with calipers) ---
+block_w = 50;   // Width (X)
+block_d = 30;   // Depth (Y)
+block_h = 40;   // Height (Z)
+
+// Barrel channel
+barrel_dia = 16;      // Syringe barrel diameter
+channel_w = 16.5;     // Channel width (clearance)
+channel_r = channel_w / 2; // Radius of the semi-circular back
+
+// Flange slot
+flange_w = 34;        // Slot width (X)
+flange_h = 2.6;       // Slot height (Z)
+flange_z_start = 30;  // Bottom of slot
+flange_y_end = 11;    // Depth of slot from front (y = -15)
+
+// Wall screws
+screw_dia = 4.5;      // Hole diameter for M4 screws
+screw_x = 19;         // X position of screw holes
+screw_z = 15;         // Z position of screw holes
+
+// --- Settings ---
+$fn = 64; // High resolution for round holes
+
+// --- Main Block ---
+// Centered at origin: X [-25, 25], Y [-15, 15], Z [0, 40]
+difference() {
+    // Solid block
+    translate([-block_w/2, -block_d/2, 0])
+        cube([block_w, block_d, block_h]);
+
+    // --- Barrel Channel ---
+    // The channel is defined by a cross-section in the XY plane, extruded along Z.
+    // Cross-section:
+    // 1. Semi-circle centered at (0,0) with radius channel_r, facing +Y (towards wall).
+    //    This covers Y from 0 to channel_r.
+    // 2. Rectangular slot from Y=0 to Y=-15 (front face), width channel_w.
+    
+    // We create the cross-section using 2D operations and extrude it.
+    linear_extrude(height = block_h + 1, center = false)
+    union() {
+        // Semi-circle part (Y >= 0)
+        intersection() {
+            circle(r = channel_r);
+            square([-channel_r, 0], center = false); // Keeps only Y >= 0 part of the circle
+        }
+        // Rectangular part (Y < 0)
+        translate([-channel_r, -block_d/2])
+            square([channel_w, block_d/2]);
+    }
+
+    // --- Flange Slot ---
+    // Cut from front face (y = -15) back to y = 11.
+    // Width 34mm (X: -17 to 17), Height 2.6mm (Z: 30 to 32.6).
+    // Extend slightly past boundaries to ensure clean cut.
+    translate([-flange_w/2, flange_y_end - 0.1, flange_z_start - 0.1])
+        cube([flange_w + 0.2, block_d/2 - flange_y_end + 0.2, flange_h + 0.2]);
+
+    // --- Wall Screw Holes ---
+    // Two holes, diameter 4.5mm, at x = -19 and 19, z = 15.
+    // Running through the block along Y (from front to back).
+    for (x_pos = [-screw_x, screw_x]) {
+        translate([x_pos, -block_d/2 - 1, screw_z - screw_dia/2])
+            cylinder(r = screw_dia/2, h = block_d + 2, center = false);
+    }
+}
+```

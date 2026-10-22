@@ -1,0 +1,107 @@
+// --- Dimensions ---
+shelf_thickness = 18.0;      // Thickness of the shelf (mm)
+clamp_gap = 18.4;            // Gap for the shelf (mm)
+spine_width = 5.0;           // Width of the vertical spine (mm)
+spine_depth = 28.4;          // Depth of the spine (mm)
+bottom_jaw_width = 25.0;     // Width of the bottom jaw (mm)
+bottom_jaw_depth = 5.0;       // Depth of the bottom jaw (mm)
+top_jaw_width = 90.0;        // Total width of top jaw + arm (mm)
+top_jaw_depth = 5.0;         // Thickness of the top jaw/arm (mm)
+arm_length = 65.0;           // Length of the arm extending forward (mm)
+total_height = 105.0;        // Extrusion length along Z (mm)
+hole_diameter = 20.0;        // Diameter of pipette holes (mm)
+hole_spacing = 35.0;         // Spacing between hole centers (52.5 - 17.5)
+hole_x_offset = 42.0;        // X position of hole centers (mm)
+
+// --- Constants ---
+$fn = 64;
+
+// --- Modeling ---
+
+// The part is printed lying on its side in the XY plane.
+// The profile is defined in the XY plane and extruded along Z.
+// Based on user description: 
+// +Y is "up" (vertical in use), +X is "away from shelf" (horizontal in use).
+// The extrusion is 105mm along Z.
+
+module profile() {
+    difference() {
+        // Main Body Profile
+        union() {
+            // Spine: x=[0, 5], y=[0, 28.4]
+            translate([0, 0])
+                cube([spine_width, spine_depth]);
+            
+            // Bottom Jaw: x=[-25, 5], y=[0, 5]
+            translate([-bottom_jaw_width, 0])
+                cube([bottom_jaw_width + spine_width, bottom_jaw_depth]);
+            
+            // Top Jaw and Arm: x=[-25, 65], y=[23.4, 28.4]
+            // Note: x goes from -25 to 65. Total width = 90.
+            translate([-bottom_jaw_width, 23.4])
+                cube([bottom_jaw_width + arm_length, top_jaw_depth]);
+        }
+
+        // Holes: 20mm diameter, through the arm along Y.
+        // Centered at x=42, z=17.5, 52.5, 87.5.
+        // Since the part is extruded along Z, the "holes" are cylinders 
+        // oriented along the Y axis.
+        // To make them "through the arm", they must cut through the Y dimension.
+        // However, the user says "through the arm along Y (vertically in use)".
+        // In the print orientation (XY plane), Y is the depth of the profile.
+        // If the holes are "through the arm along Y", they cut through the thickness.
+        // But the user says "vertically in use", and in use +Y is up.
+        // This implies the holes are drilled through the Z-axis (the extrusion direction)
+        // OR the user meant the holes are perpendicular to the arm's length.
+        // Re-reading: "three round 20mm holes go through the arm along Y (vertically in use)".
+        // If +Y is up, and they go "along Y", they are vertical holes.
+        // In the print orientation (XY plane), the Z axis is the extrusion.
+        // If the holes are vertical in use, they must be drilled along the Y axis in the model.
+        
+        // Let's interpret "through the arm along Y" as the hole axis being the Y axis.
+        // This would mean the holes are drilled through the thickness of the arm.
+        // But the user says "vertically in use", and +Y is up. 
+        // Therefore, the hole axis is the Y axis.
+        
+        for (z_pos = [17.5, 52.5, 87.5]) {
+            translate([hole_x_offset, -1, z_pos])
+                rotate([0, 90, 0])
+                    cylinder(d = hole_diameter, h = spine_depth + 10);
+        }
+    }
+}
+
+// Final Assembly
+// We define the profile and extrude it along Z.
+// However, the holes are defined in the profile logic above.
+// To ensure the holes are "through" the part, we must extrude the profile 
+// and then subtract the cylinders.
+
+difference() {
+    // The extruded profile
+    linear_extrude(height = total_height)
+        profile_shape();
+
+    // The holes (cylinders along Y)
+    // Since we extruded along Z, we must subtract cylinders along Y.
+    // The profile_shape() is the 2D footprint.
+    for (z_pos = [17.5, 52.5, 87.5]) {
+        translate([hole_x_offset, -1, z_pos])
+            rotate([0, 90, 0])
+                cylinder(d = hole_diameter, h = total_height + 2);
+    }
+}
+
+// Helper module for the 2D profile
+module profile_shape() {
+    union() {
+        // Spine
+        square([spine_width, spine_depth]);
+        // Bottom Jaw
+        translate([-bottom_jaw_width, 0])
+            square([bottom_jaw_width + spine_width, bottom_jaw_depth]);
+        // Top Jaw and Arm
+        translate([-bottom_jaw_width, 23.4])
+            square([bottom_jaw_width + arm_length, top_jaw_depth]);
+    }
+}

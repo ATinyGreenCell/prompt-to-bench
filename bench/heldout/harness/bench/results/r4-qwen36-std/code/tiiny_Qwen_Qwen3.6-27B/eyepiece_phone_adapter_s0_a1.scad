@@ -1,0 +1,56 @@
+// Dimensions (mm)
+plate_x = 80;
+plate_y = 60;
+plate_z = 3;
+
+cam_hole_d = 12;
+cam_hole_x = -20;
+cam_hole_y = 10;
+
+sleeve_od = 36.6;
+sleeve_z_start = 3;
+sleeve_z_end = 31;
+
+bore1_d = 22;
+bore1_z_start = 3;
+bore1_z_end = 11;
+
+bore2_d = 30.6;
+bore2_z_start = 11;
+bore2_z_end = 31;
+
+m3_hole_d = 2.5;
+m3_z = 21;
+
+$fn = 64;
+
+// Plate
+translate([-plate_x/2, -plate_y/2, 0])
+  cube([plate_x, plate_y, plate_z]);
+
+// Camera hole through plate
+translate([cam_hole_x, cam_hole_y, -0.01])
+  cylinder(h = plate_z + 0.02, r = cam_hole_d/2, $fn = $fn);
+
+// Sleeve body
+translate([cam_hole_x, cam_hole_y, sleeve_z_start])
+  cylinder(h = sleeve_z_end - sleeve_z_start, r = sleeve_od/2, $fn = $fn);
+
+// Bore 1 (stop)
+translate([cam_hole_x, cam_hole_y, bore1_z_start])
+  cylinder(h = bore1_z_end - bore1_z_start + 0.01, r = bore1_d/2, $fn = $fn);
+
+// Bore 2 (open top)
+translate([cam_hole_x, cam_hole_y, bore2_z_start])
+  cylinder(h = bore2_z_end - bore2_z_start + 0.01, r = bore2_d/2, $fn = $fn);
+
+// M3 centring screw holes
+for (i = [0:2]) {
+  angle = i * 120;
+  // Radius to the middle of the sleeve wall
+  wall_r = (sleeve_od/2 + bore2_d/2) / 2;
+  hx = cam_hole_x + wall_r * cos(angle);
+  hy = cam_hole_y + wall_r * sin(angle);
+  translate([hx, hy, m3_z - 0.01])
+    cylinder(h = 0.02, r = m3_hole_d/2, $fn = $fn);
+}

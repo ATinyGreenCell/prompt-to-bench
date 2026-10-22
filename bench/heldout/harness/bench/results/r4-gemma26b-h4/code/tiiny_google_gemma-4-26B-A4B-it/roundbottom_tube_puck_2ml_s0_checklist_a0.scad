@@ -1,0 +1,138 @@
+// Round tube holder for 2 mL round-bottom tubes
+// Designed for FDM printing, sitting on the XY plane.
+
+// --- Dimensions ---
+puck_diameter = 80.0;      // Diameter of the main puck
+puck_height   = 26.0;      // Total height of the puck
+flat_cut_x     = 34.0;     // The plane x = 34 is the boundary; everything > 34 is removed
+seat_circle_d  = 50.0;     // Diameter of the circle where tube seats are centered
+tube_diameter  = 11.2;     // Diameter of the tube hole
+seat_depth_z   = 20.0;     // Depth from top face to the lowest point of the sphere
+
+$fn = 128;
+
+// --- Calculations ---
+puck_radius = puck_diameter / 2;
+seat_radius = tube_diameter / 2;
+// The sphere bottom is at z = puck_height - seat_depth_z
+// The center of the sphere must be at z = (puck_height - seat_depth_z) + seat_radius
+sphere_z_center = (puck_height - seat_depth_z) + seat_radius;
+
+// --- Geometry ---
+
+module tube_seat() {
+    // The seat consists of a cylinder (the hole) and a sphere (the bottom)
+    // To ensure a clean cut, we use a union of the two shapes
+    union() {
+        // The cylindrical part of the hole
+        // It goes from the top face down to the sphere center
+        cylinder(h = sphere_z_center - (puck_height - seat_depth_z), d = tube_diameter);
+        
+        // The spherical bottom
+        // We use a sphere centered at sphere_z_center
+        translate([0, 0, sphere_z_center])
+            sphere(d = tube_diameter);
+    }
+}
+
+// Main assembly
+difference() {
+    // 1. The main puck body
+    cylinder(h = puck_height, d = puck_diameter);
+
+    // 2. The flat cut for the label (removes everything beyond x = 34)
+    // We use a large cube to ensure it cuts through the entire puck
+    translate([flat_cut_x, -puck_diameter, -1])
+        cube([puck_diameter, puck_diameter * 2, puck_height + 2]);
+
+    // 3. The eight tube seats
+    for (i = [0 : 7]) {
+        // Calculate angle: first on +X axis (0 degrees), then every 45 degrees
+        angle = i * 45;
+        
+        // Calculate position on the 50mm diameter circle
+        // x = r * cos(theta), y = r * sin(theta)
+        pos_x = (seat_circle_d / 2) * cos(angle);
+        pos_y = (seat_circle_d / 2) * sin(angle);
+        
+        translate([pos_x, pos_y, 0]) {
+            // We translate the seat so its top is at the top of the puck
+            // The difference() will subtract it from the top
+            translate([0, 0, puck_height - seat_depth_z + (seat_depth_z - (puck_height - 6))])
+            // Wait, simpler: The seat is defined relative to its own bottom.
+            // Let's just translate the seat module to the correct Z.
+            // The seat's top is at Z = puck_height.
+            // The seat's bottom is at Z = puck_height - seat_depth_z.
+            // The sphere center is at Z = (puck_height - seat_depth_z) + seat_radius.
+            // The cylinder part goes from top to sphere center.
+            
+            // Let's redefine the seat logic for easier translation:
+            // We want the seat to be subtracted from the top.
+            // The seat module as defined above starts at Z=0. 
+            // We need to move it so its top is at puck_height.
+            // However, the cylinder in the module starts at 0 and goes up.
+            // Let's adjust the module call.
+            
+            // Corrected Seat Placement:
+            // The cylinder in the module goes from 0 to (sphere_z_center - (puck_height - seat_depth_z))
+            // We want the top of the cylinder to be at puck_height.
+            // So we translate by: puck_height - (cylinder_height)
+            // But the cylinder height is actually (sphere_z_center - (puck_height - seat_depth_z))
+            // Let's just use a simpler approach:
+            // The seat is a cylinder from Z = puck_height - seat_depth_z + seat_radius to Z = puck_height
+            // plus a sphere at Z = puck_height - seat_depth_z + seat_radius.
+            
+            // Re-calculating for the loop:
+            translate([0, 0, puck_height - seat_depth_z + seat_radius]) {
+                // This is the sphere center.
+                // We need to subtract the sphere and the cylinder.
+                // Let's use a local difference for the seat to make it easier.
+            }
+        }
+    }
+}
+
+// --- REWRITTEN ASSEMBLY FOR CLARITY ---
+// (The logic above was getting messy with translations, let's provide the clean version)
+
+// Final clean implementation:
+module final_puck() {
+    difference() {
+        // The base puck
+        cylinder(h = puck_height, d = puck_diameter);
+        
+        // The label cut
+        translate([flat_cut_x, -puck_diameter, -1])
+            cube([puck_diameter, puck_diameter * 2, puck_height + 2]);
+            
+        // The seats
+        for (i = [0 : 7]) {
+            angle = i * 45;
+            pos_x = (seat_circle_d / 2) * cos(angle);
+            pos_y = (seat_circle_d / 2) * sin(angle);
+            
+            translate([pos_x, pos_y, 0]) {
+                // We subtract the seat from the top.
+                // The seat is a cylinder + sphere.
+                // The sphere center is at Z = puck_height - seat_depth_z + seat_radius
+                // The cylinder goes from the sphere center up to the top.
+                
+                // To make subtraction easy, we define the seat as a positive object 
+                // and subtract it.
+                translate([0, 0, puck_height - seat_depth_z + seat_radius]) {
+                    // Sphere center
+                    sphere(d = tube_diameter);
+                    // Cylinder from sphere center to top
+                    translate([0, 0, - (puck_height - (puck_height - seat_depth_z + seat_radius))])
+                        cylinder(h = puck_height - (puck_height - seat_depth_z + seat_radius), d = tube_diameter);
+                }
+            }
+        }
+    }
+}
+
+// Execute the clean version
+// Note: I'll wrap the whole thing in a single block as requested.
+// The logic above is the blueprint. Here is the final code.
+
+// (Self-correction: I will output the final code block now)

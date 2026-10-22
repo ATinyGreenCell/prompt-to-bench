@@ -1,0 +1,102 @@
+```openscad
+// --- Parameters ---
+// Plate dimensions
+plate_width_flats = 90;       // Distance across flats (mm)
+plate_thickness = 3;          // Thickness of the base plate (mm)
+
+// Hole and Sleeve dimensions
+hole_diameter = 17.5;         // Diameter of the conical tube hole (mm)
+sleeve_wall = 2;              // Wall thickness of the sleeves (mm)
+sleeve_outer_diameter = 21.5; // 17.5 + 2*2 = 21.5 mm
+sleeve_height = 20;           // Height of sleeves and skirt (mm)
+
+// Layout dimensions
+hole_circle_diameter = 54;    // Diameter of the circle passing through hole centers (mm)
+num_holes = 7;                // Total number of holes (1 center + 6 peripheral)
+hole_spacing_deg = 60;        // Angular spacing for peripheral holes (degrees)
+
+// Skirt dimensions
+skirt_width_flats = 84;       // Distance across flats of the hexagonal skirt (mm)
+skirt_wall = 2;               // Wall thickness of the skirt (mm)
+skirt_height = 20;            // Height of the skirt (mm)
+
+// Rendering quality
+fn_val = 64;
+
+// --- Helper Module ---
+// Using a module instead of a function to ensure it is recognized by OpenSCAD
+module hexagon_profile(width_flats) {
+    // r is the circumradius (distance from center to vertex)
+    // width_flats = 2 * r * cos(30) => r = width_flats / sqrt(3)
+    r = width_flats / cos(30);
+    polygon(r = r, [
+        for (i = [0 : 5]) [r * cos(i * 60), r * sin(i * 60)]
+    ]);
+}
+
+// --- Main Model ---
+// The part is built from z=0 upwards.
+// The plate is at z=0 to z=3.
+// The sleeves and skirt rise from the plate (z=3) to z=23.
+
+union() {
+    // 1. The Base Plate (Hexagonal)
+    difference() {
+        // The main plate body
+        linear_extrude(height = plate_thickness)
+        hexagon_profile(plate_width_flats);
+
+        // 2. The Holes (Cutting through the plate)
+        // Center hole
+        translate([0, 0, -0.5])
+        cylinder(h = plate_thickness + 1, d = hole_diameter, $fn = fn_val);
+
+        // 6 Peripheral holes
+        for (i = [0 : 5]) {
+            angle = i * hole_spacing_deg;
+            rotate([0, 0, angle])
+            translate([hole_circle_diameter / 2, 0, -0.5])
+            cylinder(h = plate_thickness + 1, d = hole_diameter, $fn = fn_val);
+        }
+    }
+
+    // 3. The Sleeves
+    // Sleeves rise from the plate (z=3) to z=23.
+    // Center Sleeve
+    translate([0, 0, plate_thickness])
+    difference() {
+        cylinder(h = sleeve_height, d = sleeve_outer_diameter, $fn = fn_val);
+        // Hollow out the sleeve (cutting slightly deeper to ensure clean top)
+        translate([0, 0, -0.5])
+        cylinder(h = sleeve_height + 1, d = hole_diameter, $fn = fn_val);
+    }
+
+    // Peripheral Sleeves
+    for (i = [0 : 5]) {
+        angle = i * hole_spacing_deg;
+        rotate([0, 0, angle])
+        translate([hole_circle_diameter / 2, 0, plate_thickness])
+        difference() {
+            cylinder(h = sleeve_height, d = sleeve_outer_diameter, $fn = fn_val);
+            translate([0, 0, -0.5])
+            cylinder(h = sleeve_height + 1, d = hole_diameter, $fn = fn_val);
+        }
+    }
+
+    // 4. The Hexagonal Skirt
+    // Rises from the plate (z=3) to z=23.
+    translate([0, 0, plate_thickness])
+    difference() {
+        // Outer Skirt Shape
+        linear_extrude(height = sleeve_height)
+        hexagon_profile(skirt_width_flats);
+        
+        // Inner Skirt Shape (to make it a wall)
+        // To maintain a 2mm wall thickness perpendicular to the faces,
+        // the width across flats of the inner hexagon must be (skirt_width_flats - 2 * wall).
+        translate([0, 0, -0.5])
+        linear_extrude(height = sleeve_height + 1)
+        hexagon_profile(skirt_width_flats - (2 * skirt_wall));
+    }
+}
+```
