@@ -1,0 +1,79 @@
+```openscad
+$fn = 128; // High resolution for smooth curves and accurate hole sizes
+
+// --- Dimensions ---
+// Handle
+d_handle = 8;      // Diameter of cylindrical handle (mm)
+h_handle = 45;     // Height of cylindrical handle (mm)
+
+// Cone
+d_cone_top = 8;    // Top diameter of cone (matches handle) (mm)
+d_cone_bot = 3;    // Bottom diameter of cone (mm)
+h_cone = 17;       // Height of cone (62 - 45) (mm)
+
+// Tip
+d_tip = 3;         // Diameter of sphere tip (mm)
+z_tip_center = 62; // Z-coordinate of sphere center (mm)
+
+// Grooves
+w_groove = 2;      // Width of groove in Z (mm)
+d_groove = 1;      // Depth of groove (mm)
+z_grooves = [10, 15, 20, 25]; // Z-centers of the 4 grooves
+
+// --- Construction ---
+
+difference() {
+    // 1. Create the main body (Handle + Cone + Tip)
+    
+    // Handle: Cylinder from z=0 to z=45, centered at z=22.5
+    handle = cylinder(
+        h = h_handle,
+        r = d_handle / 2,
+        center = [0, 0, h_handle / 2]
+    );
+
+    // Cone: Linear extrusion from z=45 to z=62
+    // Base radius 4mm at z=45, Top radius 1.5mm at z=62
+    cone = linear_extrude(
+        h = h_cone,
+        center = [0, 0, h_handle + h_cone / 2]
+    ) {
+        circle(r = d_handle / 2); // Base at z=45
+        circle(r = d_cone_bot / 2); // Top at z=62
+    };
+
+    // Tip: Sphere centered at z=62
+    tip = sphere(
+        r = d_tip / 2,
+        center = [0, 0, z_tip_center]
+    );
+
+    // Union the main body parts
+    body = union(
+        handle,
+        cone,
+        tip
+    );
+
+    // 2. Cut the grooves
+    // We subtract 4 cylinders, each rotated 90 degrees around Z
+    // The cutter is a cylinder standing vertically, rotated 90 deg around X to cut horizontally.
+    
+    for (i = [0, 1, 2, 3]) {
+        // Calculate Z position for this groove
+        z_pos = z_grooves[i];
+        
+        // The cutter is a cylinder standing vertically.
+        // We rotate it 90 degrees around X to make it horizontal.
+        // Then we rotate the whole thing around Z by i*90.
+        
+        cutter = rotate([90, 0, 0]) * cylinder(
+            h = w_groove + 0.1, // Extend slightly past the face to ensure clean cut
+            r = d_groove,
+            center = [0, 0, z_pos]
+        );
+        
+        rotate([0, 0, i * 90]) * cutter;
+    }
+}
+```

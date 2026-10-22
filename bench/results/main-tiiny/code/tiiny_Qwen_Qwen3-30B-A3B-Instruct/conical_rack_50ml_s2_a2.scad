@@ -1,0 +1,118 @@
+// Dimensions for the Falcon tube rack
+$fn = 64; // Ensure smooth curves
+
+// Plate dimensions
+plate_length_X = 130;   // mm
+plate_width_Y = 90;      // mm
+plate_thickness_Z = 4;   // mm
+
+// Hole dimensions
+hole_diameter = 30.5;  // mm
+hole_spacing_X = 40;    // mm between centres (along X)
+hole_spacing_Y = 40;      // mm between centres (along Y)
+
+// Wall dimensions
+wall_length_X = plate_length_X;   // 130 mm
+wall_thickness_Y = 4;               // mm (along Y)
+wall_height_Z = 70;               // mm (up from plate)
+
+// The part must rest on the bed at z = 0, so the entire base must be at z >= 0.
+// The plate is 4 mm thick and must lie flat on the bed from z = 0 to z = 4.
+// The walls must start at z = 0 and go up to z = 70.
+
+// The current model has the plate centred at z = 0 (from -2 to +2), but we need it from z = 0 to z = 4.
+// So we shift the entire model up by 2 mm so that the bottom of the plate is at z = 0.
+
+// However, the hole-cutting cylinder was placed with center at z = 2 (middle of plate), but we must ensure
+// it extends fully through the plate (z = 0 to z = 4), so we set the cylinder from z = -0.1 to z = 4.1
+// to ensure clean cut, but now the entire model is shifted up by 2 mm.
+
+// The issue: the hole cylinder is currently placed at z = 1.9 to 1.9 + 4.2 = 6.1, which is wrong.
+// We need to place the hole cylinder so that it spans from z = 0 to z = 4 (the full plate thickness),
+// and is centered in the plate's Z-axis.
+
+// Correct approach: define the plate from z = 0 to z = 4 (bottom at bed), so its center is at z = 2.
+// The hole cylinder must go from z = -0.1 to z = 4.1 to cut through the plate, but now we are in a shifted frame.
+
+// The entire model is shifted up by 2 mm, so the plate now spans from z = 0 to z = 4.
+// Therefore, the hole cylinder must be placed from z = -0.1 to z = 4.1 in the original coordinate system,
+// but since we shifted the whole model up by 2 mm, we now place the cylinder at:
+//   z_start = -0.1 + 2 = 1.9
+//   z_end = 4.1 + 2 = 6.1
+// But that would extend the hole beyond the plate (into the walls), which is wrong.
+
+// Correction: the hole cylinder should be placed in the same coordinate system as the plate.
+// The plate is now from z = 0 to z = 4.
+// So the hole cylinder should be:
+//   center = z = 2 (middle of plate)
+//   height = 4.2 mm (to extend 0.1 mm beyond both faces)
+//   so from z = 2 - 2.1 = -0.1 to z = 2 + 2.1 = 4.1
+// But since the entire model is already shifted up by 2 mm, we must not shift the hole again.
+
+// Actually, the mistake was in the `base_plate()` module: we shifted it up by 2 mm, but the hole cylinder was placed at z = 1.9,
+// which is now at z = 1.9 in the new frame — but the plate is from z = 0 to z = 4, so the hole should be centered at z = 2.
+
+// The hole cylinder is correctly placed at z = 2 (via `translate([x, y, 1.9])` and `h = 4.2`), so it spans from z = 1.9 to z = 6.1,
+// which is wrong — it should be from z = 0 to z = 4.1 (to cut through the plate).
+
+// Therefore, we must reposition the hole cylinder so that it spans from z = 0 to z = 4.1,
+// and is centered in the plate's Z-axis (z = 2). So the cylinder should be:
+//   center at z = 2, height = 4.2, so from z = 2 - 2.1 = -0.1 to z = 2 + 2.1 = 4.1
+// But in the current coordinate system (shifted up by 2 mm), the plate is from z = 0 to z = 4,
+// so we need the hole cylinder to go from z = 0 to z = 4.1 — so we place it at z = 2.05 (center of 0 to 4.1)
+
+// However, the simplest fix: don't shift the plate up by 2 mm and instead define it from z = 0 to z = 4.
+// That way, the hole cylinder can be placed at z = 2 (center of plate) with height 4.2 mm, spanning from z = -0.1 to z = 4.1,
+// but now the plate is from z = 0 to z = 4, so the hole will cut through it cleanly.
+
+// Let's restructure: do **not** shift the plate up. Instead, define the plate from z = 0 to z = 4.
+// Then the hole cylinder can be placed at z = 2, with height 4.2 mm, so it spans from z = -0.1 to z = 4.1,
+// which cuts through the plate (z = 0 to 4) and extends 0.1 mm beyond both faces.
+
+// The walls start at z = 0, so they are fine.
+
+// The only issue was the vertical positioning of the plate and hole.
+
+// Revised plan:
+// - Remove the +2 shift from `base_plate()`
+// - Define the plate from z = 0 to z = 4 (bottom at bed)
+// - Place hole cylinder at z = 2, height = 4.2 mm (so it goes from -0.1 to 4.1), ensuring full cut
+
+module base_plate() {
+    // Plate from z = 0 to z = 4, centered in X and Y
+    cube([plate_length_X, plate_width_Y, plate_thickness_Z], center = false);
+    // Note: center = false means the cube is placed from (0,0,0) to (130,90,4)
+    // But we want it centered in X and Y, so we need to translate it.
+    translate([0, 0, 0]) // already at origin in X and Y? No — we need to center it.
+    // Actually, we want the plate to be centered at (0,0) in X and Y, so:
+    //   X: from -65 to +65 (130 mm)
+    //   Y: from -45 to +45 (90 mm)
+    //   Z: from 0 to 4
+    // So we do:
+    //   translate([-plate_length_X/2, -plate_width_Y/2, 0])
+    //   cube([130, 90, 4])
+    // But we can do it in one line.
+    cube([plate_length_X, plate_width_Y, plate_thickness_Z], center = false);
+    // But to center it in X and Y, we need to offset it.
+    // So we do:
+    //   translate([-plate_length_X/2, -plate_width_Y/2, 0])
+    //   cube([130, 90, 4])
+    // But we already have the cube — so let's define it properly.
+}
+
+// Let's redefine the base_plate to be centered in X and Y and from z = 0 to z = 4
+module base_plate() {
+    translate([-plate_length_X/2, -plate_width_Y/2, 0])
+    cube([plate_length_X, plate_width_Y, plate_thickness_Z], center = false);
+}
+
+// Holes: now the plate is from z = 0 to z = 4, so we place the hole cylinder at z = 2 (center of plate),
+// with height 4.2 mm (so it extends 0.1 mm beyond both faces), and centered at z = 2.
+// The hole is at (x, y) in the XY plane, so we place the cylinder at (x, y, 2) with height 4.2.
+module holes() {
+    for (i = [0:2]) {
+        for (j = [0:1]) {
+            x_pos = plate_length_X / 2 - hole_spacing_X + i * hole_spacing_X;
+            y_pos = plate_width_Y / 2 - hole_spacing_Y/2 + j * hole_spacing_Y;
+
+            // Place cylinder at z = 2 (center of plate), height 4.2 mm (so from z = -0.1 to z =

@@ -1,0 +1,166 @@
+```openscad
+// --- Dimensions ---
+// Box outer dimensions
+BOX_W = 70;
+BOX_D = 50;
+BOX_H = 30;
+
+// Box wall and floor thickness
+WALL_THICK = 2;
+FLOOR_THICK = 2;
+
+// Lid plate dimensions (matches box outer footprint)
+LID_W = 70;
+LID_D = 50;
+LID_THICK = 2;
+
+// Lid lip dimensions
+// The lip is a solid rectangular block (rim) that fits inside the box.
+// "1.5 mm thick wall" implies the material thickness of the lip structure.
+// Since it's a lid lip, it's typically a solid perimeter.
+// Outer size: 65.6 x 45.6 mm.
+// Height: 4 mm.
+// Thickness: 1.5 mm. This usually refers to the wall thickness of the lip if it were hollow,
+// but for a solid lip, it might refer to the step-down or just be a descriptor.
+// However, given "1.5 mm thick wall" and "4 mm tall", and it's a "lip",
+// let's assume the lip is a solid block of height 4mm, but the "wall" part
+// that contacts the box is 1.5mm thick? No, that's ambiguous.
+// Let's look at the previous failure. The previous code made it a hollow tube.
+// The report showed a hole.
+// If the user wants a solid lip (no hole), the "1.5 mm thick wall" might refer to the
+// thickness of the material *if* it were a wall, or perhaps the lip is a solid block
+// with a fillet?
+// Let's re-read: "a 1.5 mm thick wall, 4 mm tall".
+// This phrasing strongly suggests a hollow structure (a wall).
+// But the previous hollow structure caused issues?
+// The previous issue was positioning.
+// Let's fix the positioning first.
+// Box: 70x50. Lid: 70x50. Gap: 10mm.
+// Box Center X: - (70/2 + 10/2) = -40.
+// Lid Center X: + (70/2 + 10/2) = 40.
+// This gives X range: -75 to -5 (Box) and 5 to 75 (Lid). Gap 10mm.
+// Total X: -75 to 75. Width 150.
+
+// Let's assume the lip is a SOLID block for simplicity unless "wall" implies hollow.
+// "1.5 mm thick wall" -> If it's a solid block, it doesn't have a wall thickness.
+// If it's a hollow block, it has a wall thickness.
+// Given "slides into the box", a solid block lip (rim) is common.
+// But "1.5 mm thick wall" is specific.
+// Let's assume the lip is a hollow rectangular tube with wall thickness 1.5mm.
+// Outer: 65.6 x 45.6.
+// Inner: 65.6 - 2*1.5 = 62.6. 45.6 - 2*1.5 = 42.6.
+// Height: 4mm.
+// This matches the previous geometry. The error was likely just positioning or
+// the "overhang" warning.
+// The report said "OVERHANGS: none steeper than 45 deg".
+// A hollow lip printed upside down (lip up) has vertical walls.
+// Vertical walls are 90 degrees. 90 > 45. So it SHOULD have overhangs.
+// Why did the report say "none"?
+// Maybe the lip was solid?
+// If the lip was solid, there are no vertical inner walls.
+// So the previous code's "hollow" logic might have been ignored or the geometry was different.
+// Let's look at the previous code's `Lid()` module.
+// It created a difference: Outer block minus Inner block.
+// This creates a hollow rim.
+// The inner walls are vertical.
+// The report said "OVERHANGS: none steeper than 45 deg".
+// This is a contradiction for a hollow rim.
+// Unless... the lip was not hollow?
+// Or the "lip" was the plate? No.
+// Let's assume the user wants a SOLID lip (no hole).
+// "1.5 mm thick wall" might be a misinterpretation of "1.5 mm thick" (material thickness)
+// and "wall" (the part itself).
+// If it's a solid block, it fits the "no overhangs" report (vertical outer walls are fine if supported by plate? No, vertical walls are 90 deg).
+// Wait, "overhangs steeper than 45 deg" usually means angles > 45 deg from horizontal.
+// Vertical is 90 deg. So vertical walls ARE overhangs.
+// But if the walls are connected to the bed (via the plate), they don't need supports?
+// No, vertical walls on a plate are fine. They are 90 deg.
+// The report says "none steeper than 45 deg". This implies no vertical walls?
+// This suggests the lip was NOT vertical?
+// Or the lip was not present?
+// Let's look at the slice z=4.00.
+// "1 hole: 1 x shape 62.60 x 42.60".
+// This confirms the lip WAS hollow in the previous render.
+// So why "no overhangs"?
+// Maybe the slicer considers vertical walls as 0% overhang?
+// Regardless, let's fix the positioning and ensure the geometry matches the "1.5 mm thick wall" description.
+// I will model it as a hollow rim (wall thickness 1.5mm).
+
+// --- Calculated Internal Dimensions ---
+BOX_IN_W = BOX_W - 2 * WALL_THICK;
+BOX_IN_D = BOX_D - 2 * WALL_THICK;
+BOX_IN_H = BOX_H - FLOOR_THICK;
+
+// Lid lip dimensions
+LIP_W = 65.6;
+LIP_D = 45.6;
+LIP_H = 4;
+LIP_WALL = 1.5;
+
+// Gap
+GAP = 10;
+
+// --- Positions ---
+// Box Center X: -40
+// Lid Center X: 40
+BOX_CX = -40;
+LID_CX = 40;
+
+// --- Modules ---
+
+module Box() {
+    // Outer shell
+    difference() {
+        // Solid block
+        cube([BOX_W, BOX_D, BOX_H], center = false);
+        
+        // Inner cavity
+        // Start at Z = FLOOR_THICK
+        // Size: BOX_IN_W x BOX_IN_D x BOX_IN_H
+        // Extend up by 0.01 to ensure clean cut
+        translate([0, 0, FLOOR_THICK]) {
+            $fn = 64;
+            cube([BOX_IN_W, BOX_IN_D, BOX_IN_H + 0.01], center = false);
+        }
+    }
+}
+
+module Lid() {
+    // Plate
+    // 70 x 50 x 2 mm
+    // Centered at (0,0,1)
+    translate([0, 0, LID_THICK / 2]) {
+        $fn = 64;
+        cube([LID_W, LID_D, LID_THICK], center = true);
+    }
+    
+    // Lip
+    // Hollow rim, outer 65.6 x 45.6, wall 1.5, height 4.
+    // Sits on top of plate.
+    // Plate top is at Z = LID_THICK = 2.
+    // Lip bottom is at Z = 2.
+    // Lip top is at Z = 2 + 4 = 6.
+    
+    lip_outer_w = LIP_W;
+    lip_outer_d = LIP_D;
+    lip_h = LIP_H;
+    lip_wall = LIP_WALL;
+    
+    lip_inner_w = lip_outer_w - 2 * lip_wall;
+    lip_inner_d = lip_outer_d - 2 * lip_wall;
+    
+    // Ensure inner dims are positive
+    if (lip_inner_w > 0 && lip_inner_d > 0) {
+        difference() {
+            // Outer block of lip
+            // Centered in X/Y, bottom at Z=2
+            translate([0, 0, 2 + lip_h / 2]) {
+                $fn = 64;
+                cube([lip_outer_w, lip_outer_d, lip_h], center = true);
+            }
+            
+            // Inner hole
+            // Extend slightly to ensure clean cut
+            translate([0, 0, 2 + lip_h / 2]) {
+                $fn = 64;
+                cube([lip_inner_w, lip_inner_d, lip_h + 0.0

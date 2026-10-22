@@ -1,0 +1,51 @@
+// Bench rack for 1.5 mL microcentrifuge tubes
+// Dimensions in millimeters
+
+// Block dimensions
+length = 106;   // X direction
+width = 72;     // Y direction
+height = 30;    // Z direction
+
+// Hole grid parameters
+hole_count_x = 6;
+hole_count_y = 4;
+hole_spacing = 16;  // center-to-center distance
+hole_diameter = 11.2;
+hole_depth = 25;
+floor_thickness = 5;
+
+// Derived values
+hole_radius = hole_diameter / 2;
+
+// Create the main block
+main_block = cube([length, width, height], center=true);
+
+// Create the hole grid
+hole_grid = 
+    for (x = [0 : hole_count_x - 1]) {
+        for (y = [0 : hole_count_y - 1]) {
+            translate([
+                (x - (hole_count_x - 1) / 2) * hole_spacing,
+                (y - (hole_count_y - 1) / 2) * hole_spacing,
+                0
+            ])
+            cylinder(h = hole_depth + 1, r = hole_radius, center=true, $fn=64);
+        }
+    }
+
+// Combine the main block and the holes
+rack = difference() {
+    main_block;
+    hole_grid;
+}
+
+// Add the floor thickness to the final model
+final_rack = translate([0, 0, (height - floor_thickness) / 2]) {
+    cube([length, width, floor_thickness], center=true);
+}
+
+// Final assembly
+union() {
+    rack;
+    final_rack;
+}

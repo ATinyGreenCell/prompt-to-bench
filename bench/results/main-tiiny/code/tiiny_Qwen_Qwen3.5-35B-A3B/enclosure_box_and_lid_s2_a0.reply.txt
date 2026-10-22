@@ -1,0 +1,128 @@
+```openscad
+// Units: millimetres
+// $fn = 64; // Default for curved shapes, but we use it explicitly where needed
+
+// --- Part 1: Box ---
+// Outer dimensions
+box_outer_x = 70;
+box_outer_y = 50;
+box_outer_z = 30;
+
+// Wall and floor thickness
+box_wall_thick = 2;
+box_floor_thick = 2;
+
+// Clearance for lid (0.2mm per side)
+box_clearance = 0.2;
+
+// Inner dimensions calculated from outer
+box_inner_x = box_outer_x - 2 * box_wall_thick;
+box_inner_y = box_outer_y - 2 * box_wall_thick;
+box_inner_z = box_outer_z - box_floor_thick; // Open top, so height is floor thickness
+
+// Position for Part 1 (Box)
+// Centered on X, Y=0, Z=0.
+// We will place it at x = - (box_outer_x/2 + 5) to leave 10mm gap with Part 2
+box_pos_x = - (box_outer_x / 2 + 5);
+box_pos_y = 0;
+box_pos_z = 0;
+
+// --- Part 2: Lid ---
+// Plate dimensions (base)
+lid_plate_x = 70;
+lid_plate_y = 50;
+lid_plate_z = 2;
+
+// Lip dimensions
+lip_wall_thick = 1.5;
+lip_height = 4;
+lip_outer_x = 65.6;
+lip_outer_y = 45.6;
+
+// Position for Part 2 (Lid)
+// Placed on +X side of box with 10mm gap.
+// Box right edge is at box_pos_x + box_outer_x/2.
+// Gap is 10mm.
+lid_pos_x = box_pos_x + box_outer_x/2 + 10;
+lid_pos_y = 0;
+lid_pos_z = 0;
+
+// --- Construction ---
+
+module box_part() {
+    // Base plate (floor)
+    translate([box_pos_x, box_pos_y, box_pos_z])
+        cube([box_outer_x, box_outer_y, box_floor_thick]);
+
+    // Walls (4 walls)
+    // Front wall (Y positive)
+    translate([box_pos_x, box_pos_y + box_outer_y/2 - box_wall_thick/2, box_floor_thick])
+        cube([box_outer_x, box_wall_thick, box_outer_z - box_floor_thick]);
+    
+    // Back wall (Y negative)
+    translate([box_pos_x, box_pos_y - box_outer_y/2 + box_wall_thick/2, box_floor_thick])
+        cube([box_outer_x, box_wall_thick, box_outer_z - box_floor_thick]);
+    
+    // Left wall (X negative)
+    translate([box_pos_x + box_outer_x/2 - box_wall_thick/2, box_pos_y, box_floor_thick])
+        cube([box_wall_thick, box_outer_y, box_outer_z - box_floor_thick]);
+    
+    // Right wall (X positive)
+    translate([box_pos_x - box_outer_x/2 + box_wall_thick/2, box_pos_y, box_floor_thick])
+        cube([box_wall_thick, box_outer_y, box_outer_z - box_floor_thick]);
+}
+
+module lid_part() {
+    // Base plate
+    translate([lid_pos_x, lid_pos_y, lid_pos_z])
+        cube([lid_plate_x, lid_plate_y, lid_plate_z]);
+
+    // Lip (Rectangular wall)
+    // The lip is centered on the plate.
+    // We create a hollow box for the lip and subtract it from the plate? 
+    // No, the lip is a wall on top. We can model it as a hollow box sitting on the plate.
+    // To ensure it's a solid part, we can use a difference or just build the walls.
+    // Let's build the walls explicitly to avoid coplanar issues with the plate.
+    
+    // We need to subtract the inner volume from the plate to create the lip walls?
+    // Actually, the prompt says "a rectangular lip on top of it".
+    // Best approach: Create the plate, then create the lip walls as separate cubes and union them.
+    // But the lip is a "wall" 1.5mm thick.
+    // Let's model the lip as a hollow box (outer 65.6 x 45.6 x 4) and subtract the inner void from the plate?
+    // No, the plate is 2mm thick. The lip sits on top.
+    // Let's create the lip as a hollow box and subtract the inner part from the plate?
+    // Actually, simpler: Create the plate. Then create the lip walls as 4 separate cubes.
+    
+    // Lip outer dimensions
+    lip_x = lip_outer_x;
+    lip_y = lip_outer_y;
+    lip_z = lip_height;
+    
+    // Center the lip on the plate
+    lip_center_x = lid_pos_x;
+    lip_center_y = lid_pos_y;
+    lip_base_z = lid_pos_z + lid_plate_z;
+
+    // Front wall (Y positive)
+    translate([lip_center_x, lip_center_y + lip_y/2 - lip_wall_thick/2, lip_base_z])
+        cube([lip_x, lip_wall_thick, lip_z]);
+        
+    // Back wall (Y negative)
+    translate([lip_center_x, lip_center_y - lip_y/2 + lip_wall_thick/2, lip_base_z])
+        cube([lip_x, lip_wall_thick, lip_z]);
+        
+    // Left wall (X negative)
+    translate([lip_center_x + lip_x/2 - lip_wall_thick/2, lip_center_y, lip_base_z])
+        cube([lip_wall_thick, lip_y, lip_z]);
+        
+    // Right wall (X positive)
+    translate([lip_center_x - lip_x/2 + lip_wall_thick/2, lip_center_y, lip_base_z])
+        cube([lip_wall_thick, lip_y, lip_z]);
+}
+
+// Combine both parts
+union() {
+    box_part();
+    lid_part();
+}
+```

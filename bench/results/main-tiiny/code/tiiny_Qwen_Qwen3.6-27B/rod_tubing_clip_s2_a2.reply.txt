@@ -1,0 +1,119 @@
+```openscad
+// Snap-on clip for 12.7 mm lab stand rod and 6 mm ID tubing
+// Printed flat (10 mm tall extrusion in Z)
+
+// Dimensions
+rod_id = 12.7;          // Inner diameter of rod ring
+rod_wall = 3;           // Wall thickness of rod ring
+rod_od = rod_id + 2 * rod_wall; // Outer diameter of rod ring (18.7 mm)
+
+tube_id = 6;            // Inner diameter of tubing ring
+tube_wall = 2;          // Wall thickness of tubing ring
+tube_od = tube_id + 2 * tube_wall; // Outer diameter of tubing ring (10 mm)
+
+tube_center_x = 15;     // X position of tubing ring center
+
+bridge_x_start = 8;     // Start of bridge (X)
+bridge_x_end = 12;      // End of bridge (X)
+bridge_width = 6;       // Width of bridge (Y)
+
+rod_slot_width = 10;    // Width of opening in rod ring (Y)
+rod_slot_half = rod_slot_width / 2;
+
+tube_slot_width = 4.5;  // Width of opening in tubing ring (Y)
+tube_slot_half = tube_slot_width / 2;
+
+extrusion_height = 10;  // Height of the part in Z
+
+$fn = 64;
+
+linear_extrude(height = extrusion_height, center = false, convexity = 10) {
+    // We must ensure the bridge connects the two rings to form a single solid.
+    // The previous design failed because the bridge did not overlap the rings' material.
+    // Rod ring material is between r=6.35 and r=9.35.
+    // Tube ring material is between r=3 and r=5, centered at x=15.
+    // Bridge is x=8..12, y=-3..3.
+    // At x=8, rod ring outer edge is at y = sqrt(9.35^2 - 8^2) = sqrt(87.42 - 64) = sqrt(23.42) = 4.84.
+    // So at x=8, the rod ring exists for |y| > 4.84 (outer) and |y| < 4.84 (hole).
+    // Wait, the rod ring is a donut. Material is 6.35 < r < 9.35.
+    // At x=8, r=8. So 6.35 < 8 < 9.35. Thus at x=8, there is material for all y such that 6.35 < sqrt(64+y^2) < 9.35.
+    // sqrt(64+y^2) > 6.35 => 64+y^2 > 40.32 => y^2 > -23.68 (always true).
+    // sqrt(64+y^2) < 9.35 => 64+y^2 < 87.42 => y^2 < 23.42 => |y| < 4.84.
+    // So at x=8, the rod ring has material for |y| < 4.84.
+    // The bridge is defined for |y| < 3.
+    // Since 3 < 4.84, the bridge at x=8 overlaps with the rod ring material.
+    
+    // At x=12, tube ring center is 15. Distance from center is 3.
+    // Tube ring material is 3 < r < 5.
+    // At distance 3, we are at the inner edge.
+    // sqrt((15-12)^2 + y^2) = sqrt(9+y^2).
+    // Material exists if 3 < sqrt(9+y^2) < 5.
+    // 9+y^2 > 9 => y^2 > 0 => y != 0.
+    // 9+y^2 < 25 => y^2 < 16 => |y| < 4.
+    // So at x=12, the tube ring has material for 0 < |y| < 4.
+    // The bridge is defined for |y| < 3.
+    // So the bridge at x=12 overlaps with the tube ring material (except exactly at y=0, but that's a set of measure zero).
+    
+    // Why did it render as 3 bodies?
+    // The difference operations might have created gaps or the union didn't merge them if they only touched at edges.
+    // To ensure a single body, we should make the bridge slightly wider or longer to ensure robust overlap, 
+    // or simply rely on the fact that OpenSCAD unions overlapping volumes.
+    // The issue might be that the "cut" rectangles in the difference() for the rings extend infinitely or very large,
+    // and if they intersect the bridge, they might cut the bridge?
+    // No, the bridge is added in the union AFTER the difference.
+    // Wait, the structure is:
+    // union() {
+    //   difference() { ring; cut; }
+    //   difference() { ring; cut; }
+    //   bridge;
+    // }
+    // This is correct.
+    
+    // Let's re-read the report: "3 separate bodies".
+    // Body 1: 15.78 x 4.35 x 10.00 centered at (0, 6.99). This looks like the top half of the rod ring?
+    // Body 2: 11.46 x 10.00 x 10.00 centered at (12.85, 0). This looks like the tube ring + bridge?
+    // Body 3: 15.78 x 4.35 x 10.00 centered at (0, -6.99). This looks like the bottom half of the rod ring?
+    
+    // It seems the rod ring is split into two halves (top and bottom) and the tube ring/bridge is separate.
+    // Why is the rod ring split?
+    // The cut is: x < 0 and -5 < y < 5.
+    // This cut removes the left side of the ring.
+    // The remaining parts are the top arc and bottom arc.
+    // Do they touch?
+    // At x=0, the ring has material for 6.35 < sqrt(y^2) < 9.35 => 6.35 < |y| < 9.35.
+    // The cut removes -5 < y < 5.
+    // So at x=0, the material remains for 5 < |y| < 9.35? No, the cut is only for x < 0.
+    // At x=0, the cut does not apply (x < 0 is false).
+    // So at x=0, the full ring cross-section exists: 6.35 < |y| < 9.35.
+    // The top part is y > 6.35. The bottom part is y < -6.35.
+    // They do NOT touch at x=0 because there is a gap between -6.35 and 6.35 (the hole).
+    // So the rod ring is naturally two separate pieces (top and bottom) after the cut.
+    
+    // The bridge connects to the rod ring?
+    // Bridge is x=8..12, y=-3..3.
+    // Rod ring at x=8 has material for |y| < 4.84.
+    // Bridge is |y| < 3.
+    // So the bridge overlaps the rod ring material at x=8.
+    // This should merge the bridge with the rod ring pieces.
+    
+    // Why are they separate?
+    // Maybe the bridge doesn't reach x=8?
+    // Bridge starts at x=8.
+    // Rod ring material at x=8 is for |y| < 4.84.
+    // Bridge is |y| < 3.
+    // They overlap.
+    
+    // Let's check the tube ring connection.
+    // Tube ring at x=12 has material for 0 < |y| < 4.
+    // Bridge is |y| < 3.
+    // They overlap.
+    
+    // So the bridge should connect the top rod piece, bottom rod piece, and tube ring into one body.
+    // Unless... the bridge is not overlapping due to floating point or definition issues?
+    // Or maybe the "cut" for the rod ring is removing the bridge?
+    // No, the bridge is in the union, added after the difference.
+    
+    // Wait, look at the body sizes.
+    // Body 1: centered at (0, 6.99). Size 15.78 x 4.35.
+    // This is the top half of the rod ring.
+    // Body 3: centered at (

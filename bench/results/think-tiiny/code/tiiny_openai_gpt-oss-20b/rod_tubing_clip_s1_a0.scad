@@ -1,0 +1,67 @@
+// Snap‑on clip for tubing and lab stand rod
+
+$fn = 64; // resolution for cylinders
+
+// Dimensions
+rod_inner_d = 12.7; // mm
+rod_wall     = 3;   // mm
+rod_outer_d = rod_inner_d + 2*rod_wall; // mm
+
+tub_inner_d = 6;   // mm
+tub_wall     = 2;   // mm
+tub_outer_d = tub_inner_d + 2*tub_wall; // mm
+
+extrude_h   = 10; // mm
+
+// Opening dimensions
+rod_open_y = 10;   // mm (width of opening on rod side)
+tub_open_y = 4.5;  // mm (width of opening on tubing side)
+
+// Bridge dimensions
+bridge_x_start = 8;   // mm
+bridge_x_end   = 12;  // mm
+bridge_y_width = 6;   // mm
+bridge_z_height = extrude_h; // mm
+
+// Derived dimensions for openings
+rod_open_x     = rod_outer_d/2 + 0.02; // mm
+rod_open_z     = extrude_h + 0.02;      // mm
+rod_open_x_start = -rod_outer_d/2 - 0.01; // mm
+rod_open_y_start = -rod_open_y/2 - 0.01; // mm
+rod_open_z_start = -0.01;                 // mm
+
+tub_open_x     = tub_outer_d/2 + 0.02; // mm
+tub_open_z     = extrude_h + 0.02;      // mm
+tub_open_x_start = 15 + 0.01;           // mm
+tub_open_y_start = -tub_open_y/2 - 0.01; // mm
+tub_open_z_start = -0.01;                 // mm
+
+// Modules
+module rod_ring() {
+    difference() {
+        cylinder(h=extrude_h, d=rod_outer_d);
+        cylinder(h=extrude_h, d=rod_inner_d);
+        translate([rod_open_x_start, rod_open_y_start, rod_open_z_start])
+            cube([rod_open_x, rod_open_y, rod_open_z]);
+    }
+}
+
+module tub_ring() {
+    difference() {
+        translate([15,0,0]) cylinder(h=extrude_h, d=tub_outer_d);
+        translate([15,0,0]) cylinder(h=extrude_h, d=tub_inner_d);
+        translate([tub_open_x_start, tub_open_y_start, tub_open_z_start])
+            cube([tub_open_x, tub_open_y, tub_open_z]);
+    }
+}
+
+module bridge() {
+    translate([bridge_x_start, -bridge_y_width/2, 0])
+        cube([bridge_x_end - bridge_x_start, bridge_y_width, bridge_z_height]);
+}
+
+union() {
+    rod_ring();
+    tub_ring();
+    bridge();
+}

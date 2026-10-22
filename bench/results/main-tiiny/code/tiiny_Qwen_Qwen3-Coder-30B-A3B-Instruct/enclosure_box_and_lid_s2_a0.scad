@@ -1,0 +1,60 @@
+// Dimensions
+box_outer_x = 70;   // Outer width of the box
+box_outer_y = 50;   // Outer depth of the box
+box_outer_z = 30;   // Outer height of the box
+wall_thickness = 2;   // Thickness of the box walls
+floor_thickness = 2; // Thickness of the box floor
+lid_thickness = 2;   // Thickness of the lid plate
+lip_outer_x = 65.6;  // Outer width of the lid lip
+lip_outer_y = 45.6;  // Outer depth of the lid lip
+lip_height = 4;      // Height of the lid lip
+lip_thickness = 1.5; // Thickness of the lid lip wall
+clearance = 0.2;     // Clearance between lid and box
+gap = 10;            // Gap between the two parts
+
+// Box
+box_inner_x = box_outer_x - 2 * wall_thickness;
+box_inner_y = box_outer_y - 2 * wall_thickness;
+box_inner_z = box_outer_z - floor_thickness;
+
+box = union() {
+    // Outer shell
+    cube([box_outer_x, box_outer_y, box_outer_z]);
+    
+    // Inner hollow
+    translate([wall_thickness, wall_thickness, floor_thickness])
+        cube([box_inner_x, box_inner_y, box_inner_z]);
+};
+
+// Lid
+lid_plate = cube([lip_outer_x + 2 * lip_thickness, lip_outer_y + 2 * lip_thickness, lid_thickness]);
+
+// Lip
+lid_lip = union() {
+    // Outer rectangle
+    cube([lip_outer_x + 2 * lip_thickness, lip_outer_y + 2 * lip_thickness, lip_height]);
+    
+    // Inner rectangle (cut out)
+    translate([lip_thickness, lip_thickness, 0])
+        cube([lip_outer_x, lip_outer_y, lip_height + 0.01]);
+};
+
+// Final lid assembly
+lid = union() {
+    translate([0, 0, lid_thickness])
+        lid_lip;
+    translate([0, 0, 0])
+        lid_plate;
+};
+
+// Positioning
+box_pos = [0, 0, 0];
+lid_pos = [box_outer_x + gap, 0, 0];
+
+// Final assembly
+union() {
+    translate(box_pos)
+        box;
+    translate(lid_pos)
+        lid;
+}

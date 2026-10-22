@@ -1,0 +1,154 @@
+$fn = 128;
+
+// --- Dimensions ---
+// Base Plate
+base_width_x = 50;   // x from -25 to 25
+base_height_y = 45;  // y from 0 to 45
+base_thickness_z = 5; // z from 0 to 5
+
+// Base Mounting Holes (M4)
+base_hole_diameter = 4.5;
+base_hole_x1 = -17;
+base_hole_y1 = 30;
+base_hole_x2 = 17;
+base_hole_y2 = 30;
+
+// Vertical Motor Plate
+motor_plate_width_x = 50; // x from -25 to 25
+motor_plate_height_y = 5; // y from 0 to 5
+motor_plate_thickness_z = 50; // z from 0 to 50
+
+// Motor Plate Hole (Centring Boss)
+motor_hole_diameter = 23;
+motor_hole_x = 0;
+motor_hole_z = 28;
+
+// Motor Plate Screw Holes (M3)
+motor_screw_hole_diameter = 3.4;
+motor_screw_pattern_size = 31; // 31 mm square pattern
+motor_screw_pattern_center_x = 0;
+motor_screw_pattern_center_z = motor_hole_z;
+
+// Gussets
+gusset_thickness = 5;
+gusset_leg_y = 20;
+gusset_leg_z = 20;
+// Gusset position: Right angle corner at y=5, z=5. Extends +Y and +Z.
+// Left Gusset: x from -25 to -20 (width 5)
+// Right Gusset: x from 20 to 25 (width 5)
+
+// --- Construction ---
+
+module base_plate() {
+    // Main block
+    translate([0, 0, 0])
+        cube([base_width_x, base_height_y, base_thickness_z]);
+
+    // Cut M4 holes
+    // Extend slightly past faces to ensure clean cut
+    $fn = 64;
+    for (i = [0, 1]) {
+        translate([base_hole_x1, base_hole_y1, 0])
+            cylinder(h = base_thickness_z + 0.1, r = base_hole_diameter / 2);
+        
+        translate([base_hole_x2, base_hole_y2, 0])
+            cylinder(h = base_thickness_z + 0.1, r = base_hole_diameter / 2);
+    }
+}
+
+module motor_plate() {
+    // Main block
+    translate([0, 0, 0])
+        cube([motor_plate_width_x, motor_plate_height_y, motor_plate_thickness_z]);
+
+    // Cut Motor Centring Boss Hole
+    // Center at x=0, z=28. Hole is along Y axis.
+    // Extend slightly past faces
+    translate([motor_hole_x, 0, motor_hole_z])
+        cylinder(h = motor_plate_height_y + 0.1, r = motor_hole_diameter / 2);
+
+    // Cut M3 Screw Holes (4 holes on 31mm square pattern)
+    // Pattern centered at (0, 28). 
+    // Square size 31mm means half-size is 15.5mm.
+    // Corners at +/- 15.5 in X and Z relative to center.
+    $fn = 64;
+    for (i = [0, 1, 2, 3]) {
+        // Calculate corner offsets
+        // i=0: (-15.5, -15.5)
+        // i=1: (15.5, -15.5)
+        // i=2: (15.5, 15.5)
+        // i=3: (-15.5, 15.5)
+        if (i == 0) { tx = -motor_screw_pattern_size/2; tz = -motor_screw_pattern_size/2; }
+        else if (i == 1) { tx = motor_screw_pattern_size/2; tz = -motor_screw_pattern_size/2; }
+        else if (i == 2) { tx = motor_screw_pattern_size/2; tz = motor_screw_pattern_size/2; }
+        else { tx = -motor_screw_pattern_size/2; tz = motor_screw_pattern_size/2; }
+
+        translate([motor_screw_pattern_center_x + tx, 0, motor_screw_pattern_center_z + tz])
+            cylinder(h = motor_plate_height_y + 0.1, r = motor_screw_hole_diameter / 2);
+    }
+}
+
+module gusset() {
+    // Right triangle in YZ plane.
+    // Legs: 20mm along +Y, 20mm along +Z.
+    // Right angle corner at y=5, z=5.
+    // So the triangle vertices in local coords (relative to corner) are:
+    // (0,0), (20,0), (0,20).
+    // We need to position this such that the corner is at y=5, z=5.
+    // The gusset has thickness 5mm along X.
+    
+    // Create the triangular profile in YZ
+    // Vertices: (y=0, z=0), (y=20, z=0), (y=0, z=20)
+    // This forms the right angle at (0,0).
+    // We will translate this so (0,0) lands at (y=5, z=5).
+    
+    // Profile definition
+    points = [
+        [0, 0], // y=0, z=0 (corner)
+        [gusset_leg_y, 0], // y=20, z=0
+        [0, gusset_leg_z]  // y=0, z=20
+    ];
+
+    // Extrude the profile along X axis with thickness
+    // The profile is in YZ. We extrude along X.
+    // Thickness is 5mm.
+    // We need to decide direction. Left gusset is at x=-25 to -20. Right is 20 to 25.
+    // The profile is defined for y>=0, z>=0.
+    
+    // Let's build the solid directly using linear_extrude
+    // The profile is in the YZ plane.
+    // We rotate the profile 90 deg around X to make it easier? No, linear_extrude extrudes along Z by default.
+    // Let's use rotate_extrude or just translate the profile into XZ and extrude along Y?
+    // Easier: Define polygon in YZ, then linear_extrude along X.
+    // But linear_extrude extrudes along Z.
+    // So we rotate the part 90 deg around Y, extrude, then rotate back?
+    // Or simply:
+    // 1. Create a 2D polygon in YZ plane.
+    // 2. Use linear_extrude with path = [thickness/2, -thickness/2]? No.
+    
+    // Standard way for prism in YZ:
+    // Rotate 90 deg around X axis so YZ becomes XZ (or similar), extrude, rotate back.
+    // Actually, let's just use the polygon command with linear_extrude along X.
+    // To extrude along X, we rotate the object 90 deg around Y, extrude along Z, then rotate -90 around Y.
+    
+    // Define the triangle vertices relative to the corner (0,0,0)
+    // y: 0 to 20, z: 0 to 20.
+    // Corner is at global y=5, z=5.
+    
+    // Step 1: Create the 2D shape in YZ plane
+    // Vertices: (y=0, z=0), (y=20, z=0), (y=0, z=20)
+    // Note: OpenSCAD polygon expects [x, y]. Here our local coords are y, z.
+    // Let's map local_y -> polygon_x, local_z -> polygon_y.
+    
+    poly_points = [
+        [0, 0],   // y=0, z=0
+        [gusset_leg_y, 0], // y=20, z=0
+        [0, gusset_leg_z]  // y=0, z=20
+    ];
+
+    // Extrude along X axis
+    // We need to rotate the profile so it lies in XZ plane, extrude along Y?
+    // No, let's stick to the rule: Build on XY, build up Z.
+    // The gusset is a block.
+    // Let's construct it by rotating the profile 90 deg around Y, extruding along Z (which becomes X), then rotating back.
+    // Wait, if I rotate 9

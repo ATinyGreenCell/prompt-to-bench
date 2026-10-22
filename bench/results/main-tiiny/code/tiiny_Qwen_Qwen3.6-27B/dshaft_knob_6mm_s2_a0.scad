@@ -1,0 +1,152 @@
+// Replacement knob for hotplate stirrer
+// Dimensions measured with calipers
+
+// Main knob dimensions
+knob_diameter = 30;
+knob_radius = knob_diameter / 2;
+knob_height = 15;
+
+// D-shaft blind bore dimensions
+bore_diameter = 6.2;
+bore_radius = bore_diameter / 2;
+bore_depth = 12;
+// Distance from flat to opposite side of circle is 4.7 mm
+// This means the flat is offset from the center by (radius - 4.7)
+bore_flat_offset = bore_radius - 4.7; // 3.1 - 4.7 = -1.6 mm (flat is 1.6 mm below center)
+
+// Grip grooves
+num_grooves = 18;
+groove_diameter = 2;
+groove_radius = groove_diameter / 2;
+
+// Pointer groove on top face
+pointer_width = 1.5;
+pointer_depth = 1;
+pointer_length = knob_radius; // from center to edge
+
+// Print quality
+$fn = 64;
+
+// Main knob body
+translate([0, 0, 0])
+cylinder(h = knob_height, r = knob_radius, center = false);
+
+// D-shaped blind bore (cut from bottom up)
+// The bore is a cylinder with a flat side
+// We subtract a cylinder and then add back the part that was cut by the flat
+// Actually, we subtract the D-shape directly using difference
+
+difference() {
+    // This is handled in the main difference below
+}
+
+// Full assembly with all cuts
+difference() {
+    // Main knob
+    cylinder(h = knob_height, r = knob_radius, center = false);
+    
+    // D-shaped blind bore
+    // The D-shape: a circle with a flat side
+    // The flat is on one side, offset from center
+    // We create the D-shape by taking a cylinder and cutting it with a half-space
+    // The flat is at y = -bore_flat_offset (since offset is negative, flat is below center)
+    // Actually, let's think: distance from flat to opposite side is 4.7 mm
+    // Circle diameter is 6.2 mm, so from center to opposite side is 3.1 mm
+    // From flat to center is 4.7 - 3.1 = 1.6 mm
+    // So the flat is 1.6 mm from the center, on the side towards negative y
+    
+    // Create D-shape bore: cylinder minus a rectangular block that cuts the flat
+    translate([0, 0, 0]) {
+        // First, the cylindrical part of the bore
+        cylinder(h = bore_depth + 0.1, r = bore_radius, center = false);
+        
+        // Now we need to make it D-shaped by cutting a flat
+        // The flat is at y = -1.6 mm (1.6 mm below center)
+        // We cut everything below y = -1.6 mm within the bore region
+        // To do this, we subtract a half-space, but OpenSCAD doesn't have half-spaces
+        // Instead, we can use a large box that cuts the flat
+        
+        // Actually, let's reconsider: the D-shape means we keep the part of the circle
+        // above the flat line. So we need to subtract the part below the flat.
+        // We'll create a shape that represents the "missing" part and subtract it.
+        
+        // The missing part is a rectangular prism that extends from the flat line
+        // to the bottom of the circle, but only within the bore depth
+        
+        // Let's use a different approach: create the D-shape as a union of a half-cylinder
+        // and a rectangular prism, then subtract that.
+        
+        // Actually, the simplest way: subtract a cylinder, then add back the part that
+        // should remain (the part below the flat). No, that's not right either.
+        
+        // Let me think again. The D-shape bore means the hole has a flat side.
+        // The flat is 1.6 mm from the center. So the hole is the intersection of
+        // a cylinder and a half-space (y >= -1.6).
+        
+        // To create this in OpenSCAD, we can:
+        // 1. Create a cylinder
+        // 2. Intersect it with a half-space (represented by a large box)
+        
+        // But we're in a difference, so we need to subtract the D-shape.
+        // Let's create the D-shape as a separate module and subtract it.
+    }
+    
+    // Let me restructure: create the D-shape bore as a separate solid
+    // and subtract it.
+}
+
+// Let me rewrite this more carefully
+
+difference() {
+    // Main knob
+    cylinder(h = knob_height, r = knob_radius, center = false);
+    
+    // D-shaped blind bore
+    // Create D-shape: cylinder intersected with half-space
+    translate([0, 0, 0]) {
+        intersection() {
+            cylinder(h = bore_depth + 0.1, r = bore_radius, center = false);
+            // Half-space: y >= -bore_flat_offset
+            // Represent as a large box
+            translate([0, -bore_flat_offset, 0])
+            cube([knob_diameter + 2, knob_diameter + 2, bore_depth + 1], center = false);
+        }
+    }
+    
+    // Grip grooves: 18 evenly spaced vertical half-cylinders on the outer surface
+    for (i = [0 : num_grooves - 1]) {
+        angle = i * 360 / num_grooves;
+        // Position the groove on the outer surface
+        // The groove is a half-cylinder centered on the surface
+        // So its center is at radius = knob_radius - groove_radius/2? 
+        // No, "centred on the outer surface" means the center of the half-cylinder
+        // is on the surface, so half of it is inside and half outside.
+        // For a half-cylinder groove, we want the flat side facing outward.
+        
+        translate([0, 0, 0])
+        rotate([0, 0, angle])
+        translate([knob_radius, 0, knob_height / 2])
+        rotate([90, 0, 0])
+        // Half-cylinder: cylinder intersected with half-space
+        intersection() {
+            cylinder(h = knob_height + 0.1, r = groove_radius, center = true);
+            // Keep the part facing inward (negative x in local coords)
+            translate([-groove_radius, 0, 0])
+            cube([groove_radius + 1, groove_radius + 1, knob_height + 1], center = false);
+        }
+    }
+    
+    // Pointer groove on top face
+    // 1.5 mm wide, 1 mm deep, from center to edge
+    // On the same side as the flat of the D (negative y side)
+    translate([0, 0, knob_height]) {
+        // Slot: rectangular prism
+        // Width in y-direction (along the radius), length in y-direction
+        // Actually, it runs from center to edge along the same side as the flat
+        // The flat is on the negative y side, so the groove goes from (0,0) to (0, -knob_radius)
+        
+        // Create a slot that is 1.5 mm wide (in x-direction) and runs along y
+        translate([-pointer_width / 2, -pointer_length / 2, -pointer_depth / 2])
+        cube([pointer_width + 0.1, pointer_length + 0.1, pointer_depth + 0.1], center = false);
+    }
+}

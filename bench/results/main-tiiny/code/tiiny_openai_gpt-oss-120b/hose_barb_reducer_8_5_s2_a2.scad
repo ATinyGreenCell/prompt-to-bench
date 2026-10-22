@@ -1,0 +1,80 @@
+//---------------------------
+//  Parameters (mm)
+//---------------------------
+h_barb8 = 10;               // height of each 8 mm tubing barb
+h_collar = 5;               // height of the 12 mm collar (20 mm → 25 mm)
+h_barb5 = 8;                // height of each 5 mm tubing barb
+total_height = 41;         // overall part height (0 mm → 41 mm)
+
+d8_bottom = 7.5;            // outer diameter of 8 mm barb at its bottom
+d8_top    = 9.5;            // outer diameter of 8 mm barb at its top
+d5_bottom = 6.5;            // outer diameter of 5 mm barb at its bottom
+d5_top    = 5.0;            // outer diameter of 5 mm barb at its top
+d_collar  = 12.0;           // outer diameter of the middle collar
+d_bore    = 3.0;            // inner bore diameter (runs through whole part)
+
+// extra length for cutting shapes to avoid coplanar faces
+cut_excess = 0.5;            // mm (positive and negative)
+
+// resolution for curved surfaces
+$fn = 128;
+
+//---------------------------
+//  Modules
+//---------------------------
+
+// A single barb (rotationally symmetric) defined by bottom radius, top radius, and height.
+// The profile is a linear ramp from bottom to top, then a vertical step back to the bottom radius.
+module barb(bottom_d, top_d, height) {
+    r_bottom = bottom_d/2;
+    r_top    = top_d/2;
+    // 2‑D profile points (radius, z)
+    points = [
+        [r_bottom, 0],
+        [r_top,    height],
+        [r_bottom, height]
+    ];
+    rotate_extrude(angle = 360, convexity = true)
+        polygon(points);
+}
+
+// Assemble the whole reducer
+module reducer() {
+    // Outer solid (union of all outer features)
+    outer = union() {
+        // ---- 8 mm tubing barbs (two stacked) ----
+        // First barb at z = 0
+        translate([0,0,0])
+            barb(d8_bottom, d8_top, h_barb8);
+        // Second barb at z = 10
+        translate([0,0,h_barb8])
+            barb(d8_bottom, d8_top, h_barb8);
+
+        // ---- 12 mm collar (cylindrical) ----
+        translate([0,0,2*h_barb8])
+            cylinder(d = d_collar, h = h_collar, center = false);
+
+        // ---- 5 mm tubing barbs (two stacked) ----
+        // First barb at z = 25
+        translate([0,0,2*h_barb8 + h_collar])
+            barb(d5_bottom, d5_top, h_barb5);
+        // Second barb at z = 33
+        translate([0,0,2*h_barb8 + h_collar + h_barb5])
+            barb(d5_bottom, d5_top, h_barb5);
+    };
+
+    // Central bore (cylinder) – extend 0.5 mm below and above the part to avoid coplanar faces
+    bore = translate([0,0,-cut_excess])
+               cylinder(d = d_bore, h = total_height + 2*cut_excess, center = false);
+
+    // Final part: outer solid minus bore
+    difference() {
+        outer;
+        bore;
+    }
+}
+
+//---------------------------
+//  Render
+//---------------------------
+reducer();

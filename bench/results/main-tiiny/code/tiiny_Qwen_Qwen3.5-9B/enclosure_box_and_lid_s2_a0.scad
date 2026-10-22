@@ -1,0 +1,100 @@
+$fn = 64;
+
+// --- Part 1: Box Dimensions ---
+// Outer dimensions (X x Y x Z)
+BOX_OUT_X = 70;
+BOX_OUT_Y = 50;
+BOX_OUT_Z = 30;
+
+// Wall and floor thicknesses
+WALL_THICK = 2;
+FLOOR_THICK = 2;
+
+// --- Part 2: Lid Dimensions ---
+// Plate dimensions (same as box outer)
+LID_PLATE_X = 70;
+LID_PLATE_Y = 50;
+LID_PLATE_THICK = 2;
+
+// Lip dimensions
+LIP_WALL_THICK = 1.5;
+LIP_HEIGHT = 4;
+
+// Lip outer size (calculated to provide 0.2mm clearance inside the box walls)
+// Box inner width = 70 - 2*2 = 66.
+// Lip outer width = 66 - 2*0.2 = 65.6.
+// Box inner depth = 50 - 2*2 = 46.
+// Lip outer depth = 46 - 2*0.2 = 45.6.
+LIP_OUT_X = 65.6;
+LIP_OUT_Y = 45.6;
+
+// --- Assembly Positioning ---
+// Gap between parts
+GAP = 10;
+
+// Center the whole assembly on the bed
+TOTAL_WIDTH = BOX_OUT_X + GAP + LID_PLATE_X;
+OFFSET_X = (TOTAL_WIDTH / 2) - (BOX_OUT_X / 2);
+
+module box() {
+    // Create the box shell
+    // We use a single difference to create the walls and floor
+    difference() {
+        // Outer block
+        cube([BOX_OUT_X, BOX_OUT_Y, BOX_OUT_Z]);
+        
+        // Cut out the inner volume (hollow part)
+        // Inner dimensions:
+        // X: 70 - 2*2 = 66
+        // Y: 50 - 2*2 = 46
+        // Z: 30 - 2 (floor) = 28
+        translate([WALL_THICK, WALL_THICK, FLOOR_THICK]) {
+            cube([BOX_OUT_X - 2*WALL_THICK, BOX_OUT_Y - 2*WALL_THICK, BOX_OUT_Z - FLOOR_THICK]);
+        }
+    }
+}
+
+module lid() {
+    // The lid is printed upside down relative to the box logic, 
+    // but we model it resting on the bed (Z=0) as requested.
+    // It consists of a bottom plate and a top lip.
+    
+    union() {
+        // 1. The bottom plate (70 x 50 x 2)
+        cube([LID_PLATE_X, LID_PLATE_Y, LID_PLATE_THICK]);
+        
+        // 2. The lip (rectangular tube)
+        // Position: Centered on the plate.
+        // Height is LIP_HEIGHT.
+        // Thickness is LIP_WALL_THICK.
+        // Outer size is LIP_OUT_X x LIP_OUT_Y.
+        // Since the plate is at Z=0 and has thickness 2, the lip sits on top.
+        translate([
+            (LID_PLATE_X - LIP_OUT_X) / 2, 
+            (LID_PLATE_Y - LIP_OUT_Y) / 2, 
+            LID_PLATE_THICK
+        ]) {
+            // Create the lip as a hollow block
+            difference() {
+                // Outer block of the lip
+                cube([LIP_OUT_X, LIP_OUT_Y, LIP_HEIGHT]);
+                
+                // Inner void of the lip
+                // Inner X = 65.6 - 2*1.5 = 62.6
+                // Inner Y = 45.6 - 2*1.5 = 42.6
+                translate([LIP_WALL_THICK, LIP_WALL_THICK, 0]) {
+                    cube([LIP_OUT_X - 2*LIP_WALL_THICK, LIP_OUT_Y - 2*LIP_WALL_THICK, LIP_HEIGHT]);
+                }
+            }
+        }
+    }
+}
+
+// --- Main Assembly ---
+translate([OFFSET_X, 0, 0]) {
+    box();
+}
+
+translate([OFFSET_X + BOX_OUT_X + GAP, 0, 0]) {
+    lid();
+}

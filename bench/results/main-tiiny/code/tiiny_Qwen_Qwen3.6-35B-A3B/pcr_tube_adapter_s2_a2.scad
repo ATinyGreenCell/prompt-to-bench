@@ -1,0 +1,57 @@
+// Adapter sleeve for 0.2 mL PCR tube in 1.5 mL rack hole
+// Dimensions in mm
+
+// --- Collar dimensions (base on bed) ---
+collar_od = 13;       // Outer diameter of the collar
+collar_h = 1.5;       // Height of the collar
+
+// --- Sleeve body dimensions ---
+sleeve_od = 10.8;     // Outer diameter of the sleeve body
+sleeve_total_h = 21.5;// Total height from bed to top of sleeve
+sleeve_body_h = sleeve_total_h - collar_h; // Height of the cylindrical body above collar
+
+// --- Bore dimensions ---
+bore_d = 6.2;         // Diameter of the through bore
+
+// --- Print orientation settings ---
+// The part rests on the XY plane at z=0.
+// Collar is from z=0 to z=1.5.
+// Sleeve body rises from z=1.5 to z=21.5.
+// Centered on origin in X and Y.
+
+// Set resolution for round features
+$fn = 64;
+
+// 1. Create the collar (base)
+// Extends from z=0 to z=collar_h
+collar = cylinder(d = collar_od, h = collar_h, center = false);
+
+// 2. Create the sleeve body
+// Starts at z = collar_h, ends at z = sleeve_total_h
+sleeve_body = translate([0, 0, collar_h]) 
+              cylinder(d = sleeve_od, h = sleeve_body_h, center = false);
+
+// Union the collar and the body
+main_body = union() {
+    collar;
+    sleeve_body;
+};
+
+// 3. Create the bore
+// The bore runs through the full height (0 to 21.5).
+// To avoid coplanar faces in difference(), we extend the cutting cylinder 
+// slightly past the top and bottom faces.
+bore_cut_h = sleeve_total_h + 0.05; // Extend 0.05mm past top
+bore_cut = translate([0, 0, -0.025]) // Center the extension
+           cylinder(d = bore_d, h = bore_cut_h, center = true);
+
+// 4. Subtract the bore from the main body
+final_part = difference() {
+    main_body;
+    bore_cut;
+};
+
+// 5. Final output
+render() {
+    final_part;
+}

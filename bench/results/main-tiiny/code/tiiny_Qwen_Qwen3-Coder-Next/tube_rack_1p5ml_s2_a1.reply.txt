@@ -1,0 +1,128 @@
+Looking at the measurement report and comparing it to the specification:
+
+**Specification:**
+- 24 holes total (4 rows × 6 columns)
+- Hole grid centred on the block
+- Hole spacing: 16 mm centre-to-centre in both directions
+- Hole diameter: 11.2 mm
+- Hole depth: 25 mm (leaving 5 mm solid floor)
+
+**Report findings:**
+1. **Hole count per slice**: The report shows only 6 holes at each slice level, but we need 24 holes total (4 rows × 6 columns = 24 holes).
+2. **Grid centre position**: The report shows grid centre at (24.00, 16.00), but for a 106×72 mm block with 6×4 holes at 16 mm pitch, the grid should be centred on the block centre (53, 36).
+3. **Grid dimensions check**:
+   - 6 columns → grid width = (6-1) × 16 = 80 mm
+   - 4 rows → grid height = (4-1) × 16 = 48 mm
+   - Block centre is at (53, 36), so grid should be centred there
+   - First hole X position should be: 53 - 80/2 = 13 mm
+   - First hole Y position should be: 36 - 48/2 = 12 mm
+
+The issue is in how I calculated the hole positions. My offset calculation was incorrect.
+
+Let me recalculate:
+- Grid width in X: (6-1) × 16 = 80 mm
+- Grid width in Y: (4-1) × 16 = 48 mm
+- Block centre: (53, 36)
+- First hole X position: 53 - 80/2 = 53 - 40 = 13 mm
+- First hole Y position: 36 - 48/2 = 36 - 24 = 12 mm
+
+The report shows grid centre at (24, 16), which suggests the holes are positioned incorrectly.
+
+Also, the report shows only 6 holes per slice, but we need 24 holes total. This indicates the for loops are not generating all holes.
+
+Looking at my code: `for (i = [0 : cols - 1])` and `for (j = [0 : rows - 1])` should generate 6×4=24 holes. But the report shows only 6 holes, which suggests the holes might be overlapping or only one row/column is being generated.
+
+Wait - the report says "6 x circle d=11.19 [3 x 2 grid (X x Y), pitch X 16.00 / Y 16.00, grid centre (24.00, 16.00)]". This indicates only 6 holes are present (3×2), not 24 (6×4).
+
+The issue is in my offset calculation. Let me recalculate properly:
+
+For 6 columns with 16 mm pitch, the X positions should be:
+- Column 0: x = 53 - (5×16)/2 = 53 - 40 = 13
+- Column 1: x = 13 + 16 = 29
+- Column 2: x = 29 + 16 = 45
+- Column 3: x = 45 + 16 = 61
+- Column 4: x = 61 + 16 = 77
+- Column 5: x = 77 + 16 = 93
+
+For 4 rows with 16 mm pitch, the Y positions should be:
+- Row 0: y = 36 - (3×16)/2 = 36 - 24 = 12
+- Row 1: y = 12 + 16 = 28
+- Row 2: y = 28 + 16 = 44
+- Row 3: y = 44 + 16 = 60
+
+So the correct offsets should be:
+- offset_x = 13 - 0×16 = 13 (first hole X position)
+- offset_y = 12 - 0×16 = 12 (first hole Y position)
+
+But in my code, I calculated:
+- grid_width_x = (cols - 1) * hole_pitch_x = 5 * 16 = 80
+- grid_width_y = (rows - 1) * hole_pitch_y = 3 * 16 = 48
+- offset_x = -grid_width_x / 2 = -40
+- offset_y = -grid_width_y / 2 = -24
+
+Then hole_x = offset_x + i * hole_pitch_x = -40 + i * 16
+This gives positions: -40, -24, -8, 8, 24, 40
+
+But the block is centred at (0,0) in my code, while the report shows the block goes from 0 to 106 in X and 0 to 72 in Y, meaning the block is positioned with its corner at (0,0), not centred at (0,0).
+
+Ah, that's the issue! In OpenSCAD, when I use `cube([block_length, block_width, block_height])`, it creates the cube from (0,0,0) to (block_length, block_width, block_height), so the block is not centred at the origin.
+
+I need to centre the block at the origin for the hole calculation to work correctly, or adjust the hole positions accordingly.
+
+Let me fix this by centring the block at the origin:
+
+```openscad
+// Bench rack for 1.5 mL microcentrifuge tubes
+// Dimensions and parameters
+block_length = 106;    // X dimension (mm)
+block_width  = 72;     // Y dimension (mm)
+block_height = 30;     // Z dimension (mm)
+hole_diameter = 11.2;  // Hole diameter (mm)
+hole_depth = 25;       // Hole depth (mm)
+floor_thickness = 5;   // Solid floor thickness (mm)
+rows = 4;              // Number of rows (along Y)
+cols = 6;              // Number of columns (along X)
+hole_pitch_x = 16;     // Centre-to-centre spacing in X (mm)
+hole_pitch_y = 16;     // Centre-to-centre spacing in Y (mm)
+
+// Calculate hole positions (centred on block)
+// Grid dimensions
+grid_width_x = (cols - 1) * hole_pitch_x;  // 5 * 16 = 80 mm
+grid_width_y = (rows - 1) * hole_pitch_y;  // 3 * 16 = 48 mm
+
+// Block is created from (0,0,0) to (block_length, block_width, block_height)
+// So block centre is at (block_length/2, block_width/2, block_height/2)
+block_centre_x = block_length / 2;  // 53 mm
+block_centre_y = block_width / 2;   // 36 mm
+
+// First hole position (bottom-left of grid)
+first_hole_x = block_centre_x - grid_width_x / 2;  // 53 - 40 = 13 mm
+first_hole_y = block_centre_y - grid_width_y / 2;  // 36 - 24 = 12 mm
+
+// Set resolution for smooth curves
+$fn = 64;
+
+module block_with_holes() {
+    difference() {
+        // Base block - positioned from (0,0,0)
+        cube([block_length, block_width, block_height]);
+        
+        // Cut holes
+        for (i = [0 : cols - 1]) {
+            for (j = [0 : rows - 1]) {
+                // Calculate hole position
+                hole_x = first_hole_x + i * hole_pitch_x;
+                hole_y = first_hole_y + j * hole_pitch_y;
+                
+                // Translate hole to position and extend through block + extra
+                translate([hole_x, hole_y, 0]) {
+                    cylinder(h = block_height + 1, r = hole_diameter / 2, center = false);
+                }
+            }
+        }
+    }
+}
+
+// Build the rack
+block_with_holes();
+```

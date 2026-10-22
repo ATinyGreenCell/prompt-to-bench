@@ -1,0 +1,107 @@
+```openscad
+// Dimensions for the snap-on clip
+// Lab stand rod diameter
+rod_diameter = 12.7;
+// Lab stand rod radius
+rod_radius = rod_diameter / 2;
+// Rod ring wall thickness
+rod_wall = 3;
+// Rod ring outer diameter
+rod_outer = rod_diameter + 2 * rod_wall;
+// Rod ring outer radius
+rod_outer_radius = rod_outer / 2;
+// Rod ring opening width (X-direction)
+rod_opening_width = 10;
+// Rod ring opening half-width
+rod_opening_half = rod_opening_width / 2;
+// Rod ring opening Y-range half-width
+rod_opening_y_half = 5;
+
+// Tubing diameter
+tubing_diameter = 6;
+// Tubing radius
+tubing_radius = tubing_diameter / 2;
+// Tubing wall thickness
+tubing_wall = 2;
+// Tubing ring outer diameter
+tubing_outer = tubing_diameter + 2 * tubing_wall;
+// Tubing ring outer radius
+tubing_outer_radius = tubing_outer / 2;
+// Tubing ring center X position
+tubing_center_x = 15;
+// Tubing ring opening width (X-direction)
+tubing_opening_width = 4.5;
+// Tubing ring opening half-width
+tubing_opening_half = tubing_opening_width / 2;
+// Tubing ring opening Y-range half-width
+tubing_opening_y_half = 2.25;
+
+// Bridge dimensions
+bridge_width = 6;
+bridge_half_width = bridge_width / 2;
+bridge_start_x = 8;
+bridge_end_x = 12;
+
+// Extrusion height
+extrusion_height = 10;
+
+// Safety offset for cutting shapes to avoid coplanar faces
+safety_offset = 0.01;
+
+// Define the 2D profile in the XY plane
+module profile() {
+    // Create the rod ring (centered at origin)
+    // We use a cylinder with a hole, then subtract the opening
+    rod_ring = difference() {
+        // Main ring body
+        cylinder(h = extrusion_height, r = rod_outer_radius, $fn = 64);
+        // Inner hole for the rod
+        cylinder(h = extrusion_height + safety_offset, r = rod_radius, $fn = 64);
+    };
+    
+    // Create the tubing ring (centered at x=15, y=0)
+    tubing_ring = difference() {
+        // Main ring body
+        translate([tubing_center_x, 0, 0])
+            cylinder(h = extrusion_height, r = tubing_outer_radius, $fn = 64);
+        // Inner hole for the tubing
+        translate([tubing_center_x, 0, 0])
+            cylinder(h = extrusion_height + safety_offset, r = tubing_radius, $fn = 64);
+    };
+    
+    // Create the bridge connecting the two rings
+    // The bridge is a solid rectangle from x=8 to x=12, width 6mm (Y)
+    bridge = translate([ (bridge_start_x + bridge_end_x) / 2, 0, 0 ])
+        cube([ bridge_end_x - bridge_start_x, bridge_width, extrusion_height ], center = true);
+    
+    // Create the opening in the rod ring (remove x < 0 and -5 < y < 5)
+    rod_opening_cut = translate([ -rod_opening_half - safety_offset, 0, 0 ])
+        cube([ rod_opening_width + 2 * safety_offset, rod_opening_y_half * 2 + 2 * safety_offset, extrusion_height + safety_offset ], center = true);
+    
+    // Create the opening in the tubing ring (remove x > 15 and -2.25 < y < 2.25)
+    tubing_opening_cut = translate([ tubing_center_x + tubing_opening_half + safety_offset, 0, 0 ])
+        cube([ tubing_opening_width + 2 * safety_offset, tubing_opening_y_half * 2 + 2 * safety_offset, extrusion_height + safety_offset ], center = true);
+    
+    // Combine all parts
+    union() {
+        // Rod ring with opening
+        difference() {
+            rod_ring;
+            rod_opening_cut;
+        }
+        
+        // Tubing ring with opening
+        difference() {
+            tubing_ring;
+            tubing_opening_cut;
+        }
+        
+        // Bridge
+        bridge;
+    }
+}
+
+// Extrude the profile to create the 3D part
+linear_extrude(height = extrusion_height)
+    profile();
+```

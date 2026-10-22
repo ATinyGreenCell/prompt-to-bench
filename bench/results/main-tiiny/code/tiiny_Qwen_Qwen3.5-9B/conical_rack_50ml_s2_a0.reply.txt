@@ -1,0 +1,114 @@
+```openscad
+// Rack for six 50 mL conical (Falcon-type) tubes
+// Print orientation: Flat plate on bed (Z=0), walls rising up.
+// After printing, flip over so walls are on the bed and holes face up.
+
+// --- Dimensions (mm) ---
+// Plate dimensions
+plate_width_X = 130;
+plate_width_Y = 90;
+plate_thickness = 4;
+
+// Hole specifications
+hole_diameter = 30.5;
+hole_count_X = 3;
+hole_count_Y = 2;
+hole_spacing_X = 40; // Centre-to-centre
+hole_spacing_Y = 40; // Centre-to-centre
+
+// Wall specifications
+wall_length_X = 130;
+wall_thickness_Y = 4;
+wall_height = 70; // Total height from bed (z=0) to top of wall
+
+// --- Derived Variables ---
+// Calculate plate center offsets to align holes and walls correctly
+// Plate is centered on origin.
+// Holes are centered on the plate.
+// Walls are flush with the long edges (Y = +/- plate_width_Y/2).
+
+plate_center_X = plate_width_X / 2;
+plate_center_Y = plate_width_Y / 2;
+
+// Hole positions relative to plate center
+hole_offset_X = (hole_count_X - 1) * hole_spacing_X / 2;
+hole_offset_Y = (hole_count_Y - 1) * hole_spacing_Y / 2;
+
+// Wall positions relative to plate center
+// Walls are at Y = +/- (plate_width_Y/2 - wall_thickness_Y/2)
+wall_inner_Y = plate_center_Y - wall_thickness_Y / 2;
+wall_outer_Y = -wall_inner_Y;
+
+// --- Main Module ---
+module tube_rack() {
+    $fn = 64; // Ensure smooth holes
+
+    // 1. Create the base plate
+    // Dimensions: X=130, Y=90, Z=4
+    // Centered at origin
+    plate = translate([0, 0, 0])
+        cube([plate_width_X, plate_width_Y, plate_thickness], center=true);
+
+    // 2. Create the six through-holes
+    // We use difference to cut holes from the plate
+    // Holes are centered on the plate, spaced 40mm apart
+    holes = translate([0, 0, 0])
+        union() {
+            for (i = [0 : hole_count_X - 1]) {
+                for (j = [0 : hole_count_Y - 1]) {
+                    translate([
+                        (i - (hole_count_X - 1) / 2) * hole_spacing_X,
+                        (j - (hole_count_Y - 1) / 2) * hole_spacing_Y,
+                        0
+                    ])
+                        cylinder(
+                            h = plate_thickness + 0.5, // Extend slightly past plate to ensure clean cut
+                            r = hole_diameter / 2,
+                            center=true
+                        );
+                }
+            }
+        };
+
+    // 3. Create the two solid walls
+    // Walls run along the long edges (X direction), rising from Z=0 to Z=70
+    // They are 4mm thick (Y direction) and flush with the plate edges.
+    // Since the plate is centered, the walls are at Y = +/- (45 - 2) = +/- 43mm
+    
+    walls = union() {
+        // Left Wall (negative Y side)
+        translate([0, -wall_inner_Y, 0])
+            cube([wall_length_X, wall_thickness_Y, wall_height], center=false);
+        
+        // Right Wall (positive Y side)
+        translate([0, wall_inner_Y, 0])
+            cube([wall_length_X, wall_thickness_Y, wall_height], center=false);
+    };
+
+    // 4. Combine everything
+    // Start with the plate, subtract holes, then subtract walls (to ensure clean integration if needed, 
+    // though union of plate and walls is usually sufficient, we subtract walls to ensure no floating geometry 
+    // if the wall logic was complex, but here we just union plate and walls and subtract holes).
+    // Actually, the prompt says "Two solid walls... rise from the plate". 
+    // So we Union Plate + Walls, then Difference Holes.
+    
+    union() {
+        plate;
+        walls;
+    }
+    
+    difference() {
+        // The combined solid
+        union() {
+            plate;
+            walls;
+        };
+        
+        // The holes
+        holes;
+    }
+}
+
+// Instantiate the rack
+tube_rack();
+```

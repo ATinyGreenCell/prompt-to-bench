@@ -1,0 +1,59 @@
+```openscad
+// Hotplate stirrer knob replacement
+// Dimensions in millimeters
+
+// Main knob dimensions
+knob_diameter = 30;
+knob_height = 15;
+
+// D-shaped bore dimensions
+d_bore_diameter = 6.2;
+d_bore_flat_width = 4.7;
+d_bore_depth = 12;
+
+// Grip grooves
+grip_groove_diameter = 2;
+grip_groove_count = 18;
+
+// Pointer groove
+pointer_width = 1.5;
+pointer_depth = 1;
+
+// Create the main knob
+knob = cylinder(r = knob_diameter/2, h = knob_height, $fn = 64);
+
+// Create the D-shaped bore
+d_bore = cylinder(r = d_bore_diameter/2, h = d_bore_depth + 0.01, $fn = 64);
+d_bore_cut = cube([d_bore_diameter, d_bore_diameter, d_bore_depth + 0.01]);
+d_bore_cut = translate([0, -d_bore_diameter/2, 0]) d_bore_cut;
+
+// Create grip grooves
+grip_grooves = [];
+for (i = [0 : grip_groove_count - 1]) {
+    angle = i * 360 / grip_groove_count;
+    groove = cylinder(r = grip_groove_diameter/2, h = knob_height + 0.01, $fn = 64);
+    groove = rotate([0, 0, angle]) groove;
+    groove = translate([knob_diameter/2 - grip_groove_diameter/2, 0, 0]) groove;
+    grip_grooves = concat(grip_grooves, [groove]);
+}
+
+// Create pointer groove
+pointer_groove = cylinder(r = pointer_width/2, h = pointer_depth + 0.01, $fn = 64);
+pointer_groove = translate([0, 0, knob_height - pointer_depth]) pointer_groove;
+
+// Combine all parts
+assembly = union() {
+    knob,
+    difference() {
+        d_bore,
+        d_bore_cut,
+    },
+    grip_grooves,
+    pointer_groove,
+};
+
+// Final assembly with proper orientation
+union() {
+    translate([0, 0, 0]) assembly;
+}
+```

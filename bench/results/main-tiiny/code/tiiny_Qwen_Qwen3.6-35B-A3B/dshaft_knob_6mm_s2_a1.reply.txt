@@ -1,0 +1,115 @@
+```openscad
+// Replacement knob for hotplate stirrer
+// D-shaft: 6mm nominal, 6.2mm bore diameter, 4.7mm width (flat-to-arc)
+// Knob: 30mm diameter, 15mm tall
+// Print orientation: Bottom face (z=0) rests on bed.
+
+// --- Dimensions ---
+knob_diameter = 30;
+knob_height = 15;
+bore_diameter = 6.2;
+bore_width = 4.7; // Distance from flat to opposite arc
+bore_depth = 12;
+grip_groove_diameter = 2;
+num_grip_grooves = 18;
+pointer_groove_width = 1.5;
+pointer_groove_depth = 1;
+
+// --- Calculated Values ---
+knob_radius = knob_diameter / 2;
+bore_radius = bore_diameter / 2;
+
+// Calculate position of the flat face of the D-bore.
+// The distance from the flat to the far side of the circle is 4.7mm.
+// The total diameter is 6.2mm.
+// Distance from center to flat = (Diameter - Width) / 2 ? No.
+// Width = Distance from flat to far arc.
+// Let x be distance from center to flat.
+// Width = x + radius.
+// x = Width - radius = 4.7 - 3.1 = 1.6mm.
+// So the flat is at x = -1.6 (if flat is on the left/negative side).
+flat_offset = bore_width - bore_radius; // 1.6
+
+// --- Main Model ---
+difference() {
+    // 1. Outer Cylinder
+    cylinder(r = knob_radius, h = knob_height, center = false, $fn = 64);
+
+    // 2. D-Shaped Blind Bore
+    // The bore is 12mm deep, starting from z=0.
+    // It consists of a circular hole with one side flattened.
+    // We cut a cylinder, then cut a box to create the flat.
+    
+    // Cut the circular part of the bore
+    // Extend slightly past z=12 to ensure clean cut
+    translate([0, 0, 0]) {
+        cylinder(r = bore_radius, h = bore_depth + 0.1, center = false, $fn = 64);
+        
+        // Cut the flat side
+        // The flat is on the negative X side.
+        // The flat face is at x = -flat_offset = -1.6.
+        // We cut a box that covers the left part of the bore.
+        // Box X range: from -bore_radius to -flat_offset (plus margin)
+        // Box Y range: -bore_radius to bore_radius
+        // Box Z range: 0 to bore_depth
+        translate([-bore_radius - 0.01, -bore_radius, 0]) {
+            cube([
+                (bore_radius + flat_offset) + 0.02, // Width: from far left to flat, plus margin
+                2 * bore_radius + 0.02,             // Height in Y
+                bore_depth + 0.1                      // Height in Z
+            ], center = false);
+        }
+    }
+
+    // 3. Grip Grooves
+    // 18 evenly spaced vertical grooves on the outer surface.
+    // Each is a 2mm diameter half-cylinder.
+    // "Half-cylinder centred on the outer surface" implies the groove profile is a semi-circle.
+    // We cut a cylinder of radius 1mm (diameter 2mm) from the surface.
+    // To make it a "half-cylinder" groove, we subtract a cylinder of radius 1mm.
+    // Since the center is on the surface, half the cylinder is inside the part (the groove)
+    // and half is outside (which is removed by the difference anyway).
+    // So we just subtract a cylinder of r=1, h=knob_height, centered at the surface.
+    
+    for (i = [0 : num_grip_grooves - 1]) {
+        angle = i * 360 / num_grip_grooves;
+        
+        // Position on the surface
+        px = knob_radius * cos(angle);
+        py = knob_radius * sin(angle);
+        
+        translate([px, py, 0]) {
+            // Rotate to align the cylinder axis radially
+            rotate([0, 0, angle]) {
+                // Cut the groove
+                // The cylinder axis is now along the X-axis (radial direction)
+                // We cut a cylinder of radius 1mm.
+                // To ensure it cuts cleanly, we make it slightly longer than the knob height.
+                cylinder(r = grip_groove_diameter / 2, h = knob_height + 0.1, center = false, $fn = 32);
+            }
+        }
+    }
+
+    // 4. Pointer Groove
+    // 1.5mm wide, 1mm deep, on the top face.
+    // Runs from the center to the outer edge.
+    // On the same side as the flat of the D (negative X side).
+    // We cut a rectangular slot from z=15 down to z=14.
+    // It runs from x=0 to x=knob_radius.
+    // Width is 1.5mm, so it spans y from -0.75 to 0.75.
+    
+    translate([0, 0, knob_height]) {
+        // Cut the slot
+        // X: from 0 to knob_radius (plus margin to ensure it reaches the edge)
+        // Y: -0.75 to 0.75 (plus margin)
+        // Z: 0 to 1mm deep (plus margin)
+        translate([0, 0, 0]) {
+            cube([
+                knob_radius + 0.01, // Length: center to edge
+                pointer_groove_width + 0.02, // Width
+                pointer_groove_depth + 0.01  // Depth
+            ], center = false);
+        }
+    }
+}
+```

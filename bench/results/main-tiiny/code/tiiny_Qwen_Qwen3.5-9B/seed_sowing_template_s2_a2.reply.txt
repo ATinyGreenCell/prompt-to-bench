@@ -1,0 +1,106 @@
+The measurement report reveals two critical issues compared to the specification:
+
+1.  **Grid Positioning Error**: The report shows holes at `(22.5, 22.5)`, `(22.5, 31.5)`, etc.
+    *   Specification requires a **7x7 grid** with **9 mm spacing** centered on the disc.
+    *   The total span of the grid is $(7-1) \times 9 = 54$ mm.
+    *   The distance from the center to the edge of the grid is $54 / 2 = 27$ mm.
+    *   The outermost holes should be at $X = \pm 27$ and $Y = \pm 27$.
+    *   The current code places the first hole at $X=22.5$ (which is $27 - 4.5$), meaning the grid is shifted by 4.5 mm in the positive direction. The calculation `grid_offset_x = (grid_span_x / 2) - (hole_spacing / 2)` is incorrect for centering a grid of discrete points; it should simply be `grid_span_x / 2`.
+
+2.  **Notch Positioning Error**: The report shows a contact area of 5,651 mm².
+    *   Full disc area $\approx \pi \times 42.5^2 \approx 5,674.5$ mm².
+    *   Notch area = $10 \text{ mm (width)} \times 4 \text{ mm (depth)} = 40$ mm².
+    *   Expected contact area $\approx 5,674.5 - 40 = 5,634.5$ mm².
+    *   The reported 5,651 mm² indicates the notch is not being cut, or cut incorrectly.
+    *   The notch is defined as "centred on the Y axis" on the "+Y side". This means the notch is centered at $Y = \text{disc\_radius} - \text{notch\_depth}/2$.
+    *   The previous code calculated `notch_center_y` as the midpoint between the rim and the start of the notch, but the translation logic for the cube was likely misaligned or the coordinate calculation was off. Specifically, the notch needs to be centered at $Y = 42.5 - 2 = 40.5$.
+
+**Corrections applied:**
+1.  Fixed grid offset calculation to `grid_span / 2`.
+2.  Fixed notch center calculation to ensure it is centered on the Y-axis at the correct depth from the rim.
+3.  Ensured the cutting cube extends slightly past the disc boundaries to guarantee a clean cut.
+
+```openscad
+$fn = 128; // High resolution for smooth curves and accurate hole sizing
+
+// --- Dimensions ---
+// Disc dimensions
+disc_outer_diameter = 85;
+disc_thickness = 2;
+
+// Grid dimensions
+grid_rows = 7;
+grid_cols = 7;
+hole_diameter = 3;
+hole_spacing = 9; // Centre-to-centre
+
+// Notch dimensions (on the +Y side)
+notch_width = 10; // X width
+notch_depth = 4;  // Y depth measured in from the rim
+
+// --- Derived Variables ---
+// Calculate the radius of the disc
+disc_radius = disc_outer_diameter / 2;
+
+// Calculate the span of the grid
+// Span = (Number of items - 1) * Spacing
+grid_span_x = (grid_cols - 1) * hole_spacing;
+grid_span_y = (grid_rows - 1) * hole_spacing;
+
+// Grid offset from center to center the grid
+// To center a grid of points, the offset is half the total span.
+grid_offset_x = grid_span_x / 2;
+grid_offset_y = grid_span_y / 2;
+
+// Notch position calculation
+// The notch is on the +Y side, centred on the Y axis.
+// It starts at the rim (y = disc_radius) and goes inward by notch_depth.
+// The center of the notch is at: disc_radius - (notch_depth / 2)
+notch_center_y = disc_radius - (notch_depth / 2);
+notch_center_x = 0;
+
+// --- Main Part Construction ---
+
+difference() {
+    // 1. Create the main disc
+    // Centered at origin, lying on XY plane, building up Z
+    translate([0, 0, 0])
+    cylinder(
+        h = disc_thickness,
+        r = disc_radius,
+        $fn = 128
+    );
+
+    // 2. Cut the 7x7 grid of holes
+    // Loop through rows and columns
+    for (row = [0 : grid_rows - 1], col = [0 : grid_cols - 1]) {
+        // Calculate position of this specific hole
+        current_x = grid_offset_x + col * hole_spacing;
+        current_y = grid_offset_y + row * hole_spacing;
+        
+        translate([current_x, current_y, 0])
+        cylinder(
+            h = disc_thickness + 0.1, // Extend slightly past the bottom to ensure clean cut
+            r = hole_diameter / 2,
+            $fn = 128
+        );
+    }
+
+    // 3. Cut the rectangular orientation notch
+    // Location: +Y side, centred on X axis
+    // Dimensions: notch_width (X) x notch_depth (Y)
+    // Depth of cut: full thickness of the disc
+    
+    // Position the notch center at the calculated Y coordinate
+    translate([
+        notch_center_x, 
+        notch_center_y, 
+        disc_thickness / 2
+    ])
+    cube([
+        notch_width, 
+        notch_depth, 
+        disc_thickness + 0.1 // Extend slightly past the top/bottom to ensure clean cut
+    ]);
+}
+```

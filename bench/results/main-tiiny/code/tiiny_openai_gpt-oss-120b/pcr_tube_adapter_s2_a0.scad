@@ -1,0 +1,35 @@
+// Parameters (mm)
+collar_diameter = 13;          // Diameter of the bottom collar
+collar_thickness = 1.5;        // Thickness of the bottom collar (z = 0 → 1.5)
+sleeve_outer_diameter = 10.8; // Outer diameter of the sleeve body
+sleeve_total_height = 21.5;    // Total height from bed to top of sleeve
+bore_diameter = 6.2;           // Diameter of the straight bore
+
+// Derived dimensions
+sleeve_body_height = sleeve_total_height - collar_thickness; // Height of the sleeve body alone
+
+// Global resolution for curved shapes
+$fn = 64;
+
+// Main model
+difference() {
+    // Union of collar and sleeve body
+    union() {
+        // Bottom collar (rests on the bed)
+        cylinder(d = collar_diameter,
+                 h = collar_thickness,
+                 center = false);
+        
+        // Sleeve body (overlaps collar by 0.01 mm to avoid coplanar faces)
+        translate([0, 0, collar_thickness - 0.01])
+            cylinder(d = sleeve_outer_diameter,
+                     h = sleeve_body_height + 0.01,
+                     center = false);
+    }
+    
+    // Straight bore through the entire part (extends 0.01 mm beyond each end)
+    translate([0, 0, -0.01])
+        cylinder(d = bore_diameter,
+                 h = sleeve_total_height + 0.02,
+                 center = false);
+}

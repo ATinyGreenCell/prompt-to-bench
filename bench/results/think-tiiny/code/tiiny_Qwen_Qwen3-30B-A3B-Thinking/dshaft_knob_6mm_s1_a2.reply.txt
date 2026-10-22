@@ -1,0 +1,61 @@
+```openscad
+// Knob for hotplate stirrer with 6 mm D-shaft
+// Units: millimetres
+
+// Dimensions
+diameter = 30;        // Overall diameter of the knob
+height = 15;           // Overall height of the knob (bottom at z=0)
+d_shaft_diameter = 6.2; // Diameter of the D-bore circle (6.2 mm)
+d_bore_depth = 12;       // Depth of the D-bore (from bottom face z=0)
+d_flat_length = 4.7;   // Length of the flat (distance from flat to opposite side)
+groove_width = 2;      // Width of each grip groove (diameter of half-cylinder)
+groove_count = 18;     // Number of grip grooves
+pointer_width = 1.5;   // Width of the pointer groove (Y direction)
+pointer_depth = 1;       // Depth of the pointer groove (Z direction)
+
+// Main knob body (cylinder, bottom at z=0)
+knob = cylinder(r = diameter / 2, h = height, center = false);
+
+// D-bore: D-shaped blind bore (12 mm deep from bottom face z=0)
+d_bore_cyl = cylinder(r = d_shaft_diameter / 2, h = d_bore_depth, center = false);
+d_bore_flat = cube([0.1, d_flat_length, d_bore_depth], center = false);
+d_bore = difference() {
+  d_bore_cyl;
+  translate([d_shaft_diameter / 2, -d_flat_length / 2, 0]) d_bore_flat;
+};
+
+// Grip grooves: 18 evenly spaced vertical grooves around the outer surface
+// Each groove is a half-cylinder (diameter = groove_width) centered on the surface
+grooves = union() {
+  for (i = [0 : groove_count - 1]) {
+    angle = i * 360 / groove_count;
+    rotate([0, 0, angle])
+      translate([diameter / 2 - groove_width / 2, 0, 0])
+      rotate([90, 0, 0])
+      cylinder(r = groove_width / 2, h = height, center = false);
+  }
+};
+
+// Pointer groove: 1.5 mm wide (Y), 1 mm deep (Z), from center to edge on flat side
+pointer = cube([diameter / 2, pointer_width, pointer_depth], center = false);
+pointer = translate([0, -pointer_width / 2, height - pointer_depth]) pointer;
+
+// Assemble the knob: body with D-bore, grooves, and pointer
+knob_with_bore = difference() {
+  knob;
+  d_bore;
+};
+
+knob_with_grooves = union() {
+  knob_with_bore;
+  grooves;
+};
+
+knob_with_pointer = difference() {
+  knob_with_grooves;
+  pointer;
+};
+
+// Final knob (with all features)
+knob_with_pointer;
+```

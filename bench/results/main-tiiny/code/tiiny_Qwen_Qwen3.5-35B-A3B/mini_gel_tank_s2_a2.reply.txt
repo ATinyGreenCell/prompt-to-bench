@@ -1,0 +1,139 @@
+The measurement report reveals several critical issues with the previous design:
+
+1.  **Geometry Centering**: The report shows the bounding box at `X 0.00 .. 120.00` and `Y 0.00 .. 70.00`. The specification implies the part should be centered on the origin (X: -60 to 60, Y: -35 to 35) unless specified otherwise. The previous code used `center=false` with a translation that shifted the origin to the corner. The spec says "centre it on the origin in X and Y".
+2.  **Platform Position**: The report shows the platform (the solid region in the middle) appearing at `z=8.00` with a shape that is not a simple rectangle spanning the full width. The spec says the platform spans the full inner width (64mm) and is 60mm long. The previous code's `platform()` module was likely cut by the `difference()` operation or positioned incorrectly relative to the cavity.
+3.  **Hole Position**: The report shows no holes in the slices. The `electrode_holes()` module was likely subtracted from the tank body, but the `union` with the platform might have caused a topology issue or the holes were not cut correctly because the tank body was already a solid with a cavity.
+4.  **Hole Location**: The spec requires holes at `z=30`. The report shows the top of the part at `z=40`. The holes should be visible in the slice at `z=30`.
+5.  **Platform Height**: The spec says the platform top is 10mm above the inner floor. Inner floor is at `z=3`. Platform top should be at `z=13`. The report shows the platform appearing at `z=8.00` (which is 5mm above floor) and the shape is distorted.
+
+**Correction Plan:**
+1.  **Center the part**: Use `center=true` for the main cube and translate the platform correctly.
+2.  **Fix the Platform**: The platform is a solid block inside the cavity. It should not be subtracted. It should be unioned with the tank body.
+3.  **Fix the Holes**: The holes must be subtracted from the tank body. The tank body is a hollow box. The holes go through the end walls.
+4.  **Ensure Watertightness**: The platform must be inside the cavity. The holes must not intersect the platform.
+    *   Platform Top: `z = 3 + 10 = 13`.
+    *   Hole Center: `z = 30`.
+    *   Gap: 17mm. Safe.
+5.  **Dimensions**:
+    *   Outer: 120 x 70 x 40.
+    *   Inner: 114 x 64 x 37 (40 - 3).
+    *   Platform: 60 x 64 x 10 (height from floor).
+    *   Holes: 2mm diameter at z=30.
+
+Let's rewrite the code to ensure the geometry is centered at (0,0,0) for the base, with the floor at z=0? No, the spec says "rests on the XY plane at z = 0".
+So:
+*   Bottom of tank = z=0.
+*   Top of tank = z=40.
+*   Floor thickness = 3mm. So inner floor is at z=3.
+*   Platform top = 13mm.
+*   Holes at z=30.
+*   Centered in X and Y.
+
+The previous code had `center=false` which put the bottom at 0 but the center at (60, 35, 20). The spec says "centre it on the origin in X and Y".
+So the bounding box should be X: -60 to 60, Y: -35 to 35.
+The previous report showed X: 0 to 120. This is the main error.
+
+Corrected logic:
+1.  Define `outer_x = 120`, `outer_y = 70`, `outer_z = 40`.
+2.  Use `center=true` for the main cube to center it at (0,0,0).
+3.  The bottom of the part will be at `z = -20`.
+4.  **Wait**, the spec says "rests on the XY plane at z = 0".
+    *   If I use `center=true`, the bottom is at -20.
+    *   I must translate the whole assembly up by 20mm so the bottom is at 0.
+    *   Or, I can define the cube with `center=false` and `translate` to place the bottom at 0, but then the center is not at 0.
+    *   The spec says "centre it on the origin in X and Y".
+    *   So X and Y must be centered at 0. Z must be 0 to 40.
+    *   Therefore, the `cube` must be translated by `[0, 0, 20]` if using `center=true`, or `center=false` with `translate` to `[0,0,0]` but then the center is not at 0.
+    *   Actually, `cube([120, 70, 40], center=true)` creates a box from -60 to 60, -35 to 35, -20 to 20.
+    *   To get 0 to 40, I need to translate by `[0, 0, 20]`.
+    *   This satisfies "centre it on the origin in X and Y" (X and Y are centered) and "rests on the XY plane at z=0" (Z starts at 0).
+
+Let's re-verify the platform.
+*   Inner floor at z=3.
+*   Platform top at z=13.
+*   Platform height = 10.
+*   Platform bottom = 3.
+*   Platform center Z = 8.
+*   Platform X center = 0.
+*   Platform Y center = 0.
+*   Platform X size = 60.
+*   Platform Y size = 64.
+
+Holes:
+*   Center Z = 30.
+*   Center X = -60 and 60.
+*   Center Y = 0.
+
+Let's write the code.
+
+```openscad
+// Buffer tank for mini horizontal gel-electrophoresis box
+// Dimensions in millimetres (mm)
+
+// Outer dimensions
+outer_x = 120;
+outer_y = 70;
+outer_z = 40;
+
+// Wall and floor thickness
+wall_thickness = 3;
+floor_thickness = 3;
+
+// Platform dimensions
+platform_length_x = 60;
+platform_height_offset = 10; // Height above inner floor
+platform_width_y = outer_y - 2 * wall_thickness; // Spans full inner width
+
+// Electrode hole dimensions
+hole_diameter = 2;
+hole_z = 30;
+hole_y = 0;
+
+// Calculate inner dimensions
+inner_x = outer_x - 2 * wall_thickness;
+inner_y = outer_y - 2 * wall_thickness;
+inner_z = outer_z - floor_thickness;
+
+// Calculate platform top Z position
+// Floor is at z=3. Platform top is 10mm above floor.
+platform_top_z = floor_thickness + platform_height_offset;
+// Platform bottom is at floor_thickness (z=3)
+
+// Calculate hole position relative to bottom
+// Hole is at z=30.
+
+// Main assembly module
+module tank_body() {
+    // Create the outer shell
+    // We want the bottom at z=0, top at z=40.
+    // Centered in X and Y.
+    difference() {
+        // Outer solid block
+        // Center at (0,0,20) to make bottom at 0
+        translate([0, 0, 20])
+            cube([outer_x, outer_y, outer_z], center = true);
+        
+        // Subtract inner cavity
+        // Cavity starts at z=3 (floor thickness)
+        // Cavity size: inner_x, inner_y, inner_z
+        translate([0, 0, floor_thickness + 20])
+            cube([inner_x, inner_y, inner_z], center = true);
+    }
+}
+
+module platform() {
+    // Platform is a solid block
+    // Centered in X, spans full inner Y
+    // Bottom at z=3, Top at z=13
+    // Center Z = 8
+    translate([0, 0, 8])
+        cube([platform_length_x, platform_width_y, platform_height_offset], center = true);
+}
+
+module electrode_holes() {
+    // Two holes, one at each X end (left and right)
+    // Hole center at y=0, z=30
+    // Hole diameter 2mm
+    // The holes must extend past the walls to ensure clean cuts
+    
+    // Left hole (at

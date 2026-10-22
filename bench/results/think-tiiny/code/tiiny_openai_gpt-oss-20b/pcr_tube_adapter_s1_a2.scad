@@ -1,0 +1,30 @@
+$fn = 64; // resolution for cylinders
+
+// Dimensions (mm)
+collar_d = 13;      // diameter of collar
+collar_h = 1.5;     // height of collar
+
+sleeve_od = 10.8;   // outer diameter of sleeve body
+sleeve_h = 20.0;    // height of sleeve body (from collar top to top of sleeve)
+sleeve_start_z = collar_h; // bottom of sleeve body
+
+bore_d = 6.2;       // diameter of bore
+bore_start_z = -0.5; // start of bore cylinder below base
+bore_h = 22.5;      // height of bore cylinder (extends beyond outer shape)
+
+// Build outer shape
+outer = union() {
+    // Collar
+    cylinder(d=collar_d, h=collar_h);
+    // Sleeve body
+    translate([0,0,sleeve_start_z]) cylinder(d=sleeve_od, h=sleeve_h);
+};
+
+// Subtract bore
+adapter = difference() {
+    outer;
+    // Bore cylinder extends beyond outer shape
+    translate([0,0,bore_start_z]) cylinder(d=bore_d, h=bore_h);
+};
+
+adapter;

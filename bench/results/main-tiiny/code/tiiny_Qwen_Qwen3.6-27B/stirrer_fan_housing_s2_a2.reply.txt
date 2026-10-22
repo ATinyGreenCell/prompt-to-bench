@@ -1,0 +1,70 @@
+```openscad
+// DIY Magnetic Stirrer Housing for 80mm PC Fan
+// Designed for FDM 3D printing
+// Print orientation: Upside down (top plate on bed)
+
+// --- Dimensions (mm) ---
+plate_thickness = 2;       // Thickness of the top plate (stirring surface)
+wall_thickness = 2.5;      // Thickness of the side walls
+box_outer_size = 90;       // Outer dimension of the box (X and Y)
+box_height = 40;           // Height of the walls (from top plate to open edge)
+hole_diameter = 4.5;       // Diameter for M4 screw holes
+hole_pattern = 71.5;       // Center-to-center distance of the 4-hole square pattern
+notch_width = 12;          // Width of the power cable notch
+notch_depth = 8;           // Depth of the notch from the open edge (z=40 down to z=32)
+
+// --- Derived Dimensions ---
+hole_offset = hole_pattern / 2; // Distance from center to each hole
+notch_z_start = box_height - notch_depth; // Z position where notch starts (32)
+inner_size = box_outer_size - 2 * wall_thickness; // Inner dimension of the box (85mm)
+
+// --- Main Structure ---
+$fn = 64; // High resolution for smooth holes and curves
+
+difference() {
+    // Union of the box components
+    union() {
+        // Top Plate (rests on z=0 to z=plate_thickness)
+        translate([-box_outer_size/2, -box_outer_size/2, 0])
+            cube([box_outer_size, box_outer_size, plate_thickness]);
+
+        // Four Walls (rise from top plate to z=box_height)
+        // Front Wall (positive Y)
+        translate([-box_outer_size/2, box_outer_size/2 - wall_thickness, plate_thickness])
+            cube([box_outer_size, wall_thickness, box_height - plate_thickness]);
+
+        // Back Wall (negative Y)
+        translate([-box_outer_size/2, -box_outer_size/2, plate_thickness])
+            cube([box_outer_size, wall_thickness, box_height - plate_thickness]);
+
+        // Right Wall (positive X)
+        translate([box_outer_size/2 - wall_thickness, -box_outer_size/2, plate_thickness])
+            cube([wall_thickness, box_outer_size, box_height - plate_thickness]);
+
+        // Left Wall (negative X)
+        translate([-box_outer_size/2, -box_outer_size/2, plate_thickness])
+            cube([wall_thickness, box_outer_size, box_height - plate_thickness]);
+    }
+
+    // --- Cutouts ---
+
+    // 1. Four M4 Screw Holes in the Top Plate
+    // Pattern is centered on the plate, 71.5mm square
+    for (x = [-hole_offset, hole_offset]) {
+        for (y = [-hole_offset, hole_offset]) {
+            translate([x, y, -0.1]) // Extend slightly below z=0 to ensure clean cut
+                cylinder(h = plate_thickness + 0.2, r = hole_diameter / 2, center = false);
+        }
+    }
+
+    // 2. Power Cable Notch in One Wall
+    // Cut in the "Front" wall (positive Y side)
+    // Notch is 12mm wide, centered on the wall, from z=32 to z=40
+    // The notch must only cut through the wall material, not the entire box width.
+    // The wall is at Y = [box_outer_size/2 - wall_thickness, box_outer_size/2]
+    // Center of the wall face is at Y = box_outer_size/2 - wall_thickness/2
+    // We use a cube centered on the wall thickness to cut the notch.
+    translate([0, box_outer_size/2 - wall_thickness/2, notch_z_start])
+        cube([notch_width, wall_thickness + 0.1, notch_depth + 0.1], center = true);
+}
+```

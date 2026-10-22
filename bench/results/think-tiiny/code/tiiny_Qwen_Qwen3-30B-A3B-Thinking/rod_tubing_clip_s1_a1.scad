@@ -1,0 +1,49 @@
+$fn = 64;
+
+// Dimensions in millimeters
+rod_inner_d = 12.7;    // Inner diameter of rod ring (for 1/2 inch rod)
+rod_wall = 3;           // Wall thickness of rod ring
+tube_inner_d = 6;       // Inner diameter of tubing ring
+tube_wall = 2;          // Wall thickness of tubing ring
+bridge_width_y = 6;     // Width of bridge in Y direction (6 mm)
+bridge_x_start = 8;       // Start X of bridge (left edge)
+bridge_x_end = 12;      // End X of bridge (right edge)
+slot_rod_y_min = -5;    // Y min for rod slot (10 mm height)
+slot_rod_y_max = 5;     // Y max for rod slot
+slot_tube_y_min = -2.25; // Y min for tubing slot (4.5 mm height)
+slot_tube_y_max = 2.25; // Y max for tubing slot
+height_z = 10;          // Extrusion height in Z (10 mm)
+
+// Rod ring: outer diameter = rod_inner_d + 2 * rod_wall = 18.7 mm
+rod_ring = difference() {
+  circle(r = (rod_inner_d + 2 * rod_wall) / 2);
+  circle(r = rod_inner_d / 2);
+  translate([-rod_inner_d/2 - rod_wall - 0.01, slot_rod_y_min]) 
+    square([rod_inner_d/2 + rod_wall + 0.01, slot_rod_y_max - slot_rod_y_min]);
+};
+
+// Tubing ring: outer diameter = tube_inner_d + 2 * tube_wall = 10 mm
+tube_ring = difference() {
+  translate([15, 0]) {
+    circle(r = (tube_inner_d + 2 * tube_wall) / 2);
+    circle(r = tube_inner_d / 2);
+  }
+  translate([15 + tube_inner_d/2 + tube_wall + 0.01, slot_tube_y_min]) 
+    square([tube_inner_d/2 + tube_wall + 0.01, slot_tube_y_max - slot_tube_y_min]);
+};
+
+// Bridge: solid connection between rings (6 mm wide in Y, 4 mm long in X)
+bridge = translate([bridge_x_start, -bridge_width_y/2]) 
+  square([bridge_x_end - bridge_x_start, bridge_width_y]);
+
+// Combine all parts into 2D profile
+profile = union() {
+  rod_ring;
+  tube_ring;
+  bridge;
+};
+
+// Extrude the profile 10 mm in Z to form the 3D part
+linear_extrude(height = height_z) {
+  profile;
+}

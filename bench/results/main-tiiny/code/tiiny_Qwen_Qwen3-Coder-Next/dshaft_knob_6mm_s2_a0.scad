@@ -1,0 +1,92 @@
+// Replacement knob for hotplate stirrer with 6 mm D-shaft
+// Dimensions from user specification
+
+$fn = 64; // High resolution for smooth curves
+
+// Main knob dimensions
+knob_diameter = 30;
+knob_height = 15;
+
+// D-shaft bore dimensions
+d_shaft_diameter = 6.2;
+d_shaft_flat_distance = 4.7; // Distance from flat to opposite side of circle
+d_shaft_depth = 12;
+
+// Grip groove dimensions
+num_grooves = 18;
+groove_diameter = 2;
+
+// Pointer groove dimensions
+pointer_width = 1.5;
+pointer_depth = 1;
+
+// Calculate D-shaft parameters
+// For a circle with a flat cut, the height of the flat from the center is:
+// h = (diameter - flat_distance) / 2
+flat_height_from_center = (d_shaft_diameter - d_shaft_flat_distance) / 2;
+
+// Build the knob
+module knob() {
+    // Main cylinder
+    cylinder(h = knob_height, d = knob_diameter, center = false);
+}
+
+module d_shaft_bore() {
+    // Create the D-shaped bore: cylinder with a flat cut
+    // First create the full cylinder
+    cylinder(h = d_shaft_depth + 0.01, d = d_shaft_diameter, center = false);
+    
+    // Cut the flat side: a rectangular prism
+    // Position it so the flat is at the bottom (y = -flat_height_from_center)
+    translate([0, -flat_height_from_center, -0.01]) {
+        cube([d_shaft_diameter + 0.1, d_shaft_diameter, d_shaft_depth + 0.02]);
+    }
+}
+
+module grip_grooves() {
+    radius = knob_diameter / 2;
+    
+    for (i = [0 : num_grooves - 1]) {
+        angle = (i * 360) / num_grooves;
+        
+        // Position groove on outer surface
+        translate([radius * cos(angle), radius * sin(angle), 0]) {
+            rotate([0, 0, angle]) {
+                // Half-cylinder groove: cylinder cut in half along x-axis
+                translate([0, 0, -0.01]) {
+                    cylinder(h = knob_height + 0.02, d = groove_diameter, center = false);
+                }
+                // Cut to make it a half-cylinder (remove left half)
+                translate([0, 0, -0.01]) {
+                    cube([groove_diameter + 0.1, groove_diameter + 0.1, knob_height + 0.02]);
+                }
+            }
+        }
+    }
+}
+
+module pointer_groove() {
+    // Pointer groove runs from center to outer edge on the same side as the D-flat
+    // The D-flat is at the bottom (negative y direction), so pointer is along negative y axis
+    
+    // Create a rectangular groove from center to edge along negative y-axis
+    translate([0, -pointer_width/2, knob_height - pointer_depth]) {
+        cube([pointer_width, knob_diameter/2 + 0.01, pointer_depth + 0.01]);
+    }
+}
+
+// Build the final knob
+difference() {
+    knob();
+    
+    // Subtract D-shaft bore
+    translate([0, 0, knob_height - d_shaft_depth]) {
+        d_shaft_bore();
+    }
+    
+    // Subtract grip grooves
+    grip_grooves();
+    
+    // Subtract pointer groove
+    pointer_groove();
+}

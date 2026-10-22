@@ -1,0 +1,59 @@
+// ---------- Parameters ----------
+box_outer_x = 70;      // outer X size of the box (mm)
+box_outer_y = 50;      // outer Y size of the box (mm)
+box_outer_z = 30;      // outer Z size of the box (mm)
+wall_thick = 2;        // wall thickness (mm)
+floor_thick = 2;      // floor thickness (mm)
+
+lid_plate_x = 70;      // X size of the lid plate (mm)
+lid_plate_y = 50;      // Y size of the lid plate (mm)
+lid_plate_z = 2;       // thickness of the lid plate (mm)
+
+lip_outer_x = 65.6;    // outer X size of the lid lip (mm)
+lip_outer_y = 45.6;    // outer Y size of the lid lip (mm)
+lip_wall = 1.5;        // lip wall thickness (mm)
+lip_height = 4;        // lip height (mm)
+
+gap = 10;              // gap between box and lid (mm)
+
+// ---------- Helper variables ----------
+inner_x = box_outer_x - 2*wall_thick;
+inner_y = box_outer_y - 2*wall_thick;
+inner_z = box_outer_z - floor_thick; // cavity goes up to the top (open)
+
+lip_inner_x = lip_outer_x - 2*lip_wall;
+lip_inner_y = lip_outer_y - 2*lip_wall;
+
+// positions
+box_center = [0, 0, 0];                     // box centered at origin
+lid_center_x = (box_outer_x/2) + gap + (lid_plate_x/2); // X centre of lid
+lid_center = [lid_center_x, 0, 0];
+
+// ---------- Settings ----------
+$fn = 64;
+
+// ---------- Box ----------
+module box_part() {
+    // outer solid
+    outer = translate([-box_outer_x/2, -box_outer_y/2, 0])
+            cube([box_outer_x, box_outer_y, box_outer_z]);
+
+    // inner cavity (extends 0.1 mm beyond the top to keep it open)
+    inner = translate([
+                -box_outer_x/2 + wall_thick,
+                -box_outer_y/2 + wall_thick,
+                floor_thick
+            ])
+            cube([inner_x, inner_y, inner_z + 0.1]);
+
+    difference() {
+        outer;
+        inner;
+    }
+}
+
+// ---------- Lid ----------
+module lid_part() {
+    // plate (bottom of lid)
+    plate = translate([-lid_plate_x/2, -lid_plate_y/2, 0])
+            cube([lid

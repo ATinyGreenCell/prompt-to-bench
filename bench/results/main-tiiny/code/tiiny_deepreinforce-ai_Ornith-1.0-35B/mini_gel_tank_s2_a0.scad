@@ -1,0 +1,106 @@
+// --- Buffer tank for mini horizontal gel-electrophoresis box ---
+// Print orientation: resting on XY plane at z = 0, building upward (+Z)
+// Centre on origin in X and Y
+
+// Outer dimensions
+outer_X = 120;   // mm, X dimension
+outer_Y = 70;    // mm, Y dimension
+outer_Z = 40;    // mm, Z dimension
+
+// Wall and floor thickness
+wall_thick = 3;  // mm
+floor_thick = 3; // mm
+
+// Platform dimensions
+platform_length = 60;  // mm, X dimension (centred)
+platform_top_z = 13;   // mm, top of platform above inner floor
+platform_thickness = platform_top_z - floor_thick; // 10 mm
+
+// Electrode wire holes
+hole_dia = 2;    // mm, diameter
+hole_z = 30;     // mm, height of hole centre
+
+// Wall thickness for hole clearance
+wall_thick_x = wall_thick;
+
+// Inner dimensions
+inner_X = outer_X - 2 * wall_thick;
+inner_Y = outer_Y - 2 * wall_thick;
+
+// Platform half-length
+plat_half_X = platform_length / 2;
+
+// --- Build the tank ---
+module tank() {
+    // Outer shell (solid block)
+    difference() {
+        // Full outer block
+        cube([outer_X, outer_Y, outer_Z], center = true);
+        
+        // Inner cavity (subtract inner volume)
+        translate([0, 0, floor_thick]) {
+            cube([inner_X, inner_Y, outer_Z - floor_thick], center = true);
+        }
+        
+        // Platform (subtract to create the raised platform shape)
+        // The platform is solid, so we subtract everything EXCEPT the platform
+        // Actually, let's think differently:
+        // We have a hollow box with a solid platform inside
+        // So: start with solid block, subtract inner cavity, then add platform
+        
+        // Let me rebuild:
+        // 1. Start with solid outer block
+        // 2. Subtract inner cavity (hollow space)
+        // 3. The platform is part of the remaining solid
+        
+        // But we need the platform to be solid and raised
+        // So after step 2, we have walls and floor
+        // Then we need to add the platform
+        
+        // Let me use a different approach:
+        // Build the tank as walls + floor, then add platform separately
+    }
+    
+    // Alternative approach: build walls, floor, and platform separately
+    union() {
+        // Floor
+        translate([0, 0, floor_thick/2]) {
+            cube([outer_X, outer_Y, floor_thick], center = true);
+        }
+        
+        // Four walls
+        // Front and back walls (along X)
+        translate([0, outer_Y/2 - wall_thick/2, outer_Z/2]) {
+            cube([outer_X, wall_thick, outer_Z], center = true);
+        }
+        translate([0, -outer_Y/2 + wall_thick/2, outer_Z/2]) {
+            cube([outer_X, wall_thick, outer_Z], center = true);
+        }
+        
+        // Left and right walls (along Y)
+        translate([outer_X/2 - wall_thick/2, 0, outer_Z/2]) {
+            cube([wall_thick, outer_Y, outer_Z], center = true);
+        }
+        translate([-outer_X/2 + wall_thick/2, 0, outer_Z/2]) {
+            cube([wall_thick, outer_Y, outer_Z], center = true);
+        }
+        
+        // Platform (solid, raised)
+        translate([0, 0, floor_thick + platform_thickness/2]) {
+            cube([platform_length, inner_Y, platform_thickness], center = true);
+        }
+    }
+}
+
+// --- Main assembly ---
+tank();
+
+// --- Drill electrode wire holes ---
+// Hole at each end wall, along X axis, at y=0, z=30
+for (x_pos in [-outer_X/2 + wall_thick/2, outer_X/2 - wall_thick/2]) {
+    translate([x_pos, 0, hole_z]) {
+        rotate([90, 0, 0]) {
+            cylinder(d = hole_dia, h = outer_Y + 1, center = true, $fn = 32);
+        }
+    }
+}

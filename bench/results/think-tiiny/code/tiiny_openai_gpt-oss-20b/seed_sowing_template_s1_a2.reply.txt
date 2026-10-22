@@ -1,0 +1,43 @@
+```openscad
+$fn = 64; // high resolution for curved surfaces
+
+// ---------- Disc ----------
+disc_d = 85;          // diameter (mm)
+disc_r = disc_d / 2;  // radius (mm)
+disc_h = 2;           // height (mm)
+disc = cylinder(r=disc_r, h=disc_h, center=false);
+
+// ---------- Holes ----------
+hole_d = 3;           // diameter (mm)
+hole_h = disc_h + 0.02; // extend 0.01 mm beyond top and bottom
+hole_z_offset = -0.01; // shift down to extend below bottom
+
+grid_n = 7;           // 7 × 7 grid
+grid_spacing = 9;    // centre‑to‑centre spacing (mm)
+
+holes = union() {
+    for (i = [0:grid_n-1]) {
+        for (j = [0:grid_n-1]) {
+            x = (i - (grid_n-1)/2) * grid_spacing;
+            y = (j - (grid_n-1)/2) * grid_spacing;
+            translate([x, y, hole_z_offset]) cylinder(d=hole_d, h=hole_h, center=false);
+        }
+    }
+}; // added semicolon
+
+// ---------- Orientation notch ----------
+notch_w = 10;          // width in X (mm)
+notch_d = 4 + 0.01;     // depth in Y (mm) + 0.01 mm extension beyond rim
+notch_h = disc_h + 0.02; // extend 0.01 mm above disc top
+notch_z_offset = -0.01; // shift down to extend below bottom
+notch_y_offset = disc_r - (notch_d - 0.01); // start Y at rim minus 4 mm
+
+notch = translate([0, notch_y_offset, notch_z_offset]) cube([notch_w, notch_d, notch_h], center=false);
+
+// ---------- Final part ----------
+difference() {
+    disc;
+    holes;
+    notch;
+}
+```

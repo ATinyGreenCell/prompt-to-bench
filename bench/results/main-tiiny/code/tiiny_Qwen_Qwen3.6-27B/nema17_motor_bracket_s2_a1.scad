@@ -1,0 +1,94 @@
+// L-shaped NEMA 17 Mounting Bracket for Syringe Pump
+// Print orientation: Base on bed (XY plane), building up +Z.
+
+// --- Dimensions ---
+// Base Plate
+base_x = 50;          // Total width (x from -25 to 25)
+base_y = 45;          // Total depth (y from 0 to 45)
+base_z = 5;           // Thickness
+
+// Vertical Motor Plate
+motor_plate_x = 50;   // Total width (x from -25 to 25)
+motor_plate_y = 5;    // Thickness (y from 0 to 5)
+motor_plate_z = 50;   // Height (z from 0 to 50)
+
+// Base Holes (M4)
+base_hole_dia = 4.5;
+base_hole_offset_x = 17;
+base_hole_offset_y = 30;
+
+// Motor Plate Holes
+boss_hole_dia = 23;
+boss_hole_z = 28;     // Center height of boss hole
+
+m3_hole_dia = 3.4;
+m3_pattern_size = 31; // Square pattern size
+m3_pattern_z = 28;    // Center height of M3 pattern
+
+// Gussets
+gusset_thickness = 5;
+gusset_leg = 20;      // Length of triangle legs
+gusset_x_start = 20;  // Gussets are at x=20..25 and x=-25..-20
+
+// --- Rendering Settings ---
+$fn = 64;
+
+// --- Main Structure ---
+difference() {
+    union() {
+        // 1. Base Plate
+        // Centered at x=0, y=base_y/2, z=base_z/2
+        // Spec: x from -25 to 25, y from 0 to 45, z from 0 to 5
+        translate([-base_x/2, 0, 0])
+            cube([base_x, base_y, base_z]);
+
+        // 2. Vertical Motor Plate
+        // Stands on the back edge of the base (y=0 to y=5)
+        // Spec: x from -25 to 25, y from 0 to 5, z from 0 to 50
+        translate([-motor_plate_x/2, 0, 0])
+            cube([motor_plate_x, motor_plate_y, motor_plate_z]);
+
+        // 3. Left Gusset
+        // Right triangle in YZ plane, right angle at (y=5, z=5)
+        // Legs go +Y (to 25) and +Z (to 25)
+        // Located at x = -25 to -20
+        translate([-25, 0, 0])
+            linear_extrude(height = 5, convexity = 10)
+            polygon(points = [[5,5], [25,5], [5,25]], paths = [[0,1,2]]);
+
+        // 4. Right Gusset
+        // Located at x = 20 to 25
+        translate([20, 0, 0])
+            linear_extrude(height = 5, convexity = 10)
+            polygon(points = [[5,5], [25,5], [5,25]], paths = [[0,1,2]]);
+    }
+
+    // --- Cuts ---
+
+    // 1. Base Plate Holes (M4)
+    // Hole 1: x = -17, y = 30
+    translate([-17, 30, -0.1])
+        cylinder(h = base_z + 0.2, r = base_hole_dia/2, center = true);
+
+    // Hole 2: x = 17, y = 30
+    translate([17, 30, -0.1])
+        cylinder(h = base_z + 0.2, r = base_hole_dia/2, center = true);
+
+    // 2. Motor Plate Boss Hole (23mm)
+    // Center at x=0, z=28. Cuts through Y (thickness 5).
+    // Cylinder axis along Y.
+    translate([0, -0.1, boss_hole_z])
+        rotate([90, 0, 0])
+        cylinder(h = motor_plate_y + 0.2, r = boss_hole_dia/2, center = true);
+
+    // 3. Motor Plate M3 Holes (31mm square pattern)
+    // Center at x=0, z=28.
+    // Pattern corners: x = +/- 15.5, z = 28 +/- 15.5
+    for (dx = [-15.5, 15.5]) {
+        for (dz = [-15.5, 15.5]) {
+            translate([dx, -0.1, m3_pattern_z + dz])
+                rotate([90, 0, 0])
+                cylinder(h = motor_plate_y + 0.2, r = m3_hole_dia/2, center = true);
+        }
+    }
+}

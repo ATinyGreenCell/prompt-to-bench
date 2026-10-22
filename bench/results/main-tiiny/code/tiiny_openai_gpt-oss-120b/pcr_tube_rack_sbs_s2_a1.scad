@@ -1,0 +1,86 @@
+// ------------------- Parameters -------------------
+// Block dimensions (mm)
+block_length = 127.76;   // X dimension
+block_width  = 85.48;    // Y dimension
+block_height = 20;       // Z dimension
+
+// Hole pattern
+hole_diameter = 6.2;     // mm
+hole_radius   = hole_diameter/2;
+hole_spacing  = 9.0;     // mm centre‑to‑centre
+cols = 12;               // columns (X direction)
+rows = 8;                // rows (Y direction)
+
+// Offsets of the first hole (A1) from the left and back edges
+offset_x_from_left = 14.38;   // mm
+offset_y_from_back = 11.24;   // mm
+
+// Chamfer (orientation mark) at the left‑back corner
+chamfer_leg = 5.0;           // mm, length of the 45° legs
+chamfer_extra = 0.01;        // mm, extend beyond block faces
+
+// Cutting tolerance (extra length beyond faces)
+cut_extra = 0.1;              // mm
+
+// Rendering quality
+$fn = 64;
+
+// ------------------- Modules -------------------
+
+// Main block (centered on origin, rests on XY plane at z=0)
+module main_block() {
+    // The block is centered, so its bottom face is at z = -block_height/2.
+    // To make it rest on the XY plane we translate it upward by block_height/2.
+    translate([0, 0, block_height/2])
+        cube([block_length, block_width, block_height], center = true);
+}
+
+// Hole grid (through‑cylinders)
+module hole_grid() {
+    // Coordinates of the left and back edges of the block (when centered)
+    left_edge  = -block_length/2;
+    back_edge  = -block_width/2;
+    
+    // Position of the first hole (A1)
+    first_x = left_edge + offset_x_from_left;
+    first_y = back_edge + offset_y_from_back;
+    
+    for (i = [0:cols-1], j = [0:rows-1]) {
+        translate([ first_x + i*hole_spacing,
+                    first_y + j*hole_spacing,
+                    -cut_extra ])   // extend below the block
+            cylinder(h = block_height + 2*cut_extra,
+                     r = hole_radius,
+                     center = false);
+    }
+}
+
+// Chamfer cut at the left‑back corner (45° triangular prism)
+module chamfer_cut() {
+    // Corner coordinates (left‑back of the block, when centered)
+    corner_x = -block_length/2;
+    corner_y = -block_width/2;
+    
+    // Translate the prism so that it sits flush with the two faces and extends a little beyond
+    translate([ corner_x - chamfer_extra,
+                corner_y - chamfer_extra,
+                -cut_extra ])   // extend below the block
+        linear_extrude(height = block_height + 2*cut_extra)
+            polygon(points = [
+                [0, 0],
+                [chamfer_leg, 0],
+                [0, chamfer_leg]
+            ]);
+}
+
+// ------------------- Assembly -------------------
+difference() {
+    // Solid block
+    main_block();
+    
+    // All cuts (holes + chamfer)
+    union() {
+        hole_grid();
+        chamfer_cut();
+    }
+}

@@ -1,0 +1,83 @@
+Looking at the measurement report and comparing with the specification:
+
+1. **Number of bodies**: 5 separate bodies — this is wrong. It should be 1 solid body (spine + 10 teeth connected). The issue is that the teeth are not connected to the spine — they're placed starting at `Y = -spine_width/2 - tooth_length`, but the spine only goes from `Y = -spine_width/2` to `Y = +spine_width/2`. So there's a gap between spine and teeth.
+
+2. **Bounding box X range**: -29.25 .. 70.00 → size 99.25 mm.  
+   Expected spine length = 70 mm, centered at X=0 → should be -35 to +35 (size 70).  
+   The extra width (99.25 - 70 = 29.25) suggests the teeth row is being added *outside* the spine, but the spine should be the *back bar*, and the teeth hang from one edge — so the spine should extend *beyond* the teeth row on both sides.
+
+   From spec: *"10 rectangular teeth that hang from one long edge of the spine in the -Y direction"*  
+   → The spine is 70 mm long (X), 12 mm wide (Y).  
+   → Teeth row is centered on spine in X, so spine should extend beyond the teeth row on both X ends.
+
+   Teeth row width = 10×5.0 + 9×1.5 = 50 + 13.5 = 63.5 mm  
+   So spine should extend (70 - 63.5)/2 = 3.25 mm beyond on each side.
+
+   But current bounding box shows X from -29.25 to 70.00 — that's 99.25 mm total, which is way too wide. Something is wrong with the spine placement.
+
+Let’s re-examine the code:
+
+- Spine: `cube([spine_length, spine_width, thickness])` at `translate([0, -spine_width/2, 0])`  
+  → Spine spans X: -35 to +35 (since spine_length = 70), Y: -6 to +6 (since spine_width = 12)
+
+- Teeth: `translate([tooth_x, -spine_width/2 - tooth_length, 0])`  
+  → Each tooth is placed with its *top edge* at Y = -spine_width/2 (i.e., touching the spine’s bottom edge), and extends to Y = -spine_width/2 - tooth_length = -6 - 12 = -18  
+  → So teeth should be attached to spine (no gap), and teeth row spans Y: -18 to -6.
+
+But the bounding box shows Y from -18 to +6 (size 24), which matches: spine Y = -6 to +6, teeth Y = -18 to -6 → total Y extent = -18 to +6.
+
+However, X bounding box is -29.25 to 70.00 (size 99.25), but spine is only 70 mm long (should be -35 to +35). The extra width suggests the spine is being *extended* to cover the teeth row — but that contradicts the spec.
+
+Wait — the report says:  
+`shape 73.25 x 24.00` at z=0.75  
+→ That’s 73.25 mm wide in X, 24 mm in Y.
+
+But spine is only 70 mm long, and teeth row is 63.5 mm wide. So if the spine is only 70 mm, and teeth are centered, the total X extent should be spine length = 70 mm (since teeth are attached to spine, not extending beyond it).
+
+But the bounding box shows X from -29.25 to 70.00 → size 99.25 mm. That means the spine or something else is extending way beyond.
+
+Let’s compute expected X positions:
+
+- Teeth row width = 63.5 mm  
+- Centered at X = 0 → teeth span X: -31.75 to +31.75  
+- Spine is 70 mm long, centered at X = 0 → spine spans X: -35 to +35  
+→ So spine should extend 1.75 mm beyond teeth on each side (since 35 - 31.75 = 3.25? Wait: 35 - 31.75 = 3.25, yes).
+
+So total X extent = -35 to +35 = 70 mm.
+
+But report says X: -29.25 .. 70.00 → size 99.25. That’s inconsistent.
+
+Let’s recompute `teeth_row_x_start`:
+
+```scad
+teeth_row_width = 10*5.0 + 9*1.5 = 50 + 13.5 = 63.5
+teeth_row_x_start = -63.5 / 2 = -31.75
+tooth_x = teeth_row_x_start + i*tooth_spacing + tooth_width/2
+        = -31.75 + i*(5.0+1.5) + 2.5
+        = -31.75 + i*6.5 + 2.5
+```
+
+For i=0: tooth_x = -31.75 + 2.5 = -29.25  
+For i=9: tooth_x = -31.75 + 9*6.5 + 2.5 = -31.75 + 58.5 + 2.5 = 29.25  
+→ Teeth span X: -29.25 to +29.25 (width 58.5? Wait: 29.25 - (-29.25) = 58.5, but should be 63.5)
+
+Wait — mistake: tooth_spacing = tooth_width + gap_width = 5.0 + 1.5 = 6.5  
+But for 10 teeth, there are 9 gaps, so total width = 10*5.0 + 9*1.5 = 63.5  
+→ Teeth span from X = -63.5/2 = -31.75 to +31.75  
+→ First tooth center at -31.75 + 2.5 = -29.25  
+→ Last tooth center at +31.75 - 2.5 = 29.25  
+→ So tooth centers: -29.25, -22.75, ..., 29.25  
+→ First tooth: X = -29.25 - 2.5 = -31.75 to -29.25 + 2.5 = -26.75  
+→ Last tooth: X = 26.75 to 31.75  
+→ Teeth row spans X: -31.75 to +31.75 (width 63.5) — correct.
+
+But bounding box shows X from -29.25 to 70.00 — that means the spine is *not* centered at 0, or the spine is being placed incorrectly.
+
+Wait — spine is defined as:
+
+```scad
+translate([0, -spine_width/2, 0])
+    cube([spine_length, spine_width, thickness]);
+```
+
+→ Spine is centered at X=0,

@@ -1,0 +1,54 @@
+// PCR Tube Rack for 96 PCR Tubes (0.2 mL)
+// ANSI/SLAS standard microplate footprint
+
+// Dimensions
+length = 127.76;        // X dimension
+width = 85.48;         // Y dimension
+height = 20;           // Z dimension
+
+// Hole grid parameters
+hole_diameter = 6.2;    // Diameter of each hole
+rows = 8;              // Number of rows (along Y)
+cols = 12;             // Number of columns (along X)
+spacing = 9.0;         // Centre-to-centre spacing
+
+// Positioning of first hole (A1)
+x_offset = 14.38;       // Distance from left edge to A1 hole centre
+y_offset = 11.24;      // Distance from back edge to A1 hole centre
+
+// Chamfer parameters
+chamfer_length = 5;    // Length of chamfer legs
+chamfer_angle = 45;   // Chamfer angle
+
+// Main block
+rack = cube([length, width, height], center=true);
+
+// Holes for PCR tubes
+hole_grid = 
+    for (row = [0 : rows-1]) {
+        for (col = [0 : cols-1]) {
+            translate([
+                x_offset - (length/2) + col * spacing,
+                y_offset - (width/2) + row * spacing,
+                0
+            ])
+            cylinder(h=height+0.02, d=hole_diameter, center=true, $fn=64);
+        }
+    }
+
+// Chamfer at A1 corner (left-back corner)
+chamfer = 
+    translate([-length/2 + x_offset - 0.01, -width/2 + y_offset - 0.01, 0])
+    rotate([0, 0, 180 - chamfer_angle])
+    polygon(points=[
+        [0, 0],
+        [chamfer_length, 0],
+        [0, chamfer_length]
+    ]);
+
+// Combine all parts
+union() {
+    rack;
+    hole_grid;
+    chamfer;
+}

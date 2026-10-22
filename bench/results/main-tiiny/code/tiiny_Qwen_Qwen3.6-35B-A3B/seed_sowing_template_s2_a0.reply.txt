@@ -1,0 +1,65 @@
+```openscad
+// --- Dimensions ---
+DISH_ID         = 90;       // Inner diameter of the 90 mm Petri dish
+DISC_OD         = 85;       // Outer diameter of the sowing template
+DISC_THICK      = 2;        // Thickness of the template
+GRID_HOLE_D     = 3;        // Diameter of the sowing holes
+GRID_CTR_SP     = 9;        // Centre-to-centre spacing of the grid
+GRID_ROWS       = 7;        // Number of rows in the grid
+GRID_COLS       = 7;        // Number of columns in the grid
+NOTCH_W         = 10;       // Width of the orientation notch (along X)
+NOTCH_D         = 4;        // Depth of the orientation notch (along Y, from rim)
+
+// --- Derived Values ---
+GRID_SPAN_X = (GRID_COLS - 1) * GRID_CTR_SP;
+GRID_SPAN_Y = (GRID_ROWS - 1) * GRID_CTR_SP;
+HALF_OD     = DISC_OD / 2;
+HALF_W      = NOTCH_W / 2;
+HALF_D      = NOTCH_D / 2;
+
+// --- Extrusion Helper ---
+// Using linear_extrude for the main body to ensure a flat, precise top/bottom surface
+// and to easily handle the through-holes.
+module template_body() {
+    linear_extrude(height = DISC_THICK) {
+        difference() {
+            // Main disc
+            circle(d = DISC_OD, $fn = 64);
+            
+            // Orientation notch (cut from the +Y side)
+            // The notch is centered on the Y-axis, extending from Y = (R-D) to Y = R
+            // We use a rectangle that extends slightly past the rim to ensure a clean cut
+            translate([0, HALF_OD - HALF_D - 0.01, 0])
+                square([NOTCH_W + 0.02, NOTCH_D + 0.02], center = true);
+        }
+    }
+}
+
+// --- Grid Holes ---
+// Calculate the offset from the center to the first hole
+// For 7 items, there are 6 spaces. Offset = 3 * spacing.
+GRID_OFFSET = 3 * GRID_CTR_SP;
+
+module grid_holes() {
+    for (i = [0 : GRID_COLS - 1]) {
+        for (j = [0 : GRID_ROWS - 1]) {
+            // Calculate center coordinates
+            // i=0 is left, i=6 is right. Center is 0.
+            // x = -3*9 + i*9
+            // y = -3*9 + j*9
+            hx = (i - 3) * GRID_CTR_SP;
+            hy = (j - 3) * GRID_CTR_SP;
+            
+            translate([hx, hy, 0])
+                // Extend hole slightly past the thickness to ensure clean cutting
+                cylinder(d = GRID_HOLE_D, h = DISC_THICK + 0.02, $fn = 64);
+        }
+    }
+}
+
+// --- Main Assembly ---
+difference() {
+    template_body();
+    grid_holes();
+}
+```

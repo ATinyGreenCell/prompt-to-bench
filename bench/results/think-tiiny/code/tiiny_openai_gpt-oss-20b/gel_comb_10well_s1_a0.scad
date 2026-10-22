@@ -1,0 +1,30 @@
+$fn = 64;
+
+// Dimensions (mm)
+spine_length     = 70;          // X
+spine_width      = 12;           // Y
+spine_thickness  = 1.5;          // Z
+
+tooth_width      = 5;            // X
+tooth_length     = 12;           // Y
+tooth_thickness  = 1.5;          // Z
+
+num_teeth        = 10;
+gap_between_teeth = 1.5;         // Y
+
+// Derived dimensions
+total_teeth_width = num_teeth * tooth_width + (num_teeth - 1) * gap_between_teeth; // 63.5
+start_x            = -total_teeth_width / 2; // -31.75
+
+// Build comb
+union() {
+    // Spine
+    translate([ -spine_length/2, -spine_width/2, 0 ])
+        cube([ spine_length, spine_width, spine_thickness ], center=false);
+
+    // Teeth
+    for(i=[0:num_teeth-1]) {
+        translate([ start_x + i*(tooth_width + gap_between_teeth), -spine_width/2 - tooth_length, 0 ])
+            cube([ tooth_width, tooth_length, tooth_thickness ], center=false);
+    }
+}

@@ -1,0 +1,102 @@
+```openscad
+$fn = 64;
+
+// --- Dimensions (mm) ---
+// Part 1: The Box
+box_w = 70;
+box_h = 50;
+box_d = 30;
+wall_thick = 2;
+floor_thick = 2;
+open_top = true;
+
+// Part 2: The Lid
+lid_w = 70;
+lid_h = 50;
+lid_thick = 2;
+lip_h = 4;
+lip_thick = 1.5;
+lip_clearance = 0.2;
+
+// Assembly
+gap = 10;
+lid_offset = box_w + gap;
+
+// --- Part 1: The Box ---
+module part1_box() {
+    // Outer dimensions
+    outer_w = box_w;
+    outer_h = box_h;
+    outer_d = box_d;
+    
+    // Inner dimensions (subtract walls)
+    inner_w = outer_w - (wall_thick * 2);
+    inner_h = outer_h - (wall_thick * 2);
+    inner_d = outer_d - (wall_thick * 2);
+    
+    // Floor height
+    floor_h = floor_thick;
+    
+    // Cutout for the lid (slightly larger than lid outer size for clearance)
+    // Lid outer size is 65.6 x 45.6
+    cutout_w = 65.6 + (lip_clearance * 2);
+    cutout_h = 45.6 + (lip_clearance * 2);
+    
+    // Cutout depth (goes through the floor and wall)
+    cutout_d = outer_d + 1;
+    
+    // Cutout height (from floor up)
+    cutout_h_from_floor = 1;
+    
+    union() {
+        // Floor
+        translate([0, 0, floor_h / 2])
+            cube([outer_w, outer_h, floor_thick], center = true);
+            
+        // Walls
+        // Front/Back
+        translate([0, outer_h / 2, (outer_d / 2) - (wall_thick / 2)])
+            cube([outer_w, wall_thick, wall_thick], center = true);
+            
+        // Left/Right
+        translate([outer_w / 2, 0, (outer_d / 2) - (wall_thick / 2)])
+            cube([wall_thick, outer_h, wall_thick], center = true);
+            
+        // Cutout for the lid
+        // Positioned at the +X side of the box
+        translate([(outer_w / 2) - (cutout_w / 2), 0, floor_h + cutout_h_from_floor])
+            cube([cutout_w, cutout_h, cutout_d], center = true);
+    }
+}
+
+// --- Part 2: The Lid ---
+module part2_lid() {
+    // Outer dimensions
+    outer_w = lid_w;
+    outer_h = lid_h;
+    
+    // Lip dimensions
+    lip_w = 65.6;
+    lip_h = 4;
+    lip_thick = 1.5;
+    
+    union() {
+        // Main Plate
+        translate([0, 0, lid_thick / 2])
+            cube([outer_w, outer_h, lid_thick], center = true);
+            
+        // Lip (Rectangular wall on top)
+        // Positioned at the +X side of the plate
+        translate([(outer_w / 2) - (lip_w / 2), 0, lid_thick + (lip_h / 2)])
+            cube([lip_w, lip_h, lip_thick], center = true);
+    }
+}
+
+// --- Assembly ---
+// Part 1 (Box) at origin
+part1_box();
+
+// Part 2 (Lid) shifted to the right
+translate([lid_offset, 0, 0])
+    part2_lid();
+```

@@ -1,0 +1,171 @@
+// Buffer tank for mini horizontal gel-electrophoresis box
+// Outer dimensions: 120 x 70 x 40 mm
+// Wall thickness: 3 mm
+// Floor thickness: 3 mm
+// Platform: 60 mm long (X), full inner width (Y), top at z=13
+
+// --- Dimensions ---
+outer_x = 120;
+outer_y = 70;
+outer_z = 40;
+wall_thick = 3;
+floor_thick = 3;
+platform_x = 60;
+platform_top_z = 13;
+hole_diam = 2;
+hole_z = 30;
+
+// --- Calculated Dimensions ---
+// Inner dimensions
+inner_x = outer_x - 2 * wall_thick;
+inner_y = outer_y - 2 * wall_thick;
+inner_z = outer_z - floor_thick;
+
+// Platform height from floor
+platform_height = platform_top_z - floor_thick;
+
+// Platform Y position (centred)
+platform_y_start = (inner_y - inner_y) / 2; // Full inner width, so starts at 0 relative to inner box
+
+// Hole position relative to outer box
+// Hole is at y=0 (outer box centre in Y), z=30 (outer box height)
+// Hole goes through the end walls (at X=0 and X=outer_x)
+
+// --- Build Part ---
+// Start with the outer shell (solid block)
+difference() {
+    // Main body
+    cube([outer_x, outer_y, outer_z], center = false);
+    
+    // Hollow out the inside (leaving floor and walls)
+    // Inner cavity starts at z = floor_thick
+    translate([wall_thick, wall_thick, floor_thick]) {
+        cube([inner_x, inner_y, inner_z], center = false);
+    }
+    
+    // Create the raised platform inside
+    // The platform is a solid block within the inner cavity
+    // It spans full inner Y, is platform_x long in X, and platform_height tall
+    // Position: X is centred in the inner cavity, Y is centred in the inner cavity
+    
+    // Platform X position relative to outer box
+    // Inner cavity X starts at wall_thick, ends at outer_x - wall_thick
+    // Platform is centred in the inner cavity
+    platform_x_start = wall_thick + (inner_x - platform_x) / 2;
+    
+    // Platform Y position relative to outer box
+    // Platform spans full inner Y, so it starts at wall_thick in Y
+    platform_y_start = wall_thick;
+    
+    // Platform Z position relative to outer box
+    // Platform top is at z = platform_top_z
+    // Platform height is platform_height
+    // So platform bottom is at z = platform_top_z - platform_height = floor_thick
+    platform_z_start = floor_thick;
+    
+    // Subtract the platform volume from the inner cavity? 
+    // No, the platform is part of the solid. 
+    // We need to subtract the buffer chambers around the platform.
+    // The inner cavity is already subtracted. Now we need to add back the platform 
+    // and subtract the chambers.
+    
+    // Actually, let's build it differently:
+    // 1. Start with outer solid.
+    // 2. Subtract the main inner cavity (above the floor).
+    // 3. Add the platform (which is solid).
+    // 4. Subtract the two buffer chambers (which are the space around the platform).
+    
+    // Let's restart the difference logic properly.
+}
+
+// Better approach:
+// 1. Create the outer shell with a hole for the inner cavity.
+// 2. The inner cavity is not a simple box because of the platform.
+// 3. We can model the tank as:
+//    - Outer block
+//    - Minus the inner void (which consists of two chambers and the space above the platform)
+//    - Plus the platform (which is solid)
+
+// Let's use a constructive approach:
+// Start with the outer block.
+// Subtract the inner void.
+// The inner void is the space inside the walls, excluding the platform.
+
+// Inner void geometry:
+// - Below the platform: two chambers at the ends.
+// - Above the platform: the entire inner cross-section.
+
+// Let's define the inner void as a single shape to subtract.
+// The inner void is bounded by:
+// - Inner walls (x: wall_thick to outer_x-wall_thick, y: wall_thick to outer_y-wall_thick)
+// - Floor (z: 0 to floor_thick) - but the floor is solid, so void starts at z=floor_thick?
+//   No, the floor is solid. The void is above the floor.
+//   So the void starts at z = floor_thick.
+// - The platform is solid, so the void is around it.
+
+// Let's model the void as:
+// 1. A box for the entire inner space above the floor:
+//    x: [wall_thick, outer_x - wall_thick]
+//    y: [wall_thick, outer_y - wall_thick]
+//    z: [floor_thick, outer_z]
+// 2. Subtract the platform from this void? No, the platform is solid, so it's not part of the void.
+//    So the void is the inner space minus the platform.
+
+// So, we subtract from the outer block:
+// - The inner void (inner space above floor, minus platform)
+
+// Let's define the inner void as a union of:
+// - Left chamber: x: [wall_thick, platform_x_start], y: [wall_thick, outer_y-wall_thick], z: [floor_thick, platform_top_z]
+// - Right chamber: x: [platform_x_start + platform_x, outer_x - wall_thick], y: [wall_thick, outer_y-wall_thick], z: [floor_thick, platform_top_z]
+// - Upper space: x: [wall_thick, outer_x - wall_thick], y: [wall_thick, outer_y - wall_thick], z: [platform_top_z, outer_z]
+
+// Wait, the platform is solid. So the void is:
+// - The space below the platform (two chambers)
+// - The space above the platform
+
+// Let's subtract these voids from the outer block.
+
+// Outer block
+difference() {
+    cube([outer_x, outer_y, outer_z], center = false);
+    
+    // Void 1: Left chamber (below platform)
+    // x: from wall_thick to platform_x_start
+    // y: from wall_thick to outer_y - wall_thick
+    // z: from floor_thick to platform_top_z
+    translate([wall_thick, wall_thick, floor_thick]) {
+        cube([platform_x_start - wall_thick, inner_y, platform_top_z - floor_thick], center = false);
+    }
+    
+    // Void 2: Right chamber (below platform)
+    // x: from platform_x_start + platform_x to outer_x - wall_thick
+    // y: from wall_thick to outer_y - wall_thick
+    // z: from floor_thick to platform_top_z
+    translate([platform_x_start + platform_x, wall_thick, floor_thick]) {
+        cube([(outer_x - wall_thick) - (platform_x_start + platform_x), inner_y, platform_top_z - floor_thick], center = false);
+    }
+    
+    // Void 3: Upper space (above platform)
+    // x: from wall_thick to outer_x - wall_thick
+    // y: from wall_thick to outer_y - wall_thick
+    // z: from platform_top_z to outer_z
+    translate([wall_thick, wall_thick, platform_top_z]) {
+        cube([inner_x, inner_y, outer_z - platform_top_z], center = false);
+    }
+    
+    // Holes for electrode wires
+    // Hole at y=0, z=30, through the end walls
+    // The hole is 2mm diameter, horizontal along X
+    // It goes through the left wall (x: 0 to wall_thick) and right wall (x: outer_x-wall_thick to outer_x)
+    // But it's a single hole through the entire tank? 
+    // "Through each end wall... drill a 2 mm diameter horizontal hole along X"
+    // This implies two separate holes, one in each end wall.
+    // Or one hole through the entire tank? 
+    // "Through each end wall" suggests two holes. But "along X" suggests the hole axis is X.
+    // If it's through the end wall, the hole axis is X.
+    // So we need two holes: one at x=0 (left wall) and one at x=outer_x (right wall).
+    // But the hole is "through" the wall, so it goes from outside to inside.
+    // Let's assume the hole goes through the entire tank? 
+    // "Through each end wall... for the electrode wires"
+    // Typically, electrode wires go into the buffer from the ends.
+    // So there is

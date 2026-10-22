@@ -1,0 +1,95 @@
+```openscad
+// Replacement knob for hotplate stirrer
+// Dimensions measured with calipers
+
+// Main knob dimensions
+knob_diameter = 30;
+knob_radius = knob_diameter / 2;
+knob_height = 15;
+
+// D-shaft blind bore dimensions
+bore_diameter = 6.2;
+bore_radius = bore_diameter / 2;
+bore_depth = 12;
+// Distance from flat to opposite side of circle is 4.7 mm
+// This means the flat is offset from the center by (radius - 4.7)
+bore_flat_offset = bore_radius - 4.7; // 3.1 - 4.7 = -1.6 mm (flat is 1.6 mm below center)
+
+// Grip grooves
+num_grooves = 18;
+groove_diameter = 2;
+groove_radius = groove_diameter / 2;
+
+// Pointer groove on top face
+pointer_width = 1.5;
+pointer_depth = 1;
+pointer_length = knob_radius; // from center to edge
+
+// Print quality
+$fn = 64;
+
+// Full assembly with all cuts
+difference() {
+    // Main knob
+    cylinder(h = knob_height, r = knob_radius, center = false);
+    
+    // D-shaped blind bore
+    // Create D-shape: cylinder intersected with half-space
+    // The flat is at y = -1.6 mm (1.6 mm below center)
+    // We keep the part of the cylinder where y >= -1.6
+    translate([0, 0, 0]) {
+        intersection() {
+            cylinder(h = bore_depth + 0.1, r = bore_radius, center = false);
+            // Half-space: y >= -bore_flat_offset
+            // Represent as a large box starting at y = -bore_flat_offset
+            translate([0, -bore_flat_offset, 0])
+            cube([knob_diameter + 2, knob_diameter + 2, bore_depth + 1], center = false);
+        }
+    }
+    
+    // Grip grooves: 18 evenly spaced vertical half-cylinders on the outer surface
+    for (i = [0 : num_grooves - 1]) {
+        angle = i * 360 / num_grooves;
+        // Position the groove on the outer surface
+        // The groove is a half-cylinder centered on the surface
+        // So its center is at radius = knob_radius
+        // The half-cylinder is cut so that only the inner half remains (facing the center)
+        
+        translate([0, 0, 0])
+        rotate([0, 0, angle])
+        translate([knob_radius, 0, knob_height / 2])
+        rotate([90, 0, 0])
+        // Half-cylinder: cylinder intersected with half-space
+        intersection() {
+            cylinder(h = knob_height + 0.1, r = groove_radius, center = true);
+            // Keep the part facing inward (negative x in local coords)
+            // The cylinder is along Z (local), so we cut along X
+            // We want the half where x <= 0 (facing center of knob)
+            translate([-groove_radius, -groove_radius, -knob_height/2 - 0.05])
+            cube([groove_radius + 0.1, groove_radius * 2 + 0.1, knob_height + 0.1], center = false);
+        }
+    }
+    
+    // Pointer groove on top face
+    // 1.5 mm wide, 1 mm deep, from center to edge
+    // On the same side as the flat of the D (negative y side)
+    // The previous attempt had the pointer groove centered on the Y-axis, 
+    // but it should be aligned with the flat of the D-shaft.
+    // The flat is on the negative Y side.
+    // The groove runs from center (0,0) to edge (0, -knob_radius).
+    // It is 1.5 mm wide in the X direction.
+    
+    translate([0, 0, knob_height]) {
+        // Slot: rectangular prism
+        // Width in x-direction (1.5 mm), length in y-direction (from 0 to -knob_radius)
+        // Depth in z-direction (1 mm, going down)
+        
+        // Center of the slot in x is 0, in y is -pointer_length/2
+        // The slot extends from y=0 to y=-pointer_length
+        // So we place the cube such that it covers this range
+        
+        translate([-pointer_width / 2, -pointer_length / 2, -pointer_depth / 2])
+        cube([pointer_width + 0.1, pointer_length + 0.1, pointer_depth + 0.1], center = false);
+    }
+}
+```

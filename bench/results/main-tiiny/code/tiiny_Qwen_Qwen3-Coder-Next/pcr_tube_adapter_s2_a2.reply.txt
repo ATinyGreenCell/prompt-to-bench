@@ -1,0 +1,66 @@
+Looking at the measurement report and comparing with the specification:
+
+1. **Total height**: Specification says the sleeve should rise to z = 21.5 mm (collar 1.5 mm + sleeve body 20.0 mm = 21.5 mm total). The report shows Z from -0.01 to 21.51, giving size 21.52 mm, which is correct within tolerance.
+
+2. **Collar dimensions**: Specification says collar is 13 mm diameter and 1.5 mm thick. The report shows the collar at z=0.76 has diameter 12.98 mm (very close to 13 mm) and the bounding box shows X/Y size 13.00 mm, which matches.
+
+3. **Sleeve outer diameter**: Specification says 10.8 mm. The report shows 10.79 mm at z=11.51 and z=20.44, which is correct.
+
+4. **Bore diameter**: Specification says 6.2 mm. However, the slices show no holes - just solid regions with 0 holes. This means the bore is not being subtracted properly or the slices aren't showing the bore clearly.
+
+5. **Bed contact**: The report shows lowest point at z = -0.01, which is slightly below the bed. This is due to the -0.01 offset in the bore subtraction. We need to ensure the part sits flat at z=0.
+
+6. **Critical issue**: The bore should be visible in the slices as a hole. The fact that it shows "0 holes" suggests the bore subtraction isn't working correctly. This is likely because the bore cylinder is being subtracted but the slices are showing the remaining solid, which should have a hole. However, the slice description says "1 solid region" with "0 holes", which means the bore is not creating a hole in the slice.
+
+The problem is that the bore cylinder might be too small or the subtraction isn't working as expected. Let me check the bore radius: 6.2 mm diameter means 3.1 mm radius. The sleeve outer radius is 10.8/2 = 5.4 mm, so the bore should fit.
+
+Wait - looking more carefully at the slice description: it says "1 solid region" with "0 holes". This suggests the bore is not being subtracted. The issue might be that the bore cylinder is not properly defined or the subtraction is failing.
+
+Let me reconsider the approach. The bore should be a cylinder subtracted from the center. The issue might be that the bore cylinder needs to extend further past the part to ensure clean subtraction.
+
+Actually, looking at the volume: 2,029 mm³. Let's calculate expected volume:
+- Collar volume: π*(6.5² - 3.1²)*1.5 = π*(42.25 - 9.61)*1.5 = π*32.64*1.5 ≈ 154 mm³
+- Sleeve volume: π*(5.4² - 3.1²)*20 = π*(29.16 - 9.61)*20 = π*19.55*20 ≈ 1,229 mm³
+- Total expected: ~1,383 mm³
+
+But the report shows 2,029 mm³, which is higher than expected. This suggests the bore might not be properly subtracted.
+
+Wait, I think I see the issue. The bore cylinder subtraction might not be working because of how OpenSCAD handles the difference operation. Let me check the code again.
+
+Actually, looking at the bounding box and slices, the issue is that the slices show no hole, which means the bore is not being created. This could be because the bore cylinder is not properly defined or the subtraction is failing.
+
+Let me recalculate the expected volume with the bore:
+- Total volume without bore: π*6.5²*1.5 + π*5.4²*20 = π*(63.375 + 583.2) = π*646.575 ≈ 2,032 mm³
+- Bore volume: π*3.1²*21.5 = π*20.735 ≈ 651 mm³
+- Expected volume with bore: 2,032 - 651 = 1,381 mm³
+
+But the report shows 2,029 mm³, which is almost exactly the volume without the bore (2,032 mm³). This confirms the bore is not being subtracted.
+
+The issue is likely that the bore cylinder is not properly defined or the subtraction is failing. Let me check the code: the bore cylinder is defined with radius 3.1 and height 21.52, which should be correct.
+
+I think the problem is that the bore cylinder is not extending far enough past the part. Let me increase the extension.
+
+Actually, looking at the code again, I see the issue: the bore cylinder height is total_height + 0.02 = 21.52, but the part height is 21.51 (from -0.01 to 21.51). So the bore should extend past both ends.
+
+Wait, the bounding box shows Z from -0.01 to 21.51, which means the part is from z = -0.01 to z = 21.51. But the specification says the part should sit on the bed at z = 0. The -0.01 is due to the bore subtraction offset.
+
+Let me fix this by ensuring the part sits flat at z = 0 and the bore is properly subtracted.
+
+The key issue is that the bore is not being subtracted. This could be because the bore cylinder is not properly defined or the subtraction is failing. Let me try a different approach: use a for loop to create the bore or ensure the subtraction is working.
+
+Actually, I think the issue is that the bore cylinder is not extending far enough. Let me increase the extension.
+
+But the volume calculation shows the bore is not being subtracted at all. Let me check if the bore cylinder radius is correct: 6.2 mm diameter means 3.1 mm radius, which is correct.
+
+I think the issue is that the bore cylinder is not being subtracted because of how OpenSCAD handles the difference operation. Let me try to ensure the subtraction is working by making the bore cylinder extend further.
+
+Actually, I think the real issue is that the bore cylinder is not properly defined in the code. Let me check the code again:
+
+```openscad
+    // Bore (subtract cylinder from center, extending past both ends)
+    translate([0, 0, -0.01]) {
+        cylinder(h = total_height + 0.02, r = bore_radius, center = false);
+    }
+```
+
+This should work. Let me check the total_height: 1

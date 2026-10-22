@@ -1,0 +1,77 @@
+We are going to write the OpenSCAD code as described.
+
+Note: The problem says "after flipping, the rack stands on the two walls". So the walls are the legs that rest on the table. The walls are built from Z=0 to Z=70, so when flipped, the walls will be the bottom (so the rack stands on the walls, which are 70mm tall, but the walls are built from Z=0 to Z=70, so when flipped, the bottom of the rack (which was at Z=0) becomes the top? Actually, the rack is printed upside down, meaning the side that was on the bed (Z=0) is the top of the printed part. Then we flip it over so that the walls (which are built upward from the bed) become the legs that rest on the table. The walls are 70mm tall, so the rack will stand 70mm high? But the problem says "rises from the plate to z=70", meaning the walls are 70mm tall. When flipped, the walls are the legs and the rack will stand on the walls (so the height of the rack from the table to the top of the rack is the height of the walls plus the plate? Actually, the plate is 4mm thick and the walls are 70mm tall, so the total height of the rack when standing is 70mm (the walls) plus the plate? But the plate is attached to the walls, so the plate is at the top of the walls? Actually, the plate is the horizontal part that is attached to the walls at the base of the walls? No: the plate is the base that the walls are built on. The walls are built on the plate, so the plate is between the walls? Actually, the plate is the horizontal base, and the walls are vertical legs at the two long edges. The plate is 4mm thick, so the walls are built on the plate's edge (so the wall's bottom is at Z=0, and the plate is from Z=0 to Z=4, so the wall is attached to the plate at Z=0 to Z=4). Therefore, when flipped, the rack will stand on the walls (which are 70mm tall) and the plate will be at the top of the walls? Actually, the plate is attached to the walls at the base of the walls (so the plate is at the bottom of the walls? but the plate is 4mm thick, so the plate is below the walls?).
+
+        Let me clarify the print orientation:
+
+          - The rack is printed upside down: meaning the side that will be the bottom of the rack (when flipped) is printed on the bed (so the bed is at Z=0, and the rack is printed with the walls going upward from the bed). 
+          - The plate is printed on the bed (so the plate's bottom face is on the bed, and the plate is 4mm thick, so the plate's top face is at Z=4). 
+          - The walls are built on the plate's long edges (so the walls are built on the plate's edge, meaning the walls are built on the plate's side that is at the edge of the plate). The walls are built upward from the bed (so the wall's bottom is at Z=0 and top at Z=70). 
+          - Therefore, the plate is between the walls? Actually, the plate is the horizontal part that is attached to the walls at the edge. The walls are built on the plate's edge, so the plate is at the base of the walls. The plate is 4mm thick, so the wall's base (Z=0) is attached to the plate's edge (which is at Z=0 to Z=4). 
+
+        After flipping, the rack is turned over so that the walls are now the legs that rest on the table. The wall's base (which was at Z=0) is now the bottom of the rack (on the table). The plate is now at the top of the rack (above the walls). The height of the rack from the table to the top of the plate is the height of the walls (70mm) plus the thickness of the plate (4mm) -> 74mm? But the problem doesn't specify the total height, so we don't care.
+
+        We are only building the rack as described.
+
+        Now, write the code.
+
+        Important: We must not have any errors. We'll use the variables as defined.
+
+        Let's code accordingly.
+
+        Note: The hole diameter is 30.5mm, which is the standard for Falcon tubes? But we use the given value.
+
+        We'll set $fn=64 at the top.
+
+        We are going to write the entire code in one block.
+
+        Note: The problem says "Reply with only the code, in a single ```openscad code block."
+
+        Let's write the code.
+</think>
+
+```openscad
+$fn = 64;
+
+plate_x = 130;        // X dimension of plate (mm)
+plate_y = 90;         // Y dimension of plate (mm)
+plate_z = 4;          // Z thickness of plate (mm)
+hole_diameter = 30.5;   // Diameter of through-holes (mm)
+hole_radius = hole_diameter / 2;
+hole_z_extension = 0.02;  // Total extension beyond plate in Z (0.01 beyond each face)
+hole_cylinder_height = plate_z + hole_z_extension;
+wall_length = plate_x;    // Length of walls (X dimension, mm)
+wall_thickness = 4;     // Thickness of walls (Y dimension, mm)
+wall_height = 70;       // Height of walls (Z dimension, mm)
+
+plate = 
+    translate([-plate_x/2, -plate_y/2, 0])
+    cube([plate_x, plate_y, plate_z], center=false);
+
+holes = 
+    for (i = [-1, 1]) 
+    for (j = [-1, 0, 1]) 
+        translate([40*j, 20*i, 2.0]) 
+        cylinder(h=hole_cylinder_height, r=hole_radius, $fn=64);
+
+plate_with_holes = 
+    difference() {
+        plate;
+        holes;
+    };
+
+wall_bottom = 
+    translate([0, -47, wall_height/2])
+    cube([wall_length, wall_thickness, wall_height], center=true);
+
+wall_top = 
+    translate([0, 47, wall_height/2])
+    cube([wall_length, wall_thickness, wall_height], center=true);
+
+rack = 
+    union() {
+        plate_with_holes;
+        wall_bottom;
+        wall_top;
+    };
+```

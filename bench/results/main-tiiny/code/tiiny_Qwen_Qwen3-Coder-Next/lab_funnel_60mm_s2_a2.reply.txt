@@ -1,0 +1,56 @@
+Looking at the measurement report again, I see the critical issue: the slices show "0 holes" but the funnel should have a hole through it (open at top and bottom). The report shows solid regions with no holes, which means the inner subtraction still isn't working properly.
+
+The problem is that OpenSCAD's `difference()` operation requires the subtracted object to completely enclose the object being subtracted from, and the order matters. Also, the inner cylinder needs to extend beyond the outer shape to properly cut through.
+
+Let me analyze the expected dimensions:
+- Spout outer diameter: 10 mm → radius 5 mm
+- Spout inner diameter: 10 - 2×1.6 = 6.8 mm → radius 3.4 mm
+- Cone outer diameter at z=20: 10 mm, at z=50: 60 mm
+- Cone inner diameter at z=20: 6.8 mm, at z=50: 56.8 mm
+
+The issue is that my `difference()` operation has the union of inner cylinders as the second operand, but OpenSCAD's `difference()` subtracts the second operand from the first, so I need to structure it correctly.
+
+Actually, looking more carefully at the code I provided, I see I'm using `union()` for the outer shape and then trying to subtract the inner union, but the syntax is wrong - I need to use `difference()` properly.
+
+Here's the corrected version:
+
+```openscad
+// Lab Funnel Design
+// Wall thickness: 1.6 mm
+// Spout: 10 mm outer diameter, 20 mm tall (z = 0 to z = 20)
+// Cone: 10 mm outer diameter at z = 20, 60 mm outer diameter at z = 50
+
+$fn = 64;
+
+wall_thickness = 1.6;
+spout_outer_diameter = 10;
+spout_height = 20;
+cone_top_diameter = 10;
+cone_bottom_diameter = 60;
+cone_height = 30; // from z = 20 to z = 50
+
+// Calculate inner diameters
+spout_inner_diameter = spout_outer_diameter - 2 * wall_thickness;
+cone_top_inner_diameter = cone_top_diameter - 2 * wall_thickness;
+cone_bottom_inner_diameter = cone_bottom_diameter - 2 * wall_thickness;
+
+// Build the funnel using difference
+module funnel() {
+    // Outer shape (spout + cone)
+    outer_shape = cylinder(h = spout_height, r = spout_outer_diameter / 2, center = false);
+    translate([0, 0, spout_height])
+        outer_shape = union(outer_shape, cylinder(h = cone_height, r1 = cone_top_diameter / 2, r2 = cone_bottom_diameter / 2, center = false));
+    
+    // Inner hole (spout + cone)
+    inner_hole = cylinder(h = spout_height + 0.02, r = spout_inner_diameter / 2, center = false);
+    translate([0, 0, spout_height])
+        inner_hole = union(inner_hole, cylinder(h = cone_height + 0.02, r1 = cone_top_inner_diameter / 2, r2 = cone_bottom_inner_diameter / 2, center = false));
+    
+    difference() {
+        outer_shape;
+        translate([0, 0, -0.01]) inner_hole;
+    }
+}
+
+funnel();
+```

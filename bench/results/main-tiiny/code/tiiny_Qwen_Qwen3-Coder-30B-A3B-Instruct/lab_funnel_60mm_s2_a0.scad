@@ -1,0 +1,44 @@
+// Lab funnel design
+// Dimensions in millimeters
+
+// Main dimensions
+spout_height = 20;
+cone_height = 30;
+total_height = spout_height + cone_height;
+spout_outer_dia = 10;
+spout_inner_dia = 6.8;
+cone_outer_dia = 60;
+wall_thickness = 1.6;
+
+// Derived dimensions
+spout_radius = spout_outer_dia / 2;
+spout_inner_radius = spout_inner_dia / 2;
+cone_radius = cone_outer_dia / 2;
+cone_inner_radius = cone_outer_dia / 2 - wall_thickness;
+
+// Create the funnel
+union() {
+    // Outer cone
+    cylinder(r = spout_radius, h = spout_height, $fn = 64);
+    translate([0, 0, spout_height]) {
+        cylinder(r = cone_radius, h = cone_height, $fn = 64);
+    }
+    
+    // Inner spout
+    difference() {
+        cylinder(r = spout_inner_radius, h = spout_height + 0.01, $fn = 64);
+        translate([0, 0, -0.01]) {
+            cylinder(r = spout_inner_radius, h = spout_height + 0.02, $fn = 64);
+        }
+    }
+    
+    // Inner cone
+    difference() {
+        translate([0, 0, spout_height]) {
+            cylinder(r = cone_inner_radius, h = cone_height + 0.01, $fn = 64);
+        }
+        translate([0, 0, spout_height - 0.01]) {
+            cylinder(r = cone_inner_radius, h = cone_height + 0.02, $fn = 64);
+        }
+    }
+}

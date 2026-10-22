@@ -1,0 +1,23 @@
+```openscad
+$fn = 64; // smooth curves
+
+// ---------- Dimensions ----------
+wall   = 3;   // mm
+floor  = 3;   // mm
+
+outerX = 120; // mm
+outerY = 70;  // mm
+outerZ = 40;  // mm
+
+innerX = outerX - 2*wall; // 114 mm
+innerY = outerY - 2*wall; // 64 mm
+innerZ = outerZ - floor;   // 37 mm
+
+// Platform (gel tray)
+platformLen = 60;          // mm
+platformWid = innerY;      // 64 mm
+platformTopZ = floor + 10; // 13 mm
+platformBotZ = floor;       // 3 mm
+
+// Electrode holes
+holeDia = 

@@ -1,0 +1,83 @@
+Looking at the report, I can see several issues:
+
+1. **Bounding box Y**: The report shows Y 0.00 .. 45.00, but the block should be centred on the origin in X and Y. This means the block is not centred - it's positioned from Y=0 to Y=45 instead of Y=-22.5 to Y=22.5.
+
+2. **Slots not visible in horizontal slices**: At z=10.00 and z=19.00, there are 0 holes, which means the slots are not being cut properly. The slot cutting logic has an issue.
+
+Let me trace through the slot cutting:
+- The slot_cut() module translates to SLOT_X_OFFSET - EXTEND in X, and SLOT_Y_START - SLOT_WIDTH/2 - EXTEND in Y
+- SLOT_Y_START = -SLOT_GROUP_WIDTH/2 = -(9 * 3.5)/2 = -15.75
+- For i=0, slot_y = -15.75
+- Then it translates by [0, slot_y, 0] and calls slot_cut()
+- slot_cut() translates by [SLOT_X_OFFSET - EXTEND, SLOT_Y_START - SLOT_WIDTH/2 - EXTEND, -EXTEND]
+- Wait, there's a bug! slot_cut() uses SLOT_Y_START, not the current slot_y position
+
+The issue is that slot_cut() uses the global SLOT_Y_START instead of the current slot's Y position. I need to pass the slot Y position as a parameter or restructure the code.
+
+Also, the block should be centred on the origin. Let me fix both issues.
+
+```openscad
+// Drying rack for 10 microscope slides
+// Base block: 90 x 45 x 20 mm
+// 10 slots: 77 mm long (X), 1.6 mm wide (Y), 10 mm deep, 3.5 mm pitch
+
+// Base block dimensions
+BLOCK_X = 90;
+BLOCK_Y = 45;
+BLOCK_Z = 20;
+
+// Slot dimensions
+SLOT_LENGTH = 77;
+SLOT_WIDTH = 1.6;
+SLOT_DEPTH = 10;
+
+// Slot spacing
+SLOT_PITCH = 3.5;
+NUM_SLOTS = 10;
+
+// Calculate slot group width and offset
+SLOT_GROUP_WIDTH = (NUM_SLOTS - 1) * SLOT_PITCH;
+SLOT_Y_OFFSET = SLOT_GROUP_WIDTH / 2;
+
+// Slot X offset to centre the 77 mm slot in the 90 mm block
+SLOT_X_OFFSET = (BLOCK_X - SLOT_LENGTH) / 2;
+
+// Slot Y positions (centred on block)
+SLOT_Y_START = -SLOT_Y_OFFSET;
+
+// Cutting shape extension to avoid coplanar faces
+EXTEND = 0.5;
+
+module base_block() {
+    // Centre the block on the origin in X and Y
+    translate([BLOCK_X / 2, BLOCK_Y / 2, 0]) {
+        cube([BLOCK_X, BLOCK_Y, BLOCK_Z], center = false);
+    }
+}
+
+module slot_cut(slot_y_pos) {
+    // Slot extends slightly past the top face (z=20) and bottom of cut (z=10)
+    // Slot is centred in X, positioned at specific Y
+    translate([
+        SLOT_X_OFFSET - EXTEND,
+        slot_y_pos - SLOT_WIDTH / 2 - EXTEND,
+        -EXTEND
+    ]) {
+        cube([
+            SLOT_LENGTH + 2 * EXTEND,
+            SLOT_WIDTH + 2 * EXTEND,
+            SLOT_DEPTH + BLOCK_Z + 2 * EXTEND
+        ], center = false);
+    }
+}
+
+// Build the rack: base block with slots cut out
+difference() {
+    base_block();
+    
+    for (i = [0 : NUM_SLOTS - 1]) {
+        slot_y = SLOT_Y_START + i * SLOT_PITCH;
+        slot_cut(slot_y);
+    }
+}
+```

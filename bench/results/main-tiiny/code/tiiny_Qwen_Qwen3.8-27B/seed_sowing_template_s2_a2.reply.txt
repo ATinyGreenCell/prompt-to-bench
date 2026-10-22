@@ -1,0 +1,49 @@
+```openscad
+// Sowing template for a 90 mm Petri dish
+// Flat disc, 7x7 grid of 3 mm through-holes, orientation notch on +Y rim
+
+// --- Dimensions (mm) ---
+disc_diameter = 85;          // outer diameter of the template disc
+disc_radius   = disc_diameter / 2;  // 42.5 mm
+disc_thickness = 2;          // thickness of the flat disc
+
+hole_diameter = 3;           // diameter of each sowing hole
+hole_radius   = hole_diameter / 2;  // 1.5 mm
+
+grid_n = 7;                  // 7 x 7 grid of holes
+grid_spacing = 9;            // centre-to-centre spacing between adjacent holes
+
+notch_width = 10;            // width of the orientation notch (X direction)
+notch_depth = 4;             // depth of the notch measured inward from the rim (Y direction)
+
+// --- Base disc, resting on the bed at z = 0, centred on origin in X/Y ---
+disc = cylinder(h = disc_thickness, r = disc_radius, $fn = 64);
+
+// --- 7 x 7 grid of 3 mm through-holes, centred on the disc ---
+// Holes extend 1 mm past both top and bottom faces to guarantee clean cuts.
+hole_grid = for (i = [0 : grid_n - 1], j = [0 : grid_n - 1])
+    translate([
+        (i - (grid_n - 1) / 2) * grid_spacing,   // X position, centred
+        (j - (grid_n - 1) / 2) * grid_spacing,   // Y position, centred
+        -1                                       // start 1 mm below z=0
+    ])
+    cylinder(h = disc_thickness + 2, r = hole_radius, $fn = 64);
+
+// --- Rectangular orientation notch on the +Y rim ---
+// Centred on the Y axis (x = 0), 10 mm wide in X, 4 mm deep in Y from the rim.
+// The rim is at y = disc_radius; the notch spans y = disc_radius - notch_depth to y = disc_radius.
+// Extended 1 mm past the rim (y = disc_radius + 1) and 1 mm past both z-faces for clean cuts.
+notch = translate([
+    -notch_width / 2,                    // centred on Y axis in X
+    disc_radius - notch_depth,          // inner edge of the notch
+    -1                                   // 1 mm below z = 0
+])
+cube([notch_width, notch_depth + 1, disc_thickness + 2]);
+
+// --- Final part: disc minus holes and notch ---
+difference() {
+    disc;
+    hole_grid;
+    notch;
+}
+```

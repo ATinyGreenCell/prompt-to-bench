@@ -1,0 +1,45 @@
+// Small lab funnel, printed upright (wide opening at top).
+// All dimensions in mm.
+
+// ---- Named dimensions (measured with calipers) ----
+spout_od   = 10;    // spout outer diameter
+spout_id   = 6.8;   // spout bore (inner diameter)
+spout_h    = 20;    // spout height (z = 0 to z = 20)
+cone_od    = 60;    // cone outer diameter at rim (z = 50)
+cone_id    = 56.8;  // cone inner diameter at rim (cone_od - 2*wall)
+cone_h     = 30;    // cone height (z = 20 to z = 50)
+wall       = 1.6;   // uniform wall thickness
+
+// ---- Curvature resolution ----
+$fn = 64;
+
+// ---- Build the funnel as a single solid, then hollow it ----
+// Outer profile: straight spout cylinder + widening cone on top.
+// Inner profile: straight bore through the spout + conical bore through the cone.
+// The difference leaves a 1.6 mm wall everywhere and open top/bottom.
+
+difference() {
+    // Outer solid
+    union() {
+        // Spout: straight tube, z = 0 to z = 20
+        cylinder(h = spout_h, d = spout_od, $fn = $fn);
+
+        // Cone: widens from spout_od at z = 20 to cone_od at z = 50
+        translate([0, 0, spout_h])
+            cylinder(h = cone_h, d1 = spout_od, d2 = cone_od, $fn = $fn);
+    }
+
+    // Inner bore (cutting shape extends 1 mm past both open faces)
+    union() {
+        // Spout bore: straight, z = -1 to z = 21
+        translate([0, 0, -1])
+            cylinder(h = spout_h + 2, d = spout_id, $fn = $fn);
+
+        // Cone bore: conical, z = 19 to z = 51
+        // At z = 19 (1 mm below the spout/cone junction) the inner cone
+        // diameter equals spout_id, so it blends smoothly into the spout bore.
+        // At z = 51 (1 mm past the rim) it is slightly larger than cone_id.
+        translate([0, 0, 19])
+            cylinder(h = 32, d1 = spout_id, d2 = cone_id + 2 * wall * (2 / cone_h), $fn = $fn);
+    }
+}

@@ -1,0 +1,77 @@
+```openscad
+$fn = 64;
+
+// Dimensions
+rod_id = 12.7;        // inner diameter of rod ring (mm)
+rod_wall = 3;         // wall thickness of rod ring (mm)
+rod_od = rod_id + 2 * rod_wall;  // outer diameter of rod ring (mm)
+rod_ring_height = 10; // height of the entire clip (Z)
+
+tubing_id = 6;        // inner diameter of tubing ring (mm)
+tubing_wall = 2;      // wall thickness of tubing ring (mm)
+tubing_od = tubing_id + 2 * tubing_wall;  // outer diameter of tubing ring (mm)
+
+bridge_width = 6;     // width of bridge in Y-direction (mm)
+bridge_x_start = 8;   // start x-coordinate of bridge
+bridge_x_end = 12;    // end x-coordinate of bridge
+
+// Opening dimensions
+rod_opening_width = 10;   // width of rod ring opening (mm)
+tubing_opening_width = 4.5; // width of tubing ring opening (mm)
+
+// Calculate centers
+rod_center_x = 0;
+rod_center_y = 0;
+tubing_center_x = 15;
+tubing_center_y = 0;
+
+// Rod ring with opening
+module rod_ring_with_opening() {
+    difference() {
+        // Outer circle
+        cylinder(h = rod_ring_height + 0.01, d = rod_od, center = true);
+        // Inner circle (hole)
+        translate([0, 0, -0.01])
+            cylinder(h = rod_ring_height + 0.02, d = rod_id, center = true);
+        // Opening cut: remove x < 0 and -5 < y < 5
+        translate([-100, -6, -0.01])
+            cube([100, 12, rod_ring_height + 0.02]);
+    }
+}
+
+// Tubing ring with opening
+module tubing_ring_with_opening() {
+    difference() {
+        // Outer circle
+        translate([tubing_center_x, tubing_center_y, 0])
+            cylinder(h = rod_ring_height + 0.01, d = tubing_od, center = true);
+        // Inner circle (hole)
+        translate([tubing_center_x, tubing_center_y, -0.01])
+            cylinder(h = rod_ring_height + 0.02, d = tubing_id, center = true);
+        // Opening cut: remove x > 15 and -2.25 < y < 2.25
+        translate([15, -2.25 - 0.01, -0.01])
+            cube([100, 4.5 + 0.02, rod_ring_height + 0.02]);
+    }
+}
+
+// Bridge between rings
+module bridge() {
+    // y-range: from -3 to +3 (6 mm wide)
+    y_start = -bridge_width / 2;
+    y_end = bridge_width / 2;
+    
+    translate([bridge_x_start, y_start, 0])
+        cube([bridge_x_end - bridge_x_start, bridge_width, rod_ring_height]);
+}
+
+// Assemble the clip
+module clip() {
+    union() {
+        rod_ring_with_opening();
+        tubing_ring_with_opening();
+        bridge();
+    }
+}
+
+clip();
+```

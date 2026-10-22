@@ -1,0 +1,71 @@
+// Pestle for 1.5 mL microcentrifuge tube
+// Dimensions measured in mm
+
+// Handle
+handle_diameter = 8;
+handle_radius = handle_diameter / 2;
+handle_height = 45;
+
+// Cone
+cone_top_diameter = 8;
+cone_top_radius = cone_top_diameter / 2;
+cone_bottom_diameter = 3;
+cone_bottom_radius = cone_bottom_diameter / 2;
+cone_start_z = 45;
+cone_end_z = 62;
+cone_height = cone_end_z - cone_start_z;
+
+// Tip
+tip_diameter = 3;
+tip_radius = tip_diameter / 2;
+tip_center_z = 62;
+
+// Grooves
+groove_width = 2;
+groove_depth = 1;
+groove_positions = [10, 15, 20, 25];
+
+$fn = 64;
+
+// Positive Geometry
+module pestle_body() {
+    union() {
+        // Handle
+        translate([0, 0, 0])
+            cylinder(h = handle_height, r = handle_radius, center = false);
+
+        // Cone
+        translate([0, 0, cone_start_z])
+            cylinder(h = cone_height, r1 = cone_top_radius, r2 = cone_bottom_radius, center = false);
+
+        // Tip (sphere)
+        translate([0, 0, tip_center_z])
+            sphere(r = tip_radius);
+    }
+}
+
+// Groove cutters
+module grooves() {
+    for (z_pos = groove_positions) {
+        // Each groove is a cylinder cut into the handle.
+        // Width is in Z, so height of cutter is groove_width.
+        // Depth is 1mm, so radius of cutter is handle_radius - groove_depth.
+        // Centered at z_pos.
+        
+        cutter_radius = handle_radius - groove_depth;
+        
+        // Extend slightly past the handle surface to ensure clean cut
+        // The handle is at radius 4. The cutter is at radius 3.
+        // We need to make sure the cutter doesn't leave artifacts.
+        // A cylinder of radius 3 centered at the axis will cut into the radius 4 handle.
+        
+        translate([0, 0, z_pos])
+            cylinder(h = groove_width + 0.02, r = cutter_radius, center = true);
+    }
+}
+
+// Final Assembly
+difference() {
+    pestle_body();
+    grooves();
+}

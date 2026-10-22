@@ -1,0 +1,126 @@
+```openscad
+// Dimensions for 10-well agarose gel comb
+$fn = 64;
+
+// Spine (back bar) dimensions
+spine_length = 70;   // X direction
+spine_width = 12;      // Y direction
+spine_thickness = 1.5; // Z direction (height)
+
+// Tooth dimensions
+tooth_width = 5.0;   // X direction (width of each tooth)
+tooth_length = 12;     // Y direction (length of each tooth, extending from spine)
+tooth_gap = 1.5;       // Gap between adjacent teeth (in Y direction)
+
+// Number of teeth
+num_teeth = 10;
+
+// Total Y span of teeth and gaps
+total_tooth_width = num_teeth * tooth_width;
+total_gap_width = (num_teeth - 1) * tooth_gap;
+total_y_span = total_tooth_width + total_gap_width;
+
+// The tooth row is centered on the spine in X
+// Spine is 70 mm long in X, so the tooth row should be centered at X = 0
+// The tooth row extends in the -Y direction from the spine's edge
+
+// The spine is centered at X = 0, Y = 0, Z = 0
+// The tooth row is attached to the spine's -Y edge (Y = -spine_width/2)
+// So the first tooth starts at Y = -spine_width/2 - tooth_length/2 - tooth_gap/2
+
+// We'll position each tooth so that the entire tooth row is centered in X
+// and the spine's -Y edge is aligned with the start of the tooth row
+
+// The tooth row's Y extent: from Y = -spine_width/2 - tooth_length/2 - tooth_gap/2 to Y = -spine_width/2 + tooth_length/2 + tooth_gap/2
+// But we want the tooth row to be centered in X, so we place each tooth at X = 0
+
+// Corrected: The spine is centered at (0, 0, 0), and the tooth row extends from the -Y edge of the spine
+// So the Y position of the first tooth's center is: -spine_width/2 - tooth_length/2 - tooth_gap/2 + tooth_gap/2 = -spine_width/2 - tooth_length/2
+
+// Actually, we want the tooth row to be centered in X, and the spine's -Y edge is at Y = -spine_width/2
+// The tooth row extends from Y = -spine_width/2 - tooth_length/2 to Y = -spine_width/2 + tooth_length/2 (but with gaps)
+
+// Let's recompute: the tooth row should be centered in X, so each tooth is centered at X = 0
+// The Y position of each tooth's center is: -spine_width/2 - (tooth_length + tooth_gap) * i - tooth_length/2 - tooth_gap/2
+
+// But we can simplify: the tooth row is symmetric around Y = -spine_width/2 - (tooth_length + tooth_gap) * (num_teeth - 1)/2 - tooth_length/2
+
+// Actually, we can just place the first tooth at Y = -spine_width/2 - tooth_length/2 - tooth_gap/2
+// Then each next tooth is offset by (tooth_length + tooth_gap) in Y
+
+// But the problem is: the spine is 12 mm wide in Y, so its -Y edge is at Y = -6 mm
+// The tooth row should start at Y = -6 - tooth_length/2 - tooth_gap/2
+
+// Let's define the Y offset for the first tooth's center
+// The first tooth's center is at Y = -spine_width/2 - tooth_length/2 - tooth_gap/2
+
+// But we want the entire tooth row to be centered in X, so we place each tooth at X = 0
+
+// However, the spine is 70 mm long in X, so we need to center the tooth row in X over the spine
+
+// The tooth row is 5.0 mm wide in X, so we center it at X = 0
+
+// So each tooth is centered at X = 0, and Y = -spine_width/2 - tooth_length/2 - tooth_gap/2 - (tooth_length + tooth_gap) * i
+
+// But this would make the tooth row extend too far in Y
+
+// Let's recompute the total Y span: 10 teeth, each 12 mm long, with 9 gaps of 1.5 mm
+// Total Y span = 10*12 + 9*1.5 = 120 + 13.5 = 133.5 mm
+
+// The spine is 12 mm wide in Y, so the tooth row extends from Y = -6 - 133.5/2 to Y = -6 + 133.5/2
+
+// But the spine's -Y edge is at Y = -6, so the tooth row starts at Y = -6 - 133.5/2 = -6 - 66.75 = -72.75
+// And ends at Y = -6 + 66.75 = 60.75
+
+// But the report says Y: -134.25 .. 6.00 — that's way off.
+
+// Let's re-read the report: Y: -134.25 .. 6.00 (size 140.25) — that's not matching our 133.5 mm
+
+// Wait — the problem says: "10 rectangular teeth that hang from one long edge of the spine in the -Y direction"
+// The spine is 70 mm long (X), 12 mm wide (Y), so its long edge is 70 mm in X, short edge is 12 mm in Y
+
+// The teeth hang from one long edge (70 mm) in the -Y direction
+
+// So the spine is oriented with its 70 mm edge along X, and the 12 mm edge along Y
+
+// The teeth are attached to one of the long edges (e.g., the edge at Y = -6 to Y = 6, but at X = -35 to 35)
+
+// The teeth hang from the long edge at Y = -6 (the bottom edge) in the -Y direction
+
+// So the first tooth is attached at Y = -6, and extends from Y = -6 to Y = -6 - 12 = -18
+
+// But the gap between teeth is 1.5 mm, so the next tooth starts at Y = -18 - 1.5 = -20.5
+
+// So the total Y span of the tooth row is: 10 teeth * 12 mm + 9 gaps * 1.5 mm = 120 + 13.5 = 133.5 mm
+
+// The spine's Y ranges from -6 to 6 (since width = 12 mm), so the tooth row extends from Y = -6 - 133.5 = -139.5 to Y = -6
+
+// But the report says Y: -134.25 .. 6.00 — that's not matching.
+
+// Wait — the report says Y: -134.25 .. 6.00, which is 140.25 mm long — that's 140.25 mm in Y
+
+// But our tooth row is only 133.5 mm long — so why is it 140.25?
+
+// Let's recheck: the spine is 12 mm wide in Y, so Y from -6 to 6
+
+// The tooth row is attached to the spine's -Y edge (Y = -6), and extends in -Y direction
+
+// The first tooth is 12 mm long, so from Y = -6 to Y = -18
+
+// The next tooth is separated by 1.5 mm gap, so from Y = -18 - 1.5 = -20.5 to Y = -32.5
+
+// So the total Y span of the tooth row is from Y = -6 to Y = -6 - 133.5 = -139.5
+
+// But the report says Y: -134.25 .. 6.00 — that's from -134.25 to 6.00, which is 140.25 mm
+
+// That suggests the tooth row is from Y = -134.25 to Y = 6.00 — that's 140.25 mm
+
+// But that would mean the tooth row extends from Y = -134.25 to Y = 6.00, which is 140.25 mm
+
+// But our tooth row is only 133.5 mm long — so why is it 140.25?
+
+// Wait — the spine is 12 mm wide in Y, so Y from -6 to 6
+
+// The tooth row is attached to the -Y edge (Y = -6), and extends in -Y direction
+
+// The tooth row is 133.5 mm long

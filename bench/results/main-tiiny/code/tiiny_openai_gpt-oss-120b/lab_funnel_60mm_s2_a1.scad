@@ -1,0 +1,42 @@
+// Funnel dimensions (mm)
+outer_d_spout = 10;          // outer diameter of the straight spout
+outer_d_top   = 60;          // outer diameter at the funnel rim
+wall_thickness = 1.6;        // uniform wall thickness
+height_spout   = 20;         // spout height (z = 0 → 20)
+height_cone    = 30;         // cone height (z = 20 → 50)
+clearance = 0.1;             // extra length for cutting shapes (mm)
+
+$fn = 64; // smooth circles and cones
+
+// Derived inner diameters
+inner_d_spout = outer_d_spout - 2*wall_thickness; // 6.8 mm
+inner_r_spout = inner_d_spout/2;
+
+inner_r_bottom = inner_r_spout; // at z = 20 (matches spout)
+inner_r_top    = (outer_d_top/2) - wall_thickness; // 28.4 mm
+inner_d_top    = inner_r_top*2; // 56.8 mm
+
+module outer_funnel() {
+    // Spout: cylinder from z=0 to z=height_spout
+    cylinder(h = height_spout, d = outer_d_spout);
+    // Cone: from z=height_spout to z=height_spout+height_cone
+    translate([0,0,height_spout])
+        cylinder(h = height_cone, r1 = outer_d_spout/2, r2 = outer_d_top/2);
+}
+
+module inner_funnel() {
+    // Spout inner cylinder, extended beyond both faces
+    translate([0,0,-clearance])
+        cylinder(h = height_spout + 2*clearance, d = inner_d_spout);
+    // Cone inner taper, extended beyond both faces
+    translate([0,0,height_spout - clearance])
+        cylinder(h = height_cone + 2*clearance,
+                 r1 = inner_r_bottom,
+                 r2 = inner_r_top);
+}
+
+// Final solid: outer minus inner (hollow funnel)
+difference() {
+    outer_funnel();
+    inner_funnel();
+}

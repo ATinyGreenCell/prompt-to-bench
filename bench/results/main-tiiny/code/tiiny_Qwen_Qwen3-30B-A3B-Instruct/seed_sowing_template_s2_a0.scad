@@ -1,0 +1,61 @@
+// Sowing template for 90 mm Petri dish
+// Dimensions in millimetres
+
+// Overall disc dimensions
+diameter_disc = 85;
+thickness_disc = 2;
+
+// Grid parameters
+grid_rows = 7;
+grid_cols = 7;
+hole_diameter = 3;
+hole_spacing = 9;
+
+// Notch dimensions
+notch_width = 10;      // X direction
+notch_depth = 4;         // Y direction (in from rim)
+
+// Center the grid on the disc
+grid_origin_x = -((grid_cols - 1) * hole_spacing) / 2;
+grid_origin_y = -((grid_rows - 1) * hole_spacing) / 2;
+
+// Set resolution for smooth holes
+$fn = 64;
+
+// Main disc body
+module disc() {
+    difference() {
+        // Solid disc
+        cylinder(h = thickness_disc, r = diameter_disc / 2, center = true);
+        
+        // Cut out the grid of holes
+        for (i = [0 : grid_rows - 1]) {
+            for (j = [0 : grid_cols - 1]) {
+                translate([
+                    grid_origin_x + j * hole_spacing,
+                    grid_origin_y + i * hole_spacing,
+                    0
+                ]) {
+                    cylinder(h = thickness_disc + 0.1, r = hole_diameter / 2, center = true);
+                }
+            }
+        }
+        
+        // Cut out the orientation notch
+        // Notch is on the +Y side, centered on Y axis
+        translate([
+            0, 
+            -diameter_disc / 2 + notch_depth, 
+            -0.01
+        ]) {
+            cube([
+                notch_width, 
+                notch_depth, 
+                thickness_disc + 0.02
+            ], center = false);
+        }
+    }
+}
+
+// Assemble the disc
+disc();

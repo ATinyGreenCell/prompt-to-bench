@@ -1,0 +1,94 @@
+Looking at the report, I can see several issues:
+
+1. **Bounding box X**: Shows 45.00 .. 135.00, but should be centred on origin (should be -45 to 45)
+2. **Bounding box Y**: Shows 22.50 .. 67.50, but should be centred on origin (should be -22.5 to 22.5)
+3. **Slots not visible**: At z=10.00 and z=19.00, there are 0 holes, meaning the slots aren't being cut
+
+The issue is that I'm translating the base block to [BLOCK_X/2, BLOCK_Y/2, 0] which moves it to the first quadrant, but I need it centred on the origin. Also, the slot cutting still isn't working.
+
+Let me trace through the slot logic again:
+- SLOT_Y_START = -SLOT_GROUP_WIDTH/2 = -(9 * 3.5)/2 = -15.75
+- For i=0, slot_y = -15.75
+- slot_cut(-15.75) translates to:
+  - X: SLOT_X_OFFSET - EXTEND = (90-77)/2 - 0.5 = 6 - 0.5 = 5.5
+  - Y: -15.75 - 1.6/2 - 0.5 = -15.75 - 0.8 - 0.5 = -17.05
+  - Z: -0.5
+- The cube is [77 + 1, 1.6 + 1, 10 + 20 + 1] = [78, 3.6, 31]
+- This should cut from z=-0.5 to z=30.5, which should definitely cut through the block at z=0 to z=20
+
+Wait, the issue might be that the base_block is now translated, but the slot_cut is still using absolute coordinates. Let me check:
+- base_block is at X: 45 to 135, Y: 22.5 to 67.5
+- slot_cut is at X: 5.5 to 83.5, Y: -17.05 to -13.45
+- These don't overlap! The slots are being cut in the wrong place.
+
+I need to either:
+1. Not translate the base block and keep it at the origin, or
+2. Adjust the slot positions to match the translated base block
+
+Since the spec says "centred on the block in X and Y", and the block should be centred on the origin, I should keep the block centred at origin. Let me fix this properly.
+
+```openscad
+// Drying rack for 10 microscope slides
+// Base block: 90 x 45 x 20 mm
+// 10 slots: 77 mm long (X), 1.6 mm wide (Y), 10 mm deep, 3.5 mm pitch
+
+// Base block dimensions
+BLOCK_X = 90;
+BLOCK_Y = 45;
+BLOCK_Z = 20;
+
+// Slot dimensions
+SLOT_LENGTH = 77;
+SLOT_WIDTH = 1.6;
+SLOT_DEPTH = 10;
+
+// Slot spacing
+SLOT_PITCH = 3.5;
+NUM_SLOTS = 10;
+
+// Calculate slot group width and offset
+SLOT_GROUP_WIDTH = (NUM_SLOTS - 1) * SLOT_PITCH;
+SLOT_Y_OFFSET = SLOT_GROUP_WIDTH / 2;
+
+// Slot X offset to centre the 77 mm slot in the 90 mm block
+SLOT_X_OFFSET = (BLOCK_X - SLOT_LENGTH) / 2;
+
+// Slot Y positions (centred on block)
+SLOT_Y_START = -SLOT_Y_OFFSET;
+
+// Cutting shape extension to avoid coplanar faces
+EXTEND = 0.5;
+
+module base_block() {
+    // Centre the block on the origin in X and Y
+    translate([-BLOCK_X / 2, -BLOCK_Y / 2, 0]) {
+        cube([BLOCK_X, BLOCK_Y, BLOCK_Z], center = false);
+    }
+}
+
+module slot_cut(slot_y_pos) {
+    // Slot extends slightly past the top face (z=20) and bottom of cut (z=10)
+    // Slot is centred in X, positioned at specific Y
+    translate([
+        SLOT_X_OFFSET - EXTEND,
+        slot_y_pos - SLOT_WIDTH / 2 - EXTEND,
+        -EXTEND
+    ]) {
+        cube([
+            SLOT_LENGTH + 2 * EXTEND,
+            SLOT_WIDTH + 2 * EXTEND,
+            SLOT_DEPTH + BLOCK_Z + 2 * EXTEND
+        ], center = false);
+    }
+}
+
+// Build the rack: base block with slots cut out
+difference() {
+    base_block();
+    
+    for (i = [0 : NUM_SLOTS - 1]) {
+        slot_y = SLOT_Y_START + i * SLOT_PITCH;
+        slot_cut(slot_y);
+    }
+}
+```

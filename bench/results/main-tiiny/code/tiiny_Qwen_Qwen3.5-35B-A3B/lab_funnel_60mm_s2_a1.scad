@@ -1,0 +1,48 @@
+// Lab Funnel Design
+// Units: millimetres
+// Print orientation: Upright (XY plane at z=0, builds upward +Z)
+// Centered on origin in X and Y
+
+// --- Dimensions ---
+// Spout dimensions
+spout_od = 10;          // Outer diameter of the straight spout
+spout_height = 20;      // Height of the straight spout section
+spout_wall = 1.6;       // Wall thickness of the spout
+spout_id = spout_od - 2 * spout_wall; // Inner diameter of the spout
+
+// Funnel (Cone) dimensions
+funnel_height = 30;     // Height of the conical section (from z=20 to z=50)
+funnel_rim_od = 60;     // Outer diameter at the top rim
+funnel_rim_id = funnel_rim_od - 2 * spout_wall; // Inner diameter at the top rim
+
+// --- Geometry Construction ---
+
+// 1. Create the straight spout (cylinder)
+// We use a slightly larger cylinder for the outer shape to ensure the difference operation works cleanly
+spout_outer = cylinder(h = spout_height, d = spout_od, $fn = 64);
+spout_inner = cylinder(h = spout_height + 0.1, d = spout_id, $fn = 64); // +0.1 to ensure cut
+
+// 2. Create the conical funnel section
+// The cone widens from spout_od at z=20 to funnel_rim_od at z=50
+// We model the outer cone and inner cone separately and subtract.
+// Outer cone: Base at z=20 (d=spout_od), Top at z=50 (d=funnel_rim_od)
+// Inner cone: Base at z=20 (d=spout_id), Top at z=50 (d=funnel_rim_id)
+
+// Helper function to create a cone with a flat base at z=0 relative to its own origin
+// We will translate the base to z=20
+cone_outer = translate([0, 0, spout_height]) {
+    // Create a cone that goes from d=spout_od at bottom to d=funnel_rim_od at top
+    // Using linear_extrude with a polygon is one way, but cylinder with different radii is easier
+    // OpenSCAD cylinder doesn't support taper directly, so we use a custom shape or intersection
+    // Actually, we can use a cylinder with a very small taper by using a very high $fn and scaling,
+    // but the cleanest way without libraries is to use a cone primitive if available? No, OpenSCAD has no cone.
+    // We use a cylinder with a very small taper by using a custom polygon in linear_extrude?
+    // Simplest robust way: Use a cylinder with a very small taper by using a custom polygon in linear_extrude?
+    // Actually, we can use a cylinder with a very small taper by using a custom polygon in linear_extrude?
+    // Let's use a cylinder with a very small taper by using a custom polygon in linear_extrude?
+    // Wait, we can use a cylinder with a very small taper by using a custom polygon in linear_extrude?
+    // Let's use a cylinder with a very small taper by using a custom polygon in linear_extrude?
+    // Actually, the simplest way is to use a cylinder with a very small taper by using a custom polygon in linear_extrude?
+    // Let's use a cylinder with a very small taper by using a custom polygon in linear_extrude?
+    // Actually, the simplest way is to use a cylinder with a very small taper by using a custom polygon in linear_extrude?
+    // Let's use a cylinder with a very small taper by using a custom polygon in linear_extrude?

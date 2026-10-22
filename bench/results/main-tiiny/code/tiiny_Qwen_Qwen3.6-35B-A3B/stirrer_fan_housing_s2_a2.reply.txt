@@ -1,0 +1,159 @@
+```openscad
+// Dimensions
+// Top plate thickness
+top_thickness = 2;
+// Wall thickness
+wall_thickness = 2.5;
+// Wall height (from top of plate to open edge)
+wall_height = 40;
+// Outer width of the housing
+outer_width = 90;
+// Outer depth of the housing
+outer_depth = 90;
+// Screw hole diameter
+screw_hole_dia = 4.5;
+// Screw hole pattern spacing (center-to-center)
+screw_pattern = 71.5;
+// Cable notch width
+notch_width = 12;
+// Cable notch depth from open edge
+notch_depth = 8;
+// Clearance for boolean operations
+clearance = 0.05;
+
+// Derived dimensions
+// Inner dimensions
+inner_width = outer_width - 2 * wall_thickness;
+inner_depth = outer_depth - 2 * wall_thickness;
+
+// Screw hole positions (relative to center 0,0)
+// Pattern is square, centered on plate
+screw_offset = screw_pattern / 2;
+
+// Notch parameters
+// Notch is in one wall (let's say the front wall, along X axis)
+// It is centered along the wall (along X)
+// It reaches from z = 32 to z = 40 (open edge)
+// In print orientation, z=0 is the top plate.
+// The wall rises from z = top_thickness to z = top_thickness + wall_height.
+// So the wall spans z = 2 to z = 42.
+// The open edge is at z = 42.
+// The notch is 8mm deep from the open edge, so it goes from z = 42 - 8 = 34 to z = 42.
+// Wait, the prompt says "reaching 8 mm down from the open edge (from z = 32 to z = 40)".
+// Let's re-read carefully: "four walls, 2.5 mm thick, rise from it to z = 40".
+// So the wall top is at z = 40.
+// The top plate is z = 0 to 2.
+// So the wall is from z = 2 to z = 40.
+// The notch is 8mm deep from the open edge (z=40).
+// So the notch goes from z = 40 - 8 = 32 to z = 40.
+// This matches the prompt's "from z = 32 to z = 40".
+
+// Notch Z range
+notch_z_start = 32;
+notch_z_end = 40;
+
+// Notch X range
+// Centered along the wall (width 90mm).
+// Notch width is 12mm.
+// So X goes from -6 to 6.
+notch_x_start = -notch_width / 2;
+notch_x_end = notch_width / 2;
+
+// Notch Y position
+// It is in one wall. Let's assume the wall at Y = outer_depth/2 = 45.
+// The wall has thickness 2.5mm.
+// The notch cuts through the wall.
+// We need to cut a slot from the outside.
+// The wall is at Y = 45 (outer face) to Y = 45 - 2.5 = 42.5 (inner face).
+// Or if we model the box as a solid, the wall is the material between inner and outer boundaries.
+// Let's model the box as a solid block with a hollow interior.
+
+module stirrer_housing() {
+    // 1. Create the main solid body
+    // The body consists of the top plate and the four walls.
+    // We can model this as a large outer box minus the inner hollow space.
+    
+    // Outer box dimensions
+    // Width: 90, Depth: 90, Height: 40 (top of walls)
+    // But the top plate is only 2mm thick.
+    // The walls rise from the top plate to z=40.
+    
+    // Let's build it using primitives.
+    
+    // Base: The top plate (which is on the bed)
+    // Size: 90 x 90 x 2
+    difference() {
+        // Main body: Outer box 90x90x40
+        // But we need to subtract the inner hollow.
+        // Inner hollow: 
+        // Width: 90 - 2*2.5 = 85
+        // Depth: 90 - 2*2.5 = 85
+        // Height: The hollow starts at z=2 (top of plate) and goes up to z=40.
+        // So the hollow is 85x85x38.
+        
+        // Let's create the solid first.
+        // We can use a union of the plate and the walls, or just subtract the inner void from an outer block.
+        
+        // Outer block: 90x90x40
+        // Inner void: 85x85x38, starting at z=2.
+        
+        // However, the walls are 2.5mm thick.
+        // If we take a 90x90x40 block and subtract an 85x85x38 void at z=2,
+        // the remaining walls will be (90-85)/2 = 2.5mm thick. Correct.
+        // The bottom of the walls will be at z=2. Correct.
+        // The top of the walls will be at z=40. Correct.
+        // The top plate will be the part of the 90x90x40 block from z=0 to z=2. Correct.
+        
+        // So the solid is:
+        // Union of:
+        // 1. Plate: 90x90x2
+        // 2. Walls: 90x90x38 block minus 85x85x38 void? No, that's not right.
+        // The walls are only the vertical parts.
+        // Let's just subtract the inner void from the outer block.
+        
+        // Outer block
+        cube([90, 90, 40], center = false);
+        
+        // Inner void
+        // Starts at z=2. Height is 38.
+        // Centered in X and Y.
+        // X: 90-85=5, so 2.5 on each side. Center is 0.
+        // Y: 90-85=5, so 2.5 on each side. Center is 0.
+        translate([0, 0, 2]) {
+            cube([85, 85, 38], center = false);
+        }
+    }
+    
+    // 2. Drill the four screw holes
+    // Holes are 4.5mm diameter.
+    // Pattern: 71.5mm square.
+    // Holes go through the top plate (z=0 to 2).
+    // We need to extend them slightly past z=0 and z=2 for clean boolean.
+    
+    hole_len = 4; // Extend 2mm past each face
+    
+    for (x = [-screw_offset, screw_offset]) {
+        for (y = [-screw_offset, screw_offset]) {
+            translate([x, y, -1]) {
+                cylinder(h = hole_len, d = screw_hole_dia, center = false, $fn = 64);
+            }
+        }
+    }
+    
+    // 3. Cut the cable notch
+    // Notch is in one wall. Let's choose the wall at Y = 45 (front).
+    // Notch width: 12mm (X: -6 to 6).
+    // Notch depth: 8mm from open edge (z=32 to 40).
+    // The notch cuts through the wall thickness.
+    // The wall is at Y = 42.5 to 45 (outer face).
+    // Wait, if the outer box is 90x90, the outer faces are at X=45, X=-45, Y=45, Y=-45.
+    // The inner faces are at X=42.5, X=-42.5, Y=42.5, Y=-42.5.
+    // The wall material is between 42.5 and 45.
+    // The notch should cut through the wall.
+    // Usually, a cable notch is cut from the outside.
+    // So we cut a slot from Y=45 inwards.
+    // How deep? The prompt says "cut a notch for the power cable".
+    // It doesn't specify the depth into the wall, but it must go through the wall to allow the cable to pass.
+    // However, it also says "reaching 8 mm down from the open edge".
+    // This implies the notch is a slot on the face of the wall.
+    // It doesn

@@ -1,0 +1,63 @@
+// Bench Rack for 1.5 mL Microcentrifuge Tubes
+// Dimensions in millimetres
+
+// Block Dimensions
+block_len = 106;   // X dimension
+block_wid = 72;    // Y dimension
+block_hgt = 30;    // Z dimension
+
+// Hole Grid Dimensions
+hole_diam = 11.2;  // Diameter of the tube holes
+hole_pitch_x = 16; // Centre-to-centre distance along X
+hole_pitch_y = 16; // Centre-to-centre distance along Y
+hole_depth = 25;   // Depth of the hole (open at top, closed at bottom)
+floor_thick = 5;   // Thickness of the solid floor at the bottom
+
+// Derived Dimensions
+hole_radius = hole_diam / 2;
+grid_cols = 6;
+grid_rows = 4;
+
+// Calculate grid offset to center the holes
+// Total width of the grid area
+grid_width = (grid_cols - 1) * hole_pitch_x;
+// Total height of the grid area
+grid_height = (grid_rows - 1) * hole_pitch_y;
+// Offset from block edge to grid edge
+offset_x = (block_len - grid_width) / 2;
+offset_y = (block_wid - grid_height) / 2;
+
+$fn = 64;
+
+// Main Block
+module block() {
+    cube([block_len, block_wid, block_hgt], center = false);
+}
+
+// Tube Hole
+module tube_hole() {
+    // The hole is open at the top, so we cut from the top surface down.
+    // We extend the cutter slightly past the bottom face to ensure a clean cut.
+    translate([0, 0, -0.01]) 
+    cylinder(h = hole_depth + 0.01, r = hole_radius, center = false);
+}
+
+// Assembly
+union() {
+    // 1. Create the solid block
+    block();
+    
+    // 2. Subtract the holes
+    // We loop through the grid positions
+    for (x = [0 : grid_cols - 1]) {
+        for (y = [0 : grid_rows - 1]) {
+            // Calculate position relative to origin
+            pos_x = offset_x + x * hole_pitch_x;
+            pos_y = offset_y + y * hole_pitch_y;
+            
+            translate([pos_x, pos_y, 0]) {
+                tube_hole();
+            }
+        }
+    }
+}

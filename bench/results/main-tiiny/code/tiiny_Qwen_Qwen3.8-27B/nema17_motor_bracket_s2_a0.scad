@@ -1,0 +1,91 @@
+// L-shaped NEMA 17 stepper motor mounting bracket
+// Print orientation: base plate on the bed (z = 0), builds upward in +Z.
+// Centred on the origin in X and Y.
+
+// ---- Base plate ----
+base_x_min = -25;   // base plate left edge (X)
+base_x_max =  25;   // base plate right edge (X)
+base_y_min =   0;   // base plate front edge (Y)
+base_y_max =  45;   // base plate back edge (Y)
+base_z_min =   0;   // base plate bottom (Z, on the bed)
+base_z_max =   5;   // base plate top (Z)
+
+// ---- Vertical motor plate ----
+motor_x_min = -25;  // motor plate left edge (X)
+motor_x_max =  25;  // motor plate right edge (X)
+motor_y_min =   0;  // motor plate front face (Y)
+motor_y_max =   5;  // motor plate back face (Y)
+motor_z_min =   0;  // motor plate bottom (Z)
+motor_z_max =  50;  // motor plate top (Z)
+
+// ---- Base plate M4 through-holes (vertical, along Z) ----
+m4_dia   = 4.5;     // M4 clearance hole diameter
+m4_x     = [-17, 17]; // hole centre X positions
+m4_y     =  30;      // hole centre Y position
+
+// ---- Motor plate holes (cut along Y) ----
+boss_dia  = 23;     // motor centring boss hole diameter
+boss_x    =   0;    // boss hole centre X
+boss_z    =  28;    // boss hole centre Z
+m3_dia    =  3.4;   // M3 clearance hole diameter
+m3_half   =  15.5;  // half of the 31 mm square pattern
+m3_offsets = [
+    [-m3_half, -m3_half],
+     [ m3_half, -m3_half],
+     [ m3_half,  m3_half],
+    [-m3_half,  m3_half]
+];
+
+// ---- Triangular gussets (5 mm thick, flush with left/right edges) ----
+gusset_thick = 5;   // gusset thickness in X
+gusset_leg   = 20;  // right-triangle leg length (along +Y and +Z)
+gusset_y0    =   5; // right-angle corner Y (where the plates meet)
+gusset_z0    =   5; // right-angle corner Z (where the plates meet)
+
+$fn = 64;           // round holes
+
+// Base plate solid
+base = translate([base_x_min, base_y_min, base_z_min])
+    cube([base_x_max - base_x_min, base_y_max - base_y_min, base_z_max - base_z_min]);
+
+// Vertical motor plate solid
+motor = translate([motor_x_min, motor_y_min, motor_z_min])
+    cube([motor_x_max - motor_x_min, motor_y_max - motor_y_min, motor_z_max - motor_z_min]);
+
+// Two triangular gussets (right triangle in the YZ plane, extruded 5 mm in X)
+gussets = union()
+    for (gx = [-25, 20])
+        translate([gx, 0, 0])
+            linear_extrude(gusset_thick)
+                polygon([
+                    [0, 0],
+                    [gusset_leg, 0],
+                    [0, gusset_leg]
+                ]);
+
+// Solid before drilling
+bracket = union()
+    base
+    motor
+    gussets;
+
+// Drilling cuts (each extends 1 mm past the faces it cuts, so no coplanar faces)
+cuts = union()
+    // M4 vertical through-holes in the base plate
+    for (hx = m4_x)
+        translate([hx, m4_y, base_z_min - 1])
+            cylinder(h = (base_z_max - base_z_min) + 2, r = m4_dia / 2, $fn = $fn);
+    // Motor centring boss hole through the motor plate (along Y)
+    translate([boss_x, motor_y_min - 1, boss_z])
+        rotate([90, 0, 0])
+            cylinder(h = (motor_y_max - motor_y_min) + 2, r = boss_dia / 2, $fn = $fn);
+    // Four M3 holes on a 31 mm square pattern through the motor plate (along Y)
+    for (off = m3_offsets)
+        translate([boss_x + off[0], motor_y_min - 1, boss_z + off[1]])
+            rotate([90, 0, 0])
+                cylinder(h = (motor_y_max - motor_y_min) + 2, r = m3_dia / 2, $fn = $fn);
+
+// Final part
+difference()
+    bracket
+    cuts;

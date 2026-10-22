@@ -1,0 +1,132 @@
+// --- Dimensions ---
+// Microscope slide dimensions
+slide_length = 75;    // X direction (length of the slide)
+slide_width = 25;     // Y direction (width of the slide)
+slide_thickness = 1;  // Z direction (thickness of the slide)
+
+// Base block dimensions
+base_length = 90;     // X direction
+base_width = 45;      // Y direction
+base_height = 20;     // Z direction
+
+// Slot dimensions
+slot_length = 77;     // X direction (slightly longer than slide to allow insertion)
+slot_width = 1.6;     // Y direction (slightly wider than slide thickness for clearance)
+slot_depth = 10;      // Z direction (depth into the block)
+
+// Slot arrangement
+num_slots = 10;
+slot_pitch = 3.5;     // Centre-to-centre distance in Y
+
+// --- Calculations ---
+// Calculate total width of the slot group to center it on the block
+// The slots are centred on the block in X and Y.
+// Total span of slots = (num_slots - 1) * pitch
+slot_group_width = (num_slots - 1) * slot_pitch;
+
+// Calculate start Y position for the first slot
+// Center of block in Y is base_width / 2
+// Center of slot group is also base_width / 2
+// First slot center Y = (base_width / 2) - (slot_group_width / 2)
+first_slot_y = (base_width / 2) - (slot_group_width / 2);
+
+// Calculate X position for slots
+// Slots run along X. They are centred on the block in X.
+// Slot length is 77, block length is 90.
+// Offset from center in X = slot_length / 2
+slot_x_offset = slot_length / 2;
+
+// --- Model ---
+$fn = 64;
+
+module drying_rack() {
+    // 1. Create the solid base block
+    // Resting on XY plane at z=0
+    base = cube([base_length, base_width, base_height], center = false);
+    
+    // 2. Create the slots using difference
+    // Slots run along X, so we use a cylinder or box oriented along X.
+    // Since OpenSCAD primitives are axis-aligned, we use a box (cube) for the slot cut.
+    // The slot is open at the top (z = base_height).
+    // We need to cut into the block.
+    
+    // Define the cutting shape for one slot
+    // It's a rectangular prism (box)
+    // Dimensions: length (X), width (Y), depth (Z)
+    // To ensure clean cuts and no coplanar faces, we extend the cut slightly past the bottom of the slot.
+    // Slot depth is 10mm. Block height is 20mm. Bottom of slot is at z = 20 - 10 = 10mm.
+    // We will cut from z = base_height (top) down to z = 10 - 0.01 to ensure it goes through.
+    // Actually, standard practice is to cut slightly deeper than required.
+    // Let's define the cut volume:
+    // X: centered on block, length slot_length
+    // Y: centered on slot position, width slot_width
+    // Z: from top (z=base_height) down to z = base_height - slot_depth - 0.01
+    
+    cut_depth_extension = 0.01;
+    cut_height = slot_depth + cut_depth_extension;
+    
+    // Create the base block
+    part = base;
+    
+    // Loop to create each slot
+    for (i = [0 : num_slots - 1]) {
+        // Calculate Y position for the center of the current slot
+        slot_y_center = first_slot_y + i * slot_pitch;
+        
+        // Calculate X position for the center of the current slot
+        // Centred on block in X
+        slot_x_center = 0; // Block is centred at 0,0 in X,Y? No, block is centred at 0,0 in X,Y if we use center=true.
+                           // Let's re-verify the "centred on origin" rule.
+                           // Rule 3: "centre it on the origin in X and Y".
+                           // So the block cube should be centered at (0,0,0) in X and Y?
+                           // Usually, "resting on XY plane at z=0" implies the bottom face is at z=0.
+                           // If we use cube([L,W,H], center=false), the center of the cube is at (L/2, W/2, H/2).
+                           // To centre it on the origin in X and Y, we need to translate it.
+                           // Let's adjust the base creation to be centered at (0,0) in X and Y.
+        
+        // Re-defining base to be centered at (0,0) in X and Y, with bottom at z=0
+        // Cube center would be at (0, 0, base_height/2)
+        // But we already defined 'base' above. Let's rebuild the part properly.
+    }
+    
+    // Let's restart the module logic to ensure correct positioning.
+}
+
+// Redefining the main part with correct positioning
+module drying_rack() {
+    // Base block: 90x45x20, centred at (0,0) in X and Y, bottom at z=0
+    // Center of the block in X is 0, in Y is 0.
+    // So the cube extends from -45 to 45 in X, -22.5 to 22.5 in Y, 0 to 20 in Z.
+    base = translate([0, 0, base_height / 2]) {
+        cube([base_length, base_width, base_height], center = true);
+    };
+    
+    // Now subtract the slots
+    // Slots are centred on the block in X and Y.
+    // Slot X center: 0
+    // Slot Y center: calculated in loop
+    
+    part = difference() {
+        base;
+        
+        for (i = [0 : num_slots - 1]) {
+            slot_y_center = first_slot_y + i * slot_pitch;
+            
+            // The slot is a box cut
+            // X: from -slot_length/2 to slot_length/2
+            // Y: from slot_y_center - slot_width/2 to slot_y_center + slot_width/2
+            // Z: from base_height down to base_height - slot_depth - 0.01
+            
+            slot_cut = translate([0, slot_y_center, base_height - slot_depth - 0.01]) {
+                cube([slot_length, slot_width, slot_depth + 0.01], center = true);
+            };
+            
+            slot_cut;
+        }
+    };
+    
+    part;
+}
+
+// Generate the model
+drying_rack();

@@ -1,0 +1,44 @@
+// Adapter sleeve for 0.2 mL PCR tube in 1.5 mL rack hole
+// Print orientation: upside down (collar on bed, sleeve rises upward)
+
+// Dimensions
+collar_diameter = 13;        // mm, outer diameter of collar
+collar_thickness = 1.5;      // mm, height of collar
+sleeve_outer_diameter = 10.8; // mm, outer diameter of sleeve body
+sleeve_height = 21.5;        // mm, height of sleeve body (from collar top to top of sleeve)
+bore_diameter = 6.2;         // mm, inner bore diameter
+
+// Set resolution for curves
+$fn = 64;
+
+// Collar (bottom part)
+collar_height = collar_thickness;
+collar_radius = collar_diameter / 2;
+
+// Sleeve body (upper part)
+sleeve_radius = sleeve_outer_diameter / 2;
+sleeve_top = collar_thickness + sleeve_height;
+
+// Bore (full height)
+bore_radius = bore_diameter / 2;
+
+// Build adapter sleeve
+module adapter_sleeve() {
+    // Collar base
+    translate([0, 0, 0]) {
+        cylinder(h = collar_thickness, r = collar_radius, center = false);
+    }
+    
+    // Sleeve body (cylinder on top of collar)
+    translate([0, 0, collar_thickness]) {
+        cylinder(h = sleeve_height, r = sleeve_radius, center = false);
+    }
+    
+    // Bore (subtract cylinder from center)
+    translate([0, 0, -0.01]) {
+        cylinder(h = sleeve_top + 0.02, r = bore_radius, center = false);
+    }
+}
+
+// Render the adapter sleeve
+adapter_sleeve();

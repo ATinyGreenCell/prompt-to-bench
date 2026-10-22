@@ -1,0 +1,84 @@
+// 96-Well PCR Tube Rack
+// Dimensions based on ANSI/SLAS standard microplate footprint
+
+$fn = 64; // High resolution for curved surfaces
+
+// --- Dimensions (mm) ---
+block_length = 127.76;  // X dimension
+block_width = 85.48;   // Y dimension
+block_height = 20.0;   // Z dimension (thickness)
+
+hole_diameter = 6.2;   // Hole diameter
+hole_spacing_x = 9.0;  // Center-to-center spacing along X
+hole_spacing_y = 9.0;  // Center-to-center spacing along Y
+
+// Offsets for the first hole (A1) from the block edges
+offset_x = 14.38;      // Distance from left edge to A1 center
+offset_y = 11.24;      // Distance from back edge to A1 center
+
+chamfer_leg = 5.0;     // Length of the chamfer leg
+
+// --- Derived Dimensions ---
+// Calculate the total grid width and height based on offsets
+grid_width_x = (11 * hole_spacing_x) + hole_diameter; // 11 gaps * 9.0 + 6.2
+grid_width_y = (7 * hole_spacing_y) + hole_diameter; // 7 gaps * 9.0 + 6.2
+
+// Calculate the total block width required to center the grid
+// Total Width = (Grid Width) + (Offset from Left) + (Offset from Right)
+// Since we center the grid, Offset Left = Offset Right
+total_block_width = grid_width_x + (2 * offset_x);
+
+// Calculate the total block height required to center the grid
+// Total Height = (Grid Height) + (Offset from Back) + (Offset from Front)
+// Since we center the grid, Offset Back = Offset Front
+total_block_height = grid_width_y + (2 * offset_y);
+
+// --- Main Body ---
+module rack_body() {
+    // Base block centered on origin
+    translate([0, 0, 0])
+    cube([block_length, total_block_width, block_height], center=true);
+}
+
+// --- Tube Holes ---
+module tube_holes() {
+    // Loop through 12 columns (X) and 8 rows (Y)
+    for (x = [0 : 11]) {
+        for (y = [0 : 7]) {
+            // Calculate position relative to the first hole (A1)
+            // A1 is at (offset_x, offset_y)
+            // Subsequent holes are offset by spacing
+            hole_x = offset_x + (x * hole_spacing_x);
+            hole_y = offset_y + (y * hole_spacing_y);
+            
+            // Translate to hole position, extrude height
+            translate([hole_x, hole_y, 0])
+            cylinder(h = block_height + 1, d = hole_diameter, center=true);
+        }
+    }
+}
+
+// --- Chamfer ---
+module chamfer_cut() {
+    // Cut a 45-degree chamfer at the A1 corner
+    // A1 is at (offset_x, offset_y)
+    // We cut a small box at the corner and rotate it
+    
+    // Position the cut at the corner
+    translate([offset_x, offset_y, 0])
+    rotate([0, 0, 45])
+    // The box size is the chamfer leg length
+    cube([chamfer_leg, chamfer_leg, block_height + 1]);
+}
+
+// --- Assembly ---
+difference() {
+    // 1. Base Block
+    rack_body();
+    
+    // 2. Subtract Holes
+    tube_holes();
+    
+    // 3. Subtract Chamfer
+    chamfer_cut();
+}

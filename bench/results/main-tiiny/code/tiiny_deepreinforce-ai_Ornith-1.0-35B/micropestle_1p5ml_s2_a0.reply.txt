@@ -1,0 +1,52 @@
+```openscad
+// Pestle for 1.5 mL microcentrifuge tube grinding
+// Print orientation: standing upright on XY plane (z=0)
+
+// Handle dimensions
+handle_diameter = 8;        // mm, diameter of cylindrical handle
+handle_length = 45;         // mm, height of handle from z=0 to z=45
+
+// Cone dimensions
+cone_bottom_diameter = 8;   // mm, diameter at base of cone (z=45)
+cone_top_diameter = 3;      // mm, diameter at tip of cone (z=62)
+cone_height = 17;           // mm, height of cone (62 - 45)
+
+// Tip dimensions
+tip_diameter = 3;            // mm, diameter of spherical tip
+tip_center_z = 62;           // mm, z-coordinate of sphere center
+
+// Groove dimensions
+groove_width = 2;            // mm, width of each groove in Z
+groove_depth = 1;          // mm, depth of each groove (radial)
+groove_positions = [10, 15, 20, 25];  // mm, z-centers of grooves
+
+// Groove radius (half of handle diameter minus depth)
+groove_radius = (handle_diameter / 2) - groove_depth;
+
+// Build the pestle
+pestle = union() {
+    // Cylindrical handle
+    cylinder(d = handle_diameter, h = handle_length, center = false, $fn = 64);
+    
+    // Cone (using cylinder with different top and bottom diameters)
+    translate([0, 0, handle_length]) {
+        cylinder(d1 = cone_bottom_diameter, d2 = cone_top_diameter, h = cone_height, center = false, $fn = 64);
+    }
+    
+    // Rounded tip (sphere)
+    translate([0, 0, tip_center_z]) {
+        sphere(d = tip_diameter, $fn = 64);
+    }
+};
+
+// Cut circumferential grooves
+for (z_pos = groove_positions) {
+    difference() {
+        pestle;
+        // Groove as a cylinder that extends past the handle surface
+        translate([0, 0, z_pos - groove_width / 2]) {
+            cylinder(d = handle_diameter + 0.02, h = groove_width + 0.02, center = false, $fn = 64);
+        }
+    }
+}
+```

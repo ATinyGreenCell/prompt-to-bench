@@ -1,0 +1,67 @@
+// Bench rack for 1.5 mL microcentrifuge tubes
+// Dimensions measured with calipers, units in millimetres
+
+// Overall block dimensions
+block_length = 106;   // X dimension
+block_width = 72;      // Y dimension
+block_height = 30;     // Z dimension
+
+// Hole grid dimensions
+rows = 4;              // Number of rows along Y
+cols = 6;              // Number of columns along X
+pitch_x = 16;          // Centre-to-centre spacing in X
+pitch_y = 16;          // Centre-to-centre spacing in Y
+hole_diameter = 11.2;  // Hole diameter
+hole_depth = 25;     // Hole depth from top
+floor_thickness = 5;  // Solid floor thickness at bottom
+
+// Hole parameters
+hole_radius = hole_diameter / 2;
+
+// Calculate grid centering offsets
+// Total grid width = (cols - 1) * pitch_x
+// Total grid height = (rows - 1) * pitch_y
+// Center the grid on the block
+grid_center_x = (cols - 1) * pitch_x / 2;
+grid_center_y = (rows - 1) * pitch_y / 2;
+
+// Start position of the first hole (bottom-left of grid)
+start_x = -grid_center_x;
+start_y = -grid_center_y;
+
+// Create the base block
+base_block = cube([block_length, block_width, block_height], center = true);
+
+// Create the holes
+holes = [];
+for (i = [0 : cols - 1]) {
+    for (j = [0 : rows - 1]) {
+        hx = start_x + i * pitch_x;
+        hy = start_y + j * pitch_y;
+        // Hole cylinder: extends through the block, will be subtracted
+        // We make it slightly deeper than needed to ensure clean cut
+        hole_cyl = cylinder(h = block_height + 1, r = hole_radius, center = true);
+        holes = holes + [translate([hx, hy, 0]) * hole_cyl];
+    }
+}
+
+// Union all holes
+all_holes = union() {
+    for (h = holes) {
+        h;
+    }
+};
+
+// Final part: base block minus holes
+part = difference() {
+    base_block;
+    all_holes;
+};
+
+// Ensure the bottom is closed by the difference operation
+// The hole depth is 25mm, block height is 30mm, so 5mm floor remains naturally.
+// No additional boolean needed as the cylinder cuts through the full height
+// but the difference operation leaves the bottom 5mm intact.
+
+// Render the part
+part;

@@ -1,0 +1,46 @@
+// DIY magnetic stirrer housing for 80mm PC case fan
+// Top plate thickness: 2 mm
+// Wall thickness: 2.5 mm
+// Overall size: 90 x 90 mm
+// Cable notch: 12 mm wide, 8 mm deep
+// Mounting holes: 4.5 mm diameter, 71.5 mm pattern
+
+// Dimensions
+top_plate_thickness = 2;
+wall_thickness = 2.5;
+outer_width = 90;
+outer_depth = 90;
+height = 40;
+hole_diameter = 4.5;
+hole_pattern = 71.5;
+cable_notch_width = 12;
+cable_notch_depth = 8;
+
+// Main housing block
+housing = cube([outer_width, outer_depth, height], center=true);
+
+// Top plate
+top_plate = cube([outer_width, outer_depth, top_plate_thickness], center=true);
+
+// Walls
+walls = difference() {
+    cube([outer_width + wall_thickness, outer_depth + wall_thickness, height], center=true);
+    cube([outer_width, outer_depth, height], center=true);
+};
+
+// Mounting holes
+for (x = [-hole_pattern/2, hole_pattern/2]) {
+    for (y = [-hole_pattern/2, hole_pattern/2]) {
+        translate([x, y, top_plate_thickness/2]) cylinder(d=hole_diameter, h=top_plate_thickness + 0.02, center=true, $fn=64);
+    }
+}
+
+// Cable notch
+cable_notch = translate([0, 0, height - cable_notch_depth]) cube([cable_notch_width, wall_thickness, cable_notch_depth], center=true);
+
+// Final assembly
+union() {
+    translate([0, 0, top_plate_thickness/2]) top_plate;
+    translate([0, 0, height/2]) walls;
+    translate([0, 0, height - cable_notch_depth/2]) cable_notch;
+}

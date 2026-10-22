@@ -1,0 +1,140 @@
+```openscad
+$fn = 128;
+
+// --- Dimensions ---
+// Plate thickness (Z)
+$plate_thickness = 1.5;
+
+// Spine dimensions (X, Y)
+$spine_length = 70;
+$spine_width = 12;
+
+// Tooth dimensions (X, Y)
+$tooth_width = 5.0;
+$tooth_length = 12;
+
+// Gap between teeth
+$gap_size = 1.5;
+
+// Number of wells
+$num_wells = 10;
+
+// --- Calculations ---
+// Total width of the tooth row (teeth + gaps)
+$total_row_width = ($num_wells * $tooth_width) + (($num_wells - 1) * $gap_size);
+
+// Calculate offset to center the row on the spine in X
+// The row of teeth needs to be centered relative to the spine's length.
+// We will position the first tooth such that the entire row is centered.
+// Center of the row in X should be 0.
+// Position of the center of the i-th tooth (0-indexed):
+// x_center_i = - (total_row_width / 2) + (i + 0.5) * ($tooth_width + $gap_size)
+
+// --- Build ---
+
+// We will build the comb by creating the spine and then subtracting the gaps 
+// from a larger block containing the teeth, or by unioning a spine and teeth.
+// Given the requirement for a single solid and clean geometry, we will:
+// 1. Create the full spine block.
+// 2. Create the teeth as a single block hanging from the spine.
+// 3. Union them.
+
+// 1. Create the Spine
+// Dimensions: X = $spine_length, Y = $spine_width, Z = $plate_thickness
+// Centered at origin.
+spine = cube([$spine_length, $spine_width, $plate_thickness]);
+
+// 2. Create the Teeth Block
+// The teeth hang from the spine in the -Y direction.
+// The spine top edge is at Y = $spine_width / 2.
+// The teeth extend from Y = $spine_width / 2 to Y = $spine_width / 2 - $tooth_length.
+// The row of teeth is centered on the spine in X.
+
+// Calculate the bounding box of the teeth block
+// X range: centered at 0, width = $total_row_width
+// Y range: starts at $spine_width/2, extends down by $tooth_length
+// Z range: 0 to $plate_thickness
+
+// X position: The block is centered at X=0.
+// Y position: The block starts at Y = $spine_width/2 and goes down.
+// So the Y coordinate for the block is [0, $tooth_length] relative to the spine edge?
+// No, let's define the block's local coordinates and then translate it.
+// Local block: X = $total_row_width, Y = $tooth_length, Z = $plate_thickness.
+// We want the block to hang from Y = $spine_width/2.
+// So the block's Y range in world space is [$spine_width/2 - $tooth_length, $spine_width/2].
+// The block's center in Y is $spine_width/2 - $tooth_length/2.
+// The block's center in X is 0.
+
+// Let's construct the teeth block by subtracting the gaps from a solid block of teeth.
+// Solid block of teeth:
+// X: $total_row_width
+// Y: $tooth_length
+// Z: $plate_thickness
+// Centered at X=0, Y = $spine_width/2 - $tooth_length/2, Z = $plate_thickness/2.
+
+teeth_base = cube([$total_row_width, $tooth_length, $plate_thickness]);
+
+// Translate to position:
+// X: 0 (centered)
+// Y: $spine_width/2 - $tooth_length/2 (hanging from spine edge)
+// Z: $plate_thickness/2 (centered in thickness)
+teeth_base = translate([0, $spine_width/2 - $tooth_length/2, $plate_thickness/2], teeth_base);
+
+// Now subtract the gaps between teeth.
+// There are $num_wells - 1 gaps.
+// Each gap is $gap_size wide in X.
+// The gaps are centered between the teeth.
+// The first gap starts at x = $tooth_width/2 + $gap_size/2 relative to the start of the first tooth.
+// Since the block is centered at X=0, the first tooth center is at -($total_row_width)/2 + ($tooth_width + $gap_size)/2.
+// Actually, simpler: The gaps are at specific X intervals.
+// Interval i (0 to num_wells-2):
+// Center of gap i = - (total_row_width / 2) + (i + 1) * ($tooth_width + $gap_size / 2)
+// Wait, let's re-verify the centering.
+// Total width = W.
+// Centers of teeth: -W/2 + 0.5*(w+g), -W/2 + 1.5*(w+g), ...
+// Centers of gaps: -W/2 + 1.0*(w+g), -W/2 + 2.0*(w+g), ...
+// Yes.
+
+gaps = union();
+for (i = [0 : $num_wells - 2]) {
+    // Calculate X center of the gap
+    $gap_x_center = -($total_row_width / 2) + (i + 1) * ($tooth_width + $gap_size / 2);
+    
+    // Gap dimensions:
+    // X: $gap_size
+    // Y: $tooth_length (full length of the tooth row)
+    // Z: $plate_thickness
+    
+    // Position:
+    // X: $gap_x_center
+    // Y: $spine_width/2 - $tooth_length/2 (same Y as teeth)
+    // Z: $plate_thickness/2
+    
+    $gap = translate([
+        $gap_x_center, 
+        $spine_width/2 - $tooth_length/2, 
+        $plate_thickness/2
+    ], 
+    cube([$gap_size, $tooth_length, $plate_thickness]));
+    
+    gaps = union(gaps, $gap);
+}
+
+// Create the final teeth shape by subtracting gaps from the base
+teeth = difference([
+    teeth_base,
+    gaps
+]);
+
+// 3. Combine Spine and Teeth
+// Union the spine and the teeth block.
+// Since the teeth hang from the spine, they share the interface at Y = $spine_width/2.
+// The union will create a single solid.
+comb = union(spine, teeth);
+
+// 4. Final Output
+// The part is already oriented correctly: lying flat on XY, building up in Z.
+// It is centered at X=0, Y=0.
+// We simply render it.
+comb;
+```

@@ -1,0 +1,73 @@
+// Sowing Template for 90 mm Petri Dish
+// Units: mm
+
+// --- User Dimensions ---
+dish_diameter = 90;      // Outer diameter of the Petri dish
+template_diameter = 85;  // Diameter of the template disc
+template_thickness = 2;  // Thickness of the template
+hole_diameter = 3;       // Diameter of the sowing holes
+grid_spacing = 9;        // Centre-to-centre distance between holes
+grid_rows = 7;           // Number of holes in a row
+grid_cols = 7;           // Number of holes in a column
+notch_width = 10;        // Width of the rectangular notch (X axis)
+notch_depth = 4;         // Depth of the notch (Y axis, measured in from rim)
+
+// --- Derived Dimensions ---
+rim_width = (dish_diameter - template_diameter) / 2;
+rim_thickness = template_thickness + 0.5; // Slight overhang for print stability
+hole_radius = hole_diameter / 2;
+grid_radius = (grid_rows - 1) * grid_spacing / 2;
+
+// --- Rendering ---
+$fn = 64;
+
+// 1. Base Disc
+module base_disc() {
+    cylinder(d = template_diameter, h = template_thickness, center = true);
+}
+
+// 2. Grid of Holes
+module hole_grid() {
+    // Calculate offset to center the grid on the disc
+    // The grid spans from -grid_radius to +grid_radius
+    let (start_offset = -grid_radius) {
+        for (x = [start_offset : grid_spacing : grid_radius]) {
+            for (y = [start_offset : grid_spacing : grid_radius]) {
+                translate([x, y, 0])
+                    cylinder(d = hole_diameter, h = template_thickness + 1, center = true);
+            }
+        }
+    }
+}
+
+// 3. Orientation Notch
+module orientation_notch() {
+    // The notch is on the +Y side, centered on the Y axis.
+    // It is 10mm wide (X) and 4mm deep (Y).
+    // We cut this out of the rim.
+    
+    // Translate to the rim edge
+    translate([0, (template_diameter / 2) - notch_depth, 0]) {
+        // Cut a rectangular shape
+        // We add a tiny epsilon (0.01) to ensure the cut is clean
+        cube([notch_width, notch_depth + 0.01, rim_thickness + 0.01], center = true);
+    }
+}
+
+// --- Assembly ---
+union() {
+    // Main body
+    base_disc();
+    
+    // Holes
+    hole_grid();
+    
+    // Notch (Subtracted from the rim)
+    difference() {
+        // Add a small rim cap to ensure the notch cuts through cleanly
+        translate([0, 0, template_thickness/2])
+            cylinder(d = template_diameter, h = 0.1, center = true);
+        
+        orientation_notch();
+    }
+}

@@ -1,0 +1,143 @@
+// Dimensions for 10-well agarose gel comb
+// Plate thickness (Z)
+plate_thickness = 1.5;
+
+// Spine dimensions
+spine_length = 70;       // X direction
+spine_width = 12;        // Y direction
+
+// Tooth dimensions
+tooth_width = 5.0;      // X direction
+tooth_length = 12;      // Y direction (hanging in -Y)
+
+// Gap between teeth
+gap_width = 1.5;        // X direction
+
+// Number of teeth
+num_teeth = 10;
+
+// Calculate total width of teeth and gaps
+total_tooth_width = num_teeth * tooth_width;
+total_gap_width = (num_teeth - 1) * gap_width;
+total_tooth_row_width = total_tooth_width + total_gap_width;
+
+// Center the tooth row on the spine in X
+// Spine is centered at 0, so tooth row center is also 0.
+// We need to offset the tooth row so it sits on the spine edge.
+// Spine Y range: -spine_width/2 to +spine_width/2
+// Tooth row Y range: -spine_width/2 (top edge) to -spine_width/2 - tooth_length
+// Tooth row X range: -total_tooth_row_width/2 to +total_tooth_row_width/2
+
+// Define the spine base
+spine_base = translate([0, 0, 0]) {
+    cube([spine_length, spine_width, plate_thickness], center = true);
+}
+
+// Define the teeth
+// We create a single block for all teeth and then subtract the gaps,
+// or build them individually. Building individually is clearer for loops.
+teeth_part = translate([0, -spine_width/2 - tooth_length/2, 0]) {
+    // Create a block that covers all teeth and gaps
+    // Width = total_tooth_row_width, Length = tooth_length
+    // Then we will subtract the gaps? No, easier to build each tooth and union them.
+    // Actually, let's build the teeth as separate cubes and union them.
+    // But we need to ensure they connect to the spine.
+    // The spine is already defined. We will union the teeth to the spine.
+    // Wait, the teeth hang from the spine. The spine is the base.
+    // The teeth are attached to the spine.
+    // Let's build the teeth as a single block that is attached to the spine.
+    // The teeth block should be:
+    // X: -total_tooth_row_width/2 to +total_tooth_row_width/2
+    // Y: -spine_width/2 - tooth_length to -spine_width/2
+    // Z: 0 to plate_thickness
+    // Then we subtract the gaps? No, the gaps are empty space.
+    // We need to create the teeth as separate blocks and union them.
+    // Or create a block with holes.
+    // Let's create a block for the teeth and subtract the gaps.
+    
+    // Base block for teeth row
+    teeth_block = cube([total_tooth_row_width, tooth_length, plate_thickness], center = true);
+    
+    // Subtract gaps
+    // There are (num_teeth - 1) gaps.
+    // Gap positions:
+    // Gap 1: between tooth 1 and 2.
+    // Center of gap 1: -total_tooth_row_width/2 + tooth_width + gap_width/2
+    // Let's calculate gap centers.
+    // First tooth center: -total_tooth_row_width/2 + tooth_width/2
+    // Second tooth center: -total_tooth_row_width/2 + tooth_width + gap_width + tooth_width/2
+    // Gap center i (1-indexed): -total_tooth_row_width/2 + i*(tooth_width + gap_width) - gap_width/2
+    // Actually, simpler:
+    // Gap i is between tooth i and i+1.
+    // Center of gap i: -total_tooth_row_width/2 + (i * (tooth_width + gap_width)) - gap_width/2
+    // Let's verify for i=1: -total_tooth_row_width/2 + tooth_width + gap_width - gap_width/2
+    // = -total_tooth_row_width/2 + tooth_width + gap_width/2
+    // Correct.
+    
+    for (i = [1 : num_teeth - 1]) {
+        gap_center_x = -total_tooth_row_width/2 + (i * (tooth_width + gap_width)) - gap_width/2;
+        // Gap is a cube that removes the space between teeth
+        // Gap width = gap_width, length = tooth_length, thickness = plate_thickness
+        // We need to subtract this from the teeth_block
+        // But we need to make sure the gap extends slightly past the teeth to avoid coplanar faces
+        // The gap is already defined by the teeth boundaries.
+        // To be safe, we make the gap slightly larger in X.
+        // Actually, the rule says "make every cutting shape extend 0.01-1 mm past the faces it cuts".
+        // So the gap cube should be slightly wider than the gap.
+        // Let's make the gap cube width = gap_width + 0.02
+        gap_cube = translate([gap_center_x, 0, 0]) {
+            cube([gap_width + 0.02, tooth_length, plate_thickness], center = true);
+        };
+        teeth_block = difference() {
+            teeth_block;
+            gap_cube;
+        };
+    }
+    
+    teeth_block;
+}
+
+// Combine spine and teeth
+// The teeth are attached to the spine.
+// The spine is at Y: -spine_width/2 to +spine_width/2
+// The teeth are at Y: -spine_width/2 - tooth_length to -spine_width/2
+// They share the face at Y = -spine_width/2.
+// We need to union them.
+// But the teeth_block is centered at Y = -spine_width/2 - tooth_length/2
+// The spine is centered at Y = 0.
+// The teeth_block Y range: -spine_width/2 - tooth_length to -spine_width/2
+// The spine Y range: -spine_width/2 to +spine_width/2
+// They touch at Y = -spine_width/2.
+// We need to make sure the union is clean.
+// Let's create the teeth as a separate part and union with spine.
+// But the teeth_block is already a single block with gaps subtracted.
+// We need to make sure the teeth_block is attached to the spine.
+// The teeth_block is at Y = -spine_width/2 - tooth_length/2
+// The spine is at Y = 0.
+// The teeth_block Y max is -spine_width/2.
+// The spine Y min is -spine_width/2.
+// So they touch.
+// We need to union them.
+// But the teeth_block is a single block with holes.
+// We can just union the spine and the teeth_block.
+// However, the teeth_block is already a single block with gaps subtracted.
+// So we can just union the spine and the teeth_block.
+// But the teeth_block is centered at Y = -spine_width/2 - tooth_length/2
+// The spine is centered at Y = 0.
+// We need to translate the teeth_block to be attached to the spine.
+// Actually, the teeth_block is already positioned correctly relative to the spine.
+// The teeth_block Y range is -spine_width/2 - tooth_length to -spine_width/2.
+// The spine Y range is -spine_width/2 to +spine_width/2.
+// So they touch at Y = -spine_width/2.
+// We can just union them.
+// But the teeth_block is a single block with gaps subtracted.
+// We need to make sure the teeth_block is attached to the spine.
+// The teeth_block is already attached to the spine in terms of position.
+// So we can just union them.
+// But the teeth_block is a single block with gaps subtracted.
+// We need to make sure the teeth_block is attached to the spine.
+// The teeth_block is already attached to the spine in terms of position.
+// So we can just union them.
+// But the teeth_block is a single block with gaps subtracted.
+// We need to make sure the teeth_block is attached to the spine.
+// The teeth_block

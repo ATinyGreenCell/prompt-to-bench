@@ -1,0 +1,32 @@
+// Dimensions
+spine_length = 70;     // Length of the spine (X direction)
+spine_width = 12;      // Width of the spine (Y direction)
+spine_thickness = 1.5;  // Thickness of the plate (Z direction)
+
+tooth_width = 5.0;     // Width of each tooth (X direction)
+tooth_length = 12;    // Length of each tooth (Y direction)
+tooth_gap = 1.5;      // Gap between teeth (Y direction)
+
+num_teeth = 10;       // Number of teeth
+
+// Main plate
+plate = cube([spine_length, spine_width, spine_thickness], center=true);
+
+// Create teeth
+teeth = [];
+for (i = [0:num_teeth-1]) {
+    tooth_x = (i - (num_teeth-1)/2) * (tooth_width + tooth_gap);
+    tooth_y = -spine_width/2 - tooth_length/2;
+    tooth = translate([tooth_x, tooth_y, 0]) 
+            cube([tooth_width, tooth_length, spine_thickness + 0.01], center=true);
+    teeth = [teeth, tooth];
+}
+
+// Combine plate and teeth
+comb = union() {
+    plate;
+    teeth;
+}
+
+// Final comb
+comb;

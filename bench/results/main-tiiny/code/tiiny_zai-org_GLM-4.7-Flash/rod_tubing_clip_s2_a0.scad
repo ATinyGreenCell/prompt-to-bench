@@ -1,0 +1,66 @@
+$fn = 64;
+
+// Dimensions
+rod_diameter = 12.7;       // 1/2 inch lab stand rod
+rod_wall = 3.0;            // Wall thickness of the rod ring
+rod_ring_z = 10.0;         // Height of the extrusion
+rod_ring_opening_w = 10.0; // Width of the opening on the -X side
+rod_ring_opening_h = 5.0;  // Height of the opening on the -X side
+
+tubing_diameter = 6.0;     // Inner diameter of the tubing ring
+tubing_wall = 2.0;         // Wall thickness of the tubing ring
+tubing_ring_x = 15.0;      // X position of the tubing ring
+tubing_ring_opening_w = 4.5; // Width of the opening on the +X side
+tubing_ring_opening_h = 2.25; // Height of the opening on the +X side
+
+bridge_x_start = 8.0;      // X start of the bridge
+bridge_x_end = 12.0;       // X end of the bridge
+bridge_y = 0.0;            // Y position of the bridge
+
+// Derived Dimensions
+rod_outer_diameter = rod_diameter + (2 * rod_wall);
+tubing_outer_diameter = tubing_diameter + (2 * tubing_wall);
+
+// Build the clip
+union() {
+    // 1. Rod Ring (with opening on -X side)
+    difference() {
+        cylinder(h = rod_ring_z, r = rod_outer_diameter / 2, center = true);
+        
+        // Cut the opening on the -X side
+        translate([-rod_ring_opening_w / 2, 0, 0])
+        cube([rod_ring_opening_w, rod_ring_opening_h, rod_ring_z + 1], center = true);
+    }
+
+    // 2. Tubing Ring (centered at x = 15, y = 0)
+    translate([tubing_ring_x, 0, 0]) {
+        difference() {
+            cylinder(h = rod_ring_z, r = tubing_outer_diameter / 2, center = true);
+            
+            // Cut the opening on the +X side
+            translate([tubing_ring_opening_w / 2, 0, 0])
+            cube([tubing_ring_opening_w, tubing_ring_opening_h, rod_ring_z + 1], center = true);
+        }
+    }
+
+    // 3. Solid Bridge (joining the two rings)
+    translate([bridge_x_start, bridge_y, 0]) {
+        // Calculate bridge width based on the gap between the rod ring and tubing ring
+        // Rod ring outer edge is at x = rod_outer_diameter / 2
+        // Tubing ring inner edge is at x = tubing_ring_x - tubing_outer_diameter / 2
+        bridge_width = tubing_ring_x - (tubing_outer_diameter / 2) - (rod_outer_diameter / 2);
+        
+        // Ensure bridge doesn't overlap the rod ring opening or tubing ring opening
+        // The rod ring opening starts at x = -rod_ring_opening_w / 2
+        // The tubing ring opening ends at x = tubing_ring_x + tubing_ring_opening_w / 2
+        
+        // Adjust start to be just after the rod ring opening
+        let(start_x = max(bridge_x_start, rod_ring_opening_w / 2 + 0.1))
+        // Adjust end to be just before the tubing ring opening
+        let(end_x = min(bridge_x_end, tubing_ring_x - tubing_ring_opening_w / 2 - 0.1))
+        
+        if (end_x > start_x) {
+            cube([end_x - start_x, 6, rod_ring_z + 1], center = true);
+        }
+    }
+}

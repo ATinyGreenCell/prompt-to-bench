@@ -1,0 +1,84 @@
+Looking at the error report, the issue is clear: the variables `x_offset`, `y_offset`, `slot_depth`, `base_height`, `slot_length`, and `slot_width` are being used in the `slot()` module *before* they are defined. In OpenSCAD, modules are evaluated at render time, but variable scope and order matter — variables used inside a module must be defined *before* the module definition.
+
+The error shows that the module `slot()` is trying to use undefined variables, resulting in a degenerate cube of size 1×1×1 mm (the default fallback), which explains the tiny volume and bounding box.
+
+The fix is to move the variable definitions *before* the module definitions.
+
+Additionally, I need to correct the slot positioning logic:
+- The specification says slots are 3.5 mm apart *centre-to-centre*, so the first slot centre should be at Y = (base_width - (num_slots - 1) × pitch) / 2 + 0? No — the group of slot centres spans (num_slots - 1) × pitch + 0? Actually, the distance from the first centre to the last centre is (num_slots - 1) × pitch, so the total span of the slot centres is (num_slots - 1) × pitch, and the group is centred at base_width/2.
+
+Thus:
+- first_slot_centre = (base_width - (num_slots - 1) * slot_pitch) / 2
+- slot centres: y_i = first_slot_centre + i * slot_pitch, for i = 0..9
+
+But wait — the slot has width, but the *spacing* is defined as centre-to-centre, so the above is correct.
+
+Let’s compute:
+- num_slots = 10
+- slot_pitch = 3.5 mm
+- (num_slots - 1) × pitch = 9 × 3.5 = 31.5 mm
+- first_slot_centre = (45 - 31.5) / 2 = 13.5 / 2 = 6.75 mm
+- last_slot_centre = 6.75 + 9 × 3.5 = 38.25 mm
+- group centre = (6.75 + 38.25)/2 = 22.5 mm ✓
+
+Also, slot depth is 10 mm, so it cuts from z = 20 - 10 = 10 mm up to z = 20 mm.
+
+Slot length is 77 mm, block length is 90 mm, so:
+- slot_offset_x = (90 - 77) / 2 = 6.5 mm
+
+Now, rewrite the code with correct order and logic.
+
+```openscad
+// Drying rack for 10 microscope slides
+// Slide dimensions: 75 x 25 x 1 mm (L x W x T)
+// Base dimensions: 90 x 45 x 20 mm (X x Y x Z)
+// Slots: 10 parallel slots, 77 mm long (X), 1.6 mm wide (Y), 10 mm deep (Z)
+// Slot spacing: 3.5 mm centre-to-centre in Y
+// Slots centred on block in X and Y
+
+// Base dimensions
+base_length = 90;   // X
+base_width  = 45;   // Y
+base_height = 20;   // Z
+
+// Slot dimensions
+num_slots   = 10;
+slot_length = 77;   // X
+slot_width  = 1.6;  // Y
+slot_depth  = 10;   // Z
+slot_pitch  = 3.5;  // Y spacing between centres
+
+// Slot positioning calculations
+// First slot centre Y position (group of centres centred in Y)
+first_slot_centre_y = (base_width - (num_slots - 1) * slot_pitch) / 2;
+// Slot offset from front edge in X (slots are 77 mm long, block is 90 mm long)
+slot_offset_x = (base_length - slot_length) / 2;
+
+// Base block
+module base_block() {
+    cube([base_length, base_width, base_height]);
+}
+
+// Slot module - must be defined after variables are set
+module slot(x_offset, y_offset) {
+    // Cut from z = base_height - slot_depth to base_height
+    // Extend 0.01 mm past all faces for clean cutting
+    translate([x_offset - 0.01, y_offset - 0.01, base_height - slot_depth - 0.01])
+        cube([slot_length + 0.02, slot_width + 0.02, slot_depth + 0.02]);
+}
+
+// Build the rack
+difference() {
+    base_block();
+    // Generate slots with for loop
+    for (i = [0 : num_slots - 1]) {
+        // Calculate Y position of each slot centre
+        y_pos = first_slot_centre_y + i * slot_pitch;
+        // Translate slot to position
+        slot(slot_offset_x, y_pos);
+    }
+}
+
+// Set resolution for smooth curves
+$fn = 64;
+```

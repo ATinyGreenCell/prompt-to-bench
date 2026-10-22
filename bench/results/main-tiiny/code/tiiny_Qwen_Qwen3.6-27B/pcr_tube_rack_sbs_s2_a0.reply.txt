@@ -1,0 +1,71 @@
+```openscad
+// Dimensions (mm) - measured with calipers
+block_length = 127.76;   // X dimension
+block_width  = 85.48;    // Y dimension
+block_height = 20.0;     // Z dimension
+
+hole_diameter = 6.2;     // PCR tube hole diameter
+hole_spacing  = 9.0;     // Centre-to-centre spacing
+
+// Grid positioning
+cols = 12;               // Number of columns (X)
+rows = 8;                // Number of rows (Y)
+
+// Offset of first hole (A1) from edges
+offset_x = 14.38;        // Distance from left edge (X) to A1 centre
+offset_y = 11.24;        // Distance from back edge (Y) to A1 centre
+
+// Chamfer
+chamfer_size = 5.0;      // Leg length of 45-degree chamfer at A1 corner
+
+// Rendering quality
+$fn = 64;
+
+// Calculate grid start positions (centred on block)
+// The grid is centred, so we calculate the absolute position of A1
+// Left edge is at -block_length/2, so A1 X = -block_length/2 + offset_x
+// Back edge is at -block_width/2, so A1 Y = -block_width/2 + offset_y
+start_x = -block_length / 2 + offset_x;
+start_y = -block_width / 2 + offset_y;
+
+// Main block
+difference() {
+    // Solid block
+    translate([-block_length/2, -block_width/2, 0])
+        cube([block_length, block_width, block_height]);
+
+    // 96 Holes
+    for (col = [0 : cols-1]) {
+        for (row = [0 : rows-1]) {
+            // Calculate hole position
+            hx = start_x + col * hole_spacing;
+            hy = start_y + row * hole_spacing;
+            
+            // Cut hole (extend slightly past top and bottom to ensure clean cut)
+            translate([hx, hy, -0.5])
+                cylinder(h = block_height + 1, r = hole_diameter / 2, center = false);
+        }
+    }
+
+    // Chamfer at A1 corner (Left-Back corner in local coords, which is -X, -Y)
+    // The corner is at (-block_length/2, -block_width/2, 0)
+    // We cut a wedge from this corner.
+    // A 45-degree chamfer with 5mm legs means we remove a triangular prism.
+    // The triangle is in the XY plane at the corner, extending 5mm along X and 5mm along Y.
+    // We extrude this triangle through the Z height.
+    
+    // Define the corner point
+    corner_x = -block_length / 2;
+    corner_y = -block_width / 2;
+    
+    // Create the chamfer cut
+    // We use a polygon for the triangular face and linear_extrude it
+    translate([corner_x, corner_y, -0.5]) // Extend slightly below z=0
+    linear_extrude(height = block_height + 1, convexity = 10)
+    polygon(points = [
+        [0, 0],                          // Corner tip
+        [chamfer_size, 0],               // Along X edge
+        [0, chamfer_size]                // Along Y edge
+    ]);
+}
+```

@@ -1,0 +1,85 @@
+Looking at the report, I can see several issues:
+
+1. **Z range**: The report shows Z from -0.01 to 42.01, but the total height should be 42 mm (2 + 40). The -0.01 suggests the screw holes extend below z=0, which is fine for cutting, but the bounding box shows 42.02 size, which is correct.
+
+2. **Hole at z=2.10**: The report shows a rectangular hole 85x85 at z=2.10. This is the inner cavity of the box. The inner dimensions should be 85x85 (90 - 2*2.5 = 85), which is correct.
+
+3. **Material area at z=1.01**: Shows 8100 mm² (90x90), which is the full plate. This is correct.
+
+4. **Material area at z=2.10**: Shows 938.5 mm². Let me verify: The plate is 90x90 = 8100, minus the inner cavity 85x85 = 7225, so the walls should be 8100 - 7225 = 875 mm². But the report shows 938.5, which is higher. This suggests the walls are thicker than specified or there's an issue with the wall construction.
+
+Wait, let me recalculate: The walls are 2.5 mm thick. The outer is 90x90, inner is 85x85. The wall area should be:
+- Two walls along X: 90 * 2.5 * 2 = 450 mm² (but these include corners)
+- Two walls along Y: 85 * 2.5 * 2 = 425 mm² (excluding corners already counted)
+- Total: 450 + 425 = 875 mm²
+
+But the report shows 938.5, which is 63.5 mm² more. This suggests the walls might be constructed differently.
+
+Actually, looking at my code, I'm creating four separate wall cubes. The X+ and X- walls are full height (90 mm in Y), and the Y+ and Y- walls are also full width (90 mm in X). This means the corners are overlapping, which is fine for a union, but let me check the math again.
+
+At z=2.10 (just above the plate):
+- X+ wall: 2.5 * 90 = 225 mm²
+- X- wall: 2.5 * 90 = 225 mm²
+- Y+ wall: 2.5 * 90 = 225 mm²
+- Y- wall: 2.5 * 90 = 225 mm²
+- Total: 900 mm²
+
+But this includes the corner overlaps (2.5 * 2.5 * 4 = 25 mm²), so the actual material should be 900 - 25 = 875 mm².
+
+The report shows 938.5, which is still higher. Let me think... Oh! The issue is that I'm not accounting for the fact that the walls extend from z=2 to z=42, but at z=2.10, we're just above the plate. The walls should be 2.5 mm thick, but maybe there's an issue with how they're positioned.
+
+Actually, looking more carefully at the report, it says "5 solid regions" at z=2.10. This suggests the walls are not connected at the corners! That's the problem. The four wall cubes are separate and not overlapping at the corners.
+
+Let me fix this by making the walls overlap properly. The X+ and X- walls should be full height (90 mm in Y), and the Y+ and Y- walls should be the remaining width (85 mm in X, since the X walls already cover the corners).
+
+Wait, that's not quite right either. Let me think about this differently. If I want a proper box:
+- X+ wall: x from 87.5 to 90, y from 0 to 90, z from 2 to 42
+- X- wall: x from 0 to 2.5, y from 0 to 90, z from 2 to 42
+- Y+ wall: x from 2.5 to 87.5, y from 87.5 to 90, z from 2 to 42
+- Y- wall: x from 2.5 to 87.5, y from 0 to 2.5, z from 2 to 42
+
+This way, the Y walls don't overlap with the X walls at the corners.
+
+Let me recalculate the material at z=2.10:
+- X+ wall: 2.5 * 90 = 225 mm²
+- X- wall: 2.5 * 90 = 225 mm²
+- Y+ wall: 85 * 2.5 = 212.5 mm²
+- Y- wall: 85 * 2.5 = 212.5 mm²
+- Total: 875 mm²
+
+This matches my calculation. But the report shows 938.5, which is still higher. Let me check if there's an issue with the notch or something else.
+
+Actually, wait. The report shows the bounding box X from 0 to 90.01, which suggests the part is slightly larger than 90 mm. This could be due to the notch or some other feature.
+
+Let me look at the notch: it's in the X+ wall, 12 mm wide, centered along the wall. The wall is at x from 87.5 to 90 (2.5 mm thick). The notch should remove material from this wall.
+
+At z=38.01 (just below the notch), the report shows 938.8 mm². This is close to the 938.5 at z=2.10, which suggests the notch hasn't been cut yet (the notch is from z=32 to z=40).
+
+But 938.5 is still higher than the expected 875. Let me think... Oh! I think the issue is that the walls are overlapping at the corners in my current code, but the report is showing them as separate regions. Let me check the code again.
+
+In my code:
+- X+ wall: translate([87.5, 0, 2]) cube([2.5, 90, 40])
+- X- wall: translate([0, 0, 2]) cube([2.5, 90, 40])
+- Y+ wall: translate([0, 87.5, 2]) cube([90, 2.5, 40])
+- Y- wall: translate([0, 0, 2]) cube([90, 2.5, 40])
+
+The Y walls are full width (90 mm in X), which means they overlap with the X walls at the corners. This should create a solid connection, but the report shows "5 solid regions", which suggests they're not connected.
+
+Wait, I think I see the issue. The report says "5 solid regions" at z=2.10. This includes the plate (1 region) and the 4 walls (4 regions). If the walls were connected at the corners, there would be only 1 region for the walls, making it 2 total regions (plate + walls). But the report shows 5, which means the walls are separate.
+
+This suggests that the walls are not overlapping at the corners. Let me check the coordinates again.
+
+X+ wall: x from 87.5 to 90
+Y+ wall: x from 0 to 90, y from 87.5 to 90
+
+At the corner (x=87.5 to 90, y=87.5 to 90), both walls should be present. But if they're separate cubes in a union, they should still be connected. Unless there's a gap or something.
+
+Actually, I think the issue might be with how OpenSCAD handles the union. Let me try a different approach: create the walls as a single extruded shape or use a different method to ensure they're connected.
+
+Alternatively, let me try making the Y walls shorter (85 mm in X) so they don't overlap with the X walls:
+
+- X+ wall: x from 87.5 to 90, y from 0 to 90
+- X- wall: x from 0 to 2.5, y from 0 to 90
+- Y+ wall: x from 2.5 to 87.5, y from 87.5 to 90
+- Y- wall: x from 2.5 to 87.5, y from 0 to 2.5
+

@@ -1,0 +1,32 @@
+// Adapter sleeve: 0.2 mL PCR tube in 1.5 mL rack hole
+// Print orientation: collar on bed (z=0), sleeve rises upward
+
+// --- Dimensions (mm) ---
+COLLAR_OD       = 13.0;    // Collar outer diameter
+COLLAR_THICK    = 1.5;     // Collar thickness (height)
+SLEEVE_OD       = 10.8;    // Sleeve outer diameter
+SLEEVE_HEIGHT   = 21.5;   // Total height from bed to top
+BORE_DIA        = 6.2;     // Inner bore diameter
+
+// --- Parameters ---
+$fn = 64;
+
+// --- Build ---
+module adapter_sleeve() {
+    union() {
+        // Collar (base ring)
+        cylinder(d = COLLAR_OD, h = COLLAR_THICK);
+        
+        // Sleeve body (rises from collar)
+        translate([0, 0, COLLAR_THICK]) {
+            cylinder(d = SLEEVE_OD, h = SLEEVE_HEIGHT - COLLAR_THICK);
+        }
+        
+        // Bore (through entire height)
+        translate([0, 0, -0.01]) {
+            cylinder(d = BORE_DIA, h = SLEEVE_HEIGHT + 0.02);
+        }
+    }
+}
+
+adapter_sleeve();

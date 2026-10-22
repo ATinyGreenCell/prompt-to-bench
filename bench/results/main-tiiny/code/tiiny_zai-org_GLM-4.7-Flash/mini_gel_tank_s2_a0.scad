@@ -1,0 +1,74 @@
+$fn = 64;
+
+// --- Dimensions (mm) ---
+outer_x = 120;
+outer_y = 70;
+outer_z = 40;
+wall_thick = 3;
+floor_thick = 3;
+
+// Platform Dimensions
+platform_x = 60;
+platform_z = 10; // Height above inner floor
+platform_z_pos = 13; // Inner floor is at 3, so top is at 3+10 = 13
+
+// Electrode Holes
+hole_dia = 2;
+hole_z = 30;
+hole_y = 0;
+
+// Derived Dimensions
+inner_x = outer_x - (wall_thick * 2);
+inner_y = outer_y - (wall_thick * 2);
+inner_z = outer_z - floor_thick;
+
+// --- Main Body ---
+union() {
+    // Floor
+    translate([0, 0, 0])
+    cube([outer_x, outer_y, floor_thick]);
+
+    // Walls
+    // Front/Back (Y direction)
+    translate([0, -wall_thick/2, 0])
+    cube([outer_x, wall_thick, outer_z]);
+    
+    // Left/Right (X direction)
+    translate([-wall_thick/2, 0, 0])
+    cube([wall_thick, outer_y, outer_z]);
+
+    // Platform
+    translate([(outer_x - platform_x)/2, 0, floor_thick])
+    cube([platform_x, outer_y, platform_z]);
+}
+
+// --- Cavity (Buffer Chambers) ---
+difference() {
+    // Subtract the void from the solid
+    union() {
+        // Inner Floor Void
+        translate([0, 0, 0])
+        cube([inner_x, inner_y, floor_thick]);
+        
+        // Inner Walls Void
+        // Front/Back
+        translate([0, -wall_thick/2, 0])
+        cube([inner_x, wall_thick, outer_z]);
+        
+        // Left/Right
+        translate([-wall_thick/2, 0, 0])
+        cube([wall_thick, inner_y, outer_z]);
+        
+        // Platform Void
+        translate([(outer_x - platform_x)/2, 0, floor_thick])
+        cube([platform_x, outer_y, platform_z]);
+    }
+
+    // Electrode Holes (Left End)
+    translate([-wall_thick/2, hole_y, hole_z])
+    cylinder(d = hole_dia, h = wall_thick + 0.5);
+
+    // Electrode Holes (Right End)
+    translate([outer_x - wall_thick/2, hole_y, hole_z])
+    cylinder(d = hole_dia, h = wall_thick + 0.5);
+}

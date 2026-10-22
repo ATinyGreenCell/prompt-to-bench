@@ -1,0 +1,114 @@
+// Bench Rack for 1.5 mL Microcentrifuge Tubes
+// Design specifications based on user input
+
+// Block Dimensions (mm)
+$block_length_x = 106;
+$block_width_y = 72;
+$block_height_z = 30;
+
+// Grid Configuration
+$grid_rows_y = 4;       // Rows along Y
+$grid_cols_x = 6;       // Columns along X
+$spacing_x = 16;        // Centre-to-centre spacing X
+$spacing_y = 16;        // Centre-to-centre spacing Y
+
+// Hole Dimensions (mm)
+$hole_diameter = 11.2;
+$hole_depth = 25;       // Depth of the hole (open top, closed bottom)
+
+// Quality Settings
+$fn = 64; // Ensure smooth holes
+
+// Calculate Grid Origin to Center the Grid on the Block
+// Total span X = (cols - 1) * spacing
+// Total span Y = (rows - 1) * spacing
+// Offset X = (Block Length - Total Span X) / 2
+// Offset Y = (Block Width - Total Span Y) / 2
+
+$grid_span_x = ($grid_cols_x - 1) * $spacing_x;
+$grid_span_y = ($grid_rows_y - 1) * $spacing_y;
+
+$offset_x = ($block_length_x - $grid_span_x) / 2;
+$offset_y = ($block_width_y - $grid_span_y) / 2;
+
+// Main Module: The Bench Rack
+module bench_rack() {
+    // 1. Create the solid rectangular block
+    // Orientation: Rests on XY plane at Z=0, builds upward.
+    // Centred on origin in X and Y.
+    block = cube([
+        $block_length_x, 
+        $block_width_y, 
+        $block_height_z
+    ]);
+
+    // 2. Create the holes
+    // We use a loop to generate the cylinder for each hole position.
+    // The cylinder is positioned at the correct X, Y and has Z-height = hole_depth.
+    // Since we are using difference(), the cylinder will cut into the block.
+    // The cylinder extends slightly past the top face (Z = 0.01) to ensure clean cutting 
+    // without leaving a thin sliver of material at the very top edge.
+    // The cylinder stops exactly at Z = 25 to leave the 5mm solid floor.
+    
+    // We create a union of all hole cylinders first, then subtract from the block.
+    holes = union() {
+        for (row = [0 : $grid_rows_y - 1]) {
+            for (col = [0 : $grid_cols_x - 1]) {
+                // Calculate position of the hole center
+                // X position: offset_x + col * spacing_x
+                // Y position: offset_y + row * spacing_y
+                
+                $x_pos = $offset_x + col * $spacing_x;
+                $y_pos = $offset_y + row * $spacing_y;
+                
+                // Cylinder parameters
+                // Radius = diameter / 2
+                // Height = hole_depth
+                // Position: Centered vertically within the cut zone?
+                // No, the hole is 25mm deep. The block is 30mm.
+                // The hole goes from Z=0 down to Z=25.
+                // So the cylinder center Z should be 12.5.
+                
+                $z_pos = $hole_depth / 2;
+                
+                $r = $hole_diameter / 2;
+                
+                // Create the cylinder
+                // We extend slightly past the top (Z=0.01) to ensure clean cutting.
+                // The cut is from Z=0 to Z=25.
+                // Cylinder Z range: -0.01 to 25.01 (relative to center) -> Absolute Z: 12.49 to 37.49?
+                // Wait, if center is 12.5, top is 12.5 + 12.5 = 25.
+                // We want top at Z=0. So center must be at Z = -12.5.
+                // Let's re-calculate Z position.
+                // Hole goes from Z=0 to Z=25.
+                // Cylinder height = 25.
+                // Cylinder center Z = 0 - (25/2) = -12.5.
+                
+                $z_pos = -$hole_depth / 2;
+                
+                h = $hole_depth + 0.02; // Slight extension past top (Z=0.01) and bottom (Z=25.01)
+                
+                translate([
+                    $x_pos, 
+                    $y_pos, 
+                    $z_pos
+                ]) {
+                    cylinder(
+                        h = h,
+                        r = $r,
+                        $fn = $fn
+                    );
+                }
+            }
+        }
+    };
+    
+    // Combine block and holes
+    difference() {
+        block;
+        holes;
+    }
+}
+
+// Render the part
+bench_rack();

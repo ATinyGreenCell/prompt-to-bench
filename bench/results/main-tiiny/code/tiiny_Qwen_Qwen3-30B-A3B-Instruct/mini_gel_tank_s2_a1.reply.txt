@@ -1,0 +1,152 @@
+```openscad
+// Dimensions in millimetres
+outer_x = 120;
+outer_y = 70;
+outer_z = 40;
+
+wall_thickness = 3;
+floor_thickness = 3;
+
+platform_length = 60;
+platform_width = outer_y;  // spans full Y
+platform_height_above_floor = 10;  // top at z = 13 (floor at z = 3, so 10 mm above)
+
+hole_diameter = 2;
+hole_radius = hole_diameter / 2;
+hole_z = 30;  // z-level of hole center
+hole_y = 0;   // along Y=0 (end wall)
+
+// The tank must rest on the XY plane at z = 0, so we shift everything up by 20 mm
+// because currently the lowest point is at z = -20.00 (from report)
+// We want the floor to be at z = 0, so we translate the whole model up by 20 mm
+
+// Adjusted z for platform top: should be at z = 13 (10 mm above floor at z = 3)
+// So platform top is at z = 13, floor at z = 3, so platform is 10 mm high
+
+// Inner dimensions (after subtracting walls)
+inner_x = outer_x - 2 * wall_thickness;
+inner_y = outer_y - 2 * wall_thickness;
+inner_z = outer_z - floor_thickness;
+
+// Platform top at z = 13 (floor at z = 3, so 10 mm above)
+platform_top_z = 13;
+
+// Platform centered in X
+platform_x_start = (outer_x - platform_length) / 2;
+platform_x_end = platform_x_start + platform_length;
+
+// Create the main tank body (open top, hollow), centered at origin but shifted so z = 0 is floor
+module tank() {
+    difference() {
+        // Outer box (with floor), now shifted so floor is at z = 0
+        translate([0, 0, 20]) {
+            cube([outer_x, outer_y, outer_z], center = false);
+        }
+        // Remove inner cavity (also shifted to z = 0)
+        translate([0, 0, 20 - outer_z/2 + inner_z/2]) {
+            cube([inner_x, inner_y, inner_z], center = false);
+        }
+    }
+}
+
+// Create the raised platform (solid, centered in X, full Y), at z = 13
+module platform() {
+    translate([0, 0, 13]) {
+        cube([platform_length, platform_width, wall_thickness], center = true);
+    }
+}
+
+// Create the two end-wall holes (horizontal, along X, at y=0, z=30)
+// The hole is a cylinder along X, so we rotate it to align with X-axis
+module end_hole() {
+    // Cylinder along X-axis, centered at origin, length = wall_thickness + 1 to ensure cut
+    cylinder(r = hole_radius, h = wall_thickness + 1, $fn = 64, center = true);
+}
+
+// Place a hole at a given X position (on the end wall), at y=0, z=30
+module hole_at_end(x_pos) {
+    // Translate to the end wall (x_pos), at y=0, z=30
+    // Then rotate to align cylinder along X-axis (so it's horizontal)
+    translate([x_pos, 0, 30]) {
+        rotate([90, 0, 0]) {
+            end_hole();
+        }
+    }
+}
+
+// Main assembly: shift everything so the floor is at z = 0
+// We'll build the whole model with z = 0 at the bottom
+$fn = 64;
+
+// Build the tank with platform and holes, all shifted so z = 0 is the floor
+// We do this by translating the entire model up by 20 mm (since original was centered at z = 0)
+// But instead, we build everything from the start with z = 0 at the floor
+
+// Recompute: we want the floor at z = 0, so the original cube was from z = -20 to z = 20 (size 40), so we shift up by 20
+// So we'll build the whole thing with a common translation of +20 in Z
+
+// We'll build the tank and platform with a common translation
+// But to avoid confusion, we'll build everything relative to z = 0 at the floor
+
+// New approach: build everything with z = 0 at the floor
+
+// Tank body: from z = 0 to z = 40, with walls and floor
+// The inner cavity is from z = 3 to z = 40 (since floor is 3 mm thick), so we remove a cavity from z = 3 to z = 40
+
+module tank() {
+    difference() {
+        // Outer box: from z = 0 to z = 40
+        cube([outer_x, outer_y, outer_z], center = false);
+        // Inner cavity: from z = 3 to z = 40, and x,y offset by wall_thickness
+        translate([wall_thickness, wall_thickness, 3]) {
+            cube([inner_x, inner_y, outer_z - 3], center = false);
+        }
+    }
+}
+
+// Platform: from z = 3 to z = 13 (since floor at z = 3, platform top at z = 13)
+// So platform is 10 mm high
+module platform() {
+    translate([0, 0, 3]) {
+        cube([platform_length, platform_width, 10], center = true);
+    }
+}
+
+// End holes: horizontal, at z = 30, y = 0, through the end walls at X = ±(outer_x/2 - wall_thickness)
+// The hole is a cylinder of diameter 2 mm, length slightly longer than wall thickness to ensure cut
+// We'll place it at the end wall (x = ±(outer_x/2 - wall_thickness)), at y = 0, z = 30
+// But the hole is horizontal, so we need to align the cylinder along X
+
+module hole_at_end(x_pos) {
+    // Place cylinder at the end wall (x = x_pos), at y = 0, z = 30
+    // Rotate to align cylinder along X-axis (so it's horizontal)
+    translate([x_pos, 0, 30]) {
+        rotate([90, 0, 0]) {
+            cylinder(r = hole_radius, h = wall_thickness + 1, $fn = 64, center = true);
+        }
+    }
+}
+
+// Main assembly: build the tank, add the platform, then subtract the holes
+// We do this in one union to ensure solid is watertight
+
+union() {
+    tank();
+    platform();
+}
+
+// Now subtract the two end holes (through the end walls)
+difference() {
+    // Start with the unioned body (tank + platform)
+    union() {
+        tank();
+        platform();
+    }
+
+    // Subtract the left hole (at x = outer_x/2 - wall_thickness)
+    hole_at_end(outer_x/2 - wall_thickness);
+
+    // Subtract the right hole (at x = -outer_x/2 + wall_thickness)
+    hole_at_end(-outer_x/2 + wall_thickness);
+}
+```

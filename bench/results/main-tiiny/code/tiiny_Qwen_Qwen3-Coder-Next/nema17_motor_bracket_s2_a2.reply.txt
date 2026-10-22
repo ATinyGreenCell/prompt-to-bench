@@ -1,0 +1,107 @@
+```openscad
+$fn = 64;
+
+// Base plate dimensions
+base_x = 50; // from -25 to 25
+base_y = 45; // from 0 to 45
+base_z = 5;
+
+// Motor plate dimensions
+motor_plate_y = 5;
+motor_plate_z = 50;
+
+// Mounting holes in base plate
+base_hole_x = 17;
+base_hole_y = 30;
+base_hole_d = 4.5;
+
+// Motor centering boss hole
+boss_hole_d = 23;
+boss_hole_z = 28;
+
+// Motor mounting holes (M3)
+motor_hole_d = 3.4;
+motor_hole_offset = 15.5; // 31mm / 2
+motor_hole_z = boss_hole_z;
+
+// Gusset dimensions
+gusset_thick = 5;
+gusset_leg = 20;
+
+// Base plate
+base = cube([base_x, base_y, base_z]);
+
+// Motor plate (attached to back edge of base: y from 0 to 5, z from 0 to 50)
+motor_plate = translate([0, 0, base_z]) 
+              cube([base_x, motor_plate_y, motor_plate_z]);
+
+// Gussets - using proper hull with 4 corners
+gusset_left = translate([-25, 5, base_z]) 
+              hull() {
+                cube([gusset_thick, 0.01, 0.01]);
+                translate([0, gusset_leg, 0]) cube([gusset_thick, 0.01, 0.01]);
+                translate([0, 0, gusset_leg]) cube([gusset_thick, 0.01, 0.01]);
+                translate([0, gusset_leg, gusset_leg]) cube([gusset_thick, 0.01, 0.01]);
+              };
+
+gusset_right = translate([25 - gusset_thick, 5, base_z]) 
+               hull() {
+                 cube([gusset_thick, 0.01, 0.01]);
+                 translate([0, gusset_leg, 0]) cube([gusset_thick, 0.01, 0.01]);
+                 translate([0, 0, gusset_leg]) cube([gusset_thick, 0.01, 0.01]);
+                 translate([0, gusset_leg, gusset_leg]) cube([gusset_thick, 0.01, 0.01]);
+               };
+
+// Base holes
+base_hole1 = translate([-base_hole_x, base_hole_y, -0.1]) 
+             cylinder(h = base_z + 0.2, d = base_hole_d);
+base_hole2 = translate([base_hole_x, base_hole_y, -0.1]) 
+             cylinder(h = base_z + 0.2, d = base_hole_d);
+
+// Motor plate boss hole (centering hole)
+boss_hole = translate([0, -0.1, motor_hole_z]) 
+            cylinder(h = motor_plate_y + 0.2, d = boss_hole_d);
+
+// Motor mounting holes (4 holes on 31mm square pattern)
+motor_holes = union() {
+  // Top-left
+  translate([-motor_hole_offset, -0.1, motor_hole_z + motor_hole_offset]) 
+    cylinder(h = motor_plate_y + 0.2, d = motor_hole_d);
+  // Top-right
+  translate([motor_hole_offset, -0.1, motor_hole_z + motor_hole_offset]) 
+    cylinder(h = motor_plate_y + 0.2, d = motor_hole_d);
+  // Bottom-left
+  translate([-motor_hole_offset, -0.1, motor_hole_z - motor_hole_offset]) 
+    cylinder(h = motor_plate_y + 0.2, d = motor_hole_d);
+  // Bottom-right
+  translate([motor_hole_offset, -0.1, motor_hole_z - motor_hole_offset]) 
+    cylinder(h = motor_plate_y + 0.2, d = motor_hole_d);
+};
+
+// Assemble the bracket
+bracket = union() {
+  // Base plate
+  translate([-base_x/2, 0, 0]) base;
+  
+  // Motor plate
+  translate([-base_x/2, 0, base_z]) motor_plate;
+  
+  // Gussets
+  gusset_left;
+  gusset_right;
+};
+
+// Subtract holes
+difference() {
+  bracket;
+  // Base holes
+  translate([-base_x/2, 0, 0]) base_hole1;
+  translate([-base_x/2, 0, 0]) base_hole2;
+  
+  // Motor boss hole
+  translate([-base_x/2, 0, base_z]) boss_hole;
+  
+  // Motor mounting holes
+  translate([-base_x/2, 0, base_z]) motor_holes;
+}
+```

@@ -1,0 +1,64 @@
+{
+ "time": "2026-10-21T21:19:51",
+ "model": "tiiny/Qwen/Qwen3-30B-A3B-Instruct",
+ "run_bench_args": [],
+ "samples": 3,
+ "catalog": {
+  "model_id": "Qwen/Qwen3-30B-A3B-Instruct",
+  "params": "30B",
+  "npu_usage": 55,
+  "context_window": 131072,
+  "thinking": {
+   "supported": false,
+   "toggleable": false,
+   "enabled_by_default": false,
+   "levels": [],
+   "default_level": null
+  },
+  "reasoning_levels": [],
+  "udpate_time": 1790131842,
+  "type": "Text Generation",
+  "mode": "production",
+  "tags": [
+   {
+    "tag_name": "Qwen3-30B-A3B-Instruct",
+    "manifest": "Qwen3-30B-Instruct",
+    "version": null,
+    "size": 14731157237
+   }
+  ]
+ },
+ "tiiny_info": "No Tiiny device connected. Run tiiny scan followed by tiiny connect <ip_address> to connect to your device.",
+ "tiiny_status": "No Tiiny device connected. Run tiiny scan followed by tiiny connect <ip_address> to connect to your device.",
+ "tiiny_cli": "tiiny-cli-linux-amd64-v0.0.4",
+ "device_name": "seb's Tiiny",
+ "load": {
+  "before": [
+   "Qwen/Qwen3.5-35B-A3B"
+  ],
+  "npu_mb_empty": null,
+  "load_s": 11.7,
+  "loaded": [
+   "Qwen/Qwen3-30B-A3B-Instruct"
+  ],
+  "npu_mb": 24944.0
+ },
+ "bridge": "http://127.0.0.1:11435",
+ "harness": {
+  "path": "~/tiny/bench/20261014-sweep/harness",
+  "sha256": {
+   "bench/checks.py": "6560e743c914f250053535f15ff5a3e263d4f38463625552ba0c7dcdeab311c2",
+   "bench/prompts/system.md": "17d921540d27b4245749bcf22297816087f471ec84b08be5e3d56b53bd3730ed",
+   "bench/reference_stats.json": "8622046a6d1c7972b2086f0f8bd1bd582c6ff1ce3f2add11be67919c6cbcdd29",
+   "bench/run_bench.py": "5f03d8158d3928e558f1d84cbd2f7937fc1743e47dc76321c2cf3bae0999b1f4",
+   "bench/tasks.yaml": "7a82258129c771d91477746377e6feaa9c2f4238cae0cbfc7b7d99c6ebd3e490",
+   "tools/scadreport.py": "8c75e03461083a01373687b0152c981b1309a756d3ca2eb7f699dbd604afb283"
+  }
+ },
+ "link": {
+  "host": "[private-ip]",
+  "via": "primary",
+  "since": "2026-10-15T00:27:25-04:00"
+ },
+ "note": "Timings are measured on the laptop through the tiinykit bridge, the link to the box included (USB-C until 2026-10-14 20:22, the box's Wi-Fi after; 'link' is tiinykit's route at this pass). The meta_*.json 'ollama' field is the laptop's own Ollama version, reported by the bridge."
+}

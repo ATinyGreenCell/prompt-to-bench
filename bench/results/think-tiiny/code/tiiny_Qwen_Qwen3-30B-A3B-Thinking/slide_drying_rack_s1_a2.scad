@@ -1,0 +1,37 @@
+$fn = 64;
+
+// Dimensions in millimeters
+rack_length = 90;   // X-axis length of base
+rack_width = 45;    // Y-axis width of base
+rack_height = 20;   // Z-axis height of base
+
+slot_length = 77; // X-axis length of each slot
+slot_width = 1.6; // Y-axis width of each slot
+slot_depth = 10;  // Z-axis depth of each slot (from top surface)
+
+num_slots = 10; // Number of slots
+slot_center_spacing = 3.5; // Center-to-center spacing between slots (Y-axis)
+
+// Calculate starting Y position for slot centers (centered on rack)
+slot_start_y = -((num_slots - 1) * slot_center_spacing) / 2;
+
+// Hole dimensions for Z-axis (extended 0.01mm beyond rack top and slot bottom)
+hole_z_start = rack_height - slot_depth - 0.01;
+hole_z_end = rack_height + 0.01;
+hole_z_height = hole_z_end - hole_z_start;
+
+// Base block (centered at origin in X/Y, resting on XY plane at Z=0)
+difference() {
+    // Translate base up by rack_height/2 to start at Z=0
+    translate([0, 0, rack_height/2])
+        cube([rack_length, rack_width, rack_height], center=true);
+    
+    for (i = [0 : num_slots - 1]) {
+        // Calculate Y center for current slot
+        y_center = slot_start_y + i * slot_center_spacing;
+        
+        // Create hole cube (centered in X/Y for slot, placed at correct Z)
+        translate([0, y_center, hole_z_start])
+            cube([slot_length, slot_width, hole_z_height], center = true);
+    }
+}

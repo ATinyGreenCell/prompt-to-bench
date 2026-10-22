@@ -1,0 +1,49 @@
+```openscad
+// Dimensions (mm)
+plate_x = 130;
+plate_y = 90;
+plate_z = 4;
+
+hole_diameter = 30.5;
+hole_radius = hole_diameter / 2;
+
+// Grid layout: 2 rows (Y) x 3 columns (X)
+// 40 mm center-to-center spacing
+grid_spacing_x = 40;
+grid_spacing_y = 40;
+
+// Wall dimensions
+wall_length = plate_x;
+wall_thickness = 4;
+wall_height = 70;
+
+// Quality
+$fn = 64;
+
+// Main structure
+difference() {
+    // Base plate, resting on z=0, centered at origin
+    translate([-plate_x/2, -plate_y/2, 0])
+        cube([plate_x, plate_y, plate_z]);
+
+    // Side walls (long edges along X)
+    // Left wall (at y = -plate_y/2), extending outward
+    translate([-wall_length/2, -plate_y/2 - wall_thickness, 0])
+        cube([wall_length, wall_thickness, wall_height]);
+
+    // Right wall (at y = +plate_y/2), extending outward
+    translate([-wall_length/2, plate_y/2, 0])
+        cube([wall_length, wall_thickness, wall_height]);
+
+    // Holes: 2 rows (Y) x 3 columns (X)
+    // Centers at:
+    // X: -40, 0, +40
+    // Y: -20, +20
+    for (xi = [-1, 0, 1]) {
+        for (yi = [-1, 1]) {
+            translate([xi * grid_spacing_x, yi * grid_spacing_y, -1])
+                cylinder(r = hole_radius, h = plate_z + 2, center = true);
+        }
+    }
+}
+```

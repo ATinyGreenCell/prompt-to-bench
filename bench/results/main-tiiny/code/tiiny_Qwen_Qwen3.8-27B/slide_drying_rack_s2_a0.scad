@@ -1,0 +1,55 @@
+// Drying rack for 10 microscope slides (75 x 25 x 1 mm)
+// Slides stand upright on their long edge, held in parallel slots.
+
+// --- Base block dimensions ---
+base_L = 90;   // length along X (mm)
+base_W = 45;   // width along Y (mm)
+base_H = 20;   // height along Z (mm)
+
+// --- Slot dimensions ---
+slot_L = 77;   // slot length along X (mm)
+slot_W = 1.6;  // slot width along Y (mm)
+slot_D = 10;   // slot depth from top face (mm)
+
+// --- Slot layout ---
+n_slots = 10;          // number of slots
+slot_pitch = 3.5;      // centre-to-centre spacing along Y (mm)
+
+// --- Derived values ---
+// Total span of slot centres (first to last)
+slot_span = (n_slots - 1) * slot_pitch;   // 9 * 3.5 = 31.5 mm
+
+// Y position of the first (lowest) slot centre, so the group is centred on Y=0
+y_first = -slot_span / 2;
+
+// Z position of the slot bottom (top face is at z = base_H)
+slot_z_bottom = base_H - slot_D;          // 20 - 10 = 10 mm
+
+// Extend cutters 0.5 mm past the top face to avoid coplanar faces
+cut_extend = 0.5;
+
+$fn = 64;
+
+// --- Build the rack ---
+difference() {
+    // Solid base block, centred on origin in X and Y, resting on z=0
+    translate([-base_L/2, -base_W/2, 0])
+        cube([base_L, base_W, base_H]);
+
+    // 10 parallel slots, each running along X, open at top
+    for (i = [0 : n_slots-1]) {
+        y_c = y_first + i * slot_pitch;
+        // Cutter box: extends 0.5 mm above the top face (z = base_H + 0.5)
+        // and 0.5 mm below the slot bottom to ensure clean cut
+        translate([
+            -slot_L/2,
+            y_c - slot_W/2,
+            slot_z_bottom - 0.01   // start just below slot bottom; top extends past base_H
+        ])
+        cube([
+            slot_L,
+            slot_W,
+            slot_D + 0.5 + 0.01    // height: from (slot_z_bottom - 0.01) to (base_H + 0.5)
+        ]);
+    }
+}

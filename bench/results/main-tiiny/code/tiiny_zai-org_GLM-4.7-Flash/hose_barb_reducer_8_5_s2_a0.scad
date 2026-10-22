@@ -1,0 +1,155 @@
+$fn = 64;
+
+// --- Dimensions (mm) ---
+// Bore (inner diameter)
+bore_diameter = 3.0;
+
+// --- 8 mm Tubing Section (z = 0 to 20) ---
+// Barb 1 (Bottom)
+barb1_height = 10.0;
+barb1_od_bottom = 7.5;
+barb1_od_top = 9.5;
+barb1_od_step = 7.5; // Steps back to this diameter
+
+// --- Transition Section (z = 20 to 25) ---
+collar_diameter = 12.0;
+collar_height = 5.0;
+
+// --- 5 mm Tubing Section (z = 25 to 41) ---
+// Barb 2 (Top)
+barb2_height = 8.0;
+barb2_od_bottom = 6.5;
+barb2_od_top = 5.0;
+barb2_od_step = 6.5; // Steps back to this diameter
+
+// --- Geometry Generation ---
+
+// 1. Main Body (Cylinder with Bore)
+// We construct the body as a union of the outer shape and the inner bore.
+// The outer shape is built by stacking the sections described.
+
+module main_body() {
+    union() {
+        // Section 1: Bottom 8mm Barbs (z = 0 to 20)
+        translate([0, 0, 0])
+        cylinder(h = 20, r = 9.5, $fn = 64);
+        
+        // Section 2: Transition Collar (z = 20 to 25)
+        translate([0, 0, 20])
+        cylinder(h = collar_height, r = collar_diameter / 2, $fn = 64);
+        
+        // Section 3: Top 5mm Barbs (z = 25 to 41)
+        translate([0, 0, 25])
+        cylinder(h = 16, r = 6.5, $fn = 64);
+    }
+}
+
+module inner_bore() {
+    // The bore is a straight cylinder through the full length
+    cylinder(h = 41, r = bore_diameter / 2, $fn = 64);
+}
+
+// 2. Sawtooth Barbs
+// Generates a single sawtooth profile: Linear ramp up, then step down
+module sawtooth_barb(z_start, height, od_bottom, od_top, od_step) {
+    // The linear ramp (bottom to top)
+    // We use a cylinder with a linearly interpolated radius
+    // To do this in OpenSCAD without CSG hacks, we use a linear_extrude
+    // of a polygon that interpolates the radius.
+    
+    // Calculate radius at top
+    r_top = od_top / 2;
+    r_bottom = od_bottom / 2;
+    
+    // Create a polygon for the cross section
+    // We use a polygon with 4 points: Bottom-Left, Top-Left, Top-Right, Bottom-Right
+    // The X coordinates represent the radius at that Z height.
+    // We need to scale the polygon in X based on the Z height.
+    
+    // However, linear_extrude scales the whole shape. 
+    // To get a linear change in radius, we can use a polygon with a varying X coordinate
+    // and scale it in X using the 'scale' vector in linear_extrude.
+    
+    // Let's define the shape in 2D (y is up, x is out)
+    // We want the radius to go from r_bottom to r_top over 'height'.
+    // We can use a polygon that is a trapezoid, then scale it in X.
+    
+    // Shape: A trapezoid where the top edge is shorter than the bottom edge.
+    // But we need to scale it so the top edge becomes r_top.
+    // Let's define the shape with a top edge of length 2*r_top.
+    // Then we scale it in X by (r_bottom / r_top).
+    
+    // Wait, simpler approach: 
+    // Use a cylinder for the ramp, and a cylinder for the step.
+    
+    // Ramp (Linear growth)
+    // We can't easily make a cylinder with a changing radius in one go.
+    // We can use a polygon and linear_extrude with a scale vector.
+    
+    // Polygon points (relative to center):
+    // 0,0 (bottom center)
+    // 0, height (top center)
+    // r_top, height (top edge)
+    // r_bottom, 0 (bottom edge)
+    
+    // We need to scale this shape in X so that the bottom edge becomes r_bottom.
+    // Scale factor = r_bottom / r_top.
+    
+    scale_factor = r_bottom / r_top;
+    
+    linear_extrude(height = height, scale = scale_factor) {
+        polygon([
+            [0, 0],
+            [0, 1],
+            [r_top, 1],
+            [r_bottom, 0]
+        ]);
+    }
+    
+    // Step (Straight back to bottom diameter)
+    // We add a cylinder on top of the ramp.
+    // The ramp ends at z_start + height.
+    // The step starts at z_start + height.
+    // The step height is small (e.g., 0.1 mm) to ensure a solid connection.
+    
+    step_height = 0.1;
+    
+    translate([0, 0, height])
+    cylinder(h = step_height, r = od_step / 2, $fn = 64);
+}
+
+// 3. Assembly
+// Render the part
+difference() {
+    main_body();
+    inner_bore();
+}
+
+// 4. Add Barbs
+// We add the barbs to the main body.
+// We need to add them to the 'main_body' module or union them.
+// Since we are using difference, we can just union the barbs with the main body
+// before subtracting the bore.
+
+module full_part() {
+    difference() {
+        union() {
+            main_body();
+            
+            // Add Bottom Barbs (z = 0 to 10)
+            // We place them at z=0.
+            // The module draws from z=0 to z=height.
+            translate([0, 0, 0])
+            sawtooth_barb(0, barb1_height, barb1_od_bottom, barb1_od_top, barb1_od_step);
+            
+            // Add Top Barbs (z = 25 to 33)
+            // We place them at z=25.
+            translate([0, 0, 25])
+            sawtooth_barb(0, barb2_height, barb2_od_bottom, barb2_od_top, barb2_od_step);
+        }
+        inner_bore();
+    }
+}
+
+// Render the final part
+full_part();

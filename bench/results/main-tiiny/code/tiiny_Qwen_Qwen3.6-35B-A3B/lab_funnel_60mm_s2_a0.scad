@@ -1,0 +1,113 @@
+// Lab Funnel Dimensions
+// Spout outer diameter
+spout_od = 10;
+// Spout length (height from z=0 to z=20)
+spout_h = 20;
+// Rim outer diameter at top of cone
+rim_od = 60;
+// Total height of the funnel (z=0 to z=50)
+total_h = 50;
+// Wall thickness
+wall_thick = 1.6;
+// Fillet radius at the cone-spout junction to prevent sharp internal corners
+fillet_r = 1.5;
+
+// Derived dimensions
+spout_r = spout_od / 2;
+rim_r = rim_od / 2;
+spout_id = spout_od - 2 * wall_thick;
+spout_ir = spout_id / 2;
+
+// Calculate the height of the conical section
+// The cone starts at z = spout_h (20) and ends at z = total_h (50)
+cone_h = total_h - spout_h;
+
+// Calculate the inner cone geometry
+// The inner surface follows the wall thickness.
+// At the bottom of the cone (z=20), the inner radius is spout_ir.
+// At the top of the cone (z=50), the inner radius is rim_r - wall_thick.
+// Note: The prompt says "wall is 1.6 mm thick everywhere".
+// This implies the radial distance between inner and outer surfaces is constant.
+// Outer radius at z: R_out(z)
+// Inner radius at z: R_in(z) = R_out(z) - wall_thick
+
+// Let's verify the geometry.
+// z=0 to z=20: Cylinder. Outer R = 5. Inner R = 5 - 1.6 = 3.4.
+// z=20 to z=50: Cone.
+// Outer R at z=20 is 5. Outer R at z=50 is 30.
+// Inner R at z=20 is 3.4. Inner R at z=50 is 30 - 1.6 = 28.4.
+
+// To model this cleanly, we can use a difference operation.
+// 1. Create the outer solid.
+// 2. Create the inner void solid.
+// 3. Subtract inner from outer.
+
+// Outer Solid:
+// Part 1: Spout cylinder (z=0 to z=20)
+// Part 2: Cone (z=20 to z=50)
+
+// Inner Solid (Void):
+// Part 1: Spout bore cylinder (z=0 to z=20)
+// Part 2: Inner cone (z=20 to z=50)
+
+// We need to ensure the inner void extends slightly past the faces for clean boolean operations.
+// The prompt asks for open top and bottom.
+
+// Helper function to create the outer shape
+module outer_shape() {
+    union() {
+        // Spout cylinder
+        cylinder(r = spout_r, h = spout_h, center = false);
+        
+        // Cone part
+        // We build the cone from z=20 to z=50.
+        // To make it a single solid with the cylinder, we can just define a cone
+        // that sits on top of the cylinder.
+        // However, standard cylinder/cone primitives are centered or bottom-aligned.
+        // Let's build the cone separately and union it.
+        // The cone's bottom face is at z=20, top at z=50.
+        // Bottom radius = spout_r = 5
+        // Top radius = rim_r = 30
+        // Height = 30
+        translate([0, 0, spout_h]) {
+            // Create a cone. OpenSCAD cylinder with different top/bottom radii.
+            // Note: The transition at z=20 is sharp in the outer geometry unless filleted.
+            // The prompt doesn't specify an external fillet, just "wall is 1.6mm thick".
+            // A sharp external corner is fine.
+            cylinder(r1 = spout_r, r2 = rim_r, h = cone_h, center = false);
+        }
+    }
+}
+
+// Helper function to create the inner void shape
+module inner_void() {
+    union() {
+        // Spout bore
+        // Extends from z=0 to z=20.
+        // To ensure the bottom hole is open, we extend it slightly below z=0.
+        // To ensure it connects cleanly to the cone, we extend it slightly into the cone.
+        cylinder(r = spout_ir, h = spout_h + 0.5, center = false);
+        
+        // Inner Cone
+        // Starts at z=20.
+        // Bottom radius (inner) = spout_ir = 3.4
+        // Top radius (inner) = rim_r - wall_thick = 30 - 1.6 = 28.4
+        // Height = 30
+        // We extend it slightly upwards to ensure the top hole is open and clean.
+        translate([0, 0, spout_h]) {
+            cylinder(r1 = spout_ir, r2 = rim_r - wall_thick, h = cone_h + 0.5, center = false);
+        }
+    }
+}
+
+// Main Module
+module lab_funnel() {
+    $fn = 64;
+    
+    difference() {
+        outer_shape();
+        inner_void();
+    }
+}
+
+lab_funnel();

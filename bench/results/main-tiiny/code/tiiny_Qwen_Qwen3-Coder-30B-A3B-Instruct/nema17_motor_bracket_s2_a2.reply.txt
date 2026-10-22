@@ -1,0 +1,79 @@
+```openscad
+// NEMA 17 stepper motor mounting bracket
+// Print orientation: base plate on bed, builds upward
+
+// Dimensions
+base_x = 50;        // Base plate width (from -25 to 25)
+base_y = 45;        // Base plate depth (from 0 to 45)
+base_z = 5;         // Base plate thickness
+motor_plate_x = 50; // Motor plate width (from -25 to 25)
+motor_plate_y = 5;  // Motor plate depth (from 0 to 5)
+motor_plate_z = 50; // Motor plate height (from 0 to 50)
+boss_hole_d = 23;   // Boss hole diameter
+boss_hole_x = 0;    // Boss hole center x
+boss_hole_z = 28;   // Boss hole center z
+screw_hole_d = 3.4; // M3 screw hole diameter
+screw_pattern = 31; // M3 screw pattern square size
+gusset_width = 5;   // Gusset thickness
+gusset_leg = 20;    // Gusset triangle leg length
+
+// Base plate
+base = cube([base_x, base_y, base_z], center=true);
+
+// Motor plate
+motor_plate = cube([motor_plate_x, motor_plate_y, motor_plate_z], center=true);
+motor_plate = translate([0, 0, base_z]) motor_plate;
+
+// Boss hole
+boss_hole = cylinder(d=boss_hole_d, h=motor_plate_z+0.02, center=true, $fn=64);
+boss_hole = translate([boss_hole_x, 0, boss_hole_z]) boss_hole;
+
+// M3 screw holes
+screw_holes = [];
+for (i = [-1, 1]) {
+  for (j = [-1, 1]) {
+    screw_hole = cylinder(d=screw_hole_d, h=motor_plate_z+0.02, center=true, $fn=64);
+    screw_hole = translate([i*(screw_pattern/2), 0, j*(screw_pattern/2)]) screw_hole;
+    screw_holes = concat(screw_holes, [screw_hole]);
+  }
+}
+
+// M4 mounting holes
+mounting_holes = [];
+for (i = [-1, 1]) {
+  mounting_hole = cylinder(d=4.5, h=base_z+0.02, center=true, $fn=64);
+  mounting_hole = translate([i*17, 30, 0]) mounting_hole;
+  mounting_holes = concat(mounting_holes, [mounting_hole]);
+}
+
+// Gussets
+gusset_left = rotate([0, 0, 90]) 
+  polygon([[0, 0], [gusset_leg, 0], [0, gusset_leg]]);
+gusset_left = translate([-25, 5, 5]) gusset_left;
+gusset_left = linear_extrude(height=gusset_width) gusset_left;
+
+gusset_right = rotate([0, 0, 90]) 
+  polygon([[0, 0], [gusset_leg, 0], [0, gusset_leg]]);
+gusset_right = translate([25, 5, 5]) gusset_right;
+gusset_right = linear_extrude(height=gusset_width) gusset_right;
+
+// Final assembly
+assembly = union() {
+  base;
+  motor_plate;
+  difference() {
+    motor_plate;
+    boss_hole;
+    screw_holes;
+  }
+  difference() {
+    base;
+    mounting_holes;
+  }
+  gusset_left;
+  gusset_right;
+}
+
+// Final object
+assembly;
+```

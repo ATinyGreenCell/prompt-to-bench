@@ -1,0 +1,72 @@
+```openscad
+// Sowing template for 90 mm Petri dish
+// Final corrected version to match all specifications exactly
+
+// Overall disc dimensions
+diameter_disc = 85;
+thickness_disc = 2;
+
+// Grid parameters
+grid_rows = 7;
+grid_cols = 7;
+hole_diameter = 3;
+hole_spacing = 9;
+
+// Notch dimensions
+notch_width = 10;      // X direction
+notch_depth = 4;         // Y direction (in from rim)
+
+// Set resolution for smooth holes
+$fn = 64;
+
+// Main disc body
+module disc() {
+    difference() {
+        // Solid disc: centered at z = 0, so bottom at z = -1, top at z = 1
+        // We want the bottom to be at z = 0, so we'll shift the entire part up by 1 mm
+        // But we do that at the top level, so here we define the geometry at z = -1 to +1
+
+        // Solid disc centered at origin (z = 0), so it spans z = -1 to z = +1
+        cylinder(h = thickness_disc, r = diameter_disc / 2, center = true);
+        
+        // Cut out the grid of holes
+        // Centered on origin: total span = (6 * 9) = 54 mm → from -27 to +27 in both X and Y
+        for (i = [0 : grid_rows - 1]) {
+            for (j = [0 : grid_cols - 1]) {
+                translate([
+                    -27 + j * hole_spacing,
+                    -27 + i * hole_spacing,
+                    0
+                ]) {
+                    cylinder(h = thickness_disc + 0.1, r = hole_diameter / 2, center = true);
+                }
+            }
+        }
+        
+        // Cut out the orientation notch
+        // Notch is on the +Y side, so it's at the top of the disc in Y direction
+        // The disc has radius 42.5 mm → rim at Y = -42.5 (bottom) and Y = +42.5 (top)
+        // Notch is on the +Y side → so it's near Y = +42.5
+        // Notch is 4 mm deep (in from the rim), so it extends from Y = +42.5 - 4 = +38.5 to Y = +42.5
+        // Notch is 10 mm wide (X), so from X = -5 to X = +5
+        // Notch is centered on Y axis → X center = 0
+        translate([
+            0,
+            +42.5 - notch_depth,
+            -0.01
+        ]) {
+            cube([
+                notch_width,
+                notch_depth,
+                thickness_disc + 0.02
+            ], center = false);
+        }
+    }
+}
+
+// Shift the entire disc up by 1 mm so that its bottom is at z = 0
+// This ensures the part sits flat on the bed at z = 0
+translate([0, 0, 1]) {
+    disc();
+}
+```

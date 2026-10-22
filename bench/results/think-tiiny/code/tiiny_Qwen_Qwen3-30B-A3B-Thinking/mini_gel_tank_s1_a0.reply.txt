@@ -1,0 +1,208 @@
+We are going to define the variables and then build the tank.
+
+Let's write the code step by step.
+
+Note: We are to center the tank on the origin.
+
+We'll define:
+  outer_x = 120;
+  outer_y = 70;
+  outer_z = 40;
+  wall_thickness = 3;
+  floor_thickness = 3;
+  hole_diameter = 2;
+  hole_radius = hole_diameter / 2;
+  hole_length = wall_thickness + 0.01; // to extend beyond the wall by 0.01 mm
+
+  // The inner cavity dimensions (for the tank's inner space) are:
+  inner_x = outer_x - 2 * wall_thickness;
+  inner_y = outer_y - 2 * wall_thickness;
+  // The inner cavity height (from inner bottom to top) is outer_z - floor_thickness, but we don't need it for the hole.
+
+  // Platform:
+  platform_length = 60; // in X
+  platform_width = inner_y; // spans full inner Y
+  platform_height = 10; // 10 mm above inner floor (so from z=floor_thickness to z=floor_thickness+platform_height)
+
+  // The platform is centered at the origin in X and Y, and starts at z=floor_thickness.
+  // So the platform's bottom is at z = floor_thickness, and top at z = floor_thickness + platform_height.
+
+  // For the holes:
+  // Right hole center in X: 
+  //   wall center for right wall: outer_x/2 - wall_thickness/2 = 60 - 1.5 = 58.5
+  //   but we extend by 0.01 beyond the inner surface (which is at 57), so the hole runs from 57-0.01 to 60 -> center = (57-0.01+60)/2 = 58.495
+  //   We'll compute it as: ( (outer_x/2 - wall_thickness) - 0.01 + outer_x/2 ) / 2
+  //   = ( (60 - 3) - 0.01 + 60 ) / 2 = (57 - 0.01 + 60) / 2 = 116.99 / 2 = 58.495
+  // Similarly, left hole center: ( -60 + ( - (60-3) + 0.01 ) ) / 2 = ( -60 + (-57+0.01) ) / 2 = (-117.01)/2 = -58.505
+
+  // We'll define:
+  hole_center_x_right = ( (outer_x/2 - wall_thickness) - 0.01 + outer_x/2 ) / 2;
+  hole_center_x_left = ( -outer_x/2 + ( - (outer_x/2 - wall_thickness) + 0.01 ) ) / 2;
+
+But note: we can also use:
+  hole_center_x_right = (outer_x/2 - wall_thickness/2) - 0.005;
+  hole_center_x_left = - (outer_x/2 - wall_thickness/2) + 0.005;
+
+Because:
+  wall_center = outer_x/2 - wall_thickness/2 = 60 - 1.5 = 58.5.
+  We want the hole center to be 0.005 mm to the left of the wall center (because the hole extends 0.01 beyond the inner surface, so the center moves by -0.005).
+
+  Similarly, for the left: wall_center = -58.5, and we want the hole center to be 0.005 mm to the right of the wall center (because the hole extends beyond the inner surface, which for the left wall is at -57, so beyond means towards positive X, so the center moves by +0.005 from -58.5 -> -58.495).
+
+  But note: the hole for the left wall: 
+      The wall center is at -58.5.
+      The hole extends 0.01 beyond the inner surface (which is at -57) towards the inside (positive X), so the hole center should be at -58.5 + 0.005 = -58.495.
+
+  However, our calculation for the left hole center using the formula was -58.505? 
+  Let me recalculate:
+      hole_center_x_left = ( -60 + (-57 + 0.01) ) / 2 = (-60 -57 + 0.01)/2 = (-117.01)/2 = -58.505.
+
+  Why the discrepancy? 
+      The wall center (without extension) is at ( -60 + (-57) ) / 2 = -58.5.
+      We want the hole to run from -60 to -57+0.01 = -56.99.
+      The center of the hole is ( -60 + (-56.99) ) / 2 = -58.495.
+
+  So the hole center for the left is -58.495, not -58.505.
+
+  How did I get -58.505? 
+      I did: ( -60 + ( - (60-3) + 0.01 ) ) / 2 = ( -60 + (-57+0.01) ) / 2 = (-117.01)/2 = -58.505 -> this is wrong because the inner surface of the left wall is at -57, so the hole should start at -57+0.01? 
+      But note: the hole is drilled from the outer surface (X=-60) to the inner surface (X=-57) and then extended beyond the inner surface by 0.01 mm, meaning the hole goes to X=-57+0.01 (which is -56.99). 
+      So the hole runs from X=-60 to X=-56.99, so the center is (-60 + (-56.99))/2 = -58.495.
+
+  Therefore, the correct hole_center_x_left = -58.495.
+
+  Similarly, hole_center_x_right = (57 - 0.01 + 60) / 2 = (116.99)/2 = 58.495.
+
+  So we'll use:
+      hole_center_x_right = 58.495;
+      hole_center_x_left = -58.495;
+
+  But note: the problem says "y=0", so the hole is at y=0 and z=30.
+
+Now, let's code.
+
+We'll build the tank as:
+  - The floor: a cube from (-outer_x/2, -outer_y/2, 0) to (outer_x/2, outer_y/2, floor_thickness)
+  - The side walls: four prisms (front, back, left, right) for the walls (each 3 mm thick, from z=floor_thickness to z=outer_z)
+
+But note: the side walls are built on the floor, so they are attached. 
+However, the side walls are 3 mm thick and 37 mm high (from z=3 to z=40). 
+We can build the side walls as:
+  - Right wall: 
+        X: from outer_x/2 - wall_thickness to outer_x/2
+        Y: from -outer_y/2 to outer_y/2
+        Z: from floor_thickness to outer_z
+  - Similarly for the others.
+
+But note: the floor already covers the bottom, so the side walls are built on top of the floor. 
+We can build the tank as the union of the floor and the side walls.
+
+Then we add the platform (a cube) and then subtract the two holes.
+
+However, the platform is inside the tank, so we can build the tank (walls and floor) and then union the platform, then subtract the holes.
+
+Let's code accordingly.
+
+We'll define all variables at the top.
+
+Note: We are to use $fn=64 for curved shapes, so we'll set $fn=64 for the cylinders.
+
+But note: the problem says "Set $fn = 64 (or more) on curved shapes", so we'll set $fn=64 at the top of the file? 
+Actually, we can set it globally at the top, but the problem says "on curved shapes", so we'll set it for the cylinders.
+
+We'll set $fn=64 at the top of the file.
+
+But note: the problem says "only the code", so we'll put it at the top.
+
+However, the problem says "Write one complete, self-contained OpenSCAD file", so we'll put $fn=64 at the top.
+
+Let's write the code.
+</think>
+
+```openscad
+$fn = 64;
+
+// Dimensions in millimeters
+outer_x = 120;   // Outer X dimension (length)
+outer_y = 70;     // Outer Y dimension (width)
+outer_z = 40;     // Outer Z dimension (height)
+wall_thickness = 3; // Wall and floor thickness
+floor_thickness = 3; // Floor thickness (z=0 to z=floor_thickness)
+platform_length = 60; // Platform length in X (centred)
+platform_width = outer_y - 2 * wall_thickness; // Full inner Y (64 mm)
+platform_height = 10; // Platform top at z = 13 (10 mm above inner floor at z=3)
+hole_diameter = 2;  // Hole diameter (2 mm)
+hole_radius = hole_diameter / 2;
+hole_length = wall_thickness + 0.01; // Extend 0.01 mm beyond wall for non-coplanar faces
+
+// Calculate hole centers (X) for both ends (y=0, z=30)
+hole_center_x_right = ( (outer_x/2 - wall_thickness) - 0.01 + outer_x/2 ) / 2;
+hole_center_x_left = ( -outer_x/2 + ( - (outer_x/2 - wall_thickness) + 0.01 ) ) / 2;
+
+// Tank structure: floor + side walls (centered at origin)
+tank_floor = cube([outer_x, outer_y, floor_thickness], center=true);
+tank_right_wall = cube([wall_thickness, outer_y, outer_z - floor_thickness], center=true);
+translate([outer_x/2 - wall_thickness/2, 0, (outer_z - floor_thickness)/2 + floor_thickness])
+  rotate([0, 0, 90])
+  tank_right_wall;
+tank_left_wall = cube([wall_thickness, outer_y, outer_z - floor_thickness], center=true);
+translate([-outer_x/2 + wall_thickness/2, 0, (outer_z - floor_thickness)/2 + floor_thickness])
+  rotate([0, 0, 90])
+  tank_left_wall;
+tank_front_wall = cube([outer_x, wall_thickness, outer_z - floor_thickness], center=true);
+translate([0, outer_y/2 - wall_thickness/2, (outer_z - floor_thickness)/2 + floor_thickness])
+  rotate([0, 90, 0])
+  tank_front_wall;
+tank_back_wall = cube([outer_x, wall_thickness, outer_z - floor_thickness], center=true);
+translate([0, -outer_y/2 + wall_thickness/2, (outer_z - floor_thickness)/2 + floor_thickness])
+  rotate([0, 90, 0])
+  tank_back_wall;
+
+// Platform (solid, raised, centred)
+platform = cube([platform_length, platform_width, platform_height], center=true);
+translate([0, 0, floor_thickness + platform_height/2])
+  platform;
+
+// Holes (drilled through end walls)
+hole_right = 
+  translate([hole_center_x_right, 0, 30])
+  rotate([90, 0, 0])
+  cylinder(r=hole_radius, h=hole_length, center=true);
+hole_left = 
+  translate([hole_center_x_left, 0, 30])
+  rotate([90, 0, 0])
+  cylinder(r=hole_radius, h=hole_length, center=true);
+
+// Assemble the tank with platform and holes
+union() {
+  // Tank structure (floor + walls)
+  union() {
+    tank_floor;
+    tank_right_wall;
+    tank_left_wall;
+    tank_front_wall;
+    tank_back_wall;
+  }
+  // Platform
+  platform;
+}
+
+// Subtract the holes from the tank
+difference() {
+  union() {
+    // Tank structure (floor + walls)
+    union() {
+      tank_floor;
+      tank_right_wall;
+      tank_left_wall;
+      tank_front_wall;
+      tank_back_wall;
+    }
+    // Platform
+    platform;
+  }
+  // Holes
+  hole_right;
+  hole_left;
+}
+```

@@ -1,0 +1,62 @@
+// 10-well Agarose Gel Comb
+// Designed for FDM printing, lying flat on the build plate.
+
+// --- Dimensions (measured with calipers) ---
+plate_thickness = 1.5;   // Z height of the entire comb
+spine_length = 70;       // X length of the back bar
+spine_width = 12;        // Y width of the back bar
+tooth_width = 5.0;       // X width of each tooth
+tooth_length = 12;       // Y length of each tooth (extends in -Y)
+num_teeth = 10;          // Number of wells/teeth
+gap_between_teeth = 1.5; // Y gap between adjacent teeth
+
+// --- Derived Calculations ---
+// Total width occupied by teeth and gaps
+total_tooth_row_width = (num_teeth * tooth_width) + ((num_teeth - 1) * gap_between_teeth);
+// Start position of the first tooth in Y (relative to spine center)
+// The spine is centered at Y=0. The teeth hang in -Y.
+// We need to center the row of teeth on the spine.
+// The row extends from Y_start to Y_end.
+// Y_end (tip of teeth) = -tooth_length
+// Y_start (base of teeth, attached to spine) = 0 (since they hang from the edge)
+// Wait, the teeth hang from one long edge. Let's attach them to Y = -spine_width/2.
+// So the teeth extend from Y = -spine_width/2 to Y = -spine_width/2 - tooth_length.
+// The row of teeth is centered on the spine in X.
+// The spine is centered at X=0.
+// The row of teeth spans X from -total_tooth_row_width/2 to +total_tooth_row_width/2.
+
+// --- Main Construction ---
+$fn = 64;
+
+union() {
+    // 1. The Spine (Back Bar)
+    // Centered at origin, lying flat.
+    translate([0, 0, 0])
+    cube([spine_length, spine_width, plate_thickness], center = true);
+
+    // 2. The Teeth
+    // Attached to the -Y edge of the spine.
+    // The spine's -Y edge is at Y = -spine_width/2.
+    // The teeth extend further in -Y.
+    
+    for (i = [0 : num_teeth - 1]) {
+        // Calculate X position for each tooth
+        // The row is centered at X=0.
+        // The first tooth (i=0) is at the left-most position.
+        // Left-most X = -total_tooth_row_width/2
+        // Each subsequent tooth is offset by (tooth_width + gap_between_teeth)
+        
+        x_offset = -total_tooth_row_width/2 + i * (tooth_width + gap_between_teeth) + tooth_width/2;
+        
+        // Y position:
+        // The base of the tooth is at Y = -spine_width/2.
+        // The tooth extends in -Y direction by tooth_length.
+        // So the tooth spans Y from -spine_width/2 to -spine_width/2 - tooth_length.
+        // Center of the tooth in Y is -spine_width/2 - tooth_length/2.
+        
+        y_center = -spine_width/2 - tooth_length/2;
+        
+        translate([x_offset, y_center, 0])
+        cube([tooth_width, tooth_length, plate_thickness], center = true);
+    }
+}

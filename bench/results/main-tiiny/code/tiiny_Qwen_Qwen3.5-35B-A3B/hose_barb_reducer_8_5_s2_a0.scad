@@ -1,0 +1,131 @@
+// Dimensions for the hose-barb reducer
+// Units: millimetres
+// Orientation: Standing upright on XY plane (Z=0), centered at origin
+
+// Core bore dimensions
+bore_diameter = 3.0;
+bore_radius = bore_diameter / 2;
+
+// Overall length
+total_length = 41.0;
+
+// --- Section 1: 8mm tubing barbs (Z=0 to Z=20) ---
+// Two identical barbs, each 10mm tall
+section1_height = 10.0;
+section1_count = 2;
+section1_total_height = section1_height * section1_count;
+
+// Barb geometry for 8mm tubing
+// Outer diameter grows from 7.5mm to 9.5mm over the barb height
+barb1_bottom_d = 7.5;
+barb1_top_d = 9.5;
+barb1_step_d = 7.5; // Diameter after the step back
+
+// --- Section 2: Cylindrical collar (Z=20 to Z=25) ---
+collar_height = 5.0; // 25 - 20
+collar_diameter = 12.0;
+
+// --- Section 3: 5mm tubing barbs (Z=25 to Z=41) ---
+// Two identical barbs, each 8mm tall
+section3_height = 8.0;
+section3_count = 2;
+section3_total_height = section3_height * section3_count;
+
+// Barb geometry for 5mm tubing
+// Outer diameter shrinks from 6.5mm to 5.0mm over the barb height
+barb3_bottom_d = 6.5;
+barb3_top_d = 5.0;
+barb3_step_d = 6.5; // Diameter after the step back
+
+// --- Helper Function: Create a single sawtooth barb ---
+// Parameters:
+//   h: height of the barb
+//   d_bottom: diameter at the bottom of the barb
+//   d_top: diameter at the top of the barb
+//   d_step: diameter after the step back (usually same as bottom)
+//   z_start: starting Z position
+//   z_end: ending Z position (used for the step back)
+//   step_height: height of the flat step back (0.5mm)
+//   step_start_z: Z position where the step back begins (top of the taper)
+fn_create_barb(h, d_bottom, d_top, d_step, z_start, z_end, step_height, step_start_z) {
+    // Calculate radii
+    r_bottom = d_bottom / 2;
+    r_top = d_top / 2;
+    r_step = d_step / 2;
+    
+    // Calculate the slope of the taper
+    // We need to create a shape that tapers from r_bottom to r_top
+    // Then steps back to r_step
+    
+    // We will use a linear_extrude of a polygon that defines the profile
+    // The profile is defined in the XZ plane (since it's rotationally symmetric)
+    // We define the profile from z=z_start to z=z_end
+    
+    // Profile points:
+    // 1. Bottom: (r_bottom, z_start)
+    // 2. Top of taper: (r_top, z_start + h - step_height)
+    // 3. Top of step: (r_top, z_start + h - step_height) -> Actually, the step is a flat face
+    //    Wait, the prompt says "steps straight back to 7.5 mm".
+    //    This implies a sudden change in radius at the top of the taper.
+    //    So the profile goes up the slope, then drops back to the smaller radius.
+    //    Let's define the profile points carefully.
+    
+    // The barb is a solid. We can model it as a cylinder with a cutout, 
+    // or by extruding a polygon. Extruding a polygon is cleaner for the sawtooth.
+    
+    // Profile points for the outer boundary (in XZ plane, X is radius):
+    // Point 1: (r_bottom, z_start)
+    // Point 2: (r_top, z_start + h - step_height)  <-- Top of the taper
+    // Point 3: (r_step, z_start + h - step_height)  <-- Step back to smaller radius
+    // Point 4: (r_step, z_start + h)                <-- Bottom of the step face
+    // Point 5: (r_bottom, z_start + h)               <-- Bottom of the barb
+    
+    // Wait, the "step back" is usually a flat face perpendicular to Z.
+    // The prompt says: "steps straight back to 7.5 mm".
+    // This means at the top of the taper (z = z_start + h - step_height), the radius changes from r_top to r_step.
+    // Then there is a flat face at r_step from z = z_start + h - step_height to z = z_start + h.
+    // Then the bottom face is at r_bottom? No, the bottom of the barb is the interface with the previous section.
+    // The "barb" is the protruding part.
+    // Let's re-read: "each barb is 10 mm tall and its outer diameter grows linearly from 7.5 mm at its bottom to 9.5 mm at its top, then steps straight back to 7.5 mm".
+    // This implies the "top" of the barb is the peak of the sawtooth.
+    // The "step back" creates a flat ledge.
+    // So the profile is:
+    // Start at (r_bottom, z_start).
+    // Taper up to (r_top, z_peak).
+    // Step back to (r_step, z_peak).
+    // Then go down to (r_step, z_end) ? No, the step back is usually a flat face.
+    // If it steps back to 7.5mm, then the face at the top of the barb is a flat annulus?
+    // No, "steps straight back" implies a sudden change in radius.
+    // The shape is a solid.
+    // Let's assume the "barb" is the protruding part.
+    // The profile in XZ:
+    // (r_bottom, z_start) -> (r_top, z_peak) -> (r_step, z_peak) -> (r_step, z_end) -> (r_bottom, z_end) ?
+    // No, the bottom of the barb is at z_start. The top of the barb is at z_end.
+    // The "step back" happens at the top of the taper.
+    // So:
+    // 1. (r_bottom, z_start)
+    // 2. (r_top, z_peak)
+    // 3. (r_step, z_peak)  <-- Sudden drop in radius
+    // 4. (r_step, z_end)   <-- Flat face at the smaller radius?
+    // 5. (r_bottom, z_end) <-- Bottom face?
+    // Actually, the "barb" is the part that grips the tube.
+    // The "step back" creates a ledge that prevents the tube from sliding off.
+    // So the profile should be:
+    // (r_bottom, z_start) -> (r_top, z_peak) -> (r_step, z_peak) -> (r_step, z_end) -> (r_bottom, z_end)
+    // But wait, if we extrude this, the bottom face (z_end) would be at r_bottom?
+    // No, the bottom of the barb is the interface with the previous section.
+    // The previous section ends at z_start. The barb starts at z_start.
+    // The barb ends at z_end.
+    // The "step back" is at the top of the barb (z_end).
+    // So the profile is:
+    // (r_bottom, z_start) -> (r_top, z_end - step_height) -> (r_step, z_end - step_height) -> (r_step, z_end) -> (r_bottom, z_end)
+    // Wait, if the step back is to 7.5mm, and the bottom is 7.5mm, then the step back is just a flat face at the bottom of the barb?
+    // No, the "barb" is the protruding part.
+    // Let's assume the "barb" is the part that goes from z_start to z_end.
+    // The "step back" is at the top of the barb (z_end).
+    // So the profile is:
+    // (r_bottom, z_start) -> (r_top, z_end - step_height) -> (r_step, z_end - step_height) -> (r_step, z_end) -> (r_bottom, z_end)
+    // But the bottom of the barb is at z_start. The top is at z_end.
+    // The "step back" is at the top of the barb.
+    // So the profile is:
+    // (r_bottom, z_start) -> (r_top, z_end - step_height) -> (r_step, z_end - step_height

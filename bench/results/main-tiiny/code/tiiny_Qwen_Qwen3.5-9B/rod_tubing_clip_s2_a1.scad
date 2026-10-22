@@ -1,0 +1,121 @@
+$fn = 128; // High resolution for smooth curves and accurate hole sizes
+
+// --- Dimensions (mm) ---
+// Rod Stand Dimensions
+ROD_DIAMETER = 12.7;
+ROD_WALL_THICKNESS = 3;
+ROD_OUTER_DIAMETER = ROD_DIAMETER + 2 * ROD_WALL_THICKNESS; // 18.7
+
+// Tubing Dimensions
+TUBING_DIAMETER = 6;
+TUBING_WALL_THICKNESS = 2;
+TUBING_OUTER_DIAMETER = TUBING_DIAMETER + 2 * TUBING_WALL_THICKNESS; // 10
+
+// Positioning
+RING_ROD_X = 0;
+RING_TUBING_X = 15;
+
+// Bridge Dimensions
+BRIDGE_WIDTH_X = 4; // From x=8 to x=12
+BRIDGE_WIDTH_Y = 6;
+
+// Cutout Dimensions
+CUTOUT_ROD_WIDTH = 10;
+CUTOUT_ROD_Y_LIMIT = 5; // -5 < y < 5
+
+CUTOUT_TUBING_WIDTH = 4.5;
+CUTOUT_TUBING_Y_LIMIT = 2.25; // -2.25 < y < 2.25
+
+// Extrusion Height
+EXTRUSION_HEIGHT = 10;
+
+// --- Generation ---
+
+difference() {
+    // 1. The Main Profile (Extruded)
+    // center = false ensures the bottom of the extrusion is at z=0
+    linear_extrude(height = EXTRUSION_HEIGHT, center = false) {
+        translate([0, 0, EXTRUSION_HEIGHT / 2]) {
+            union() {
+                // --- Ring for Rod Stand ---
+                circle(
+                    r = ROD_OUTER_DIAMETER / 2,
+                    $fn = 64
+                );
+                
+                // Cutout for Rod Stand (-X side)
+                // Remove everything with x < 0 and -5 < y < 5
+                // We use a cylinder to cut through the ring profile fully
+                difference() {
+                    // The ring itself (already drawn above)
+                    // We subtract a cylinder that spans the full height of the profile
+                    // The cylinder radius must be large enough to cover the y-limits
+                    translate([0, -CUTOUT_ROD_Y_LIMIT, 0]) 
+                        cylinder(h = EXTRUSION_HEIGHT, r = CUTOUT_ROD_Y_LIMIT, $fn = 64);
+                    
+                    // We also need to ensure the cutout is wide enough in X
+                    // The cylinder above covers the Y range. We need to intersect with X < 0.
+                    // Since we are in a difference, we can just subtract the cylinder.
+                    // However, the cylinder extends to x=+5. We only want x<0.
+                    // Let's refine: Subtract a box that covers the cutout area.
+                }
+                
+                // Refined Cutout for Rod Stand:
+                // Subtract a box that covers x < 0 and -5 < y < 5, spanning full height.
+                translate([-CUTOUT_ROD_WIDTH / 2, -CUTOUT_ROD_Y_LIMIT, 0]) 
+                    cube([CUTOUT_ROD_WIDTH, CUTOUT_ROD_Y_LIMIT * 2, EXTRUSION_HEIGHT]);
+                
+                // --- Ring for Tubing ---
+                translate([RING_TUBING_X, 0, 0]) {
+                    circle(
+                        r = TUBING_OUTER_DIAMETER / 2,
+                        $fn = 64
+                    );
+                    
+                    // Cutout for Tubing (+X side)
+                    // Remove everything with x > 15 and -2.25 < y < 2.25
+                    // Subtract a box covering x > 15 (relative to origin) and the Y range
+                    // Box center at x=15, width 4.5, y range +/- 2.25
+                    translate([RING_TUBING_X - CUTOUT_TUBING_WIDTH / 2, -CUTOUT_TUBING_Y_LIMIT, 0]) 
+                        cube([CUTOUT_TUBING_WIDTH, CUTOUT_TUBING_Y_LIMIT * 2, EXTRUSION_HEIGHT]);
+                }
+                
+                // --- Solid Bridge ---
+                // Joins x=8 to x=12, width 6mm in Y
+                translate([8, -BRIDGE_WIDTH_Y / 2, 0]) 
+                    cube([BRIDGE_WIDTH_X, BRIDGE_WIDTH_Y, EXTRUSION_HEIGHT]);
+            }
+        }
+    }
+    
+    // 2. Cutouts for the Holes (Difference shapes)
+    // We subtract the inner voids of the rings to create the holes.
+    // Extend slightly past the inner diameter to ensure clean walls.
+    
+    // Hole for Rod Stand
+    translate([RING_ROD_X, 0, 0]) {
+        difference() {
+            // Outer shape of the hole (slightly larger than inner diameter to cut through)
+            // This box defines the wall thickness area to be removed
+            translate([0, -ROD_WALL_THICKNESS - 0.1, 0]) 
+                cube([ROD_WALL_THICKNESS * 2 + 0.2, ROD_WALL_THICKNESS * 2 + 0.2, EXTRUSION_HEIGHT + 0.1]);
+            
+            // Inner void (negative space) - Cylinder to match the rod diameter
+            translate([0, -ROD_DIAMETER / 2, 0]) 
+                cylinder(h = EXTRUSION_HEIGHT + 0.1, r = ROD_DIAMETER / 2, $fn = 64);
+        }
+    }
+    
+    // Hole for Tubing
+    translate([RING_TUBING_X, 0, 0]) {
+        difference() {
+            // Outer shape of the hole
+            translate([0, -TUBING_WALL_THICKNESS - 0.1, 0]) 
+                cube([TUBING_WALL_THICKNESS * 2 + 0.2, TUBING_WALL_THICKNESS * 2 + 0.2, EXTRUSION_HEIGHT + 0.1]);
+            
+            // Inner void (negative space)
+            translate([0, -TUBING_DIAMETER / 2, 0]) 
+                cylinder(h = EXTRUSION_HEIGHT + 0.1, r = TUBING_DIAMETER / 2, $fn = 64);
+        }
+    }
+}

@@ -1,0 +1,68 @@
+```openscad
+// Pestle for grinding tissue in a 1.5 mL microcentrifuge tube
+// Units: mm
+
+// Dimensions
+handle_diameter = 8;
+handle_height = 45;
+cone_bottom_z = 45;
+cone_top_z = 62;
+cone_top_diameter = 3;
+tip_diameter = 3;
+tip_z = 62;
+
+// Grip Grooves
+groove_count = 4;
+groove_z_positions = [10, 15, 20, 25];
+groove_width_z = 2;
+groove_depth = 1;
+groove_width_radial = 2; // Approximate width at handle surface
+
+// Rendering
+$fn = 64;
+
+// Main Body
+module pestle_body() {
+    union() {
+        // Handle
+        cylinder(h = handle_height, d = handle_diameter, center = false);
+        
+        // Cone
+        cone_height = cone_top_z - cone_bottom_z;
+        cone_radius_bottom = handle_diameter / 2;
+        cone_radius_top = cone_top_diameter / 2;
+        
+        translate([0, 0, cone_bottom_z])
+        rotate_extrude(angle = 360)
+        polygon(points = [
+            [0, 0],
+            [cone_radius_bottom, 0],
+            [cone_radius_top, cone_height]
+        ]);
+        
+        // Rounded Tip
+        translate([0, 0, tip_z])
+        sphere(d = tip_diameter);
+    }
+}
+
+// Grip Grooves
+module grip_grooves() {
+    for (z = groove_z_positions) {
+        // Calculate radial width at this Z height
+        // Linear interpolation between handle edge and center
+        // z=10 is at bottom of handle (radius 4)
+        // z=25 is at top of handle (radius 4)
+        // We assume the groove is cut into the side wall
+        radial_width = groove_width_radial;
+        
+        translate([0, 0, z])
+        rotate([90, 0, 0])
+        cylinder(h = radial_width, d = handle_diameter + (groove_depth * 2), center = true);
+    }
+}
+
+// Assembly
+pestle_body();
+grip_grooves();
+```

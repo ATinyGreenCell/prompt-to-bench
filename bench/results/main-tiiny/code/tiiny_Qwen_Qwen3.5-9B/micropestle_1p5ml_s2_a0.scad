@@ -1,0 +1,152 @@
+$fn = 128; // High resolution for smooth curves and accurate hole sizes
+
+// --- Dimensions ---
+// Handle
+d_handle = 8;      // Diameter of cylindrical handle (mm)
+h_handle = 45;     // Height of cylindrical handle (mm)
+
+// Cone
+d_cone_top = 8;    // Top diameter of cone (matches handle) (mm)
+d_cone_bot = 3;    // Bottom diameter of cone (mm)
+h_cone = 17;       // Height of cone (62 - 45) (mm)
+
+// Tip
+d_tip = 3;         // Diameter of sphere tip (mm)
+z_tip_center = 62; // Z-coordinate of sphere center (mm)
+
+// Grooves
+n_grooves = 4;     // Number of circumferential grooves
+w_groove = 2;      // Width of groove in Z (mm)
+d_groove = 1;      // Depth of groove (mm)
+z_grooves = [10, 15, 20, 25]; // Z-centers of the 4 grooves
+
+// --- Construction ---
+
+module pestle() {
+    // 1. Create the main body (Handle + Cone + Tip)
+    
+    // Start with the handle cylinder
+    handle = cylinder(
+        h = h_handle,
+        r = d_handle / 2,
+        center = [0, 0, h_handle / 2]
+    );
+
+    // Add the cone on top of the handle
+    // Cone height is 17mm, starting at z=45, ending at z=62
+    cone = linear_extrude(
+        h = h_cone,
+        center = [0, 0, h_handle + h_cone / 2]
+    ) {
+        circle(r = d_handle / 2); // Base at z=45
+        circle(r = d_cone_bot / 2); // Top at z=62
+    };
+
+    // Add the sphere tip
+    // Centered at z=62
+    tip = sphere(
+        r = d_tip / 2,
+        center = [0, 0, z_tip_center]
+    );
+
+    // Union the main body parts
+    body = union(
+        handle,
+        cone,
+        tip
+    );
+
+    // 2. Cut the grooves
+    // We use a for loop to create 4 grooves at the specified Z positions
+    // The groove is a cylinder cut into the body.
+    // To ensure clean cuts, we extend the cutter slightly past the intended depth.
+    
+    for (z = z_grooves) {
+        groove_cutter = cylinder(
+            h = w_groove + 0.1, // Extend slightly past the face (Rule 5)
+            r = d_groove,
+            center = [0, 0, z]
+        );
+        
+        // Rotate the cutter 90 degrees around X to cut a horizontal slot
+        // Then rotate around Z to position it circumferentially
+        // We place the cutter at the correct Z, then rotate it to cut the slot
+        
+        // Create a single groove shape: a cylinder rotated 90 deg around X
+        // Then we need to rotate it around Z to get 4 positions.
+        // Actually, it's easier to define the slot as a cylinder standing up, 
+        // then rotate the whole assembly? No, we are subtracting.
+        
+        // Let's define the slot as a cylinder of height w_groove + 0.1
+        // positioned at z, with radius d_groove.
+        // We need to rotate this cylinder 90 degrees around X so it cuts horizontally.
+        
+        slot = rotate([90, 0, 0]) * cylinder(
+            h = w_groove + 0.1,
+            r = d_groove,
+            center = [0, 0, z]
+        );
+        
+        // Now rotate this slot around the Z axis to get the 4 positions
+        // Angles: 0, 90, 180, 270
+        for (i = [0, 1, 2, 3]) {
+            angle = i * 90;
+            difference() {
+                body;
+                rotate([0, 0, angle]) * slot;
+            }
+        }
+    }
+    
+    // Wait, the logic above inside the loop was slightly flawed for the "for" loop structure 
+    // if I try to do difference inside a loop that modifies the variable.
+    // Correct approach: Build the body, then subtract all grooves in a single difference block.
+}
+
+// Re-structuring for correct OpenSCAD logic: Build body, then subtract grooves.
+
+difference() {
+    // Main Body
+    union() {
+        // Handle
+        cylinder(
+            h = h_handle,
+            r = d_handle / 2,
+            center = [0, 0, h_handle / 2]
+        );
+        
+        // Cone
+        linear_extrude(
+            h = h_cone,
+            center = [0, 0, h_handle + h_cone / 2]
+        ) {
+            circle(r = d_handle / 2);
+            circle(r = d_cone_bot / 2);
+        };
+        
+        // Tip
+        sphere(
+            r = d_tip / 2,
+            center = [0, 0, z_tip_center]
+        );
+    }
+    
+    // Grooves
+    // We subtract 4 cylinders, each rotated 90 degrees around Z
+    for (i = [0, 1, 2, 3]) {
+        // Calculate Z position for this groove
+        z_pos = z_grooves[i];
+        
+        // The cutter is a cylinder standing vertically.
+        // We rotate it 90 degrees around X to make it horizontal.
+        // Then we rotate the whole thing around Z by i*90.
+        
+        cutter = rotate([90, 0, 0]) * cylinder(
+            h = w_groove + 0.1, // Extend slightly past the face
+            r = d_groove,
+            center = [0, 0, z_pos]
+        );
+        
+        rotate([0, 0, i * 90]) * cutter;
+    }
+}

@@ -1,0 +1,81 @@
+// Hose Barb Reducer: 8mm ID to 5mm ID
+// Designed for FDM printing, standing upright on Z axis.
+
+// Global settings
+$fn = 64; // High resolution for round holes
+
+// --- Dimensions for 8mm Tubing Barbs (Bottom Section) ---
+OD_8mm_bottom = 7.5;  // Outer diameter at base of barb
+OD_8mm_top = 9.5;     // Outer diameter at peak of barb
+Barb8_Height = 10;    // Height of each 8mm barb
+Barb8_Count = 2;      // Number of barbs for 8mm side
+
+// --- Dimensions for Collar (Middle Section) ---
+Collar_Height = 5;    // Height of the collar (z=20 to z=25)
+Collar_OD = 12;       // Outer diameter of the collar
+
+// --- Dimensions for 5mm Tubing Barbs (Top Section) ---
+OD_5mm_bottom = 6.5;  // Outer diameter at base of barb
+OD_5mm_top = 5.0;     // Outer diameter at peak of barb
+Barb5_Height = 8;     // Height of each 5mm barb
+Barb5_Count = 2;      // Number of barbs for 5mm side
+
+// --- Bore ---
+Bore_Diameter = 3;    // Inner diameter of the through-hole
+
+// --- Helper Module: Sawtooth Barb Profile ---
+// Creates a single barb profile in 2D (XY plane)
+// x_start: radius at bottom
+// x_end: radius at top
+// height: height of the barb
+module barb_profile(x_start, x_end, height) {
+    // The profile is a trapezoid that steps back.
+    // Points: (x_start, 0) -> (x_end, height) -> (x_start, height) -> (x_start, 0)
+    // Note: For the 5mm side, x_start > x_end, so it shrinks then steps out.
+    polygon(points = [
+        [x_start, 0],
+        [x_end, height],
+        [x_start, height],
+        [x_start, 0]
+    ]);
+}
+
+// --- Main Body Construction ---
+difference() {
+    union() {
+        // 1. Bottom Barbs (8mm tubing)
+        // Located from z=0 to z=20
+        for (i = [0 : Barb8_Count - 1]) {
+            translate([0, 0, i * Barb8_Height]) {
+                rotate_extrude() {
+                    barb_profile(OD_8mm_bottom / 2, OD_8mm_top / 2, Barb8_Height);
+                }
+            }
+        }
+
+        // 2. Collar
+        // Located from z=20 to z=25
+        translate([0, 0, Barb8_Count * Barb8_Height]) {
+            cylinder(h = Collar_Height, r = Collar_OD / 2, center = false);
+        }
+
+        // 3. Top Barbs (5mm tubing)
+        // Located from z=25 to z=41
+        // Base z for top barbs is 20 (end of bottom barbs) + 5 (collar) = 25
+        base_z_top = Barb8_Count * Barb8_Height + Collar_Height;
+        for (i = [0 : Barb5_Count - 1]) {
+            translate([0, 0, base_z_top + i * Barb5_Height]) {
+                rotate_extrude() {
+                    barb_profile(OD_5mm_bottom / 2, OD_5mm_top / 2, Barb5_Height);
+                }
+            }
+        }
+    }
+
+    // 4. Bore Hole
+    // Runs through the entire length. 
+    // Total height = 20 (bottom barbs) + 5 (collar) + 16 (top barbs) = 41 mm
+    total_height = Barb8_Count * Barb8_Height + Collar_Height + Barb5_Count * Barb5_Height;
+    // Extend hole slightly past top and bottom to ensure clean cut
+    cylinder(h = total_height + 2, r = Bore_Diameter / 2, center = true);
+}

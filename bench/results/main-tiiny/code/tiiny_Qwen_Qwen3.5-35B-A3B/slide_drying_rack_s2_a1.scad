@@ -1,0 +1,97 @@
+// Drying rack for 10 microscope slides
+// Units: millimetres
+
+// --- Base Block Dimensions ---
+base_length = 90;      // X dimension
+base_width = 45;        // Y dimension
+base_height = 20;      // Z dimension
+
+// --- Slide Dimensions ---
+slide_length = 75;     // Length of slide (fits in slot)
+slide_width = 25;      // Width of slide (fits in slot)
+slide_thickness = 1; // Thickness of slide
+
+// --- Slot Dimensions ---
+slot_length = 77;      // Length of slot (X)
+slot_width = 1.6;      // Width of slot (Y)
+slot_depth = 10;     // Depth of slot (Z)
+
+// --- Slot Layout ---
+slot_count = 10;       // Number of slots
+slot_spacing = 3.5;    // Centre-to-centre spacing (Y)
+
+// --- Calculated Layout ---
+// Total width occupied by 10 slots at 3.5mm pitch: (10-1) * 3.5 = 31.5mm
+// Center of the group is at 0.
+// First slot center: - (9 * 3.5) / 2 = -15.75
+// Last slot center: + 15.75
+// Check clearance: 15.75 + (slot_width/2) = 15.75 + 0.8 = 16.55 < 22.5 (half base width). OK.
+
+// --- Construction ---
+
+module drying_rack() {
+    // 1. Create the solid base block
+    // Centered at origin (0,0,0) in X and Y.
+    // Bottom face at Z = 0, Top face at Z = base_height.
+    // We use a difference to cut the slots.
+    difference() {
+        // Base block
+        // Translate so bottom is at Z=0
+        translate([0, 0, base_height / 2]) {
+            cube([base_length, base_width, base_height], center = true);
+        }
+        
+        // 2. Cut the 10 parallel slots
+        // Slots run along X, centered in X.
+        // Slots are cut from the top face (Z = base_height) downwards.
+        for (i = [0 : slot_count - 1]) {
+            // Calculate Y position for this slot
+            // Center of the group is 0.
+            // Spacing is slot_spacing.
+            slot_y = (i - (slot_count - 1) / 2) * slot_spacing;
+            
+            // Slot geometry
+            // X: Centered, length 77mm
+            // Y: Calculated above
+            // Z: Starts at top of base, goes down 10mm.
+            
+            // To ensure no coplanar faces, we extend the cutting shape slightly past the faces.
+            // Intended slot Z range: [base_height - slot_depth, base_height]
+            // i.e., [10, 20].
+            // Cut cube Z range: [10 - 0.01, 20 + 0.01] -> [9.99, 20.01]
+            // Cut cube center Z = (9.99 + 20.01) / 2 = 15.0.
+            // Base top is 20. Base bottom is 0.
+            
+            cut_x_len = slot_length;
+            cut_y_len = slot_width;
+            cut_z_len = slot_depth + 0.02; // Extend 0.02mm past the bottom of the slot
+            
+            // Position
+            cut_x_pos = 0;
+            cut_y_pos = slot_y;
+            // Center Z: (base_height - slot_depth) + (slot_depth / 2) + 0.01
+            // = base_height - slot_depth/2 + 0.01
+            // = 20 - 5 + 0.01 = 15.01
+            // Wait, simpler: Center of the cut volume.
+            // Cut volume Z: [9.99, 20.01]. Center = 15.0.
+            // Base top = 20.
+            // Let's just use the center of the slot + offset.
+            // Slot center Z = 20 - 5 = 15.
+            // Cut cube center Z = 15.0.
+            cut_z_pos = base_height - slot_depth / 2;
+            
+            // Actually, to be safe with the "extend past faces" rule:
+            // Top face of base is at 20. Cut must go past 20.
+            // Bottom of slot is at 10. Cut must go past 10.
+            // Cut cube Z range: [10 - 0.01, 20 + 0.01] = [9.99, 20.01].
+            // Center Z = 15.0.
+            // Height = 10.02.
+            
+            translate([cut_x_pos, cut_y_pos, cut_z_pos]) {
+                cube([cut_x_len, cut_y_len, cut_z_len], center = true);
+            }
+        }
+    }
+}
+
+drying_rack();

@@ -1,0 +1,41 @@
+$fn = 64;
+
+// Outer dimensions
+outer_x = 120;
+outer_y = 70;
+outer_z = 40;
+
+// Wall and floor thickness
+wall_thick = 3;
+floor_thick = 3;
+
+// Platform dimensions
+plat_x = 60;
+plat_y = outer_y - 2 * wall_thick; // Spans full inner width
+plat_top_z = 13;
+plat_bottom_z = floor_thick;
+plat_height = plat_top_z - plat_bottom_z;
+
+// Electrode hole dimensions
+hole_diam = 2;
+hole_z = 30;
+hole_y = 0;
+
+difference() {
+    union() {
+        // Tank shell (outer box minus inner cavity)
+        difference() {
+            cube([outer_x, outer_y, outer_z], center = false);
+            translate([wall_thick, wall_thick, floor_thick]) 
+                cube([outer_x - 2 * wall_thick, outer_y - 2 * wall_thick, outer_z - floor_thick + 0.1], center = false);
+        }
+        // Raised platform
+        translate([-plat_x / 2, -plat_y / 2, plat_bottom_z]) 
+            cube([plat_x, plat_y, plat_height], center = false);
+    }
+    // Electrode holes through end walls
+    for (x_pos = [-outer_x / 2, outer_x / 2]) {
+        translate([x_pos, hole_y, hole_z]) 
+            cylinder(r = hole_diam / 2, h = outer_z + 0.1, center = false);
+    }
+}

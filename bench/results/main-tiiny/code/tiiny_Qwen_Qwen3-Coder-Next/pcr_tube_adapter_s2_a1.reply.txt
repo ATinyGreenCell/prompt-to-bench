@@ -1,0 +1,60 @@
+Looking at the measurement report and comparing it to the specification:
+
+1. **Collar dimensions**: Specification says collar is 13 mm diameter and 1.5 mm thick. The report shows the collar at z=0.76 has diameter 12.98 mm (close to 13 mm) and the bounding box shows Z from -0.01 to 23.01, which suggests the total height is ~23.02 mm. But the specification says the sleeve should rise to z=21.5 (collar 1.5 mm + sleeve 20 mm = 21.5 mm total height).
+
+2. **Sleeve height issue**: The report shows the sleeve top at z=21.87, but the specification says the sleeve body should be 21.5 mm total height (collar 1.5 mm + sleeve body 20 mm). The current implementation has sleeve_height = 21.5, making total height 1.5 + 21.5 = 23.0 mm, but the specification says "rises from the collar to z = 21.5", meaning the top of the sleeve should be at z = 21.5, so sleeve body height should be 21.5 - 1.5 = 20.0 mm.
+
+3. **Bore diameter**: The report shows the bore is not visible in the slices, but the specification says there should be a 6.2 mm bore. Looking at the bounding box, the X and Y dimensions are 13.00 mm, which matches the collar diameter, but the bore should be centered.
+
+4. **Bed contact**: The report shows lowest point at z = -0.01, which is slightly below the bed (z=0). This is due to the -0.01 offset in the bore subtraction. We should ensure the part sits flat at z=0.
+
+Let me fix these issues:
+- Set sleeve body height to 20.0 mm (so total height is 1.5 + 20.0 = 21.5 mm)
+- Ensure the part sits flat at z=0 with no negative coordinates
+- The bore should be clearly visible in the slices
+
+```openscad
+// Adapter sleeve for 0.2 mL PCR tube in 1.5 mL rack hole
+// Print orientation: upside down (collar on bed, sleeve rises upward)
+
+// Dimensions
+collar_diameter = 13;        // mm, outer diameter of collar
+collar_thickness = 1.5;      // mm, height of collar
+sleeve_outer_diameter = 10.8; // mm, outer diameter of sleeve body
+sleeve_body_height = 20.0;   // mm, height of sleeve body (21.5 total - 1.5 collar = 20.0)
+bore_diameter = 6.2;         // mm, inner bore diameter
+
+// Set resolution for curves
+$fn = 64;
+
+// Collar (bottom part)
+collar_radius = collar_diameter / 2;
+
+// Sleeve body (upper part)
+sleeve_radius = sleeve_outer_diameter / 2;
+total_height = collar_thickness + sleeve_body_height;
+
+// Bore (full height)
+bore_radius = bore_diameter / 2;
+
+// Build adapter sleeve
+module adapter_sleeve() {
+    // Collar base (from z=0 to z=collar_thickness)
+    translate([0, 0, 0]) {
+        cylinder(h = collar_thickness, r = collar_radius, center = false);
+    }
+    
+    // Sleeve body (from z=collar_thickness to z=total_height)
+    translate([0, 0, collar_thickness]) {
+        cylinder(h = sleeve_body_height, r = sleeve_radius, center = false);
+    }
+    
+    // Bore (subtract cylinder from center, extending past both ends)
+    translate([0, 0, -0.01]) {
+        cylinder(h = total_height + 0.02, r = bore_radius, center = false);
+    }
+}
+
+// Render the adapter sleeve
+adapter_sleeve();
+```

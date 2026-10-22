@@ -1,0 +1,49 @@
+$fn = 64;
+
+// Rack dimensions (mm)
+rack_length = 127.76;   // X-axis length (ANSI/SLAS footprint)
+rack_width = 85.48;        // Y-axis width (ANSI/SLAS footprint)
+rack_height = 20.0;      // Z-axis height
+
+// Hole parameters (mm)
+hole_diameter = 6.2;     // PCR tube hole diameter (0.2 mL standard)
+hole_radius = hole_diameter / 2;
+hole_spacing = 9.0;      // Center-to-center spacing between holes
+num_columns = 12;      // Columns along X-axis (length)
+num_rows = 8;          // Rows along Y-axis (width)
+
+// Hole grid offset from rack edges (mm)
+x_offset = 14.38;        // From left edge (X) to first hole center (A1)
+y_offset = 11.24;        // From back edge (Y) to first hole center (A1)
+
+// Calculate hole grid starting position (centered rack)
+x0 = -rack_length / 2 + x_offset;
+y0 = -rack_width / 2 + y_offset;
+
+// Chamfer parameters (mm)
+chamfer_leg_length = 5.0; // 45-degree chamfer leg length (from corner)
+
+// Calculate chamfer corner (bottom-left corner of rack)
+chamfer_x = -rack_length / 2;
+chamfer_y = -rack_width / 2;
+
+// Main rack body (centered on origin, z=0 to rack_height)
+rack = cube([rack_length, rack_width, rack_height], center = true);
+
+// Final part: rack minus holes minus chamfer
+difference() {
+  rack;
+  
+  // Subtract all 96 holes (8 rows x 12 columns)
+  for (i = [0 : num_columns - 1]) {
+    for (j = [0 : num_rows - 1]) {
+      translate([x0 + i * hole_spacing, y0 + j * hole_spacing, 0])
+        cylinder(h = rack_height, r = hole_radius, center = false);
+    }
+  }
+  
+  // Subtract chamfer at A1 corner (45-degree, 5mm legs) - ensure 0.01mm extension
+  translate([chamfer_x - 0.01, chamfer_y - 0.01, 0])
+    linear_extrude(height = rack_height + 0.02)
+      polygon(points = [[0, 0], [chamfer_leg_length + 0.01, 0], [0, chamfer_leg_length + 0.01]]);
+}

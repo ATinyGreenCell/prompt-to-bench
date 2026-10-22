@@ -1,0 +1,105 @@
+Looking at the measurement report and comparing it to the specification:
+
+1. **Base dimensions**: 90 × 45 × 20 mm ✓ (matches specification)
+
+2. **Slot count**: 10 slots expected, but report shows only 5 holes at z=15 and z=19 → This is the main issue.
+
+3. **Slot width**: 1.62 mm (report) vs 1.6 mm (spec) → Slight discrepancy due to +0.02 tolerance, but this is acceptable as it ensures clean cutting.
+
+4. **Slot depth**: Should be 10 mm deep from top (so from z=10 to z=20), but the report shows holes at z=15 and z=19 with the same dimensions — this suggests only the top half of the slots is being cut, which is correct per specification ("open at the top" and 10 mm deep).
+
+5. **Slot length**: 77.02 mm (report) vs 77 mm (spec) → Acceptable due to +0.02 tolerance.
+
+6. **Slot spacing**: Should be 3.5 mm centre-to-centre. The report says "pitch Y 3.50" — correct.
+
+7. **Group centre Y position**: Report says grid centre at (45.00, 9.55), but the block is 45 mm wide, so centre Y should be at 22.5 mm, not 9.55 mm.
+
+Let’s compute the correct Y positions:
+- Group width = 10 × 3.5 = 35 mm (since spacing is 3.5 mm between centres, and each slot is 1.6 mm wide, but the *centre-to-centre* spacing is 3.5 mm, so the total group width in terms of centres is 10 slots × 3.5 mm = 35 mm, from first centre to last centre)
+- So first slot centre Y = (45 - 35)/2 + 0 = 5.0 mm
+- Slot centres at Y = 5.0, 8.5, 12.0, 15.5, 19.0, 22.5, 26.0, 29.5, 33.0, 36.5 mm
+- Group centre = (5.0 + 36.5)/2 = 20.75 mm? Wait — no: (first + last)/2 = (5.0 + 36.5)/2 = 20.75 mm, but (45 - 35)/2 + 35/2 = 5 + 17.5 = 22.5 mm → Yes, group centre should be at 22.5 mm.
+
+But report says grid centre Y = 9.55 mm — that’s wrong.
+
+Let’s recompute:
+- slot_width = 1.6 mm
+- slot_pitch = 3.5 mm (centre-to-centre)
+- So the first slot centre is at: y0 = (base_width - num_slots * slot_pitch)/2 + slot_pitch/2
+  = (45 - 10 × 3.5)/2 + 3.5/2
+  = (45 - 35)/2 + 1.75
+  = 5 + 1.75 = 6.75 mm
+
+Wait — but the report says grid centre at Y = 9.55 mm.
+
+Let’s compute group centre Y:
+- First slot centre Y = (45 - 10 × 3.5)/2 + 3.5/2 = 5/2 + 1.75 = 2.5 + 1.75 = 4.25 mm? No:
+  (45 - 35)/2 = 5, then add half-pitch: 5 + 1.75 = 6.75 mm
+- Last slot centre Y = 6.75 + 9 × 3.5 = 6.75 + 31.5 = 38.25 mm
+- Group centre = (6.75 + 38.25)/2 = 22.5 mm
+
+So the report’s “grid centre (45.00, 9.55)” is wrong — it should be (45.00, 22.50).
+
+But why does the report show only 5 holes? That suggests the `for` loop only generated 5 slots instead of 10.
+
+Looking at my code:
+```scad
+for (i = [0 : num_slots - 1]) {
+    y_pos = -group_half_width + i * slot_pitch + slot_width/2;
+    ...
+}
+```
+
+Let’s compute `group_half_width`:
+- `group_width = num_slots * slot_pitch - (slot_pitch - slot_width)`
+  = 10 × 3.5 - (3.5 - 1.6) = 35 - 1.9 = 33.1 mm
+- `group_half_width = 16.55 mm`
+
+Then:
+- y_pos = -16.55 + i × 3.5 + 0.8
+- For i=0: y = -15.75
+- For i=1: y = -12.25
+- ...
+- For i=9: y = -15.75 + 9×3.5 + 0.8 = -15.75 + 31.5 + 0.8 = 16.55
+
+So the slots span from y = -15.75 to y = 16.55 → total span = 32.3 mm, but should be 35 mm (10 slots × 3.5 mm spacing from centre to centre).
+
+The issue is in `group_width` calculation. Since spacing is *centre-to-centre*, the total width from first centre to last centre is (num_slots - 1) × pitch + 0? No — the *distance* from first centre to last centre is (num_slots - 1) × pitch, so the total span of centres is (num_slots - 1) × pitch.
+
+But the physical width of the slot group (from left edge of first slot to right edge of last slot) is:
+- First slot left edge: centre - width/2
+- Last slot right edge: centre + width/2
+- So total width = (num_slots - 1) × pitch + width
+
+But for centring, we want the *centre of the group* to be at base_width/2 = 22.5 mm.
+
+The centre of the group (midpoint between first and last slot centres) is at:
+- First slot centre Y = (base_width - ((num_slots - 1) × pitch + width)) / 2 + width/2
+  = (base_width - (num_slots - 1) × pitch - width) / 2 + width/2
+  = (base_width - (num_slots - 1) × pitch - width + width) / 2
+  = (base_width - (num_slots - 1) × pitch) / 2
+
+Then slot centres are at:
+- y_i = first_slot_centre + i × pitch, for i = 0..9
+
+Let’s compute:
+- first_slot_centre = (45 - 9 × 3.5) / 2 = (45 - 31.5) / 2 = 13.5 / 2 = 6.75 mm
+- So centres at: 6.75, 10.25, 13.75, 17.25, 20.75, 24.25, 27.75, 31.25, 34.75, 38.25 mm
+- Group centre = (6.75 + 38.25)/2 = 22.5 mm ✓
+
+So the correct formula for slot Y positions is:
+- first_slot_centre = (base_width - (num_slots - 1) * slot_pitch) / 2
+- y_pos = first_slot_centre + i * slot_pitch
+
+But wait — the slot has width, so the *edge-to-edge* spacing between slots is: pitch - width = 3.5 - 1.6 = 1.9 mm.
+
+The specification says: “slots are 3.5 mm apart centre-to-centre (in Y)”, so the above is correct.
+
+Now, why did the report show only 5 holes? Let me recheck the code.
+
+Ah! I see the bug: In the `slot()` function, the Z position is:
+```scad
+translate([x_offset - 0.01, y_offset - 0.01, base_height - slot_depth - 0.01])
+    cube([slot_length + 0.02, slot_width + 0.02, slot_depth + 0.02]);
+```
+

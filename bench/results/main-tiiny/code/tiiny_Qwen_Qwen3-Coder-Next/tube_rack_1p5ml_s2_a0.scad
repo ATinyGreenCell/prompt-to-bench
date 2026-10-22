@@ -1,0 +1,57 @@
+// Bench rack for 1.5 mL microcentrifuge tubes
+// Dimensions and parameters
+block_length = 106;    // X dimension (mm)
+block_width  = 72;     // Y dimension (mm)
+block_height = 30;     // Z dimension (mm)
+hole_diameter = 11.2;  // Hole diameter (mm)
+hole_depth = 25;       // Hole depth (mm)
+floor_thickness = 5;   // Solid floor thickness (mm)
+rows = 4;              // Number of rows (along Y)
+cols = 6;              // Number of columns (along X)
+hole_pitch_x = 16;     // Centre-to-centre spacing in X (mm)
+hole_pitch_y = 16;     // Centre-to-centre spacing in Y (mm)
+
+// Calculate hole positions (centred on block)
+// Total grid dimensions
+grid_width_x = (cols - 1) * hole_pitch_x;
+grid_width_y = (rows - 1) * hole_pitch_y;
+
+// Offset from block centre to first hole centre
+offset_x = -grid_width_x / 2;
+offset_y = -grid_width_y / 2;
+
+// Hole height (from bottom of block)
+hole_bottom_z = floor_thickness;
+hole_top_z = hole_bottom_z + hole_depth;
+
+// Block centre offsets
+block_half_x = block_length / 2;
+block_half_y = block_width / 2;
+
+// Set resolution for smooth curves
+$fn = 64;
+
+module block_with_holes() {
+    difference() {
+        // Base block
+        cube([block_length, block_width, block_height]);
+        
+        // Cut holes
+        for (i = [0 : cols - 1]) {
+            for (j = [0 : rows - 1]) {
+                // Calculate hole position
+                hole_x = offset_x + i * hole_pitch_x;
+                hole_y = offset_y + j * hole_pitch_y;
+                
+                // Translate hole to position
+                translate([hole_x, hole_y, 0]) {
+                    // Cylinder for hole (extends through block + extra for clean cut)
+                    cylinder(h = block_height + 1, r = hole_diameter / 2, center = false);
+                }
+            }
+        }
+    }
+}
+
+// Build the rack
+block_with_holes();

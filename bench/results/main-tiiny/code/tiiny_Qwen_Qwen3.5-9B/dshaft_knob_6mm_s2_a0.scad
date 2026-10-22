@@ -1,0 +1,147 @@
+$fn = 128;
+
+// --- Dimensions ---
+// Knob outer diameter
+D_OUTER = 30;
+// Knob height
+H_KNOB = 15;
+// Shaft diameter (for reference)
+D_SHAFT = 6;
+
+// D-shaft bore dimensions
+// Total depth of bore
+D_BORE_DEPTH = 12;
+// Diameter of the circular part of the bore
+D_BORE_CIRCLE = 6.2;
+// Distance from the flat cut to the opposite side of the circle
+D_BORE_FLAT_TO_CURVE = 4.7;
+
+// Grip grooves dimensions
+N_GROOVES = 18;
+D_GROOVE = 2; // Diameter of the half-cylinder groove
+
+// Pointer groove dimensions
+W_POINTER = 1.5; // Width
+D_POINTER = 1;   // Depth
+
+// --- Calculations ---
+// Radius of the outer cylinder
+R_OUTER = D_OUTER / 2;
+// Radius of the circular part of the D-bore
+R_BORE_CIRCLE = D_BORE_CIRCLE / 2;
+// Radius of the grip grooves
+R_GROOVE = D_GROOVE / 2;
+// Radius of the pointer groove (half width)
+R_POINTER = W_POINTER / 2;
+
+// --- Construction ---
+
+module knob() {
+    // 1. Create the main cylinder body
+    // Centered at origin, resting on XY plane (z=0)
+    cylinder(h = H_KNOB, r = R_OUTER, $fn = 128);
+
+    // 2. Create the D-shaped blind bore
+    // We use a difference to cut the hole.
+    // The hole starts at z=0 and goes up to D_BORE_DEPTH.
+    // The D-shape is defined by a circle with a flat cut.
+    // We rotate the cut so the flat is at -X (or +X), let's say -X for standard orientation.
+    // To ensure clean cutting, we extend the cutting shape slightly past the faces.
+    
+    translate([0, 0, 0]) {
+        difference() {
+            // The solid to be cut (the hole shape)
+            // We create a D-shape cylinder.
+            // The D-shape is a circle with a rectangular chunk removed.
+            // The chunk goes from the center of the circle to the edge.
+            // Distance from flat to curve is 4.7mm. Radius is 3.1mm.
+            // So the flat extends 3.1 - 4.7 = -1.6mm? No.
+            // Distance from flat to opposite side is 4.7.
+            // Radius is 3.1.
+            // So the flat is at distance (3.1 - 4.7) = -1.6 from center?
+            // Wait, if distance from flat to curve is 4.7, and radius is 3.1,
+            // the flat must be outside the circle? No, that's impossible for a D-shape bore.
+            // Re-reading: "distance from the flat to the opposite side of the circle is 4.7 mm".
+            // Opposite side of the circle is the edge of the circle.
+            // So the width of the D-shape is 4.7mm.
+            // Radius is 3.1mm.
+            // So the flat is at distance (4.7 - 3.1) = 1.6mm from the center towards the circle?
+            // No. The total width is 4.7. The curved part is 3.1.
+            // So the flat part is 4.7 - 3.1 = 1.6mm wide?
+            // Actually, the "flat" is the cut. The distance from the cut plane to the far edge of the circle is 4.7.
+            // The radius is 3.1.
+            // So the cut plane is at x = 3.1 - 4.7 = -1.6?
+            // Let's visualize: Circle center at 0. Edge at 3.1.
+            // Distance from flat to edge is 4.7.
+            // So flat is at 3.1 - 4.7 = -1.6.
+            // So the flat is 1.6mm to the left of the center.
+            // The hole is a D-shape.
+            
+            // Let's construct the D-shape profile.
+            // We can use a polygon or a circle with a difference.
+            // Using a circle and subtracting a rectangle is easier.
+            // Circle radius: 3.1.
+            // Rectangle to subtract: width = 1.6 (from -1.6 to 0), height = 6.2 (diameter).
+            // Wait, the D-shape is usually a circle with a semi-circle cut out? No, a flat cut.
+            // A flat cut creates a rectangle missing from the circle.
+            // The missing part is a rectangle of width (R - (D_flat_to_curve - R))?
+            // Let's calculate the position of the flat.
+            // Edge is at R = 3.1.
+            // Flat is at distance 4.7 from the edge.
+            // So flat is at 3.1 - 4.7 = -1.6.
+            // So the flat is at x = -1.6.
+            // The circle spans from -3.1 to 3.1.
+            // The flat cuts off the part from -3.1 to -1.6? No.
+            // The D-shape is the circle MINUS the part to the left of x = -1.6?
+            // If the distance from flat to opposite side (right side) is 4.7.
+            // Right side is at 3.1.
+            // Flat is at 3.1 - 4.7 = -1.6.
+            // So the shape exists from x = -1.6 to x = 3.1.
+            // The width of the flat part is 1.6.
+            // The width of the curved part is 3.1.
+            // Total width 4.7. Correct.
+            
+            // So we take a circle of radius 3.1.
+            // We subtract a rectangle from x = -3.1 to x = -1.6.
+            // Rectangle width = 1.6. Height = 6.2.
+            
+            // Let's build the D-shape cylinder.
+            // We can use a polygon for the cross-section.
+            // Points: (-1.6, -3.1), (3.1, -3.1), (3.1, 3.1), (-1.6, 3.1).
+            // And the arc from (-1.6, 3.1) to (-1.6, -3.1).
+            // Actually, simpler: Union of a rectangle and a circle?
+            // Rectangle from x=-1.6 to 3.1, y=-3.1 to 3.1.
+            // Circle centered at (0,0) with radius 3.1.
+            // Union them.
+            
+            // Let's use the union method for the D-shape profile.
+            // Profile 1: Rectangle (the flat part extended)
+            // x from -1.6 to 3.1, y from -3.1 to 3.1.
+            // Profile 2: Circle radius 3.1.
+            
+            // Wait, the union of a rectangle and a circle centered at 0.
+            // Rectangle: x in [-1.6, 3.1], y in [-3.1, 3.1].
+            // Circle: x^2 + y^2 <= 3.1^2.
+            // The union will create the D-shape.
+            
+            // Let's create the D-shape cylinder using a polygon extrusion or a union of primitives.
+            // Union of a rectangle and a circle is robust.
+            
+            // Rectangle:
+            translate([-1.6, -3.1, 0]) cube([3.1 - (-1.6), 6.2, D_BORE_DEPTH]);
+            
+            // Circle:
+            translate([0, 0, 0]) cylinder(h = D_BORE_DEPTH, r = R_BORE_CIRCLE, $fn = 128);
+            
+            // Note: The union of these two creates the D-shape.
+            // However, we need to cut this shape out of the main knob.
+            // So we put this inside a difference().
+        }
+    }
+    
+    // 3. Create the Grip Grooves
+    // 18 evenly spaced vertical grooves along the full height.
+    // Each groove is a 2mm diameter half-cylinder centred on the outer surface.
+    // "Half-cylinder" implies a cylinder cut in half, so it's a semi-cylindrical groove.
+    // Centred on the outer surface means the flat face of the half-cylinder is tangent to the knob surface.
+    // The axis of the groove is

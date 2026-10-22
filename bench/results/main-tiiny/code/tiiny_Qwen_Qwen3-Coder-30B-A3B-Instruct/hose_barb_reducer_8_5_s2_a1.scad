@@ -1,0 +1,77 @@
+// Hose-barb reducer
+// Print standing upright along Z axis
+
+// Dimensions
+inner_diameter_8mm = 8.0;  // Inner diameter for 8mm tubing
+inner_diameter_5mm = 5.0;  // Inner diameter for 5mm tubing
+barb_height_8mm = 10.0;     // Height of barbs for 8mm tubing
+barb_height_5mm = 8.0;    // Height of barbs for 5mm tubing
+barb_base_diameter_8mm = 7.5; // Base diameter of 8mm barbs
+barb_top_diameter_8mm = 9.5;  // Top diameter of 8mm barbs
+barb_base_diameter_5mm = 6.5; // Base diameter of 5mm barbs
+barb_top_diameter_5mm = 5.0; // Top diameter of 5mm barbs
+collar_diameter = 12.0;      // Diameter of collar
+collar_height = 5.0;       // Height of collar
+z_start_8mm = 0.0;         // Start Z for 8mm barbs
+z_end_8mm = 20.0;          // End Z for 8mm barbs
+z_start_collar = 20.0;     // Start Z for collar
+z_end_collar = 25.0;       // End Z for collar
+z_start_5mm = 25.0;        // Start Z for 5mm barbs
+z_end_5mm = 41.0;          // End Z for 5mm barbs
+bore_diameter = 3.0;     // Diameter of central bore
+
+// Create the main body
+module reducer() {
+    union() {
+        // 8mm barbs
+        for (i = [0, 1]) {
+            translate([0, 0, z_start_8mm + i * barb_height_8mm])
+            barb_8mm();
+        }
+        
+        // Collar
+        translate([0, 0, z_start_collar])
+        cylinder(h = collar_height, d = collar_diameter, center = false);
+        
+        // 5mm barbs
+        for (i = [0, 1]) {
+            translate([0, 0, z_start_5mm + i * barb_height_5mm])
+            barb_5mm();
+        }
+    }
+}
+
+// Create 8mm barb with sawtooth profile
+module barb_8mm() {
+    union() {
+        // Main barb body
+        cylinder(h = barb_height_8mm, d1 = barb_base_diameter_8mm, d2 = barb_top_diameter_8mm, center = false);
+        
+        // Step back to base diameter
+        translate([0, 0, barb_height_8mm])
+        cylinder(h = 0.1, d = barb_base_diameter_8mm, center = false);
+    }
+}
+
+// Create 5mm barb with sawtooth profile
+module barb_5mm() {
+    union() {
+        // Main barb body
+        cylinder(h = barb_height_5mm, d1 = barb_base_diameter_5mm, d2 = barb_top_diameter_5mm, center = false);
+        
+        // Step back to base diameter
+        translate([0, 0, barb_height_5mm])
+        cylinder(h = 0.1, d = barb_base_diameter_5mm, center = false);
+    }
+}
+
+// Central bore
+module bore() {
+    cylinder(h = z_end_5mm, d = bore_diameter, center = false);
+}
+
+// Render the complete part
+difference() {
+    reducer();
+    bore();
+}

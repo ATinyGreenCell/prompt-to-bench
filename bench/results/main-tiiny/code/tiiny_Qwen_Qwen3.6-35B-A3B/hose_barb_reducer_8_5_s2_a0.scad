@@ -1,0 +1,144 @@
+// --- Dimensions ---
+// Bore diameter (through the entire length)
+BORE_DIA = 3.0;
+
+// Section 1: 8mm tubing interface (z = 0 to z = 20)
+// Total height of this section
+S1_HEIGHT = 20;
+// Number of barbs in this section
+S1_BARBS = 2;
+// Height of each individual barb
+S1_BARB_H = 10;
+// Bottom outer diameter of each barb (at the base of the barb)
+S1_OD_BOTTOM = 7.5;
+// Top outer diameter of each barb (at the tip of the barb)
+S1_OD_TOP = 9.5;
+
+// Section 2: Collar (z = 20 to z = 25)
+// Height of the collar
+COLLAR_H = 5;
+// Diameter of the collar
+COLLAR_DIA = 12;
+
+// Section 3: 5mm tubing interface (z = 25 to z = 41)
+// Total height of this section
+S3_HEIGHT = 16;
+// Number of barbs in this section
+S3_BARBS = 2;
+// Height of each individual barb
+S3_BARB_H = 8;
+// Bottom outer diameter of each barb (at the base of the barb)
+S3_OD_BOTTOM = 6.5;
+// Top outer diameter of each barb (at the tip of the barb)
+S3_OD_TOP = 5.0;
+
+// --- Parameters ---
+// Ensure holes are round
+$fn = 64;
+
+// Helper function to calculate the radius at a specific height z
+// For Section 1: Sawtooth profile, expanding from bottom to top
+// For Section 3: Sawtooth profile, shrinking from bottom to top
+// Note: The "step back" is handled by the geometry of the barb definition below.
+// The linear interpolation happens from the bottom of the barb to the top.
+// The "step back" is effectively the bottom of the NEXT barb (or the base of the current barb if we view it as a continuous slope, but the prompt says "steps straight back").
+// Actually, the prompt says: "outer diameter grows linearly... then steps straight back".
+// This implies a sawtooth wave.
+// Let's define the profile piecewise.
+
+// To model this cleanly in OpenSCAD without complex boolean logic inside a single extrude,
+// we will build the part as a union of cylinders/cones or use a linear_extrude with a profile.
+// However, since it's rotationally symmetric and varies in Z, a union of simple primitives is easiest.
+
+// We will construct the part by stacking "segments".
+// Each barb is a frustum (cone) plus a small cylinder for the "step back" if needed, 
+// but the prompt says "steps straight back to [diameter]". 
+// This usually means the face at the top of the barb is flat and has the smaller diameter (for S1) or larger diameter (for S3)?
+// Let's re-read carefully:
+// S1: "grows linearly from 7.5 at bottom to 9.5 at top, then steps straight back to 7.5".
+// This implies the top surface of the barb is a flat ring? Or does it mean the next barb starts at 7.5?
+// "Two identical barbs... stacked".
+// If they are stacked, the bottom of the second barb is at z=10. The top of the first is at z=10.
+// If the first barb goes 7.5 -> 9.5, and then "steps back to 7.5", it likely means the face at z=10 is a flat disk of diameter 7.5? 
+// No, that would leave a gap. 
+// Standard hose barb design: The barb is a protrusion. The "step back" usually refers to the root diameter.
+// If it's a sawtooth, the profile goes up, then drops vertically to the root diameter.
+// So, at z=10, the diameter drops from 9.5 to 7.5.
+// Then the next barb starts at z=10 with diameter 7.5 and grows to 9.5 at z=20.
+// This creates a continuous solid if we consider the "step" as a vertical wall.
+// So, the geometry is a series of frustums.
+// Barb 1: z=0 to 10. Bottom D=7.5, Top D=9.5.
+// Barb 2: z=10 to 20. Bottom D=7.5, Top D=9.5.
+// Wait, if Barb 1 ends at D=9.5 and Barb 2 starts at D=7.5, there is a discontinuity (a step down) at z=10.
+// This is exactly what "steps straight back" describes.
+
+// So, we can model each barb as a frustum.
+// For S1:
+// Barb i (0-indexed): z_start = i * 10, z_end = (i+1) * 10.
+// D_bottom = 7.5, D_top = 9.5.
+
+// For S3:
+// Barb i (0-indexed): z_start = 25 + i * 8, z_end = 25 + (i+1) * 8.
+// D_bottom = 6.5, D_top = 5.0.
+
+// Collar: z=20 to 25, D=12.
+
+// Bore: Through all z, D=3.
+
+// Let's build the outer shell first, then subtract the bore.
+
+module barb_frustum(z_bottom, z_top, d_bottom, d_top) {
+    // Calculate radii
+    r_bottom = d_bottom / 2;
+    r_top = d_top / 2;
+    
+    // Height
+    h = z_top - z_bottom;
+    
+    // Create the frustum
+    // OpenSCAD cylinder is bottom-centered. We need to translate it.
+    // However, difference() works best if we align coordinates.
+    // Let's create a cylinder/cone at local coordinates and translate.
+    
+    // Using polyhedron or cylinder with different top/bottom radii
+    // cylinder(h=h, r1=r_bottom, r2=r_top, center=false);
+    // This creates a shape from z=0 to z=h in local space.
+    
+    cylinder(h=h, r1=r_bottom, r2=r_top, center=false);
+}
+
+// Build the solid
+difference() {
+    union() {
+        // Section 1: 8mm tubing (z=0 to 20)
+        for (i = [0 : S1_BARBS - 1]) {
+            z_b = i * S1_BARB_H;
+            z_t = z_b + S1_BARB_H;
+            
+            // To handle the "step back" correctly in a union, we just stack the frustums.
+            // The union will merge them. The discontinuity at the top of one and bottom of next
+            // is handled by the fact that the next one starts at the smaller diameter.
+            // However, if we just union two frustums, the "step" is a vertical wall.
+            // We need to ensure the vertical wall is filled.
+            // A frustum from 7.5->9.5 and another from 7.5->9.5 stacked:
+            // At z=10, the first ends at 9.5, the second starts at 7.5.
+            // The union of these two solids will have a void at the corner unless we fill it.
+            // Actually, standard CSG union of two cones touching at a point/edge might be tricky.
+            // It's safer to model the "step" explicitly or ensure the geometry overlaps slightly.
+            // But here, the "step" is a vertical face.
+            // Let's model each barb as a frustum, and add a small cylinder at the bottom of each barb 
+            // to fill the "root" area if necessary? No, the root is the bottom of the barb.
+            // The "step" is the vertical surface at the top of the barb connecting the tip (9.5) to the root (7.5) of the next barb.
+            // If we just union the frustums, the vertical wall is not explicitly defined, but the boundary is.
+            // OpenSCAD handles this fine if we use enough $fn.
+            
+            // One issue: At z=10, we have a surface at r=4.75 (from barb 1) and a surface at r=3.75 (from barb 2).
+            // The space between r=3.75 and r=4.75 at z=10 is empty.
+            // This is correct for a sawtooth profile.
+            
+            barb_frustum(z_b, z_t, S1_OD_BOTTOM, S1_OD_TOP);
+        }
+        
+        // Collar (z=20 to 25)
+        // Diameter 12.
+        // It connects to

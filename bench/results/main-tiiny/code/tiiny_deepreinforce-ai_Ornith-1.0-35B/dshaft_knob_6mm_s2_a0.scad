@@ -1,0 +1,75 @@
+// Replacement knob for hotplate stirrer
+// D-shaft: 6 mm, Knob: 30 mm dia x 15 mm tall, printed with bottom on bed (z=0)
+
+// --- Knob outer dimensions ---
+knob_dia = 30;          // Outer diameter of knob (mm)
+knob_h = 15;            // Total height of knob (mm)
+knob_r = knob_dia / 2;
+
+// --- D-shaft bore dimensions ---
+shaft_dia = 6;          // Shaft diameter (mm)
+bore_dia = 6.2;          // Bore diameter (mm) - slight clearance
+bore_width = 4.7;        // Distance from flat to opposite side of circle (mm)
+bore_h = 12;             // Depth of blind bore (mm)
+bore_r = bore_dia / 2;
+
+// --- Grip grooves ---
+num_grooves = 18;         // Number of vertical grip grooves
+groove_dia = 2;           // Diameter of each groove (mm)
+groove_r = groove_dia / 2;
+
+// --- Pointer groove ---
+pointer_width = 1.5;      // Width of pointer groove (mm)
+pointer_depth = 1;       // Depth of pointer groove (mm)
+
+// --- Calculate D-shape offset ---
+// For a circle of diameter bore_dia, cut flat so width from flat to opposite side is bore_width
+// The flat is at distance (bore_dia - bore_width) / 2 from the center
+flat_offset = (bore_dia - bore_width) / 2;
+
+// --- Build the knob ---
+module knob() {
+    union() {
+        // Main cylinder
+        cylinder(d = knob_dia, h = knob_h, center = false, $fn = 64);
+        
+        // D-shaped bore (cut from bottom)
+        difference() {
+            // Cylinder slightly deeper to ensure full cut
+            cylinder(d = bore_dia, h = bore_h + 0.01, center = false, $fn = 64);
+            // Box to cut the flat side
+            translate([0, -knob_r, 0])
+                cube([bore_dia + 0.01, bore_dia + 0.01, bore_h + 0.01], center = false);
+        }
+        
+        // Grip grooves (cut from outside)
+        for (i = [0 : 360/num_grooves : 360 - 360/num_grooves]) {
+            angle = i;
+            translate([
+                knob_r * cos(angle),
+                knob_r * sin(angle),
+                0
+            ]) {
+                // Half-cylinder groove centered on outer surface
+                rotate([90, 0, angle]) {
+                    translate([knob_r - groove_r, 0, -knob_h/2])
+                        cylinder(d = groove_dia, h = knob_h, center = true, $fn = 32);
+                }
+            }
+        }
+        
+        // Pointer groove on top face
+        // Runs from center to outer edge, on the same side as the flat of the D
+        // Flat is on the -Y side (we cut from -Y direction)
+        translate([0, -knob_r + pointer_depth/2, knob_h - pointer_depth]) {
+            rotate([90, 0, 0]) {
+                // Slot from center to edge
+                translate([-pointer_width/2, 0, -knob_r])
+                    cube([pointer_width, knob_r, 0.01], center = false);
+            }
+        }
+    }
+}
+
+// Render the knob
+knob();

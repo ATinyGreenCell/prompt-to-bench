@@ -1,0 +1,78 @@
+```openscad
+// Lab Funnel Design
+// Units: mm
+
+// Dimensions
+funnel_height = 50;       // Total height from bottom to rim
+spout_height = 20;        // Height of the straight tube section
+spout_od = 10;            // Outer diameter of the spout
+funnel_od_top = 60;       // Outer diameter at the rim
+wall_thickness = 1.6;     // Wall thickness of the funnel
+$fn = 64;                 // Resolution for curved surfaces
+
+// Derived Dimensions
+funnel_od_bottom = spout_od + (wall_thickness * 2); // Outer diameter at z=20
+funnel_id_top = funnel_od_top - (wall_thickness * 2); // Inner diameter at rim
+funnel_id_bottom = funnel_od_bottom - (wall_thickness * 2); // Inner diameter at z=20
+spout_id = spout_od - (wall_thickness * 2); // Inner diameter of spout
+
+// Geometry
+module funnel() {
+    // 1. Straight Spout (Cylinder)
+    // Extruded from z=0 to z=20
+    cylinder(
+        h = spout_height,
+        r1 = spout_od / 2,
+        r2 = spout_od / 2,
+        $fn = $fn
+    );
+
+    // 2. Funnel Cone
+    // Extruded from z=20 to z=50
+    // We use a linear interpolation of the radius
+    // At z=20: radius = spout_od/2
+    // At z=50: radius = funnel_od_top/2
+    // Height of cone section = 30
+    translate([0, 0, spout_height]) {
+        cylinder(
+            h = funnel_height - spout_height,
+            r1 = spout_od / 2,
+            r2 = funnel_od_top / 2,
+            $fn = $fn
+        );
+    }
+}
+
+module cutouts() {
+    // 1. Bottom Cutout (Spout Bore)
+    // Extends slightly past z=0 to ensure clean separation
+    cylinder(
+        h = 0.1,
+        r = spout_id / 2,
+        $fn = $fn
+    );
+
+    // 2. Top Cutout (Funnel Bore)
+    // Extends slightly past z=50 to ensure clean separation
+    translate([0, 0, funnel_height - 0.1]) {
+        cylinder(
+            h = 0.1,
+            r = funnel_id_top / 2,
+            $fn = $fn
+        );
+    }
+}
+
+// Render
+// Union creates the solid material
+// Difference subtracts the voids
+union() {
+    funnel();
+    difference() {
+        // The solid shape
+        funnel();
+        // The voids
+        cutouts();
+    }
+}
+```

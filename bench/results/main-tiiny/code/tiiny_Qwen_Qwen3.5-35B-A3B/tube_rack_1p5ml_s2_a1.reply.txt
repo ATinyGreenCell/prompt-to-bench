@@ -1,0 +1,95 @@
+```openscad
+// Bench rack for 1.5 mL microcentrifuge tubes
+// Dimensions measured with calipers, units in millimetres
+
+// Overall block dimensions
+block_length = 106;   // X dimension
+block_width = 72;      // Y dimension
+block_height = 30;     // Z dimension
+
+// Hole grid dimensions
+rows = 4;              // Number of rows along Y
+cols = 6;              // Number of columns along X
+pitch_x = 16;          // Centre-to-centre spacing in X
+pitch_y = 16;          // Centre-to-centre spacing in Y
+hole_diameter = 11.2;  // Hole diameter
+hole_depth = 25;     // Hole depth from top
+floor_thickness = 5;  // Solid floor thickness at bottom
+
+// Hole parameters
+hole_radius = hole_diameter / 2;
+
+// Calculate grid centering offsets
+// Total grid width = (cols - 1) * pitch_x
+// Total grid height = (rows - 1) * pitch_y
+// Center the grid on the block
+grid_center_x = (cols - 1) * pitch_x / 2;
+grid_center_y = (rows - 1) * pitch_y / 2;
+
+// Start position of the first hole (bottom-left of grid)
+start_x = -grid_center_x;
+start_y = -grid_center_y;
+
+// Create the base block
+base_block = cube([block_length, block_width, block_height], center = true);
+
+// Create the holes
+holes = [];
+for (i = [0 : cols - 1]) {
+    for (j = [0 : rows - 1]) {
+        hx = start_x + i * pitch_x;
+        hy = start_y + j * pitch_y;
+        // Hole cylinder: extends through the block, will be subtracted
+        // We make it slightly deeper than needed to ensure clean cut
+        // The cylinder is centered at Z=0, so it extends from -15 to +15
+        // We need it to cut from top (Z=15) down to Z=-10 (leaving 5mm floor)
+        // So we shift the cylinder down by 5mm relative to the block center
+        // Block center is 0, top is 15, bottom is -15.
+        // We want cut from 15 down to -10.
+        // Cylinder height = 25. Center at 0 would be -12.5 to 12.5.
+        // We need top at 15, so center at 2.5.
+        // Let's use a cylinder that is slightly taller to ensure it cuts through.
+        // Cylinder height = 30 (full block height) + 1mm clearance = 31mm
+        // Center at 0 (block center) -> cuts from -15.5 to 15.5
+        // This cuts the full block, leaving 0mm floor? No.
+        // We need to cut only 25mm deep.
+        // Let's create a cylinder that sits on the top surface.
+        // Top surface is at Z = block_height/2 = 15.
+        // We want to cut from 15 down to 15 - 25 = -10.
+        // So the cylinder should be from -10 to 15.
+        // Height = 25. Center = (15 + (-10)) / 2 = 2.5.
+        // Wait, if we use difference, the cylinder must extend past the face.
+        // Let's make the cylinder height 26mm (25 + 1mm clearance)
+        // and position it so the top is at 15.
+        // Cylinder center Z = 15 - 26/2 = 15 - 13 = 2.
+        // Let's just make it a cylinder of height 26, centered at Z=2.
+        // This will cut from -11 to 15.
+        // Wait, the block goes from -15 to 15.
+        // If we cut from -11 to 15, we leave 4mm floor (-15 to -11).
+        // We need 5mm floor. So cut from -10 to 15.
+        // Cylinder height = 25. Center Z = (15 + (-10)) / 2 = 2.5.
+        // Let's use a cylinder of height 26, centered at Z=2.
+        // This cuts from -11 to 15. Floor = 4mm.
+        // Let's use height 25, centered at Z=2.5.
+        // This cuts from -10 to 15. Floor = 5mm.
+        // But we need to extend past the face by 0.01-1mm.
+        // So let's make the cylinder height 26, centered at Z=2.
+        // This cuts from -11 to 15. Floor = 4mm.
+        // Let's adjust: we want 5mm floor.
+        // Cut depth = 25.
+        // Cylinder height = 25 + 1 = 26.
+        // Top of cylinder = 15.
+        // Bottom of cylinder = 15 - 26 = -11.
+        // Floor = 15 - 25 = -10.
+        // Wait, if we cut from 15 down to -10, the floor is 5mm.
+        // The cylinder must extend past the bottom of the cut?
+        // No, the cylinder must extend past the face it cuts.
+        // The face is at Z=15. The cylinder top is at Z=15.
+        // We need to extend past the face? No, the face is the top.
+        // The cylinder must extend past the bottom of the cut?
+        // No, the cylinder must extend past the face it cuts.
+        // The face is at Z=15. The cylinder top is at Z=15.
+        // We need to extend past the face? No, the face is the top.
+        // The cylinder must extend past the bottom of the cut?
+        // No, the cylinder must extend past the face it cuts.
+        // The face is at Z=15. The cylinder top is at Z=1

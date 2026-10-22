@@ -1,0 +1,86 @@
+```openscad
+// --- Dimensions ---
+// Microscope slide dimensions
+slide_length = 75;    // X direction (length of the slide)
+slide_width = 25;     // Y direction (width of the slide)
+slide_thickness = 1;  // Z direction (thickness of the slide)
+
+// Base block dimensions
+base_length = 90;     // X direction
+base_width = 45;      // Y direction
+base_height = 20;     // Z direction
+
+// Slot dimensions
+slot_length = 77;     // X direction (slightly longer than slide to allow insertion)
+slot_width = 1.6;     // Y direction (slightly wider than slide thickness for clearance)
+slot_depth = 10;      // Z direction (depth into the block)
+
+// Slot arrangement
+num_slots = 10;
+slot_pitch = 3.5;     // Centre-to-centre distance in Y
+
+// --- Calculations ---
+// Calculate total width of the slot group to center it on the block
+// The slots are centred on the block in X and Y.
+// Total span of slots = (num_slots - 1) * pitch
+slot_group_width = (num_slots - 1) * slot_pitch;
+
+// Calculate start Y position for the first slot
+// Center of block in Y is base_width / 2
+// Center of slot group is also base_width / 2
+// First slot center Y = (base_width / 2) - (slot_group_width / 2)
+first_slot_y = (base_width / 2) - (slot_group_width / 2);
+
+// Calculate X position for slots
+// Slots run along X. They are centred on the block in X.
+// Slot length is 77, block length is 90.
+// Offset from center in X = slot_length / 2
+slot_x_offset = slot_length / 2;
+
+// --- Model ---
+$fn = 64;
+
+// Base block: 90x45x20, centred at (0,0) in X and Y, bottom at z=0
+// Center of the block in X is 0, in Y is 0.
+// So the cube extends from -45 to 45 in X, -22.5 to 22.5 in Y, 0 to 20 in Z.
+// We use translate to move the center of the cube to (0,0,base_height/2) so the bottom is at z=0.
+base = translate([0, 0, base_height / 2]) {
+    cube([base_length, base_width, base_height], center = true);
+};
+
+// Now subtract the slots
+// Slots are centred on the block in X and Y.
+// Slot X center: 0
+// Slot Y center: calculated in loop
+
+// Define the cut depth extension to ensure no coplanar faces
+cut_depth_extension = 0.01;
+cut_height = slot_depth + cut_depth_extension;
+
+// Create the final part using difference
+part = difference() {
+    base;
+    
+    for (i = [0 : num_slots - 1]) {
+        // Calculate Y position for the center of the current slot
+        slot_y_center = first_slot_y + i * slot_pitch;
+        
+        // The slot is a box cut
+        // X: centered at 0, length slot_length
+        // Y: centered at slot_y_center, width slot_width
+        // Z: from base_height down to base_height - slot_depth - 0.01
+        
+        // Translate to the center of the slot cut volume
+        // The cut volume extends from z = base_height - cut_height to z = base_height
+        // So the center Z is base_height - cut_height/2
+        slot_cut = translate([0, slot_y_center, base_height - cut_height / 2]) {
+            cube([slot_length, slot_width, cut_height], center = true);
+        };
+        
+        slot_cut;
+    }
+};
+
+// Generate the model
+part;
+```

@@ -1,0 +1,42 @@
+$fn = 64;
+
+// Dimensions
+slide_length = 75;     // mm
+slide_width = 25;      // mm
+slide_thickness = 1;    // mm
+
+base_length = 90;      // mm (X)
+base_width = 45;     // mm (Y)
+base_height = 20;       // mm (Z)
+
+slot_length = 77;     // mm (along X)
+slot_width = 1.6;       // mm (Y direction)
+slot_depth = 10;         // mm (into Z)
+
+num_slots = 10;
+center_to_center_spacing = 3.5; // mm (Y direction)
+
+// Calculate slot positions: centre the array in X and Y
+// Slot centres are spaced by center_to_center_spacing in Y
+// The total Y span of the slots: (num_slots - 1) * spacing
+total_y_span = (num_slots - 1) * center_to_center_spacing;
+y_offset = (base_width - total_y_span) / 2; // offset to centre
+
+// X is centred: slot_length is 77mm, base is 90mm, so 13mm overhang on each side
+x_offset = (base_length - slot_length) / 2;
+
+// Create base block
+cube([base_length, base_width, base_height], center = true);
+
+// Create and position slots using difference
+for (i = [0 : num_slots - 1]) {
+    y_pos = y_offset + i * center_to_center_spacing;
+    translate([0, y_pos, 0]) {
+        difference() {
+            // Full rectangular prism to remove from base
+            cube([slot_length, slot_width, base_height + 1], center = false);
+            // Subtract a slightly larger box to ensure no coplanar faces
+            translate([0, 0, -0.01]) cube([slot_length, slot_width, base_height + 1.01], center = false);
+        }
+    }
+}

@@ -1,0 +1,34 @@
+$fn = 64;
+
+// Dimensions (mm)
+block_length = 90;   // X
+block_width  = 45;   // Y
+block_height = 20;  // Z
+
+slot_length = 77;   // X
+slot_width  = 1.6;  // Y
+slot_depth  = 10;   // Z
+slot_spacing = 3.5; // centre‑to‑centre Y
+slot_count  = 10;
+
+// Offsets to centre the slot group
+offset_x = (block_length - slot_length)/2; // 6.5
+offset_y = (block_width - (slot_count*slot_width + (slot_count-1)*(slot_spacing - slot_width)))/2; // 5.95
+
+// Base block
+base_block = cube([block_length, block_width, block_height]);
+
+// Slots
+slots = union() {
+    for (i = 0; i < slot_count; i++) {
+        y = offset_y + slot_width/2 + i*slot_spacing;
+        cube([slot_length, slot_width, slot_depth]) 
+            translate([offset_x, y, 20 - slot_depth - 0.01]); // 9.99
+    }
+};
+
+// Final rack
+difference() {
+    base_block;
+    slots;
+}

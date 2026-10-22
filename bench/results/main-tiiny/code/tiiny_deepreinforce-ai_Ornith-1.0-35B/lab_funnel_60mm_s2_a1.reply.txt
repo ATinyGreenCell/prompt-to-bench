@@ -1,0 +1,64 @@
+Looking at the measurement report, I can see several issues:
+
+1. **Bounding box Z is only 30.00 mm** - should be 50 mm (H_FUNNEL)
+2. **At z=1.50, outer diameter is 12.52 mm** - should be 10 mm (OD_SPOUT)
+3. **At z=1.50, hole diameter is 9.29 mm** - should be 6.8 mm (ID_SPOUT)
+4. **At z=15.02, outer diameter is 35.05 mm** - should be between 10 and 60 mm
+5. **At z=15.02, hole diameter is 31.72 mm** - should be between 6.8 and 56.8 mm
+
+The issue is that the `translate` parameter in the `cylinder()` call is being treated as a variable name, not as a positional parameter. In OpenSCAD, `cylinder()` doesn't have a `translate` parameter - it has positional parameters for `d1`, `d2`, `h`, `center`, and `radius`. The `translate` is being interpreted incorrectly.
+
+The correct way to position the cone is to use the `center=false` parameter (which is the default) and just specify the height starting from z=0, then use `translate` in a `union()` or wrap it.
+
+Let me fix this:
+
+```openscad
+// Lab funnel - printed upright (spout down, wide opening up)
+// Dimensions measured with calipers
+
+// Overall height
+H_FUNNEL = 50;
+
+// Spout dimensions
+H_SPOUT = 20;
+OD_SPOUT = 10;
+
+// Cone (funnel body) dimensions
+OD_RIM = 60;
+H_CONE = H_FUNNEL - H_SPOUT; // 30 mm
+
+// Wall thickness
+T_WALL = 1.6;
+
+// Derived dimensions
+ID_SPOUT = OD_SPOUT - 2 * T_WALL; // 6.8 mm bore
+ID_RIM = OD_RIM - 2 * T_WALL;     // 56.8 mm inner rim diameter
+
+// Print orientation: rests on XY plane at z=0, builds upward
+
+// Outer shape: spout cylinder + cone
+difference() {
+    // Outer solid (spout + cone)
+    union() {
+        // Spout cylinder
+        cylinder(h = H_SPOUT, d = OD_SPOUT, center = false);
+        
+        // Cone: bottom at z=H_SPOUT, top at z=H_FUNNEL
+        // Use translate to position the cone
+        translate([0, 0, H_SPOUT]) {
+            cylinder(h = H_CONE, d1 = OD_SPOUT, d2 = OD_RIM, center = false);
+        }
+    }
+    
+    // Inner bore (spout + cone) - extend slightly past faces
+    union() {
+        // Spout bore
+        cylinder(h = H_SPOUT + 0.01, d = ID_SPOUT, center = false);
+        
+        // Cone bore: extends from z=H_SPOUT to z=H_FUNNEL+0.01
+        translate([0, 0, H_SPOUT]) {
+            cylinder(h = H_CONE + 0.01, d1 = ID_SPOUT, d2 = ID_RIM, center = false);
+        }
+    }
+}
+```

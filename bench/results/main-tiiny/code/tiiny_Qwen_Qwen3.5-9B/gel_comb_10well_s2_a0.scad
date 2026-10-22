@@ -1,0 +1,108 @@
+$fn = 128;
+
+// --- Dimensions ---
+// Plate thickness (Z)
+$plate_thickness = 1.5;
+
+// Spine dimensions (X, Y)
+$spine_length = 70;
+$spine_width = 12;
+
+// Tooth dimensions (X, Y)
+$tooth_width = 5.0;
+$tooth_length = 12;
+
+// Gap between teeth
+$gap_size = 1.5;
+
+// Number of wells
+$num_wells = 10;
+
+// --- Calculations ---
+// Total width of the tooth row
+$total_tooth_width = $num_wells * $tooth_width;
+
+// Total width of the gap row
+$total_gap_width = ($num_wells - 1) * $gap_size;
+
+// Total width of the tooth row including gaps
+$total_row_width = $total_tooth_width + $total_gap_width;
+
+// Calculate offset to center the row on the spine
+// Center of spine in X is 0. Center of row is at -Y.
+// We need to shift the row so its center aligns with the spine's center.
+$center_offset = ($spine_width - $total_row_width) / 2;
+
+// --- Build ---
+
+// 1. Create the Spine (Back Bar)
+// Dimensions: X = $spine_length, Y = $spine_width, Z = $plate_thickness
+spine = translate([0, $spine_width/2, 0], 
+                  cube([$spine_length, $spine_width, $plate_thickness]));
+
+// 2. Create the Teeth
+// We use a for loop to generate the teeth.
+// The teeth hang in the -Y direction from the spine.
+// The row starts at Y = $spine_width/2 - $tooth_length/2 - $center_offset
+// and extends to Y = $spine_width/2 + $tooth_length/2 - $center_offset
+// Wait, the teeth hang from the edge. 
+// Spine top edge is at Y = $spine_width/2.
+// Teeth extend from Y = $spine_width/2 to Y = $spine_width/2 - $tooth_length.
+// We need to center this row of teeth on the spine's X axis.
+
+teeth = union();
+for (i = [0 : $num_wells - 1]) {
+    // Calculate X position for this tooth
+    // Center of the first tooth is at -($total_row_width)/2 + $tooth_width/2
+    // General formula: x_pos = -($total_row_width)/2 + (i + 0.5) * ($tooth_width + $gap_size)
+    // Simplified: x_pos = -($total_row_width)/2 + (i + 0.5) * ($tooth_width + $gap_size)
+    // Let's verify: 
+    // i=0: -W/2 + 0.5*(w+g) = -w/2 - g/2 + w/2 = -g/2. Correct, starts at -gap/2.
+    
+    $x_pos = -($total_row_width)/2 + (i + 0.5) * ($tooth_width + $gap_size);
+    
+    // Tooth geometry:
+    // X: $tooth_width
+    // Y: $tooth_length
+    // Z: $plate_thickness
+    // Position:
+    // X: $x_pos
+    // Y: Hangs from the spine edge ($spine_width/2) in the -Y direction.
+    // So Y starts at $spine_width/2 and goes down by $tooth_length.
+    // Center Y = $spine_width/2 - $tooth_length/2.
+    // Z: 0 to $plate_thickness.
+    
+    t = translate([
+        $x_pos, 
+        $spine_width/2 - $tooth_length/2, 
+        0
+    ], 
+    cube([$tooth_width, $tooth_length, $plate_thickness]));
+    
+    teeth = union(teeth, t);
+}
+
+// 3. Combine Spine and Teeth
+// Since the teeth are built hanging from the spine, we can simply union them.
+// However, to ensure a clean single solid and proper boolean operations if we were cutting,
+// we union the spine and the teeth block.
+comb = union(spine, teeth);
+
+// 4. Final Output
+// The user requested the part lying flat on the bed (XY plane), building upward (+Z).
+// Our model is already oriented this way (Z is thickness, XY is the face).
+// We center it on the origin in X and Y as per standard practice unless specified otherwise.
+// The spine is 70mm long (X) and 12mm wide (Y).
+// The teeth are centered on the spine in X.
+// The spine is centered at X=0, Y=0.
+// The teeth are centered at X=0 (due to our offset calculation) and Y is negative relative to spine center?
+// Let's re-verify Y centering.
+// Spine Y range: -6 to +6.
+// Teeth Y range: Starts at +6, goes to +6 - 12 = -6.
+// So the teeth row spans Y from -6 to +6.
+// The spine spans Y from -6 to +6.
+// They align perfectly in Y.
+// The teeth are centered on the spine in X.
+// So the whole assembly is centered at X=0, Y=0.
+
+translate([0, 0, 0], comb);

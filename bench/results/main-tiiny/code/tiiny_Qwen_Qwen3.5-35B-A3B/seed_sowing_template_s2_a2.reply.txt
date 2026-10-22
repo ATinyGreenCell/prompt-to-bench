@@ -1,0 +1,58 @@
+```openscad
+// Dimensions for the sowing template
+D_DISC = 85;        // Diameter of the main disc (mm)
+T_DISC = 2;         // Thickness of the disc (mm)
+D_HOLE = 3;         // Diameter of the grid holes (mm)
+PITCH = 9;          // Center-to-center spacing of the grid (mm)
+GRID_N = 7;         // Number of holes per row/column
+NOTCH_W = 10;       // Width of the orientation notch (mm)
+NOTCH_D = 4;        // Depth of the orientation notch (mm)
+
+// Calculate grid bounds
+// Grid is centered, so range is from -PITCH*(N-1)/2 to +PITCH*(N-1)/2
+GRID_START = -PITCH * (GRID_N - 1) / 2;
+
+module sowing_template() {
+    // Base disc
+    base_disc = cylinder(h = T_DISC, d = D_DISC, $fn = 64);
+    
+    // Holes
+    hole_cylinders = [];
+    for (i = [0 : GRID_N - 1]) {
+        for (j = [0 : GRID_N - 1]) {
+            x_pos = GRID_START + i * PITCH;
+            y_pos = GRID_START + j * PITCH;
+            // Hole cylinder must extend past the disc to ensure clean cut
+            // We use a cylinder slightly taller than the disc
+            hole_cylinders += [translate([x_pos, y_pos, -0.5]) {
+                cylinder(h = T_DISC + 1, d = D_HOLE, $fn = 64)
+            }];
+        }
+    }
+    
+    // Notch
+    // Rectangular notch on +Y side, centered on Y axis (X=0)
+    // Width 10mm (X), Depth 4mm (Y, from rim)
+    // Rim is at Y = D_DISC/2 = 42.5
+    // Notch extends from Y = 42.5 - 4 = 38.5 to Y = 42.5
+    // X range: -5 to +5
+    // Z range: 0 to 2
+    notch_cyl = translate([0, 42.5 - 2, 0]) {
+        cube([NOTCH_W, NOTCH_D, T_DISC], center = true);
+    };
+
+    // Combine
+    difference() {
+        base_disc;
+        // Add all holes
+        for (h = hole_cylinders) {
+            h;
+        }
+        // Add notch
+        notch_cyl;
+    }
+}
+
+// Final assembly
+sowing_template();
+```

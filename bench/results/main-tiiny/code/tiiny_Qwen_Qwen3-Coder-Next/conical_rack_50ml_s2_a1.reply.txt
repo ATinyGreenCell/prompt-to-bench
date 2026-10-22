@@ -1,0 +1,88 @@
+Looking at the measurement report and comparing it to the specification:
+
+1. **Plate dimensions**: 130 × 90 × 4 mm ✓ (matches specification)
+2. **Hole diameter**: Report shows 30.48 mm (diameter), but specification says 30.5 mm. This is likely due to rounding in the report (30.48 mm = 1.2 inches), but we should use exactly 30.5 mm as specified.
+3. **Hole spacing**: Report shows 40.00 mm pitch in both directions ✓ (matches specification)
+4. **Hole grid**: 3 × 2 grid centred ✓ (matches specification)
+5. **Wall height**: The report shows walls at z=39.00 and z=70.30, but specification says walls should rise from the plate (z=4) to z=70, meaning wall height = 66 mm (70 - 4 = 66), not 70 mm as implemented.
+
+The critical error is in the wall height. The specification says: "rises from the plate to z = 70". Since the plate is 4 mm thick (z=0 to z=4), the walls should extend from z=4 to z=70, making their height = 70 - 4 = 66 mm.
+
+Currently the code has `wall_height = 70`, which makes the walls go from z=4 to z=74 (4 + 70 = 74), but the report confirms the top is at z=74.00.
+
+The specification says the rack should stand on the two walls after flipping, and the tubes pass through the holes. The walls need to be 66 mm tall (from z=4 to z=70), not 70 mm.
+
+Let me fix the wall height to 66 mm.
+
+```openscad
+// Rack for six 50 mL conical (Falcon-type) tubes
+// Printed upside down and flipped over after printing
+
+$fn = 64;
+
+// Plate dimensions
+plate_length = 130; // X direction
+plate_width  = 90;  // Y direction
+plate_thick  = 4;   // Z direction
+
+// Hole pattern
+hole_dia = 30.5;
+hole_pitch_x = 40; // X direction spacing
+hole_pitch_y = 40; // Y direction spacing
+num_holes_x = 3;
+num_holes_y = 2;
+
+// Wall dimensions
+wall_thick = 4;
+wall_height = 66; // 70 - 4 = 66 mm (from top of plate at z=4 to z=70)
+
+// Calculate hole positions (centred on plate)
+plate_centre_x = plate_length / 2;
+plate_centre_y = plate_width / 2;
+
+// Total span of holes
+holes_span_x = (num_holes_x - 1) * hole_pitch_x;
+holes_span_y = (num_holes_y - 1) * hole_pitch_y;
+
+// Offset from plate centre to first hole
+offset_x = (holes_span_x) / 2;
+offset_y = (holes_span_y) / 2;
+
+// Plate
+module plate() {
+    translate([0, 0, 0])
+        cube([plate_length, plate_width, plate_thick]);
+}
+
+// Holes
+module holes() {
+    for (i = [0 : num_holes_x - 1]) {
+        for (j = [0 : num_holes_y - 1]) {
+            x = plate_centre_x - offset_x + i * hole_pitch_x;
+            y = plate_centre_y - offset_y + j * hole_pitch_y;
+            translate([x, y, -1])
+                cylinder(d = hole_dia, h = plate_thick + 2);
+        }
+    }
+}
+
+// Walls (along long edges, i.e., along X-axis at Y = 0 and Y = plate_width)
+module walls() {
+    // Front wall (Y = 0)
+    translate([0, 0, plate_thick])
+        cube([plate_length, wall_thick, wall_height]);
+    
+    // Back wall (Y = plate_width - wall_thick)
+    translate([0, plate_width - wall_thick, plate_thick])
+        cube([plate_length, wall_thick, wall_height]);
+}
+
+// Build the rack
+difference() {
+    union() {
+        plate();
+        walls();
+    }
+    holes();
+}
+```

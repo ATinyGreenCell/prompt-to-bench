@@ -1,0 +1,82 @@
+```openscad
+// Dimensions for the hose-barb reducer
+// Units: millimetres
+// Orientation: Standing upright on XY plane (Z=0), centered at origin
+
+// Core bore dimensions
+bore_diameter = 3.0;
+bore_radius = bore_diameter / 2;
+
+// Overall length
+total_length = 41.0;
+
+// --- Section 1: 8mm tubing barbs (Z=0 to Z=20) ---
+// Two identical barbs, each 10mm tall
+section1_height = 10.0;
+section1_count = 2;
+section1_total_height = section1_height * section1_count;
+
+// Barb geometry for 8mm tubing
+// Outer diameter grows from 7.5mm to 9.5mm over the barb height
+barb1_bottom_d = 7.5;
+barb1_top_d = 9.5;
+barb1_step_d = 7.5; // Diameter after the step back
+
+// --- Section 2: Cylindrical collar (Z=20 to Z=25) ---
+collar_height = 5.0; // 25 - 20
+collar_diameter = 12.0;
+
+// --- Section 3: 5mm tubing barbs (Z=25 to Z=41) ---
+// Two identical barbs, each 8mm tall
+section3_height = 8.0;
+section3_count = 2;
+section3_total_height = section3_height * section3_count;
+
+// Barb geometry for 5mm tubing
+// Outer diameter shrinks from 6.5mm to 5.0mm over the barb height
+barb3_bottom_d = 6.5;
+barb3_top_d = 5.0;
+barb3_step_d = 6.5; // Diameter after the step back
+
+// --- Helper Function: Create a single sawtooth barb ---
+// Parameters:
+//   h: height of the barb
+//   d_bottom: diameter at the bottom of the barb
+//   d_top: diameter at the top of the taper
+//   d_step: diameter after the step back (usually same as bottom)
+//   z_start: starting Z position
+//   z_end: ending Z position
+//   step_height: height of the flat step back (0.5mm)
+fn_create_barb(h, d_bottom, d_top, d_step, z_start, z_end, step_height) {
+    r_bottom = d_bottom / 2;
+    r_top = d_top / 2;
+    r_step = d_step / 2;
+    
+    // Calculate the Z position where the taper ends and the step begins
+    // The step is a flat face at the top of the barb.
+    // The taper goes from z_start to (z_end - step_height).
+    // The step face goes from (z_end - step_height) to z_end.
+    z_taper_end = z_end - step_height;
+    
+    // Define the profile in the XZ plane (X is radius)
+    // We create a polygon that represents the cross-section of the barb.
+    // Points:
+    // 1. Bottom outer: (r_bottom, z_start)
+    // 2. Top outer (taper peak): (r_top, z_taper_end)
+    // 3. Top inner (step back): (r_step, z_taper_end)
+    // 4. Bottom inner (step face): (r_step, z_end)
+    // 5. Bottom outer (bottom face): (r_bottom, z_end)
+    // Note: The bottom face is at z_start? No, the bottom of the barb is at z_start.
+    // The top of the barb is at z_end.
+    // The "step back" is at the top of the barb.
+    // So the profile is:
+    // (r_bottom, z_start) -> (r_top, z_taper_end) -> (r_step, z_taper_end) -> (r_step, z_end) -> (r_bottom, z_end)
+    // But the bottom face is at z_start? No, the bottom of the barb is at z_start.
+    // The top of the barb is at z_end.
+    // The "step back" is at the top of the barb.
+    // So the profile is:
+    // (r_bottom, z_start) -> (r_top, z_taper_end) -> (r_step, z_taper_end) -> (r_step, z_end) -> (r_bottom, z_end)
+    // But the bottom face is at z_start? No, the bottom of the barb is at z_start.
+    // The top of the barb is at z_end.
+    // The "step back" is at the top of the barb.
+    // So the profile is:

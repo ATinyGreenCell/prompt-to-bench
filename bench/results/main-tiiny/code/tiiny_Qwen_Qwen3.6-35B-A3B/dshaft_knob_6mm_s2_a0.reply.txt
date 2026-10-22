@@ -1,0 +1,135 @@
+```openscad
+// Knob for hotplate stirrer
+// D-shaft: 6mm nominal, 6.2mm bore diameter, 4.7mm width (flat-to-arc)
+// Knob: 30mm diameter, 15mm tall
+// Grip grooves: 18 evenly spaced, 2mm diameter half-cylinders on outer surface
+// Pointer groove: 1.5mm wide, 1mm deep, on the flat side of the D
+
+// --- Dimensions ---
+knob_diameter = 30;
+knob_height = 15;
+bore_diameter = 6.2;
+bore_width = 4.7; // Distance from flat to opposite arc
+bore_depth = 12;
+grip_groove_diameter = 2;
+num_grip_grooves = 18;
+pointer_groove_width = 1.5;
+pointer_groove_depth = 1;
+
+// --- Calculated Values ---
+knob_radius = knob_diameter / 2;
+bore_radius = bore_diameter / 2;
+// The flat is cut from the circle. The distance from center to flat is:
+// sqrt(r^2 - (width/2)^2) ? No, the width is the chord length? 
+// "distance from the flat to the opposite side of the circle is 4.7 mm"
+// This implies the sagitta + radius? Or just the chord distance?
+// Usually D-shafts are defined by the flat width or the distance from center.
+// Let's assume the "4.7 mm" is the distance from the flat face to the farthest point on the circle.
+// So, distance from center to flat = bore_radius - (4.7 - bore_radius) = 2 * bore_radius - 4.7
+// Let's verify: If bore_radius = 3.1, 2*3.1 - 4.7 = 6.2 - 4.7 = 1.5.
+// So the flat is at x = 1.5 (if center is 0,0). The flat side is the left side (negative X) or right?
+// The pointer is on the same side as the flat. Let's place the flat on the negative X side.
+// So the flat is at x = -1.5. The circle extends from x = -3.1 to x = 3.1.
+// Distance from flat (x=-1.5) to opposite side (x=3.1) is 3.1 - (-1.5) = 4.6. Close to 4.7.
+// Let's recalculate precisely.
+// Width from flat to opposite side = W.
+// W = r + (r - d_center_to_flat) = 2r - d_center_to_flat.
+// d_center_to_flat = 2r - W = 2 * 3.1 - 4.7 = 6.2 - 4.7 = 1.5.
+// So the flat is at x = -1.5.
+
+flat_x = 2 * bore_radius - bore_width; // 1.5
+// The flat is on the negative X side. So the flat face is at x = -flat_x.
+
+// --- Main Body ---
+difference() {
+    // Outer Cylinder
+    cylinder(r = knob_radius, h = knob_height, center = false, $fn = 64);
+    
+    // Inner D-Bore
+    // We cut a cylinder and then a box to make the flat
+    translate([0, 0, 0]) {
+        // The bore starts at z=0 and goes up to bore_depth
+        // Cut the circular part
+        cylinder(r = bore_radius, h = bore_depth + 0.01, center = false, $fn = 64);
+        
+        // Cut the flat side
+        // The flat is at x = -1.5. We need to cut everything to the left of this.
+        // The bore is centered at x=0.
+        // We cut a box that covers the left side of the bore.
+        // Box dimensions: 
+        // X: from -bore_radius to -flat_x (plus a bit more to ensure clean cut)
+        // Y: -bore_radius to bore_radius
+        // Z: 0 to bore_depth
+        translate([-bore_radius - 0.01, -bore_radius, 0]) {
+            cube([bore_radius + flat_x + 0.02, 2 * bore_radius + 0.02, bore_depth + 0.01], center = false);
+        }
+    }
+    
+    // Grip Grooves
+    // 18 evenly spaced vertical grooves on the outer surface
+    // Each is a 2mm diameter half-cylinder.
+    // Radius of groove = 1mm.
+    // They are cut into the cylinder.
+    for (i = [0 : num_grip_grooves - 1]) {
+        angle = i * 360 / num_grip_grooves;
+        translate([
+            knob_radius * cos(angle),
+            knob_radius * sin(angle),
+            0
+        ]) {
+            rotate([0, 0, angle]) {
+                // Cut a half-cylinder groove.
+                // The groove is on the surface. We cut a cylinder of radius 1mm.
+                // To make it a "half-cylinder" groove, we essentially cut a cylinder 
+                // that is tangent to the surface? No, it's a groove *on* the surface.
+                // Usually, this means a V-groove or a U-groove.
+                // "2 mm diameter half-cylinder centred on the outer surface"
+                // This implies the groove profile is a semi-circle of diameter 2mm.
+                // So the radius of the groove is 1mm.
+                // The center of the groove's circular profile is on the surface of the knob.
+                // So we cut a cylinder of radius 1mm, centered at the surface.
+                // However, if we cut a full cylinder, it would poke out.
+                // We want a groove, so we subtract a cylinder of radius 1mm.
+                // But wait, if the center is on the surface, half the cylinder is inside the knob, half is outside.
+                // Subtracting the whole cylinder removes the inside part (the groove) and the outside part (nothing).
+                // So we just subtract a cylinder of radius 1mm, centered at the surface.
+                // But we must ensure it doesn't cut through the other side.
+                // Since the knob is 30mm diameter, and grooves are 2mm deep (radius 1mm), it's fine.
+                
+                // To make it a "half-cylinder" shape in the final part, we subtract a cylinder.
+                // The "half-cylinder" description likely refers to the cross-section of the groove.
+                // So we cut a cylinder of r=1, h=knob_height.
+                // But we need to align it correctly.
+                // The cylinder axis is radial.
+                
+                // Let's create a cylinder of radius 1, height knob_height.
+                // It is centered at the surface point.
+                // We need to cut it from the inside.
+                // Actually, if we cut a cylinder of radius 1 centered at the surface, 
+                // the part inside the knob is a semi-cylinder. The part outside is also a semi-cylinder.
+                // Since we are doing a difference, we subtract the whole cylinder.
+                // This effectively cuts a semi-cylindrical groove into the knob.
+                
+                cylinder(r = grip_groove_diameter / 2, h = knob_height + 0.02, center = false, $fn = 32);
+            }
+        }
+    }
+    
+    // Pointer Groove
+    // 1.5mm wide, 1mm deep, on the same side as the flat of the D.
+    // The flat is on the negative X side.
+    // The groove runs from the center to the outer edge.
+    // It is 1.5mm wide. Let's assume it's a rectangular slot or a V-groove?
+    // "1.5 mm wide and 1 mm deep". Usually implies a rectangular slot unless specified.
+    // Let's make it a rectangular slot.
+    // It runs from center to edge.
+    // Center is (0,0). Edge is at radius 15.
+    // It is on the negative X side.
+    // So it is along the negative X axis.
+    // Width is 1.5mm, so it extends from y = -0.75 to y = 0.75.
+    // Depth is 1mm, so it goes from z = knob_height - 1 to z = knob_height.
+    // Wait, "cut ... on the top face". So it starts at the top surface.
+    // Top surface is z = 15.
+    // Depth is 1mm, so it goes from z = 14 to z = 15.
+    // It runs from the center to the outer edge.
+    // So in X, it

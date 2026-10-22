@@ -1,0 +1,52 @@
+// Dimensions for the Hotplate Stirrer Knob
+knob_diameter = 30;      // Overall diameter of the knob
+knob_height = 15;        // Total height of the knob
+shaft_diameter = 6.2;    // Diameter of the D-shaft bore
+shaft_flat_width = 4.7;  // Width of the flat side of the D-shaft bore
+groove_depth = 12;       // Depth of the D-shaft bore into the knob
+grip_groove_diameter = 2; // Diameter of the grip grooves
+grip_groove_count = 18;  // Number of grip grooves
+pointer_width = 1.5;     // Width of the pointer groove
+pointer_depth = 1;       // Depth of the pointer groove
+pointer_offset = 0;      // Offset from center (0 = aligned with shaft flat)
+
+// Derived dimensions
+$fn = 64;                // Resolution for curved shapes
+
+module knob() {
+    // 1. Main Cylinder Body
+    // Shifted up by 0.5mm so the bottom face is exactly at z=0
+    translate([0, 0, 0.5])
+        cylinder(h = knob_height, d = knob_diameter, center = false);
+
+    // 2. D-Shaped Blind Bore
+    // We cut a cylinder and then subtract a rectangular block to create the D-shape.
+    // The block is positioned so the flat is on the left (negative X).
+    // The distance from flat to opposite edge is 4.7mm.
+    // Radius is 6.2mm / 2 = 3.1mm.
+    // The flat starts at x = -3.1 + 4.7 = 1.6mm.
+    // The block width is 4.7mm.
+    translate([1.6, 0, 0.5])
+        cube([4.7, shaft_diameter + 0.2, groove_depth + 0.2], center = true);
+
+    // 3. Vertical Grip Grooves
+    // We rotate a half-cylinder around the center.
+    // The half-cylinder is centered on the outer surface (radius = 15mm).
+    // We subtract it from the main body.
+    for (i = [0 : grip_groove_count - 1]) {
+        rotate([0, 0, i * (360 / grip_groove_count)])
+            translate([knob_diameter / 2, 0, 0.5])
+                cylinder(h = knob_height + 1, d = grip_groove_diameter, center = true);
+    }
+
+    // 4. Pointer Groove on Top Face
+    // A rectangular slot cut into the top face.
+    // It runs from center to edge.
+    // We position it at the pointer_offset distance from center.
+    // We add a small amount to the width to ensure clean cutting.
+    translate([pointer_offset, 0, knob_height - pointer_depth - 0.1])
+        cube([pointer_width + 0.1, knob_diameter + 1, pointer_depth + 0.2], center = true);
+}
+
+// Render the part
+knob();
