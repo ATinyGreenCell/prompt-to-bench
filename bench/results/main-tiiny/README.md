@@ -14,7 +14,7 @@ tiiny_os 0.1.35 when we first inspected it on 2026-10-14 (the build log; `box_*.
     The reruns wrote their files over the old ones in `code/`, so the three superseded conversations survive only as
     their records: code hashes, render messages and the checks that failed.
   - From then on, the final checks also decide, inside the loop, when a model gets another try.
-- **gpt-oss reasons regardless.** The gpt-oss models ignore the thinking-off request. Their records say `think: false`, but every reply carries reasoning (`thinking_chars`), and many end at the 2,048-token cap: all 96 attempts of gpt-oss-20b and 45 of gpt-oss-120b's 82.
+- **gpt-oss reasons regardless.** The gpt-oss models ignore the thinking-off request. Their records say `think: false`, but every reply carries reasoning (`thinking_chars`), and many end at the 2,048-token cap: all 96 attempts of gpt-oss-20b and, in the final data, 66 of gpt-oss-120b's 119 (45 of 82 when this folder was first published).
 
 - **Pauses and one change of order.** The sweep was stopped on 2026-10-16, after 02:08, during gpt-oss-20b's
   thinking-on job (which resumed with 3 conversations left), and restarted on 2026-10-18 at 02:36. Meanwhile the box ran
@@ -25,6 +25,19 @@ tiiny_os 0.1.35 when we first inspected it on 2026-10-14 (the build log; `box_*.
   third sample was then moved to the front of the queue so that comparison could use three samples on each side
   ([`box-gemma-h0`](../box-gemma-h0/) is a copy of Gemma's records here). Other models' third samples were still queued
   when this folder was first published (v0.3.0, 2026-10-19). All times are the laptop's (US Eastern).
+- **Final state (21 October 2026).** The sweep finished on 2026-10-21 at 22:30 with all 55 jobs done: 707
+  records here (704 conversations; three superseded records stay beside their redos, flagged `needs_rerun`) and 224
+  conversations in [`think-tiiny`](../think-tiiny/).
+  - Twelve models have three samples and four have two. On 2026-10-20 the third samples of gpt-oss-20b and Qwen3
+    30B-A3B Thinking were removed, because all 96 of their attempts had ended at the token cap without code, and
+    those of Qwen3 4B and Qwen3 8B were dropped (0 passes in 32 conversations each) to save box time, with Seb's
+    approval. GLM-4.7-Flash and Qwen3-Coder 30B-A3B, which had also passed nothing, ran a third.
+  - On 2026-10-20 the sweep paused again for the live syntax-fixer run
+    ([`box-scadfix-qwen38`](../box-scadfix-qwen38/), 09:20-10:41) and for the held-out R4 runs (15:38 to 04:18 the next
+    morning, in `bench/heldout/harness/bench/results/`). At the start of that pause the frozen copy received the
+    v0.3.1 checker (`tools/scadreport.py` with the mesh clean-up). Records made before it were re-checked with
+    `rescore.py --only-open`: at v0.3.1 that turned one Qwen3.5 9B funnel into a pass; the final re-check, over all
+    707 + 224 records, changed nothing.
 - **Redaction.** In the `box_*.json` files the box's private network address and the home-directory path are redacted
   (`[private-ip]`, `~`) by [`meta/redact_results.py`](../../../meta/redact_results.py), which applies the build log's
   patterns and changes nothing else.

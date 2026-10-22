@@ -6,10 +6,11 @@
     python bench/rescore.py main-tiiny --only-open       # only attempts whose mesh was not watertight
 
 Each attempt's saved .scad is rendered again and evaluated with the current
-`tasks.yaml` checks and `reference_stats.json`. Records keep their replies; only the
-`check`, `passed` and `score` fields are updated, and every changed verdict is listed
-and stored under `rescored`. Takes the run's lock, so it never collides with a running
-benchmark on the same folder.
+`tasks.yaml` checks and `reference_stats.json`. Records keep their replies; an attempt's
+`check`, `passed` and `score` fields are replaced when its verdict or score changes, and
+every changed verdict is listed and stored under `rescored`. An attempt that passes under
+both checkers keeps its old `check`, so its item count `n` can be the older checker's.
+Takes the run's lock, so it never collides with a running benchmark on the same folder.
 
 --only-open re-checks only the attempts whose recorded mesh was not watertight: the only ones a change to the
 mesh clean-up in `load_mesh` (tools/scadreport.py) can affect, since a watertight mesh is never touched.

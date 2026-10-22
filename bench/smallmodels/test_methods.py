@@ -2,7 +2,7 @@
 """Tests for the method backends (templates, features) inside run_bench.py's conversation loop, with the model
 replaced by scripted JSON (no Ollama needed; real OpenSCAD renders).
 
-    ~/printpaper/.venv/bin/python -I bench/smallmodels/test_methods.py
+    .venv/bin/python -I bench/smallmodels/test_methods.py      # OpenSCAD on PATH, or set $OPENSCAD
 """
 import json
 import os
@@ -14,13 +14,20 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 BENCH = os.path.dirname(HERE)
 sys.path[:0] = [HERE, os.path.join(HERE, "templates"), os.path.join(HERE, "features"), BENCH,
                 os.path.join(os.path.dirname(BENCH), "tools")]
-os.environ.setdefault("OPENSCAD", "/home/seb/.local/bin/openscad")
 import yaml  # noqa: E402
 import common  # noqa: E402
 import plugins  # noqa: E402
 import run_bench  # noqa: E402
 import backend as TB  # noqa: E402  (templates)
 import fbackend as FB  # noqa: E402
+
+# The frozen library reads the seeds by absolute path (/home/seb/printpaper/finetune/seeds), which exists only in the
+# author's checkout; the tests use this tree's own seeds instead (the files templates/FROZEN.sha256 covers).
+SEEDS = os.path.join(os.path.dirname(BENCH), "finetune", "seeds")
+_load = TB.L.load
+TB.L.load = lambda seeds_dir=SEEDS: _load(seeds_dir)
+if not TB.L.load():
+    sys.exit(f"no template seeds in {SEEDS}")
 
 FAILS = []
 

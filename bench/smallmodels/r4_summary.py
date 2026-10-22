@@ -18,27 +18,37 @@ import collections
 import json
 import os
 import statistics
+import sys
 
 from scipy.stats import binomtest, fisher_exact
 
 HELDOUT = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "bench", "heldout", "harness", "bench", "results")
 
 
-def load(results, spec):
-    """The newest record per (model, task, sample) of RUN or RUN@MODEL; records flagged needs_rerun are left out."""
+def load(results, spec, strict=True):
+    """The newest record per (model, task, sample, lang, feedback) of RUN or RUN@MODEL, as run_bench.py resumes them;
+    records flagged needs_rerun are left out. With strict, a missing run or a model without records is an error, so a
+    typo in a run name cannot print as a result."""
     run, _, model = spec.partition("@")
     path = os.path.join(results, run, "results.jsonl")
-    newest = {}
-    for line in open(path) if os.path.exists(path) else []:
+    if not os.path.exists(path):
+        raise SystemExit(f"{spec}: no {path}")
+    newest, bad = {}, 0
+    for line in open(path, encoding="utf-8", errors="replace"):
         try:
             r = json.loads(line)
-        except json.JSONDecodeError:
+            key = (r["model"], r["task"], r["sample"], r.get("lang", "en"), r.get("feedback", "report"))
+        except (json.JSONDecodeError, KeyError, TypeError, AttributeError):  # half-written or foreign line
+            bad += bool(line.strip())
             continue
         if r.get("needs_rerun") or (model and r["model"] != model):
             continue
-        key = (r["model"], r["task"], r["sample"])
         if key not in newest or str(r.get("finished", "")) >= str(newest[key].get("finished", "")):
             newest[key] = r
+    if bad:
+        print(f"warning: {spec}: {bad} damaged line(s) skipped", file=sys.stderr)
+    if strict and not newest:
+        raise SystemExit(f"{spec}: no records" + (f" for model {model!r}" if model else ""))
     return list(newest.values())
 
 
@@ -46,8 +56,8 @@ def first_builds(r):
     return bool(r["attempts"] and (r["attempts"][0].get("render") or {}).get("ok"))
 
 
-def per_sample(results, spec):
-    rs = load(results, spec)
+def per_sample(results, spec, strict=True):
+    rs = load(results, spec, strict)
     out = []
     for model in sorted({r["model"] for r in rs}):
         by = collections.defaultdict(list)
@@ -72,6 +82,9 @@ def per_task(rs, key):
 def sign(results, a, b):
     ra, rb = load(results, a), load(results, b)
     tasks = sorted({r["task"] for r in ra} | {r["task"] for r in rb})
+    na, nb = len({r["sample"] for r in ra}), len({r["sample"] for r in rb})
+    if na != nb:  # per-task counts over different numbers of samples are not comparable
+        print(f"warning: {a} has {na} sample(s) and {b} {nb}: the sign test compares unequal counts", file=sys.stderr)
     lines = []
     for label, key, alt in (("first-attempt passes", lambda r: r["first_pass"], "greater"),
                             ("passes within three attempts", lambda r: r["passed"], "two-sided")):
@@ -103,13 +116,15 @@ def main():
     ap.add_argument("--pair", nargs=2, action="append", default=[])
     ap.add_argument("--fisher", nargs=2, action="append", default=[])
     a = ap.parse_args()
+    if not os.path.isdir(a.results):
+        raise SystemExit(f"no such results folder: {a.results}")
     runs = a.runs or sorted(d for d in os.listdir(a.results)
                             if os.path.exists(os.path.join(a.results, d, "results.jsonl")))
     print("| Run | Model | Sample | Conversations | Passed within 3 | First-attempt passes | First files build | "
           "Median min/task |")
     print("|---|---|---:|---:|---:|---:|---:|---:|")
     for spec in runs:
-        print("\n".join(per_sample(a.results, spec)))
+        print("\n".join(per_sample(a.results, spec, strict=bool(a.runs))))
     for x, y in a.pair:
         print("\n".join(sign(a.results, x, y)))
     for x, y in a.fisher:

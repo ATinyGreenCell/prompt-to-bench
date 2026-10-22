@@ -14,16 +14,19 @@ Sixteen biology-lab parts, described in words and numbers. A model writes OpenSC
 | [`build_refs.py`](build_refs.py) | renders the reference designs and validates the checker against them, against known-wrong parts in [`mutants/`](mutants/) (must fail) and against known-right parts in [`variants/`](variants/) (must pass) |
 | [`rescore.py`](rescore.py) | re-checks every saved attempt of a run with the current checker and reports changed verdicts |
 | [`reference_stats.json`](reference_stats.json) | reference volumes, slice areas and design-frame centres (generated) |
-| [`run_bench.py`](run_bench.py) | runs models: Ollama (local) or `claude:<model>` via the Claude Code CLI |
+| [`run_bench.py`](run_bench.py) | runs models: Ollama (local), `claude:<model>` via the Claude Code CLI, and the small-model methods `template:<model>` and `features:<model>` (paper §6.6) |
 | [`models.yaml`](models.yaml) | model metadata: sizes, parameters, licences |
 | [`analyze.py`](analyze.py) | builds `results/summary.csv`, the figures and the README results blocks (with no options, exactly the paper's) |
 | [`sample_stats.py`](sample_stats.py) | per-task pass statistics for multi-sample runs (`--samples 8`), merging a run split over `<run>-g0..g7` |
-| [`finetune_table.py`](finetune_table.py) | the paper's Table 8: fine-tunes on the in-family / held-out split of the 16 tasks |
+| [`finetune_table.py`](finetune_table.py) | the paper's Table 8: fine-tunes on the in-family / out-of-family split of the 16 tasks |
 | [`repair_stats.py`](repair_stats.py) | how a model uses feedback: file changed, score rose, passes won by repair (§6.4) |
 | [`self_consistency.py`](self_consistency.py) | picks one of k samples by agreement of the rendered parts' size and volume, no hidden checks (§6.4) |
 | [`spec_select.py`](spec_select.py) | picks one of k samples by checking each rendered part against the numbers in its own request (sizes, hole diameters, counts), agreement as a tie-breaker; no hidden checks (§6.4) |
 | [`harness_search.py`](harness_search.py) | compares harnesses (system prompt x feedback) on batch-C descriptions, scored against their reference files, never the 16 tasks (§6.4, Table 10) |
-| [`ollama_openai_shim.py`](ollama_openai_shim.py) | an Ollama-API front for an OpenAI-compatible server (vLLM), so `run_bench.py` can drive GPU-served models unchanged |
+| [`ollama_openai_shim.py`](ollama_openai_shim.py) | an Ollama-API front for an OpenAI-compatible server (vLLM or llama-server), so `run_bench.py` can drive such models unchanged; `--grammar` adds grammar-constrained decoding (§6.6) |
+| [`heldout/`](heldout/) | HO-16, sixteen more tasks written blind, with their references, known-wrong and known-right parts, a frozen copy of the harness and its runs (paper §5.6, §6.7) |
+| [`smallmodels/`](smallmodels/) | the pre-registered tests of seven cheaper fixes for small models and the held-out analyses: [`PROTOCOL.md`](smallmodels/PROTOCOL.md), the methods and their summaries (paper §6.6, §6.7) |
+| [`printcheck/`](printcheck/) | ten held-out parts to print and measure, with predictions written before printing |
 | `run_main_local.sh`, `run_lang.sh` | the exact commands used for the paper |
 | `results/<run>/` | one JSON line per conversation, plus every generated `.scad` and raw reply (a redone conversation's earlier files move to `code/<model>/superseded/`) |
 
@@ -38,6 +41,28 @@ ollama pull qwen2.5-coder:7b
 ```
 
 You need OpenSCAD on your `PATH`. A development snapshot with the Manifold backend is strongly recommended, because CGAL renders of the 96-hole rack take minutes. You also need Ollama for local models.
+
+## The held-out set and the small-model methods
+
+```bash
+sha256sum -c bench/heldout/FROZEN.sha256 bench/heldout/harness/HARNESS.sha256   # from the repo root
+.venv/bin/python bench/heldout/build_refs_heldout.py                          # validate HO-16 (a few minutes)
+.venv/bin/python bench/heldout/harness/bench/run_bench.py --run mytest-ho --models qwen2.5-coder:7b
+.venv/bin/python bench/heldout/harness/bench/sample_stats.py mytest-ho
+.venv/bin/python bench/smallmodels/r4_summary.py --pair r4-gemma26b-h4 r4-gemma26b-std --fisher r4-qwen38-scadfix r4-qwen38-std
+.venv/bin/python bench/smallmodels/heldout_unblind.py                         # the per-task analyses of §6.7
+.venv/bin/python bench/smallmodels/test_methods.py                            # method backends, scripted model
+.venv/bin/python bench/run_bench.py --run mytest-tpl --models template:qwen2.5-coder:7b --tasks tube_rack_1p5ml
+```
+
+- The harness copy runs the held-out tasks with its own frozen `checks.py` and `tools/scadreport.py` from any folder,
+  and writes to `bench/heldout/harness/bench/results/<run>/`.
+- The frozen template library reads `finetune/seeds/` by an absolute path (`/home/seb/printpaper/finetune/seeds`).
+  In a checkout anywhere else it loads no designs, so every `template:` conversation answers "none"; link that path
+  to your checkout first.
+- `r4_summary.py` with no options prints counts only; the options above add the pre-registered tests of §6.7.
+  Method runs, their commands and their frozen hashes are listed in `smallmodels/PROTOCOL.md`. Several development
+  scripts there (`dev_*`, `chain*`, `queue_*`) are records of the author's runs and use the author's paths.
 
 ## Protocol (as used in the paper)
 

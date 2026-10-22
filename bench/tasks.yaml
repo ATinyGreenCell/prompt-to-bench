@@ -197,7 +197,7 @@
 - id: seed_sowing_template
   category: tools
   title: Seed-sowing template for a 90 mm Petri dish
-  short: seed template
+  short: sowing template
   reference: bench/reference/seed_sowing_template.scad
   library: designs/tools/seed_sowing_template.scad
   skills: [disc, small-hole grid, orientation notch]

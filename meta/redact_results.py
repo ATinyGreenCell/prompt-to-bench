@@ -9,7 +9,8 @@ component, and the strings listed in meta/redact.txt. Only the matches change: u
 trimmed, whitespace and everything else is kept, and the sweep's own JSON format is written back. Idempotent: run it
 before every commit of bench/results.
 
-    python meta/redact_results.py            # all bench/results/*/box_*.json
+    python meta/redact_results.py            # all box_*.json under bench/results/ and the held-out harness's results/
+    python meta/redact_results.py --check    # list the files that need it, change nothing (exit 1 if any)
 """
 import glob
 import json
@@ -50,29 +51,39 @@ def walk(x, pats, extra=()):
         out = {}
         for k, v in x.items():
             nk = redact_str(k, pats, extra) if isinstance(k, str) else k
-            if nk in out:  # two keys that redact alike would lose a value silently
-                raise ValueError(f"keys {k!r} and another both redact to {nk!r}")
+            if nk in out:  # two keys that redact alike would lose a value silently; the message names neither key
+                raise ValueError(f"two keys both redact to {nk!r}")
             out[nk] = walk(v, pats, extra)
         return out
     return x
 
 
 def main() -> None:
+    check = "--check" in sys.argv[1:]
     pats, extra = patterns(), load_extra()
     changed = 0
-    for path in sorted(glob.glob(os.path.join(os.path.dirname(HERE), "bench", "results", "*", "box_*.json"))):
+    root = os.path.dirname(HERE)
+    paths = sorted(glob.glob(os.path.join(root, "bench", "results", "*", "box_*.json"))
+                   + glob.glob(os.path.join(root, "bench", "heldout", "harness", "bench", "results", "*", "box_*.json")))
+    for path in paths:
         d = json.load(open(path, encoding="utf-8"))
         try:
             new = walk(d, pats, extra)
         except ValueError as e:
             raise SystemExit(f"{path}: {e} - nothing written for it")
         if new != d:
+            changed += 1
+            if check:  # names only: the matches themselves are what must not be printed
+                print(f"needs redaction: {os.path.relpath(path, root)}")
+                continue
             tmp = path + ".tmp"
             with open(tmp, "w", encoding="utf-8") as fh:
                 fh.write(json.dumps(new, indent=1))  # the sweep's format (scripts/sweep.py provenance)
             os.replace(tmp, path)
-            changed += 1
-    print(f"redacted {changed} box provenance file(s)")
+    print(f"{'would redact' if check else 'redacted'} {changed} of {len(paths)} box provenance file(s)"
+          + ("" if extra else " (no meta/redact.txt terms loaded)"))
+    if check and changed:
+        sys.exit(1)
 
 
 if __name__ == "__main__":

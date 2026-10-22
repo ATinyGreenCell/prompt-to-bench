@@ -15,7 +15,7 @@ change the benchmark shim needs.
 | `negatives/` | 33 `.scad` files and 2 raw replies that must be rejected; each `.scad` file names the line it must fail on |
 | `positives/syntax_tour.scad` | A hand-written file that uses every construct the grammar covers (OpenSCAD parses it too) |
 | `e2e.py`, `e2e/` | End-to-end test with llama-server, and its saved replies and `summary.json` |
-| `shim_grammar.patch` | Proposed `--grammar FILE` option for `bench/ollama_openai_shim.py` (not applied) |
+| `shim_grammar.patch` | The `--grammar FILE` option for `bench/ollama_openai_shim.py`, as proposed; it was applied before the grammar test, and `PROTOCOL.md` records the shim's hash for that test |
 
 ## How to pass the grammar to llama-server
 
@@ -26,7 +26,10 @@ The PrismML llama-server accepts a grammar in two ways (checked in `tools/server
    OpenAI-compatible `POST /v1/chat/completions` (llama.cpp copies extra body fields into its sampling
    parameters) and on `POST /completion`. A grammar that does not parse is refused with HTTP 400
    `"Failed to initialize samplers: failed to parse grammar"`, so a silently ignored grammar is not
-   possible. The field cannot be combined with `json_schema` or with `tools`.
+   possible. The field cannot be combined with `json_schema` or with `tools`. Through the shim
+   (`bench/ollama_openai_shim.py --grammar FILE`), an empty FILE sends no grammar at all, so decoding runs
+   unconstrained with no warning. The shim is frozen by hash, so this is documented here rather than changed
+   (release audit, 2026-10-22).
 
    ```python
    body = {"messages": [{"role": "user", "content": prompt}], "temperature": 0.2, "top_p": 0.95,
@@ -201,7 +204,7 @@ free and constrained requests were alternated twice.
 - Same-seed requests were not always reproducible on llama-server: the two unconstrained requests gave
   different replies (403 and 342 tokens), the constrained ones identical replies.
 
-## The shim change (`shim_grammar.patch`, not applied)
+## The shim change (`shim_grammar.patch`, since applied)
 
 `bench/ollama_openai_shim.py` turns run_bench's Ollama calls into `/v1/chat/completions` requests, so it
 is the one place that needs to know about the grammar. The minimal change: a `--grammar FILE` option that

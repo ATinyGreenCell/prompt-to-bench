@@ -3,13 +3,13 @@ a clean-up (merge vertices within 1e-5 mm, drop degenerate faces), and with --ba
 open (only with CGAL=1). Writes audit_all.jsonl (in the current folder); prints progress lines only. Run from this folder:
     OPENSCAD=... nice -n 15 ~/printpaper/.venv/bin/python -I audit_all.py"""
 import glob, hashlib, json, os, re, subprocess, sys, time
-sys.path[:0] = ["/home/seb/printpaper/bench", "/home/seb/printpaper/tools"]
+B = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))), "bench")
+sys.path[:0] = [B, os.path.join(os.path.dirname(B), "tools")]
 import yaml
 from checks import evaluate
 from scadreport import load_mesh, render
-OS = "/home/seb/.local/bin/openscad"
+OS = os.environ.get("OPENSCAD", "openscad")
 CGAL = os.environ.get("CGAL") == "1"  # off by default: CGAL renders take minutes
-B = "/home/seb/printpaper/bench"
 tasks = {t["id"]: t for t in yaml.safe_load(open(f"{B}/tasks.yaml"))}
 refs = json.load(open(f"{B}/reference_stats.json"))
 out = open("audit_all.jsonl", "w")
@@ -38,8 +38,9 @@ os.makedirs("work", exist_ok=True)
 t0 = time.time()
 for k, (run, ln, r, a) in enumerate(todo):
     task = r["task"]
+    suffix = "".join(f"_{x}" for x, d in ((r.get("lang", "en"), "en"), (r.get("feedback", "report"), "report")) if x != d)
     path = os.path.join(B, "results", run, "code", re.sub(r"[^A-Za-z0-9._-]+", "_", r["model"]),
-                        f"{task}_s{r['sample']}_a{a['attempt']}.scad")
+                        f"{task}_s{r['sample']}{suffix}_a{a['attempt']}.scad")  # as run_bench.py names them
     rec = {"run": run, "line": ln, "model": r["model"], "task": task, "sample": r["sample"], "attempt": a["attempt"],
            "conv_passed": r["passed"], "orig_score": a["score"], "orig_fails": [i["check"] for i in a["check"]["items"] if not i["ok"]]}
     if not os.path.exists(path):

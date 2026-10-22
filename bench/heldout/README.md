@@ -1,13 +1,15 @@
-# HO-16: a blind, held-out task set for Prompt-to-Bench
+# HO-16: a held-out task set for Prompt-to-Bench
 
 Sixteen more biology-lab parts, built 20 October 2026 with the same schema, the same unmodified checker
 (`bench/checks.py`) and the same validation discipline as the 16 benchmark tasks. They exist to test the
 methods developed after the main study (prompts, harnesses, fine-tunes, small-model interventions) on parts
 that nobody tuned those methods on.
 
-**Keep it blind.** The assistant that develops methods must not read this folder, `tasks.yaml`, the
-references or the mutants. It runs the frozen harness copy in `harness/` and sees only scores. This README is
-for the project lead. The build session was a sub-agent; the repo's build-log hook skips sub-agent
+**Status: unblinded on 21 October 2026.** Until then the set was blind: the assistant that develops methods
+did not read this folder, `tasks.yaml`, the references or the mutants, ran the frozen harness copy in `harness/`
+and saw only scores. After the pre-registered R4 tests had run, the project lead opened the per-task results
+(`bench/smallmodels/PROTOCOL.md`, "Unblinding the held-out set"; paper §6.7). The set can no longer test a method
+designed after that date: a new method needs a fresh blind set. The build session was a sub-agent; the repo's build-log hook skips sub-agent
 transcripts, so none of this content went into `meta/BUILD_LOG.md`.
 
 ## Contents
@@ -32,15 +34,15 @@ reference on this laptop (OpenSCAD 2026.10.01 nightly, Manifold), under `nice -n
 
 | # | id | category | the part | construction | checks (top level / items) | mutants | variants | render |
 |---|---|---|---|---|---|---|---|---|
-| 1 | `pcr_strip_magnet_rack` | tools | magnetic bead rack for an 8-tube PCR strip | block, cone-bottomed blind seats, magnet pockets open at the bottom | 13 / 21 | 7 | 2 | 0.67 s |
-| 2 | `cuvette_rack_2x6` | benchware | open-sided rack for 12 square cuvettes | two plates joined by 7 walls, square through-holes, open sides | 14 / 21 | 6 | 3 | 0.56 s |
+| 1 | `pcr_strip_magnet_rack` | tools | magnetic bead rack for an 8-tube PCR strip | block, cone-bottomed blind seats, magnet pockets open at the bottom | 12 / 21 | 7 | 2 | 0.67 s |
+| 2 | `cuvette_rack_2x6` | benchware | open-sided rack for 12 square cuvettes | two plates joined by 7 walls, square through-holes, open sides | 13 / 21 | 6 | 3 | 0.56 s |
 | 3 | `petri_dish_rack_upright` | benchware | upright rack for ten 90 mm Petri dishes | cylindrical cradle cut + 11 thin dividers | 13 / 20 | 6 | 2 | 0.57 s |
 | 4 | `syringe_holder_10ml` | hardware | wall holder for a 10 mL syringe | open-fronted U channel, flange slot from the front, holes through the side | 11 / 13 | 6 | 1 | 0.53 s |
 | 5 | `eyepiece_phone_adapter` | hardware | phone adapter for a 30 mm eyepiece | plate + off-centre stepped sleeve + 3 radial holes | 13 / 28 | 6 | 1 | 0.60 s |
 | 6 | `shelf_pipette_holder` | quick-fixes | shelf-edge clamp for 3 pipettes | 2-D C-clamp profile printed on its side, holes across the extrusion | 12 / 14 | 6 | 1 | 0.59 s |
 | 7 | `waterbath_float_15ml` | tools | water-bath float, 6 tubes around 1 | hexagon, polar holes, thin sleeves and an inset skirt, printed inverted | 10 / 18 | 7 | 1 | 0.57 s |
 | 8 | `tubing_manifold_1to3` | hardware | 1-to-3 tubing manifold | block with internal channels, sockets, closed channel end | 10 / 16 | 6 | 2 | 0.60 s |
-| 9 | `microtube_balance_stand` | quick-fixes | balance stand for one 1.5 mL tube | revolved profile, conical seat, side window | 11 / 26 | 6 | 1 | 0.59 s |
+| 9 | `microtube_balance_stand` | quick-fixes | balance stand for one 1.5 mL tube | revolved profile, conical seat, side window | 12 / 26 | 6 | 1 | 0.59 s |
 | 10 | `roundbottom_tube_puck_2ml` | benchware | holder for eight 2 mL round-bottom tubes | round puck with a label flat, half-sphere seat bottoms on a circle | 11 / 19 | 5 | 2 | 0.66 s |
 | 11 | `conical_15ml_incline_rack` | benchware | rack holding five 15 mL tubes at a 30-degree lean | block with tilted blind holes | 9 / 17 | 6 | 2 | 0.58 s |
 | 12 | `conical_50ml_carrier` | hardware | carrier with a handle for four 50 mL tubes | two parts on one bed: base with seats and posts, separate handle bar | 13 / 23 | 6 | 1 | 0.59 s |
@@ -83,7 +85,7 @@ Top-level checks over all 16 tasks: 16 bbox, 16 bodies, 1 body_sizes, 82 slices,
   maximum per task: against the 16 benchmark prompts 0.23-0.37, against the 2,403 distinct distillation
   prompts 0.26-0.39, against the other held-out prompts 0.25-0.35. That is the "same style, different part"
   band (0.25-0.40). No prompt shares a task's dimensions.
-* **Prompt length.** 119-192 words (mean 154), within the range of the 16 tasks' prompts (76-193, mean 121); these parts
+* **Prompt length.** 119-192 words (mean 155), within the range of the 16 tasks' prompts (76-193, mean 121); these parts
   carry more features on average.
 
 ## The tasks in detail
@@ -328,14 +330,14 @@ cd ~/printpaper
   tree; the template library reads `finetune/seeds/` by absolute path) and `tools/scadreport.py`, all byte-identical to the
   repo's working tree on 20 October 2026 (`HARNESS_COMMIT`). `tools/scadreport.py` was later replaced by the
   released checker with the sliver clean-up (v0.3.1, see the changelog). The held-out `tasks.yaml`,
-  `reference_stats.json` and `reference/` replace the originals. `results/` holds the runs listed in the changelog.
+  `reference_stats.json` and `reference/` replace the originals. `results/` holds the Opus ceiling check and the R4 runs (changelog).
 * Results go to `bench/heldout/harness/bench/results/<run>/`. Method code tested later on this set should be
   copied into the harness and recorded with a fresh `HARNESS.sha256`; the task files stay frozen
   (`FROZEN.sha256`).
 * The copy's `tasks.yaml` is identical to `bench/heldout/tasks.yaml`. Its `reference` fields point at
   `bench/heldout/reference/` relative to the repo root, which `run_bench.py` does not use.
-* No model was called while building this set. The only model run so far is the Opus ceiling check in the
-  changelog.
+* No model was called while building this set. The models run on it since are the Opus ceiling check and the
+  R4 runs (changelog).
 
 ## Known limits and weaker checks
 
@@ -416,3 +418,21 @@ Validation was clean on every step.
 4. **Manifests.** `harness/HARNESS.sha256` was regenerated because the checker file changed. As in the
    October 14 sweep harness, it covers the copy's files except run outputs (`results/`) and bytecode caches.
    `FROZEN.sha256` is unchanged: none of the files it covers changed.
+
+### 2026-10-20 to 21: the R4 runs
+The pre-registered R4 test (`bench/smallmodels/PROTOCOL.md`, "R4 test plan") ran on the frozen harness copy:
+Claude Sonnet 5.5 and Haiku 4.5 (`r4-claude`); Qwen2.5-Coder 7B, templates, Gemma 4 E4B and features on the
+laptop (`r4-coder7b`, `r4-template`, `r4-gemma4e4b`, `r4-features`); Bonsai 2 27B (`r4-bonsai`); and on the
+NPU box Gemma 4 26B with the standard and h4 prompts, Qwen3.8 27B standard and with the syntax fixer live
+(three samples each) and Qwen3.6 27B (two samples). `_offline/` holds the free offline what-ifs (the syntax
+fixer and the request check on the saved attempts). Results: `PROTOCOL.md`, "R4 results"; paper §6.7 and
+Table 15.
+
+### 2026-10-21: unblinded
+After the R4 tests had run, Seb approved opening the per-task results ("okay lets do them all"); the analyses
+are in `bench/smallmodels/heldout_unblind.py` and `PROTOCOL.md`, "Unblinding the held-out set".
+
+### 2026-10-22: README corrections
+The table above gave three top-level check counts one too many or one too few (the magnet rack 13 for 12, the
+cuvette rack 14 for 13, the balance stand 11 for 12; the item counts were right), and the mean prompt length
+as 154 words (154.9). The frozen files are unchanged.

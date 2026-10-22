@@ -12,7 +12,14 @@ build/
 
 # Benchmark lock files and self-test output
 bench/results/*/.lock
+bench/heldout/harness/bench/results/*/.lock
 bench/results/_selftest/
+# llama-server and shim logs from local runs (timestamps that look like addresses, home paths)
+llama_server.log
+shim.log
+# per-shard logs and prompt splits of the distillation runs (the shard outputs are committed)
+finetune/rft/distill/*shard*.log
+finetune/rft/distill/prompts_clean*_shard*.jsonl
 
 # Editors / OS
 .DS_Store

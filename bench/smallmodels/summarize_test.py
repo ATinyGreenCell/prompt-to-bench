@@ -19,8 +19,22 @@ RELATED = {"tube_rack_1p5ml": "grid_tray", "conical_rack_50ml": "grid_tray", "pc
 
 
 def load(run):
+    """The newest record per (model, task, sample, lang, feedback), as run_bench.py resumes a run; records flagged
+    needs_rerun are left out, and damaged lines are skipped and counted."""
     path = os.path.join(RESULTS, run, "results.jsonl")
-    return [json.loads(line) for line in open(path)] if os.path.exists(path) else []
+    newest, bad = {}, 0
+    for line in open(path, encoding="utf-8", errors="replace") if os.path.exists(path) else []:
+        try:
+            r = json.loads(line)
+            key = (r["model"], r["task"], r["sample"], r.get("lang", "en"), r.get("feedback", "report"))
+        except (json.JSONDecodeError, KeyError, TypeError, AttributeError):
+            bad += bool(line.strip())
+            continue
+        if not r.get("needs_rerun") and (key not in newest or str(r.get("finished", "")) >= str(newest[key].get("finished", ""))):
+            newest[key] = r
+    if bad:
+        print(f"warning: {run}: {bad} damaged line(s) skipped", file=sys.stderr)
+    return list(newest.values())
 
 
 def attempt_cell(a, templates):
@@ -32,6 +46,8 @@ def attempt_cell(a, templates):
 
 
 def main():
+    if len(sys.argv) < 2 or sys.argv[1].startswith("-") or ("--md" in sys.argv and sys.argv.index("--md") + 1 >= len(sys.argv)):
+        sys.exit(__doc__.strip().splitlines()[-1].strip())
     run = sys.argv[1]
     templates = run == "sm-template"
     recs = load(run)
@@ -40,8 +56,10 @@ def main():
     out = []
     for model in sorted({r["model"] for r in recs}):
         rs = sorted((r for r in recs if r["model"] == model), key=lambda r: r["task"])
-        base_model = model.split(":", 1)[1]
-        base = [r for r in load("main") if r["model"] == base_model and r.get("feedback") == "report"]
+        base_model = model.split(":", 1)[1] if model.startswith(("template:", "features:")) else model
+        base = [r for r in load("main") if r["model"] == base_model and r.get("feedback", "report") == "report"]
+        if not base:  # the comparison with the same model writing OpenSCAD is part of the summary
+            sys.exit(f"no `main` records for {base_model}")
         out += [f"## {run}: `{model}`", "",
                 "| Task | Within 3 | Attempt 1 | Attempt 2 | Attempt 3 | Minutes |" + (" Related design |" if templates else ""),
                 "|---|---|---|---|---|---:|" + ("---|" if templates else "")]
@@ -57,11 +75,10 @@ def main():
         med = statistics.median(r["wall_s"] for r in rs) / 60
         out += ["", f"- Tasks passed within three attempts: **{passed}/{n}**; on the first attempt: {first}/{n}.",
                 f"- First files that build: {builds}/{n}. Median {med:.1f} minutes a task."]
-        if base:
-            bp = sum(r["passed"] for r in base)
-            bb = sum(bool(r["attempts"] and (r["attempts"][0].get("render") or {}).get("ok")) for r in base)
-            out.append(f"- The same model writing OpenSCAD (`main`): {bp}/{len(base)} passed, {bb}/{len(base)} first files "
-                       f"build, median {statistics.median(r['wall_s'] for r in base) / 60:.1f} minutes.")
+        bp = sum(r["passed"] for r in base)
+        bb = sum(bool(r["attempts"] and (r["attempts"][0].get("render") or {}).get("ok")) for r in base)
+        out.append(f"- The same model writing OpenSCAD (`main`): {bp}/{len(base)} passed, {bb}/{len(base)} first files "
+                   f"build, median {statistics.median(r['wall_s'] for r in base) / 60:.1f} minutes.")
         bar = passed >= 8 and med <= 10 and n == 16
         out.append(f"- Viability bar (at least 8 of 16 within three attempts, median at most 10 minutes): "
                    f"{'met' if bar else 'not met'}.")

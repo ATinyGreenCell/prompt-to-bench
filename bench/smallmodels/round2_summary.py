@@ -23,12 +23,26 @@ RUNS = [("sm-features-r8", "sm-features", "features, temperature 0.2"),
 
 
 def load(run):
-    """The newest record per (model, task, sample)."""
+    """The newest record per (model, task, sample, lang, feedback), as run_bench.py resumes a run; records flagged
+    needs_rerun are left out, and damaged lines (a power cut mid-write) are skipped and counted. A missing run, or one
+    without records, is an error: round 1's count would otherwise print as 0."""
     path = os.path.join(RESULTS, run, "results.jsonl")
-    best = {}
-    for line in open(path) if os.path.exists(path) else []:
-        r = json.loads(line)
-        best[(r["model"], r["task"], r["sample"])] = r
+    if not os.path.exists(path):
+        raise SystemExit(f"{run}: no {path}")
+    best, bad = {}, 0
+    for line in open(path, encoding="utf-8", errors="replace"):
+        try:
+            r = json.loads(line)
+            key = (r["model"], r["task"], r["sample"], r.get("lang", "en"), r.get("feedback", "report"))
+        except (json.JSONDecodeError, KeyError, TypeError, AttributeError):
+            bad += bool(line.strip())
+            continue
+        if not r.get("needs_rerun") and (key not in best or str(r.get("finished", "")) >= str(best[key].get("finished", ""))):
+            best[key] = r
+    if bad:
+        print(f"warning: {run}: {bad} damaged line(s) skipped", file=sys.stderr)
+    if not best:
+        raise SystemExit(f"{run}: no records")
     return list(best.values())
 
 
@@ -58,9 +72,6 @@ def main():
     out = []
     for run, round1, label in RUNS:
         recs = load(run)
-        if not recs:
-            out += [f"## `{run}` ({label}): no results yet", ""]
-            continue
         base = load(round1)
         for model in sorted({r["model"] for r in recs}):
             rs = [r for r in recs if r["model"] == model]

@@ -394,7 +394,9 @@ Seb, 2026-10-20: "Lets do all of these". Three follow-ups to round 1. None of th
         3 %.
       - Cross-checks, 752 in all: every held-out reference fails every other held-out task and each of the 16
         original tasks; every original reference fails every held-out task.
-      - All 97 wrong-part mutants fail; all 25 correct variants, each coded independently, pass.
+      - All 97 wrong-part mutants fail; all 25 correct variants pass. (Corrected 2026-10-22: this said each variant was
+        coded independently. Sixteen are, one per task; the other nine are variations of a reference, such as a
+        coarser `$fn` or chamfered holes.)
       - No model calls were made.
     - The agent found a checker problem while authoring: some correct codings of one part exported with sliver
       triangles where unioned faces sit flush, and the frozen checker then counted extra bodies and no volume. It
@@ -598,7 +600,9 @@ models' files on the original 16 tasks.
     - `main-tiiny` (Qwen3.5 9B, sample 0).
   - No attempt that stays open after the clean-up fails only on pieces or volume, so CGAL renders were not needed.
   - 13 attempts could not be re-rendered because their files were not kept. Each failed 4-12 checks, so none was a
-    near-pass.
+    near-pass. (Corrected 2026-10-22: only the 3 `lang-claude` files were not kept. For the other 10, in the h4 runs
+    `box-gemma-h4`, `gpu-base-h4-g1` and `gpu-base-h4-g10`, `audit_all.py` looked for the file without its
+    `_checklist` suffix; it now adds it. `rescore.py --dry-run --only-open` on those three runs changes nothing.)
 - **Correction rule (exact for pass counts).** An attempt that passes after the clean-up counts as a pass. With a
   fixed checker the conversation would have ended there, so tasks passed within three attempts and first-attempt
   passes are the same as a fixed checker's. `round2_summary.py --corrections` applies the rule to R2 and to its round
@@ -668,8 +672,9 @@ on `bench/results` (`main-claude`, `box-gemma-h0`, and so on).
   - **Q4: neither method reaches the viability bar** (8/16 within three attempts, at most 10 minutes a task) on the
     new tasks, as on the original set.
   - Features still writes a file that builds every time (16/16), but none passes: the parts build but are wrong.
-  - Templates builds nothing on the new parts. Its library was written from the original set's part kinds, and the
-    new parts fit none of them.
+  - Templates builds nothing on the new parts: for every one the model answered that no design in its library fits.
+    The library is the 34 seed families of the fine-tuning data, several of them the same kind of part as an
+    original task. (Corrected 2026-10-22: this said the library was written from the original set's part kinds.)
   - The standard laptop models pass nothing on either set.
   - No prompt was cut off: Ollama's slot records show 160 replies in L1 to L4, none truncated, the largest 7,074 of
     8,192 tokens.
@@ -691,7 +696,8 @@ on `bench/results` (`main-claude`, `box-gemma-h0`, and so on).
     0.375. The pass gain points the same way on both sets (15/48 against 8/32 on the original), and neither set alone
     shows it clearly. A pooled test was not pre-registered.
   - **Q1 for this model:** under one task a sample on the new set against 4 on the original. Without scadfix, three
-    quarters or more of its first files do not render on either set (75% and 81%).
+    quarters or more of its first files do not render on either set (75% and 81%; the 75% is the two original
+    samples then run, 69% over all three).
 - **R4-B5, Qwen3.6 27B on the box** (run `r4-qwen36-std`, 00:39-04:18, two samples; original-set `main-tiiny`, 2
   samples): tasks passed per sample 5, 6 → 3, 2 (conversations 11/32 → 5/32); first-attempt passes 6/32 → 1/32;
   first files that build 31/32 → 27/32; median 4.4 → 6.0 minutes a task.
@@ -703,7 +709,7 @@ on `bench/results` (`main-claude`, `box-gemma-h0`, and so on).
   llama-server unit and the shim stopped cleanly.
 - **All arms done 2026-10-21 06:09.**
 
-**Q1, the benchmark itself: the order holds, and every model below the top two passes fewer tasks.**
+**Q1, the benchmark itself: the order holds, and every model below the top two that passes original tasks passes fewer new ones.**
 
 | Model (machine), standard protocol | Original set: tasks passed per sample | Held-out set | Held-out as a share of original |
 |---|---:|---:|---:|
@@ -717,10 +723,17 @@ on `bench/results` (`main-claude`, `box-gemma-h0`, and so on).
 | Qwen2.5-Coder 7B (laptop) | 0 | 0 | — |
 | Gemma 4 E4B (laptop) | 0 | 0 | — |
 
+(Note, 2026-10-22: for Qwen3.6 27B and Qwen3.8 27B the original-set column gives the samples run by then. With
+the finished sweep's third samples they are 5, 6, 5 (mean 5.3; share 0.47) and 4, 4, 4 (4.0; 0.17), as in the
+paper's Table 15.)
+
 - The predicted order (Opus > Gemma 4 26B > Qwen3.8 27B > the laptop models) holds, and so does the full order of
   the nine models. The only change is at the bottom, where Bonsai falls to 0 and ties the other laptop models.
   Spearman's rank correlation between the two columns is 0.99. This was not pre-registered; the order was.
-- Every model below Opus and Sonnet passes fewer new tasks, and the weaker the model, the larger the share it loses.
+- Every model below Opus and Sonnet that passes original tasks passes fewer new ones, and the weaker models lose the
+  larger shares (Qwen3.8 27B and Bonsai most), though not strictly in order (Qwen3.6 27B keeps 0.45, Gemma 4 26B
+  0.43). (Corrected 2026-10-22: this said every model below the top two, and that the share lost grows with
+  weakness; the two laptop models that passed nothing on the original set pass nothing on the new one.)
   The two frontier models pass everything on the first attempt, so the new tasks can be solved and the checks accept
   correct parts.
 - Three explanations remain, and the aggregate counts cannot separate them:
@@ -853,13 +866,18 @@ either set and are left out of the rates. Original-set counts now include the sw
    - On the original set, longer tasks pass less often. Spearman's rank correlation of pooled pass rate with request
      words is -0.70, with reference lines -0.89 (16 tasks). Within the held-out set the range is narrow and the
      correlations are weaker (-0.43, -0.20).
-   - A logistic model fitted to the original set's 256 pooled conversations (pass against request words, with a
+   - Added after the planned analyses above had been read, and not among them: a logistic model fitted to the
+     original set's 256 pooled conversations (pass against request words, with a
      term for each model) predicts a held-out pass rate of 0.30, against 0.20 observed and 0.46 on the original set.
      So request length accounts for about 60% of the drop. With reference lines instead, 0.33 (about half). Checker
      items alone predict 0.42.
    - Fitted to both sets with a held-out term, the held-out odds ratio is 0.23 with no size term, 0.52 after request
-     words (p = 0.015), and 0.68 after request words and checker items (p = 0.29). These p-values treat
-     conversations as independent. Tasks repeat across models and samples, so the p-values overstate certainty.
+     words (p = 0.015), and 0.75 after request words and checker items (p = 0.39). These p-values treat
+     conversations as independent. Tasks repeat across models and samples, so the p-values overstate certainty;
+     with errors clustered by task they are 0.0008, 0.19 and 0.73, so only the first odds ratio differs clearly
+     from 1. (Corrected 2026-10-22: the last odds ratio was given as 0.68, p = 0.29, from a fit that took some
+     original tasks' checker-item counts from attempts scored by an older checker. The fits are now section 5 of
+     `heldout_unblind.py`.)
 
 **Reading**
 - The third explanation, stricter checks, does not hold: the checks are right about the parts they fail. The new

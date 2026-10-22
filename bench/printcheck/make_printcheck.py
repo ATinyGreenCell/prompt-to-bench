@@ -3,7 +3,7 @@
 to STL and slice it for an Original Prusa MK4 with the stock profiles, as tools/slice_library.py does.
 
     python bench/printcheck/make_printcheck.py            # STL + G-code in build/printcheck/, estimates.csv here
-    python bench/printcheck/make_printcheck.py --no-slice # copy and render only
+    python bench/printcheck/make_printcheck.py --no-slice # copy and render only (estimates.csv is left as it is)
 
 The G-code is plain text, which the MK4 accepts; it and the STLs stay out of git (.gitignore).
 """
@@ -52,6 +52,8 @@ def main():
     args = ap.parse_args()
     scad_dir = os.path.join(HERE, "scad")
     out_dir = os.path.join(ROOT, "build", "printcheck")
+    if shutil.which(SL.OPENSCAD) is None and not os.path.exists(SL.OPENSCAD):
+        raise SystemExit(f"OpenSCAD not found ({SL.OPENSCAD!r}) - install it (openscad.org) or set OPENSCAD=/path/to/openscad")
     os.makedirs(scad_dir, exist_ok=True)
     os.makedirs(out_dir, exist_ok=True)
     if not args.no_slice:
@@ -81,17 +83,21 @@ def main():
                     meta["cm3"] = float(line.split("=")[1])
                 elif line.startswith("; estimated printing time (normal mode) = "):
                     meta["time"] = line.split("=")[1].strip()
+            if "cm3" not in meta or "time" not in meta:
+                raise SystemExit(f"{gcode}: no filament or time estimate in the G-code (another PrusaSlicer version?)")
             g = meta["cm3"] * SL.PLA_G_PER_CM3
             row.update({"print_time": meta["time"], "hours": round(SL.hms(meta["time"]), 2),
                         "filament_g": round(g, 1)})
         rows.append(row)
         print(f"{pid:30s} {row.get('print_time', '-'):>12s} {row.get('filament_g', 0):7.1f} g")
+    if args.no_slice:  # without slicing there are no estimates: never overwrite the published ones with fewer columns
+        print(f"rendered {len(rows)} parts -> {out_dir}; estimates.csv not changed")
+        return
     with open(os.path.join(HERE, "estimates.csv"), "w", newline="") as fh:
         w = csv.DictWriter(fh, fieldnames=list(rows[0]))
         w.writeheader()
         w.writerows(rows)
-    if not args.no_slice:
-        print(f"total {sum(r['hours'] for r in rows):.1f} h, {sum(r['filament_g'] for r in rows):.0f} g -> {out_dir}")
+    print(f"total {sum(r['hours'] for r in rows):.1f} h, {sum(r['filament_g'] for r in rows):.0f} g -> {out_dir}")
 
 
 if __name__ == "__main__":

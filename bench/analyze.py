@@ -594,11 +594,11 @@ def fig_scale(rows, box_rows, models_meta, th, path, title, n_tasks):
     ax.grid(axis="y", color=th["grid"], linewidth=1)
     ax.set_axisbelow(True)
     ax.set_xscale("log")
-    ticks = [0.5, 1, 2, 5, 10, 20, 50, 100]
+    ticks = [0.5, 1, 2, 5, 10, 20, 50, 100, 200]
     ax.set_xticks(ticks)
     ax.set_xticklabels([f"{t:g}B" for t in ticks])
     ax.minorticks_off()
-    ax.set_xlim(0.35, 170)
+    ax.set_xlim(0.35, 300)  # room on the right for the labels of the largest models
     ax.set_ylim(-3.0, n_tasks + 0.6)  # room under the zero line for the stacked labels of the low box models
     ax.set_yticks(range(0, n_tasks + 1, 4))
     ax.set_xlabel("Total parameters (log scale)", color=th["ink2"], fontsize=9)
@@ -623,14 +623,15 @@ def fig_scale(rows, box_rows, models_meta, th, path, title, n_tasks):
         ax.scatter([total_params(r) for r in own[None]], [r["pass3"] for r in own[None]], s=46, marker="o",
                    color=th["cat"][0], label="laptop CPU, 4-bit (1 sample)", **ring)
     box = [r for r in box_rows if r["mean_pass3"] is not None and total_params(r["meta"])]
+    bars = []  # (x, low, high) of the range whiskers, kept clear of labels below
     for r in box:
         ks = [k for _, k, n in r["per_sample"] if n >= n_tasks]
         if len(ks) > 1:
             ax.vlines(total_params(r["meta"]), min(ks), max(ks), color=th["cat"][1], linewidth=1.5, zorder=2)
+            bars.append((total_params(r["meta"]), min(ks), max(ks)))
     ax.scatter([total_params(r["meta"]) for r in box], [r["mean_pass3"] for r in box], s=46, marker="s",
                color=th["cat"][1], label="Tiiny NPU box (mean of samples, range)", **ring)
-    box_labels = [(r["meta"].get("short_label") or r["label"], total_params(r["meta"]), r["mean_pass3"],
-                   total_params(r["meta"]) > 50, "data")
+    box_labels = [(r["meta"].get("short_label") or r["label"], total_params(r["meta"]), r["mean_pass3"], False, "data")
                   for r in sorted(box, key=lambda r: (-r["mean_pass3"], total_params(r["meta"])))
                   if r["mean_pass3"] > 0]  # the zero line is crowded; those models are in the table
     own_labels = []  # (text, x, y, label on the left?, coordinates), placed below once the layout is fixed
@@ -650,36 +651,73 @@ def fig_scale(rows, box_rows, models_meta, th, path, title, n_tasks):
               labelcolor=th["ink2"], handletextpad=0.4)
     fig.suptitle(title, x=0.01, ha="left", fontsize=11.5, color=th["ink"], fontweight="bold")
     fig.tight_layout()
-    # Each label goes beside its marker or, if that would overlap a label, a marker or a reference-line caption
-    # already drawn, as few lines lower (else higher) as it takes, with a leader line - measured in the final layout,
-    # so long labels cannot overprint - and inside the plot.
+    # Each label goes beside its marker, on its preferred side or else the other; if both would overlap a label, a
+    # whisker, another marker (with a margin, so a label never sits next to the wrong point) or a reference-line
+    # caption already drawn, it moves down or up half a line at a time, as little as it takes, set a little further
+    # out, with a leader line to its near end - measured in the final layout, so long labels cannot overprint - and
+    # inside the plot. Labels keep a small gap between them. A leader may not pass through a label or another marker
+    # or cross another leader, and no label may sit on a leader; where that leaves no place, the leader rules give
+    # way, never the rule against overprinting.
     renderer = fig.canvas.get_renderer()
     taken = [t.get_window_extent(renderer) for t in ax.texts]
-    half = 3.5 * fig.dpi / 72
-    for coll in (c for c in ax.collections if isinstance(c, PathCollection)):  # the markers, not the whiskers
-        for xy in coll.get_offset_transform().transform(coll.get_offsets()) if len(coll.get_offsets()) else []:
-            taken.append(mtransforms.Bbox.from_extents(xy[0] - half, xy[1] - half, xy[0] + half, xy[1] + half))
+    labels = list(taken)  # the text boxes alone: the reference-line captions, then each label as it is placed
+    w = 1.5 * fig.dpi / 72
+    for bx, lo, hi in bars:
+        (px, py0), (_, py1) = ax.transData.transform([(bx, lo), (bx, hi)])
+        taken.append(mtransforms.Bbox.from_extents(px - w, py0, px + w, py1))
+    centres = [xy for coll in ax.collections if isinstance(coll, PathCollection) and len(coll.get_offsets())
+               for xy in coll.get_offset_transform().transform(coll.get_offsets())]  # the markers
+    half, dot, gap = 8 * fig.dpi / 72, 4 * fig.dpi / 72, 1.5 * fig.dpi / 72  # margin, a marker's extent, label gap
     frame = ax.get_window_extent(renderer)
-    shifts = [0] + [-11 * d for d in range(1, 7)] + [11 * d for d in range(1, 7)]
+    shifts = [s for d in range(1, 13) for s in (-5.5 * d, 5.5 * d)]
+    leaders = []  # (marker, near end of its label) of each leader drawn, in display coordinates
+
+    def through(p, q, boxes):  # does the segment p-q pass through a box? (tested at 40 points along it)
+        return any(b.contains(p[0] + (q[0] - p[0]) * i / 40, p[1] + (q[1] - p[1]) * i / 40)
+                   for i in range(1, 40) for b in boxes)
+
+    def cross(p, q, r, s):  # do the segments p-q and r-s cross?
+        side = lambda a, b, c: (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0])  # noqa: E731
+        return side(r, s, p) * side(r, s, q) < 0 and side(p, q, r) * side(p, q, s) < 0
+
     for text, x, y, left, where in box_labels + own_labels:
-        def put(dy, arrow=False):
-            return ax.annotate(text, (x, y), xycoords=where, xytext=(-7 if left else 7, -3 + dy),
-                               textcoords="offset points", fontsize=8, color=th["ink2"], ha="right" if left else "left",
-                               arrowprops={"arrowstyle": "-", "color": th["muted"], "linewidth": 0.6} if arrow else None)
-        for dy in shifts:
-            ann = put(dy)
-            bb = ann.get_window_extent(renderer)
-            if frame.contains(bb.x0, bb.y0) and frame.contains(bb.x1, bb.y1) and not any(bb.overlaps(t) for t in taken):
-                break
+        anchor = (ax.transData if where == "data" else where).transform((x, y))
+        others = [c for c in centres if abs(c[0] - anchor[0]) > 1 or abs(c[1] - anchor[1]) > 1]
+        clear = taken + [mtransforms.Bbox.from_extents(c[0] - half, c[1] - half, c[0] + half, c[1] + half)
+                         for c in others]
+        avoid = labels + [mtransforms.Bbox.from_extents(c[0] - dot, c[1] - dot, c[0] + dot, c[1] + dot)
+                          for c in others]  # a leader may cross a whisker, not a label or a marker
+
+        def put(dy, lft, arrow=False):
+            dx = 16 if dy else 7
+            return ax.annotate(text, (x, y), xycoords=where, xytext=(-dx if lft else dx, -3 + dy),
+                               textcoords="offset points", fontsize=8, color=th["ink2"], ha="right" if lft else "left",
+                               arrowprops={"arrowstyle": "-", "color": th["muted"], "linewidth": 0.6,
+                                           "relpos": (1, 0.5) if lft else (0, 0.5)} if arrow else None)
+
+        def end(bb, lft):  # where a leader meets the label
+            return (bb.x1 if lft else bb.x0, (bb.y0 + bb.y1) / 2)
+
+        def free(bb, dy, lft, strict):
+            inside = frame.contains(bb.x0, bb.y0) and frame.contains(bb.x1, bb.y1)
+            if not inside or any(bb.overlaps(t) for t in clear) or any(bb.padded(gap).overlaps(t) for t in labels):
+                return False
+            return not strict or not (any(through(p, q, [bb]) for p, q in leaders) or dy and (
+                through(anchor, end(bb, lft), avoid) or any(cross(anchor, end(bb, lft), p, q) for p, q in leaders)))
+        cands = [(0, left), (0, not left)] + [(d, left) for d in shifts]
+        boxes = {}
+        for dy, lft in cands:
+            ann = put(dy, lft)
+            boxes[dy, lft] = ann.get_window_extent(renderer)
             ann.remove()
-        else:  # nowhere free: beside the marker after all
-            dy = 0
-            ann = put(0)
-            bb = ann.get_window_extent(renderer)
+        dy, lft = next(((dy, lft) for strict in (True, False) for dy, lft in cands
+                        if free(boxes[dy, lft], dy, lft, strict)), (0, left))  # nowhere free: beside the marker
+        bb = boxes[dy, lft]
+        put(dy, lft, arrow=bool(dy))
         if dy:
-            ann.remove()
-            put(dy, arrow=True)
+            leaders.append((anchor, end(bb, lft)))
         taken.append(bb)
+        labels.append(bb)
     fig.savefig(path, facecolor=th["surface"])
     plt.close(fig)
 

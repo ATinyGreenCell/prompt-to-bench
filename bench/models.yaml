@@ -132,7 +132,7 @@
 # thinking mode are from the Hugging Face model cards (read 2026-10-14). `thinking`: none, switchable or always.
 - id: tiiny/Qwen/Qwen3-Coder-Next
   label: Qwen3-Coder-Next 80B-A3B
-  short_label: Qwen3-Coder-Next  # Figure 6, whose x axis gives the size: the full label crossed the 27B points
+  short_label: Qwen3-Coder-Next  # Figure 7, whose x axis gives the size: the full label crossed the 27B points
   family: Qwen3-Coder
   params_b: 80
   active_b: 3

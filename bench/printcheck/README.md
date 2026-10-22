@@ -2,7 +2,7 @@
 
 Every result in the paper is a geometry check: a part passes when it matches the request. This set tests the step
 after that, on the printer. Ten parts from the held-out tasks ([`bench/heldout/`](../heldout/)), written by models in
-the R4 runs, are printed on an Original Prusa MK4 and tried with the lab items they were designed for.
+the R4 runs, are to be printed on an Original Prusa MK4 and tried with the lab items they were designed for.
 
 - **Group A, open-model passes.** Five parts that Gemma 4 26B wrote on the NPU box and the checker passed. Does a
   pass from an open model give a part that works?
@@ -36,8 +36,11 @@ Table 1. The sources are in [`scad/`](scad/), copied from the runs' saved attemp
 ## Making the files
 
 ```bash
-.venv/bin/python bench/printcheck/make_printcheck.py   # STL and G-code in build/printcheck/
+.venv/bin/python bench/printcheck/make_printcheck.py   # copies the sources to scad/ and writes estimates.csv here; STL and G-code go to build/printcheck/
 ```
+
+The PrusaSlicer flatpak sees only the home folder and removable media, so run this from a checkout under your home
+folder (from elsewhere, slicing fails with a misleading "Could not find ... PrusaResearch.ini").
 
 Each part is modelled in its print orientation, so print it as it comes, in PLA, with the stock profile. The
 strainer's 1 mm holes are at the limit of a 0.4 mm nozzle. Print it once with the stock profile; if holes close, a
@@ -48,14 +51,16 @@ finer profile is a separate, labelled print.
 - **A1-A5, B1, B2 work** (the checks passed):
   - A1: an 8-tube PCR strip drops in, all eight tubes at once, and each tube's tip rests in its cone seat.
   - A2: eight 2 mL round-bottom tubes slide in by hand and stand upright.
-  - A3: a 1.5 mL tube sits upright in the seat, its tip is visible through the window, and the stand does not tip
+  - A3: a 1.5 mL tube sits upright in the seat, its lower body shows through the window, and the stand does not tip
     on a balance pan.
   - A4: twelve 12.5 mm cuvettes slide through the deck and stand on the base plate; the front and back are open.
   - A5: the foot meets the handle at 120 degrees, and the foot lies flat on the agar in a 90 mm dish.
   - B1: the cup slides into a 50 mL tube and the collar rests on the rim. Water poured in drains through the floor.
   - B2: a 10 mL syringe slides in from the front and hangs by its finger flange; M4 screws pass the holes.
-- **C1 and C3 work anyway.** The window is 2 mm wider and taller than asked, and the puck's label flat 1 mm narrower.
-  Neither should matter in use. If they work, the checker failed parts that would have worked: its tolerances are
+- **C1 and C3 work anyway.** The window is 2 mm wider and taller than asked, and the puck's label flat is cut 1 mm
+  too far out (75 mm across the flat instead of 74). Neither should matter in use. C3's seats are where the request
+  puts them: they fail only because the checker centres a part on its bounding box, which the 1 mm flat moves by
+  0.5 mm. If they work, the checker failed parts that would have worked: its tolerances are
   stricter than use requires there.
 - **C2 does not work.** Its seats narrow upward to a 3 mm neck at z = 12 and widen again below it. Each tube should
   stop on that neck instead of reaching the bottom of the seat, so the strip sits several millimetres higher than
@@ -69,7 +74,7 @@ Calipers to 0.1 mm; nominal values are the request's. Measure holes at the top f
 |---|---|---|
 | A1, C2 | block 80 x 24 x 20; seat 6.4 mm; first-to-last seat centres 63 mm; magnet pockets 60.4 x 3.3 | strip goes in without force; height of the strip's cap hinge above the block (compare A1 and C2); magnets fit, if you have 60 x 10 x 3 mm bars |
 | A2, C3 | diameter 80; width across the flat 74 (C3: 75); height 26; seat 11.2 mm | all eight tubes go in by hand and stand upright |
-| A3, C1 | base 50; column 22; height 33; seat 11 mm; window width 4 (C1: 6) | the tube stands upright; its tip shows in the window; the stand is stable on the pan |
+| A3, C1 | base 50; column 22; height 33; seat 11 mm; window width 4 (C1: 6) | the tube stands upright; its lower body shows in the window; the stand is stable on the pan |
 | A4 | 112 x 44 x 25; hole 13 x 13; hole pitch 18 | all twelve cuvettes go in and stand upright |
 | A5 | handle 150 x 6 x 4; foot 40 x 5 x 2.5; angle 120 degrees (protractor) | the foot lies flat on agar in a 90 mm dish |
 | B1 | cup 25 outside; collar 33; floor holes open, of 81 | sits on a 50 mL tube's rim; 5 mL of water drains through |

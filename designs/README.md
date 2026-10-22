@@ -1,6 +1,6 @@
 # Design library
 
-Sixteen parametric OpenSCAD designs for biology labs, plus a printer calibration coupon. They started as the benchmark's reference solutions (frozen in [`bench/reference/`](../bench/reference/)) and were then revised for real use after a mechanical and biological audit and an adversarial review ([`meta/audits/`](../meta/audits/)). They are geometry-checked and sliced; physical print-and-fit validation is in progress. Each file:
+Sixteen parametric OpenSCAD designs for biology labs, plus a printer calibration coupon. They started as the benchmark's reference solutions (frozen in [`bench/reference/`](../bench/reference/)) and were then revised for real use after a mechanical and biological audit and an adversarial review ([`meta/audits/`](../meta/audits/)). They are geometry-checked and sliced, but not yet printed and measured systematically ([paper, §9](../README.md#9-limitations)). Each file:
 
 - is plain OpenSCAD with no libraries;
 - keeps its parameters at the top in Customizer sections, so you can change them in **Window → Customizer** without touching the code;

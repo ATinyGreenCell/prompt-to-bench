@@ -45,16 +45,27 @@ def sha256(path):
 
 
 def load(harness, run, model=None):
-    """The newest record per (model, task, sample), as r4_summary.py; records flagged needs_rerun are left out."""
+    """The newest record per (model, task, sample, feedback), as r4_summary.py; records flagged needs_rerun are left
+    out, and so are damaged lines (counted). A missing run, or one without records, is an error."""
     path = os.path.join(harness, "bench", "results", run, "results.jsonl")
-    newest = {}
-    for line in open(path) if os.path.exists(path) else []:
-        r = json.loads(line)
+    if not os.path.exists(path):
+        raise SystemExit(f"{run}: no {path}")
+    newest, bad = {}, 0
+    for line in open(path, encoding="utf-8", errors="replace"):
+        try:
+            r = json.loads(line)
+            key = (r["model"], r["task"], r["sample"], r.get("feedback", "report"))
+        except (json.JSONDecodeError, KeyError, TypeError, AttributeError):  # half-written or foreign line
+            bad += bool(line.strip())
+            continue
         if r.get("needs_rerun") or r.get("lang", "en") != "en" or (model and r["model"] != model):
             continue
-        key = (r["model"], r["task"], r["sample"])
         if key not in newest or str(r.get("finished", "")) >= str(newest[key].get("finished", "")):
             newest[key] = r
+    if bad:
+        print(f"warning: {run}: {bad} damaged line(s) skipped", file=sys.stderr)
+    if not newest:
+        raise SystemExit(f"{run}: no records" + (f" for model {model!r}" if model else ""))
     return list(newest.values())
 
 
@@ -226,8 +237,9 @@ def run_spec(a):
                   f"{tp / (tp + fp) if tp + fp else float('nan'):.2f} | {tp / (tp + fn) if tp + fn else float('nan'):.2f} |")
     for label, pre in (("first attempts", "first_"), ("all attempts", "")):
         tp, fp, fn, tn = (pool[pre + x] for x in ("tp", "fp", "fn", "tn"))
+        ratio = lambda x, n: f"{x / n:.2f}" if n else "n/a"  # noqa: E731  (0/0 is not a precision of 0)
         print(f"{label}: {tp + fp + fn + tn}, right {tp + fn}; the gate accepts {tp + fp}, of them right "
-              f"{tp / max(1, tp + fp):.2f} (precision), right parts accepted {tp / max(1, tp + fn):.2f} (recall)")
+              f"{ratio(tp, tp + fp)} (precision), right parts accepted {ratio(tp, tp + fn)} (recall)")
 
 
 def main():

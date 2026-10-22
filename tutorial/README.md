@@ -246,15 +246,16 @@ You can run a model on your own laptop, with no account and no internet once it 
    ```
 3. Chat with it in a terminal (`ollama run <model>`), or connect any OpenAI-compatible chat app or OpenSCAD's experimental AI assistant to `http://localhost:11434`.
 
-**Which model?** We tested 14 free models on a 2022 laptop without a GPU ([paper, §6](../README.md#6-results)). None passed a task. The code models (Qwen2.5-Coder) mostly wrote OpenSCAD as if it were another language; the reasoning models (Qwen3.5, Granite, LFM2.5) ran out of tokens; the Gemma 4 models (E2B, E4B) came closest, rendering most parts but rarely at the right size. If you have internet access, use a hosted chatbot. If you don't, a Gemma 4 model plus the starter prompt can draft code that you then fix by hand - which is also a fine way to learn OpenSCAD.
+**Which model?** We tested 14 free models on a 2022 laptop without a GPU ([paper, §6](../README.md#6-results)). None passed a task. The code models (Qwen2.5-Coder) mostly wrote OpenSCAD as if it were another language; the reasoning models (Qwen3.5, Granite, LFM2.5) ran out of tokens; the Gemma 4 models (E2B, E4B) came closest, rendering most parts but rarely at the right size. Since then, a 27-billion-parameter model compressed to fit the same laptop (Ternary Bonsai 2 27B, run with a modified llama.cpp, not Ollama) passed 2 of the 16 tasks, slowly (a median of 24 minutes a task; [paper, §6.1](../README.md#61-overall)). On a desktop NPU box, the open Gemma 4 26B passed about half of them ([§6.5](../README.md#65-larger-open-models-on-an-npu-box)), but only about a quarter of 16 new tasks ([§6.7](../README.md#67-new-tasks)). If you have internet access, use a hosted chatbot. If you don't, a Gemma 4 model plus the starter prompt can draft code that you then fix by hand - which is also a fine way to learn OpenSCAD.
 
-**Things to try with small models** (we have not measured whether they help):
+**Things to try with small models** (most of these we have not measured; see the last point):
 
 - Use the starter prompt from Part 2, and one part per chat.
 - Give every number. Small models cannot fill gaps sensibly.
 - Ask for one feature at a time ("first the block with holes; then we add the chamfer").
 - Always paste the error messages or the `scadreport` back. If the model returns the same broken file twice, start a fresh chat.
 - Writing in your own language is fine for hosted models: our test (one hosted model) found no clear difference between English, Spanish, Hindi and Swahili requests. We have not tested whether mixing in English geometry words helps small models.
+- Two ideas we did measure ([paper, §6.4](../README.md#64-fine-tuning-a-local-model-on-verified-synthetic-data) and [§6.6](../README.md#66-cheaper-fixes-for-small-models)): a prompt with OpenSCAD rules and two worked examples helped an untuned 9B model as much as fine-tuning did, and for two laptop methods whose models barely use feedback, a fresh try did as well as another repair. Neither made a laptop model reliable.
 
 ## Part 9. Share what you made
 

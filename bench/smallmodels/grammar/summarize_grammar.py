@@ -10,7 +10,7 @@ import os
 import statistics
 import sys
 
-RESULTS = "/home/seb/printpaper/bench/results"
+RESULTS = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "results")
 PAIRS = [("qwen2.5-coder-7b-llamacpp", "grammar-off", "grammar-on"), ("bonsai2-27b-pq2_0", "main-bonsai", "grammar-on")]
 
 
