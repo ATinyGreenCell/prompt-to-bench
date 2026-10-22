@@ -1,0 +1,23 @@
+// Dimensions
+base_length = 90; // X
+base_width = 45; // Y
+base_height = 20; // Z
+slot_length = 77; // X
+slot_width = 1.6; // Y
+slot_depth = 10; // Z
+slot_spacing = 3.5; // Y
+
+// Create the base block
+base = cube([base_length, base_width, base_height]);
+
+// Create the slots
+slots = for (i = [0:9]) translate([(base_length - slot_length) / 2 + i * (slot_length + slot_spacing), (base_width - slot_width) / 2, 0]) cylinder(r = slot_width / 2, h = slot_depth + 0.01, $fn = 64);
+
+// Cut the slots into the base
+drying_rack = difference() {
+    base;
+    slots;
+};
+
+// Render the final model
+render(drying_rack);

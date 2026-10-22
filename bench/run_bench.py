@@ -298,9 +298,19 @@ class ClaudeCLI:
         shutil.rmtree(self.cwd, ignore_errors=True)
 
 
+def method_model(name):
+    """`template:<model>` or `features:<model>` (bench/smallmodels): the Ollama model inside a method, else None."""
+    head, _, rest = name.partition(":")
+    return rest if head in ("template", "features") and rest else None
+
+
 def make_backend(name, temperature, seed, num_predict=2048, think=False, num_ctx=8192):
     if name.startswith("claude:"):
         return ClaudeCLI(name.split(":", 1)[1])
+    if method_model(name):  # the model fills in JSON and the method builds the file (bench/smallmodels)
+        sys.path.insert(0, os.path.join(HERE, "smallmodels"))
+        import plugins
+        return plugins.make(name, temperature, seed, num_ctx=num_ctx, think=think, infra_error=InfraError)
     return Ollama(name, temperature, seed, num_ctx=num_ctx, num_predict=num_predict, think=think)
 
 
@@ -522,7 +532,7 @@ def main():
         if all((model, t["id"], s, args.lang, args.feedback) in done for s in range(args.samples) for t in tasks):
             continue  # finished already: no need for the model to still be installed
         if not model.startswith("claude:"):
-            ollama_ready(model)
+            ollama_ready(method_model(model) or model)
         safe = re.sub(r"[^A-Za-z0-9._-]+", "_", model)
         code_dir = os.path.join(out_dir, "code", safe)
         os.makedirs(code_dir, exist_ok=True)

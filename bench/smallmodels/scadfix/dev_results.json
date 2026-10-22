@@ -1,0 +1,566 @@
+{
+ "by_kind": {
+  "first": {
+   "attempts": 12192,
+   "fired": 258,
+   "render_before": 11412,
+   "watertight_before": 11259,
+   "pass_before": 7303,
+   "render_after": 11586,
+   "watertight_after": 11409,
+   "pass_after": 7314
+  },
+  "first_fired_only": {
+   "attempts": 258,
+   "fired": 258,
+   "render_before": 0,
+   "watertight_before": 0,
+   "pass_before": 0,
+   "render_after": 174,
+   "watertight_after": 150,
+   "pass_after": 11
+  },
+  "repair": {
+   "attempts": 4020,
+   "fired": 237,
+   "render_before": 3411,
+   "watertight_before": 3298,
+   "pass_before": 64,
+   "render_after": 3558,
+   "watertight_after": 3428,
+   "pass_after": 72
+  },
+  "repair_fired_only": {
+   "attempts": 237,
+   "fired": 237,
+   "render_before": 0,
+   "watertight_before": 0,
+   "pass_before": 0,
+   "render_after": 147,
+   "watertight_after": 130,
+   "pass_after": 8
+  }
+ },
+ "by_file": {
+  "attempts_v11_ch.jsonl": {
+   "attempts": 400,
+   "fired": 39,
+   "render_before": 269,
+   "watertight_before": 269,
+   "pass_before": 6,
+   "render_after": 274,
+   "watertight_after": 270,
+   "pass_after": 6
+  },
+  "attempts_v11s1_ch.jsonl": {
+   "attempts": 400,
+   "fired": 21,
+   "render_before": 344,
+   "watertight_before": 341,
+   "pass_before": 10,
+   "render_after": 362,
+   "watertight_after": 359,
+   "pass_after": 11
+  },
+  "attempts_v5.jsonl": {
+   "attempts": 6000,
+   "fired": 7,
+   "render_before": 5878,
+   "watertight_before": 5830,
+   "pass_before": 5131,
+   "render_after": 5885,
+   "watertight_after": 5836,
+   "pass_after": 5134
+  },
+  "attempts_v5_c.jsonl": {
+   "attempts": 1348,
+   "fired": 66,
+   "render_before": 1197,
+   "watertight_before": 1164,
+   "pass_before": 517,
+   "render_after": 1254,
+   "watertight_after": 1219,
+   "pass_after": 518
+  },
+  "attempts_v5s1_c.jsonl": {
+   "attempts": 1348,
+   "fired": 35,
+   "render_before": 1238,
+   "watertight_before": 1219,
+   "pass_before": 579,
+   "render_after": 1256,
+   "watertight_after": 1235,
+   "pass_after": 579
+  },
+  "attempts_v9_c.jsonl": {
+   "attempts": 1348,
+   "fired": 57,
+   "render_before": 1221,
+   "watertight_before": 1195,
+   "pass_before": 531,
+   "render_after": 1260,
+   "watertight_after": 1219,
+   "pass_after": 534
+  },
+  "attempts_v9s1_c.jsonl": {
+   "attempts": 1348,
+   "fired": 33,
+   "render_before": 1265,
+   "watertight_before": 1241,
+   "pass_before": 529,
+   "render_after": 1295,
+   "watertight_after": 1271,
+   "pass_after": 532
+  },
+  "repair_t02_v11ch.jsonl": {
+   "attempts": 394,
+   "fired": 37,
+   "render_before": 279,
+   "watertight_before": 278,
+   "pass_before": 1,
+   "render_after": 285,
+   "watertight_after": 280,
+   "pass_after": 1
+  },
+  "repair_t02_v11s1ch.jsonl": {
+   "attempts": 390,
+   "fired": 34,
+   "render_before": 305,
+   "watertight_before": 296,
+   "pass_before": 14,
+   "render_after": 329,
+   "watertight_after": 319,
+   "pass_after": 15
+  },
+  "repair_t02_v5c.jsonl": {
+   "attempts": 831,
+   "fired": 49,
+   "render_before": 703,
+   "watertight_before": 667,
+   "pass_before": 1,
+   "render_after": 743,
+   "watertight_after": 707,
+   "pass_after": 2
+  },
+  "repair_t02_v5s1c.jsonl": {
+   "attempts": 769,
+   "fired": 34,
+   "render_before": 664,
+   "watertight_before": 644,
+   "pass_before": 2,
+   "render_after": 681,
+   "watertight_after": 659,
+   "pass_after": 2
+  },
+  "repair_t02_v9c.jsonl": {
+   "attempts": 817,
+   "fired": 51,
+   "render_before": 709,
+   "watertight_before": 681,
+   "pass_before": 17,
+   "render_after": 740,
+   "watertight_after": 702,
+   "pass_after": 20
+  },
+  "repair_t02_v9s1c.jsonl": {
+   "attempts": 819,
+   "fired": 32,
+   "render_before": 751,
+   "watertight_before": 732,
+   "pass_before": 29,
+   "render_after": 780,
+   "watertight_after": 761,
+   "pass_after": 32
+  }
+ },
+ "by_rule": {
+  "first": {
+   "rotate_vector": {
+    "attempts": 52,
+    "fired": 52,
+    "render_before": 0,
+    "watertight_before": 0,
+    "pass_before": 0,
+    "render_after": 16,
+    "watertight_after": 5,
+    "pass_after": 0
+   },
+   "python_comprehension": {
+    "attempts": 85,
+    "fired": 85,
+    "render_before": 0,
+    "watertight_before": 0,
+    "pass_before": 0,
+    "render_after": 79,
+    "watertight_after": 79,
+    "pass_after": 6
+   },
+   "function_block": {
+    "attempts": 25,
+    "fired": 25,
+    "render_before": 0,
+    "watertight_before": 0,
+    "pass_before": 0,
+    "render_after": 12,
+    "watertight_after": 10,
+    "pass_after": 1
+   },
+   "dotdot_range": {
+    "attempts": 5,
+    "fired": 5,
+    "render_before": 0,
+    "watertight_before": 0,
+    "pass_before": 0,
+    "render_after": 5,
+    "watertight_after": 5,
+    "pass_after": 0
+   },
+   "python_continue": {
+    "attempts": 13,
+    "fired": 13,
+    "render_before": 0,
+    "watertight_before": 0,
+    "pass_before": 0,
+    "render_after": 13,
+    "watertight_after": 13,
+    "pass_after": 1
+   },
+   "geometry_in_place": {
+    "attempts": 6,
+    "fired": 6,
+    "render_before": 0,
+    "watertight_before": 0,
+    "pass_before": 0,
+    "render_after": 1,
+    "watertight_after": 1,
+    "pass_after": 0
+   },
+   "pipe_comprehension": {
+    "attempts": 4,
+    "fired": 4,
+    "render_before": 0,
+    "watertight_before": 0,
+    "pass_before": 0,
+    "render_after": 3,
+    "watertight_after": 2,
+    "pass_after": 1
+   },
+   "python_tuples": {
+    "attempts": 19,
+    "fired": 19,
+    "render_before": 0,
+    "watertight_before": 0,
+    "pass_before": 0,
+    "render_after": 18,
+    "watertight_after": 17,
+    "pass_after": 0
+   },
+   "python_for_in": {
+    "attempts": 26,
+    "fired": 26,
+    "render_before": 0,
+    "watertight_before": 0,
+    "pass_before": 0,
+    "render_after": 26,
+    "watertight_after": 26,
+    "pass_after": 1
+   },
+   "comprehension_let": {
+    "attempts": 6,
+    "fired": 6,
+    "render_before": 0,
+    "watertight_before": 0,
+    "pass_before": 0,
+    "render_after": 0,
+    "watertight_after": 0,
+    "pass_after": 0
+   },
+   "python_in": {
+    "attempts": 5,
+    "fired": 5,
+    "render_before": 0,
+    "watertight_before": 0,
+    "pass_before": 0,
+    "render_after": 5,
+    "watertight_after": 5,
+    "pass_after": 0
+   },
+   "function_if_else": {
+    "attempts": 21,
+    "fired": 21,
+    "render_before": 0,
+    "watertight_before": 0,
+    "pass_before": 0,
+    "render_after": 15,
+    "watertight_after": 11,
+    "pass_after": 2
+   },
+   "function_keyword": {
+    "attempts": 1,
+    "fired": 1,
+    "render_before": 0,
+    "watertight_before": 0,
+    "pass_before": 0,
+    "render_after": 1,
+    "watertight_after": 1,
+    "pass_after": 0
+   },
+   "range_brackets": {
+    "attempts": 4,
+    "fired": 4,
+    "render_before": 0,
+    "watertight_before": 0,
+    "pass_before": 0,
+    "render_after": 4,
+    "watertight_after": 4,
+    "pass_after": 0
+   },
+   "geometry_inline": {
+    "attempts": 2,
+    "fired": 2,
+    "render_before": 0,
+    "watertight_before": 0,
+    "pass_before": 0,
+    "render_after": 1,
+    "watertight_after": 1,
+    "pass_after": 0
+   },
+   "bracketless_comprehension": {
+    "attempts": 1,
+    "fired": 1,
+    "render_before": 0,
+    "watertight_before": 0,
+    "pass_before": 0,
+    "render_after": 1,
+    "watertight_after": 1,
+    "pass_after": 0
+   },
+   "list_semicolons": {
+    "attempts": 23,
+    "fired": 23,
+    "render_before": 0,
+    "watertight_before": 0,
+    "pass_before": 0,
+    "render_after": 13,
+    "watertight_after": 1,
+    "pass_after": 0
+   },
+   "unicode_operators": {
+    "attempts": 1,
+    "fired": 1,
+    "render_before": 0,
+    "watertight_before": 0,
+    "pass_before": 0,
+    "render_after": 1,
+    "watertight_after": 1,
+    "pass_after": 0
+   },
+   "function_literal_equals": {
+    "attempts": 1,
+    "fired": 1,
+    "render_before": 0,
+    "watertight_before": 0,
+    "pass_before": 0,
+    "render_after": 1,
+    "watertight_after": 1,
+    "pass_after": 0
+   }
+  },
+  "repair": {
+   "rotate_vector": {
+    "attempts": 59,
+    "fired": 59,
+    "render_before": 0,
+    "watertight_before": 0,
+    "pass_before": 0,
+    "render_after": 18,
+    "watertight_after": 7,
+    "pass_after": 0
+   },
+   "python_comprehension": {
+    "attempts": 81,
+    "fired": 81,
+    "render_before": 0,
+    "watertight_before": 0,
+    "pass_before": 0,
+    "render_after": 75,
+    "watertight_after": 75,
+    "pass_after": 5
+   },
+   "function_block": {
+    "attempts": 25,
+    "fired": 25,
+    "render_before": 0,
+    "watertight_before": 0,
+    "pass_before": 0,
+    "render_after": 12,
+    "watertight_after": 10,
+    "pass_after": 0
+   },
+   "python_continue": {
+    "attempts": 14,
+    "fired": 14,
+    "render_before": 0,
+    "watertight_before": 0,
+    "pass_before": 0,
+    "render_after": 14,
+    "watertight_after": 14,
+    "pass_after": 1
+   },
+   "python_tuples": {
+    "attempts": 2,
+    "fired": 2,
+    "render_before": 0,
+    "watertight_before": 0,
+    "pass_before": 0,
+    "render_after": 1,
+    "watertight_after": 1,
+    "pass_after": 0
+   },
+   "dotdot_range": {
+    "attempts": 5,
+    "fired": 5,
+    "render_before": 0,
+    "watertight_before": 0,
+    "pass_before": 0,
+    "render_after": 5,
+    "watertight_after": 5,
+    "pass_after": 0
+   },
+   "geometry_in_place": {
+    "attempts": 5,
+    "fired": 5,
+    "render_before": 0,
+    "watertight_before": 0,
+    "pass_before": 0,
+    "render_after": 0,
+    "watertight_after": 0,
+    "pass_after": 0
+   },
+   "python_for_in": {
+    "attempts": 30,
+    "fired": 30,
+    "render_before": 0,
+    "watertight_before": 0,
+    "pass_before": 0,
+    "render_after": 30,
+    "watertight_after": 30,
+    "pass_after": 1
+   },
+   "comprehension_let": {
+    "attempts": 7,
+    "fired": 7,
+    "render_before": 0,
+    "watertight_before": 0,
+    "pass_before": 0,
+    "render_after": 0,
+    "watertight_after": 0,
+    "pass_after": 0
+   },
+   "pipe_comprehension": {
+    "attempts": 6,
+    "fired": 6,
+    "render_before": 0,
+    "watertight_before": 0,
+    "pass_before": 0,
+    "render_after": 5,
+    "watertight_after": 5,
+    "pass_after": 0
+   },
+   "python_in": {
+    "attempts": 3,
+    "fired": 3,
+    "render_before": 0,
+    "watertight_before": 0,
+    "pass_before": 0,
+    "render_after": 3,
+    "watertight_after": 3,
+    "pass_after": 0
+   },
+   "function_if_else": {
+    "attempts": 16,
+    "fired": 16,
+    "render_before": 0,
+    "watertight_before": 0,
+    "pass_before": 0,
+    "render_after": 10,
+    "watertight_after": 8,
+    "pass_after": 2
+   },
+   "function_keyword": {
+    "attempts": 3,
+    "fired": 3,
+    "render_before": 0,
+    "watertight_before": 0,
+    "pass_before": 0,
+    "render_after": 2,
+    "watertight_after": 1,
+    "pass_after": 0
+   },
+   "range_brackets": {
+    "attempts": 3,
+    "fired": 3,
+    "render_before": 0,
+    "watertight_before": 0,
+    "pass_before": 0,
+    "render_after": 3,
+    "watertight_after": 3,
+    "pass_after": 0
+   },
+   "geometry_inline": {
+    "attempts": 2,
+    "fired": 2,
+    "render_before": 0,
+    "watertight_before": 0,
+    "pass_before": 0,
+    "render_after": 1,
+    "watertight_after": 1,
+    "pass_after": 0
+   },
+   "list_semicolons": {
+    "attempts": 16,
+    "fired": 16,
+    "render_before": 0,
+    "watertight_before": 0,
+    "pass_before": 0,
+    "render_after": 6,
+    "watertight_after": 0,
+    "pass_after": 0
+   },
+   "python_operators": {
+    "attempts": 1,
+    "fired": 1,
+    "render_before": 0,
+    "watertight_before": 0,
+    "pass_before": 0,
+    "render_after": 1,
+    "watertight_after": 1,
+    "pass_after": 0
+   },
+   "unicode_operators": {
+    "attempts": 1,
+    "fired": 1,
+    "render_before": 0,
+    "watertight_before": 0,
+    "pass_before": 0,
+    "render_after": 1,
+    "watertight_after": 1,
+    "pass_after": 0
+   },
+   "function_literal_equals": {
+    "attempts": 1,
+    "fired": 1,
+    "render_before": 0,
+    "watertight_before": 0,
+    "pass_before": 0,
+    "render_after": 1,
+    "watertight_after": 1,
+    "pass_after": 0
+   }
+  }
+ },
+ "references_that_do_not_measure": 0,
+ "scadfix_version": "1.0",
+ "rule_errors": [],
+ "seconds": 3081
+}

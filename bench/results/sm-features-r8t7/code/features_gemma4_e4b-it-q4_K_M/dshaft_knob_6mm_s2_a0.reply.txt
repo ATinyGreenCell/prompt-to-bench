@@ -1,0 +1,16 @@
+Features: {"bodies": [{"solids": [{"shape": "cylinder", "d": 30, "h": 15, "at": [0, 0, 0]}], "cuts": [{"cut": "hole", "d": 6.2, "depth": 12, "at": [0, 0]}, {"cut": "pocket", "size": [2, 30], "depth": 15, "at": [0, 0]}, {"cut": "slot", "width": 1.5, "length": 15, "depth": 1, "at": [0, 0]}]}]}
+
+```openscad
+// Built by bench/smallmodels/features/compiler.py from a list of features.
+$fn = 64;
+difference() {
+  union() {
+    translate([0, 0, 0]) cylinder(d = 30, h = 15);
+  }
+  union() {
+    translate([0, 0, 2.99]) rotate([0, 0, 0]) cylinder(d = 6.2, h = 12.02);
+    translate([0, 0, -0.01]) rotate([0, 0, 0]) translate([-1, -15, 0]) cube([2, 30, 15.02]);
+    translate([0, 0, 13.99]) rotate([0, 0, 0]) hull() { for (s = [-1, 1]) translate([s * 6.75, 0, 0]) cylinder(d = 1.5, h = 1.02); }
+  }
+}
+```

@@ -1,0 +1,25 @@
+Features: {"bodies": [{"solids": [{"shape": "box", "size": [50, 45, 5], "at": [-25, 0, 0]}, {"shape": "box", "size": [50, 5, 50], "at": [-25, 0, 0]}], "cuts": [{"cut": "side_hole", "d": 4.5, "axis": "x", "z": 3.75, "at": [-17, 30]}, {"cut": "side_hole", "d": 4.5, "axis": "x", "z": 3.75, "at": [17, 30]}]}, {"solids": [{"shape": "box", "size": [50, 5, 50], "at": [-25, 0, 0]}], "cuts": [{"cut": "hole", "d": 23, "depth": 5, "at": [0, 17.5]}, {"cut": "box", "size": [3.4, 31, 31], "at": [0, 17.5, 28]}]}]}
+
+```openscad
+// Built by bench/smallmodels/features/compiler.py from a list of features.
+$fn = 64;
+difference() {
+  union() {
+    translate([-25, 0, 0]) translate([-25, -22.5, 0]) cube([50, 45, 5]);
+    translate([-25, 0, 0]) translate([-25, -2.5, 0]) cube([50, 5, 50]);
+  }
+  union() {
+    translate([-17, 30, 3.75]) rotate([0, 0, 0]) rotate([0, 90, 0]) cylinder(d = 4.5, h = 1200, center = true);
+    translate([17, 30, 3.75]) rotate([0, 0, 0]) rotate([0, 90, 0]) cylinder(d = 4.5, h = 1200, center = true);
+  }
+}
+difference() {
+  union() {
+    translate([-25, 0, 0]) translate([-25, -2.5, 0]) cube([50, 5, 50]);
+  }
+  union() {
+    translate([0, 17.5, 44.99]) rotate([0, 0, 0]) cylinder(d = 23, h = 5.02);
+    translate([0, 17.5, 28]) rotate([0, 0, 0]) translate([-1.7, -15.5, 0]) cube([3.4, 31, 31]);
+  }
+}
+```

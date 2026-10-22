@@ -1,0 +1,100 @@
+```openscad
+// Dimensions
+$fn = 64;
+outer_x = 120;
+outer_y = 70;
+outer_z = 40;
+wall_thickness = 3;
+floor_thickness = 3;
+platform_length = 60;
+platform_height = 10;
+buffer_chamber_height = outer_z - floor_thickness - platform_height;
+hole_diameter = 2;
+
+// Calculate inner dimensions
+inner_x = outer_x - 2 * wall_thickness;
+inner_y = outer_y - 2 * wall_thickness;
+inner_z = outer_z - 2 * floor_thickness;
+
+// Create the tank
+tank = cube_size([outer_x, outer_y, outer_z]);
+
+// Create the floor
+floor = cube_size([inner_x, inner_y, floor_thickness]);
+floor = translate_by([wall_thickness, wall_thickness, 0])(floor);
+
+// Create the platform
+platform = cube_size([platform_length, inner_y, platform_height]);
+platform = translate_by([wall_thickness + (inner_x - platform_length) / 2, wall_thickness, floor_thickness])(platform);
+
+// Create the buffer chambers
+buffer_chamber = cube_size([inner_x, inner_y, buffer_chamber_height]);
+buffer_chamber = translate_by([wall_thickness, wall_thickness, floor_thickness + platform_height])(buffer_chamber);
+
+// Create the holes
+hole = cylinder_d(hole_diameter, h = buffer_chamber_height + 1);
+hole = translate_by([wall_thickness, 0, floor_thickness + platform_height])(hole);
+hole = difference_buffer(hole, 0.05);
+
+// Combine the parts
+buffer_tank = union_all([tank, floor, platform, buffer_chamber, hole, hole]);
+
+// Function to create a difference with a buffer
+difference_buffer(object, buffer) {
+    returndifference() {
+        object
+        (object + translate_by([buffer, buffer, buffer])) *  # Translate  (object + buffer) in   (+buffer, +buffer, +buffer)
+        object
+    (object - translate_by([buffer, buffer, buffer])) *  # Translate  (object - buffer) in  (+buffer, +buffer, +buffer)
+    object
+    (object + translate_by([-buffer, -buffer, -buffer])) *  # Translate  (object + buffer) in  (-buffer, -buffer, -buffer)
+    object
+    (object - translate_by([-buffer, -buffer, -buffer])) *  # Translate  (object - buffer) in  (-buffer, -buffer, -buffer)
+    object
+    (object + translate_by([buffer, -buffer, buffer])) *  # Translate  (object + buffer) in  (+buffer, -buffer, +buffer)
+    object
+    (object - translate_by([buffer, -buffer, buffer])) *  # Translate  (object - buffer) in  (+buffer, -buffer, +buffer)
+    object
+    (object + translate_by([-buffer, buffer, buffer])) *  # Translate  (object + buffer) in  (-buffer, +buffer, +buffer)
+    object
+    (object - translate_by([-buffer, buffer, buffer])) *  # Translate  (object - buffer) in  (-buffer, +buffer, +buffer)
+    object
+    (object + translate_by([buffer, buffer, -buffer])) *  # Translate  (object + buffer) in  (+buffer, +buffer, -buffer)
+    object
+    (object - translate_by([buffer, buffer, -buffer])) *  # Translate  (object - buffer) in  (+buffer, +buffer, -buffer)
+    object
+    (object + translate_by([-buffer, -buffer, -buffer])) *  # Translate  (object + buffer) in  (-buffer, -buffer, -buffer)
+    object
+    (object - translate_by([-buffer, -buffer, -buffer])) *  # Translate  (object - buffer) in  (-buffer, -buffer, -buffer)
+    object
+    (object + translate_by([buffer, -buffer, -buffer])) *  # Translate  (object + buffer) in  (+buffer, -buffer, -buffer)
+    object
+    (object - translate_by([buffer, -buffer, -buffer])) *  # Translate  (object - buffer) in  (+buffer, -buffer, -buffer)
+    object
+    (object + translate_by([-buffer, buffer, -buffer])) *  # Translate  (object + buffer) in  (-buffer, +buffer, -buffer)
+    object
+    (object - translate_by([-buffer, buffer, -buffer])) *  # Translate  (object - buffer) in  (-buffer, +buffer, -buffer)
+    object
+    (object + translate_by([buffer, buffer, buffer])) *  # Translate  (object + buffer) in  (+buffer, +buffer, +buffer)
+    object
+    (object - translate_by([buffer, buffer, buffer])) *  # Translate  (object - buffer) in  (+buffer, +buffer, +buffer)
+    object
+    (object + translate_by([-buffer, -buffer, buffer])) *  # Translate  (object + buffer) in  (-buffer, -buffer, +buffer)
+    object
+    (object - translate_by([-buffer, -buffer, buffer])) *  # Translate  (object - buffer) in  (-buffer, -buffer, +buffer)
+    object
+    (object + translate_by([buffer, -buffer, buffer])) *  # Translate  (object + buffer) in  (+buffer, -buffer, +buffer)
+    object
+    (object - translate_by([buffer, -buffer, buffer])) *  # Translate  (object - buffer) in  (+buffer, -buffer, +buffer)
+    object
+    (object + translate_by([-buffer, buffer, buffer])) *  # Translate  (object + buffer) in  (-buffer, +buffer, +buffer)
+    object
+    (object - translate_by([-buffer, buffer, buffer])) *  # Translate  (object - buffer) in  (-buffer, +buffer, +buffer)
+    object
+    (object + translate_by([buffer, buffer, -buffer])) *  # Translate  (object + buffer) in  (+buffer, +buffer, -buffer)
+    object
+    (object - translate_by([buffer, buffer, -buffer])) *  # Translate  (object - buffer) in  (+buffer, +buffer, -buffer)
+    object
+    (object + translate_by([-buffer, -buffer, -buffer])) *  # Translate  (object + buffer) in  (-buffer, -buffer, -buffer)
+    object
+    (object -

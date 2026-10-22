@@ -1,0 +1,70 @@
+// Housing for a DIY magnetic stirrer built from an 80 mm PC case fan.
+// Modelled in print orientation (upside down): the 2 mm top plate lies on the bed
+// (z = 0 to 2) and four 2.5 mm walls rise from it to z = 40, where the box is open.
+
+$fn = 64;
+
+// ---- Dimensions (mm) ----
+outer_x   = 90;   // outer size in X
+outer_y   = 90;   // outer size in Y
+wall_t    = 2.5;  // wall thickness
+top_t     = 2;    // top plate thickness (lies on the bed in print orientation)
+wall_h    = 40;   // total height of the walls (z = 0 to 40)
+
+hole_d    = 4.5;  // M4 clearance hole diameter in the top plate
+hole_pitch= 71.5; // square pitch of the four mounting holes, centred on the plate
+
+notch_w   = 12;   // width of the power-cable notch
+notch_top = 40;   // top of the notch (open edge of the box)
+notch_bot = 32;   // bottom of the notch (8 mm down from the open edge)
+
+// ---- Base: 2 mm top plate on the bed (z = 0 to 2) ----
+module top_plate() {
+    translate([-outer_x/2, -outer_y/2, 0])
+        cube([outer_x, outer_y, top_t]);
+}
+
+// ---- Four walls rising from the plate to z = 40 ----
+module walls() { union() {
+    // Front wall (negative Y side)
+    translate([-outer_x/2, -outer_y/2, 0])
+        cube([outer_x, wall_t, wall_h]);
+
+    // Back wall (positive Y side)
+    translate([-outer_x/2, outer_y/2 - wall_t, 0])
+        cube([outer_x, wall_t, wall_h]);
+
+    // Left wall (negative X side)
+    translate([-outer_x/2, -outer_y/2 + wall_t, 0])
+        cube([wall_t, outer_y - 2*wall_t, wall_h]);
+
+    // Right wall (positive X side)
+    translate([outer_x/2 - wall_t, -outer_y/2 + wall_t, 0])
+        cube([wall_t, outer_y - 2*wall_t, wall_h]);
+} }
+
+// ---- Four M4 clearance holes through the top plate ----
+// 71.5 mm square pattern centred on the plate; each hole is 4.5 mm in diameter.
+// The cylinders extend 0.5 mm past each face of the 2 mm plate so no faces are coplanar.
+module holes() { for (sx = [-1, 1], sy = [-1, 1])
+    translate([sx * hole_pitch/2, sy * hole_pitch/2, -0.5])
+        cylinder(h = top_t + 1.0, d = hole_d, $fn = 64); }
+
+// ---- Power-cable notch in one wall (front wall, negative Y side) ----
+// 12 mm wide, centred along the wall, from z = 32 to z = 40.
+// The cutter starts at the wall's outer face (y = -outer_y/2) and extends 1 mm
+// past the inner face, so it spans the full wall thickness and removes the notch.
+module notch_cutter() {
+    translate([-notch_w/2, -outer_y/2, notch_bot])
+        cube([notch_w, wall_t + 1.0, notch_top - notch_bot + 1.0]);
+}
+
+// ---- Final solid ----
+difference() {
+    union() {
+        top_plate();
+        walls();
+    }
+    holes();
+    notch_cutter();
+}

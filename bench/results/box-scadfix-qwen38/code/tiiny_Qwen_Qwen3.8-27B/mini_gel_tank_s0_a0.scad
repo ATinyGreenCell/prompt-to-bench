@@ -1,0 +1,53 @@
+// Buffer tank for a mini horizontal gel-electrophoresis box
+// Print orientation: rests on XY plane at z = 0, builds upward (+Z), centred on origin in X and Y.
+
+// ---- Outer envelope ----
+L = 120;   // outer length along X
+W = 70;    // outer width  along Y
+H = 40;    // outer height along Z
+
+// ---- Wall / floor thickness ----
+t = 3;     // uniform wall and floor thickness
+
+// ---- Inner cavity (open top) ----
+Li = L - 2*t;   // 114 mm inner length
+Wi = W - 2*t;   //  64 mm inner width
+Hi = H - t;     //  37 mm inner depth (floor top at z = 3)
+
+// ---- Central gel-tray platform ----
+pL = 60;        // platform length along X (centred)
+pH = 10;        // platform height above the inner floor (top at z = 13)
+
+// ---- Electrode-wire holes (through both X end walls) ----
+d  = 2;         // hole diameter
+hy = 0;         // hole centre Y (on the centreline)
+hz = 30;        // hole centre Z
+
+$fn = 64;       // round holes
+
+// ---- Base solid: outer box minus inner cavity (open top) ----
+module tank() { difference() {
+    cube([L, W, H], center = true);
+    // cavity extends 1 mm past the top so the top face is fully open
+    translate([-Li/2, -Wi/2, t])
+        cube([Li, Wi, Hi + 1]);
+} }
+
+// ---- Solid raised platform (spans full inner width, centred in X) ----
+module platform() { translate([0, 0, t])
+    cube([pL, Wi, pH], center = true); }
+
+// ---- Electrode-wire holes: cylinders along X, extended 1 mm past each end wall ----
+module wire_holes() { for (sx = [-1, 1])
+    translate([sx * (L/2 + 1), hy, hz])
+        rotate([0, 90, 0])
+            cylinder(h = L + 2, r = d/2, center = true); }
+
+// ---- Final part ----
+difference() {
+    union() {
+        tank();
+        platform();
+    }
+    wire_holes();
+}

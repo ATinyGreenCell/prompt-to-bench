@@ -1,0 +1,43 @@
+// 10-well agarose gel comb, printed flat (Z = thickness)
+
+// --- Named dimensions (mm) ---
+plate_thick   = 1.5;   // Z thickness of the whole comb
+spine_len     = 70.0;  // X length of the back bar (spine)
+spine_width   = 12.0;  // Y width of the back bar
+tooth_w       = 5.0;   // X width of each tooth
+tooth_len     = 12.0;  // Y length of each tooth (hangs in -Y from the spine)
+gap           = 1.5;   // X gap between neighbouring teeth
+n_teeth       = 10;    // number of teeth
+
+// Derived layout values
+tooth_pitch   = tooth_w + gap;                       // centre-to-centre spacing in X
+row_width     = n_teeth * tooth_w + (n_teeth - 1) * gap; // total X span of the tooth row
+row_x0        = -row_width / 2;                      // left edge of the tooth row (centred on X)
+
+// Spine occupies Y in [0, spine_width].
+// Teeth hang in -Y but are extended INTO the spine (overlap) so the gaps
+// between teeth cut through the spine and form 10 real slots.
+tooth_y0      = -tooth_len;                          // tooth tip (lowest Y)
+tooth_y1      =  1.0;                                // tooth top (inside the spine)
+
+// Shift the whole part in Y so the lowest point (tooth tips) sits at Y = 0.
+y_offset      = -tooth_y0;   // = tooth_len
+
+$fn = 64;
+
+// Build in local coords (spine Y 0..spine_width, teeth Y tooth_y0..tooth_y1),
+// then translate +Y so the part rests on the bed with its lowest face at Y = 0.
+translate([0, y_offset, 0])
+union() {
+    // Back bar (spine)
+    translate([-spine_len/2, 0, 0])
+        cube([spine_len, spine_width, plate_thick], center=[true, false, false]);
+
+    // 10 rectangular teeth, centred as a row on the spine in X
+    for (i = [0 : n_teeth-1]) {
+        x_c = row_x0 + tooth_w/2 + i * tooth_pitch;   // centre X of tooth i
+        y_c = (tooth_y0 + tooth_y1) / 2;             // centre Y of tooth i
+        translate([x_c, y_c, 0])
+            cube([tooth_w, tooth_y1 - tooth_y0, plate_thick], center=[true, true, false]);
+    }
+}

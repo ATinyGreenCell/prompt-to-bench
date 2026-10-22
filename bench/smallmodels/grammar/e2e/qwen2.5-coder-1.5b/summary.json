@@ -1,0 +1,145 @@
+{
+ "model": "/usr/share/ollama/.ollama/models/blobs/sha256-29d8c98fa6b098e200069bfb88b9508dc3e85586d20cba59f8dda9a808165104",
+ "label": "qwen2.5-coder-1.5b",
+ "prompt": "Design a 20 x 30 x 5 mm plate with four 3 mm holes 4 mm from each corner. Reply with a single complete OpenSCAD file.",
+ "port": 18090,
+ "threads": 6,
+ "ctx": 8192,
+ "max_tokens": 1536,
+ "seed": 1,
+ "temperature": 0.2,
+ "top_p": 0.95,
+ "grammar_sha256": "ffade52b8c5d5df67dc5318e4bfc3e8f80c4dbe853401ec02bcea69700bcb6bc",
+ "date": "2026-10-19 23:05 EDT",
+ "server_cmd": "nice -n 10 /home/seb/src/prismml-llama.cpp/build/bin/llama-server -m /usr/share/ollama/.ollama/models/blobs/sha256-29d8c98fa6b098e200069bfb88b9508dc3e85586d20cba59f8dda9a808165104 --host 127.0.0.1 --port 18090 -c 8192 -t 6 -np 1",
+ "load_sec": 3.0,
+ "chat_free": {
+  "http": 200,
+  "finish_reason": "stop",
+  "completion_tokens": 403,
+  "prompt_tokens": 66,
+  "tokens_per_sec": 15.79,
+  "prompt_tokens_per_sec": 43.2,
+  "gen_ms": 25464,
+  "wall_sec": 27.0,
+  "grammar_accepts_reply": false,
+  "grammar_rejects_at": "line 1 col 1: unexpected character 'C' in 'Certainly! Below is an OpenSCAD file that creates a 20 x 30 x 5 mm plate with fo'",
+  "has_code_block": true,
+  "openscad_renders": true,
+  "openscad_messages": [],
+  "render_sec": 0.5,
+  "scadreport": {
+   "render_ok": true,
+   "messages": [],
+   "size": [
+    27.5,
+    32.5,
+    9.0
+   ],
+   "watertight": true,
+   "bodies": 9,
+   "volume": 3520.2,
+   "holes_in_one_slice": 0,
+   "holes": []
+  },
+  "identical_on_repeat_2": false
+ },
+ "chat_grammar": {
+  "http": 200,
+  "finish_reason": "stop",
+  "completion_tokens": 287,
+  "prompt_tokens": 66,
+  "tokens_per_sec": 14.64,
+  "prompt_tokens_per_sec": 8.8,
+  "gen_ms": 19542,
+  "wall_sec": 19.7,
+  "grammar_accepts_reply": true,
+  "has_code_block": true,
+  "openscad_renders": true,
+  "openscad_messages": [],
+  "render_sec": 0.5,
+  "scadreport": {
+   "render_ok": true,
+   "messages": [],
+   "size": [
+    20.0,
+    30.0,
+    34.0
+   ],
+   "watertight": true,
+   "bodies": 1,
+   "volume": 3817.8,
+   "holes_in_one_slice": 0,
+   "holes": []
+  },
+  "identical_on_repeat_2": true
+ },
+ "tokens_per_sec_runs": {
+  "free": [
+   15.79,
+   16.38
+  ],
+  "grammar": [
+   14.64,
+   14.14
+  ]
+ },
+ "completion_endpoint": {
+  "http": 200,
+  "first_48_tokens": "```openscad\n// Define the dimensions of the plate\n$fn = 50; // For better round corners\n\n// Define the dimensions of the holes\nhole_diameter = 3;\nhole_distance = 4;\n\n// Define",
+  "starts_with_fence": true,
+  "grammar_in_settings": true
+ },
+ "broken_grammar": {
+  "http": 400,
+  "error": {
+   "code": 400,
+   "message": "Failed to initialize samplers: failed to parse grammar",
+   "type": "invalid_request_error"
+  }
+ },
+ "chat_grammar_file_flag": {
+  "http": 200,
+  "finish_reason": "stop",
+  "completion_tokens": 217,
+  "prompt_tokens": 66,
+  "tokens_per_sec": 14.69,
+  "prompt_tokens_per_sec": 35.5,
+  "gen_ms": 14704,
+  "wall_sec": 16.6,
+  "grammar_accepts_reply": true,
+  "has_code_block": true,
+  "openscad_renders": true,
+  "openscad_messages": [
+   "WARNING: variable \"diameter\" not specified as parameter in file reply_grammar_file.scad, line 21",
+   "WARNING: variable \"height\" not specified as parameter in file reply_grammar_file.scad, line 21",
+   "WARNING: variable \"diameter\" not specified as parameter in file reply_grammar_file.scad, line 21",
+   "WARNING: variable \"height\" not specified as parameter in file reply_grammar_file.scad, line 21",
+   "WARNING: variable \"diameter\" not specified as parameter in file reply_grammar_file.scad, line 21",
+   "WARNING: variable \"height\" not specified as parameter in file reply_grammar_file.scad, line 21",
+   "WARNING: variable \"diameter\" not specified as parameter in file reply_grammar_file.scad, line 21",
+   "WARNING: variable \"height\" not specified as parameter in file reply_grammar_file.scad, line 21",
+   "WARNING: variable \"diameter\" not specified as parameter in file reply_grammar_file.scad, line 21",
+   "WARNING: variable \"height\" not specified as parameter in file reply_grammar_file.scad, line 21"
+  ],
+  "render_sec": 3.4,
+  "scadreport": {
+   "render_ok": true,
+   "messages": [
+    "WARNING: variable \"diameter\" not specified as parameter in file reply_grammar_file.scad, line 21",
+    "WARNING: variable \"height\" not specified as parameter in file reply_grammar_file.scad, line 21"
+   ],
+   "size": [
+    20.0,
+    30.0,
+    5.0
+   ],
+   "watertight": true,
+   "bodies": 1,
+   "volume": 2543.1,
+   "holes_in_one_slice": 0,
+   "holes": []
+  },
+  "server_cmd": "nice -n 10 /home/seb/src/prismml-llama.cpp/build/bin/llama-server -m /usr/share/ollama/.ollama/models/blobs/sha256-29d8c98fa6b098e200069bfb88b9508dc3e85586d20cba59f8dda9a808165104 --host 127.0.0.1 --port 18090 -c 8192 -t 6 -np 1 --grammar-file /home/seb/printpaper/bench/smallmodels/grammar/openscad.gbnf"
+ }
+}

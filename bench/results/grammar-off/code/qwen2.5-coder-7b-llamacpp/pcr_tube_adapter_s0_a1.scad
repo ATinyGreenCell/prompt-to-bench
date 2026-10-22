@@ -1,0 +1,32 @@
+// Dimensions
+collar_diameter = 13;
+collar_thickness = 1.5;
+sleeve_outer_diameter = 10.8;
+bore_diameter = 6.2;
+total_height = 21.5;
+
+// Calculate radiuses
+collar_radius = collar_diameter / 2;
+sleeve_outer_radius = sleeve_outer_diameter / 2;
+bore_radius = bore_diameter / 2;
+
+// Create the collar
+collar = cylinder(r = collar_radius, h = collar_thickness, center = true);
+
+// Create the sleeve body
+sleeve_body = cylinder(r = sleeve_outer_radius, h = total_height, center = true);
+
+// Create the bore
+bore = cylinder(r = bore_radius, h = total_height + 2, center = true);
+
+// Combine the parts
+adapter_sleeve = difference() {
+    union() {
+        collar;
+        sleeve_body;
+    }
+    bore;
+};
+
+// Rotate the model to print upside down
+rotate_extrude($fn = 64) adapter_sleeve;

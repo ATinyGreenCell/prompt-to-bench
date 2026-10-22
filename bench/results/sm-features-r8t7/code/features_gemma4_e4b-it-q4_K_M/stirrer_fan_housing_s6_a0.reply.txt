@@ -1,0 +1,31 @@
+Features: {"bodies": [{"solids": [{"shape": "box", "size": [90, 90, 2], "at": [0, 0, 0]}], "cuts": [{"cut": "box", "size": [71.5, 71.5, 2], "at": [0, 0, 0]}, {"cut": "box", "size": [90, 2.5, 38], "at": [0, 0, 2], "grid": {"nx": 4, "ny": 1, "pitch_x": 0, "pitch_y": 0}}, {"cut": "box", "size": [2.5, 90, 38], "at": [0, 0, 2], "grid": {"nx": 1, "ny": 4, "pitch_x": 0, "pitch_y": 0}}, {"cut": "box", "size": [90, 2.5, 38], "at": [0, 77.5, 2], "grid": {"nx": 1, "ny": 4, "pitch_x": 0, "pitch_y": 0}}, {"cut": "box", "size": [2.5, 90, 38], "at": [45, 0, 2], "grid": {"nx": 4, "ny": 1, "pitch_x": 0, "pitch_y": 0}}, {"cut": "box", "size": [12, 2.5, 8], "at": [-45, -37.5, 32]}]}]}
+
+```openscad
+// Built by bench/smallmodels/features/compiler.py from a list of features.
+$fn = 64;
+difference() {
+  union() {
+    translate([0, 0, 0]) translate([-45, -45, 0]) cube([90, 90, 2]);
+  }
+  union() {
+    translate([0, 0, 0]) rotate([0, 0, 0]) translate([-35.75, -35.75, 0]) cube([71.5, 71.5, 2]);
+    translate([0, 0, 2]) rotate([0, 0, 0]) translate([-45, -1.25, 0]) cube([90, 2.5, 38]);
+    translate([0, 0, 2]) rotate([0, 0, 0]) translate([-45, -1.25, 0]) cube([90, 2.5, 38]);
+    translate([0, 0, 2]) rotate([0, 0, 0]) translate([-45, -1.25, 0]) cube([90, 2.5, 38]);
+    translate([0, 0, 2]) rotate([0, 0, 0]) translate([-45, -1.25, 0]) cube([90, 2.5, 38]);
+    translate([0, 0, 2]) rotate([0, 0, 0]) translate([-1.25, -45, 0]) cube([2.5, 90, 38]);
+    translate([0, 0, 2]) rotate([0, 0, 0]) translate([-1.25, -45, 0]) cube([2.5, 90, 38]);
+    translate([0, 0, 2]) rotate([0, 0, 0]) translate([-1.25, -45, 0]) cube([2.5, 90, 38]);
+    translate([0, 0, 2]) rotate([0, 0, 0]) translate([-1.25, -45, 0]) cube([2.5, 90, 38]);
+    translate([0, 77.5, 2]) rotate([0, 0, 0]) translate([-45, -1.25, 0]) cube([90, 2.5, 38]);
+    translate([0, 77.5, 2]) rotate([0, 0, 0]) translate([-45, -1.25, 0]) cube([90, 2.5, 38]);
+    translate([0, 77.5, 2]) rotate([0, 0, 0]) translate([-45, -1.25, 0]) cube([90, 2.5, 38]);
+    translate([0, 77.5, 2]) rotate([0, 0, 0]) translate([-45, -1.25, 0]) cube([90, 2.5, 38]);
+    translate([45, 0, 2]) rotate([0, 0, 0]) translate([-1.25, -45, 0]) cube([2.5, 90, 38]);
+    translate([45, 0, 2]) rotate([0, 0, 0]) translate([-1.25, -45, 0]) cube([2.5, 90, 38]);
+    translate([45, 0, 2]) rotate([0, 0, 0]) translate([-1.25, -45, 0]) cube([2.5, 90, 38]);
+    translate([45, 0, 2]) rotate([0, 0, 0]) translate([-1.25, -45, 0]) cube([2.5, 90, 38]);
+    translate([-45, -37.5, 32]) rotate([0, 0, 0]) translate([-6, -1.25, 0]) cube([12, 2.5, 8]);
+  }
+}
+```

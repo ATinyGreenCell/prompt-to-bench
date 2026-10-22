@@ -1,0 +1,15 @@
+Features: {"bodies": [{"solids": [{"shape": "extrude", "outline": [[-9.35, -1.5], [9.35, -1.5], [9.35, 1.5], [-9.35, 1.5]], "h": 10, "at": [0, 0, 0]}], "cuts": [{"cut": "box", "size": [10, 10, 10], "at": [-10, 0, -5]}, {"cut": "box", "size": [2.25, 4.5, 10], "at": [17.25, 0, -5]}]}]}
+
+```openscad
+// Built by bench/smallmodels/features/compiler.py from a list of features.
+$fn = 64;
+difference() {
+  union() {
+    translate([0, 0, 0]) linear_extrude(height = 10) polygon([[-9.35, -1.5], [9.35, -1.5], [9.35, 1.5], [-9.35, 1.5]]);
+  }
+  union() {
+    translate([-10, 0, -5]) rotate([0, 0, 0]) translate([-5, -5, 0]) cube([10, 10, 10]);
+    translate([17.25, 0, -5]) rotate([0, 0, 0]) translate([-1.125, -2.25, 0]) cube([2.25, 4.5, 10]);
+  }
+}
+```

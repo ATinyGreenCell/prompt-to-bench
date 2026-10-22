@@ -1,0 +1,44 @@
+```openscad
+// Dimensions
+top_plate_thickness = 2;
+wall_thickness = 2.5;
+box_size = 90;
+fan_mounting_hole_diameter = 4.5;
+fan_mounting_hole_distance = 71.5;
+notch_width = 12;
+notch_height = 8;
+notch_depth = 8;
+
+// Top plate
+top_plate = cube([box_size, box_size, top_plate_thickness]);
+
+// Fan mounting holes
+fan_holes = for (i = [0:3])
+  translate([i * fan_mounting_hole_distance / 2 - box_size / 4, i * fan_mounting_hole_distance / 2 - box_size / 4, 0])
+    cylinder(d = fan_mounting_hole_diameter, h = top_plate_thickness + 0.01, $fn = 64);
+
+// Walls
+walls = union() {
+  for (i = [0:1])
+    translate([i * box_size, 0, 0])
+      cube([wall_thickness, box_size, wall_thickness]);
+  for (i = [0:1])
+    translate([0, i * box_size, 0])
+      cube([box_size, wall_thickness, wall_thickness]);
+};
+
+// Notch in one wall
+notch = translate([box_size / 2 - notch_width / 2, 0, wall_thickness])
+  cube([notch_width, box_size, notch_depth], center = true);
+
+// Final model
+difference() {
+  union() {
+    top_plate;
+    walls;
+  }
+  fan_holes;
+  translate([0, 0, wall_thickness])
+    notch;
+}
+```

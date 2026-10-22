@@ -1,0 +1,26 @@
+// Dimensions
+dish_diameter = 90;
+template_diameter = 85;
+template_thickness = 2;
+hole_diameter = 3;
+hole_spacing = 9;
+notch_width = 10;
+notch_depth = 4;
+
+// Center the model on the origin
+translate([dish_diameter / 2, dish_diameter / 2, 0]) {
+    // Flat disc
+    difference() {
+        cylinder(r = template_diameter / 2, h = template_thickness, center = true);
+        // Holes
+        for (i = [0:6]) {
+            for (j = [0:6]) {
+                translate([i * hole_spacing - template_diameter / 2 + hole_spacing / 2, j * hole_spacing - template_diameter / 2 + hole_spacing / 2, 0])
+                    cylinder(r = hole_diameter / 2, h = template_thickness + 0.1, center = true);
+            }
+        }
+        // Notch
+        translate([0, dish_diameter / 2 - notch_width / 2, 0])
+            cube([notch_width, notch_depth, template_thickness + 0.1], center = true);
+    }
+}

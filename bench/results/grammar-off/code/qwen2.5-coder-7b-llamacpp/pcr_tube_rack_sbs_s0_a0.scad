@@ -1,0 +1,36 @@
+// Dimensions
+$fn = 64;
+block_length = 127.76;
+block_width = 85.48;
+block_height = 20;
+hole_diameter = 6.2;
+hole_spacing = 9.0;
+chamfer_length = 5;
+
+// Calculate hole positions
+hole_positions = [
+    for (row = [0:7])
+        for (col = [0:11])
+            [14.38 + col * hole_spacing, 11.24 + row * hole_spacing]
+];
+
+// Create the block
+block = cube([block_length, block_width, block_height]);
+
+// Create the holes
+holes = union() {
+    for (pos = hole_positions)
+        cylinder(r = hole_diameter / 2, h = block_height + 0.01, center = true);
+};
+
+// Create the chamfer
+chamfer = translate([14.38, 11.24, 0]) rotate_extrude(angle = 45) square([chamfer_length, chamfer_length], center = true);
+
+// Final model
+difference() {
+    union() {
+        block;
+        holes;
+    };
+    chamfer;
+}

@@ -1,0 +1,16 @@
+```openscad
+// Dimensions
+base_length = 90; // X
+base_width = 45; // Y
+base_height = 20; // Z
+slot_length = 77; // X
+slot_width = 1.6; // Y
+slot_depth = 10; // Z
+slot_spacing = 3.5; // Y
+
+// Create the base block
+base = cube[size ==[base_length, base_width, base_height]];
+
+// Create the slots
+slots = for_i ==[0:9] (
+    translate [i * (slot_width + slot_spacing) - base_width / 2 + slot_width / 2 + slot_spacing / 2 + slot_length / 2 - slot_length / 2 - slot_width / 2 - slot_spacing / 2 - slot_length / 2 + slot_length / 2 - slot_width / 2 - slot_spacing / 2 - slot_length / 2 + slot_length / 2 - slot_width / 2 - slot_spacing / 2 - slot_length / 2 + slot_length / 2 - slot_width / 2 - slot_spacing / 2 - slot_length / 2 + slot_length / 2 - slot_width / 2 - slot_spacing / 2 - slot_length / 2 + slot_length / 2 - slot_width / 2 - slot_spacing / 2 - slot_length / 2 + slot_length / 2 - slot_width / 2 - slot_spacing / 2 - slot_length / 2 + slot_length / 2 - slot_width / 2 - slot_spacing / 2 - slot_length / 2 + slot_length / 2 - slot

@@ -1,0 +1,37 @@
+Design: funnel
+Parameters: {"top": 60.0, "spout_d": 10.0, "cone_h": 30.0, "spout_l": 20.0, "wall": 1.6}
+
+```openscad
+// Funnel - a conical mouth narrowing into a straight spout, hollow with a constant wall. NOVEL
+// general part (a generic funnel, not any one labware item).
+//
+// @desc hollow funnel: conical mouth into a straight spout
+// @prompt Design a funnel in OpenSCAD: a cone {top} mm across the mouth narrowing over {cone_h} mm to a spout {spout_d} mm across and {spout_l} mm long, with a {wall} mm wall throughout. Reply with a single complete OpenSCAD file.
+// @param top     mouth diameter, mm   [30:90]
+// @param spout_d spout diameter, mm   [6:20]
+// @param cone_h  cone height, mm      [20:60]
+// @param spout_l spout length, mm     [10:40]
+// @param wall    wall thickness, mm   [1.2:3]
+
+top     = 60;
+spout_d = 10;
+cone_h  = 30;
+spout_l = 20;
+wall    = 1.6;
+
+$fn = 64;
+
+ib = max(1.6, spout_d - 2 * wall);   // keep the spout bore open even if the wall is thick
+
+translate([0, 0, spout_l])          // rest the spout tip on the bed (z = 0)
+difference() {
+    union() {
+        cylinder(h = cone_h, d1 = spout_d, d2 = top);                 // cone: spout end up to mouth
+        translate([0, 0, -spout_l]) cylinder(h = spout_l + 0.01, d = spout_d);   // spout below
+    }
+    translate([0, 0, -spout_l - 1])
+        cylinder(h = spout_l + 1 + 0.01, d = ib);                     // bore through the spout
+    cylinder(h = cone_h + 1, d1 = ib, d2 = top - 2 * wall);           // inner cone, open mouth
+}
+
+```

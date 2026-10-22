@@ -1,0 +1,22 @@
+Features: {"bodies": [{"solids": [{"shape": "box", "size": [70, 50, 30], "at": [-35, 0, 0]}, {"shape": "box", "size": [70, 50, 2], "at": [35, 0, -1]}], "cuts": [{"cut": "shell", "wall": 2, "open": "top"}]}, {"solids": [{"shape": "box", "size": [65.6, 45.6, 4], "at": [-32.8, -22.8, 0]}, {"shape": "box", "size": [70, 50, 2], "at": [35, 0, -1]}], "cuts": [{"cut": "pocket", "size": [65.6, 45.6], "depth": 2, "at": [-32.8, -22.8]}]}]}
+
+```openscad
+// Built by bench/smallmodels/features/compiler.py from a list of features.
+$fn = 64;
+difference() {
+  union() {
+    translate([-35, 0, 0]) translate([-35, -25, 0]) cube([70, 50, 30]);
+    translate([35, 0, -1]) translate([-35, -25, 0]) cube([70, 50, 2]);
+  }
+  translate([-68, -23, 2]) cube([66, 46, 29]);  // shell, wall 2, open top
+}
+difference() {
+  union() {
+    translate([-32.8, -22.8, 0]) translate([-32.8, -22.8, 0]) cube([65.6, 45.6, 4]);
+    translate([35, 0, -1]) translate([-35, -25, 0]) cube([70, 50, 2]);
+  }
+  union() {
+    translate([-32.8, -22.8, 1.99]) rotate([0, 0, 0]) translate([-32.8, -22.8, 0]) cube([65.6, 45.6, 2.02]);
+  }
+}
+```

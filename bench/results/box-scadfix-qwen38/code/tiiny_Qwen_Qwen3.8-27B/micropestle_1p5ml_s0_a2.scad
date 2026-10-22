@@ -1,0 +1,61 @@
+// Pestle for 1.5 mL microcentrifuge tube, printed standing upright
+// All dimensions in millimetres
+
+// Handle
+handle_d = 8;          // handle diameter
+handle_z0 = 0;         // handle bottom z
+handle_z1 = 45;        // handle top z
+
+// Cone (taper)
+cone_d0 = 8;           // cone base diameter (matches handle)
+cone_d1 = 3;           // cone tip diameter
+cone_z0 = 45;          // cone base z
+cone_z1 = 62;          // cone tip z
+
+// Rounded tip
+tip_d = 3;             // sphere diameter
+tip_z = 62;            // sphere centre z
+
+// Grip grooves (cut into handle)
+groove_w = 2;          // groove width in Z
+groove_depth = 1;      // groove radial depth
+groove_z = [10, 15, 20, 25];  // groove centre z positions
+
+$fn = 64;
+
+// Build the solid body: handle + cone + tip sphere
+module body() { union() {
+    // Cylindrical handle
+    translate([0, 0, handle_z0])
+        cylinder(h = handle_z1 - handle_z0, d = handle_d, $fn = $fn);
+
+    // Tapering cone (8 mm -> 3 mm)
+    translate([0, 0, cone_z0])
+        cylinder(h = cone_z1 - cone_z0, d1 = cone_d0, d2 = cone_d1, $fn = $fn);
+
+    // Rounded tip sphere
+    translate([0, 0, tip_z])
+        sphere(r = tip_d / 2, $fn = $fn);
+} }
+
+// Build the four circumferential groove cutters.
+// Each cutter is a hollow tube (annulus) that extends 1 mm past the handle
+// faces in Z so the difference() cut is clean (no coplanar faces).
+// Outer radius = handle radius + 1 mm (extends past the outer face).
+// Inner radius = handle radius - groove_depth (cuts 1 mm into the wall,
+// leaving a solid core of diameter handle_d - 2*groove_depth).
+module groove_cutters() { for (gz = groove_z)
+    difference() {
+        // Outer cylinder (extends 1 mm past handle in Z)
+        translate([0, 0, gz - groove_w / 2 - 1])
+            cylinder(h = groove_w + 2, d = handle_d + 2, $fn = $fn);
+        // Inner cylinder (defines the groove depth)
+        translate([0, 0, gz - groove_w / 2 - 1])
+            cylinder(h = groove_w + 2, d = handle_d - 2 * groove_depth, $fn = $fn);
+    } }
+
+// Final pestle: body minus grip grooves
+difference() {
+    body();
+    groove_cutters();
+}

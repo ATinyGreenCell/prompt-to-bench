@@ -1,0 +1,32 @@
+Features: {"bodies": [{"solids": [{"shape": "box", "size": [50, 45, 5], "at": [-25, 0, 0]}, {"shape": "box", "size": [50, 5, 50], "at": [-25, 0, 0]}], "cuts": [{"cut": "side_hole", "d": 4.5, "axis": "x", "z": 3.75, "at": [-17, 30]}, {"cut": "side_hole", "d": 4.5, "axis": "x", "z": 3.75, "at": [17, 30]}]}, {"solids": [{"shape": "box", "size": [50, 5, 50], "at": [-25, 0, 0]}], "cuts": [{"cut": "hole", "d": 23, "depth": 4.75, "at": [0, 28]}, {"cut": "hole", "d": 3.4, "depth": 1.5, "at": [-15.5, 28], "circle": {"count": 4, "radius": 0, "start_deg": 0}}, {"cut": "hole", "d": 3.4, "depth": 1.5, "at": [15.5, 28], "circle": {"count": 4, "radius": 0, "start_deg": 0}}]}]}
+
+```openscad
+// Built by bench/smallmodels/features/compiler.py from a list of features.
+$fn = 64;
+difference() {
+  union() {
+    translate([-25, 0, 0]) translate([-25, -22.5, 0]) cube([50, 45, 5]);
+    translate([-25, 0, 0]) translate([-25, -2.5, 0]) cube([50, 5, 50]);
+  }
+  union() {
+    translate([-17, 30, 3.75]) rotate([0, 0, 0]) rotate([0, 90, 0]) cylinder(d = 4.5, h = 1200, center = true);
+    translate([17, 30, 3.75]) rotate([0, 0, 0]) rotate([0, 90, 0]) cylinder(d = 4.5, h = 1200, center = true);
+  }
+}
+difference() {
+  union() {
+    translate([-25, 0, 0]) translate([-25, -2.5, 0]) cube([50, 5, 50]);
+  }
+  union() {
+    translate([0, 28, 45.24]) rotate([0, 0, 0]) cylinder(d = 23, h = 4.77);
+    translate([-15.5, 28, 48.49]) rotate([0, 0, 0]) cylinder(d = 3.4, h = 1.52);
+    translate([-15.5, 28, 48.49]) rotate([0, 0, 90]) cylinder(d = 3.4, h = 1.52);
+    translate([-15.5, 28, 48.49]) rotate([0, 0, 180]) cylinder(d = 3.4, h = 1.52);
+    translate([-15.5, 28, 48.49]) rotate([0, 0, 270]) cylinder(d = 3.4, h = 1.52);
+    translate([15.5, 28, 48.49]) rotate([0, 0, 0]) cylinder(d = 3.4, h = 1.52);
+    translate([15.5, 28, 48.49]) rotate([0, 0, 90]) cylinder(d = 3.4, h = 1.52);
+    translate([15.5, 28, 48.49]) rotate([0, 0, 180]) cylinder(d = 3.4, h = 1.52);
+    translate([15.5, 28, 48.49]) rotate([0, 0, 270]) cylinder(d = 3.4, h = 1.52);
+  }
+}
+```

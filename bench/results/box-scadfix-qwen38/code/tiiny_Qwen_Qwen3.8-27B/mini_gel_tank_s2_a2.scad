@@ -1,0 +1,59 @@
+// Buffer tank for a mini horizontal gel-electrophoresis box
+// Print orientation: rests on XY plane at z = 0, builds upward (+Z), centred on origin in X and Y.
+
+// ---- Outer envelope ----
+outer_x = 120;   // outer length along X (mm)
+outer_y = 70;    // outer width  along Y (mm)
+outer_z = 40;    // outer height along Z (mm)
+
+// ---- Wall / floor thickness ----
+wall_t = 3;      // side wall thickness (mm)
+floor_t = 3;     // floor thickness (mm)
+
+// ---- Inner cavity ----
+inner_x = outer_x - 2 * wall_t;   // 114 mm
+inner_y = outer_y - 2 * wall_t;   // 64 mm
+inner_z = outer_z - floor_t;      // 37 mm (open top)
+
+// ---- Raised gel-tray platform (solid, spans full inner width in Y) ----
+plat_x = 60;     // platform length along X (mm), centred
+plat_y = inner_y; // platform width along Y = full inner width (64 mm)
+plat_h = 10;     // platform height above the inner floor (mm)
+plat_top = floor_t + plat_h;      // 13 mm above z = 0
+
+// ---- Electrode-wire holes (through the two X end walls) ----
+hole_d = 2;       // hole diameter (mm)
+hole_r = hole_d / 2;
+hole_y = 0;       // centred in Y
+hole_z = 30;      // height above z = 0
+
+// ---- Build ----
+$fn = 64;
+
+// 1) Solid outer block
+outer_block = cube([outer_x, outer_y, outer_z], center = true);
+
+// 2) Open-top inner cavity (extended 1 mm above the rim so the top is cut open)
+cavity = cube([inner_x, inner_y, inner_z + 1], center = true);
+
+// 3) Raised platform (solid, centred in X, full inner width in Y)
+platform = cube([plat_x, plat_y, plat_h], center = true);
+
+// 4) Horizontal electrode holes through both X end walls (extended 1 mm past each face)
+electrode_holes = [for (sx = [-1, 1])]
+    translate([sx * (outer_x / 2 + 1), hole_y, hole_z])
+        rotate([0, 90, 0])
+            cylinder(h = 1, r = hole_r, $fn = $fn);
+
+// 5) Assemble: shell = outer minus cavity, then add platform, then drill holes
+module tank() {
+    difference(
+        union(
+            difference(outer_block, cavity),
+            platform
+        ),
+        electrode_holes
+    );
+}
+
+tank();

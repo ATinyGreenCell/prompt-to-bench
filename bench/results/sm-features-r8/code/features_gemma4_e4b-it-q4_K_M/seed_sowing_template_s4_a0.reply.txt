@@ -1,0 +1,23 @@
+Features: {"bodies": [{"solids": [{"shape": "cylinder", "d": 85, "h": 2, "at": [0, 0, 0]}], "cuts": [{"cut": "hole", "d": 3, "depth": null, "at": [0, 0]}, {"cut": "hole", "d": 3, "depth": null, "at": [9, 0]}, {"cut": "hole", "d": 3, "depth": null, "at": [-9, 0]}, {"cut": "hole", "d": 3, "depth": null, "at": [0, 9]}, {"cut": "hole", "d": 3, "depth": null, "at": [0, -9]}, {"cut": "hole", "d": 3, "depth": null, "at": [9, 9]}, {"cut": "hole", "d": 3, "depth": null, "at": [-9, 9]}, {"cut": "hole", "d": 3, "depth": null, "at": [9, -9]}, {"cut": "hole", "d": 3, "depth": null, "at": [-9, -9]}, {"cut": "box", "size": [10, 4, 2], "at": [0, 85, 0]}]}]}
+
+```openscad
+// Built by bench/smallmodels/features/compiler.py from a list of features.
+$fn = 64;
+difference() {
+  union() {
+    translate([0, 0, 0]) cylinder(d = 85, h = 2);
+  }
+  union() {
+    translate([0, 0, -1]) rotate([0, 0, 0]) cylinder(d = 3, h = 4);
+    translate([9, 0, -1]) rotate([0, 0, 0]) cylinder(d = 3, h = 4);
+    translate([-9, 0, -1]) rotate([0, 0, 0]) cylinder(d = 3, h = 4);
+    translate([0, 9, -1]) rotate([0, 0, 0]) cylinder(d = 3, h = 4);
+    translate([0, -9, -1]) rotate([0, 0, 0]) cylinder(d = 3, h = 4);
+    translate([9, 9, -1]) rotate([0, 0, 0]) cylinder(d = 3, h = 4);
+    translate([-9, 9, -1]) rotate([0, 0, 0]) cylinder(d = 3, h = 4);
+    translate([9, -9, -1]) rotate([0, 0, 0]) cylinder(d = 3, h = 4);
+    translate([-9, -9, -1]) rotate([0, 0, 0]) cylinder(d = 3, h = 4);
+    translate([0, 85, 0]) rotate([0, 0, 0]) translate([-5, -2, 0]) cube([10, 4, 2]);
+  }
+}
+```

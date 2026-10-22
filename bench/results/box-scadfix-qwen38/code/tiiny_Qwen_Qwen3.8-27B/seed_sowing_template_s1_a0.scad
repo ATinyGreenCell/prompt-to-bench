@@ -1,0 +1,43 @@
+// Sowing template for a 90 mm Petri dish
+// Flat disc, 7x7 grid of 3 mm through-holes, orientation notch on +Y rim
+
+// --- Dimensions (mm) ---
+disc_diameter = 85;          // outer diameter of the template disc
+disc_radius   = disc_diameter / 2;   // 42.5 mm
+disc_thickness = 2;          // thickness of the flat disc
+
+hole_diameter = 3;           // diameter of each sowing hole
+hole_radius   = hole_diameter / 2;   // 1.5 mm
+
+grid_n = 7;                  // 7 x 7 grid of holes
+grid_spacing = 9;            // centre-to-centre spacing between adjacent holes
+
+notch_width = 10;            // width of the orientation notch (X direction)
+notch_depth = 4;             // depth of the notch into the rim (Y direction)
+
+// --- Base disc, resting on the bed at z = 0, centred on origin in X/Y ---
+module base() { cylinder(h = disc_thickness, r = disc_radius, $fn = 128); }
+
+// --- 7 x 7 grid of 3 mm through-holes, centred on the disc ---
+// Holes span z = -0.5 to z = 2.5 (0.5 mm past each face) to guarantee a clean through-cut
+module hole_grid() { for (i = [0 : grid_n - 1], j = [0 : grid_n - 1])
+    translate([
+        (i - (grid_n - 1) / 2) * grid_spacing,   // X offset, centred
+        (j - (grid_n - 1) / 2) * grid_spacing,   // Y offset, centred
+        -0.5                                      // start 0.5 mm below the bed
+    ])
+    cylinder(h = disc_thickness + 1.0, r = hole_radius, $fn = 64); }
+
+// --- Orientation notch on the +Y rim ---
+// Rim is at y = +42.5; notch is 4 mm deep, so its inner face is at y = 38.5
+// The notch block spans y = 38.5 to y = 43.5 (1 mm past the rim) and x = -5 to +5
+// It spans z = -0.5 to z = 2.5 (0.5 mm past each face)
+module notch_block() { translate([0, disc_radius - notch_depth, -0.5])
+    cube([notch_width, notch_depth + 1.0, disc_thickness + 1.0], center = [false, false, false]); }
+
+// --- Final part: disc minus holes minus notch ---
+difference() {
+    base();
+    hole_grid();
+    notch_block();
+}

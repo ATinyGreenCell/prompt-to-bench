@@ -1,0 +1,13 @@
+01:08:28 [chain] spec v1 qwen3.5:9b
+02:01:13 [chain] spec v2 gemma4:e4b
+02:22:13 [chain] spec v3 gemma4:e4b
+02:41:05 [chain] template development
+03:35:29 [chain] template development (two passes)
+05:43:13 [chain] Qwen3.5 4B template run stopped after 37 picks (no reply parses); switching to chain3.sh
+05:43:13 [chain] template development (two passes)
+06:26:56 [chain] features development
+06:27:11 [note] correction to the 05:43:13 line: the run made 36 picks; the 37th call was templates/format_check.py
+06:57:37 [chain] waiting for the template and features freezes
+07:03:37 [chain] test run template:qwen2.5-coder:7b
+07:27:14 [chain] test run features:gemma4:e4b-it-q4_K_M
+08:24:01 [chain] grammar test runs

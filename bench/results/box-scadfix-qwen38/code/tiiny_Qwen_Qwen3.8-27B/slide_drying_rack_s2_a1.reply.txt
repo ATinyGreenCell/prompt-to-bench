@@ -1,0 +1,50 @@
+The report shows the slots are 79 mm long (I extended the cutting box 1 mm past each X face, but the spec calls for exactly 77 mm slots). The slots must be exactly 77 mm long, 1.6 mm wide, 10 mm deep, 3.5 mm pitch, and centred on the block in both X and Y.
+
+```openscad
+// Drying rack for 10 microscope slides (75 x 25 x 1 mm)
+// Slides stand upright on their long edge, held in slots cut into the top face.
+
+// --- Base block dimensions ---
+base_L = 90;   // length along X (mm)
+base_W = 45;   // width along Y (mm)
+base_H = 20;   // height along Z (mm)
+
+// --- Slot dimensions ---
+slot_L = 77;   // slot length along X (mm)
+slot_W = 1.6;  // slot width along Y (mm)
+slot_D = 10;   // slot depth into the block (mm)
+
+// --- Slot layout ---
+n_slots = 10;          // number of slots
+slot_pitch = 3.5;      // centre-to-centre spacing along Y (mm)
+
+// --- Derived values ---
+// Total span of slot centres (first to last)
+span = (n_slots - 1) * slot_pitch;   // 9 * 3.5 = 31.5 mm
+// Y position of the first slot centre (so the group is centred on Y=0)
+y_first = -span / 2;
+
+// --- Build ---
+$fn = 64;
+
+// Solid base block, centred on origin in X and Y, resting on z=0
+module base() { translate([-base_L/2, -base_W/2, 0])
+    cube([base_L, base_W, base_H]); }
+
+// Cutting tool: one slot, extended 1 mm past the top face (z = base_H + 1)
+// so the cut is open at the top and no faces are exactly coplanar.
+// The slot is exactly slot_L long in X and slot_W wide in Y (no X/Y extension),
+// so the resulting slots are 77 x 1.6 mm and centred on the block in X and Y.
+module slot_tool() { translate([-slot_L/2, -slot_W/2, base_H + 1 - slot_D])
+    cube([slot_L, slot_W, slot_D + 1]); }
+
+// Difference: base minus all 10 slots
+difference() {
+    base();
+    for (i = [0 : n_slots - 1]) {
+        y_i = y_first + i * slot_pitch;
+        translate([0, y_i, 0])
+            slot_tool();
+    }
+}
+```

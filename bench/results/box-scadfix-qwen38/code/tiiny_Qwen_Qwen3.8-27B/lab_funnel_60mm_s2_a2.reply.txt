@@ -1,0 +1,42 @@
+```openscad
+// Small lab funnel – printed upright, wide opening at top.
+// All dimensions in mm, taken directly from the spec.
+
+$fn = 64;
+
+// ---- Named dimensions (measured with calipers) ----
+spout_od   = 10;   // spout outer diameter
+spout_h    = 20;   // spout height (z = 0 .. 20)
+cone_od    = 60;   // cone outer diameter at the rim (z = 50)
+cone_h     = 30;   // cone height (z = 20 .. 50)
+wall       = 1.6;  // uniform wall thickness
+
+// Derived values
+spout_id   = spout_od - 2 * wall;   // 6.8 mm spout bore
+cone_id    = cone_od  - 2 * wall;   // 56.8 mm inner rim diameter
+
+// ---- Outer solid (spout cylinder + cone) ----
+module outer() { union() {
+    // Straight spout, z = 0 .. 20
+    cylinder(h = spout_h, d = spout_od, center = false);
+    // Cone, z = 20 .. 50 (10 mm OD at base -> 60 mm OD at rim)
+    translate([0, 0, spout_h])
+        cylinder(h = cone_h, d1 = spout_od, d2 = cone_od, center = false);
+} }
+
+// ---- Inner cavity (spout bore + cone bore), open at both ends ----
+// Each cutter is extended 1 mm past the faces it cuts (no coplanar faces).
+module inner() { union() {
+    // Spout bore, extended 1 mm below z = 0 and 1 mm above z = 20
+    cylinder(h = spout_h + 2, d = spout_id, center = false);
+    // Cone bore, extended 1 mm below z = 20 and 1 mm above z = 50
+    translate([0, 0, spout_h - 1])
+        cylinder(h = cone_h + 2, d1 = spout_id, d2 = cone_id, center = false);
+} }
+
+// ---- Funnel = outer minus inner (open top and bottom) ----
+difference() {
+    outer();
+    inner();
+}
+```

@@ -1,0 +1,10 @@
+Features: {"bodies": [{"solids": [{"shape": "tube", "d_outer": 13, "d_inner": 0, "h": 1.5, "at": [0, 0, 0]}, {"shape": "tube", "d_outer": 10.8, "d_inner": 6.2, "h": 20, "at": [0, 0, 1.5]}], "cuts": []}]}
+
+```openscad
+// Built by bench/smallmodels/features/compiler.py from a list of features.
+$fn = 64;
+union() {
+    translate([0, 0, 0]) difference() { cylinder(d = 13, h = 1.5); translate([0, 0, -0.01]) cylinder(d = 0, h = 1.52); }
+    translate([0, 0, 1.5]) difference() { cylinder(d = 10.8, h = 20); translate([0, 0, -0.01]) cylinder(d = 6.2, h = 20.02); }
+  }
+```

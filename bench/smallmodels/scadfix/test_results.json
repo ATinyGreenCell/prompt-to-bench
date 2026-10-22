@@ -1,0 +1,1558 @@
+{
+ "scadfix_version": "1.0",
+ "scadfix_sha256": "85f74e839594e33576d6923be770a90f05c918324252febda804f40b490dc334",
+ "runs": {
+  "laptop": [
+   "main",
+   "ft-scad",
+   "main-bonsai"
+  ],
+  "box": [
+   "main-tiiny"
+  ]
+ },
+ "attempts": 2249,
+ "attempts_missing_file": 0,
+ "attempts_fired": 896,
+ "rule_errors": [],
+ "rescored_originals_that_differ": [],
+ "models": [
+  {
+   "group": "laptop",
+   "model": "qwen2.5-coder:0.5b",
+   "label": "Qwen2.5-Coder 0.5B",
+   "samples": [
+    {
+     "sample": 0,
+     "tasks": 16,
+     "render1_before": 0,
+     "render1_after": 1,
+     "pass1_before": 0,
+     "pass1_after": 0,
+     "syntax1_before": 7,
+     "syntax1_fired": 5,
+     "syntax1_render_after": 1,
+     "tasks_passed_before": 0,
+     "tasks_passed_after": 0,
+     "render1_after_no_trunc": 1,
+     "pass1_after_no_trunc": 0,
+     "tasks_passed_after_no_trunc": 0
+    }
+   ],
+   "attempts": 48,
+   "attempts_fired": 24,
+   "first_attempts_fired": 8,
+   "fixed_files_render": 3,
+   "fixed_files_pass": 0,
+   "rules_all_attempts": {
+    "python_tuples": 24,
+    "close_truncated": 4
+   },
+   "rules_first_attempts": {
+    "python_tuples": 8,
+    "close_truncated": 2
+   }
+  },
+  {
+   "group": "laptop",
+   "model": "qwen2.5-coder:1.5b",
+   "label": "Qwen2.5-Coder 1.5B",
+   "samples": [
+    {
+     "sample": 0,
+     "tasks": 16,
+     "render1_before": 1,
+     "render1_after": 3,
+     "pass1_before": 0,
+     "pass1_after": 0,
+     "syntax1_before": 11,
+     "syntax1_fired": 9,
+     "syntax1_render_after": 1,
+     "tasks_passed_before": 0,
+     "tasks_passed_after": 0,
+     "render1_after_no_trunc": 2,
+     "pass1_after_no_trunc": 0,
+     "tasks_passed_after_no_trunc": 0
+    }
+   ],
+   "attempts": 48,
+   "attempts_fired": 30,
+   "first_attempts_fired": 10,
+   "fixed_files_render": 6,
+   "fixed_files_pass": 0,
+   "rules_all_attempts": {
+    "bracketless_comprehension": 21,
+    "geometry_to_module": 15,
+    "geometry_in_place": 9,
+    "close_truncated": 3
+   },
+   "rules_first_attempts": {
+    "bracketless_comprehension": 7,
+    "geometry_to_module": 5,
+    "geometry_in_place": 3,
+    "close_truncated": 1
+   }
+  },
+  {
+   "group": "laptop",
+   "model": "qwen2.5:1.5b",
+   "label": "Qwen2.5 1.5B (general)",
+   "samples": [
+    {
+     "sample": 0,
+     "tasks": 16,
+     "render1_before": 2,
+     "render1_after": 5,
+     "pass1_before": 0,
+     "pass1_after": 0,
+     "syntax1_before": 9,
+     "syntax1_fired": 7,
+     "syntax1_render_after": 2,
+     "tasks_passed_before": 0,
+     "tasks_passed_after": 0,
+     "render1_after_no_trunc": 4,
+     "pass1_after_no_trunc": 0,
+     "tasks_passed_after_no_trunc": 0
+    }
+   ],
+   "attempts": 48,
+   "attempts_fired": 36,
+   "first_attempts_fired": 12,
+   "fixed_files_render": 9,
+   "fixed_files_pass": 0,
+   "rules_all_attempts": {
+    "python_for_in": 18,
+    "geometry_in_place": 12,
+    "close_truncated": 12,
+    "python_range": 9,
+    "bracketless_comprehension": 6,
+    "list_semicolons": 6,
+    "dotdot_range": 6,
+    "geometry_to_module": 3,
+    "function_keyword": 3,
+    "function_block": 3
+   },
+   "rules_first_attempts": {
+    "python_for_in": 6,
+    "geometry_in_place": 4,
+    "close_truncated": 4,
+    "python_range": 3,
+    "bracketless_comprehension": 2,
+    "list_semicolons": 2,
+    "dotdot_range": 2,
+    "geometry_to_module": 1,
+    "function_keyword": 1,
+    "function_block": 1
+   }
+  },
+  {
+   "group": "laptop",
+   "model": "qwen2.5-coder:3b",
+   "label": "Qwen2.5-Coder 3B",
+   "samples": [
+    {
+     "sample": 0,
+     "tasks": 16,
+     "render1_before": 3,
+     "render1_after": 5,
+     "pass1_before": 0,
+     "pass1_after": 0,
+     "syntax1_before": 12,
+     "syntax1_fired": 7,
+     "syntax1_render_after": 2,
+     "tasks_passed_before": 0,
+     "tasks_passed_after": 0,
+     "render1_after_no_trunc": 5,
+     "pass1_after_no_trunc": 0,
+     "tasks_passed_after_no_trunc": 0
+    }
+   ],
+   "attempts": 48,
+   "attempts_fired": 21,
+   "first_attempts_fired": 7,
+   "fixed_files_render": 6,
+   "fixed_files_pass": 0,
+   "rules_all_attempts": {
+    "geometry_to_module": 12,
+    "bracketless_comprehension": 6,
+    "geometry_in_place": 6,
+    "missing_semicolon": 3,
+    "python_for_in": 3
+   },
+   "rules_first_attempts": {
+    "geometry_to_module": 4,
+    "bracketless_comprehension": 2,
+    "geometry_in_place": 2,
+    "missing_semicolon": 1,
+    "python_for_in": 1
+   }
+  },
+  {
+   "group": "laptop",
+   "model": "qwen3.5:2b-q4_K_M",
+   "label": "Qwen3.5 2B",
+   "samples": [
+    {
+     "sample": 0,
+     "tasks": 16,
+     "render1_before": 0,
+     "render1_after": 0,
+     "pass1_before": 0,
+     "pass1_after": 0,
+     "syntax1_before": 0,
+     "syntax1_fired": 0,
+     "syntax1_render_after": 0,
+     "tasks_passed_before": 0,
+     "tasks_passed_after": 0,
+     "render1_after_no_trunc": 0,
+     "pass1_after_no_trunc": 0,
+     "tasks_passed_after_no_trunc": 0
+    }
+   ],
+   "attempts": 48,
+   "attempts_fired": 31,
+   "first_attempts_fired": 11,
+   "fixed_files_render": 0,
+   "fixed_files_pass": 0,
+   "rules_all_attempts": {
+    "close_truncated": 23,
+    "missing_semicolon": 5,
+    "prose_lines": 5,
+    "python_operators": 5,
+    "geometry_in_place": 1
+   },
+   "rules_first_attempts": {
+    "close_truncated": 8,
+    "missing_semicolon": 2,
+    "prose_lines": 2,
+    "python_operators": 2
+   }
+  },
+  {
+   "group": "laptop",
+   "model": "llama3.2:3b",
+   "label": "Llama 3.2 3B",
+   "samples": [
+    {
+     "sample": 0,
+     "tasks": 16,
+     "render1_before": 8,
+     "render1_after": 9,
+     "pass1_before": 0,
+     "pass1_after": 0,
+     "syntax1_before": 5,
+     "syntax1_fired": 2,
+     "syntax1_render_after": 1,
+     "tasks_passed_before": 0,
+     "tasks_passed_after": 0,
+     "render1_after_no_trunc": 9,
+     "pass1_after_no_trunc": 0,
+     "tasks_passed_after_no_trunc": 0
+    }
+   ],
+   "attempts": 48,
+   "attempts_fired": 7,
+   "first_attempts_fired": 3,
+   "fixed_files_render": 3,
+   "fixed_files_pass": 0,
+   "rules_all_attempts": {
+    "geometry_to_module": 3,
+    "range_brackets": 3,
+    "close_truncated": 1
+   },
+   "rules_first_attempts": {
+    "close_truncated": 1,
+    "geometry_to_module": 1,
+    "range_brackets": 1
+   }
+  },
+  {
+   "group": "laptop",
+   "model": "granite4.2:3b",
+   "label": "Granite 4.2 3B",
+   "samples": [
+    {
+     "sample": 0,
+     "tasks": 16,
+     "render1_before": 2,
+     "render1_after": 4,
+     "pass1_before": 0,
+     "pass1_after": 0,
+     "syntax1_before": 1,
+     "syntax1_fired": 0,
+     "syntax1_render_after": 0,
+     "tasks_passed_before": 0,
+     "tasks_passed_after": 0,
+     "render1_after_no_trunc": 2,
+     "pass1_after_no_trunc": 0,
+     "tasks_passed_after_no_trunc": 0
+    }
+   ],
+   "attempts": 48,
+   "attempts_fired": 21,
+   "first_attempts_fired": 9,
+   "fixed_files_render": 5,
+   "fixed_files_pass": 0,
+   "rules_all_attempts": {
+    "close_truncated": 14,
+    "geometry_in_place": 8,
+    "geometry_to_module": 2,
+    "prose_lines": 1
+   },
+   "rules_first_attempts": {
+    "close_truncated": 6,
+    "geometry_in_place": 4,
+    "prose_lines": 1,
+    "geometry_to_module": 1
+   }
+  },
+  {
+   "group": "laptop",
+   "model": "ministral-3:3b",
+   "label": "Ministral 3 3B",
+   "samples": [
+    {
+     "sample": 0,
+     "tasks": 16,
+     "render1_before": 1,
+     "render1_after": 3,
+     "pass1_before": 0,
+     "pass1_after": 0,
+     "syntax1_before": 13,
+     "syntax1_fired": 10,
+     "syntax1_render_after": 2,
+     "tasks_passed_before": 0,
+     "tasks_passed_after": 0,
+     "render1_after_no_trunc": 3,
+     "pass1_after_no_trunc": 0,
+     "tasks_passed_after_no_trunc": 0
+    }
+   ],
+   "attempts": 48,
+   "attempts_fired": 33,
+   "first_attempts_fired": 10,
+   "fixed_files_render": 5,
+   "fixed_files_pass": 0,
+   "rules_all_attempts": {
+    "python_for_in": 27,
+    "dotdot_range": 6,
+    "geometry_in_place": 5,
+    "function_block": 5,
+    "range_brackets": 4,
+    "python_range": 3,
+    "geometry_to_module": 3,
+    "missing_semicolon": 1,
+    "close_truncated": 1
+   },
+   "rules_first_attempts": {
+    "python_for_in": 9,
+    "dotdot_range": 2,
+    "geometry_in_place": 1,
+    "python_range": 1,
+    "function_block": 1,
+    "range_brackets": 1,
+    "geometry_to_module": 1
+   }
+  },
+  {
+   "group": "laptop",
+   "model": "qwen3.5:4b-q4_K_M",
+   "label": "Qwen3.5 4B",
+   "samples": [
+    {
+     "sample": 0,
+     "tasks": 16,
+     "render1_before": 1,
+     "render1_after": 2,
+     "pass1_before": 0,
+     "pass1_after": 0,
+     "syntax1_before": 1,
+     "syntax1_fired": 1,
+     "syntax1_render_after": 0,
+     "tasks_passed_before": 0,
+     "tasks_passed_after": 0,
+     "render1_after_no_trunc": 1,
+     "pass1_after_no_trunc": 0,
+     "tasks_passed_after_no_trunc": 0
+    }
+   ],
+   "attempts": 48,
+   "attempts_fired": 33,
+   "first_attempts_fired": 11,
+   "fixed_files_render": 5,
+   "fixed_files_pass": 0,
+   "rules_all_attempts": {
+    "close_truncated": 28,
+    "geometry_in_place": 4,
+    "geometry_to_module": 2,
+    "function_block": 1,
+    "range_brackets": 1,
+    "list_semicolons": 1,
+    "bracketless_comprehension": 1,
+    "missing_semicolon": 1
+   },
+   "rules_first_attempts": {
+    "close_truncated": 8,
+    "function_block": 1,
+    "range_brackets": 1,
+    "geometry_to_module": 1,
+    "bracketless_comprehension": 1,
+    "geometry_in_place": 1,
+    "missing_semicolon": 1
+   }
+  },
+  {
+   "group": "laptop",
+   "model": "gemma4:e2b-it-q4_K_M",
+   "label": "Gemma 4 E2B",
+   "samples": [
+    {
+     "sample": 0,
+     "tasks": 16,
+     "render1_before": 12,
+     "render1_after": 13,
+     "pass1_before": 0,
+     "pass1_after": 0,
+     "syntax1_before": 4,
+     "syntax1_fired": 2,
+     "syntax1_render_after": 1,
+     "tasks_passed_before": 0,
+     "tasks_passed_after": 0,
+     "render1_after_no_trunc": 13,
+     "pass1_after_no_trunc": 0,
+     "tasks_passed_after_no_trunc": 0
+    }
+   ],
+   "attempts": 48,
+   "attempts_fired": 6,
+   "first_attempts_fired": 2,
+   "fixed_files_render": 5,
+   "fixed_files_pass": 0,
+   "rules_all_attempts": {
+    "geometry_to_module": 6,
+    "geometry_in_place": 1
+   },
+   "rules_first_attempts": {
+    "geometry_to_module": 2,
+    "geometry_in_place": 1
+   }
+  },
+  {
+   "group": "laptop",
+   "model": "qwen2.5-coder:7b",
+   "label": "Qwen2.5-Coder 7B",
+   "samples": [
+    {
+     "sample": 0,
+     "tasks": 16,
+     "render1_before": 1,
+     "render1_after": 8,
+     "pass1_before": 0,
+     "pass1_after": 0,
+     "syntax1_before": 15,
+     "syntax1_fired": 13,
+     "syntax1_render_after": 7,
+     "tasks_passed_before": 0,
+     "tasks_passed_after": 0,
+     "render1_after_no_trunc": 8,
+     "pass1_after_no_trunc": 0,
+     "tasks_passed_after_no_trunc": 0
+    }
+   ],
+   "attempts": 48,
+   "attempts_fired": 39,
+   "first_attempts_fired": 13,
+   "fixed_files_render": 21,
+   "fixed_files_pass": 0,
+   "rules_all_attempts": {
+    "geometry_to_module": 36,
+    "geometry_in_place": 3,
+    "bracketless_comprehension": 3
+   },
+   "rules_first_attempts": {
+    "geometry_to_module": 12,
+    "geometry_in_place": 1,
+    "bracketless_comprehension": 1
+   }
+  },
+  {
+   "group": "laptop",
+   "model": "scadcoder",
+   "label": "scadcoder (fine-tuned, ours)",
+   "samples": [
+    {
+     "sample": 0,
+     "tasks": 16,
+     "render1_before": 14,
+     "render1_after": 14,
+     "pass1_before": 0,
+     "pass1_after": 0,
+     "syntax1_before": 1,
+     "syntax1_fired": 0,
+     "syntax1_render_after": 0,
+     "tasks_passed_before": 0,
+     "tasks_passed_after": 0,
+     "render1_after_no_trunc": 14,
+     "pass1_after_no_trunc": 0,
+     "tasks_passed_after_no_trunc": 0
+    }
+   ],
+   "attempts": 48,
+   "attempts_fired": 0,
+   "first_attempts_fired": 0,
+   "fixed_files_render": 0,
+   "fixed_files_pass": 0,
+   "rules_all_attempts": {},
+   "rules_first_attempts": {}
+  },
+  {
+   "group": "laptop",
+   "model": "lfm2.5:8b-a1b-q4_K_M",
+   "label": "LFM2.5 8B-A1B (MoE)",
+   "samples": [
+    {
+     "sample": 0,
+     "tasks": 16,
+     "render1_before": 0,
+     "render1_after": 0,
+     "pass1_before": 0,
+     "pass1_after": 0,
+     "syntax1_before": 0,
+     "syntax1_fired": 0,
+     "syntax1_render_after": 0,
+     "tasks_passed_before": 0,
+     "tasks_passed_after": 0,
+     "render1_after_no_trunc": 0,
+     "pass1_after_no_trunc": 0,
+     "tasks_passed_after_no_trunc": 0
+    }
+   ],
+   "attempts": 48,
+   "attempts_fired": 34,
+   "first_attempts_fired": 11,
+   "fixed_files_render": 3,
+   "fixed_files_pass": 0,
+   "rules_all_attempts": {
+    "prose_lines": 26,
+    "python_operators": 26,
+    "close_truncated": 9,
+    "python_tuples": 7,
+    "python_comments": 4,
+    "missing_semicolon": 4,
+    "geometry_in_place": 4,
+    "range_brackets": 1,
+    "python_for_in": 1,
+    "unicode_operators": 1
+   },
+   "rules_first_attempts": {
+    "prose_lines": 11,
+    "python_operators": 11,
+    "close_truncated": 4,
+    "python_tuples": 2
+   }
+  },
+  {
+   "group": "laptop",
+   "model": "gemma4:e4b-it-q4_K_M",
+   "label": "Gemma 4 E4B",
+   "samples": [
+    {
+     "sample": 0,
+     "tasks": 16,
+     "render1_before": 9,
+     "render1_after": 12,
+     "pass1_before": 0,
+     "pass1_after": 0,
+     "syntax1_before": 3,
+     "syntax1_fired": 2,
+     "syntax1_render_after": 2,
+     "tasks_passed_before": 0,
+     "tasks_passed_after": 1,
+     "render1_after_no_trunc": 11,
+     "pass1_after_no_trunc": 0,
+     "tasks_passed_after_no_trunc": 1
+    }
+   ],
+   "attempts": 48,
+   "attempts_fired": 8,
+   "first_attempts_fired": 5,
+   "fixed_files_render": 5,
+   "fixed_files_pass": 1,
+   "rules_all_attempts": {
+    "close_truncated": 4,
+    "python_comprehension": 3,
+    "geometry_to_module": 1
+   },
+   "rules_first_attempts": {
+    "close_truncated": 3,
+    "python_comprehension": 1,
+    "geometry_to_module": 1
+   }
+  },
+  {
+   "group": "laptop",
+   "model": "qwen3.5:9b-q4_K_M",
+   "label": "Qwen3.5 9B",
+   "samples": [
+    {
+     "sample": 0,
+     "tasks": 16,
+     "render1_before": 1,
+     "render1_after": 4,
+     "pass1_before": 0,
+     "pass1_after": 0,
+     "syntax1_before": 2,
+     "syntax1_fired": 2,
+     "syntax1_render_after": 1,
+     "tasks_passed_before": 0,
+     "tasks_passed_after": 0,
+     "render1_after_no_trunc": 2,
+     "pass1_after_no_trunc": 0,
+     "tasks_passed_after_no_trunc": 0
+    }
+   ],
+   "attempts": 48,
+   "attempts_fired": 33,
+   "first_attempts_fired": 11,
+   "fixed_files_render": 11,
+   "fixed_files_pass": 0,
+   "rules_all_attempts": {
+    "missing_semicolon": 22,
+    "close_truncated": 18,
+    "geometry_in_place": 6,
+    "geometry_inline": 3,
+    "list_semicolons": 1
+   },
+   "rules_first_attempts": {
+    "missing_semicolon": 8,
+    "close_truncated": 8,
+    "geometry_in_place": 2,
+    "geometry_inline": 1
+   }
+  },
+  {
+   "group": "laptop",
+   "model": "bonsai2-27b-pq2_0",
+   "label": "Bonsai 2 27B (ternary)",
+   "samples": [
+    {
+     "sample": 0,
+     "tasks": 16,
+     "render1_before": 5,
+     "render1_after": 9,
+     "pass1_before": 0,
+     "pass1_after": 0,
+     "syntax1_before": 11,
+     "syntax1_fired": 8,
+     "syntax1_render_after": 4,
+     "tasks_passed_before": 2,
+     "tasks_passed_after": 2,
+     "render1_after_no_trunc": 9,
+     "pass1_after_no_trunc": 0,
+     "tasks_passed_after_no_trunc": 2
+    }
+   ],
+   "attempts": 47,
+   "attempts_fired": 22,
+   "first_attempts_fired": 8,
+   "fixed_files_render": 12,
+   "fixed_files_pass": 0,
+   "rules_all_attempts": {
+    "geometry_to_module": 21,
+    "python_for_in": 3,
+    "range_brackets": 3,
+    "geometry_in_place": 2,
+    "close_truncated": 1
+   },
+   "rules_first_attempts": {
+    "geometry_to_module": 7,
+    "python_for_in": 1,
+    "close_truncated": 1,
+    "range_brackets": 1
+   }
+  },
+  {
+   "group": "box",
+   "model": "tiiny/Qwen/Qwen3-4B-Instruct-2507",
+   "label": "Qwen3 4B Instruct-2507",
+   "samples": [
+    {
+     "sample": 0,
+     "tasks": 16,
+     "render1_before": 3,
+     "render1_after": 9,
+     "pass1_before": 0,
+     "pass1_after": 0,
+     "syntax1_before": 5,
+     "syntax1_fired": 4,
+     "syntax1_render_after": 2,
+     "tasks_passed_before": 0,
+     "tasks_passed_after": 0,
+     "render1_after_no_trunc": 6,
+     "pass1_after_no_trunc": 0,
+     "tasks_passed_after_no_trunc": 0
+    },
+    {
+     "sample": 1,
+     "tasks": 16,
+     "render1_before": 1,
+     "render1_after": 6,
+     "pass1_before": 0,
+     "pass1_after": 0,
+     "syntax1_before": 7,
+     "syntax1_fired": 7,
+     "syntax1_render_after": 2,
+     "tasks_passed_before": 0,
+     "tasks_passed_after": 0,
+     "render1_after_no_trunc": 3,
+     "pass1_after_no_trunc": 0,
+     "tasks_passed_after_no_trunc": 0
+    }
+   ],
+   "attempts": 96,
+   "attempts_fired": 65,
+   "first_attempts_fired": 23,
+   "fixed_files_render": 28,
+   "fixed_files_pass": 0,
+   "rules_all_attempts": {
+    "geometry_to_module": 37,
+    "close_truncated": 16,
+    "geometry_in_place": 15,
+    "geometry_inline": 13,
+    "python_for_in": 3
+   },
+   "rules_first_attempts": {
+    "geometry_to_module": 12,
+    "close_truncated": 9,
+    "geometry_in_place": 8,
+    "geometry_inline": 3,
+    "python_for_in": 1
+   }
+  },
+  {
+   "group": "box",
+   "model": "tiiny/Qwen/Qwen3-8B",
+   "label": "Qwen3 8B",
+   "samples": [
+    {
+     "sample": 0,
+     "tasks": 16,
+     "render1_before": 2,
+     "render1_after": 7,
+     "pass1_before": 0,
+     "pass1_after": 0,
+     "syntax1_before": 14,
+     "syntax1_fired": 12,
+     "syntax1_render_after": 5,
+     "tasks_passed_before": 0,
+     "tasks_passed_after": 0,
+     "render1_after_no_trunc": 7,
+     "pass1_after_no_trunc": 0,
+     "tasks_passed_after_no_trunc": 0
+    },
+    {
+     "sample": 1,
+     "tasks": 16,
+     "render1_before": 3,
+     "render1_after": 5,
+     "pass1_before": 0,
+     "pass1_after": 0,
+     "syntax1_before": 13,
+     "syntax1_fired": 13,
+     "syntax1_render_after": 2,
+     "tasks_passed_before": 0,
+     "tasks_passed_after": 0,
+     "render1_after_no_trunc": 5,
+     "pass1_after_no_trunc": 0,
+     "tasks_passed_after_no_trunc": 0
+    }
+   ],
+   "attempts": 96,
+   "attempts_fired": 76,
+   "first_attempts_fired": 25,
+   "fixed_files_render": 21,
+   "fixed_files_pass": 0,
+   "rules_all_attempts": {
+    "geometry_to_module": 74,
+    "python_for_in": 8,
+    "geometry_in_place": 6,
+    "function_literal_equals": 2
+   },
+   "rules_first_attempts": {
+    "geometry_to_module": 24,
+    "python_for_in": 2,
+    "geometry_in_place": 2,
+    "function_literal_equals": 1
+   }
+  },
+  {
+   "group": "box",
+   "model": "tiiny/Qwen/Qwen3.5-9B",
+   "label": "Qwen3.5 9B (Tiiny)",
+   "samples": [
+    {
+     "sample": 0,
+     "tasks": 16,
+     "render1_before": 8,
+     "render1_after": 9,
+     "pass1_before": 0,
+     "pass1_after": 0,
+     "syntax1_before": 3,
+     "syntax1_fired": 2,
+     "syntax1_render_after": 1,
+     "tasks_passed_before": 1,
+     "tasks_passed_after": 1,
+     "render1_after_no_trunc": 9,
+     "pass1_after_no_trunc": 0,
+     "tasks_passed_after_no_trunc": 1
+    },
+    {
+     "sample": 1,
+     "tasks": 16,
+     "render1_before": 4,
+     "render1_after": 6,
+     "pass1_before": 0,
+     "pass1_after": 0,
+     "syntax1_before": 6,
+     "syntax1_fired": 4,
+     "syntax1_render_after": 1,
+     "tasks_passed_before": 0,
+     "tasks_passed_after": 0,
+     "render1_after_no_trunc": 5,
+     "pass1_after_no_trunc": 0,
+     "tasks_passed_after_no_trunc": 0
+    }
+   ],
+   "attempts": 95,
+   "attempts_fired": 41,
+   "first_attempts_fired": 16,
+   "fixed_files_render": 11,
+   "fixed_files_pass": 0,
+   "rules_all_attempts": {
+    "geometry_to_module": 21,
+    "close_truncated": 16,
+    "bracketless_comprehension": 9,
+    "geometry_in_place": 4,
+    "geometry_inline": 1,
+    "list_semicolons": 1,
+    "prose_lines": 1,
+    "python_operators": 1
+   },
+   "rules_first_attempts": {
+    "close_truncated": 8,
+    "geometry_to_module": 7,
+    "bracketless_comprehension": 3,
+    "geometry_in_place": 2,
+    "geometry_inline": 1,
+    "list_semicolons": 1
+   }
+  },
+  {
+   "group": "box",
+   "model": "tiiny/openai/gpt-oss-20b",
+   "label": "gpt-oss-20b",
+   "samples": [
+    {
+     "sample": 0,
+     "tasks": 16,
+     "render1_before": 0,
+     "render1_after": 0,
+     "pass1_before": 0,
+     "pass1_after": 0,
+     "syntax1_before": 0,
+     "syntax1_fired": 0,
+     "syntax1_render_after": 0,
+     "tasks_passed_before": 0,
+     "tasks_passed_after": 0,
+     "render1_after_no_trunc": 0,
+     "pass1_after_no_trunc": 0,
+     "tasks_passed_after_no_trunc": 0
+    },
+    {
+     "sample": 1,
+     "tasks": 16,
+     "render1_before": 0,
+     "render1_after": 0,
+     "pass1_before": 0,
+     "pass1_after": 0,
+     "syntax1_before": 0,
+     "syntax1_fired": 0,
+     "syntax1_render_after": 0,
+     "tasks_passed_before": 0,
+     "tasks_passed_after": 0,
+     "render1_after_no_trunc": 0,
+     "pass1_after_no_trunc": 0,
+     "tasks_passed_after_no_trunc": 0
+    }
+   ],
+   "attempts": 96,
+   "attempts_fired": 0,
+   "first_attempts_fired": 0,
+   "fixed_files_render": 0,
+   "fixed_files_pass": 0,
+   "rules_all_attempts": {},
+   "rules_first_attempts": {}
+  },
+  {
+   "group": "box",
+   "model": "tiiny/google/gemma-4-26B-A4B-it",
+   "label": "Gemma 4 26B-A4B",
+   "samples": [
+    {
+     "sample": 0,
+     "tasks": 16,
+     "render1_before": 16,
+     "render1_after": 16,
+     "pass1_before": 4,
+     "pass1_after": 4,
+     "syntax1_before": 0,
+     "syntax1_fired": 0,
+     "syntax1_render_after": 0,
+     "tasks_passed_before": 9,
+     "tasks_passed_after": 9,
+     "render1_after_no_trunc": 16,
+     "pass1_after_no_trunc": 4,
+     "tasks_passed_after_no_trunc": 9
+    },
+    {
+     "sample": 1,
+     "tasks": 16,
+     "render1_before": 15,
+     "render1_after": 16,
+     "pass1_before": 2,
+     "pass1_after": 2,
+     "syntax1_before": 0,
+     "syntax1_fired": 0,
+     "syntax1_render_after": 0,
+     "tasks_passed_before": 7,
+     "tasks_passed_after": 7,
+     "render1_after_no_trunc": 15,
+     "pass1_after_no_trunc": 2,
+     "tasks_passed_after_no_trunc": 7
+    },
+    {
+     "sample": 2,
+     "tasks": 16,
+     "render1_before": 13,
+     "render1_after": 15,
+     "pass1_before": 3,
+     "pass1_after": 3,
+     "syntax1_before": 1,
+     "syntax1_fired": 0,
+     "syntax1_render_after": 0,
+     "tasks_passed_before": 12,
+     "tasks_passed_after": 12,
+     "render1_after_no_trunc": 13,
+     "pass1_after_no_trunc": 3,
+     "tasks_passed_after_no_trunc": 12
+    }
+   ],
+   "attempts": 110,
+   "attempts_fired": 3,
+   "first_attempts_fired": 3,
+   "fixed_files_render": 3,
+   "fixed_files_pass": 0,
+   "rules_all_attempts": {
+    "close_truncated": 3
+   },
+   "rules_first_attempts": {
+    "close_truncated": 3
+   }
+  },
+  {
+   "group": "box",
+   "model": "tiiny/Qwen/Qwen3-30B-A3B-Thinking",
+   "label": "Qwen3 30B-A3B Thinking-2507",
+   "samples": [
+    {
+     "sample": 0,
+     "tasks": 16,
+     "render1_before": 0,
+     "render1_after": 0,
+     "pass1_before": 0,
+     "pass1_after": 0,
+     "syntax1_before": 0,
+     "syntax1_fired": 0,
+     "syntax1_render_after": 0,
+     "tasks_passed_before": 0,
+     "tasks_passed_after": 0,
+     "render1_after_no_trunc": 0,
+     "pass1_after_no_trunc": 0,
+     "tasks_passed_after_no_trunc": 0
+    },
+    {
+     "sample": 1,
+     "tasks": 16,
+     "render1_before": 0,
+     "render1_after": 0,
+     "pass1_before": 0,
+     "pass1_after": 0,
+     "syntax1_before": 0,
+     "syntax1_fired": 0,
+     "syntax1_render_after": 0,
+     "tasks_passed_before": 0,
+     "tasks_passed_after": 0,
+     "render1_after_no_trunc": 0,
+     "pass1_after_no_trunc": 0,
+     "tasks_passed_after_no_trunc": 0
+    }
+   ],
+   "attempts": 96,
+   "attempts_fired": 0,
+   "first_attempts_fired": 0,
+   "fixed_files_render": 0,
+   "fixed_files_pass": 0,
+   "rules_all_attempts": {},
+   "rules_first_attempts": {}
+  },
+  {
+   "group": "box",
+   "model": "tiiny/Qwen/Qwen3-Coder-30B-A3B-Instruct",
+   "label": "Qwen3-Coder 30B-A3B",
+   "samples": [
+    {
+     "sample": 0,
+     "tasks": 16,
+     "render1_before": 4,
+     "render1_after": 10,
+     "pass1_before": 0,
+     "pass1_after": 0,
+     "syntax1_before": 11,
+     "syntax1_fired": 11,
+     "syntax1_render_after": 6,
+     "tasks_passed_before": 0,
+     "tasks_passed_after": 0,
+     "render1_after_no_trunc": 10,
+     "pass1_after_no_trunc": 0,
+     "tasks_passed_after_no_trunc": 0
+    },
+    {
+     "sample": 1,
+     "tasks": 16,
+     "render1_before": 6,
+     "render1_after": 12,
+     "pass1_before": 0,
+     "pass1_after": 0,
+     "syntax1_before": 9,
+     "syntax1_fired": 9,
+     "syntax1_render_after": 6,
+     "tasks_passed_before": 0,
+     "tasks_passed_after": 0,
+     "render1_after_no_trunc": 12,
+     "pass1_after_no_trunc": 0,
+     "tasks_passed_after_no_trunc": 0
+    }
+   ],
+   "attempts": 96,
+   "attempts_fired": 62,
+   "first_attempts_fired": 20,
+   "fixed_files_render": 38,
+   "fixed_files_pass": 0,
+   "rules_all_attempts": {
+    "geometry_to_module": 62,
+    "bracketless_comprehension": 6,
+    "geometry_inline": 3,
+    "geometry_in_place": 2
+   },
+   "rules_first_attempts": {
+    "geometry_to_module": 20,
+    "bracketless_comprehension": 2,
+    "geometry_in_place": 1,
+    "geometry_inline": 1
+   }
+  },
+  {
+   "group": "box",
+   "model": "tiiny/Qwen/Qwen3-30B-A3B-Instruct",
+   "label": "Qwen3 30B-A3B Instruct-2507",
+   "samples": [
+    {
+     "sample": 0,
+     "tasks": 16,
+     "render1_before": 9,
+     "render1_after": 13,
+     "pass1_before": 0,
+     "pass1_after": 0,
+     "syntax1_before": 4,
+     "syntax1_fired": 4,
+     "syntax1_render_after": 4,
+     "tasks_passed_before": 0,
+     "tasks_passed_after": 0,
+     "render1_after_no_trunc": 13,
+     "pass1_after_no_trunc": 0,
+     "tasks_passed_after_no_trunc": 0
+    },
+    {
+     "sample": 1,
+     "tasks": 16,
+     "render1_before": 7,
+     "render1_after": 11,
+     "pass1_before": 2,
+     "pass1_after": 2,
+     "syntax1_before": 5,
+     "syntax1_fired": 5,
+     "syntax1_render_after": 3,
+     "tasks_passed_before": 2,
+     "tasks_passed_after": 2,
+     "render1_after_no_trunc": 10,
+     "pass1_after_no_trunc": 2,
+     "tasks_passed_after_no_trunc": 2
+    }
+   ],
+   "attempts": 92,
+   "attempts_fired": 37,
+   "first_attempts_fired": 13,
+   "fixed_files_render": 24,
+   "fixed_files_pass": 0,
+   "rules_all_attempts": {
+    "geometry_to_module": 24,
+    "close_truncated": 10,
+    "python_for_in": 6,
+    "geometry_in_place": 2
+   },
+   "rules_first_attempts": {
+    "geometry_to_module": 8,
+    "close_truncated": 4,
+    "python_for_in": 2,
+    "geometry_in_place": 1
+   }
+  },
+  {
+   "group": "box",
+   "model": "tiiny/Qwen/Qwen3.6-27B",
+   "label": "Qwen3.6 27B",
+   "samples": [
+    {
+     "sample": 0,
+     "tasks": 16,
+     "render1_before": 16,
+     "render1_after": 16,
+     "pass1_before": 3,
+     "pass1_after": 3,
+     "syntax1_before": 0,
+     "syntax1_fired": 0,
+     "syntax1_render_after": 0,
+     "tasks_passed_before": 5,
+     "tasks_passed_after": 5,
+     "render1_after_no_trunc": 16,
+     "pass1_after_no_trunc": 3,
+     "tasks_passed_after_no_trunc": 5
+    },
+    {
+     "sample": 1,
+     "tasks": 16,
+     "render1_before": 15,
+     "render1_after": 15,
+     "pass1_before": 3,
+     "pass1_after": 3,
+     "syntax1_before": 0,
+     "syntax1_fired": 0,
+     "syntax1_render_after": 0,
+     "tasks_passed_before": 6,
+     "tasks_passed_after": 6,
+     "render1_after_no_trunc": 15,
+     "pass1_after_no_trunc": 3,
+     "tasks_passed_after_no_trunc": 6
+    }
+   ],
+   "attempts": 80,
+   "attempts_fired": 0,
+   "first_attempts_fired": 0,
+   "fixed_files_render": 0,
+   "fixed_files_pass": 0,
+   "rules_all_attempts": {},
+   "rules_first_attempts": {}
+  },
+  {
+   "group": "box",
+   "model": "tiiny/zai-org/GLM-4.7-Flash",
+   "label": "GLM-4.7-Flash 30B-A3B",
+   "samples": [
+    {
+     "sample": 0,
+     "tasks": 16,
+     "render1_before": 13,
+     "render1_after": 16,
+     "pass1_before": 0,
+     "pass1_after": 0,
+     "syntax1_before": 3,
+     "syntax1_fired": 3,
+     "syntax1_render_after": 3,
+     "tasks_passed_before": 0,
+     "tasks_passed_after": 0,
+     "render1_after_no_trunc": 16,
+     "pass1_after_no_trunc": 0,
+     "tasks_passed_after_no_trunc": 0
+    },
+    {
+     "sample": 1,
+     "tasks": 16,
+     "render1_before": 14,
+     "render1_after": 16,
+     "pass1_before": 0,
+     "pass1_after": 0,
+     "syntax1_before": 2,
+     "syntax1_fired": 2,
+     "syntax1_render_after": 2,
+     "tasks_passed_before": 0,
+     "tasks_passed_after": 0,
+     "render1_after_no_trunc": 16,
+     "pass1_after_no_trunc": 0,
+     "tasks_passed_after_no_trunc": 0
+    }
+   ],
+   "attempts": 96,
+   "attempts_fired": 14,
+   "first_attempts_fired": 5,
+   "fixed_files_render": 14,
+   "fixed_files_pass": 0,
+   "rules_all_attempts": {
+    "geometry_to_module": 9,
+    "geometry_inline": 3,
+    "range_brackets": 2
+   },
+   "rules_first_attempts": {
+    "geometry_to_module": 3,
+    "range_brackets": 1,
+    "geometry_inline": 1
+   }
+  },
+  {
+   "group": "box",
+   "model": "tiiny/Qwen/Qwen3.8-27B",
+   "label": "Qwen3.8 27B",
+   "samples": [
+    {
+     "sample": 0,
+     "tasks": 16,
+     "render1_before": 3,
+     "render1_after": 11,
+     "pass1_before": 2,
+     "pass1_after": 4,
+     "syntax1_before": 12,
+     "syntax1_fired": 9,
+     "syntax1_render_after": 8,
+     "tasks_passed_before": 4,
+     "tasks_passed_after": 6,
+     "render1_after_no_trunc": 11,
+     "pass1_after_no_trunc": 4,
+     "tasks_passed_after_no_trunc": 6
+    },
+    {
+     "sample": 1,
+     "tasks": 16,
+     "render1_before": 5,
+     "render1_after": 13,
+     "pass1_before": 3,
+     "pass1_after": 7,
+     "syntax1_before": 11,
+     "syntax1_fired": 10,
+     "syntax1_render_after": 8,
+     "tasks_passed_before": 4,
+     "tasks_passed_after": 9,
+     "render1_after_no_trunc": 13,
+     "pass1_after_no_trunc": 7,
+     "tasks_passed_after_no_trunc": 9
+    }
+   ],
+   "attempts": 83,
+   "attempts_fired": 56,
+   "first_attempts_fired": 19,
+   "fixed_files_render": 49,
+   "fixed_files_pass": 20,
+   "rules_all_attempts": {
+    "geometry_to_module": 53,
+    "function_keyword": 3,
+    "bracketless_comprehension": 1
+   },
+   "rules_first_attempts": {
+    "geometry_to_module": 18,
+    "function_keyword": 1,
+    "bracketless_comprehension": 1
+   }
+  },
+  {
+   "group": "box",
+   "model": "tiiny/Qwen/Qwen3.5-35B-A3B",
+   "label": "Qwen3.5 35B-A3B",
+   "samples": [
+    {
+     "sample": 0,
+     "tasks": 16,
+     "render1_before": 3,
+     "render1_after": 5,
+     "pass1_before": 1,
+     "pass1_after": 1,
+     "syntax1_before": 7,
+     "syntax1_fired": 4,
+     "syntax1_render_after": 2,
+     "tasks_passed_before": 2,
+     "tasks_passed_after": 2,
+     "render1_after_no_trunc": 5,
+     "pass1_after_no_trunc": 1,
+     "tasks_passed_after_no_trunc": 2
+    },
+    {
+     "sample": 1,
+     "tasks": 16,
+     "render1_before": 7,
+     "render1_after": 11,
+     "pass1_before": 0,
+     "pass1_after": 2,
+     "syntax1_before": 5,
+     "syntax1_fired": 4,
+     "syntax1_render_after": 2,
+     "tasks_passed_before": 0,
+     "tasks_passed_after": 2,
+     "render1_after_no_trunc": 9,
+     "pass1_after_no_trunc": 2,
+     "tasks_passed_after_no_trunc": 2
+    }
+   ],
+   "attempts": 94,
+   "attempts_fired": 55,
+   "first_attempts_fired": 15,
+   "fixed_files_render": 19,
+   "fixed_files_pass": 6,
+   "rules_all_attempts": {
+    "geometry_to_module": 30,
+    "close_truncated": 21,
+    "geometry_in_place": 8,
+    "prose_lines": 3,
+    "python_operators": 3,
+    "geometry_inline": 3,
+    "missing_semicolon": 2
+   },
+   "rules_first_attempts": {
+    "geometry_to_module": 9,
+    "close_truncated": 7,
+    "geometry_in_place": 3,
+    "geometry_inline": 1
+   }
+  },
+  {
+   "group": "box",
+   "model": "tiiny/Qwen/Qwen3.6-35B-A3B",
+   "label": "Qwen3.6 35B-A3B",
+   "samples": [
+    {
+     "sample": 0,
+     "tasks": 16,
+     "render1_before": 9,
+     "render1_after": 13,
+     "pass1_before": 0,
+     "pass1_after": 1,
+     "syntax1_before": 1,
+     "syntax1_fired": 1,
+     "syntax1_render_after": 1,
+     "tasks_passed_before": 0,
+     "tasks_passed_after": 3,
+     "render1_after_no_trunc": 11,
+     "pass1_after_no_trunc": 1,
+     "tasks_passed_after_no_trunc": 3
+    },
+    {
+     "sample": 1,
+     "tasks": 16,
+     "render1_before": 7,
+     "render1_after": 7,
+     "pass1_before": 1,
+     "pass1_after": 1,
+     "syntax1_before": 5,
+     "syntax1_fired": 4,
+     "syntax1_render_after": 0,
+     "tasks_passed_before": 3,
+     "tasks_passed_after": 4,
+     "render1_after_no_trunc": 7,
+     "pass1_after_no_trunc": 1,
+     "tasks_passed_after_no_trunc": 4
+    }
+   ],
+   "attempts": 93,
+   "attempts_fired": 48,
+   "first_attempts_fired": 14,
+   "fixed_files_render": 21,
+   "fixed_files_pass": 7,
+   "rules_all_attempts": {
+    "geometry_to_module": 23,
+    "close_truncated": 21,
+    "geometry_in_place": 8,
+    "prose_lines": 6,
+    "python_operators": 6,
+    "bracketless_comprehension": 2,
+    "geometry_inline": 2,
+    "missing_semicolon": 1,
+    "python_range": 1,
+    "function_block": 1,
+    "python_tuples": 1
+   },
+   "rules_first_attempts": {
+    "close_truncated": 8,
+    "geometry_to_module": 7,
+    "geometry_in_place": 4,
+    "missing_semicolon": 1,
+    "bracketless_comprehension": 1,
+    "function_block": 1
+   }
+  },
+  {
+   "group": "box",
+   "model": "tiiny/deepreinforce-ai/Ornith-1.0-35B",
+   "label": "Ornith-1.0 35B (MoE)",
+   "samples": [
+    {
+     "sample": 0,
+     "tasks": 16,
+     "render1_before": 11,
+     "render1_after": 12,
+     "pass1_before": 2,
+     "pass1_after": 3,
+     "syntax1_before": 5,
+     "syntax1_fired": 5,
+     "syntax1_render_after": 1,
+     "tasks_passed_before": 3,
+     "tasks_passed_after": 4,
+     "render1_after_no_trunc": 12,
+     "pass1_after_no_trunc": 3,
+     "tasks_passed_after_no_trunc": 4
+    },
+    {
+     "sample": 1,
+     "tasks": 16,
+     "render1_before": 11,
+     "render1_after": 12,
+     "pass1_before": 1,
+     "pass1_after": 2,
+     "syntax1_before": 4,
+     "syntax1_fired": 3,
+     "syntax1_render_after": 1,
+     "tasks_passed_before": 1,
+     "tasks_passed_after": 2,
+     "render1_after_no_trunc": 12,
+     "pass1_after_no_trunc": 2,
+     "tasks_passed_after_no_trunc": 2
+    }
+   ],
+   "attempts": 90,
+   "attempts_fired": 24,
+   "first_attempts_fired": 8,
+   "fixed_files_render": 6,
+   "fixed_files_pass": 6,
+   "rules_all_attempts": {
+    "geometry_to_module": 24,
+    "range_brackets": 3
+   },
+   "rules_first_attempts": {
+    "geometry_to_module": 8,
+    "range_brackets": 1
+   }
+  },
+  {
+   "group": "box",
+   "model": "tiiny/Qwen/Qwen3-Coder-Next",
+   "label": "Qwen3-Coder-Next 80B-A3B",
+   "samples": [
+    {
+     "sample": 0,
+     "tasks": 16,
+     "render1_before": 13,
+     "render1_after": 15,
+     "pass1_before": 1,
+     "pass1_after": 1,
+     "syntax1_before": 2,
+     "syntax1_fired": 2,
+     "syntax1_render_after": 2,
+     "tasks_passed_before": 4,
+     "tasks_passed_after": 5,
+     "render1_after_no_trunc": 15,
+     "pass1_after_no_trunc": 1,
+     "tasks_passed_after_no_trunc": 5
+    },
+    {
+     "sample": 1,
+     "tasks": 16,
+     "render1_before": 14,
+     "render1_after": 14,
+     "pass1_before": 2,
+     "pass1_after": 2,
+     "syntax1_before": 1,
+     "syntax1_fired": 1,
+     "syntax1_render_after": 0,
+     "tasks_passed_before": 2,
+     "tasks_passed_after": 2,
+     "render1_after_no_trunc": 14,
+     "pass1_after_no_trunc": 2,
+     "tasks_passed_after_no_trunc": 2
+    }
+   ],
+   "attempts": 87,
+   "attempts_fired": 14,
+   "first_attempts_fired": 5,
+   "fixed_files_render": 6,
+   "fixed_files_pass": 1,
+   "rules_all_attempts": {
+    "geometry_to_module": 10,
+    "close_truncated": 4
+   },
+   "rules_first_attempts": {
+    "geometry_to_module": 3,
+    "close_truncated": 2
+   }
+  },
+  {
+   "group": "box",
+   "model": "tiiny/openai/gpt-oss-120b",
+   "label": "gpt-oss-120b",
+   "samples": [
+    {
+     "sample": 0,
+     "tasks": 16,
+     "render1_before": 3,
+     "render1_after": 4,
+     "pass1_before": 3,
+     "pass1_after": 4,
+     "syntax1_before": 2,
+     "syntax1_fired": 1,
+     "syntax1_render_after": 1,
+     "tasks_passed_before": 4,
+     "tasks_passed_after": 7,
+     "render1_after_no_trunc": 4,
+     "pass1_after_no_trunc": 4,
+     "tasks_passed_after_no_trunc": 7
+    },
+    {
+     "sample": 1,
+     "tasks": 16,
+     "render1_before": 5,
+     "render1_after": 6,
+     "pass1_before": 3,
+     "pass1_after": 4,
+     "syntax1_before": 3,
+     "syntax1_fired": 2,
+     "syntax1_render_after": 1,
+     "tasks_passed_before": 5,
+     "tasks_passed_after": 7,
+     "render1_after_no_trunc": 6,
+     "pass1_after_no_trunc": 4,
+     "tasks_passed_after_no_trunc": 7
+    }
+   ],
+   "attempts": 82,
+   "attempts_fired": 23,
+   "first_attempts_fired": 5,
+   "fixed_files_render": 13,
+   "fixed_files_pass": 11,
+   "rules_all_attempts": {
+    "geometry_to_module": 15,
+    "close_truncated": 8,
+    "missing_semicolon": 1,
+    "geometry_in_place": 1
+   },
+   "rules_first_attempts": {
+    "geometry_to_module": 3,
+    "close_truncated": 2
+   }
+  }
+ ],
+ "seconds": 171
+}

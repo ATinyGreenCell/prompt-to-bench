@@ -1,0 +1,21 @@
+Features: {"bodies": [{"solids": [{"shape": "box", "size": [130, 90, 4], "at": [0, 0, 0]}, {"shape": "box", "size": [130, 4, 70], "at": [-65, -45, 0], "grid": {"nx": 1, "ny": 2, "pitch_x": 0, "pitch_y": 90}}, {"shape": "box", "size": [4, 90, 70], "at": [0, -45, 0], "grid": {"nx": 1, "ny": 3, "pitch_x": 130, "pitch_y": 0}}], "cuts": [{"cut": "hole", "d": 30.5, "depth": null, "at": [0, -40], "grid": {"nx": 3, "ny": 2, "pitch_x": 40, "pitch_y": 40}}]}]}
+
+```openscad
+// Built by bench/smallmodels/features/compiler.py from a list of features.
+$fn = 64;
+difference() {
+  union() {
+    translate([0, 0, 0]) translate([-65, -45, 0]) cube([130, 90, 4]);
+    translate([-65, -90, 0]) rotate([0, 0, 0]) translate([-65, -2, 0]) cube([130, 4, 70]); translate([-65, 0, 0]) rotate([0, 0, 0]) translate([-65, -2, 0]) cube([130, 4, 70]);
+    translate([0, -45, 0]) rotate([0, 0, 0]) translate([-2, -45, 0]) cube([4, 90, 70]); translate([0, -45, 0]) rotate([0, 0, 0]) translate([-2, -45, 0]) cube([4, 90, 70]); translate([0, -45, 0]) rotate([0, 0, 0]) translate([-2, -45, 0]) cube([4, 90, 70]);
+  }
+  union() {
+    translate([-40, -60, -1]) rotate([0, 0, 0]) cylinder(d = 30.5, h = 72);
+    translate([0, -60, -1]) rotate([0, 0, 0]) cylinder(d = 30.5, h = 72);
+    translate([40, -60, -1]) rotate([0, 0, 0]) cylinder(d = 30.5, h = 72);
+    translate([-40, -20, -1]) rotate([0, 0, 0]) cylinder(d = 30.5, h = 72);
+    translate([0, -20, -1]) rotate([0, 0, 0]) cylinder(d = 30.5, h = 72);
+    translate([40, -20, -1]) rotate([0, 0, 0]) cylinder(d = 30.5, h = 72);
+  }
+}
+```

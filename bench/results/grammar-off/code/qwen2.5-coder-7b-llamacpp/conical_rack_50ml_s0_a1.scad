@@ -1,0 +1,46 @@
+// Dimensions
+plate_width = 130; // mm
+plate_height = 90; // mm
+plate_thickness = 4; // mm
+hole_diameter = 30.5; // mm
+wall_height = 70; // mm
+wall_thickness = plate_thickness; // mm
+hole_spacing = 40; // mm
+
+// Calculate hole positions
+hole_positions = [
+    [0, 0],
+    [hole_spacing, 0],
+    [2 * hole_spacing, 0],
+    [0, hole_spacing],
+    [hole_spacing, hole_spacing],
+    [2 * hole_spacing, hole_spacing]
+];
+
+// Create the plate
+plate = cube([plate_width, plate_height, plate_thickness]);
+
+// Create the holes
+holes = union() {
+    for (pos = hole_positions) {
+        cylinder(r = hole_diameter / 2, h = wall_height + plate_thickness + 0.01, center = true);
+    }
+};
+
+// Create the walls
+walls = union() {
+    translate([0, 0, plate_thickness]) {
+        linear_extrude(height = wall_height, center = true, convexity = 10)
+            square([plate_width, wall_thickness]);
+    }
+    translate([0, plate_height - wall_thickness, plate_thickness]) {
+        linear_extrude(height = wall_height, center = true, convexity = 10)
+            square([plate_width, wall_thickness]);
+    }
+};
+
+// Combine the plate, holes, and walls
+rack = plate - holes + walls;
+
+// Render the rack
+render(rack);

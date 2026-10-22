@@ -1,0 +1,91 @@
+validate.py report - 2026-10-19 23:19 EDT
+grammar: bench/smallmodels/grammar/openscad.gbnf  sha256 ffade52b8c5d5df67dc5318e4bfc3e8f80c4dbe853401ec02bcea69700bcb6bc
+parsed as llama.cpp does: 265 named rules, 3483 rules after expanding groups and repetitions; no left recursion; 1 initial stacks; parse 0.04 s
+
+== ACCEPT: every file must parse
+  bench/reference                   16 / 16    accepted   stacks per character: mean  29.0, max 131
+  bench/variants                     3 / 3     accepted   stacks per character: mean  31.0, max 131
+  designs                           17 / 17    accepted   stacks per character: mean  21.2, max 131
+  finetune/seeds                    34 / 34    accepted   stacks per character: mean  20.4, max 131
+  distill A (clean_shard*)         680 / 680   accepted   stacks per character: mean  27.9, max 131
+  distill B (clean_b_shard*)       700 / 700   accepted   stacks per character: mean  27.2, max 132
+  distill C (clean_c_shard*)       674 / 674   accepted   stacks per character: mean  28.1, max 131
+  TOTAL (repo corpus)             2124 / 2124  accepted
+  + grammar/positives (extra)        1 / 1     accepted   stacks per character: mean  38.4, max 132
+  2541677 characters in 16 s on 6 processes
+  most stacks: finetune/rft/distill/clean_b_shard3.jsonl:74 (132); finetune/rft/distill/clean_b_shard4.jsonl:72 (132); bench/smallmodels/grammar/positives/syntax_tour.scad (132)
+
+== REJECT: every negative must fail (at the line it names, if it names one)
+  ok    c_style_for.scad                   rejected at file line 3 col 11: unexpected character ';'
+        for (i = 0; i < 4; i++) translate([i * 10, 0, 0]) cube(5);
+  ok    elif.scad                          rejected at file line 5 col 5: unexpected character ' '
+        elif (!a) sphere(1);
+  ok    fence_in_comment.scad              rejected at file line 3 col 19: unexpected character '`'
+        cube(1); // done ```
+  ok    function_with_braces.scad          rejected at file line 3 col 21: unexpected character '{'
+        function area(w, h) { return w * h; }
+  ok    math_member.scad                   rejected at file line 3 col 11: unexpected character 'q'
+        r = math.sqrt(2);
+  ok    missing_semicolon_assignment.scad  rejected at file line 4 col 1: unexpected character 'c'
+        cube(w);
+  ok    missing_semicolon_block.scad       rejected at file line 6 col 1: unexpected character '}'
+        }
+  ok    missing_semicolon_module.scad      rejected at file line 4 col 1: unexpected character 't'
+        translate([4, 4, 0]) cylinder(d = 3, h = 6);
+  ok    module_as_argument.scad            rejected at file line 3 col 11: unexpected character '('
+        union(cube(1), sphere(2));
+  ok    module_from_function.scad          rejected at file line 3 col 23: unexpected character '('
+        function body() = cube([10, 10, 2]);
+  ok    module_in_vector.scad              rejected at file line 3 col 14: unexpected character '('
+        parts = [cube(1), sphere(2)];
+  ok    module_never_called.scad           rejected at the closing fence: unexpected character '`'
+        ```
+  ok    module_value_cube.scad             rejected at file line 3 col 12: unexpected character '('
+        rack = cube([10, 10, 10]);
+  ok    module_value_difference.scad       rejected at file line 3 col 19: unexpected character '('
+        plate = difference() { cube(10); sphere(5); };
+  ok    module_value_translate.scad        rejected at file line 3 col 14: unexpected character '('
+        b = translate([1, 0, 0]) cube(1);
+  ok    plus_equals.scad                   rejected at file line 4 col 3: unexpected character '+'
+        x += 2;
+  ok    prose_before.reply.txt             rejected at reply line 1 col 1: unexpected character 'H'
+        Here is the OpenSCAD code:
+  ok    py_def.scad                        rejected at file line 3 col 4: unexpected character ' '
+        def plate():
+  ok    py_false.scad                      rejected at file line 3 col 38: unexpected character ')'
+        cylinder(h = 5, r = 2, center = False);
+  ok    py_for_in.scad                     rejected at file line 3 col 5: unexpected character 'i'
+        for i in range(4):
+  ok    py_for_in_parens.scad              rejected at file line 3 col 8: unexpected character 'i'
+        for (i in [0 : 3]) translate([i * 10, 0, 0]) cube(5);
+  ok    py_from_import.scad                rejected at file line 3 col 6: unexpected character 's'
+        from solid import *
+  ok    py_import.scad                     rejected at file line 3 col 8: unexpected character 'm'
+        import math
+  ok    py_lambda.scad                     rejected at file line 3 col 11: unexpected character ' '
+        f = lambda x: x * 2;
+  ok    py_list_comprehension.scad         rejected at file line 3 col 14: unexpected character 'f'
+        xs = [i * 10 for i in [0 : 3]];
+  ok    py_none.scad                       rejected at file line 3 col 16: unexpected character ';'
+        offset_x = None;
+  ok    py_print.scad                      rejected at file line 3 col 6: unexpected character '('
+        print("plate width", 20);
+  ok    py_return.scad                     rejected at file line 4 col 11: unexpected character ' '
+        return cube([20, 30, 5]);
+  ok    py_ternary.scad                    rejected at file line 4 col 7: unexpected character 'i'
+        h = 5 if big else 3;
+  ok    py_true.scad                       rejected at file line 3 col 33: unexpected character ')'
+        cube([10, 10, 10], center = True);
+  ok    range_call.scad                    rejected at file line 3 col 15: unexpected character '('
+        for (i = range(4)) translate([i * 5, 0, 0]) cube(2);
+  ok    unbalanced_close_brace.scad        rejected at file line 7 col 1: unexpected character '}'
+        }
+  ok    unbalanced_open_brace.scad         rejected at the closing fence: unexpected character '`'
+        ```
+  ok    unclosed_fence.reply.txt           rejected at reply line 3 col 1: unexpected end of input
+        
+  ok    while_loop.scad                    rejected at file line 4 col 6: unexpected character ' '
+        while (i < 3) { cube(i); }
+  35 / 35 negatives rejected where expected
+
+RESULT: accept 2124/2124 repo files and replies (+ 1/1 extra), reject 35/35 negatives

@@ -1,0 +1,23 @@
+Features: {"bodies": [{"solids": [{"shape": "box", "size": [90, 45, 20], "at": [0, 0, 0]}], "cuts": [{"cut": "slot", "width": 1.6, "length": 77, "depth": 10, "at": [0, -3.5], "grid": {"nx": 1, "ny": 10, "pitch_x": 0, "pitch_y": 3.5}}]}]}
+
+```openscad
+// Built by bench/smallmodels/features/compiler.py from a list of features.
+$fn = 64;
+difference() {
+  union() {
+    translate([0, 0, 0]) translate([-45, -22.5, 0]) cube([90, 45, 20]);
+  }
+  union() {
+    translate([0, -19.25, 9.99]) rotate([0, 0, 0]) hull() { for (s = [-1, 1]) translate([s * 37.7, 0, 0]) cylinder(d = 1.6, h = 10.02); }
+    translate([0, -15.75, 9.99]) rotate([0, 0, 0]) hull() { for (s = [-1, 1]) translate([s * 37.7, 0, 0]) cylinder(d = 1.6, h = 10.02); }
+    translate([0, -12.25, 9.99]) rotate([0, 0, 0]) hull() { for (s = [-1, 1]) translate([s * 37.7, 0, 0]) cylinder(d = 1.6, h = 10.02); }
+    translate([0, -8.75, 9.99]) rotate([0, 0, 0]) hull() { for (s = [-1, 1]) translate([s * 37.7, 0, 0]) cylinder(d = 1.6, h = 10.02); }
+    translate([0, -5.25, 9.99]) rotate([0, 0, 0]) hull() { for (s = [-1, 1]) translate([s * 37.7, 0, 0]) cylinder(d = 1.6, h = 10.02); }
+    translate([0, -1.75, 9.99]) rotate([0, 0, 0]) hull() { for (s = [-1, 1]) translate([s * 37.7, 0, 0]) cylinder(d = 1.6, h = 10.02); }
+    translate([0, 1.75, 9.99]) rotate([0, 0, 0]) hull() { for (s = [-1, 1]) translate([s * 37.7, 0, 0]) cylinder(d = 1.6, h = 10.02); }
+    translate([0, 5.25, 9.99]) rotate([0, 0, 0]) hull() { for (s = [-1, 1]) translate([s * 37.7, 0, 0]) cylinder(d = 1.6, h = 10.02); }
+    translate([0, 8.75, 9.99]) rotate([0, 0, 0]) hull() { for (s = [-1, 1]) translate([s * 37.7, 0, 0]) cylinder(d = 1.6, h = 10.02); }
+    translate([0, 12.25, 9.99]) rotate([0, 0, 0]) hull() { for (s = [-1, 1]) translate([s * 37.7, 0, 0]) cylinder(d = 1.6, h = 10.02); }
+  }
+}
+```

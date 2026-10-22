@@ -1,0 +1,98 @@
+```openscad
+// NEMA 17 L-shaped mounting bracket
+// Print orientation: base plate on bed (z=0), builds upward (+Z), centred on origin in X/Y.
+
+$fn = 64;
+
+// ---- Base plate ----
+base_x_min = -25;   // left edge
+base_x_max =  25;   // right edge
+base_y_min =   0;   // back edge (shared with motor plate)
+base_y_max =  45;   // front edge
+base_z_min =   0;   // bed
+base_z_max =   5;   // top of base plate
+
+// ---- Motor plate ----
+mp_x_min = -25;     // left edge
+mp_x_max =  25;     // right edge
+mp_y_min =   0;     // back edge (on bed)
+mp_y_max =   5;     // front face
+mp_z_min =   0;     // bed
+mp_z_max =  50;     // top of motor plate
+
+// ---- Motor centring-boss hole (through motor plate, axis along Y) ----
+boss_d = 23;        // diameter
+boss_cx =  0;       // centre x
+boss_cz = 28;       // centre z
+
+// ---- M3 screw holes (through motor plate, axis along Y) ----
+m3_d = 3.4;         // diameter
+m3_off = 31 / 2;    // 15.5 mm offset from boss centre (31 mm square pattern)
+
+// ---- M4 base through-holes (axis along Z) ----
+m4_d = 4.5;         // diameter
+m4_x = 17;          // |x| of the two holes
+m4_y = 30;          // y of the two holes
+
+// ---- Triangular gussets (5 mm thick, flush with outer edges) ----
+gusset_thk = 5;     // thickness in X
+gusset_leg = 20;    // both legs (along +Y and +Z)
+gusset_y0  =  5;    // right-angle corner y (front face of motor plate)
+gusset_z0  =  5;    // right-angle corner z (top of base plate)
+
+// ---- Base plate solid ----
+module base() { translate([base_x_min, base_y_min, base_z_min])
+    cube([base_x_max - base_x_min, base_y_max - base_y_min, base_z_max - base_z_min]); }
+
+// ---- Motor plate solid ----
+module motor_plate() { translate([mp_x_min, mp_y_min, mp_z_min])
+    cube([mp_x_max - mp_x_min, mp_y_max - mp_y_min, mp_z_max - mp_z_min]); }
+
+// ---- Gusset (right triangle in YZ, extruded in X) ----
+// Right-angle corner at (y=5, z=5); legs go +Y and +Z.
+module gusset() { linear_extrude(gusset_thk)
+    polygon([[0, 0], [gusset_leg, 0], [0, gusset_leg]]); }
+
+// ---- Cutters (each extends 1 mm past the faces it cuts) ----
+// M4 vertical through-holes in base plate
+m4_cut = [
+    [-m4_x, m4_y],
+    [ m4_x, m4_y]
+];
+
+// M3 screw holes in motor plate (31 mm square pattern centred on boss)
+m3_cut = [
+    [ boss_cx - m3_off, boss_cz - m3_off ],
+    [ boss_cx + m3_off, boss_cz - m3_off ],
+    [ boss_cx - m3_off, boss_cz + m3_off ],
+    [ boss_cx + m3_off, boss_cz + m3_off ]
+];
+
+// ---- Final part ----
+difference() {
+    union() {
+        base();
+        motor_plate();
+        // Left gusset: x from -25 to -20
+        translate([mp_x_min, gusset_y0, gusset_z0]) gusset();
+        // Right gusset: x from 20 to 25
+        translate([mp_x_max - gusset_thk, gusset_y0, gusset_z0]) gusset();
+    }
+
+    // M4 holes (axis Z) – extend 1 mm above and below the base plate
+    for (p = m4_cut)
+        translate([p[0], p[1], base_z_min - 1])
+            cylinder(h = (base_z_max - base_z_min) + 2, d = m4_d, $fn = $fn);
+
+    // Boss hole (axis Y) – extend 1 mm past both faces of the motor plate
+    translate([boss_cx, mp_y_min - 1, boss_cz])
+        rotate([90, 0, 0])
+            cylinder(h = (mp_y_max - mp_y_min) + 2, d = boss_d, $fn = $fn);
+
+    // M3 holes (axis Y) – extend 1 mm past both faces of the motor plate
+    for (p = m3_cut)
+        translate([p[0], mp_y_min - 1, p[1]])
+            rotate([90, 0, 0])
+                cylinder(h = (mp_y_max - mp_y_min) + 2, d = m3_d, $fn = $fn);
+}
+```

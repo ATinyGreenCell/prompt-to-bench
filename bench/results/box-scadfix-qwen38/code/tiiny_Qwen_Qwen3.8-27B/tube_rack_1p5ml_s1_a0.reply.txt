@@ -1,0 +1,49 @@
+```openscad
+// Bench rack for 1.5 mL microcentrifuge tubes
+// Print orientation: rests on XY plane at z = 0, builds upward (+Z)
+
+// Block dimensions (measured with calipers)
+block_L = 106;   // length along X
+block_W = 72;    // width along Y
+block_H = 30;    // height along Z
+
+// Hole grid
+rows = 4;        // rows along Y
+cols = 6;        // columns along X
+pitch = 16;      // centre-to-centre spacing in both X and Y
+hole_d = 11.2;   // hole diameter
+hole_depth = 25; // depth from top, open at top, closed at bottom
+floor_t = 5;     // solid floor thickness (block_H - hole_depth)
+
+// Derived: total grid extents (centre-to-centre span)
+grid_span_X = (cols - 1) * pitch;  // 5 * 16 = 80
+grid_span_Y = (rows - 1) * pitch;  // 3 * 16 = 48
+
+// Hole centre coordinates (grid centred on origin in X and Y)
+hole_x = [for (i = 0; i < cols; i++) (i - (cols - 1) / 2) * pitch];
+hole_y = [for (j = 0; j < rows; j++) (j - (rows - 1) / 2) * pitch];
+
+// Holes start at the top face (z = block_H) and cut downward by hole_depth
+hole_z_start = block_H;
+hole_z_end   = block_H - hole_depth;  // = 5, leaving 5 mm solid floor
+
+$fn = 64;
+
+// Solid block, centred on origin in X and Y, base at z = 0
+module block() { translate([-block_L / 2, -block_W / 2, 0])
+    cube([block_L, block_W, block_H], center = false); }
+
+// Cut all 24 holes
+difference() {
+    block();
+
+    for (x = hole_x) {
+        for (y = hole_y) {
+            // Each hole: cylinder from z = hole_z_end to z = hole_z_start + 1
+            // Extend 1 mm past the top face to ensure clean cut through the top
+            translate([x, y, hole_z_end])
+                cylinder(h = hole_depth + 1, d = hole_d, $fn = 64);
+        }
+    }
+}
+```

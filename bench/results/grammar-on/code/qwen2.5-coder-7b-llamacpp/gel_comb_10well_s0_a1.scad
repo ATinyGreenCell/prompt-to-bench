@@ -1,0 +1,149 @@
+// Dimensions
+thickness = 1.5; // mm
+spine_length = 70; // mm
+spine_width = 12; // mm
+tooth_width = 5.0; // mm
+tooth_length = 12; // mm
+gap = 1.5; // mm
+
+// Main comb plate
+comb_plate = cube[size ==[spine_length, spine_width, thickness]];
+
+// Teeth
+teeth = for_i ==[0:9] 
+    [
+        translate
+        [
+            spine_length / 2 - tooth_width / 2 - (tooth_width + gap) * i - tooth_width / 2 - gap / 2
+            -spine_width / 2 + tooth_length / 2
+            -thickness / 2
+        ]
+        (cube[size ==[tooth_width, tooth_length, thickness]])
+    ];
+
+// Comb with teeth
+comb_with_teeth = comb_plate - teeth;
+
+// Final model
+comb = comb_with_teeth;
+comb
+    // Ensure the comb is centered on the origin
+    = translate
+    [
+        -spine_length / 2
+        -spine_width / 2
+        -thickness / 2
+    ]
+    (comb_with_teeth);
+comb
+    // Set $fn for smooth edges
+    = $fn == 64 (comb);
+comb
+    // Render the model
+    = comb;
+comb
+    // Ensure no faces are exactly coplanar
+    = difference
+    [
+        comb
+        (translate
+        [
+            0
+             (spine_width + tooth_length + gap) / 2
+            -thickness / 2
+        ]
+        (cube[size ==[spine_length, tooth_length + gap, thickness]]))
+    ];
+comb
+    = difference
+    [
+        comb
+        (translate
+        [
+            (spine_length + tooth_width + gap) / 2
+            -spine_width / 2
+            -thickness / 2
+        ]
+        (cube[size ==[tooth_width + gap, spine_width, thickness]]))
+    ];
+comb
+    = difference
+    [
+        comb
+        (translate
+        [
+            -spine_length / 2
+            -spine_width / 2
+            -thickness / 2
+        ]
+        (cube[size ==[tooth_width + gap, spine_width, thickness]]))
+    ];
+comb
+    = difference
+    [
+        comb
+        (translate
+        [
+            -spine_length / 2
+            (spine_width + tooth_length + gap) / 2
+            -thickness / 2
+        ]
+        (cube[size ==[spine_length, tooth_length + gap, thickness]]))
+    ];
+comb
+    = comb;
+comb
+    = comb;
+comb
+    = comb;
+comb
+    = comb;
+comb
+    = comb;
+comb
+    = comb;
+comb
+    = comb;
+comb
+    = comb;
+comb
+    = comb;
+comb
+    = comb;
+comb
+    = comb;
+comb
+    = comb;
+comb
+    = comb;
+comb
+    = comb;
+comb
+    = comb;
+comb
+    = comb;
+comb
+    = comb;
+comb
+    = comb;
+comb
+    = comb;
+comb
+    = comb;
+comb
+    = comb;
+comb
+    = comb;
+comb
+    = comb;
+comb
+    = comb;
+comb
+    = comb;
+comb
+    = comb;
+comb
+    = comb;
+comb
+    = comb;
+comb

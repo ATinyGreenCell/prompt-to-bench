@@ -1,0 +1,16 @@
+07:34:00 features:gemma4:e4b-it-q4_K_M tube_rack_1p5ml          s0 fail after 3 attempt(s), best score 0.42, 404s
+07:38:53 features:gemma4:e4b-it-q4_K_M conical_rack_50ml        s0 fail after 3 attempt(s), best score 0.36, 293s
+07:41:16 features:gemma4:e4b-it-q4_K_M slide_drying_rack        s0 fail after 3 attempt(s), best score 0.55, 143s
+07:44:31 features:gemma4:e4b-it-q4_K_M pcr_tube_rack_sbs        s0 fail after 3 attempt(s), best score 0.36, 196s
+07:46:29 features:gemma4:e4b-it-q4_K_M gel_comb_10well          s0 fail after 3 attempt(s), best score 0.40, 118s
+07:49:53 features:gemma4:e4b-it-q4_K_M micropestle_1p5ml        s0 fail after 3 attempt(s), best score 0.94, 204s
+07:52:38 features:gemma4:e4b-it-q4_K_M lab_funnel_60mm          s0 fail after 3 attempt(s), best score 0.56, 164s
+07:59:09 features:gemma4:e4b-it-q4_K_M seed_sowing_template     s0 fail after 3 attempt(s), best score 0.50, 392s
+08:02:04 features:gemma4:e4b-it-q4_K_M dshaft_knob_6mm          s0 fail after 3 attempt(s), best score 0.64, 175s
+08:03:17 features:gemma4:e4b-it-q4_K_M pcr_tube_adapter         s0 PASS after 1 attempt(s), best score 1.00, 73s
+08:05:12 features:gemma4:e4b-it-q4_K_M hose_barb_reducer_8_5    s0 fail after 3 attempt(s), best score 0.37, 115s
+08:09:10 features:gemma4:e4b-it-q4_K_M rod_tubing_clip          s0 fail after 3 attempt(s), best score 0.14, 237s
+08:14:32 features:gemma4:e4b-it-q4_K_M stirrer_fan_housing      s0 fail after 3 attempt(s), best score 0.21, 323s
+08:18:56 features:gemma4:e4b-it-q4_K_M nema17_motor_bracket     s0 fail after 3 attempt(s), best score 0.36, 263s
+08:22:07 features:gemma4:e4b-it-q4_K_M enclosure_box_and_lid    s0 fail after 3 attempt(s), best score 0.50, 191s
+08:24:01 features:gemma4:e4b-it-q4_K_M mini_gel_tank            s0 fail after 3 attempt(s), best score 0.00, 114s

@@ -1,0 +1,58 @@
+```openscad
+// Replacement knob for a 6 mm D-shaft hotplate stirrer
+// Print orientation: hotplate-facing side down (z = 0), builds upward.
+
+// ---- Dimensions (mm) ----
+knob_dia   = 30.0;   // outer cylinder diameter
+knob_h     = 15.0;   // knob height
+knob_r     = knob_dia / 2;
+
+// D-bore: 6.2 mm circle, one side flat, flat-to-opposite-side = 4.7 mm
+bore_dia   = 6.2;
+bore_r     = bore_dia / 2;
+bore_flat  = 4.7;    // distance from flat to opposite side of circle
+bore_depth = 12.0;   // blind bore depth from bottom face
+
+// Grip grooves: 18 vertical half-cylinders, 2 mm dia, centred on outer surface
+groove_n   = 18;
+groove_dia = 2.0;
+groove_r   = groove_dia / 2;
+
+// Pointer groove on top: 1.5 mm wide, 1 mm deep, centre to edge, on flat side
+ptr_w      = 1.5;
+ptr_d      = 1.0;
+
+$fn = 64;
+
+// D-bore flat offset from centre (flat is on +X side, same side as pointer)
+// flat at x = bore_flat - bore_r  (opposite side of circle is at x = -bore_r)
+bore_flat_x = bore_flat - bore_r;
+
+// ---- Knob body ----
+body = cylinder(h = knob_h, r = knob_r, $fn = 64);
+
+// ---- D-shaped blind bore (cut from bottom, extends 1 mm past bottom face) ----
+d_bore = difference(
+    cylinder(h = bore_depth + 1, r = bore_r, $fn = 64),
+    // half-space x > bore_flat_x  (removes the +X side, leaving flat on +X)
+    translate([bore_flat_x, -100, -1]) cube([100, 200, bore_depth + 2])
+);
+
+// ---- 18 vertical grip grooves (half-cylinders centred on outer surface) ----
+grooves = for (i = [0 : groove_n - 1])
+    rotate([0, 0, i * 360 / groove_n])
+        translate([knob_r, 0, 0])
+            cylinder(h = knob_h + 2, r = groove_r, $fn = 32);
+
+// ---- Pointer groove on top face (1.5 wide, 1 deep, centre to edge, +X side) ----
+pointer = translate([0, 0, knob_h - ptr_d])
+    cube([knob_r + 1, ptr_w, ptr_d + 1], center = [false, true, false]);
+
+// ---- Final part ----
+difference(
+    body,
+    d_bore,
+    grooves,
+    pointer
+);
+```

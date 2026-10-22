@@ -1,0 +1,2537 @@
+{
+ "writer": "claude:claude-sonnet-5-5#v3",
+ "specs": {
+  "tube_rack_1p5ml": {
+   "size_x_mm": 106,
+   "size_y_mm": 72,
+   "height_z_mm": 30,
+   "separate_pieces": 1,
+   "vertical_round_hole_groups": [
+    {
+     "count": 24,
+     "diameter_mm": 11.2
+    }
+   ],
+   "bottom_size_mm": [
+    106,
+    72
+   ],
+   "top_size_mm": [
+    106,
+    72
+   ]
+  },
+  "conical_rack_50ml": {
+   "size_x_mm": 130,
+   "size_y_mm": 90,
+   "height_z_mm": 70,
+   "separate_pieces": 1,
+   "vertical_round_hole_groups": [
+    {
+     "count": 6,
+     "diameter_mm": 30.5
+    }
+   ],
+   "bottom_size_mm": [
+    130,
+    90
+   ],
+   "top_size_mm": [
+    130,
+    90
+   ]
+  },
+  "slide_drying_rack": {
+   "size_x_mm": 90,
+   "size_y_mm": 45,
+   "height_z_mm": 20,
+   "separate_pieces": 1,
+   "vertical_round_hole_groups": [],
+   "bottom_size_mm": [
+    90,
+    45
+   ],
+   "top_size_mm": [
+    90,
+    45
+   ]
+  },
+  "pcr_tube_rack_sbs": {
+   "size_x_mm": 127.76,
+   "size_y_mm": 85.48,
+   "height_z_mm": 20,
+   "separate_pieces": 1,
+   "vertical_round_hole_groups": [
+    {
+     "count": 96,
+     "diameter_mm": 6.2
+    }
+   ],
+   "bottom_size_mm": [
+    127.76,
+    85.48
+   ],
+   "top_size_mm": [
+    127.76,
+    85.48
+   ]
+  },
+  "gel_comb_10well": {
+   "size_x_mm": 70,
+   "size_y_mm": 24,
+   "height_z_mm": 1.5,
+   "separate_pieces": 1,
+   "vertical_round_hole_groups": [],
+   "bottom_size_mm": [
+    70,
+    24
+   ],
+   "top_size_mm": [
+    70,
+    24
+   ]
+  },
+  "micropestle_1p5ml": {
+   "size_x_mm": 8,
+   "size_y_mm": 8,
+   "height_z_mm": 63.5,
+   "separate_pieces": 1,
+   "vertical_round_hole_groups": [],
+   "bottom_size_mm": [
+    8,
+    8
+   ],
+   "top_size_mm": null
+  },
+  "lab_funnel_60mm": {
+   "size_x_mm": 60,
+   "size_y_mm": 60,
+   "height_z_mm": 50,
+   "separate_pieces": 1,
+   "vertical_round_hole_groups": [
+    {
+     "count": 1,
+     "diameter_mm": 6.8
+    }
+   ],
+   "bottom_size_mm": [
+    10,
+    10
+   ],
+   "top_size_mm": [
+    60,
+    60
+   ]
+  },
+  "seed_sowing_template": {
+   "size_x_mm": 85,
+   "size_y_mm": null,
+   "height_z_mm": 2,
+   "separate_pieces": 1,
+   "vertical_round_hole_groups": [
+    {
+     "count": 49,
+     "diameter_mm": 3
+    }
+   ],
+   "bottom_size_mm": null,
+   "top_size_mm": null
+  },
+  "dshaft_knob_6mm": {
+   "size_x_mm": 30,
+   "size_y_mm": 30,
+   "height_z_mm": 15,
+   "separate_pieces": 1,
+   "vertical_round_hole_groups": [],
+   "bottom_size_mm": [
+    30,
+    30
+   ],
+   "top_size_mm": [
+    30,
+    30
+   ]
+  },
+  "pcr_tube_adapter": {
+   "size_x_mm": 13,
+   "size_y_mm": 13,
+   "height_z_mm": 21.5,
+   "separate_pieces": 1,
+   "vertical_round_hole_groups": [
+    {
+     "count": 1,
+     "diameter_mm": 6.2
+    }
+   ],
+   "bottom_size_mm": [
+    13,
+    13
+   ],
+   "top_size_mm": [
+    10.8,
+    10.8
+   ]
+  },
+  "hose_barb_reducer_8_5": {
+   "size_x_mm": 12,
+   "size_y_mm": 12,
+   "height_z_mm": 41,
+   "separate_pieces": 1,
+   "vertical_round_hole_groups": [
+    {
+     "count": 1,
+     "diameter_mm": 3
+    }
+   ],
+   "bottom_size_mm": [
+    7.5,
+    7.5
+   ],
+   "top_size_mm": [
+    5,
+    5
+   ]
+  },
+  "rod_tubing_clip": {
+   "size_x_mm": null,
+   "size_y_mm": 18.7,
+   "height_z_mm": 10,
+   "separate_pieces": 1,
+   "vertical_round_hole_groups": [
+    {
+     "count": 1,
+     "diameter_mm": 12.7
+    },
+    {
+     "count": 1,
+     "diameter_mm": 6
+    }
+   ],
+   "bottom_size_mm": null,
+   "top_size_mm": null
+  },
+  "stirrer_fan_housing": {
+   "size_x_mm": 90,
+   "size_y_mm": 90,
+   "height_z_mm": 40,
+   "separate_pieces": 1,
+   "vertical_round_hole_groups": [
+    {
+     "count": 4,
+     "diameter_mm": 4.5
+    }
+   ],
+   "bottom_size_mm": [
+    90,
+    90
+   ],
+   "top_size_mm": [
+    90,
+    90
+   ]
+  },
+  "nema17_motor_bracket": {
+   "size_x_mm": 50,
+   "size_y_mm": 45,
+   "height_z_mm": 50,
+   "separate_pieces": 1,
+   "vertical_round_hole_groups": [
+    {
+     "count": 2,
+     "diameter_mm": 4.5
+    }
+   ],
+   "bottom_size_mm": [
+    50,
+    45
+   ],
+   "top_size_mm": [
+    50,
+    5
+   ]
+  },
+  "enclosure_box_and_lid": {
+   "size_x_mm": 150,
+   "size_y_mm": 50,
+   "height_z_mm": 30,
+   "separate_pieces": 2,
+   "vertical_round_hole_groups": [],
+   "bottom_size_mm": [
+    150,
+    50
+   ],
+   "top_size_mm": [
+    70,
+    50
+   ]
+  },
+  "mini_gel_tank": {
+   "size_x_mm": 120,
+   "size_y_mm": 70,
+   "height_z_mm": 40,
+   "separate_pieces": 1,
+   "vertical_round_hole_groups": [],
+   "bottom_size_mm": [
+    120,
+    70
+   ],
+   "top_size_mm": [
+    120,
+    70
+   ]
+  }
+ },
+ "records": {
+  "main": 224,
+  "main-bonsai": 16,
+  "ft-scad": 16,
+  "base-scad": 16,
+  "main-tiiny": 528,
+  "think-tiiny": 189,
+  "box-gemma-h4": 48
+ },
+ "references": [
+  {
+   "task": "tube_rack_1p5ml",
+   "accepts_reference": true,
+   "why": []
+  },
+  {
+   "task": "conical_rack_50ml",
+   "accepts_reference": true,
+   "why": []
+  },
+  {
+   "task": "slide_drying_rack",
+   "accepts_reference": true,
+   "why": []
+  },
+  {
+   "task": "pcr_tube_rack_sbs",
+   "accepts_reference": true,
+   "why": []
+  },
+  {
+   "task": "gel_comb_10well",
+   "accepts_reference": true,
+   "why": []
+  },
+  {
+   "task": "micropestle_1p5ml",
+   "accepts_reference": true,
+   "why": []
+  },
+  {
+   "task": "lab_funnel_60mm",
+   "accepts_reference": true,
+   "why": []
+  },
+  {
+   "task": "seed_sowing_template",
+   "accepts_reference": true,
+   "why": []
+  },
+  {
+   "task": "dshaft_knob_6mm",
+   "accepts_reference": true,
+   "why": []
+  },
+  {
+   "task": "pcr_tube_adapter",
+   "accepts_reference": true,
+   "why": []
+  },
+  {
+   "task": "hose_barb_reducer_8_5",
+   "accepts_reference": true,
+   "why": []
+  },
+  {
+   "task": "rod_tubing_clip",
+   "accepts_reference": false,
+   "why": [
+    "0 round holes of 12.7 mm vs 1",
+    "0 round holes of 6 mm vs 1"
+   ]
+  },
+  {
+   "task": "stirrer_fan_housing",
+   "accepts_reference": true,
+   "why": []
+  },
+  {
+   "task": "nema17_motor_bracket",
+   "accepts_reference": true,
+   "why": []
+  },
+  {
+   "task": "enclosure_box_and_lid",
+   "accepts_reference": true,
+   "why": []
+  },
+  {
+   "task": "mini_gel_tank",
+   "accepts_reference": true,
+   "why": []
+  }
+ ],
+ "attempts": [
+  {
+   "run": "main",
+   "model": "gemma4:e2b-it-q4_K_M",
+   "first_tn": 14,
+   "later_tn": 28,
+   "first_fp": 2,
+   "later_fp": 4
+  },
+  {
+   "run": "main",
+   "model": "gemma4:e4b-it-q4_K_M",
+   "first_tn": 15,
+   "later_tn": 28,
+   "first_fp": 1,
+   "later_fp": 4
+  },
+  {
+   "run": "main",
+   "model": "granite4.2:3b",
+   "first_tn": 16,
+   "later_tn": 31,
+   "later_fp": 1
+  },
+  {
+   "run": "main",
+   "model": "lfm2.5:8b-a1b-q4_K_M",
+   "first_tn": 16,
+   "later_tn": 32
+  },
+  {
+   "run": "main",
+   "model": "llama3.2:3b",
+   "first_tn": 16,
+   "later_tn": 32
+  },
+  {
+   "run": "main",
+   "model": "ministral-3:3b",
+   "first_tn": 16,
+   "later_tn": 30,
+   "later_fp": 2
+  },
+  {
+   "run": "main",
+   "model": "qwen2.5-coder:0.5b",
+   "first_tn": 16,
+   "later_tn": 32
+  },
+  {
+   "run": "main",
+   "model": "qwen2.5-coder:1.5b",
+   "first_tn": 16,
+   "later_tn": 32
+  },
+  {
+   "run": "main",
+   "model": "qwen2.5-coder:3b",
+   "first_tn": 15,
+   "later_tn": 30,
+   "first_fp": 1,
+   "later_fp": 2
+  },
+  {
+   "run": "main",
+   "model": "qwen2.5-coder:7b",
+   "first_tn": 16,
+   "later_tn": 32
+  },
+  {
+   "run": "main",
+   "model": "qwen2.5:1.5b",
+   "first_tn": 16,
+   "later_tn": 32
+  },
+  {
+   "run": "main",
+   "model": "qwen3.5:2b-q4_K_M",
+   "first_tn": 16,
+   "later_tn": 32
+  },
+  {
+   "run": "main",
+   "model": "qwen3.5:4b-q4_K_M",
+   "first_tn": 16,
+   "later_tn": 32
+  },
+  {
+   "run": "main",
+   "model": "qwen3.5:9b-q4_K_M",
+   "first_tn": 16,
+   "later_tn": 30,
+   "later_fp": 2
+  },
+  {
+   "run": "main-bonsai",
+   "model": "bonsai2-27b-pq2_0",
+   "first_tn": 15,
+   "later_tn": 29,
+   "later_tp": 2,
+   "first_fp": 1
+  },
+  {
+   "run": "ft-scad",
+   "model": "scadcoder",
+   "first_tn": 16,
+   "later_tn": 32
+  },
+  {
+   "run": "base-scad",
+   "model": "qwen2.5-coder:7b",
+   "first_tn": 16,
+   "later_tn": 32
+  },
+  {
+   "run": "main-tiiny",
+   "model": "tiiny/Qwen/Qwen3-30B-A3B-Instruct",
+   "first_tn": 26,
+   "later_tn": 51,
+   "first_fp": 4,
+   "later_fp": 9,
+   "first_tp": 2
+  },
+  {
+   "run": "main-tiiny",
+   "model": "tiiny/Qwen/Qwen3-30B-A3B-Thinking",
+   "first_tn": 32,
+   "later_tn": 64
+  },
+  {
+   "run": "main-tiiny",
+   "model": "tiiny/Qwen/Qwen3-4B-Instruct-2507",
+   "first_tn": 32,
+   "later_tn": 64
+  },
+  {
+   "run": "main-tiiny",
+   "model": "tiiny/Qwen/Qwen3-8B",
+   "first_tn": 30,
+   "later_tn": 62,
+   "first_fp": 2,
+   "later_fp": 2
+  },
+  {
+   "run": "main-tiiny",
+   "model": "tiiny/Qwen/Qwen3-Coder-30B-A3B-Instruct",
+   "first_tn": 30,
+   "later_tn": 58,
+   "first_fp": 2,
+   "later_fp": 6
+  },
+  {
+   "run": "main-tiiny",
+   "model": "tiiny/Qwen/Qwen3-Coder-Next",
+   "first_tp": 2,
+   "first_tn": 25,
+   "later_tn": 46,
+   "first_fp": 4,
+   "later_tp": 3,
+   "later_fp": 6,
+   "first_fn": 1
+  },
+  {
+   "run": "main-tiiny",
+   "model": "tiiny/Qwen/Qwen3.5-35B-A3B",
+   "first_tn": 30,
+   "later_tn": 61,
+   "first_fp": 1,
+   "later_tp": 1,
+   "first_tp": 1
+  },
+  {
+   "run": "main-tiiny",
+   "model": "tiiny/Qwen/Qwen3.5-9B",
+   "first_tn": 30,
+   "later_tn": 58,
+   "later_fp": 4,
+   "later_tp": 1,
+   "first_fp": 2
+  },
+  {
+   "run": "main-tiiny",
+   "model": "tiiny/Qwen/Qwen3.6-27B",
+   "first_fp": 10,
+   "later_tp": 5,
+   "first_tn": 16,
+   "later_tn": 25,
+   "later_fp": 18,
+   "first_tp": 6
+  },
+  {
+   "run": "main-tiiny",
+   "model": "tiiny/Qwen/Qwen3.6-35B-A3B",
+   "first_tn": 25,
+   "later_fp": 8,
+   "first_fp": 6,
+   "later_tn": 51,
+   "later_tp": 2,
+   "first_tp": 1
+  },
+  {
+   "run": "main-tiiny",
+   "model": "tiiny/Qwen/Qwen3.8-27B",
+   "first_tn": 26,
+   "later_tn": 46,
+   "later_tp": 3,
+   "first_tp": 5,
+   "first_fp": 1,
+   "later_fp": 2
+  },
+  {
+   "run": "main-tiiny",
+   "model": "tiiny/deepreinforce-ai/Ornith-1.0-35B",
+   "first_tn": 23,
+   "later_tn": 44,
+   "later_fp": 13,
+   "first_fp": 6,
+   "later_tp": 1,
+   "first_tp": 3
+  },
+  {
+   "run": "main-tiiny",
+   "model": "tiiny/google/gemma-4-26B-A4B-it",
+   "first_tp": 9,
+   "first_tn": 32,
+   "later_tn": 20,
+   "later_fp": 23,
+   "later_tp": 17,
+   "first_fp": 7,
+   "later_fn": 2
+  },
+  {
+   "run": "main-tiiny",
+   "model": "tiiny/openai/gpt-oss-120b",
+   "first_tp": 6,
+   "first_tn": 26,
+   "later_tn": 47,
+   "later_tp": 2,
+   "later_fn": 1
+  },
+  {
+   "run": "main-tiiny",
+   "model": "tiiny/openai/gpt-oss-20b",
+   "first_tn": 32,
+   "later_tn": 64
+  },
+  {
+   "run": "main-tiiny",
+   "model": "tiiny/zai-org/GLM-4.7-Flash",
+   "first_tn": 28,
+   "later_tn": 54,
+   "first_fp": 4,
+   "later_fp": 10
+  },
+  {
+   "run": "think-tiiny",
+   "model": "tiiny/Qwen/Qwen3-30B-A3B-Thinking",
+   "first_tn": 15,
+   "later_tn": 27,
+   "later_tp": 3,
+   "first_fp": 1
+  },
+  {
+   "run": "think-tiiny",
+   "model": "tiiny/Qwen/Qwen3.5-35B-A3B",
+   "first_tn": 14,
+   "later_tn": 29,
+   "later_tp": 1,
+   "first_fp": 1,
+   "first_tp": 1
+  },
+  {
+   "run": "think-tiiny",
+   "model": "tiiny/Qwen/Qwen3.5-9B",
+   "first_tn": 14,
+   "later_fp": 8,
+   "first_tp": 1,
+   "first_fp": 1,
+   "later_tn": 22
+  },
+  {
+   "run": "think-tiiny",
+   "model": "tiiny/Qwen/Qwen3.6-35B-A3B",
+   "first_tn": 21,
+   "later_tn": 31,
+   "later_tp": 3,
+   "later_fp": 12,
+   "first_tp": 8,
+   "first_fp": 3
+  },
+  {
+   "run": "think-tiiny",
+   "model": "tiiny/deepreinforce-ai/Ornith-1.0-35B",
+   "first_tn": 10,
+   "later_tn": 18,
+   "first_fp": 4,
+   "later_fp": 7,
+   "first_tp": 2,
+   "later_tp": 2
+  },
+  {
+   "run": "think-tiiny",
+   "model": "tiiny/google/gemma-4-26B-A4B-it",
+   "first_tp": 8,
+   "first_tn": 7,
+   "later_tn": 12,
+   "later_tp": 2,
+   "first_fp": 1,
+   "later_fp": 1
+  },
+  {
+   "run": "think-tiiny",
+   "model": "tiiny/openai/gpt-oss-120b",
+   "first_tn": 23,
+   "later_tp": 11,
+   "later_tn": 32,
+   "first_tp": 5,
+   "later_fn": 1,
+   "first_fp": 4,
+   "later_fp": 3
+  },
+  {
+   "run": "think-tiiny",
+   "model": "tiiny/openai/gpt-oss-20b",
+   "first_tp": 3,
+   "first_tn": 24,
+   "later_tn": 42,
+   "later_fp": 1,
+   "later_tp": 4,
+   "first_fp": 1,
+   "first_fn": 1
+  },
+  {
+   "run": "think-tiiny",
+   "model": "tiiny/zai-org/GLM-4.7-Flash",
+   "first_tp": 1,
+   "first_tn": 13,
+   "later_tn": 27,
+   "first_fp": 2,
+   "later_fp": 3
+  },
+  {
+   "run": "box-gemma-h4",
+   "model": "tiiny/google/gemma-4-26B-A4B-it",
+   "first_tp": 21,
+   "first_fp": 9,
+   "later_fp": 15,
+   "later_tp": 9,
+   "first_tn": 17,
+   "later_tn": 21,
+   "later_fn": 2,
+   "first_fn": 1
+  }
+ ],
+ "cascade": [
+  {
+   "run": "main",
+   "model": "gemma4:e2b-it-q4_K_M",
+   "gate": "render",
+   "samples": 1,
+   "wrong": 12.0,
+   "escalated": 4.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 4.0,
+   "hosted_ok:Claude Haiku 4.5": 2.0
+  },
+  {
+   "run": "main",
+   "model": "gemma4:e2b-it-q4_K_M",
+   "gate": "spec",
+   "samples": 1,
+   "escalated": 14.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 14.0,
+   "hosted_ok:Claude Haiku 4.5": 12.0,
+   "wrong": 2.0
+  },
+  {
+   "run": "main",
+   "model": "gemma4:e2b-it-q4_K_M",
+   "gate": "oracle",
+   "samples": 1,
+   "escalated": 16.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 16.0,
+   "hosted_ok:Claude Haiku 4.5": 14.0
+  },
+  {
+   "run": "main",
+   "model": "gemma4:e4b-it-q4_K_M",
+   "gate": "render",
+   "samples": 1,
+   "wrong": 11.0,
+   "escalated": 5.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 5.0,
+   "hosted_ok:Claude Haiku 4.5": 4.0
+  },
+  {
+   "run": "main",
+   "model": "gemma4:e4b-it-q4_K_M",
+   "gate": "spec",
+   "samples": 1,
+   "escalated": 14.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 14.0,
+   "hosted_ok:Claude Haiku 4.5": 12.0,
+   "wrong": 2.0
+  },
+  {
+   "run": "main",
+   "model": "gemma4:e4b-it-q4_K_M",
+   "gate": "oracle",
+   "samples": 1,
+   "escalated": 16.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 16.0,
+   "hosted_ok:Claude Haiku 4.5": 14.0
+  },
+  {
+   "run": "main",
+   "model": "granite4.2:3b",
+   "gate": "render",
+   "samples": 1,
+   "escalated": 11.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 11.0,
+   "hosted_ok:Claude Haiku 4.5": 9.0,
+   "wrong": 5.0
+  },
+  {
+   "run": "main",
+   "model": "granite4.2:3b",
+   "gate": "spec",
+   "samples": 1,
+   "escalated": 15.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 15.0,
+   "hosted_ok:Claude Haiku 4.5": 13.0,
+   "wrong": 1.0
+  },
+  {
+   "run": "main",
+   "model": "granite4.2:3b",
+   "gate": "oracle",
+   "samples": 1,
+   "escalated": 16.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 16.0,
+   "hosted_ok:Claude Haiku 4.5": 14.0
+  },
+  {
+   "run": "main",
+   "model": "lfm2.5:8b-a1b-q4_K_M",
+   "gate": "render",
+   "samples": 1,
+   "escalated": 16.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 16.0,
+   "hosted_ok:Claude Haiku 4.5": 14.0
+  },
+  {
+   "run": "main",
+   "model": "lfm2.5:8b-a1b-q4_K_M",
+   "gate": "spec",
+   "samples": 1,
+   "escalated": 16.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 16.0,
+   "hosted_ok:Claude Haiku 4.5": 14.0
+  },
+  {
+   "run": "main",
+   "model": "lfm2.5:8b-a1b-q4_K_M",
+   "gate": "oracle",
+   "samples": 1,
+   "escalated": 16.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 16.0,
+   "hosted_ok:Claude Haiku 4.5": 14.0
+  },
+  {
+   "run": "main",
+   "model": "llama3.2:3b",
+   "gate": "render",
+   "samples": 1,
+   "escalated": 6.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 6.0,
+   "hosted_ok:Claude Haiku 4.5": 6.0,
+   "wrong": 10.0
+  },
+  {
+   "run": "main",
+   "model": "llama3.2:3b",
+   "gate": "spec",
+   "samples": 1,
+   "escalated": 16.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 16.0,
+   "hosted_ok:Claude Haiku 4.5": 14.0
+  },
+  {
+   "run": "main",
+   "model": "llama3.2:3b",
+   "gate": "oracle",
+   "samples": 1,
+   "escalated": 16.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 16.0,
+   "hosted_ok:Claude Haiku 4.5": 14.0
+  },
+  {
+   "run": "main",
+   "model": "ministral-3:3b",
+   "gate": "render",
+   "samples": 1,
+   "escalated": 14.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 14.0,
+   "hosted_ok:Claude Haiku 4.5": 13.0,
+   "wrong": 2.0
+  },
+  {
+   "run": "main",
+   "model": "ministral-3:3b",
+   "gate": "spec",
+   "samples": 1,
+   "escalated": 15.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 15.0,
+   "hosted_ok:Claude Haiku 4.5": 13.0,
+   "wrong": 1.0
+  },
+  {
+   "run": "main",
+   "model": "ministral-3:3b",
+   "gate": "oracle",
+   "samples": 1,
+   "escalated": 16.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 16.0,
+   "hosted_ok:Claude Haiku 4.5": 14.0
+  },
+  {
+   "run": "main",
+   "model": "qwen2.5-coder:0.5b",
+   "gate": "render",
+   "samples": 1,
+   "escalated": 16.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 16.0,
+   "hosted_ok:Claude Haiku 4.5": 14.0
+  },
+  {
+   "run": "main",
+   "model": "qwen2.5-coder:0.5b",
+   "gate": "spec",
+   "samples": 1,
+   "escalated": 16.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 16.0,
+   "hosted_ok:Claude Haiku 4.5": 14.0
+  },
+  {
+   "run": "main",
+   "model": "qwen2.5-coder:0.5b",
+   "gate": "oracle",
+   "samples": 1,
+   "escalated": 16.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 16.0,
+   "hosted_ok:Claude Haiku 4.5": 14.0
+  },
+  {
+   "run": "main",
+   "model": "qwen2.5-coder:1.5b",
+   "gate": "render",
+   "samples": 1,
+   "escalated": 15.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 15.0,
+   "hosted_ok:Claude Haiku 4.5": 13.0,
+   "wrong": 1.0
+  },
+  {
+   "run": "main",
+   "model": "qwen2.5-coder:1.5b",
+   "gate": "spec",
+   "samples": 1,
+   "escalated": 16.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 16.0,
+   "hosted_ok:Claude Haiku 4.5": 14.0
+  },
+  {
+   "run": "main",
+   "model": "qwen2.5-coder:1.5b",
+   "gate": "oracle",
+   "samples": 1,
+   "escalated": 16.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 16.0,
+   "hosted_ok:Claude Haiku 4.5": 14.0
+  },
+  {
+   "run": "main",
+   "model": "qwen2.5-coder:3b",
+   "gate": "render",
+   "samples": 1,
+   "escalated": 13.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 13.0,
+   "hosted_ok:Claude Haiku 4.5": 11.0,
+   "wrong": 3.0
+  },
+  {
+   "run": "main",
+   "model": "qwen2.5-coder:3b",
+   "gate": "spec",
+   "samples": 1,
+   "escalated": 15.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 15.0,
+   "hosted_ok:Claude Haiku 4.5": 13.0,
+   "wrong": 1.0
+  },
+  {
+   "run": "main",
+   "model": "qwen2.5-coder:3b",
+   "gate": "oracle",
+   "samples": 1,
+   "escalated": 16.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 16.0,
+   "hosted_ok:Claude Haiku 4.5": 14.0
+  },
+  {
+   "run": "main",
+   "model": "qwen2.5-coder:7b",
+   "gate": "render",
+   "samples": 1,
+   "escalated": 15.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 15.0,
+   "hosted_ok:Claude Haiku 4.5": 13.0,
+   "wrong": 1.0
+  },
+  {
+   "run": "main",
+   "model": "qwen2.5-coder:7b",
+   "gate": "spec",
+   "samples": 1,
+   "escalated": 16.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 16.0,
+   "hosted_ok:Claude Haiku 4.5": 14.0
+  },
+  {
+   "run": "main",
+   "model": "qwen2.5-coder:7b",
+   "gate": "oracle",
+   "samples": 1,
+   "escalated": 16.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 16.0,
+   "hosted_ok:Claude Haiku 4.5": 14.0
+  },
+  {
+   "run": "main",
+   "model": "qwen2.5:1.5b",
+   "gate": "render",
+   "samples": 1,
+   "escalated": 14.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 14.0,
+   "hosted_ok:Claude Haiku 4.5": 13.0,
+   "wrong": 2.0
+  },
+  {
+   "run": "main",
+   "model": "qwen2.5:1.5b",
+   "gate": "spec",
+   "samples": 1,
+   "escalated": 16.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 16.0,
+   "hosted_ok:Claude Haiku 4.5": 14.0
+  },
+  {
+   "run": "main",
+   "model": "qwen2.5:1.5b",
+   "gate": "oracle",
+   "samples": 1,
+   "escalated": 16.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 16.0,
+   "hosted_ok:Claude Haiku 4.5": 14.0
+  },
+  {
+   "run": "main",
+   "model": "qwen3.5:2b-q4_K_M",
+   "gate": "render",
+   "samples": 1,
+   "escalated": 16.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 16.0,
+   "hosted_ok:Claude Haiku 4.5": 14.0
+  },
+  {
+   "run": "main",
+   "model": "qwen3.5:2b-q4_K_M",
+   "gate": "spec",
+   "samples": 1,
+   "escalated": 16.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 16.0,
+   "hosted_ok:Claude Haiku 4.5": 14.0
+  },
+  {
+   "run": "main",
+   "model": "qwen3.5:2b-q4_K_M",
+   "gate": "oracle",
+   "samples": 1,
+   "escalated": 16.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 16.0,
+   "hosted_ok:Claude Haiku 4.5": 14.0
+  },
+  {
+   "run": "main",
+   "model": "qwen3.5:4b-q4_K_M",
+   "gate": "render",
+   "samples": 1,
+   "escalated": 15.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 15.0,
+   "hosted_ok:Claude Haiku 4.5": 13.0,
+   "wrong": 1.0
+  },
+  {
+   "run": "main",
+   "model": "qwen3.5:4b-q4_K_M",
+   "gate": "spec",
+   "samples": 1,
+   "escalated": 16.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 16.0,
+   "hosted_ok:Claude Haiku 4.5": 14.0
+  },
+  {
+   "run": "main",
+   "model": "qwen3.5:4b-q4_K_M",
+   "gate": "oracle",
+   "samples": 1,
+   "escalated": 16.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 16.0,
+   "hosted_ok:Claude Haiku 4.5": 14.0
+  },
+  {
+   "run": "main",
+   "model": "qwen3.5:9b-q4_K_M",
+   "gate": "render",
+   "samples": 1,
+   "wrong": 2.0,
+   "escalated": 14.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 14.0,
+   "hosted_ok:Claude Haiku 4.5": 12.0
+  },
+  {
+   "run": "main",
+   "model": "qwen3.5:9b-q4_K_M",
+   "gate": "spec",
+   "samples": 1,
+   "wrong": 2.0,
+   "escalated": 14.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 14.0,
+   "hosted_ok:Claude Haiku 4.5": 12.0
+  },
+  {
+   "run": "main",
+   "model": "qwen3.5:9b-q4_K_M",
+   "gate": "oracle",
+   "samples": 1,
+   "escalated": 16.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 16.0,
+   "hosted_ok:Claude Haiku 4.5": 14.0
+  },
+  {
+   "run": "main-bonsai",
+   "model": "bonsai2-27b-pq2_0",
+   "gate": "render",
+   "samples": 1,
+   "escalated": 12.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 12.0,
+   "hosted_ok:Claude Haiku 4.5": 11.0,
+   "wrong": 4.0
+  },
+  {
+   "run": "main-bonsai",
+   "model": "bonsai2-27b-pq2_0",
+   "gate": "spec",
+   "samples": 1,
+   "escalated": 13.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 13.0,
+   "hosted_ok:Claude Haiku 4.5": 12.0,
+   "right": 2.0,
+   "wrong": 1.0
+  },
+  {
+   "run": "main-bonsai",
+   "model": "bonsai2-27b-pq2_0",
+   "gate": "oracle",
+   "samples": 1,
+   "escalated": 14.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 14.0,
+   "hosted_ok:Claude Haiku 4.5": 12.0,
+   "right": 2.0
+  },
+  {
+   "run": "ft-scad",
+   "model": "scadcoder",
+   "gate": "render",
+   "samples": 1,
+   "wrong": 14.0,
+   "escalated": 2.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 2.0,
+   "hosted_ok:Claude Haiku 4.5": 1.0
+  },
+  {
+   "run": "ft-scad",
+   "model": "scadcoder",
+   "gate": "spec",
+   "samples": 1,
+   "escalated": 16.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 16.0,
+   "hosted_ok:Claude Haiku 4.5": 14.0
+  },
+  {
+   "run": "ft-scad",
+   "model": "scadcoder",
+   "gate": "oracle",
+   "samples": 1,
+   "escalated": 16.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 16.0,
+   "hosted_ok:Claude Haiku 4.5": 14.0
+  },
+  {
+   "run": "base-scad",
+   "model": "qwen2.5-coder:7b",
+   "gate": "render",
+   "samples": 1,
+   "escalated": 15.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 15.0,
+   "hosted_ok:Claude Haiku 4.5": 13.0,
+   "wrong": 1.0
+  },
+  {
+   "run": "base-scad",
+   "model": "qwen2.5-coder:7b",
+   "gate": "spec",
+   "samples": 1,
+   "escalated": 16.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 16.0,
+   "hosted_ok:Claude Haiku 4.5": 14.0
+  },
+  {
+   "run": "base-scad",
+   "model": "qwen2.5-coder:7b",
+   "gate": "oracle",
+   "samples": 1,
+   "escalated": 16.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 16.0,
+   "hosted_ok:Claude Haiku 4.5": 14.0
+  },
+  {
+   "run": "main-tiiny",
+   "model": "tiiny/Qwen/Qwen3-30B-A3B-Instruct",
+   "gate": "render",
+   "samples": 2,
+   "wrong": 9.0,
+   "escalated": 6.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 6.0,
+   "hosted_ok:Claude Haiku 4.5": 5.0,
+   "right": 1.0
+  },
+  {
+   "run": "main-tiiny",
+   "model": "tiiny/Qwen/Qwen3-30B-A3B-Instruct",
+   "gate": "spec",
+   "samples": 2,
+   "escalated": 12.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 12.0,
+   "hosted_ok:Claude Haiku 4.5": 10.0,
+   "wrong": 3.0,
+   "right": 1.0
+  },
+  {
+   "run": "main-tiiny",
+   "model": "tiiny/Qwen/Qwen3-30B-A3B-Instruct",
+   "gate": "oracle",
+   "samples": 2,
+   "escalated": 15.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 15.0,
+   "hosted_ok:Claude Haiku 4.5": 13.0,
+   "right": 1.0
+  },
+  {
+   "run": "main-tiiny",
+   "model": "tiiny/Qwen/Qwen3-30B-A3B-Thinking",
+   "gate": "render",
+   "samples": 2,
+   "escalated": 16.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 16.0,
+   "hosted_ok:Claude Haiku 4.5": 14.0
+  },
+  {
+   "run": "main-tiiny",
+   "model": "tiiny/Qwen/Qwen3-30B-A3B-Thinking",
+   "gate": "spec",
+   "samples": 2,
+   "escalated": 16.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 16.0,
+   "hosted_ok:Claude Haiku 4.5": 14.0
+  },
+  {
+   "run": "main-tiiny",
+   "model": "tiiny/Qwen/Qwen3-30B-A3B-Thinking",
+   "gate": "oracle",
+   "samples": 2,
+   "escalated": 16.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 16.0,
+   "hosted_ok:Claude Haiku 4.5": 14.0
+  },
+  {
+   "run": "main-tiiny",
+   "model": "tiiny/Qwen/Qwen3-4B-Instruct-2507",
+   "gate": "render",
+   "samples": 2,
+   "escalated": 12.5,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 12.5,
+   "hosted_ok:Claude Haiku 4.5": 11.0,
+   "wrong": 3.5
+  },
+  {
+   "run": "main-tiiny",
+   "model": "tiiny/Qwen/Qwen3-4B-Instruct-2507",
+   "gate": "spec",
+   "samples": 2,
+   "escalated": 16.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 16.0,
+   "hosted_ok:Claude Haiku 4.5": 14.0
+  },
+  {
+   "run": "main-tiiny",
+   "model": "tiiny/Qwen/Qwen3-4B-Instruct-2507",
+   "gate": "oracle",
+   "samples": 2,
+   "escalated": 16.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 16.0,
+   "hosted_ok:Claude Haiku 4.5": 14.0
+  },
+  {
+   "run": "main-tiiny",
+   "model": "tiiny/Qwen/Qwen3-8B",
+   "gate": "render",
+   "samples": 2,
+   "escalated": 13.5,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 13.5,
+   "hosted_ok:Claude Haiku 4.5": 11.5,
+   "wrong": 2.5
+  },
+  {
+   "run": "main-tiiny",
+   "model": "tiiny/Qwen/Qwen3-8B",
+   "gate": "spec",
+   "samples": 2,
+   "escalated": 15.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 15.0,
+   "hosted_ok:Claude Haiku 4.5": 13.0,
+   "wrong": 1.0
+  },
+  {
+   "run": "main-tiiny",
+   "model": "tiiny/Qwen/Qwen3-8B",
+   "gate": "oracle",
+   "samples": 2,
+   "escalated": 16.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 16.0,
+   "hosted_ok:Claude Haiku 4.5": 14.0
+  },
+  {
+   "run": "main-tiiny",
+   "model": "tiiny/Qwen/Qwen3-Coder-30B-A3B-Instruct",
+   "gate": "render",
+   "samples": 2,
+   "escalated": 10.5,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 10.5,
+   "hosted_ok:Claude Haiku 4.5": 8.5,
+   "wrong": 5.5
+  },
+  {
+   "run": "main-tiiny",
+   "model": "tiiny/Qwen/Qwen3-Coder-30B-A3B-Instruct",
+   "gate": "spec",
+   "samples": 2,
+   "escalated": 14.5,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 14.5,
+   "hosted_ok:Claude Haiku 4.5": 12.5,
+   "wrong": 1.5
+  },
+  {
+   "run": "main-tiiny",
+   "model": "tiiny/Qwen/Qwen3-Coder-30B-A3B-Instruct",
+   "gate": "oracle",
+   "samples": 2,
+   "escalated": 16.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 16.0,
+   "hosted_ok:Claude Haiku 4.5": 14.0
+  },
+  {
+   "run": "main-tiiny",
+   "model": "tiiny/Qwen/Qwen3-Coder-Next",
+   "gate": "render",
+   "samples": 2,
+   "right": 1.5,
+   "wrong": 12.5,
+   "escalated": 2.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 2.0,
+   "hosted_ok:Claude Haiku 4.5": 1.5
+  },
+  {
+   "run": "main-tiiny",
+   "model": "tiiny/Qwen/Qwen3-Coder-Next",
+   "gate": "spec",
+   "samples": 2,
+   "right": 2.0,
+   "escalated": 11.0,
+   "cut_short": 0.5,
+   "hosted_ok:Claude Sonnet 5.5": 11.0,
+   "hosted_ok:Claude Haiku 4.5": 9.0,
+   "wrong": 3.0
+  },
+  {
+   "run": "main-tiiny",
+   "model": "tiiny/Qwen/Qwen3-Coder-Next",
+   "gate": "oracle",
+   "samples": 2,
+   "right": 3.0,
+   "escalated": 13.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 13.0,
+   "hosted_ok:Claude Haiku 4.5": 11.0
+  },
+  {
+   "run": "main-tiiny",
+   "model": "tiiny/Qwen/Qwen3.5-35B-A3B",
+   "gate": "render",
+   "samples": 2,
+   "escalated": 11.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 11.0,
+   "hosted_ok:Claude Haiku 4.5": 9.5,
+   "wrong": 4.5,
+   "right": 0.5
+  },
+  {
+   "run": "main-tiiny",
+   "model": "tiiny/Qwen/Qwen3.5-35B-A3B",
+   "gate": "spec",
+   "samples": 2,
+   "escalated": 14.5,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 14.5,
+   "hosted_ok:Claude Haiku 4.5": 12.5,
+   "wrong": 0.5,
+   "right": 1.0
+  },
+  {
+   "run": "main-tiiny",
+   "model": "tiiny/Qwen/Qwen3.5-35B-A3B",
+   "gate": "oracle",
+   "samples": 2,
+   "escalated": 15.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 15.0,
+   "hosted_ok:Claude Haiku 4.5": 13.0,
+   "right": 1.0
+  },
+  {
+   "run": "main-tiiny",
+   "model": "tiiny/Qwen/Qwen3.5-9B",
+   "gate": "render",
+   "samples": 2,
+   "wrong": 7.5,
+   "escalated": 8.5,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 8.5,
+   "hosted_ok:Claude Haiku 4.5": 7.0
+  },
+  {
+   "run": "main-tiiny",
+   "model": "tiiny/Qwen/Qwen3.5-9B",
+   "gate": "spec",
+   "samples": 2,
+   "escalated": 14.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 14.0,
+   "hosted_ok:Claude Haiku 4.5": 12.0,
+   "wrong": 1.5,
+   "right": 0.5
+  },
+  {
+   "run": "main-tiiny",
+   "model": "tiiny/Qwen/Qwen3.5-9B",
+   "gate": "oracle",
+   "samples": 2,
+   "escalated": 15.5,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 15.5,
+   "hosted_ok:Claude Haiku 4.5": 13.5,
+   "right": 0.5
+  },
+  {
+   "run": "main-tiiny",
+   "model": "tiiny/Qwen/Qwen3.6-27B",
+   "gate": "render",
+   "samples": 2,
+   "wrong": 12.5,
+   "right": 3.0,
+   "escalated": 0.5,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 0.5,
+   "hosted_ok:Claude Haiku 4.5": 0.5
+  },
+  {
+   "run": "main-tiiny",
+   "model": "tiiny/Qwen/Qwen3.6-27B",
+   "gate": "spec",
+   "samples": 2,
+   "wrong": 7.0,
+   "escalated": 5.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 5.0,
+   "hosted_ok:Claude Haiku 4.5": 4.5,
+   "right": 4.0
+  },
+  {
+   "run": "main-tiiny",
+   "model": "tiiny/Qwen/Qwen3.6-27B",
+   "gate": "oracle",
+   "samples": 2,
+   "right": 5.5,
+   "escalated": 10.5,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 10.5,
+   "hosted_ok:Claude Haiku 4.5": 8.5
+  },
+  {
+   "run": "main-tiiny",
+   "model": "tiiny/Qwen/Qwen3.6-35B-A3B",
+   "gate": "render",
+   "samples": 2,
+   "wrong": 8.0,
+   "escalated": 7.5,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 7.5,
+   "hosted_ok:Claude Haiku 4.5": 6.5,
+   "right": 0.5
+  },
+  {
+   "run": "main-tiiny",
+   "model": "tiiny/Qwen/Qwen3.6-35B-A3B",
+   "gate": "spec",
+   "samples": 2,
+   "wrong": 4.0,
+   "escalated": 11.5,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 11.5,
+   "hosted_ok:Claude Haiku 4.5": 10.0,
+   "right": 0.5
+  },
+  {
+   "run": "main-tiiny",
+   "model": "tiiny/Qwen/Qwen3.6-35B-A3B",
+   "gate": "oracle",
+   "samples": 2,
+   "escalated": 14.5,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 14.5,
+   "hosted_ok:Claude Haiku 4.5": 12.5,
+   "right": 1.5
+  },
+  {
+   "run": "main-tiiny",
+   "model": "tiiny/Qwen/Qwen3.8-27B",
+   "gate": "render",
+   "samples": 2,
+   "escalated": 10.5,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 10.5,
+   "hosted_ok:Claude Haiku 4.5": 10.0,
+   "right": 3.5,
+   "wrong": 2.0
+  },
+  {
+   "run": "main-tiiny",
+   "model": "tiiny/Qwen/Qwen3.8-27B",
+   "gate": "spec",
+   "samples": 2,
+   "escalated": 11.5,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 11.5,
+   "hosted_ok:Claude Haiku 4.5": 10.5,
+   "right": 4.0,
+   "wrong": 0.5
+  },
+  {
+   "run": "main-tiiny",
+   "model": "tiiny/Qwen/Qwen3.8-27B",
+   "gate": "oracle",
+   "samples": 2,
+   "escalated": 12.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 12.0,
+   "hosted_ok:Claude Haiku 4.5": 11.0,
+   "right": 4.0
+  },
+  {
+   "run": "main-tiiny",
+   "model": "tiiny/deepreinforce-ai/Ornith-1.0-35B",
+   "gate": "render",
+   "samples": 2,
+   "escalated": 4.5,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 4.5,
+   "hosted_ok:Claude Haiku 4.5": 4.5,
+   "wrong": 10.0,
+   "right": 1.5
+  },
+  {
+   "run": "main-tiiny",
+   "model": "tiiny/deepreinforce-ai/Ornith-1.0-35B",
+   "gate": "spec",
+   "samples": 2,
+   "escalated": 9.5,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 9.5,
+   "hosted_ok:Claude Haiku 4.5": 8.5,
+   "wrong": 4.5,
+   "right": 2.0
+  },
+  {
+   "run": "main-tiiny",
+   "model": "tiiny/deepreinforce-ai/Ornith-1.0-35B",
+   "gate": "oracle",
+   "samples": 2,
+   "escalated": 14.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 14.0,
+   "hosted_ok:Claude Haiku 4.5": 12.0,
+   "right": 2.0
+  },
+  {
+   "run": "main-tiiny",
+   "model": "tiiny/google/gemma-4-26B-A4B-it",
+   "gate": "render",
+   "samples": 3,
+   "right": 3.67,
+   "wrong": 12.33
+  },
+  {
+   "run": "main-tiiny",
+   "model": "tiiny/google/gemma-4-26B-A4B-it",
+   "gate": "spec",
+   "samples": 3,
+   "right": 8.0,
+   "escalated": 3.0,
+   "cut_short": 0.67,
+   "hosted_ok:Claude Sonnet 5.5": 3.0,
+   "hosted_ok:Claude Haiku 4.5": 3.0,
+   "wrong": 5.0
+  },
+  {
+   "run": "main-tiiny",
+   "model": "tiiny/google/gemma-4-26B-A4B-it",
+   "gate": "oracle",
+   "samples": 3,
+   "right": 9.33,
+   "escalated": 6.67,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 6.67,
+   "hosted_ok:Claude Haiku 4.5": 6.0
+  },
+  {
+   "run": "main-tiiny",
+   "model": "tiiny/openai/gpt-oss-120b",
+   "gate": "render",
+   "samples": 2,
+   "right": 4.5,
+   "escalated": 9.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 9.0,
+   "hosted_ok:Claude Haiku 4.5": 8.0,
+   "wrong": 2.5
+  },
+  {
+   "run": "main-tiiny",
+   "model": "tiiny/openai/gpt-oss-120b",
+   "gate": "spec",
+   "samples": 2,
+   "right": 4.0,
+   "escalated": 12.0,
+   "cut_short": 0.5,
+   "hosted_ok:Claude Sonnet 5.5": 12.0,
+   "hosted_ok:Claude Haiku 4.5": 10.5
+  },
+  {
+   "run": "main-tiiny",
+   "model": "tiiny/openai/gpt-oss-120b",
+   "gate": "oracle",
+   "samples": 2,
+   "right": 4.5,
+   "escalated": 11.5,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 11.5,
+   "hosted_ok:Claude Haiku 4.5": 10.0
+  },
+  {
+   "run": "main-tiiny",
+   "model": "tiiny/openai/gpt-oss-20b",
+   "gate": "render",
+   "samples": 2,
+   "escalated": 16.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 16.0,
+   "hosted_ok:Claude Haiku 4.5": 14.0
+  },
+  {
+   "run": "main-tiiny",
+   "model": "tiiny/openai/gpt-oss-20b",
+   "gate": "spec",
+   "samples": 2,
+   "escalated": 16.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 16.0,
+   "hosted_ok:Claude Haiku 4.5": 14.0
+  },
+  {
+   "run": "main-tiiny",
+   "model": "tiiny/openai/gpt-oss-20b",
+   "gate": "oracle",
+   "samples": 2,
+   "escalated": 16.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 16.0,
+   "hosted_ok:Claude Haiku 4.5": 14.0
+  },
+  {
+   "run": "main-tiiny",
+   "model": "tiiny/zai-org/GLM-4.7-Flash",
+   "gate": "render",
+   "samples": 2,
+   "wrong": 13.5,
+   "escalated": 2.5,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 2.5,
+   "hosted_ok:Claude Haiku 4.5": 2.5
+  },
+  {
+   "run": "main-tiiny",
+   "model": "tiiny/zai-org/GLM-4.7-Flash",
+   "gate": "spec",
+   "samples": 2,
+   "escalated": 13.5,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 13.5,
+   "hosted_ok:Claude Haiku 4.5": 12.0,
+   "wrong": 2.5
+  },
+  {
+   "run": "main-tiiny",
+   "model": "tiiny/zai-org/GLM-4.7-Flash",
+   "gate": "oracle",
+   "samples": 2,
+   "escalated": 16.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 16.0,
+   "hosted_ok:Claude Haiku 4.5": 14.0
+  },
+  {
+   "run": "think-tiiny",
+   "model": "tiiny/Qwen/Qwen3-30B-A3B-Thinking",
+   "gate": "render",
+   "samples": 1,
+   "escalated": 13.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 13.0,
+   "hosted_ok:Claude Haiku 4.5": 11.0,
+   "right": 1.0,
+   "wrong": 2.0
+  },
+  {
+   "run": "think-tiiny",
+   "model": "tiiny/Qwen/Qwen3-30B-A3B-Thinking",
+   "gate": "spec",
+   "samples": 1,
+   "escalated": 13.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 13.0,
+   "hosted_ok:Claude Haiku 4.5": 11.0,
+   "right": 2.0,
+   "wrong": 1.0
+  },
+  {
+   "run": "think-tiiny",
+   "model": "tiiny/Qwen/Qwen3-30B-A3B-Thinking",
+   "gate": "oracle",
+   "samples": 1,
+   "escalated": 13.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 13.0,
+   "hosted_ok:Claude Haiku 4.5": 11.0,
+   "right": 3.0
+  },
+  {
+   "run": "think-tiiny",
+   "model": "tiiny/Qwen/Qwen3.5-35B-A3B",
+   "gate": "render",
+   "samples": 1,
+   "wrong": 4.0,
+   "escalated": 11.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 11.0,
+   "hosted_ok:Claude Haiku 4.5": 10.0,
+   "right": 1.0
+  },
+  {
+   "run": "think-tiiny",
+   "model": "tiiny/Qwen/Qwen3.5-35B-A3B",
+   "gate": "spec",
+   "samples": 1,
+   "right": 2.0,
+   "escalated": 13.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 13.0,
+   "hosted_ok:Claude Haiku 4.5": 12.0,
+   "wrong": 1.0
+  },
+  {
+   "run": "think-tiiny",
+   "model": "tiiny/Qwen/Qwen3.5-35B-A3B",
+   "gate": "oracle",
+   "samples": 1,
+   "right": 2.0,
+   "escalated": 14.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 14.0,
+   "hosted_ok:Claude Haiku 4.5": 12.0
+  },
+  {
+   "run": "think-tiiny",
+   "model": "tiiny/Qwen/Qwen3.5-9B",
+   "gate": "render",
+   "samples": 1,
+   "wrong": 10.0,
+   "right": 1.0,
+   "escalated": 5.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 5.0,
+   "hosted_ok:Claude Haiku 4.5": 4.0
+  },
+  {
+   "run": "think-tiiny",
+   "model": "tiiny/Qwen/Qwen3.5-9B",
+   "gate": "spec",
+   "samples": 1,
+   "wrong": 5.0,
+   "right": 1.0,
+   "escalated": 10.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 10.0,
+   "hosted_ok:Claude Haiku 4.5": 9.0
+  },
+  {
+   "run": "think-tiiny",
+   "model": "tiiny/Qwen/Qwen3.5-9B",
+   "gate": "oracle",
+   "samples": 1,
+   "escalated": 15.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 15.0,
+   "hosted_ok:Claude Haiku 4.5": 13.0,
+   "right": 1.0
+  },
+  {
+   "run": "think-tiiny",
+   "model": "tiiny/Qwen/Qwen3.6-35B-A3B",
+   "gate": "render",
+   "samples": 2,
+   "right": 4.5,
+   "wrong": 8.5,
+   "escalated": 3.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 3.0,
+   "hosted_ok:Claude Haiku 4.5": 3.0
+  },
+  {
+   "run": "think-tiiny",
+   "model": "tiiny/Qwen/Qwen3.6-35B-A3B",
+   "gate": "spec",
+   "samples": 2,
+   "right": 4.5,
+   "escalated": 7.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 7.0,
+   "hosted_ok:Claude Haiku 4.5": 6.5,
+   "wrong": 4.5
+  },
+  {
+   "run": "think-tiiny",
+   "model": "tiiny/Qwen/Qwen3.6-35B-A3B",
+   "gate": "oracle",
+   "samples": 2,
+   "right": 5.5,
+   "escalated": 10.5,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 10.5,
+   "hosted_ok:Claude Haiku 4.5": 10.0
+  },
+  {
+   "run": "think-tiiny",
+   "model": "tiiny/deepreinforce-ai/Ornith-1.0-35B",
+   "gate": "render",
+   "samples": 1,
+   "escalated": 7.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 7.0,
+   "hosted_ok:Claude Haiku 4.5": 7.0,
+   "wrong": 7.0,
+   "right": 2.0
+  },
+  {
+   "run": "think-tiiny",
+   "model": "tiiny/deepreinforce-ai/Ornith-1.0-35B",
+   "gate": "spec",
+   "samples": 1,
+   "escalated": 9.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 9.0,
+   "hosted_ok:Claude Haiku 4.5": 8.0,
+   "wrong": 4.0,
+   "right": 3.0
+  },
+  {
+   "run": "think-tiiny",
+   "model": "tiiny/deepreinforce-ai/Ornith-1.0-35B",
+   "gate": "oracle",
+   "samples": 1,
+   "escalated": 12.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 12.0,
+   "hosted_ok:Claude Haiku 4.5": 11.0,
+   "right": 4.0
+  },
+  {
+   "run": "think-tiiny",
+   "model": "tiiny/google/gemma-4-26B-A4B-it",
+   "gate": "render",
+   "samples": 1,
+   "right": 9.0,
+   "escalated": 3.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 3.0,
+   "hosted_ok:Claude Haiku 4.5": 3.0,
+   "wrong": 4.0
+  },
+  {
+   "run": "think-tiiny",
+   "model": "tiiny/google/gemma-4-26B-A4B-it",
+   "gate": "spec",
+   "samples": 1,
+   "right": 10.0,
+   "escalated": 5.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 5.0,
+   "hosted_ok:Claude Haiku 4.5": 5.0,
+   "wrong": 1.0
+  },
+  {
+   "run": "think-tiiny",
+   "model": "tiiny/google/gemma-4-26B-A4B-it",
+   "gate": "oracle",
+   "samples": 1,
+   "right": 10.0,
+   "escalated": 6.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 6.0,
+   "hosted_ok:Claude Haiku 4.5": 6.0
+  },
+  {
+   "run": "think-tiiny",
+   "model": "tiiny/openai/gpt-oss-120b",
+   "gate": "render",
+   "samples": 2,
+   "right": 6.5,
+   "escalated": 5.5,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 5.5,
+   "hosted_ok:Claude Haiku 4.5": 4.0,
+   "wrong": 4.0
+  },
+  {
+   "run": "think-tiiny",
+   "model": "tiiny/openai/gpt-oss-120b",
+   "gate": "spec",
+   "samples": 2,
+   "right": 6.5,
+   "escalated": 7.0,
+   "cut_short": 0.5,
+   "hosted_ok:Claude Sonnet 5.5": 7.0,
+   "hosted_ok:Claude Haiku 4.5": 5.5,
+   "wrong": 2.5
+  },
+  {
+   "run": "think-tiiny",
+   "model": "tiiny/openai/gpt-oss-120b",
+   "gate": "oracle",
+   "samples": 2,
+   "right": 8.5,
+   "escalated": 7.5,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 7.5,
+   "hosted_ok:Claude Haiku 4.5": 6.0
+  },
+  {
+   "run": "think-tiiny",
+   "model": "tiiny/openai/gpt-oss-20b",
+   "gate": "render",
+   "samples": 1,
+   "right": 3.0,
+   "wrong": 4.0,
+   "escalated": 9.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 9.0,
+   "hosted_ok:Claude Haiku 4.5": 7.0
+  },
+  {
+   "run": "think-tiiny",
+   "model": "tiiny/openai/gpt-oss-20b",
+   "gate": "spec",
+   "samples": 1,
+   "right": 4.0,
+   "escalated": 11.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 11.0,
+   "hosted_ok:Claude Haiku 4.5": 9.0,
+   "wrong": 1.0
+  },
+  {
+   "run": "think-tiiny",
+   "model": "tiiny/openai/gpt-oss-20b",
+   "gate": "oracle",
+   "samples": 1,
+   "right": 4.0,
+   "escalated": 12.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 12.0,
+   "hosted_ok:Claude Haiku 4.5": 10.0
+  },
+  {
+   "run": "think-tiiny",
+   "model": "tiiny/zai-org/GLM-4.7-Flash",
+   "gate": "render",
+   "samples": 1,
+   "right": 1.0,
+   "wrong": 10.0,
+   "escalated": 5.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 5.0,
+   "hosted_ok:Claude Haiku 4.5": 5.0
+  },
+  {
+   "run": "think-tiiny",
+   "model": "tiiny/zai-org/GLM-4.7-Flash",
+   "gate": "spec",
+   "samples": 1,
+   "right": 1.0,
+   "escalated": 11.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 11.0,
+   "hosted_ok:Claude Haiku 4.5": 11.0,
+   "wrong": 4.0
+  },
+  {
+   "run": "think-tiiny",
+   "model": "tiiny/zai-org/GLM-4.7-Flash",
+   "gate": "oracle",
+   "samples": 1,
+   "right": 1.0,
+   "escalated": 15.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 15.0,
+   "hosted_ok:Claude Haiku 4.5": 13.0
+  },
+  {
+   "run": "box-gemma-h4",
+   "model": "tiiny/google/gemma-4-26B-A4B-it",
+   "gate": "render",
+   "samples": 3,
+   "right": 8.0,
+   "wrong": 8.0
+  },
+  {
+   "run": "box-gemma-h4",
+   "model": "tiiny/google/gemma-4-26B-A4B-it",
+   "gate": "spec",
+   "samples": 3,
+   "right": 9.0,
+   "wrong": 3.67,
+   "escalated": 3.33,
+   "cut_short": 1.0,
+   "hosted_ok:Claude Sonnet 5.5": 3.33,
+   "hosted_ok:Claude Haiku 4.5": 3.33
+  },
+  {
+   "run": "box-gemma-h4",
+   "model": "tiiny/google/gemma-4-26B-A4B-it",
+   "gate": "oracle",
+   "samples": 3,
+   "right": 11.0,
+   "escalated": 5.0,
+   "cut_short": 0.0,
+   "hosted_ok:Claude Sonnet 5.5": 5.0,
+   "hosted_ok:Claude Haiku 4.5": 4.67
+  }
+ ],
+ "teams": [
+  {
+   "team": "laptop: Gemma 4 E4B, scadcoder, Bonsai 2 27B",
+   "gate": "spec",
+   "samples": 1,
+   "escalated": 12.0,
+   "hosted_ok:Claude Sonnet 5.5": 12.0,
+   "hosted_ok:Claude Haiku 4.5": 11.0,
+   "wrong": 3.0,
+   "kept_by_0": 2.0,
+   "right": 1.0,
+   "kept_by_2": 2.0
+  },
+  {
+   "team": "laptop: Gemma 4 E4B, scadcoder, Bonsai 2 27B",
+   "gate": "oracle",
+   "samples": 1,
+   "escalated": 14.0,
+   "hosted_ok:Claude Sonnet 5.5": 14.0,
+   "hosted_ok:Claude Haiku 4.5": 12.0,
+   "right": 2.0,
+   "kept_by_2": 2.0
+  },
+  {
+   "team": "box: Gemma 4 26B, gpt-oss-120b thinking, Qwen3.6 27B",
+   "gate": "spec",
+   "samples": 2,
+   "right": 7.5,
+   "kept_by_0": 13.5,
+   "escalated": 1.0,
+   "hosted_ok:Claude Sonnet 5.5": 1.0,
+   "hosted_ok:Claude Haiku 4.5": 1.0,
+   "wrong": 7.5,
+   "kept_by_2": 0.5,
+   "kept_by_1": 1.0
+  },
+  {
+   "team": "box: Gemma 4 26B, gpt-oss-120b thinking, Qwen3.6 27B",
+   "gate": "oracle",
+   "samples": 2,
+   "right": 11.5,
+   "kept_by_0": 8.0,
+   "escalated": 4.5,
+   "hosted_ok:Claude Sonnet 5.5": 4.5,
+   "hosted_ok:Claude Haiku 4.5": 4.0,
+   "kept_by_1": 3.5
+  },
+  {
+   "team": "tiiny/Qwen/Qwen3-30B-A3B-Instruct (main-tiiny), best of its 2 samples",
+   "gate": "spec",
+   "samples": 1,
+   "wrong": 5,
+   "escalated": 9,
+   "hosted_ok:Claude Sonnet 5.5": 9,
+   "hosted_ok:Claude Haiku 4.5": 7,
+   "right": 2
+  },
+  {
+   "team": "tiiny/Qwen/Qwen3-30B-A3B-Instruct (main-tiiny), best of its 2 samples",
+   "gate": "oracle",
+   "samples": 1,
+   "escalated": 14,
+   "hosted_ok:Claude Sonnet 5.5": 14,
+   "hosted_ok:Claude Haiku 4.5": 12,
+   "right": 2
+  },
+  {
+   "team": "tiiny/Qwen/Qwen3-30B-A3B-Thinking (main-tiiny), best of its 2 samples",
+   "gate": "spec",
+   "samples": 1,
+   "escalated": 16,
+   "hosted_ok:Claude Sonnet 5.5": 16,
+   "hosted_ok:Claude Haiku 4.5": 14
+  },
+  {
+   "team": "tiiny/Qwen/Qwen3-30B-A3B-Thinking (main-tiiny), best of its 2 samples",
+   "gate": "oracle",
+   "samples": 1,
+   "escalated": 16,
+   "hosted_ok:Claude Sonnet 5.5": 16,
+   "hosted_ok:Claude Haiku 4.5": 14
+  },
+  {
+   "team": "tiiny/Qwen/Qwen3-4B-Instruct-2507 (main-tiiny), best of its 2 samples",
+   "gate": "spec",
+   "samples": 1,
+   "escalated": 16,
+   "hosted_ok:Claude Sonnet 5.5": 16,
+   "hosted_ok:Claude Haiku 4.5": 14
+  },
+  {
+   "team": "tiiny/Qwen/Qwen3-4B-Instruct-2507 (main-tiiny), best of its 2 samples",
+   "gate": "oracle",
+   "samples": 1,
+   "escalated": 16,
+   "hosted_ok:Claude Sonnet 5.5": 16,
+   "hosted_ok:Claude Haiku 4.5": 14
+  },
+  {
+   "team": "tiiny/Qwen/Qwen3-8B (main-tiiny), best of its 2 samples",
+   "gate": "spec",
+   "samples": 1,
+   "escalated": 15,
+   "hosted_ok:Claude Sonnet 5.5": 15,
+   "hosted_ok:Claude Haiku 4.5": 13,
+   "wrong": 1
+  },
+  {
+   "team": "tiiny/Qwen/Qwen3-8B (main-tiiny), best of its 2 samples",
+   "gate": "oracle",
+   "samples": 1,
+   "escalated": 16,
+   "hosted_ok:Claude Sonnet 5.5": 16,
+   "hosted_ok:Claude Haiku 4.5": 14
+  },
+  {
+   "team": "tiiny/Qwen/Qwen3-Coder-30B-A3B-Instruct (main-tiiny), best of its 2 samples",
+   "gate": "spec",
+   "samples": 1,
+   "escalated": 13,
+   "hosted_ok:Claude Sonnet 5.5": 13,
+   "hosted_ok:Claude Haiku 4.5": 11,
+   "wrong": 3
+  },
+  {
+   "team": "tiiny/Qwen/Qwen3-Coder-30B-A3B-Instruct (main-tiiny), best of its 2 samples",
+   "gate": "oracle",
+   "samples": 1,
+   "escalated": 16,
+   "hosted_ok:Claude Sonnet 5.5": 16,
+   "hosted_ok:Claude Haiku 4.5": 14
+  },
+  {
+   "team": "tiiny/Qwen/Qwen3-Coder-Next (main-tiiny), best of its 2 samples",
+   "gate": "spec",
+   "samples": 1,
+   "right": 3,
+   "escalated": 9,
+   "hosted_ok:Claude Sonnet 5.5": 9,
+   "hosted_ok:Claude Haiku 4.5": 7,
+   "wrong": 4
+  },
+  {
+   "team": "tiiny/Qwen/Qwen3-Coder-Next (main-tiiny), best of its 2 samples",
+   "gate": "oracle",
+   "samples": 1,
+   "right": 5,
+   "escalated": 11,
+   "hosted_ok:Claude Sonnet 5.5": 11,
+   "hosted_ok:Claude Haiku 4.5": 9
+  },
+  {
+   "team": "tiiny/Qwen/Qwen3.5-35B-A3B (main-tiiny), best of its 2 samples",
+   "gate": "spec",
+   "samples": 1,
+   "escalated": 13,
+   "hosted_ok:Claude Sonnet 5.5": 13,
+   "hosted_ok:Claude Haiku 4.5": 11,
+   "wrong": 1,
+   "right": 2
+  },
+  {
+   "team": "tiiny/Qwen/Qwen3.5-35B-A3B (main-tiiny), best of its 2 samples",
+   "gate": "oracle",
+   "samples": 1,
+   "escalated": 14,
+   "hosted_ok:Claude Sonnet 5.5": 14,
+   "hosted_ok:Claude Haiku 4.5": 12,
+   "right": 2
+  },
+  {
+   "team": "tiiny/Qwen/Qwen3.5-9B (main-tiiny), best of its 2 samples",
+   "gate": "spec",
+   "samples": 1,
+   "escalated": 13,
+   "hosted_ok:Claude Sonnet 5.5": 13,
+   "hosted_ok:Claude Haiku 4.5": 11,
+   "wrong": 2,
+   "right": 1
+  },
+  {
+   "team": "tiiny/Qwen/Qwen3.5-9B (main-tiiny), best of its 2 samples",
+   "gate": "oracle",
+   "samples": 1,
+   "escalated": 15,
+   "hosted_ok:Claude Sonnet 5.5": 15,
+   "hosted_ok:Claude Haiku 4.5": 13,
+   "right": 1
+  },
+  {
+   "team": "tiiny/Qwen/Qwen3.6-27B (main-tiiny), best of its 2 samples",
+   "gate": "spec",
+   "samples": 1,
+   "wrong": 8,
+   "escalated": 3,
+   "hosted_ok:Claude Sonnet 5.5": 3,
+   "hosted_ok:Claude Haiku 4.5": 3,
+   "right": 5
+  },
+  {
+   "team": "tiiny/Qwen/Qwen3.6-27B (main-tiiny), best of its 2 samples",
+   "gate": "oracle",
+   "samples": 1,
+   "right": 8,
+   "escalated": 8,
+   "hosted_ok:Claude Sonnet 5.5": 8,
+   "hosted_ok:Claude Haiku 4.5": 6
+  },
+  {
+   "team": "tiiny/Qwen/Qwen3.6-35B-A3B (main-tiiny), best of its 2 samples",
+   "gate": "spec",
+   "samples": 1,
+   "wrong": 7,
+   "escalated": 8,
+   "hosted_ok:Claude Sonnet 5.5": 8,
+   "hosted_ok:Claude Haiku 4.5": 7,
+   "right": 1
+  },
+  {
+   "team": "tiiny/Qwen/Qwen3.6-35B-A3B (main-tiiny), best of its 2 samples",
+   "gate": "oracle",
+   "samples": 1,
+   "escalated": 13,
+   "hosted_ok:Claude Sonnet 5.5": 13,
+   "hosted_ok:Claude Haiku 4.5": 11,
+   "right": 3
+  },
+  {
+   "team": "tiiny/Qwen/Qwen3.8-27B (main-tiiny), best of its 2 samples",
+   "gate": "spec",
+   "samples": 1,
+   "escalated": 9,
+   "hosted_ok:Claude Sonnet 5.5": 9,
+   "hosted_ok:Claude Haiku 4.5": 8,
+   "right": 6,
+   "wrong": 1
+  },
+  {
+   "team": "tiiny/Qwen/Qwen3.8-27B (main-tiiny), best of its 2 samples",
+   "gate": "oracle",
+   "samples": 1,
+   "escalated": 10,
+   "hosted_ok:Claude Sonnet 5.5": 10,
+   "hosted_ok:Claude Haiku 4.5": 9,
+   "right": 6
+  },
+  {
+   "team": "tiiny/deepreinforce-ai/Ornith-1.0-35B (main-tiiny), best of its 2 samples",
+   "gate": "spec",
+   "samples": 1,
+   "wrong": 7,
+   "right": 3,
+   "escalated": 6,
+   "hosted_ok:Claude Sonnet 5.5": 6,
+   "hosted_ok:Claude Haiku 4.5": 5
+  },
+  {
+   "team": "tiiny/deepreinforce-ai/Ornith-1.0-35B (main-tiiny), best of its 2 samples",
+   "gate": "oracle",
+   "samples": 1,
+   "escalated": 13,
+   "hosted_ok:Claude Sonnet 5.5": 13,
+   "hosted_ok:Claude Haiku 4.5": 11,
+   "right": 3
+  },
+  {
+   "team": "tiiny/google/gemma-4-26B-A4B-it (main-tiiny), best of its 3 samples",
+   "gate": "spec",
+   "samples": 1,
+   "right": 9,
+   "wrong": 6,
+   "escalated": 1,
+   "hosted_ok:Claude Sonnet 5.5": 1,
+   "hosted_ok:Claude Haiku 4.5": 1
+  },
+  {
+   "team": "tiiny/google/gemma-4-26B-A4B-it (main-tiiny), best of its 3 samples",
+   "gate": "oracle",
+   "samples": 1,
+   "right": 14,
+   "escalated": 2,
+   "hosted_ok:Claude Sonnet 5.5": 2,
+   "hosted_ok:Claude Haiku 4.5": 2
+  },
+  {
+   "team": "tiiny/openai/gpt-oss-120b (main-tiiny), best of its 2 samples",
+   "gate": "spec",
+   "samples": 1,
+   "right": 6,
+   "escalated": 10,
+   "hosted_ok:Claude Sonnet 5.5": 10,
+   "hosted_ok:Claude Haiku 4.5": 9
+  },
+  {
+   "team": "tiiny/openai/gpt-oss-120b (main-tiiny), best of its 2 samples",
+   "gate": "oracle",
+   "samples": 1,
+   "right": 7,
+   "escalated": 9,
+   "hosted_ok:Claude Sonnet 5.5": 9,
+   "hosted_ok:Claude Haiku 4.5": 8
+  },
+  {
+   "team": "tiiny/openai/gpt-oss-20b (main-tiiny), best of its 2 samples",
+   "gate": "spec",
+   "samples": 1,
+   "escalated": 16,
+   "hosted_ok:Claude Sonnet 5.5": 16,
+   "hosted_ok:Claude Haiku 4.5": 14
+  },
+  {
+   "team": "tiiny/openai/gpt-oss-20b (main-tiiny), best of its 2 samples",
+   "gate": "oracle",
+   "samples": 1,
+   "escalated": 16,
+   "hosted_ok:Claude Sonnet 5.5": 16,
+   "hosted_ok:Claude Haiku 4.5": 14
+  },
+  {
+   "team": "tiiny/zai-org/GLM-4.7-Flash (main-tiiny), best of its 2 samples",
+   "gate": "spec",
+   "samples": 1,
+   "escalated": 11,
+   "hosted_ok:Claude Sonnet 5.5": 11,
+   "hosted_ok:Claude Haiku 4.5": 10,
+   "wrong": 5
+  },
+  {
+   "team": "tiiny/zai-org/GLM-4.7-Flash (main-tiiny), best of its 2 samples",
+   "gate": "oracle",
+   "samples": 1,
+   "escalated": 16,
+   "hosted_ok:Claude Sonnet 5.5": 16,
+   "hosted_ok:Claude Haiku 4.5": 14
+  },
+  {
+   "team": "tiiny/Qwen/Qwen3.6-35B-A3B (think-tiiny), best of its 2 samples",
+   "gate": "spec",
+   "samples": 1,
+   "right": 5,
+   "escalated": 5,
+   "hosted_ok:Claude Sonnet 5.5": 5,
+   "hosted_ok:Claude Haiku 4.5": 5,
+   "wrong": 6
+  },
+  {
+   "team": "tiiny/Qwen/Qwen3.6-35B-A3B (think-tiiny), best of its 2 samples",
+   "gate": "oracle",
+   "samples": 1,
+   "right": 8,
+   "escalated": 8,
+   "hosted_ok:Claude Sonnet 5.5": 8,
+   "hosted_ok:Claude Haiku 4.5": 8
+  },
+  {
+   "team": "tiiny/openai/gpt-oss-120b (think-tiiny), best of its 2 samples",
+   "gate": "spec",
+   "samples": 1,
+   "right": 7,
+   "escalated": 6,
+   "hosted_ok:Claude Sonnet 5.5": 6,
+   "hosted_ok:Claude Haiku 4.5": 5,
+   "wrong": 3
+  },
+  {
+   "team": "tiiny/openai/gpt-oss-120b (think-tiiny), best of its 2 samples",
+   "gate": "oracle",
+   "samples": 1,
+   "right": 10,
+   "escalated": 6,
+   "hosted_ok:Claude Sonnet 5.5": 6,
+   "hosted_ok:Claude Haiku 4.5": 5
+  },
+  {
+   "team": "tiiny/google/gemma-4-26B-A4B-it (box-gemma-h4), best of its 3 samples",
+   "gate": "spec",
+   "samples": 1,
+   "right": 8,
+   "wrong": 6,
+   "escalated": 2,
+   "hosted_ok:Claude Sonnet 5.5": 2,
+   "hosted_ok:Claude Haiku 4.5": 2
+  },
+  {
+   "team": "tiiny/google/gemma-4-26B-A4B-it (box-gemma-h4), best of its 3 samples",
+   "gate": "oracle",
+   "samples": 1,
+   "right": 13,
+   "escalated": 3,
+   "hosted_ok:Claude Sonnet 5.5": 3,
+   "hosted_ok:Claude Haiku 4.5": 3
+  }
+ ]
+}

@@ -1,0 +1,122 @@
+The bounding box is 70 mm wide in X (should be 50 mm) and the z=2.5 slice shows a 70×45 footprint (should be 50×45). The gussets are being extruded along the wrong axis: `linear_extrude` extrudes a 2D profile in the XY plane along +Z, so my "YZ triangle" was actually drawn in XY and extruded upward, creating a 70 mm wide slab. I need to draw the triangle in the YZ plane and extrude it along X.
+
+```openscad
+// NEMA 17 L-shaped mounting bracket
+// Print orientation: base plate on XY plane (z=0), builds upward (+Z)
+
+$fn = 64;
+
+// Base plate dimensions
+base_x_min = -25;
+base_x_max = 25;
+base_y_min = 0;
+base_y_max = 45;
+base_z_min = 0;
+base_z_max = 5;
+
+// M4 through-holes in base plate
+m4_hole_d = 4.5;
+m4_hole_x1 = -17;
+m4_hole_y1 = 30;
+m4_hole_x2 = 17;
+m4_hole_y2 = 30;
+
+// Vertical motor plate dimensions
+motor_x_min = -25;
+motor_x_max = 25;
+motor_y_min = 0;
+motor_y_max = 5;
+motor_z_min = 0;
+motor_z_max = 50;
+
+// Motor centring boss hole
+boss_hole_d = 23;
+boss_hole_x = 0;
+boss_hole_z = 28;
+
+// M3 screw holes on 31 mm square pattern
+m3_hole_d = 3.4;
+m3_square = 31;
+m3_offset = m3_square / 2;  // 15.5 mm from centre
+
+// Gusset dimensions
+gusset_thick = 5;
+gusset_leg_y = 20;
+gusset_leg_z = 20;
+gusset_y_corner = 5;   // right-angle corner y position
+gusset_z_corner = 5;   // right-angle corner z position
+
+// Left gusset x range
+gusset_left_x_min = -25;
+gusset_left_x_max = -20;
+
+// Right gusset x range
+gusset_right_x_min = 20;
+gusset_right_x_max = 25;
+
+// Helper: triangular gusset in YZ plane, extruded along X
+// Profile drawn in YZ (via rotate), then extruded along +X
+module gusset(x_min, x_max) {
+    translate([x_min, 0, 0]) {
+        rotate([0, 90, 0]) {
+            linear_extrude(x_max - x_min) {
+                polygon(points = [
+                    [gusset_y_corner, gusset_z_corner],
+                    [gusset_y_corner + gusset_leg_y, gusset_z_corner],
+                    [gusset_y_corner, gusset_z_corner + gusset_leg_z]
+                ]);
+            }
+        }
+    }
+}
+
+// Helper: vertical through-hole in motor plate (along Y axis)
+module motor_plate_hole(cx, cz, d) {
+    translate([cx, -1, cz]) {
+        rotate([90, 0, 0]) {
+            cylinder(h = motor_y_max - motor_y_min + 2, d = d, $fn = $fn);
+        }
+    }
+}
+
+// Helper: vertical through-hole in base plate (along Z axis)
+module base_plate_hole(cx, cy, d) {
+    translate([cx, cy, -1]) {
+        cylinder(h = base_z_max - base_z_min + 2, d = d, $fn = $fn);
+    }
+}
+
+difference() {
+    union() {
+        // Base plate
+        translate([base_x_min, base_y_min, base_z_min]) {
+            cube([base_x_max - base_x_min, base_y_max - base_y_min, base_z_max - base_z_min]);
+        }
+
+        // Vertical motor plate
+        translate([motor_x_min, motor_y_min, motor_z_min]) {
+            cube([motor_x_max - motor_x_min, motor_y_max - motor_y_min, motor_z_max - motor_z_min]);
+        }
+
+        // Left gusset
+        gusset(gusset_left_x_min, gusset_left_x_max);
+
+        // Right gusset
+        gusset(gusset_right_x_min, gusset_right_x_max);
+    }
+
+    // M4 holes in base plate
+    base_plate_hole(m4_hole_x1, m4_hole_y1, m4_hole_d);
+    base_plate_hole(m4_hole_x2, m4_hole_y2, m4_hole_d);
+
+    // Boss hole in motor plate
+    motor_plate_hole(boss_hole_x, boss_hole_z, boss_hole_d);
+
+    // M3 screw holes in motor plate (31 mm square pattern)
+    for (dx = [-m3_offset, m3_offset]) {
+        for (dz = [-m3_offset, m3_offset]) {
+            motor_plate_hole(boss_hole_x + dx, boss_hole_z + dz, m3_hole_d);
+        }
+    }
+}
+```

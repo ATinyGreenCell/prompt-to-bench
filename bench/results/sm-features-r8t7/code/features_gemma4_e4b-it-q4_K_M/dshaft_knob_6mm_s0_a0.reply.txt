@@ -1,0 +1,31 @@
+Features: {"bodies": [{"solids": [{"shape": "cylinder", "d": 30, "h": 15, "at": [0, 0, 0]}], "cuts": [{"cut": "d_hole", "d": 6.2, "flat": 4.7, "depth": 12, "at": [0, 0]}, {"cut": "side_hole", "d": 2, "axis": "y", "z": 0, "at": [0, 0]}, {"cut": "side_hole", "d": 2, "axis": "y", "z": 0, "at": [0, 0]}, {"cut": "side_hole", "d": 2, "axis": "y", "z": 0, "at": [0, 0]}, {"cut": "side_hole", "d": 2, "axis": "y", "z": 0, "at": [0, 0]}, {"cut": "side_hole", "d": 2, "axis": "y", "z": 0, "at": [0, 0]}, {"cut": "side_hole", "d": 2, "axis": "y", "z": 0, "at": [0, 0]}, {"cut": "side_hole", "d": 2, "axis": "y", "z": 0, "at": [0, 0]}, {"cut": "side_hole", "d": 2, "axis": "y", "z": 0, "at": [0, 0]}, {"cut": "side_hole", "d": 2, "axis": "y", "z": 0, "at": [0, 0]}, {"cut": "side_hole", "d": 2, "axis": "y", "z": 0, "at": [0, 0]}, {"cut": "side_hole", "d": 2, "axis": "y", "z": 0, "at": [0, 0]}, {"cut": "side_hole", "d": 2, "axis": "y", "z": 0, "at": [0, 0]}, {"cut": "side_hole", "d": 2, "axis": "y", "z": 0, "at": [0, 0]}, {"cut": "side_hole", "d": 2, "axis": "y", "z": 0, "at": [0, 0]}, {"cut": "side_hole", "d": 2, "axis": "y", "z": 0, "at": [0, 0]}, {"cut": "side_hole", "d": 2, "axis": "y", "z": 0, "at": [0, 0]}, {"cut": "box", "size": [1.5, 1.5, 1], "at": [0, 0, 14]}]}]}
+
+```openscad
+// Built by bench/smallmodels/features/compiler.py from a list of features.
+$fn = 64;
+difference() {
+  union() {
+    translate([0, 0, 0]) cylinder(d = 30, h = 15);
+  }
+  union() {
+    translate([0, 0, 2.99]) rotate([0, 0, 0]) difference() { cylinder(d = 6.2, h = 12.02); translate([-1.6, -6.2, -1]) cube([6.2, 12.4, 14.02]); }
+    translate([0, 0, 0]) rotate([0, 0, 0]) rotate([90, 0, 0]) cylinder(d = 2, h = 1060, center = true);
+    translate([0, 0, 0]) rotate([0, 0, 0]) rotate([90, 0, 0]) cylinder(d = 2, h = 1060, center = true);
+    translate([0, 0, 0]) rotate([0, 0, 0]) rotate([90, 0, 0]) cylinder(d = 2, h = 1060, center = true);
+    translate([0, 0, 0]) rotate([0, 0, 0]) rotate([90, 0, 0]) cylinder(d = 2, h = 1060, center = true);
+    translate([0, 0, 0]) rotate([0, 0, 0]) rotate([90, 0, 0]) cylinder(d = 2, h = 1060, center = true);
+    translate([0, 0, 0]) rotate([0, 0, 0]) rotate([90, 0, 0]) cylinder(d = 2, h = 1060, center = true);
+    translate([0, 0, 0]) rotate([0, 0, 0]) rotate([90, 0, 0]) cylinder(d = 2, h = 1060, center = true);
+    translate([0, 0, 0]) rotate([0, 0, 0]) rotate([90, 0, 0]) cylinder(d = 2, h = 1060, center = true);
+    translate([0, 0, 0]) rotate([0, 0, 0]) rotate([90, 0, 0]) cylinder(d = 2, h = 1060, center = true);
+    translate([0, 0, 0]) rotate([0, 0, 0]) rotate([90, 0, 0]) cylinder(d = 2, h = 1060, center = true);
+    translate([0, 0, 0]) rotate([0, 0, 0]) rotate([90, 0, 0]) cylinder(d = 2, h = 1060, center = true);
+    translate([0, 0, 0]) rotate([0, 0, 0]) rotate([90, 0, 0]) cylinder(d = 2, h = 1060, center = true);
+    translate([0, 0, 0]) rotate([0, 0, 0]) rotate([90, 0, 0]) cylinder(d = 2, h = 1060, center = true);
+    translate([0, 0, 0]) rotate([0, 0, 0]) rotate([90, 0, 0]) cylinder(d = 2, h = 1060, center = true);
+    translate([0, 0, 0]) rotate([0, 0, 0]) rotate([90, 0, 0]) cylinder(d = 2, h = 1060, center = true);
+    translate([0, 0, 0]) rotate([0, 0, 0]) rotate([90, 0, 0]) cylinder(d = 2, h = 1060, center = true);
+    translate([0, 0, 14]) rotate([0, 0, 0]) translate([-0.75, -0.75, 0]) cube([1.5, 1.5, 1]);
+  }
+}
+```

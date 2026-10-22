@@ -1,0 +1,57 @@
+--- a/bench/ollama_openai_shim.py	2026-10-19 23:01:51.572372576 -0400
++++ b/bench/ollama_openai_shim.py	2026-10-19 23:02:20.864414266 -0400
+@@ -14,8 +14,14 @@
+ shim closes the upstream request too, so the server stops generating. Model names are listed
+ with a ":latest" tag, as Ollama does; the tag is stripped before forwarding.
+ 
++With --grammar FILE (a GBNF grammar such as bench/smallmodels/grammar/openscad.gbnf), every
++forwarded request also carries "grammar": <the file's text>, which llama-server applies to the
++whole reply (grammar-constrained decoding). This is a llama.cpp field; vLLM does not read it.
++
+     python bench/ollama_openai_shim.py --upstream http://127.0.0.1:18000 --port 11500
+     OLLAMA_HOST=http://127.0.0.1:11500 python bench/run_bench.py --run gpu-x --models <served-name> ...
++    python bench/ollama_openai_shim.py --upstream http://127.0.0.1:18090 --port 11501 \\
++        --grammar bench/smallmodels/grammar/openscad.gbnf
+ """
+ from __future__ import annotations
+ 
+@@ -29,6 +35,7 @@
+ import urllib.request
+ 
+ UPSTREAM = "http://127.0.0.1:8000"
++GRAMMAR = None  # GBNF text sent as "grammar" with every request (--grammar), or None
+ 
+ 
+ def upstream_models() -> list[str]:
+@@ -82,6 +89,8 @@
+                 req[k] = o[k]
+         if body.get("think") is False:
+             req["chat_template_kwargs"] = {"enable_thinking": False}
++        if GRAMMAR:
++            req["grammar"] = GRAMMAR
+         up = urllib.request.Request(f"{UPSTREAM}/v1/chat/completions", data=json.dumps(req).encode(),
+                                     headers={"Content-Type": "application/json"})
+         t0 = time.time()
+@@ -138,14 +147,20 @@
+ 
+ 
+ def main() -> None:
+-    global UPSTREAM
++    global UPSTREAM, GRAMMAR
+     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+     ap.add_argument("--upstream", default=UPSTREAM, help="OpenAI-compatible base URL (no /v1)")
+     ap.add_argument("--host", default="127.0.0.1")
+     ap.add_argument("--port", type=int, default=11500)
++    ap.add_argument("--grammar", metavar="FILE",
++                    help="GBNF grammar sent as \"grammar\" with every request (llama-server only)")
+     a = ap.parse_args()
+     UPSTREAM = a.upstream.rstrip("/")
+-    print(f"ollama-openai shim on http://{a.host}:{a.port} -> {UPSTREAM}", flush=True)
++    if a.grammar:
++        with open(a.grammar, encoding="utf-8") as f:
++            GRAMMAR = f.read()
++    print(f"ollama-openai shim on http://{a.host}:{a.port} -> {UPSTREAM}"
++          + (f" (grammar {a.grammar}, {len(GRAMMAR)} chars)" if GRAMMAR else ""), flush=True)
+     Server((a.host, a.port), Handler).serve_forever()
+ 
+ 

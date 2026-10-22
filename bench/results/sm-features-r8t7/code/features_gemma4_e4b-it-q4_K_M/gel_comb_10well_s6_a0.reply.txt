@@ -1,0 +1,23 @@
+Features: {"bodies": [{"solids": [{"shape": "box", "size": [70, 12, 1.5], "at": [0, 0, 0]}], "cuts": [{"cut": "box", "size": [5.0, 12, 1.5], "at": [-35, -6, 0], "grid": {"nx": 1, "ny": 10, "pitch_x": 8.5, "pitch_y": 0}}]}]}
+
+```openscad
+// Built by bench/smallmodels/features/compiler.py from a list of features.
+$fn = 64;
+difference() {
+  union() {
+    translate([0, 0, 0]) translate([-35, -6, 0]) cube([70, 12, 1.5]);
+  }
+  union() {
+    translate([-35, -6, 0]) rotate([0, 0, 0]) translate([-2.5, -6, 0]) cube([5, 12, 1.5]);
+    translate([-35, -6, 0]) rotate([0, 0, 0]) translate([-2.5, -6, 0]) cube([5, 12, 1.5]);
+    translate([-35, -6, 0]) rotate([0, 0, 0]) translate([-2.5, -6, 0]) cube([5, 12, 1.5]);
+    translate([-35, -6, 0]) rotate([0, 0, 0]) translate([-2.5, -6, 0]) cube([5, 12, 1.5]);
+    translate([-35, -6, 0]) rotate([0, 0, 0]) translate([-2.5, -6, 0]) cube([5, 12, 1.5]);
+    translate([-35, -6, 0]) rotate([0, 0, 0]) translate([-2.5, -6, 0]) cube([5, 12, 1.5]);
+    translate([-35, -6, 0]) rotate([0, 0, 0]) translate([-2.5, -6, 0]) cube([5, 12, 1.5]);
+    translate([-35, -6, 0]) rotate([0, 0, 0]) translate([-2.5, -6, 0]) cube([5, 12, 1.5]);
+    translate([-35, -6, 0]) rotate([0, 0, 0]) translate([-2.5, -6, 0]) cube([5, 12, 1.5]);
+    translate([-35, -6, 0]) rotate([0, 0, 0]) translate([-2.5, -6, 0]) cube([5, 12, 1.5]);
+  }
+}
+```

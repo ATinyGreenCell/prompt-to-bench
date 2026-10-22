@@ -1,0 +1,177 @@
+{
+ "scadfix_version": "1.0",
+ "by_kind": {
+  "first": {
+   "files": 12192,
+   "parse_errors_before": 367,
+   "fired": 258,
+   "fired_on_files_that_parsed": 0,
+   "parse_errors_after": 140
+  },
+  "repair": {
+   "files": 4020,
+   "parse_errors_before": 340,
+   "fired": 237,
+   "fired_on_files_that_parsed": 0,
+   "parse_errors_after": 132
+  }
+ },
+ "by_rule": {
+  "first": {
+   "python_comprehension": {
+    "fired": 85,
+    "parse_error_cleared": 80
+   },
+   "rotate_vector": {
+    "fired": 52,
+    "parse_error_cleared": 35
+   },
+   "python_for_in": {
+    "fired": 26,
+    "parse_error_cleared": 26
+   },
+   "function_block": {
+    "fired": 25,
+    "parse_error_cleared": 20
+   },
+   "list_semicolons": {
+    "fired": 23,
+    "parse_error_cleared": 23
+   },
+   "function_if_else": {
+    "fired": 21,
+    "parse_error_cleared": 19
+   },
+   "python_tuples": {
+    "fired": 19,
+    "parse_error_cleared": 19
+   },
+   "python_continue": {
+    "fired": 13,
+    "parse_error_cleared": 13
+   },
+   "geometry_in_place": {
+    "fired": 6,
+    "parse_error_cleared": 5
+   },
+   "comprehension_let": {
+    "fired": 6,
+    "parse_error_cleared": 6
+   },
+   "dotdot_range": {
+    "fired": 5,
+    "parse_error_cleared": 5
+   },
+   "python_in": {
+    "fired": 5,
+    "parse_error_cleared": 5
+   },
+   "pipe_comprehension": {
+    "fired": 4,
+    "parse_error_cleared": 3
+   },
+   "range_brackets": {
+    "fired": 4,
+    "parse_error_cleared": 4
+   },
+   "geometry_inline": {
+    "fired": 2,
+    "parse_error_cleared": 2
+   },
+   "function_keyword": {
+    "fired": 1,
+    "parse_error_cleared": 1
+   },
+   "bracketless_comprehension": {
+    "fired": 1,
+    "parse_error_cleared": 1
+   },
+   "unicode_operators": {
+    "fired": 1,
+    "parse_error_cleared": 1
+   },
+   "function_literal_equals": {
+    "fired": 1,
+    "parse_error_cleared": 1
+   }
+  },
+  "repair": {
+   "python_comprehension": {
+    "fired": 81,
+    "parse_error_cleared": 76
+   },
+   "rotate_vector": {
+    "fired": 59,
+    "parse_error_cleared": 42
+   },
+   "python_for_in": {
+    "fired": 30,
+    "parse_error_cleared": 30
+   },
+   "function_block": {
+    "fired": 25,
+    "parse_error_cleared": 21
+   },
+   "function_if_else": {
+    "fired": 16,
+    "parse_error_cleared": 15
+   },
+   "list_semicolons": {
+    "fired": 16,
+    "parse_error_cleared": 16
+   },
+   "python_continue": {
+    "fired": 14,
+    "parse_error_cleared": 14
+   },
+   "comprehension_let": {
+    "fired": 7,
+    "parse_error_cleared": 7
+   },
+   "pipe_comprehension": {
+    "fired": 6,
+    "parse_error_cleared": 5
+   },
+   "dotdot_range": {
+    "fired": 5,
+    "parse_error_cleared": 5
+   },
+   "geometry_in_place": {
+    "fired": 5,
+    "parse_error_cleared": 4
+   },
+   "python_in": {
+    "fired": 3,
+    "parse_error_cleared": 3
+   },
+   "function_keyword": {
+    "fired": 3,
+    "parse_error_cleared": 3
+   },
+   "range_brackets": {
+    "fired": 3,
+    "parse_error_cleared": 3
+   },
+   "python_tuples": {
+    "fired": 2,
+    "parse_error_cleared": 2
+   },
+   "geometry_inline": {
+    "fired": 2,
+    "parse_error_cleared": 2
+   },
+   "python_operators": {
+    "fired": 1,
+    "parse_error_cleared": 1
+   },
+   "unicode_operators": {
+    "fired": 1,
+    "parse_error_cleared": 1
+   },
+   "function_literal_equals": {
+    "fired": 1,
+    "parse_error_cleared": 1
+   }
+  }
+ }
+}

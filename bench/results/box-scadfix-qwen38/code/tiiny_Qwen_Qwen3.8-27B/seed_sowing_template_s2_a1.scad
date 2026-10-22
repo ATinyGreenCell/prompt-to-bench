@@ -1,0 +1,44 @@
+// Sowing template for a 90 mm Petri dish
+// Flat disc, 7x7 grid of 3 mm through-holes, 9 mm pitch, +Y rim notch
+
+// --- Dimensions (mm) ---
+disc_diameter = 85;   // outer diameter of the template disc
+disc_radius   = disc_diameter / 2;  // 42.5
+disc_thickness = 2;   // thickness of the flat disc
+
+hole_diameter = 3;    // diameter of each sowing hole
+hole_radius   = hole_diameter / 2;  // 1.5
+
+grid_pitch = 9;       // centre-to-centre spacing between holes
+grid_n     = 7;       // 7 x 7 grid
+grid_half  = (grid_n - 1) / 2;      // 3 -> offsets -3..3 * pitch
+
+notch_width = 10;     // X-direction width of the orientation notch
+notch_depth = 4;      // Y-direction depth measured inward from the rim
+
+// --- Derived values for the notch ---
+// The notch is cut into the +Y rim, centred on the Y axis.
+// It removes a rectangular block from the rim:
+//   X: from -notch_width/2 to +notch_width/2
+//   Y: from (disc_radius - notch_depth) to (disc_radius + 1)  [extend 1 mm past rim]
+//   Z: from -1 to (disc_thickness + 1)  [extend 1 mm past both faces]
+
+$fn = 64;
+
+// --- Build the template ---
+difference() {
+    // Base disc
+    cylinder(h = disc_thickness, r = disc_radius, $fn = $fn);
+
+    // 7 x 7 grid of through-holes
+    for (i = [-grid_half : grid_half]) {
+        for (j = [-grid_half : grid_half]) {
+            translate([i * grid_pitch, j * grid_pitch, -1])
+                cylinder(h = disc_thickness + 2, r = hole_radius, $fn = $fn);
+        }
+    }
+
+    // Orientation notch on the +Y rim
+    translate([0, disc_radius - notch_depth, -1])
+        cube([notch_width, notch_depth + 1, disc_thickness + 2]);
+}

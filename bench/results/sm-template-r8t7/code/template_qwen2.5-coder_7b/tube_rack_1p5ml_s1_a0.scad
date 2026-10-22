@@ -1,0 +1,32 @@
+// Component tray - a rectangular plate with a regular grid of round pockets, for sorting small
+// parts, fasteners or samples. NOVEL general part (a generic pocket grid, not any one labware item).
+//
+// @desc rectangular tray with a grid of round pockets
+// @prompt Design a parts tray in OpenSCAD: a {cols} by {rows} grid of round pockets {pocket} mm across and {depth} mm deep, spaced {pitch} mm centre to centre, in a plate with {wall} mm walls and floor. Reply with a single complete OpenSCAD file.
+// @param cols   pockets along X       [2:6:1]
+// @param rows   pockets along Y       [2:6:1]
+// @param pocket pocket diameter, mm   [8:24]
+// @param depth  pocket depth, mm      [5:20]
+// @param pitch  centre spacing, mm    [14:34]
+// @param wall   wall / floor, mm      [1.6:4]
+
+cols   = 6;
+rows   = 4;
+pocket = 11.2;
+depth  = 20;
+pitch  = 16;
+wall   = 4;
+
+$fn = 48;
+
+p  = max(pitch, pocket + 2 * wall);          // keep a wall between neighbouring pockets
+Lx = (cols - 1) * p + pocket + 2 * wall;
+Ly = (rows - 1) * p + pocket + 2 * wall;
+H  = depth + wall;
+
+difference() {
+    cube([Lx, Ly, H]);
+    for (i = [0 : cols - 1], j = [0 : rows - 1])
+        translate([wall + pocket / 2 + i * p, wall + pocket / 2 + j * p, wall])
+            cylinder(h = depth + 1, d = pocket);   // blind pocket, open at the top face
+}

@@ -1,0 +1,32 @@
+Features: {"bodies": [{"solids": [{"shape": "cylinder", "d": 30, "h": 15, "at": [0, 0, 0]}], "cuts": [{"cut": "hole", "d": 6.2, "depth": 12, "at": [0, 0]}, {"cut": "pocket", "size": [30, 1], "depth": 1, "at": [0, 0], "circle": {"count": 18, "radius": 15, "start_deg": 0}}]}]}
+
+```openscad
+// Built by bench/smallmodels/features/compiler.py from a list of features.
+$fn = 64;
+difference() {
+  union() {
+    translate([0, 0, 0]) cylinder(d = 30, h = 15);
+  }
+  union() {
+    translate([0, 0, 2.99]) rotate([0, 0, 0]) cylinder(d = 6.2, h = 12.02);
+    translate([15, 0, 13.99]) rotate([0, 0, 0]) translate([-15, -0.5, 0]) cube([30, 1, 1.02]);
+    translate([14.0954, 5.1303, 13.99]) rotate([0, 0, 20]) translate([-15, -0.5, 0]) cube([30, 1, 1.02]);
+    translate([11.4907, 9.6418, 13.99]) rotate([0, 0, 40]) translate([-15, -0.5, 0]) cube([30, 1, 1.02]);
+    translate([7.5, 12.9904, 13.99]) rotate([0, 0, 60]) translate([-15, -0.5, 0]) cube([30, 1, 1.02]);
+    translate([2.6047, 14.7721, 13.99]) rotate([0, 0, 80]) translate([-15, -0.5, 0]) cube([30, 1, 1.02]);
+    translate([-2.6047, 14.7721, 13.99]) rotate([0, 0, 100]) translate([-15, -0.5, 0]) cube([30, 1, 1.02]);
+    translate([-7.5, 12.9904, 13.99]) rotate([0, 0, 120]) translate([-15, -0.5, 0]) cube([30, 1, 1.02]);
+    translate([-11.4907, 9.6418, 13.99]) rotate([0, 0, 140]) translate([-15, -0.5, 0]) cube([30, 1, 1.02]);
+    translate([-14.0954, 5.1303, 13.99]) rotate([0, 0, 160]) translate([-15, -0.5, 0]) cube([30, 1, 1.02]);
+    translate([-15, 0, 13.99]) rotate([0, 0, 180]) translate([-15, -0.5, 0]) cube([30, 1, 1.02]);
+    translate([-14.0954, -5.1303, 13.99]) rotate([0, 0, 200]) translate([-15, -0.5, 0]) cube([30, 1, 1.02]);
+    translate([-11.4907, -9.6418, 13.99]) rotate([0, 0, 220]) translate([-15, -0.5, 0]) cube([30, 1, 1.02]);
+    translate([-7.5, -12.9904, 13.99]) rotate([0, 0, 240]) translate([-15, -0.5, 0]) cube([30, 1, 1.02]);
+    translate([-2.6047, -14.7721, 13.99]) rotate([0, 0, 260]) translate([-15, -0.5, 0]) cube([30, 1, 1.02]);
+    translate([2.6047, -14.7721, 13.99]) rotate([0, 0, 280]) translate([-15, -0.5, 0]) cube([30, 1, 1.02]);
+    translate([7.5, -12.9904, 13.99]) rotate([0, 0, 300]) translate([-15, -0.5, 0]) cube([30, 1, 1.02]);
+    translate([11.4907, -9.6418, 13.99]) rotate([0, 0, 320]) translate([-15, -0.5, 0]) cube([30, 1, 1.02]);
+    translate([14.0954, -5.1303, 13.99]) rotate([0, 0, 340]) translate([-15, -0.5, 0]) cube([30, 1, 1.02]);
+  }
+}
+```

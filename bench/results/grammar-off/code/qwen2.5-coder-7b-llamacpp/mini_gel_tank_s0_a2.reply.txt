@@ -1,0 +1,65 @@
+```openscad
+// Dimensions
+$fn = 64;
+outer_x = 120;
+outer_y = 70;
+outer_z = 40;
+wall_thickness = 3;
+floor_thickness = 3;
+platform_length = 60;
+platform_height = 10;
+buffer_chamber_height = outer_z - floor_thickness - platform_height;
+hole_diameter = 2;
+
+// Calculate inner dimensions
+inner_x = outer_x - 2 * wall_thickness;
+inner_y = outer_y - 2 * wall_thickness;
+inner_z = outer_z - 2 * floor_thickness;
+
+// Create the tank
+tank = cube([outer_x, outer_y, outer_z], center = true);
+
+// Create the walls
+walls = difference() {
+    cube([outer_x, outer_y, outer_z], center = true);
+    cube([outer_x, outer_y, wall_thickness], center = true);
+    cube([outer_x, wall_thickness, outer_z], center = true);
+    cube([wall_thickness, outer_y, outer_z], center = true);
+}
+
+// Create the floor
+floor = cube([inner_x, inner_y, floor_thickness], center = true);
+
+// Create the platform
+platform = cube([platform_length, inner_y, platform_height], center = true);
+translate([0, 0, floor_thickness + platform_height / 2]) platform;
+
+// Create the buffer chambers
+buffer_chamber = cube([inner_x, inner_y, buffer_chamber_height], center = true);
+translate([0, 0, floor_thickness + platform_height]) buffer_chamber;
+
+// Create the holes in the end walls
+hole = cylinder(r = hole_diameter / 2, h = buffer_chamber_height + 1, center = true);
+translate([wall_thickness / 2, 0, floor_thickness + platform_height]) hole;
+translate([outer_x - wall_thickness / 2, 0, floor_thickness + platform_height]) hole;
+
+// Combine all parts
+result = union() {
+    tank;
+    walls;
+    floor;
+    platform;
+    buffer_chamber;
+    difference() {
+        buffer_chamber;
+        translate([wall_thickness / 2, 0, floor_thickness + platform_height]) hole;
+    }
+    difference() {
+        buffer_chamber;
+        translate([outer_x - wall_thickness / 2, 0, floor_thickness + platform_height]) hole;
+    }
+};
+
+// Output the result
+result;
+```

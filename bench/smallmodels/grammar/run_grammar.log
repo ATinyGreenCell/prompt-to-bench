@@ -1,0 +1,42 @@
+Terminated                 sleep 60
+Terminated                 sleep 60
+08:24:01 [grammar] Ollama models unloaded
+Running as unit: smallmodels-llama.service; invocation ID: e12cb6882af346739e6c585fe78823ec
+08:24:14 [grammar] run grammar-off qwen2.5-coder-7b-llamacpp
+08:27:23 qwen2.5-coder-7b-llamacpp    tube_rack_1p5ml          s0 fail after 3 attempt(s), best score 0.00, 188s
+08:31:09 qwen2.5-coder-7b-llamacpp    conical_rack_50ml        s0 fail after 3 attempt(s), best score 0.00, 226s
+08:33:34 qwen2.5-coder-7b-llamacpp    slide_drying_rack        s0 fail after 3 attempt(s), best score 0.00, 145s
+08:36:33 qwen2.5-coder-7b-llamacpp    pcr_tube_rack_sbs        s0 fail after 3 attempt(s), best score 0.00, 180s
+08:38:34 qwen2.5-coder-7b-llamacpp    gel_comb_10well          s0 fail after 3 attempt(s), best score 0.00, 121s
+08:41:50 qwen2.5-coder-7b-llamacpp    micropestle_1p5ml        s0 fail after 3 attempt(s), best score 0.00, 195s
+08:44:59 qwen2.5-coder-7b-llamacpp    lab_funnel_60mm          s0 fail after 3 attempt(s), best score 0.00, 189s
+08:50:16 qwen2.5-coder-7b-llamacpp    seed_sowing_template     s0 fail after 3 attempt(s), best score 0.60, 317s
+08:55:46 qwen2.5-coder-7b-llamacpp    dshaft_knob_6mm          s0 fail after 3 attempt(s), best score 0.00, 330s
+08:58:18 qwen2.5-coder-7b-llamacpp    pcr_tube_adapter         s0 fail after 3 attempt(s), best score 0.00, 152s
+09:07:09 qwen2.5-coder-7b-llamacpp    hose_barb_reducer_8_5    s0 fail after 3 attempt(s), best score 0.00, 531s
+09:10:51 qwen2.5-coder-7b-llamacpp    rod_tubing_clip          s0 fail after 3 attempt(s), best score 0.00, 222s
+09:14:45 qwen2.5-coder-7b-llamacpp    stirrer_fan_housing      s0 fail after 3 attempt(s), best score 0.00, 234s
+09:21:24 qwen2.5-coder-7b-llamacpp    nema17_motor_bracket     s0 fail after 3 attempt(s), best score 0.00, 400s
+09:25:18 qwen2.5-coder-7b-llamacpp    enclosure_box_and_lid    s0 fail after 3 attempt(s), best score 0.00, 234s
+09:30:50 qwen2.5-coder-7b-llamacpp    mini_gel_tank            s0 fail after 3 attempt(s), best score 0.00, 332s
+09:30:52 [grammar] run grammar-on qwen2.5-coder-7b-llamacpp
+09:40:05 qwen2.5-coder-7b-llamacpp    tube_rack_1p5ml          s0 fail after 3 attempt(s), best score 0.00, 551s
+09:45:30 qwen2.5-coder-7b-llamacpp    conical_rack_50ml        s0 fail after 3 attempt(s), best score 0.00, 326s
+09:51:30 qwen2.5-coder-7b-llamacpp    slide_drying_rack        s0 fail after 3 attempt(s), best score 0.00, 360s
+10:01:21 qwen2.5-coder-7b-llamacpp    pcr_tube_rack_sbs        s0 fail after 3 attempt(s), best score 0.00, 591s
+10:13:33 qwen2.5-coder-7b-llamacpp    gel_comb_10well          s0 fail after 3 attempt(s), best score 0.00, 731s
+10:40:51 qwen2.5-coder-7b-llamacpp    micropestle_1p5ml        s0 fail after 3 attempt(s), best score 0.00, 1639s
+10:44:53 qwen2.5-coder-7b-llamacpp    lab_funnel_60mm          s0 fail after 3 attempt(s), best score 0.00, 241s
+10:49:47 qwen2.5-coder-7b-llamacpp    seed_sowing_template     s0 fail after 3 attempt(s), best score 0.60, 294s
+10:55:26 qwen2.5-coder-7b-llamacpp    dshaft_knob_6mm          s0 fail after 3 attempt(s), best score 0.00, 339s
+11:04:27 qwen2.5-coder-7b-llamacpp    pcr_tube_adapter         s0 fail after 3 attempt(s), best score 0.00, 541s
+11:34:26 qwen2.5-coder-7b-llamacpp    hose_barb_reducer_8_5    s0 fail after 3 attempt(s), best score 0.00, 1800s
+11:41:09 qwen2.5-coder-7b-llamacpp    rod_tubing_clip          s0 fail after 3 attempt(s), best score 0.00, 402s
+12:13:25 qwen2.5-coder-7b-llamacpp    stirrer_fan_housing      s0 fail after 3 attempt(s), best score 0.00, 1936s
+12:23:38 qwen2.5-coder-7b-llamacpp    nema17_motor_bracket     s0 fail after 3 attempt(s), best score 0.00, 613s
+12:31:06 qwen2.5-coder-7b-llamacpp    enclosure_box_and_lid    s0 fail after 3 attempt(s), best score 0.00, 448s
+12:48:40 qwen2.5-coder-7b-llamacpp    mini_gel_tank            s0 fail after 3 attempt(s), best score 0.00, 1055s
+Running as unit: smallmodels-llama.service; invocation ID: 3771ab02f77a41e4a7f3ef8357d41393
+12:48:56 [grammar] run grammar-on bonsai2-27b-pq2_0
+Terminated                 OLLAMA_HOST=http://127.0.0.1:$1 OPENSCAD=/home/seb/.local/bin/openscad .venv/bin/python -I bench/run_bench.py --run "$2" --models "$3" --samples 1 --max-repairs 2
+12:50:25 [grammar] Bonsai 2 27B grammar-on not run: stopped for futility before its first reply (PROTOCOL.md, round 2 notes)

@@ -1,0 +1,10 @@
+Features: {"bodies": [{"solids": [{"shape": "revolve", "profile": [[4, 0], [8, 20], [12, 20], [3, 41]], "at": [0, 0, 0]}, {"shape": "tube", "d_outer": 3, "d_inner": 3, "h": 41, "at": [0, 0, 0]}], "cuts": []}]}
+
+```openscad
+// Built by bench/smallmodels/features/compiler.py from a list of features.
+$fn = 64;
+union() {
+    translate([0, 0, 0]) rotate_extrude() polygon([[4, 0], [8, 20], [12, 20], [3, 41]]);
+    translate([0, 0, 0]) difference() { cylinder(d = 3, h = 41); translate([0, 0, -0.01]) cylinder(d = 2.8, h = 41.02); }
+  }
+```

@@ -1,0 +1,39 @@
+```openscad
+// Dimensions
+collar_diameter = 13;
+collar_thickness = 1.5;
+sleeve_outer_diameter = 10.8;
+bore_diameter = 6.2;
+total_height = 21.5;
+
+// Calculate radiuses
+collar_radius = collar_diameter / 2;
+sleeve_outer_radius = sleeve_outer_diameter / 2;
+bore_radius = bore_diameter / 2;
+
+// Create the collar
+collar = cylinder/radius==(collar_radius - collar_thickness / 2) - cylinder/radius==(collar_radius + collar_thickness / 2) + translate [0  (collar_radius - bore_radius)] (cylinder/radius==(bore_radius) - cylinder/radius==(bore_radius + 0.01));
+
+// Create the sleeve body
+sleeve_body = cylinder/radius==(sleeve_outer_radius) - cylinder/radius==(sleeve_outer_radius + 0.01) + translate [0  (sleeve_outer_radius - bore_radius)] (cylinder/radius==(bore_radius) - cylinder/radius==(bore_radius + 0.01));
+
+// Combine the collar and sleeve body
+adapter_sleeve = collar + translate [0  (collar_radius + sleeve_outer_radius)] (sleeve_body);
+
+// Rotate the adapter sleeve 180 degrees to print upside down
+rotate_extrude($fn=64) adapter_sleeve
+    // Rest on the XY plane at z = 0
+    // Centre on the origin in X and Y
+    // Build upward (+Z)
+    // The file must render to a valid solid with no errors
+    // Set $fn = 64 (or more) on curved shapes so holes come out round and to size
+    // Build repeated features (hole grids, slots, teeth, grooves) with for loops
+    // In difference(), make every cutting shape extend 0.01-1 mm past the faces it cuts, so no faces are exactly coplanar
+    // Use only built-in OpenSCAD: cube, cylinder, sphere, polygon, circle, square, linear_extrude, rotate_extrude, translate, rotate, mirror, union, difference, intersection, hull, for. Do not use include, use or any external library
+    // The file must render to a valid solid with no errors
+    // Build repeated features (hole grids, slots, teeth, grooves) with for loops
+    // In difference(), make every cutting shape extend 0.01-1 mm past the faces it cuts, so no faces are exactly coplanar
+    // Use only built-in OpenSCAD: cube, cylinder, sphere, polygon, circle, square, linear_extrude, rotate_extrude, translate, rotate, mirror, union, difference, intersection, hull, for. Do not use include, use or any external library
+    // The file must render to a valid solid with no errors
+    // Build repeated features (hole grids, slots, teeth, grooves) with for loops
+    // In difference(), make every cutting shape extend 0.01-1 mm past the faces it cuts

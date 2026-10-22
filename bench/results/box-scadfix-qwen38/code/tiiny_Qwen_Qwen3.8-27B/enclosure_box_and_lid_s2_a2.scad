@@ -1,0 +1,79 @@
+// Two-part enclosure for a small electronics board (e.g. Arduino temperature logger)
+// Both parts are modelled in their print orientation, side by side on the bed.
+
+$fn = 64;
+
+// ---------- Part 1: Box (open top) ----------
+box_outer_x = 70;   // outer width  (X)
+box_outer_y = 50;   // outer depth  (Y)
+box_outer_z = 30;   // outer height (Z)
+box_wall    = 2;    // side wall thickness
+box_floor   = 2;    // floor thickness
+
+// ---------- Part 2: Lid (printed upside down) ----------
+lid_plate_x   = 70;    // plate width  (X)
+lid_plate_y   = 50;    // plate depth  (Y)
+lid_plate_z   = 2;     // plate thickness (Z)
+lid_wall      = 1.5;   // lip wall thickness
+lip_height    = 4;     // lip height above plate
+lip_outer_x   = 65.6;  // lip outer width  (X)
+lip_outer_y   = 45.6;  // lip outer depth  (Y)
+
+// ---------- Layout ----------
+gap = 10;  // gap between the two parts along X
+
+// Box is centred on the origin in X and Y.
+// Lid is placed on the +X side of the box, 10 mm away from the box's +X face.
+lid_x_offset = box_outer_x / 2 + gap + lid_plate_x / 2;
+
+// ---------- Part 1: Box ----------
+module box() {
+    // Outer solid (base at z = 0, centred in X and Y)
+    translate([0, 0, box_outer_z / 2]) {
+        cube([box_outer_x, box_outer_y, box_outer_z], center = true);
+    }
+    // Cavity: 2 mm walls, 2 mm floor, open top (cut extends 1 mm past the top face)
+    // Cavity base at z = box_floor, centred in X and Y
+    translate([0, 0, box_floor + (box_outer_z - box_floor + 1) / 2]) {
+        cube([box_outer_x - 2 * box_wall,
+              box_outer_y - 2 * box_wall,
+              box_outer_z - box_floor + 1],
+             center = true);
+    }
+}
+
+// ---------- Part 2: Lid (printed upside down) ----------
+module lid() {
+    // Plate lying flat on the bed (z = 0 to z = 2), centred in X and Y
+    translate([0, 0, lid_plate_z / 2]) {
+        cube([lid_plate_x, lid_plate_y, lid_plate_z], center = true);
+    }
+    // Lip: 1.5 mm thick wall, 4 mm tall, outer 65.6 x 45.6, centred on the plate
+    // The lip sits on top of the plate (z = 2 to z = 6)
+    // Outer lip solid
+    translate([0, 0, lid_plate_z + lip_height / 2]) {
+        cube([lip_outer_x, lip_outer_y, lip_height], center = true);
+    }
+    // Inner lip void (extends 1 mm past the top of the lip to keep the top open)
+    translate([0, 0, lid_plate_z + lip_height / 2]) {
+        cube([lip_outer_x - 2 * lid_wall,
+              lip_outer_y - 2 * lid_wall,
+              lip_height + 1],
+             center = true);
+    }
+}
+
+// ---------- Assemble both parts on the bed ----------
+union() {
+    // Box: centred on origin
+    difference() {
+        box();
+    }
+
+    // Lid: shifted to +X side
+    translate([lid_x_offset, 0, 0]) {
+        difference() {
+            lid();
+        }
+    }
+}

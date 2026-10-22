@@ -1,0 +1,12 @@
+// Built by bench/smallmodels/features/compiler.py from a list of features.
+$fn = 64;
+difference() {
+  union() {
+    translate([0, 0, 0]) translate([-45, -45, 0]) cube([90, 90, 2]);
+  }
+  union() {
+    translate([-42.5, 0, 2]) rotate([0, 0, 0]) translate([-0.75, -45, 0]) cube([1.5, 90, 38]);
+    translate([0, -42.5, 2]) rotate([0, 0, 0]) translate([-45, -0.75, 0]) cube([90, 1.5, 38]);
+    translate([0, 0, -40]) rotate([0, 0, 0]) translate([-45, -45, 0]) cube([90, 90, 38]);
+  }
+}

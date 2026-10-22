@@ -1,0 +1,28 @@
+// Stepped tube adapter - two coaxial tube sections of different diameter joined at a shoulder and
+// bored through, to couple two tube sizes. NOVEL general part (a generic reducer).
+//
+// @desc hollow stepped adapter joining two tube diameters
+// @prompt Design a stepped tube adapter in OpenSCAD: a section {d1} mm across and {l1} mm long joined to a section {d2} mm across and {l2} mm long, bored through with a {bore} mm hole. Reply with a single complete OpenSCAD file.
+// @param d1   first outer diameter, mm   [14:34]
+// @param l1   first length, mm           [10:30]
+// @param d2   second outer diameter, mm  [8:24]
+// @param l2   second length, mm          [10:30]
+// @param bore through-bore diameter, mm  [4:16]
+
+d1   = 14;
+l1   = 10;
+d2   = 10.8;
+l2   = 20;
+bore = 6.2;
+
+$fn = 64;
+
+b = min(bore, d2 - 2, d1 - 2);        // keep a wall in the narrower section
+
+difference() {
+    union() {
+        cylinder(h = l1, d = d1);
+        translate([0, 0, l1 - 0.01]) cylinder(h = l2 + 0.01, d = d2);
+    }
+    translate([0, 0, -1]) cylinder(h = l1 + l2 + 2, d = b);   // through-bore
+}

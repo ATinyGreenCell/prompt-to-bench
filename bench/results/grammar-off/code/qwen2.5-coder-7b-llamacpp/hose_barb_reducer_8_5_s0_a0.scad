@@ -1,0 +1,70 @@
+// Dimensions
+d8_inner = 8; // 8 mm inner diameter for 8 mm tubing
+d5_inner = 5; // 5 mm inner diameter for 5 mm tubing
+d_bore = 3; // 3 mm bore diameter
+h_barb_8 = 10; // Height of each 8 mm barb
+h_barb_5 = 8; // Height of each 5 mm barb
+d_barb_8_min = 7.5; // Minimum outer diameter of 8 mm barb
+d_barb_8_max = 9.5; // Maximum outer diameter of 8 mm barb
+d_barb_5_min = 6.5; // Minimum outer diameter of 5 mm barb
+d_barb_5_max = 5.0; // Maximum outer diameter of 5 mm barb
+d_collar = 12; // Diameter of cylindrical collar
+length_collar = 5; // Length of cylindrical collar
+length_total = 41; // Total length of the reducer
+
+// Function to create a linearly varying diameter
+linear_diameter(d_min, d_max, height, z) {
+    return d_min + (d_max - d_min) * z / height;
+}
+
+// Function to create a barb
+barb(d_min, d_max, height, z) {
+    return cylinder(r = linear_diameter(d_min, d_max, height, z), h = 0.01, $fn = 64);
+}
+
+// Function to create a step in a barb
+step_barb(d_min, d_max, height, step_height, z) {
+    return union() {
+        cylinder(r = linear_diameter(d_min, d_max, height, z), h = 0.01, $fn = 64);
+        cylinder(r = linear_diameter(d_min, d_max, height - step_height, z), h = 0.01, $fn = 64);
+    };
+}
+
+// Main part
+part = union() {
+    // Bore
+    cylinder(r = d_bore / 2, h = length_total, $fn = 64);
+    
+    // 8 mm barbs
+    for (z = [0:h_barb_8]) {
+        translate([0, 0, z]) {
+            union() {
+                cylinder(r = d_barb_8_min / 2, h = 0.01, $fn = 64);
+                cylinder(r = d_barb_8_max / 2, h = 0.01, $fn = 64);
+            }
+        }
+    }
+    
+    // Cylindrical collar
+    translate([0, 0, h_barb_8]) {
+        cylinder(r = d_collar / 2, h = length_collar, $fn = 64);
+    }
+    
+    // 5 mm barbs
+    for (z = [h_barb_8 + length_collar:h_barb_8 + length_collar + h_barb_5]) {
+        translate([0, 0, z]) {
+            union() {
+                cylinder(r = d_barb_5_min / 2, h = 0.01, $fn = 64);
+                cylinder(r = d_barb_5_max / 2, h = 0.01, $fn = 64);
+            }
+        }
+    }
+};
+
+// Final part with slight offset to avoid coplanar faces
+part = translate([0.01, 0.01, 0.01]) {
+    part;
+};
+
+// Export the part
+part;

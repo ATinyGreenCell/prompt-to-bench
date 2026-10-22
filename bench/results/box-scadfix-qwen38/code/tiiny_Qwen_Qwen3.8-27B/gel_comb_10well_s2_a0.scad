@@ -1,0 +1,39 @@
+// 10-well agarose gel comb, printed flat (Z = thickness)
+// All dimensions in mm, measured with calipers.
+
+// Global
+$fn = 64;
+
+// Spine (back bar)
+spine_len   = 70;   // X length of the spine
+spine_wid   = 12;   // Y width of the spine
+plate_thick = 1.5;  // Z thickness of the whole comb
+
+// Teeth
+n_teeth     = 10;   // number of teeth
+tooth_wid   = 5.0;  // X width of each tooth
+tooth_len   = 12;   // Y length of each tooth (hangs in -Y from spine)
+gap         = 1.5;  // X gap between neighbouring teeth
+
+// Derived
+tooth_pitch = tooth_wid + gap;                       // centre-to-centre X spacing
+row_width   = (n_teeth - 1) * tooth_pitch + tooth_wid; // total X extent of the tooth row
+row_start_x = -row_width / 2 + tooth_wid / 2;        // X of first tooth centre (row centred on origin)
+
+// Spine occupies Y in [0, spine_wid]; teeth hang in -Y from Y = 0.
+// (The comb is centred on the origin in X; Y is offset so the spine sits at Y >= 0.)
+
+module comb() {
+    // Spine
+    translate([-spine_len/2, 0, 0])
+        cube([spine_len, spine_wid, plate_thick], center=[true, false, false]);
+
+    // Teeth (10 of them), each a 5 x 12 x 1.5 block hanging in -Y
+    for (i = [0 : n_teeth - 1]) {
+        tx = row_start_x + i * tooth_pitch;
+        translate([tx - tooth_wid/2, -tooth_len, 0])
+            cube([tooth_wid, tooth_len, plate_thick], center=[true, false, false]);
+    }
+}
+
+comb();

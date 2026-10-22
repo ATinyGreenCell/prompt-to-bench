@@ -1,0 +1,37 @@
+{
+ "scadfix_version": "1.0",
+ "files": 2124,
+ "fired": 0,
+ "by_group": {
+  "bench/reference": [
+   16,
+   0
+  ],
+  "bench/variants": [
+   3,
+   0
+  ],
+  "designs": [
+   17,
+   0
+  ],
+  "finetune/seeds": [
+   34,
+   0
+  ],
+  "distill batch A": [
+   680,
+   0
+  ],
+  "distill batch B": [
+   700,
+   0
+  ],
+  "distill batch C": [
+   674,
+   0
+  ]
+ },
+ "fired_on": [],
+ "rule_errors": []
+}

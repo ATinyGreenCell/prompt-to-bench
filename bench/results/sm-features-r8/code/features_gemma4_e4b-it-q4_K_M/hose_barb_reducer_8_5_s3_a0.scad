@@ -1,0 +1,10 @@
+// Built by bench/smallmodels/features/compiler.py from a list of features.
+$fn = 64;
+difference() {
+  union() {
+    translate([0, 0, 0]) rotate_extrude() polygon([[3, 0], [12, 41], [3, 41]]);
+  }
+  union() {
+    translate([0, 0, -1]) rotate([0, 0, 0]) cylinder(d = 3, h = 43);
+  }
+}

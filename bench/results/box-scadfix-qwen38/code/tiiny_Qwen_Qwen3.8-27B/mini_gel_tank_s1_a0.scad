@@ -1,0 +1,59 @@
+// Buffer tank for a mini horizontal gel-electrophoresis box
+// Print orientation: rests on XY plane at z = 0, builds upward (+Z), centred on origin in X and Y.
+
+// ---- Outer tank dimensions (measured with calipers) ----
+outer_x = 120;   // tank length along X
+outer_y = 70;    // tank width  along Y
+outer_z = 40;    // tank height along Z
+
+// ---- Wall / floor thickness ----
+wall_t = 3;      // side wall thickness
+floor_t = 3;     // floor thickness
+
+// ---- Inner cavity (open top) ----
+inner_x = outer_x - 2 * wall_t;   // 114 mm
+inner_y = outer_y - 2 * wall_t;   // 64 mm
+inner_z = outer_z - floor_t;      // 37 mm (open top)
+
+// ---- Raised gel-tray platform ----
+plat_len = 60;   // platform length along X (centred)
+plat_top = 13;   // platform top height above z = 0 (10 mm above inner floor at z = 3)
+plat_h   = plat_top - floor_t;    // 10 mm above the floor
+
+// ---- Electrode-wire holes (through the two X end walls) ----
+hole_d = 2;      // hole diameter
+hole_y = 0;      // centred in Y
+hole_z = 30;     // height above z = 0
+
+$fn = 64;        // round holes / cylinders
+
+// ---- 1. Solid outer block ----
+module block() { translate([-outer_x/2, -outer_y/2, 0])
+        cube([outer_x, outer_y, outer_z]); }
+
+// ---- 2. Open-top inner cavity (cut 1 mm past the top so the top stays open) ----
+module cavity() { translate([-(inner_x/2), -(inner_y/2), floor_t])
+        cube([inner_x, inner_y, inner_z + 1]); }
+
+// ---- 3. Raised gel-tray platform (solid, spans full inner width, centred in X) ----
+module platform() { translate([-(plat_len/2), -(inner_y/2), floor_t])
+          cube([plat_len, inner_y, plat_h]); }
+
+// ---- 4. Electrode-wire holes: horizontal cylinders along X through both end walls ----
+//      Each cylinder extends 1 mm past the outer face of the wall it passes through,
+//      so the cut is not coplanar with any face.
+module wire_hole() { cylinder(h = outer_x + 2, r = hole_d/2, $fn = $fn); }
+
+// ---- Assemble ----
+difference() {
+    union() {
+        block();
+        platform();
+    }
+    cavity();
+    for (x_end = [-1, 1]) {
+        translate([x_end * outer_x/2 - 1, hole_y, hole_z])
+            rotate([0, 90, 0])
+            wire_hole();
+    }
+}

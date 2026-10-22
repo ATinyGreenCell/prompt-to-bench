@@ -1,0 +1,63 @@
+The chamfer made things worse: the conical ceiling is a downward-facing surface, and the report still flags a flat downward area at z = 26 (the chamfer's base ring). A flat ceiling — even a small one — is exactly what needs support.
+
+The fix is to make the hole ceiling **convex** (a dome that bulges *down* into the hole). A convex ceiling has no flat downward-facing region and no overhang steeper than 45°: its surface normal is always within 45° of vertical, so it prints without supports. A 1 mm dome on an 11.2 mm hole is a negligible fit change.
+
+```openscad
+// Bench rack for 1.5 mL microcentrifuge tubes
+// Print orientation: rests on XY plane at z = 0, builds upward (+Z), centred on origin in X and Y.
+
+// Block dimensions (measured with calipers)
+L = 106;   // length along X
+W = 72;    // width along Y
+H = 30;    // height along Z
+
+// Hole grid
+n_rows = 4;        // rows along Y
+n_cols = 6;        // columns along X
+pitch = 16;        // centre-to-centre spacing in both X and Y
+hole_d = 11.2;     // hole diameter
+hole_depth = 25;   // depth of each hole (open at top, closed at bottom)
+floor = 5;         // solid floor thickness (H - hole_depth)
+
+// Convex dome at the top of each hole: bulges DOWN into the hole so the
+// ceiling is convex (no flat downward-facing area, no overhang > 45 deg),
+// which prints without supports.
+dome_h = 1;        // dome height (mm)
+
+// Curved-surface resolution
+$fn = 64;
+
+// Grid extents (centres)
+x_span = (n_cols - 1) * pitch;   // 80 mm
+y_span = (n_rows - 1) * pitch;   // 48 mm
+
+// Base block, centred on origin in X and Y, sitting on z = 0
+module block() { translate([-L/2, -W/2, 0]) cube([L, W, H]); }
+
+// One vertical hole (cylinder) with a convex dome at its top,
+// centred at (x, y). Open at the top, closed at the bottom.
+module hole() {
+    // Straight cylindrical wall, from the floor up to the base of the dome.
+    // Extended 1 mm past the top face so the difference cut is not coplanar.
+    cylinder(h = hole_depth + 1 - dome_h, d = hole_d, $fn = $fn);
+    // Convex dome: a sphere whose cap bulges down into the hole.
+    // Sphere radius R = (r^2 + h^2) / (2h); centre at z = hole_depth - h - R.
+    // The cap's top is at z = hole_depth + 1 (1 mm past the block top).
+    r = hole_d / 2;
+    R = (r*r + dome_h*dome_h) / (2*dome_h);
+    translate([0, 0, hole_depth - dome_h - R])
+        sphere(r = R, $fn = $fn);
+}
+
+// Difference: block minus all 24 holes
+difference() {
+    block();
+    for (i = [0 : n_cols - 1]) {
+        for (j = [0 : n_rows - 1]) {
+            x = -x_span/2 + i * pitch;
+            y = -y_span/2 + j * pitch;
+            translate([x, y, 0]) hole();
+        }
+    }
+}
+```

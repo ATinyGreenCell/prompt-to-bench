@@ -1,0 +1,285 @@
+56 descriptions, 56 reference parts measured
+22:32:22 gemma4:e4b-it-q4_K_M     cable_bridge_037         59.1s accepts ref: False 0 round holes of 12 mm vs 2
+22:33:23 gemma4:e4b-it-q4_K_M     cable_bridge_020         60.8s accepts ref: False 0 round holes of 8 mm vs 3
+22:34:24 gemma4:e4b-it-q4_K_M     cable_bridge_046         61.1s accepts ref: True 
+22:38:56 gemma4:e4b-it-q4_K_M     cable_bridge_007        272.4s accepts ref: True 
+22:41:24 gemma4:e4b-it-q4_K_M     cam_disc_013            147.7s accepts ref: True 
+56 descriptions, 56 reference parts measured
+22:42:31 gemma4:e4b-it-q4_K_M     cam_disc_030             59.9s accepts ref: True 
+22:43:36 gemma4:e4b-it-q4_K_M     cam_disc_034             65.6s accepts ref: True 
+22:44:43 gemma4:e4b-it-q4_K_M     cam_disc_018             66.5s accepts ref: True 
+22:45:41 gemma4:e4b-it-q4_K_M     dial_ring_017            58.0s accepts ref: True 
+22:46:44 gemma4:e4b-it-q4_K_M     dial_ring_045            63.3s accepts ref: True 
+22:47:45 gemma4:e4b-it-q4_K_M     dial_ring_001            60.9s accepts ref: True 
+22:48:42 gemma4:e4b-it-q4_K_M     dial_ring_022            56.9s accepts ref: True 
+22:49:46 gemma4:e4b-it-q4_K_M     dog_bone_008             64.4s accepts ref: False footprint 120 x 15 vs 120 x 35
+22:50:47 gemma4:e4b-it-q4_K_M     dog_bone_000             60.2s accepts ref: True 
+22:51:50 gemma4:e4b-it-q4_K_M     dog_bone_046             63.4s accepts ref: False footprint 130 x 15 vs 130 x 35
+22:52:52 gemma4:e4b-it-q4_K_M     dog_bone_034             61.9s accepts ref: False footprint 140 x 19 vs 230 x 19
+22:53:57 gemma4:e4b-it-q4_K_M     frustum_riser_018        65.1s accepts ref: True 
+22:54:33 gemma4:e4b-it-q4_K_M     frustum_riser_028        36.2s accepts ref: True 
+22:55:10 gemma4:e4b-it-q4_K_M     frustum_riser_041        37.0s accepts ref: True 
+22:55:53 gemma4:e4b-it-q4_K_M     frustum_riser_017        42.5s accepts ref: True 
+22:56:46 gemma4:e4b-it-q4_K_M     hinge_leaf_035           53.3s accepts ref: False height 6 vs 2.5; footprint 60 x 23 vs 60 x 20; 0 round holes of 2 mm vs 3
+22:57:53 gemma4:e4b-it-q4_K_M     hinge_leaf_020           67.2s accepts ref: False height 6 vs 3; footprint 50 x 33 vs 50 x 30; 0 round holes of 2.5 mm vs 3
+22:58:56 gemma4:e4b-it-q4_K_M     hinge_leaf_004           62.5s accepts ref: False height 7 vs 2.5; footprint 50 x 28.5 vs 50 x 25; 0 round holes of 3 mm vs 3
+22:59:35 gemma4:e4b-it-q4_K_M     hinge_leaf_005           39.3s accepts ref: False height 6 vs 3; footprint 50 x 23 vs 50 x 20; 0 round holes of 3 mm vs 3
+23:00:15 gemma4:e4b-it-q4_K_M     lab_scoop_024            40.2s accepts ref: False footprint 129.99 x 29.98 vs 115 x 10
+23:01:24 gemma4:e4b-it-q4_K_M     lab_scoop_041            69.1s accepts ref: False footprint 83.99 x 23.99 vs 72 x 12
+23:02:35 gemma4:e4b-it-q4_K_M     lab_scoop_016            70.7s accepts ref: False footprint 120 x 19.99 vs 110 x 10
+23:03:50 gemma4:e4b-it-q4_K_M     lab_scoop_014            74.9s accepts ref: False footprint 103.99 x 23.99 vs 102 x 8
+23:05:08 gemma4:e4b-it-q4_K_M     pull_handle_028          78.4s accepts ref: False footprint 108 x 12 vs 96 x 12
+23:05:50 gemma4:e4b-it-q4_K_M     pull_handle_005          41.4s accepts ref: False footprint 110 x 14 vs 110 x 28
+23:06:42 gemma4:e4b-it-q4_K_M     pull_handle_011          52.7s accepts ref: True 
+23:06:57 gemma4:e4b-it-q4_K_M     pull_handle_025          14.8s accepts ref: True 
+23:07:44 gemma4:e4b-it-q4_K_M     ribbed_panel_021         46.6s accepts ref: True 
+23:08:22 gemma4:e4b-it-q4_K_M     ribbed_panel_001         38.2s accepts ref: True 
+23:08:59 gemma4:e4b-it-q4_K_M     ribbed_panel_035         37.2s accepts ref: True 
+23:09:54 gemma4:e4b-it-q4_K_M     ribbed_panel_042         54.5s accepts ref: True 
+23:10:59 gemma4:e4b-it-q4_K_M     spoked_wheel_021         64.8s accepts ref: False footprint 80 x 80 vs 90 x 90
+23:12:07 gemma4:e4b-it-q4_K_M     spoked_wheel_017         68.0s accepts ref: True 
+23:13:19 gemma4:e4b-it-q4_K_M     spoked_wheel_011         72.8s accepts ref: True 
+23:14:25 gemma4:e4b-it-q4_K_M     spoked_wheel_036         66.1s accepts ref: False footprint 60 x 60 vs 70 x 70
+23:15:31 gemma4:e4b-it-q4_K_M     star_wheel_006           65.2s accepts ref: False footprint 63.32 x 66.57 vs 70 x 70
+23:16:39 gemma4:e4b-it-q4_K_M     star_wheel_049           67.9s accepts ref: False footprint 80 x 69.28 vs 40 x 40
+23:16:53 gemma4:e4b-it-q4_K_M     star_wheel_023           14.4s accepts ref: False footprint 80 x 69.28 vs 80 x 80
+23:18:01 gemma4:e4b-it-q4_K_M     star_wheel_039           68.0s accepts ref: True 
+23:19:04 gemma4:e4b-it-q4_K_M     t_slot_nut_002           63.0s accepts ref: True 
+23:19:43 gemma4:e4b-it-q4_K_M     t_slot_nut_037           38.9s accepts ref: True 
+23:20:28 gemma4:e4b-it-q4_K_M     t_slot_nut_024           45.0s accepts ref: True 
+23:21:12 gemma4:e4b-it-q4_K_M     t_slot_nut_000           44.1s accepts ref: True 
+23:21:52 gemma4:e4b-it-q4_K_M     torus_weight_022         39.9s accepts ref: True 
+23:22:30 gemma4:e4b-it-q4_K_M     torus_weight_011         37.7s accepts ref: True 
+23:23:23 gemma4:e4b-it-q4_K_M     torus_weight_010         53.7s accepts ref: True 
+23:24:24 gemma4:e4b-it-q4_K_M     torus_weight_015         60.4s accepts ref: True 
+23:25:27 gemma4:e4b-it-q4_K_M     vibration_foot_037       63.0s accepts ref: True 
+23:26:29 gemma4:e4b-it-q4_K_M     vibration_foot_044       62.3s accepts ref: True 
+23:27:30 gemma4:e4b-it-q4_K_M     vibration_foot_017       60.9s accepts ref: True 
+23:27:47 gemma4:e4b-it-q4_K_M     vibration_foot_034       17.6s accepts ref: True 
+23:28:52 qwen3.5:4b-q4_K_M        cable_bridge_037         64.8s accepts ref: False 1 pieces vs 2
+23:29:44 qwen3.5:4b-q4_K_M        cable_bridge_020         52.1s accepts ref: True 
+23:30:35 qwen3.5:4b-q4_K_M        cable_bridge_046         50.3s accepts ref: False 1 pieces vs 2
+23:31:14 qwen3.5:4b-q4_K_M        cable_bridge_007         39.8s accepts ref: True 
+23:32:14 qwen3.5:4b-q4_K_M        cam_disc_013             59.6s accepts ref: False height 9 vs 16; 1 pieces vs 2
+23:33:14 qwen3.5:4b-q4_K_M        cam_disc_030             59.8s accepts ref: False height 13 vs 15; 1 pieces vs 2
+23:34:08 qwen3.5:4b-q4_K_M        cam_disc_034             54.3s accepts ref: True 
+23:34:57 qwen3.5:4b-q4_K_M        cam_disc_018             49.2s accepts ref: False footprint 40 x 40 vs 50 x 40
+23:35:42 qwen3.5:4b-q4_K_M        dial_ring_017            44.4s accepts ref: True 
+23:36:16 qwen3.5:4b-q4_K_M        dial_ring_045            34.4s accepts ref: False footprint 60 x 60 vs 60 x 40
+23:36:53 qwen3.5:4b-q4_K_M        dial_ring_001            36.9s accepts ref: True 
+23:37:36 qwen3.5:4b-q4_K_M        dial_ring_022            42.6s accepts ref: True 
+23:38:24 qwen3.5:4b-q4_K_M        dog_bone_008             48.4s accepts ref: True 
+23:39:16 qwen3.5:4b-q4_K_M        dog_bone_000             52.6s accepts ref: True 
+23:40:10 qwen3.5:4b-q4_K_M        dog_bone_046             53.8s accepts ref: False footprint 130 x 15 vs 130 x 24
+23:41:03 qwen3.5:4b-q4_K_M        dog_bone_034             52.6s accepts ref: True 
+23:41:58 qwen3.5:4b-q4_K_M        frustum_riser_018        55.0s accepts ref: True 
+23:42:46 qwen3.5:4b-q4_K_M        frustum_riser_028        48.5s accepts ref: True 
+23:43:39 qwen3.5:4b-q4_K_M        frustum_riser_041        52.3s accepts ref: True 
+23:44:30 qwen3.5:4b-q4_K_M        frustum_riser_017        51.1s accepts ref: True 
+23:45:27 qwen3.5:4b-q4_K_M        hinge_leaf_035           56.8s accepts ref: False height 6 vs 5; footprint 60 x 23 vs 60 x 20; 0 round holes of 4 mm vs 3
+23:46:12 qwen3.5:4b-q4_K_M        hinge_leaf_020           45.9s accepts ref: False footprint 50 x 33 vs 50 x 30; 0 round holes of 2.5 mm vs 4
+23:46:47 qwen3.5:4b-q4_K_M        hinge_leaf_004           34.3s accepts ref: False footprint 50 x 28.5 vs 50 x 25; 0 round holes of 3 mm vs 3
+23:47:26 qwen3.5:4b-q4_K_M        hinge_leaf_005           39.8s accepts ref: False footprint 50 x 23 vs 50 x 20; 0 round holes of 3 mm vs 3
+23:48:06 qwen3.5:4b-q4_K_M        lab_scoop_024            39.9s accepts ref: False height 14.99 vs 27; footprint 129.99 x 29.98 vs 115 x 48
+23:48:56 qwen3.5:4b-q4_K_M        lab_scoop_041            49.3s accepts ref: False footprint 83.99 x 23.99 vs 62 x 12
+23:49:34 qwen3.5:4b-q4_K_M        lab_scoop_016            38.3s accepts ref: False footprint 120 x 19.99 vs 123 x 40
+23:50:13 qwen3.5:4b-q4_K_M        lab_scoop_014            39.4s accepts ref: False footprint 103.99 x 23.99 vs 81.5 x 14
+23:51:10 qwen3.5:4b-q4_K_M        pull_handle_028          56.7s accepts ref: False footprint 108 x 12 vs 96 x 12; 2 round holes of 3.4 mm vs 4
+23:52:13 qwen3.5:4b-q4_K_M        pull_handle_005          62.9s accepts ref: False footprint 110 x 14 vs 96 x 28; 2 round holes of 4.5 mm vs 4
+23:53:17 qwen3.5:4b-q4_K_M        pull_handle_011          64.2s accepts ref: False footprint 74 x 10 vs 64 x 10; 1 pieces vs 3
+23:54:17 qwen3.5:4b-q4_K_M        pull_handle_025          59.5s accepts ref: False footprint 74 x 10 vs 74 x 38
+23:55:15 qwen3.5:4b-q4_K_M        ribbed_panel_021         58.1s accepts ref: True 
+23:56:13 qwen3.5:4b-q4_K_M        ribbed_panel_001         57.7s accepts ref: True 
+23:57:13 qwen3.5:4b-q4_K_M        ribbed_panel_035         60.9s accepts ref: True 
+23:58:08 qwen3.5:4b-q4_K_M        ribbed_panel_042         54.9s accepts ref: True 
+23:59:06 qwen3.5:4b-q4_K_M        spoked_wheel_021         57.8s accepts ref: False footprint 80 x 80 vs 92 x 92
+00:00:02 qwen3.5:4b-q4_K_M        spoked_wheel_017         56.2s accepts ref: False height 5 vs 10; footprint 60 x 60 vs 72 x 72; 1 pieces vs 6
+00:01:01 qwen3.5:4b-q4_K_M        spoked_wheel_011         58.7s accepts ref: False footprint 100 x 100 vs 106 x 106; 1 pieces vs 9
+00:01:55 qwen3.5:4b-q4_K_M        spoked_wheel_036         53.5s accepts ref: False footprint 60 x 60 vs 70 x 65
+00:02:53 qwen3.5:4b-q4_K_M        star_wheel_006           57.9s accepts ref: False footprint 63.32 x 66.57 vs 70 x 70
+00:03:49 qwen3.5:4b-q4_K_M        star_wheel_049           56.7s accepts ref: False footprint 80 x 69.28 vs 100 x 100
+00:04:44 qwen3.5:4b-q4_K_M        star_wheel_023           54.5s accepts ref: False footprint 80 x 69.28 vs 80 x 80
+00:05:40 qwen3.5:4b-q4_K_M        star_wheel_039           56.1s accepts ref: True 
+00:06:38 qwen3.5:4b-q4_K_M        t_slot_nut_002           58.5s accepts ref: False footprint 10 x 10 vs 10 x 8
+00:07:36 qwen3.5:4b-q4_K_M        t_slot_nut_037           58.0s accepts ref: False footprint 15 x 14 vs 15 x 17
+00:08:34 qwen3.5:4b-q4_K_M        t_slot_nut_024           57.7s accepts ref: False footprint 10 x 10 vs 10 x 8.5
+00:09:35 qwen3.5:4b-q4_K_M        t_slot_nut_000           61.1s accepts ref: True 
+00:10:28 qwen3.5:4b-q4_K_M        torus_weight_022         52.9s accepts ref: True 
+00:11:20 qwen3.5:4b-q4_K_M        torus_weight_011         52.1s accepts ref: True 
+00:12:15 qwen3.5:4b-q4_K_M        torus_weight_010         55.3s accepts ref: True 
+00:13:08 qwen3.5:4b-q4_K_M        torus_weight_015         52.4s accepts ref: True 
+00:14:08 qwen3.5:4b-q4_K_M        vibration_foot_037       60.1s accepts ref: True 
+00:15:08 qwen3.5:4b-q4_K_M        vibration_foot_044       59.5s accepts ref: True 
+00:16:06 qwen3.5:4b-q4_K_M        vibration_foot_017       58.9s accepts ref: True 
+00:17:09 qwen3.5:4b-q4_K_M        vibration_foot_034       62.2s accepts ref: False footprint 50 x 50 vs 50 x 36; 1 round holes of 44 mm vs 2
+00:19:22 qwen3.5:9b-q4_K_M        cable_bridge_037        133.4s accepts ref: False 1 pieces vs 2
+00:21:04 qwen3.5:9b-q4_K_M        cable_bridge_020        101.7s accepts ref: True 
+00:22:43 qwen3.5:9b-q4_K_M        cable_bridge_046         98.7s accepts ref: True 
+00:24:23 qwen3.5:9b-q4_K_M        cable_bridge_007        100.7s accepts ref: True 
+00:26:08 qwen3.5:9b-q4_K_M        cam_disc_013            104.4s accepts ref: False height 9 vs 13; 1 pieces vs 2
+00:27:55 qwen3.5:9b-q4_K_M        cam_disc_030            107.5s accepts ref: False height 13 vs 15; footprint 30 x 30 vs 42 x 30
+00:29:42 qwen3.5:9b-q4_K_M        cam_disc_034            106.8s accepts ref: False height 14 vs 20
+00:31:28 qwen3.5:9b-q4_K_M        cam_disc_018            105.7s accepts ref: False footprint 40 x 40 vs 50 x 40
+00:33:09 qwen3.5:9b-q4_K_M        dial_ring_017           101.4s accepts ref: True 
+00:34:50 qwen3.5:9b-q4_K_M        dial_ring_045           101.1s accepts ref: False footprint 60 x 60 vs 60 x 44
+00:36:31 qwen3.5:9b-q4_K_M        dial_ring_001           101.2s accepts ref: True 
+00:38:12 qwen3.5:9b-q4_K_M        dial_ring_022           100.4s accepts ref: True 
+00:39:41 qwen3.5:9b-q4_K_M        dog_bone_008             88.9s accepts ref: True 
+00:41:06 qwen3.5:9b-q4_K_M        dog_bone_000             85.7s accepts ref: True 
+00:44:27 qwen3.5:9b-q4_K_M        dog_bone_046            200.5s accepts ref: True 
+00:47:48 qwen3.5:9b-q4_K_M        dog_bone_034            200.9s accepts ref: True 
+00:49:20 qwen3.5:9b-q4_K_M        frustum_riser_018        92.5s accepts ref: True 
+00:51:06 qwen3.5:9b-q4_K_M        frustum_riser_028       105.4s accepts ref: False height 25 vs 33
+00:52:58 qwen3.5:9b-q4_K_M        frustum_riser_041       112.7s accepts ref: True 
+00:54:42 qwen3.5:9b-q4_K_M        frustum_riser_017       103.1s accepts ref: True 
+00:56:50 qwen3.5:9b-q4_K_M        hinge_leaf_035          128.9s accepts ref: False footprint 60 x 23 vs 60 x 20; 0 round holes of 2 mm vs 3
+00:58:58 qwen3.5:9b-q4_K_M        hinge_leaf_020          127.6s accepts ref: False footprint 50 x 33 vs 50 x 30; 0 round holes of 2.5 mm vs 3
+01:00:34 qwen3.5:9b-q4_K_M        hinge_leaf_004           95.9s accepts ref: False footprint 50 x 28.5 vs 50 x 25; 0 round holes of 3 mm vs 3
+01:02:18 qwen3.5:9b-q4_K_M        hinge_leaf_005          103.5s accepts ref: False height 6 vs 9; footprint 50 x 23 vs 50 x 20; 0 round holes of 6 mm vs 3
+01:04:18 qwen3.5:9b-q4_K_M        lab_scoop_024           120.3s accepts ref: False height 14.99 vs 27; footprint 129.99 x 29.98 vs 148 x 30
+01:06:31 qwen3.5:9b-q4_K_M        lab_scoop_041           132.9s accepts ref: False footprint 83.99 x 23.99 vs 62 x 4
+56 descriptions, 56 reference parts measured
+01:10:29 qwen3.5:9b-q4_K_M        lab_scoop_016           121.6s accepts ref: False height 10 vs 6; footprint 120 x 19.99 vs 127 x 34
+01:12:34 qwen3.5:9b-q4_K_M        lab_scoop_014           124.6s accepts ref: False footprint 103.99 x 23.99 vs 84 x 3
+01:14:46 qwen3.5:9b-q4_K_M        pull_handle_028         132.5s accepts ref: False footprint 108 x 12 vs 96 x 12
+01:16:52 qwen3.5:9b-q4_K_M        pull_handle_005         125.6s accepts ref: False footprint 110 x 14 vs 96 x 28
+01:19:03 qwen3.5:9b-q4_K_M        pull_handle_011         130.5s accepts ref: False footprint 74 x 10 vs 96 x 50; 1 pieces vs 3
+01:21:00 qwen3.5:9b-q4_K_M        pull_handle_025         117.9s accepts ref: False footprint 74 x 10 vs 98 x 32
+01:22:47 qwen3.5:9b-q4_K_M        ribbed_panel_021        106.9s accepts ref: True 
+01:24:33 qwen3.5:9b-q4_K_M        ribbed_panel_001        106.0s accepts ref: True 
+01:26:20 qwen3.5:9b-q4_K_M        ribbed_panel_035        106.9s accepts ref: True 
+01:28:04 qwen3.5:9b-q4_K_M        ribbed_panel_042        103.4s accepts ref: True 
+01:29:53 qwen3.5:9b-q4_K_M        spoked_wheel_021        109.4s accepts ref: False footprint 80 x 80 vs 127 x 127
+01:31:39 qwen3.5:9b-q4_K_M        spoked_wheel_017        105.8s accepts ref: True 
+01:33:26 qwen3.5:9b-q4_K_M        spoked_wheel_011        107.3s accepts ref: True 
+01:35:14 qwen3.5:9b-q4_K_M        spoked_wheel_036        107.6s accepts ref: False footprint 60 x 60 vs 30 x 60
+01:36:59 qwen3.5:9b-q4_K_M        star_wheel_006          105.3s accepts ref: False footprint 63.32 x 66.57 vs 60 x 70
+01:38:48 qwen3.5:9b-q4_K_M        star_wheel_049          109.2s accepts ref: False footprint 80 x 69.28 vs 136.753 x 136.753
+01:40:36 qwen3.5:9b-q4_K_M        star_wheel_023          107.7s accepts ref: False footprint 80 x 69.28 vs 83.15 x 79.27
+01:42:26 qwen3.5:9b-q4_K_M        star_wheel_039          109.9s accepts ref: False footprint 80 x 80 vs 113.256 x 113.256
+01:44:14 qwen3.5:9b-q4_K_M        t_slot_nut_002          108.5s accepts ref: False footprint 10 x 10 vs 10 x 26
+01:46:04 qwen3.5:9b-q4_K_M        t_slot_nut_037          109.6s accepts ref: True 
+01:47:58 qwen3.5:9b-q4_K_M        t_slot_nut_024          114.7s accepts ref: False footprint 10 x 10 vs 10 x 25
+01:49:48 qwen3.5:9b-q4_K_M        t_slot_nut_000          109.8s accepts ref: True 
+01:51:26 qwen3.5:9b-q4_K_M        torus_weight_022         97.8s accepts ref: True 
+01:52:38 qwen3.5:9b-q4_K_M        torus_weight_011         72.2s accepts ref: True 
+01:53:39 qwen3.5:9b-q4_K_M        torus_weight_010         60.2s accepts ref: True 
+01:54:36 qwen3.5:9b-q4_K_M        torus_weight_015         57.9s accepts ref: False footprint 60 x 60 vs 44 x 44
+01:55:55 qwen3.5:9b-q4_K_M        vibration_foot_037       79.0s accepts ref: True 
+01:57:43 qwen3.5:9b-q4_K_M        vibration_foot_044      107.5s accepts ref: True 
+01:59:30 qwen3.5:9b-q4_K_M        vibration_foot_017      107.0s accepts ref: True 
+02:01:13 qwen3.5:9b-q4_K_M        vibration_foot_034      103.3s accepts ref: True 
+56 descriptions, 56 reference parts measured
+02:03:04 gemma4:e4b-it-q4_K_M     cable_bridge_037        110.6s accepts ref: False 0 round holes of 12 mm vs 2
+02:03:24 gemma4:e4b-it-q4_K_M     cable_bridge_020         20.3s accepts ref: False 0 round holes of 8 mm vs 3
+02:03:42 gemma4:e4b-it-q4_K_M     cable_bridge_046         17.3s accepts ref: False 0 round holes of 10 mm vs 1
+02:03:59 gemma4:e4b-it-q4_K_M     cable_bridge_007         16.9s accepts ref: True 
+02:04:23 gemma4:e4b-it-q4_K_M     cam_disc_013             24.5s accepts ref: True 
+02:04:47 gemma4:e4b-it-q4_K_M     cam_disc_030             23.7s accepts ref: False height 13 vs 8
+02:05:07 gemma4:e4b-it-q4_K_M     cam_disc_034             20.2s accepts ref: True 
+02:05:28 gemma4:e4b-it-q4_K_M     cam_disc_018             21.3s accepts ref: True 
+02:05:48 gemma4:e4b-it-q4_K_M     dial_ring_017            19.9s accepts ref: True 
+02:06:06 gemma4:e4b-it-q4_K_M     dial_ring_045            18.1s accepts ref: True 
+02:06:25 gemma4:e4b-it-q4_K_M     dial_ring_001            18.5s accepts ref: True 
+02:06:44 gemma4:e4b-it-q4_K_M     dial_ring_022            19.0s accepts ref: True 
+02:07:05 gemma4:e4b-it-q4_K_M     dog_bone_008             21.3s accepts ref: False footprint 120 x 15 vs 120 x 35
+02:07:23 gemma4:e4b-it-q4_K_M     dog_bone_000             17.8s accepts ref: True 
+02:07:43 gemma4:e4b-it-q4_K_M     dog_bone_046             19.8s accepts ref: False footprint 130 x 15 vs 130 x 35
+02:08:03 gemma4:e4b-it-q4_K_M     dog_bone_034             20.4s accepts ref: True 
+02:08:25 gemma4:e4b-it-q4_K_M     frustum_riser_018        21.6s accepts ref: True 
+02:08:44 gemma4:e4b-it-q4_K_M     frustum_riser_028        19.6s accepts ref: True 
+02:09:03 gemma4:e4b-it-q4_K_M     frustum_riser_041        18.6s accepts ref: True 
+02:09:21 gemma4:e4b-it-q4_K_M     frustum_riser_017        18.2s accepts ref: True 
+02:09:47 gemma4:e4b-it-q4_K_M     hinge_leaf_035           25.9s accepts ref: False height 6 vs 2.5; footprint 60 x 23 vs 60 x 20; 0 round holes of 2 mm vs 3
+02:10:12 gemma4:e4b-it-q4_K_M     hinge_leaf_020           24.8s accepts ref: False height 6 vs 3; footprint 50 x 33 vs 50 x 30; 0 round holes of 2.5 mm vs 3
+02:10:34 gemma4:e4b-it-q4_K_M     hinge_leaf_004           22.3s accepts ref: False height 7 vs 2.5; footprint 50 x 28.5 vs 50 x 25; 0 round holes of 3 mm vs 3
+02:10:57 gemma4:e4b-it-q4_K_M     hinge_leaf_005           22.9s accepts ref: False height 6 vs 3; footprint 50 x 23 vs 50 x 20; 0 round holes of 3 mm vs 3
+02:11:23 gemma4:e4b-it-q4_K_M     lab_scoop_024            26.0s accepts ref: False footprint 129.99 x 29.98 vs 115 x 10
+02:11:46 gemma4:e4b-it-q4_K_M     lab_scoop_041            23.2s accepts ref: False footprint 83.99 x 23.99 vs 62 x 12
+02:12:10 gemma4:e4b-it-q4_K_M     lab_scoop_016            23.9s accepts ref: False footprint 120 x 19.99 vs 110 x 10
+02:12:33 gemma4:e4b-it-q4_K_M     lab_scoop_014            23.3s accepts ref: False footprint 103.99 x 23.99 vs 81.5 x 8
+02:13:01 gemma4:e4b-it-q4_K_M     pull_handle_028          27.4s accepts ref: True 
+02:13:25 gemma4:e4b-it-q4_K_M     pull_handle_005          23.8s accepts ref: True 
+02:13:49 gemma4:e4b-it-q4_K_M     pull_handle_011          24.3s accepts ref: True 
+02:14:07 gemma4:e4b-it-q4_K_M     pull_handle_025          18.1s accepts ref: True 
+02:14:29 gemma4:e4b-it-q4_K_M     ribbed_panel_021         21.6s accepts ref: True 
+02:14:49 gemma4:e4b-it-q4_K_M     ribbed_panel_001         20.1s accepts ref: True 
+02:15:10 gemma4:e4b-it-q4_K_M     ribbed_panel_035         21.0s accepts ref: True 
+02:15:29 gemma4:e4b-it-q4_K_M     ribbed_panel_042         19.1s accepts ref: True 
+02:15:51 gemma4:e4b-it-q4_K_M     spoked_wheel_021         22.2s accepts ref: True 
+02:16:12 gemma4:e4b-it-q4_K_M     spoked_wheel_017         21.6s accepts ref: False footprint 60 x 60 vs 70 x 70
+02:16:33 gemma4:e4b-it-q4_K_M     spoked_wheel_011         20.9s accepts ref: True 
+02:16:57 gemma4:e4b-it-q4_K_M     spoked_wheel_036         23.2s accepts ref: False footprint 60 x 60 vs 70 x 70
+02:17:18 gemma4:e4b-it-q4_K_M     star_wheel_006           21.7s accepts ref: False footprint 63.32 x 66.57 vs 35 x 35
+02:17:38 gemma4:e4b-it-q4_K_M     star_wheel_049           20.3s accepts ref: False footprint 80 x 69.28 vs 40 x 40
+02:17:51 gemma4:e4b-it-q4_K_M     star_wheel_023           13.0s accepts ref: False footprint 80 x 69.28 vs 40 x 40
+02:18:14 gemma4:e4b-it-q4_K_M     star_wheel_039           22.2s accepts ref: False footprint 80 x 80 vs 40 x 40
+02:18:37 gemma4:e4b-it-q4_K_M     t_slot_nut_002           23.2s accepts ref: True 
+02:18:59 gemma4:e4b-it-q4_K_M     t_slot_nut_037           21.7s accepts ref: True 
+02:19:21 gemma4:e4b-it-q4_K_M     t_slot_nut_024           22.1s accepts ref: True 
+02:19:42 gemma4:e4b-it-q4_K_M     t_slot_nut_000           21.8s accepts ref: True 
+02:20:00 gemma4:e4b-it-q4_K_M     torus_weight_022         17.5s accepts ref: True 
+02:20:17 gemma4:e4b-it-q4_K_M     torus_weight_011         17.1s accepts ref: True 
+02:20:34 gemma4:e4b-it-q4_K_M     torus_weight_010         16.5s accepts ref: True 
+02:20:50 gemma4:e4b-it-q4_K_M     torus_weight_015         16.3s accepts ref: True 
+02:21:12 gemma4:e4b-it-q4_K_M     vibration_foot_037       22.4s accepts ref: True 
+02:21:32 gemma4:e4b-it-q4_K_M     vibration_foot_044       20.2s accepts ref: True 
+02:21:55 gemma4:e4b-it-q4_K_M     vibration_foot_017       22.2s accepts ref: True 
+02:22:13 gemma4:e4b-it-q4_K_M     vibration_foot_034       18.5s accepts ref: True 
+56 descriptions, 56 reference parts measured
+02:23:37 gemma4:e4b-it-q4_K_M     cable_bridge_037         84.1s accepts ref: False 0 round holes of 12 mm vs 2
+02:24:04 gemma4:e4b-it-q4_K_M     cable_bridge_020         26.2s accepts ref: False 0 round holes of 8 mm vs 3
+02:24:26 gemma4:e4b-it-q4_K_M     cable_bridge_046         22.2s accepts ref: False 0 round holes of 10 mm vs 1
+02:24:49 gemma4:e4b-it-q4_K_M     cable_bridge_007         23.1s accepts ref: True 
+02:25:19 gemma4:e4b-it-q4_K_M     cam_disc_013             30.1s accepts ref: False top outline 16 x 16 vs 40 x 40
+02:25:49 gemma4:e4b-it-q4_K_M     cam_disc_030             29.5s accepts ref: False top outline 12 x 12 vs 30 x 30
+02:26:16 gemma4:e4b-it-q4_K_M     cam_disc_034             27.1s accepts ref: False top outline 11 x 11 vs 30 x 30
+02:26:40 gemma4:e4b-it-q4_K_M     cam_disc_018             24.7s accepts ref: False top outline 14 x 14 vs 40 x 40
+02:27:07 gemma4:e4b-it-q4_K_M     dial_ring_017            27.0s accepts ref: False top outline 69.98 x 69.98 vs 50 x 50
+02:27:27 gemma4:e4b-it-q4_K_M     dial_ring_045            19.8s accepts ref: False top outline 59.97 x 59.97 vs 44 x 44
+02:27:42 gemma4:e4b-it-q4_K_M     dial_ring_001            14.5s accepts ref: False top outline 49.97 x 49.97 vs 26 x 26
+02:27:57 gemma4:e4b-it-q4_K_M     dial_ring_022            15.0s accepts ref: False top outline 79.98 x 79.98 vs 56 x 56
+02:28:13 gemma4:e4b-it-q4_K_M     dog_bone_008             16.2s accepts ref: True 
+02:28:30 gemma4:e4b-it-q4_K_M     dog_bone_000             16.7s accepts ref: False top outline 130 x 19 vs 8 x 40
+02:28:45 gemma4:e4b-it-q4_K_M     dog_bone_046             15.3s accepts ref: False top outline 130 x 15 vs 8 x 30
+02:29:03 gemma4:e4b-it-q4_K_M     dog_bone_034             17.7s accepts ref: False top outline 140 x 19 vs 8 x 50
+02:29:20 gemma4:e4b-it-q4_K_M     frustum_riser_018        17.6s accepts ref: True 
+02:29:39 gemma4:e4b-it-q4_K_M     frustum_riser_028        19.3s accepts ref: True 
+02:30:02 gemma4:e4b-it-q4_K_M     frustum_riser_041        23.0s accepts ref: True 
+02:30:27 gemma4:e4b-it-q4_K_M     frustum_riser_017        25.0s accepts ref: True 
+02:30:57 gemma4:e4b-it-q4_K_M     hinge_leaf_035           29.8s accepts ref: False height 6 vs 2.5; footprint 60 x 23 vs 60 x 20; 0 round holes of 2 mm vs 3; bottom outline 60 x 20.75 vs 60 x 20
+02:31:27 gemma4:e4b-it-q4_K_M     hinge_leaf_020           29.4s accepts ref: False height 6 vs 3; footprint 50 x 33 vs 50 x 30; 0 round holes of 2.5 mm vs 3; bottom outline 50 x 30.77 vs 50 x 30
+02:31:50 gemma4:e4b-it-q4_K_M     hinge_leaf_004           23.7s accepts ref: False height 7 vs 2.5; footprint 50 x 28.5 vs 50 x 25; 0 round holes of 3 mm vs 3; bottom outline 50 x 25.82 vs 50 x 25
+02:32:08 gemma4:e4b-it-q4_K_M     hinge_leaf_005           17.8s accepts ref: False height 6 vs 3; footprint 50 x 23 vs 50 x 20; 0 round holes of 3 mm vs 3; bottom outline 50 x 20.77 vs 50 x 20
+02:32:28 gemma4:e4b-it-q4_K_M     lab_scoop_024            20.3s accepts ref: False footprint 129.99 x 29.98 vs 115 x 10; bottom outline 3.48 x 3.48 vs 30 x 30; top outline 129.99 x 29.98 vs 28 x 28
+02:32:45 gemma4:e4b-it-q4_K_M     lab_scoop_041            16.3s accepts ref: False footprint 83.99 x 23.99 vs 72 x 12; bottom outline 3.09 x 3.09 vs 0 x 0
+02:33:02 gemma4:e4b-it-q4_K_M     lab_scoop_016            17.2s accepts ref: False footprint 120 x 19.99 vs 110 x 25; bottom outline 2.82 x 2.82 vs 20 x 20
+02:33:20 gemma4:e4b-it-q4_K_M     lab_scoop_014            18.4s accepts ref: False footprint 103.99 x 23.99 vs 81.5 x 8; bottom outline 3.09 x 3.09 vs 0 x 0
+02:33:41 gemma4:e4b-it-q4_K_M     pull_handle_028          20.7s accepts ref: False footprint 108 x 12 vs 96 x 12
+02:34:01 gemma4:e4b-it-q4_K_M     pull_handle_005          19.6s accepts ref: True 
+02:34:20 gemma4:e4b-it-q4_K_M     pull_handle_011          19.5s accepts ref: False footprint 74 x 10 vs 74 x 50; top outline 74 x 10 vs 74 x 50
+02:34:35 gemma4:e4b-it-q4_K_M     pull_handle_025          15.0s accepts ref: False footprint 74 x 10 vs 74 x 32
+02:34:52 gemma4:e4b-it-q4_K_M     ribbed_panel_021         17.1s accepts ref: True 
+02:35:08 gemma4:e4b-it-q4_K_M     ribbed_panel_001         16.0s accepts ref: True 
+02:35:26 gemma4:e4b-it-q4_K_M     ribbed_panel_035         17.4s accepts ref: True 
+02:35:42 gemma4:e4b-it-q4_K_M     ribbed_panel_042         16.1s accepts ref: True 
+02:35:59 gemma4:e4b-it-q4_K_M     spoked_wheel_021         17.8s accepts ref: True 
+02:36:16 gemma4:e4b-it-q4_K_M     spoked_wheel_017         16.9s accepts ref: True 
+02:36:34 gemma4:e4b-it-q4_K_M     spoked_wheel_011         17.9s accepts ref: True 
+02:36:51 gemma4:e4b-it-q4_K_M     spoked_wheel_036         16.9s accepts ref: False footprint 60 x 60 vs 70 x 70; bottom outline 60 x 60 vs 70 x 70; top outline 60 x 60 vs 70 x 70
+02:37:08 gemma4:e4b-it-q4_K_M     star_wheel_006           16.5s accepts ref: False footprint 63.32 x 66.57 vs 35 x 35
+02:37:24 gemma4:e4b-it-q4_K_M     star_wheel_049           15.9s accepts ref: False footprint 80 x 69.28 vs 40 x 40
+02:37:35 gemma4:e4b-it-q4_K_M     star_wheel_023           11.0s accepts ref: False footprint 80 x 69.28 vs 40 x 40
+02:37:50 gemma4:e4b-it-q4_K_M     star_wheel_039           16.0s accepts ref: False footprint 80 x 80 vs 40 x 40
+02:38:09 gemma4:e4b-it-q4_K_M     t_slot_nut_002           18.9s accepts ref: False top outline 10 x 8 vs 8 x 8
+02:38:27 gemma4:e4b-it-q4_K_M     t_slot_nut_037           17.3s accepts ref: False top outline 15 x 6 vs 6 x 6
+02:38:45 gemma4:e4b-it-q4_K_M     t_slot_nut_024           18.2s accepts ref: False top outline 10 x 6 vs 6 x 6
+02:39:01 gemma4:e4b-it-q4_K_M     t_slot_nut_000           16.4s accepts ref: False top outline 20 x 7 vs 7 x 7
+02:39:17 gemma4:e4b-it-q4_K_M     torus_weight_022         15.2s accepts ref: False bottom outline 61.75 x 61.75 vs 68 x 68; top outline 61.75 x 61.75 vs 68 x 68
+02:39:30 gemma4:e4b-it-q4_K_M     torus_weight_011         13.6s accepts ref: False bottom outline 45.98 x 45.98 vs 54 x 54; top outline 45.98 x 45.98 vs 54 x 54
+02:39:44 gemma4:e4b-it-q4_K_M     torus_weight_010         13.5s accepts ref: False bottom outline 62.13 x 62.13 vs 72 x 72; top outline 62.13 x 62.13 vs 72 x 72
+02:39:57 gemma4:e4b-it-q4_K_M     torus_weight_015         13.2s accepts ref: False bottom outline 46.4 x 46.4 vs 60 x 60; top outline 46.4 x 46.4 vs 60 x 60
+02:40:15 gemma4:e4b-it-q4_K_M     vibration_foot_037       17.9s accepts ref: True 
+02:40:32 gemma4:e4b-it-q4_K_M     vibration_foot_044       17.2s accepts ref: True 
+02:40:49 gemma4:e4b-it-q4_K_M     vibration_foot_017       17.2s accepts ref: True 
+02:41:05 gemma4:e4b-it-q4_K_M     vibration_foot_034       15.6s accepts ref: True 

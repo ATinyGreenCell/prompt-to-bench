@@ -1,0 +1,28 @@
+{
+ "started": "2026-10-20T07:27:15",
+ "args": {
+  "run": "sm-features",
+  "models": [
+   "features:gemma4:e4b-it-q4_K_M"
+  ],
+  "tasks": null,
+  "samples": 1,
+  "max_repairs": 2,
+  "feedback": "report",
+  "temperature": 0.2,
+  "prompts": null,
+  "lang": "en",
+  "system": "bench/prompts/system.md",
+  "render_timeout": 120,
+  "seed_base": 1000,
+  "num_predict": 2048,
+  "think": false,
+  "num_ctx": 8192
+ },
+ "git_commit": "bfd9986f16a9b06193527850a3eab2004ad9d9b8+uncommitted-changes",
+ "host": "enamel",
+ "cpu": "x86_64",
+ "python": "3.14.4",
+ "openscad": "OpenSCAD version 2026.10.01",
+ "ollama": "0.30.11"
+}

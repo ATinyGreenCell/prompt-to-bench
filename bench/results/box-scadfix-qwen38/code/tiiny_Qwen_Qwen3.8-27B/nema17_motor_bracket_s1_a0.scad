@@ -1,0 +1,125 @@
+// L-shaped NEMA 17 stepper motor mounting bracket
+// Print orientation: base plate on bed (z=0), builds upward (+Z)
+
+// Base plate dimensions
+base_x_min = -25;
+base_x_max = 25;
+base_y_min = 0;
+base_y_max = 45;
+base_z_min = 0;
+base_z_max = 5;
+
+// Vertical motor plate dimensions
+plate_x_min = -25;
+plate_x_max = 25;
+plate_y_min = 0;
+plate_y_max = 5;
+plate_z_min = 0;
+plate_z_max = 50;
+
+// Base plate M4 through-holes (vertical, along Z)
+m4_hole_dia = 4.5;
+m4_hole1_x = -17;
+m4_hole1_y = 30;
+m4_hole2_x = 17;
+m4_hole2_y = 30;
+
+// Motor plate centring boss hole (along Y)
+boss_hole_dia = 23;
+boss_hole_x = 0;
+boss_hole_z = 28;
+
+// Motor plate M3 screw holes (along Y)
+m3_hole_dia = 3.4;
+m3_pattern_size = 31;  // square pattern centred on boss hole
+m3_hole_offset = m3_pattern_size / 2;  // 15.5 mm from centre
+
+// Gusset dimensions
+gusset_thickness = 5;
+gusset_leg_y = 20;  // leg along +Y
+gusset_leg_z = 20;  // leg along +Z
+gusset_corner_y = 5;  // right-angle corner y position
+gusset_corner_z = 5;  // right-angle corner z position
+
+// Left gusset x range
+gusset_left_x_min = -25;
+gusset_left_x_max = -20;
+
+// Right gusset x range
+gusset_right_x_min = 20;
+gusset_right_x_max = 25;
+
+$fn = 64;
+
+// Base plate
+module base_plate() { translate([base_x_min, base_y_min, base_z_min])
+    cube([base_x_max - base_x_min, base_y_max - base_y_min, base_z_max - base_z_min]); }
+
+// Vertical motor plate
+module motor_plate() { translate([plate_x_min, plate_y_min, plate_z_min])
+    cube([plate_x_max - plate_x_min, plate_y_max - plate_y_min, plate_z_max - plate_z_min]); }
+
+// M4 holes in base plate (vertical through-holes, along Z)
+module m4_hole1() { translate([m4_hole1_x, m4_hole1_y, -1])
+    cylinder(h = base_z_max - base_z_min + 2, d = m4_hole_dia); }
+
+module m4_hole2() { translate([m4_hole2_x, m4_hole2_y, -1])
+    cylinder(h = base_z_max - base_z_min + 2, d = m4_hole_dia); }
+
+// Boss hole in motor plate (along Y)
+module boss_hole() { translate([boss_hole_x, -1, boss_hole_z])
+    rotate([90, 0, 0])
+    cylinder(h = plate_y_max - plate_y_min + 2, d = boss_hole_dia); }
+
+// M3 screw holes in motor plate (along Y)
+// Four holes on a 31 mm square pattern centred on boss hole
+module m3_hole1() { translate([boss_hole_x - m3_hole_offset, -1, boss_hole_z - m3_hole_offset])
+    rotate([90, 0, 0])
+    cylinder(h = plate_y_max - plate_y_min + 2, d = m3_hole_dia); }
+
+module m3_hole2() { translate([boss_hole_x + m3_hole_offset, -1, boss_hole_z - m3_hole_offset])
+    rotate([90, 0, 0])
+    cylinder(h = plate_y_max - plate_y_min + 2, d = m3_hole_dia); }
+
+module m3_hole3() { translate([boss_hole_x - m3_hole_offset, -1, boss_hole_z + m3_hole_offset])
+    rotate([90, 0, 0])
+    cylinder(h = plate_y_max - plate_y_min + 2, d = m3_hole_dia); }
+
+module m3_hole4() { translate([boss_hole_x + m3_hole_offset, -1, boss_hole_z + m3_hole_offset])
+    rotate([90, 0, 0])
+    cylinder(h = plate_y_max - plate_y_min + 2, d = m3_hole_dia); }
+
+// Left gusset: right triangle in YZ plane, extruded along X
+// Vertices in YZ: (y=5, z=5), (y=25, z=5), (y=5, z=25)
+module left_gusset() { translate([gusset_left_x_min, 0, 0])
+    linear_extrude(height = gusset_left_x_max - gusset_left_x_min)
+    polygon(points = [[gusset_corner_y, gusset_corner_z],
+                       [gusset_corner_y + gusset_leg_y, gusset_corner_z],
+                       [gusset_corner_y, gusset_corner_z + gusset_leg_z]]); }
+
+// Right gusset: right triangle in YZ plane, extruded along X
+module right_gusset() { translate([gusset_right_x_min, 0, 0])
+    linear_extrude(height = gusset_right_x_max - gusset_right_x_min)
+    polygon(points = [[gusset_corner_y, gusset_corner_z],
+                       [gusset_corner_y + gusset_leg_y, gusset_corner_z],
+                       [gusset_corner_y, gusset_corner_z + gusset_leg_z]]); }
+
+// Assemble the bracket
+difference() {
+    union() {
+        base_plate();
+        motor_plate();
+        left_gusset();
+        right_gusset();
+    }
+    // Cut M4 holes from base plate
+    m4_hole1();
+    m4_hole2();
+    // Cut boss hole from motor plate
+    boss_hole();
+    // Cut M3 screw holes from motor plate
+    m3_hole1();
+    m3_hole2();
+    m3_hole3();
+    m3_hole4();
+}

@@ -1,0 +1,23 @@
+Features: {"bodies": [{"solids": [{"shape": "extrude", "outline": [[-9.35, -3], [9.35, -3], [9.35, 3], [-9.35, 3]], "h": 10, "at": [0, 0, 0]}, {"shape": "extrude", "outline": [[-2.75, -1], [4.25, -1], [4.25, 1], [-2.75, 1]], "h": 10, "at": [15, 0, 0]}], "cuts": [{"cut": "box", "size": [10, 10, 10], "at": [-9.35, 0, -5]}]}, {"solids": [{"shape": "extrude", "outline": [[-2.75, -1], [4.25, -1], [4.25, 1], [-2.75, 1]], "h": 10, "at": [15, 0, 0]}], "cuts": [{"cut": "box", "size": [4.5, 5, 10], "at": [19.25, 0, -2.25]}]}]}
+
+```openscad
+// Built by bench/smallmodels/features/compiler.py from a list of features.
+$fn = 64;
+difference() {
+  union() {
+    translate([0, 0, 0]) linear_extrude(height = 10) polygon([[-9.35, -3], [9.35, -3], [9.35, 3], [-9.35, 3]]);
+    translate([15, 0, 0]) linear_extrude(height = 10) polygon([[-2.75, -1], [4.25, -1], [4.25, 1], [-2.75, 1]]);
+  }
+  union() {
+    translate([-9.35, 0, -5]) rotate([0, 0, 0]) translate([-5, -5, 0]) cube([10, 10, 10]);
+  }
+}
+difference() {
+  union() {
+    translate([15, 0, 0]) linear_extrude(height = 10) polygon([[-2.75, -1], [4.25, -1], [4.25, 1], [-2.75, 1]]);
+  }
+  union() {
+    translate([19.25, 0, -2.25]) rotate([0, 0, 0]) translate([-2.25, -2.5, 0]) cube([4.5, 5, 10]);
+  }
+}
+```

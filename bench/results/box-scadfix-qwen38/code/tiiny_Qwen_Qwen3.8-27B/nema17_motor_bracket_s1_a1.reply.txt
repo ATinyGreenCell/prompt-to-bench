@@ -1,0 +1,150 @@
+Looking at the report, the bounding box shows X from -25 to 45 (size 70), but the spec says the base plate is x from -25 to 25 (size 50). The gussets extend to y=25, which is within the base plate's y range (0 to 45), so that's fine. But the X range should be -25 to 25, not -25 to 45.
+
+Wait, let me re-read. The base plate is x from -25 to 25, y from 0 to 45. The gussets are at x=-25 to -20 and x=20 to 25, with legs along +Y (20mm) and +Z (20mm). So the gussets go from y=5 to y=25, which is within the base plate's y range. The X range should be -25 to 25.
+
+But the report says X -25 to 45. That's wrong. Let me check my code...
+
+Ah, I see the issue. The gussets are extruded along X, but I'm using `linear_extrude` which extrudes in the Z direction by default, not X. I need to rotate the polygon or use a different approach.
+
+Actually, `linear_extrude` extrudes in the Z direction. To extrude in the X direction, I need to rotate the shape first. Let me fix the gussets to be properly oriented.
+
+The gussets should be right triangles in the YZ plane, extruded along X. So I need to define the polygon in the YZ plane (which is the XY plane of the polygon if I rotate it), then extrude along X.
+
+Let me think about this more carefully. The gusset is a right triangle with:
+- Right angle corner at (y=5, z=5)
+- One leg along +Y (20mm): from (y=5, z=5) to (y=25, z=5)
+- One leg along +Z (20mm): from (y=5, z=5) to (y=5, z=25)
+
+This triangle lies in the YZ plane. To create it with `linear_extrude`, I need to:
+1. Define the polygon in a 2D plane
+2. Rotate it to be in the YZ plane
+3. Extrude along X
+
+Or I can use `polygon` with 3D points and `hull` or other approaches. Actually, the simplest is to define the triangle in the XY plane, rotate it to YZ, then extrude along X.
+
+Let me fix the gusset modules:
+
+```openscad
+// L-shaped NEMA 17 stepper motor mounting bracket
+// Print orientation: base plate on bed (z=0), builds upward (+Z)
+
+// Base plate dimensions
+base_x_min = -25;
+base_x_max = 25;
+base_y_min = 0;
+base_y_max = 45;
+base_z_min = 0;
+base_z_max = 5;
+
+// Vertical motor plate dimensions
+plate_x_min = -25;
+plate_x_max = 25;
+plate_y_min = 0;
+plate_y_max = 5;
+plate_z_min = 0;
+plate_z_max = 50;
+
+// Base plate M4 through-holes (vertical, along Z)
+m4_hole_dia = 4.5;
+m4_hole1_x = -17;
+m4_hole1_y = 30;
+m4_hole2_x = 17;
+m4_hole2_y = 30;
+
+// Motor plate centring boss hole (along Y)
+boss_hole_dia = 23;
+boss_hole_x = 0;
+boss_hole_z = 28;
+
+// Motor plate M3 screw holes (along Y)
+m3_hole_dia = 3.4;
+m3_pattern_size = 31;  // square pattern centred on boss hole
+m3_hole_offset = m3_pattern_size / 2;  // 15.5 mm from centre
+
+// Gusset dimensions
+gusset_thickness = 5;
+gusset_leg_y = 20;  // leg along +Y
+gusset_leg_z = 20;  // leg along +Z
+gusset_corner_y = 5;  // right-angle corner y position
+gusset_corner_z = 5;  // right-angle corner z position
+
+// Left gusset x range
+gusset_left_x_min = -25;
+gusset_left_x_max = -20;
+
+// Right gusset x range
+gusset_right_x_min = 20;
+gusset_right_x_max = 25;
+
+$fn = 64;
+
+// Base plate
+module base_plate() { translate([base_x_min, base_y_min, base_z_min])
+    cube([base_x_max - base_x_min, base_y_max - base_y_min, base_z_max - base_z_min]); }
+
+// Vertical motor plate
+module motor_plate() { translate([plate_x_min, plate_y_min, plate_z_min])
+    cube([plate_x_max - plate_x_min, plate_y_max - plate_y_min, plate_z_max - plate_z_min]); }
+
+// M4 holes in base plate (vertical through-holes, along Z)
+module m4_hole1() { translate([m4_hole1_x, m4_hole1_y, -1])
+    cylinder(h = base_z_max - base_z_min + 2, d = m4_hole_dia); }
+
+module m4_hole2() { translate([m4_hole2_x, m4_hole2_y, -1])
+    cylinder(h = base_z_max - base_z_min + 2, d = m4_hole_dia); }
+
+// Boss hole in motor plate (along Y)
+module boss_hole() { translate([boss_hole_x, -1, boss_hole_z])
+    rotate([90, 0, 0])
+    cylinder(h = plate_y_max - plate_y_min + 2, d = boss_hole_dia); }
+
+// M3 screw holes in motor plate (along Y)
+module m3_hole1() { translate([boss_hole_x - m3_hole_offset, -1, boss_hole_z - m3_hole_offset])
+    rotate([90, 0, 0])
+    cylinder(h = plate_y_max - plate_y_min + 2, d = m3_hole_dia); }
+
+module m3_hole2() { translate([boss_hole_x + m3_hole_offset, -1, boss_hole_z - m3_hole_offset])
+    rotate([90, 0, 0])
+    cylinder(h = plate_y_max - plate_y_min + 2, d = m3_hole_dia); }
+
+module m3_hole3() { translate([boss_hole_x - m3_hole_offset, -1, boss_hole_z + m3_hole_offset])
+    rotate([90, 0, 0])
+    cylinder(h = plate_y_max - plate_y_min + 2, d = m3_hole_dia); }
+
+module m3_hole4() { translate([boss_hole_x + m3_hole_offset, -1, boss_hole_z + m3_hole_offset])
+    rotate([90, 0, 0])
+    cylinder(h = plate_y_max - plate_y_min + 2, d = m3_hole_dia); }
+
+// Left gusset: right triangle in YZ plane, extruded along X
+// Define triangle in XY plane, rotate to YZ, then extrude along X
+module left_gusset() {
+    translate([gusset_left_x_min, 0, 0])
+    rotate([0, 90, 0])  // Rotate XY plane to YZ plane
+    linear_extrude(height = gusset_left_x_max - gusset_left_x_min)
+    polygon(points = [[0, 0],
+                       [gusset_leg_y, 0],
+                       [0, gusset_leg_z]]);
+}
+
+// Right gusset: right triangle in YZ plane, extruded along X
+module right_gusset() {
+    translate([gusset_right_x_min, 0, 0])
+    rotate([0, 90, 0])  // Rotate XY plane to YZ plane
+    linear_extrude(height = gusset_right_x_max - gusset_right_x_min)
+    polygon(points = [[0, 0],
+                       [gusset_leg_y, 0],
+                       [0, gusset_leg_z]]);
+}
+
+// Assemble the bracket
+difference() {
+    union() {
+        base_plate();
+        motor_plate();
+        left_gusset();
+        right_gusset();
+    }
+    // Cut M4 holes from base plate
+    m4_hole1();
+    m4_hole2();
+}

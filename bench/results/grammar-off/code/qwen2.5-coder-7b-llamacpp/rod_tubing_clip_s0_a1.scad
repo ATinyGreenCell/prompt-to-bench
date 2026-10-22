@@ -1,0 +1,33 @@
+// Dimensions
+rod_diameter = 12.7;
+rod_wall = 3;
+tubing_diameter = 6;
+tubing_wall = 2;
+opening_width = 10;
+bridge_width = 6;
+bridge_height = 10;
+
+// Calculated dimensions
+rod_outer_diameter = rod_diameter + 2 * rod_wall;
+tubing_outer_diameter = tubing_diameter + 2 * tubing_wall;
+opening_height = 10;
+
+// Rod ring
+rod_ring = cylinder(r=rod_outer_diameter/2, h=rod_wall, center=true) -
+           cylinder(r=rod_diameter/2, h=rod_wall, center=true) -
+           translate([-opening_width/2, 0, 0]) * cube([opening_width, opening_height, rod_wall], center=true);
+
+// Tubing ring
+tubing_ring = translate([15, 0, 0]) * (cylinder(r=tubing_outer_diameter/2, h=tubing_wall, center=true) -
+                                     cylinder(r=tubing_diameter/2, h=tubing_wall, center=true) -
+                                     translate([0, -2.25, 0]) * cube([tubing_wall, 4.5, tubing_wall], center=true));
+
+// Bridge
+bridge = translate([8, 0, 0]) * cube([bridge_width, bridge_height, rod_wall], center=true);
+
+// Final model
+union() {
+    rod_ring;
+    tubing_ring;
+    bridge;
+}

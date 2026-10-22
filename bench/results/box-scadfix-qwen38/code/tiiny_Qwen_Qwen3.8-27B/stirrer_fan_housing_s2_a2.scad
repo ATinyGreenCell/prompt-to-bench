@@ -1,0 +1,64 @@
+// DIY magnetic stirrer housing for an 80 mm PC case fan.
+// Modelled in print orientation: the 2 mm top plate lies on the bed (z = 0..2)
+// and the four 2.5 mm walls rise to z = 40, leaving the box open at the top.
+
+$fn = 64;
+
+// ---- Dimensions (mm) ----
+top_plate_t   = 2;    // thickness of the top (stirring) plate
+wall_t        = 2.5;  // thickness of each side wall
+wall_h        = 38;   // wall height above the top plate (box open at z = 40)
+outer_x       = 90;   // outer size in X
+outer_y       = 90;   // outer size in Y
+
+// M4 screw holes through the top plate, on the fan's mounting square
+hole_d        = 4.5;  // hole diameter
+hole_pitch    = 71.5; // square pitch, centred on the plate
+
+// Power-cable notch in one wall
+notch_w       = 12;   // notch width
+notch_top     = 40;   // notch reaches the open edge (z = 40)
+notch_bot     = 32;   // notch bottom (8 mm down from the open edge)
+
+// ---- Derived geometry ----
+inner_x       = outer_x - 2 * wall_t;   // inner clear width in X
+inner_y       = outer_y - 2 * wall_t;   // inner clear width in Y
+
+// ---- Body: top plate + four walls (union) ----
+module body() { union() {
+    // Top plate, centred on the origin, resting on the bed
+    translate([-outer_x/2, -outer_y/2, 0])
+        cube([outer_x, outer_y, top_plate_t]);
+
+    // Four walls rising from the top plate to z = 40
+    // South wall (front, -Y side)
+    translate([-outer_x/2, -outer_y/2, top_plate_t])
+        cube([outer_x, wall_t, wall_h]);
+    // North wall (back, +Y side)
+    translate([-outer_x/2, outer_y/2 - wall_t, top_plate_t])
+        cube([outer_x, wall_t, wall_h]);
+    // West wall (left, -X side)
+    translate([-outer_x/2, -inner_y/2, top_plate_t])
+        cube([wall_t, inner_y, wall_h]);
+    // East wall (right, +X side)
+    translate([outer_x/2 - wall_t, -inner_y/2, top_plate_t])
+        cube([wall_t, inner_y, wall_h]);
+} }
+
+// ---- Cuts ----
+// Four M4 screw holes through the top plate (extend 1 mm past each face)
+module screw_holes() { for (dx = [-hole_pitch/2, hole_pitch/2],
+                   dy = [-hole_pitch/2, hole_pitch/2])
+    translate([dx, dy, -1])
+        cylinder(h = top_plate_t + 2, d = hole_d, $fn = $fn); }
+
+// Power-cable notch in the south wall (extend 1 mm past each face it cuts)
+module cable_notch() { translate([0, -outer_y/2 - 1, notch_bot])
+    cube([notch_w, wall_t + 2, notch_top - notch_bot + 1]); }
+
+// ---- Final part ----
+difference() {
+    body();
+    screw_holes();
+    cable_notch();
+}
