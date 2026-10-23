@@ -926,7 +926,7 @@ Details of the harness, the hosted reference (`claude:<model>`) and the language
 
 Cocioba SS (2026). *Prompt to Bench: language models as a no-CAD entry point to 3D printing for biology labs.* Zenodo. https://doi.org/10.5281/zenodo.23198097
 
-This DOI always resolves to the latest version; each release also has its own DOI (v0.1.0: [10.5281/zenodo.23198098](https://doi.org/10.5281/zenodo.23198098); v0.2.0: [10.5281/zenodo.23212435](https://doi.org/10.5281/zenodo.23212435); v0.3.0: [10.5281/zenodo.23487513](https://doi.org/10.5281/zenodo.23487513); v0.3.1: [10.5281/zenodo.23507821](https://doi.org/10.5281/zenodo.23507821)). Machine-readable metadata: [`CITATION.cff`](CITATION.cff).
+This DOI always resolves to the latest version; each release also has its own DOI (v0.1.0: [10.5281/zenodo.23198098](https://doi.org/10.5281/zenodo.23198098); v0.2.0: [10.5281/zenodo.23212435](https://doi.org/10.5281/zenodo.23212435); v0.3.0: [10.5281/zenodo.23487513](https://doi.org/10.5281/zenodo.23487513); v0.3.1: [10.5281/zenodo.23507821](https://doi.org/10.5281/zenodo.23507821); v0.4.0: [10.5281/zenodo.23584112](https://doi.org/10.5281/zenodo.23584112)). Machine-readable metadata: [`CITATION.cff`](CITATION.cff).
 
 ---
 
