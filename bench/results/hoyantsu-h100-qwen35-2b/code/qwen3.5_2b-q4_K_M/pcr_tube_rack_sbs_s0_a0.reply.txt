@@ -1,0 +1,68 @@
+```openscad
+// Design a rack for 96 PCR tubes (0.2 mL) with the standard microplate footprint.
+
+// Dimensions in millimeters
+block_length = 127.76; // X
+block_width   = 85.48;  // Y
+block_height  = 20.0;   // Z
+hole_diameter = 6.2;    // mm (radius = 3.1)
+rows          = 8;      // along Y
+cols          = 12;     // along X
+center_spacing = 9.0;   // center-to-center spacing in mm
+
+// Hole position relative to the block origin (X, Y)
+hole_x_offset = 14.38; // Distance from left edge
+hole_y_offset = 11.24; // Distance from back edge
+
+// Chamfer parameters for orientation mark on vertical edge at A1 corner
+chamfer_legs   = 5.0;    // mm
+chamfer_angle  = 45.0;   // degrees (cutting off the top face)
+
+// Create the main block body
+block_body = cube([block_length, block_width, block_height]);
+
+// Define hole grid using a for loop
+for (i = 1 to rows) {
+    for (j = 1 to cols) {
+        // Calculate center coordinates of each hole based on spacing and offset
+        h_x = i * center_spacing + hole_x_offset;
+        h_y = j * center_spacing + hole_y_offset;
+
+        // Create a cylindrical hole. 
+        // We use translate_extrude with the radius to create a hollow cylinder.
+        // The 'radius' argument in translate_extrude creates a hole of that diameter.
+        block_body = translate_extrude([h_x, h_y, -hole_diameter/2], [0, 0, hole_diameter/2], 
+ [block_length, block_width, block_height], 
+ radius = hole_diameter / 2);
+    }
+}
+
+// Create the chamfer on the vertical edge at the A1 corner (top-left-most visible face)
+// The A1 corner is defined by the intersection of the left face and the top face.
+// We mirror the block to create a right-side view, cut the chamfer there, then union back.
+chamfered_right = mirror(block_body);
+
+// Cut the 45-degree chamfer (legs = 5mm) off the vertical edge at A1 corner.
+// The 'angle' parameter in rotate_extrude determines the angle of the cut relative to the normal.
+// For a 45 degree chamfer on a vertical face, we rotate around X and Y axes.
+chamfered_right = rotate_extrude([0, 0, -block_height], [0, 0, block_height], 
+ angle = 90 * pi / 180 + (45 * pi / 180), // 45 deg from vertical
+ radius = chamfer_legs);
+
+// Combine the original block and the chamfered right side into a single solid.
+final_rack = union(block_body, chamfered_right);
+
+// Render the final part with a clean appearance suitable for printing
+final_rack = hull(final_rack); // Hull removes internal voids if any (though here it's just surface smoothing)
+final_rack = rotate_extrude([0, 0, -block_height], [0, 0, block_height], 
+                           angle = 90 * pi / 180 + (45 * pi / 180), // Keep the chamfer orientation visible
+                           radius = chamfer_legs);
+
+// Final cleanup to ensure clean edges and proper orientation for printing
+final_rack = rotate_extrude([0, 0, -block_height], [0, 0, block_height], 
+                           angle = 90 * pi / 180 + (45 * pi / 180), // Keep the chamfer orientation visible
+                           radius = chamfer_legs);
+
+// Final cleanup to ensure clean edges and proper orientation for printing
+final_rack = rotate_extrude([0, 0, -block_height], [0, 0, block_height], 
+                           angle = 90 * pi / 180 + (45 * pi / 180), // Keep the chamfer orientation visible

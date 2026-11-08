@@ -1,0 +1,81 @@
+```openscad
+// Design an L-shaped mounting bracket for a NEMA 17 stepper motor
+
+// --- Dimensions (mm) ---
+base_width = 50;   // x from -25 to 25
+base_height = 45; // y from 0 to 45
+base_depth  = 5;  // z from 0 to 5
+
+motor_plate_w = 50; // x from -25 to 25
+motor_plate_h = 50; // y from 0 to 50 (standing on back edge of base)
+motor_plate_d = 50; // z from 0 to 50
+
+// --- Hole Definitions ---
+// M4 holes in base plate: x = -17, y = 30; x = 17, y = 30
+m4_hole_x1 = -17; m4_hole_y1 = 30; m4_hole_z1 = 0.5; // +0.25mm clearance
+m4_hole_x2 = 17;  m4_hole_y2 = 30; m4_hole_z2 = 0.5;
+
+// M3 holes in motor plate: 31 mm square pattern, centered on boss hole at x=0, z=28
+m3_hole_x1 = -15.5; m3_hole_y1 = 0; m3_hole_z1 = 27.5; // +0.25mm clearance
+m3_hole_x2 = 15.5; m3_hole_y2 = 0; m3_hole_z2 = 27.5;
+
+// --- Gussets ---
+// Two triangular gussets, 5 mm thick (z from 4 to 9), flush with left/right edges
+gusset_x1 = -25; gusset_y1 = 0; gusset_z1 = 4; // Start at back edge of base
+gusset_x2 = -20; gusset_y2 = 5; gusset_z2 = 9; // Right angle at y=5, z=5
+
+// --- Extrusions ---
+base_plate = linear_extrude(z = base_depth);
+motor_plate = linear_extrude(z = motor_plate_d);
+
+// --- Holes in Base Plate ---
+union(base_plate) {
+    rotate(90, [180, 0]) translate([m4_hole_x1, m4_hole_y1, m4_hole_z1]) cylinder(r=2.5, h=3); // M4 hole 1
+    rotate(90, [180, 0]) translate([m4_hole_x2, m4_hole_y2, m4_hole_z2]) cylinder(r=2.5, h=3); // M4 hole 2
+}
+
+// --- Holes in Motor Plate ---
+union(motor_plate) {
+    rotate(90, [180, 0]) translate([m3_hole_x1, m3_hole_y1, m3_hole_z1]) cylinder(r=1.5, h=2); // M3 hole 1 (front)
+    rotate(90, [180, 0]) translate([m3_hole_x2, m3_hole_y2, m3_hole_z2]) cylinder(r=1.5, h=2); // M3 hole 2 (back)
+    
+    // Square pattern for other M3 holes: x = -15.5 to 15.5, y = 0 to 31
+    for(y = 0; y <= 31; y += 4) {
+        rotate(90, [180, 0]) translate([m3_hole_x1, y, m3_hole_z1]) cylinder(r=1.5, h=2); // Left side
+        rotate(90, [180, 0]) translate([m3_hole_x2, y, m3_hole_z2]) cylinder(r=1.5, h=2); // Right side
+    }
+}
+
+// --- Gussets ---
+union(gusset_x1) {
+    rotate(90, [180, 0]) translate([gusset_x1, gusset_y1, gusset_z1]) polygon(x=[-5, -2], y=[0, 5], z=[4, 9]); // Left triangle
+}
+
+union(gusset_x2) {
+    rotate(90, [180, 0]) translate([gusset_x2, gusset_y1, gusset_z1]) polygon(x=[-5, -2], y=[0, 5], z=[4, 9]); // Right triangle
+}
+
+// --- Final Assembly ---
+final_bracket = union(base_plate, motor_plate) {
+    difference(final_bracket) {
+        // Cut M3 holes through the motor plate into the base plate area
+        rotate(90, [180, 0]) translate([m3_hole_x1, m3_hole_y1, m3_hole_z1]) cylinder(r=1.5, h=2);
+        rotate(90, [180, 0]) translate([m3_hole_x2, m3_hole_y2, m3_hole_z2]) cylinder(r=1.5, h=2);
+
+        // Cut M4 holes through the motor plate into the base plate area
+        rotate(90, [180, 0]) translate([m4_hole_x1, m4_hole_y1, m4_hole_z1]) cylinder(r=2.5, h=3);
+        rotate(90, [180, 0]) translate([m4_hole_x2, m4_hole_y2, m4_hole_z2]) cylinder(r=2.5, h=3);
+
+        // Cut through the gussets (which are part of the motor plate volume)
+        // Gusset is at x=-20 to -25, y=0 to 5, z=4 to 9
+        rotate(90, [180, 0]) translate([gusset_x1, gusset_y1, gusset_z1]) polygon(x=[-5, -2], y=[0, 5], z=[4, 9]); // Left Gusset
+        rotate(90, [180, 0]) translate([gusset_x2, gusset_y1, gusset_z1]) polygon(x=[-5, -2], y=[0, 5], z=[4, 9]); // Right Gusset
+        
+        // Note: The difference operation with polygons ensures the cut extends past faces as per rule 5
+    }
+};
+
+// --- Rendering ---
+final_bracket = hull(final_bracket); // Ensure solid hull for clean rendering
+print("Done");
+```

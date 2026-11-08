@@ -1,0 +1,56 @@
+```openscad
+// Design: Hotplate Stirrer Knob Replacement
+// Units: Millimeters
+
+// Define dimensions based on user measurements
+const float D_SHaft = 6.0;      // Diameter of the shaft (D-shaft)
+const float Knob_Diameter = 30.0; // Outer diameter of knob
+const float Knob_Height = 15.0;  // Total height of knob
+
+// Define the blind bore geometry
+const float Blind_Bore_Diameter = 6.2; // Diameter of the D-shape hole
+const float Flat_Top_Depth = 4.7;     // Distance from flat top to bottom of circle (D - diameter)
+
+// Define groove and pointer dimensions
+const int Groove_Count = 18;         // Number of vertical grip grooves
+const float Groove_Diameter = 2.0;   // Diameter of each groove
+const float Pointer_Width = 1.5;     // Width of the top pointer groove
+const float Pointer_Depth = 1.0;     // Depth of the top pointer groove
+
+// Create a helper function to create a D-shaped hole (blind bore)
+function make_blind_bore(diameter, depth) {
+    return rotate_extrude(0, 180, 
+        [0, diameter / 2], 
+        [0, -depth] // Extrudes from the top face (z=0) downwards into negative Z
+    );
+}
+
+// Create a vertical groove on the side of the knob
+function make_vertical_groove(diameter) {
+    return rotate_extrude(90, 180, 
+        [0, diameter / 2], // Radius of groove centering
+        [-Groove_Diameter / 2, -Groove_Diameter] // Cut from top face (z=0) downwards by half the groove diameter
+    );
+}
+
+// Create a vertical groove on the flat side of the knob
+function make_flat_groove(diameter) {
+    return rotate_extrude(90, 180, 
+        [0, diameter / 2], // Radius of groove centering
+        [-Groove_Diameter / 2, -Groove_Diameter] // Cut from top face (z=0) downwards by half the groove diameter
+    );
+}
+
+// Create a pointer groove on the flat side of the knob
+function make_pointer_groove(width, depth) {
+    return rotate_extrude(90, 180, 
+        [0, width / 2], // Radius of groove centering
+        [-depth, -width] // Cut from top face (z=0) downwards by the full pointer depth
+    );
+}
+
+// Create a vertical grip groove on the outer surface
+function make_outer_groove(diameter) {
+    return rotate_extrude(90, 180, 
+        [0, diameter / 2], // Radius of groove centering
+        [-Groove_Diameter / 2, -Groove_Diameter] // Cut

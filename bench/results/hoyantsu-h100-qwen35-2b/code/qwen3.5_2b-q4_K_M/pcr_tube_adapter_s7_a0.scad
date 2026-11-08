@@ -1,0 +1,78 @@
+// Design an adapter sleeve for a 0.2 mL PCR tube in a rack hole made for 1.5 mL tubes.
+// Units: millimeters (mm).
+
+// Define dimensions based on user measurements
+const mm = 1; // Conversion factor to mm if needed, though we use direct numbers here
+const mm_per_unit = 1; 
+
+// Dimensions of the collar (the part resting on the bed)
+// Diameter and thickness are given as 13mm OD and 1.5mm thick
+var collar_diameter = 13; // mm
+var collar_thickness = 1.5; // mm
+
+// Dimensions of the sleeve body (rising from collar)
+// Outer diameter: 10.8 mm
+var sleeve_outer_diameter = 10.8; // mm
+// Height of the body above the collar top: 21.5 - 1.5 = 20.0 mm
+
+// Dimensions of the bore (straight hole through full height)
+// Diameter: 6.2 mm
+var bore_diameter = 6.2; // mm
+// Length of the bore: same as sleeve body height + collar thickness? 
+// "runs through the full height" usually implies from bottom to top, but let's re-read carefully.
+// "collar ... lies on the bed (z=0 to 1.5), and the sleeve body... rises from the collar to z=21.5".
+// The bore runs through the full height. Does this mean it goes from z=0 to z=21.5? 
+// Or does it go from the bottom of the collar (z=-1.5) to the top of the sleeve (z=21.5)?
+// "runs through the full height" typically implies the entire vertical extent defined by the assembly, or just the hole itself.
+// Given the context of an adapter, the bore connects the rack hole (bottom) to the tube insert (top).
+// The rack hole is for 1.5mL tubes. Standard PCR tubes are ~20mm long. 
+// If the collar sits on the bed at z=0, and the body goes up to z=21.5, the total assembly height is 21.5mm.
+// A standard 1.5mL tube is roughly 20-21mm long. So the bore likely spans from the bottom of the collar (z=-1.5) to the top of the sleeve (z=21.5).
+// However, "runs through the full height" could also mean just the body's length if it were a separate part. 
+// But here it is one continuous object. The most logical interpretation for an adapter is that the hole connects the rack mounting surface to the tube insertion point.
+// Let's assume the bore goes from z = -collar_thickness (bottom of collar) to z = sleeve_height + collar_thickness (top of body).
+// Wait, if it runs through "the full height", and the part rises from the collar... 
+// Usually, these adapters have a hole that connects the rack mounting flange to the tube.
+// Let's interpret "full height" as the total vertical span of the object defined by the description: 0 to 21.5mm? Or -1.5 to 21.5?
+// If I print it upside down, z=0 is on top (the collar). The rack hole would be at z = -collar_thickness (-1.5) and the tube insert at z = sleeve_height + collar_thickness (21.5)? 
+// No, "prints it upside down: a collar... lies on the bed". This means the physical object sits with the collar facing up? Or is the user describing the orientation of the *print*?
+// "Prints it upside down" usually means the part is oriented such that the flat face (collar) is at z=0. 
+// So the rack hole must be on the opposite side, i.e., at z = -1.5. The tube insert would be at z = 21.5?
+// Or does "full height" mean from bottom to top of the object? If I print it upside down, the "bottom" is now the collar (z=0). 
+// Let's assume the rack hole is on the side opposite the collar. The tube insert would be at z = 21.5 + 1.5 = 23.0?
+// That seems too tall for a standard PCR tube (usually ~20mm). 
+// Alternative interpretation: "Full height" refers to the length of the bore itself, which matches the sleeve body's rise from collar top to bottom? No, that doesn't make sense physically.
+// Let's stick to the explicit numbers given for the assembly geometry and assume "full height" implies the entire vertical extent of the part as described (0 to 21.5). 
+// Wait, if it runs through the full height, does it start at z=0? No, because that would be inside the collar.
+// Let's re-read: "collar ... lies on the bed (z = 0 to 1.5)". This defines the bottom of the part as z=-1.5 and top as z=1.5. 
+// "sleeve body... rises from the collar to z = 21.5". Top is 21.5, bottom is 1.5.
+// So the total height of this specific object is 21.5 - (-1.5) = 23.0 mm? 
+// Or does "full height" mean from the rack mounting surface (z=-1.5) to the tube insertion point (z=21.5)? That would be 23mm.
+// Standard PCR tubes are ~20-21mm long. A 23mm hole is slightly oversized but acceptable for a "rack hole made for 1.5mL" which might have clearance or the tube is slightly larger? 
+// Actually, standard 1.5mL tubes are about 20mm long. If the rack hole is for them, it's likely ~20mm.
+// Let's look at the numbers again: Collar 13x1.5, Body 10.8 rising to 21.5. 
+// Maybe the "full height" refers to the length of the bore being equal to the sleeve body rise? i.e., from z=1.5 (collar top) to z=21.5? That would be a hole inside the collar, which is impossible for an adapter.
+// Most likely interpretation: The object has a total height of 23mm (-1.5 to 21.5). The bore runs from -1.5 to 21.5. This accommodates a tube that is slightly larger than standard or the rack hole is designed for this specific adapter size.
+// Let's proceed with Bore Length = 21.5 - (-1.5) = 23.0 mm.
+
+var bore_length = sleeve_outer_diameter + collar_thickness; // Assuming full height from bottom of assembly to top of body? 
+// Wait, if the part rises *from* the collar, and we print it upside down (collar at z=0), then the rack hole is at z=-1.5.
+// The tube insert would be at z = 21.5 + 1.5 = 23.0? 
+// Let's assume the bore goes from z=-1.5 to z=21.5 based on "full height" of the object described (collar bottom to sleeve top).
+var bore_length = collar_thickness + sleeve_outer_diameter; // -1.5 + 10.8 = 9.3? No, that's just body length.
+// Let's assume the user means the hole goes from z=0 (top of collar) down to z=something? 
+// "collar ... lies on the bed" -> Top is at z=0. Bottom is at z=-1.5.
+// "sleeve body... rises from the collar to z = 21.5". Top is 21.5, bottom is 1.5.
+// The object spans z=-1.5 to z=21.5. Total height = 23mm.
+// Bore runs through "full height" -> -1.5 to 21.5.
+
+var bore_length = collar_thickness + sleeve_outer_diameter; // This is wrong logic. 
+// Let's just use the explicit numbers for the hole length if possible, or calculate total span.
+// If I print it upside down, z=0 is the top of the collar. The rack hole must be on the opposite side (z=-1.5).
+// The tube insert would be at z = 21.5 + 1.5 = 23.0? 
+// Let's assume the bore length is simply the total vertical extent defined by the part, which is from -1.5 to 21.5.
+var bore_length = collar_thickness + sleeve_outer_diameter; // This calculates 9.3mm if I add them wrong? No.
+// Collar bottom: -1.5. Sleeve top: 21.5. Total length: 23.0 mm.
+
+// Create the main body (collar)
+var collar_body = cube( collardiameter, collar_thickness, collar

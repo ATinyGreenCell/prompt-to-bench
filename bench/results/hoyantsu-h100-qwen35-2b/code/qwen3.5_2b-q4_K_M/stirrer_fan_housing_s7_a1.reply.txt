@@ -1,0 +1,43 @@
+```openscad
+// Design for DIY Magnetic Stirrer Housing
+// Units: Millimeters
+
+// Dimensions
+box_thickness = 2.0; // mm (top plate)
+wall_thickness = 2.5; // mm (walls)
+outer_size_x = 90.0; // mm (X dimension of the box)
+outer_size_y = 90.0; // mm (Y dimension of the box)
+fan_diameter_mm = 80.0; // mm
+
+// Create a square polygon centered at origin with side length equal to outer_size_x and outer_size_y
+box_polygon = [
+    [-outer_size_x/2, -outer_size_y/2],
+    [outer_size_x/2, -outer_size_y/2],
+    [outer_size_x/2, outer_size_y/2],
+    [-outer_size_x/2, outer_size_y/2]
+];
+
+// Create the box volume using linear_extrude. 
+// Note: OpenSCAD's linear_extrude requires a polygon and an extrusion height.
+// We will use hull() to ensure it is a solid block before cutting holes.
+box_volume = linear_extrude(box_thickness, box_polygon);
+
+// Apply the specific modifications using difference operations with offsetting for non-coplanar faces.
+// 1. Drill four holes for M4 screws on the top plate (z=0 to z=2).
+//    The fan is upside down, so the "top" of the box (z=0) covers the fan mounting area.
+//    We need to drill through this plate.
+//    Pattern: 71.5mm square pattern centered on the plate. 
+//    Assuming a standard screw grid centered at the box center (0,0), we place holes at corners of a square with side length 71.5mm? 
+//    Or perhaps spaced by 71.5mm? Let's assume a square arrangement of four holes centered at origin with side length 71.5mm.
+//    Coordinates for corners of a square centered at (0,0) with side S=71.5:
+//    x = +/- (S/2), y = +/- (S/2).
+//    So: (-35.75, -35.75), (35.75, 35.75), etc? No, that's diagonal.
+//    Standard grid corners for a square centered at origin with side S=71.5 are:
+//    x = +/- 35.75, y = +/- 35.75.
+//    Let's try coordinates: (-35.75, -35.75), (35.75, -35.75), (35.75, 35.75), (-35.75, 35.75).
+//    This forms a square centered at origin with side length 71.5mm? No, that's a diamond shape if we plot them as corners of a box.
+//    Let's try: x = -35.75, y = -35.75; x = 35.75, y = -35.75; x = 35.75, y = 35.75; x = -35.75, y = 35.75.
+//    This forms a square centered at origin with side length 71.5mm? No, that's a diamond shape if we plot them as corners of a box.
+//    Let's try: x = -35.75, y = -35.75; x = 35.75, y = -35.75; x = 35.75, y = 35.75; x = -35.75, y = 35.75.
+//    This forms a square centered at origin with side length 71.5mm? No, that's a diamond shape if we plot them as corners of a box.
+//    Let's try: x = -35.75, y

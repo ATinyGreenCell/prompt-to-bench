@@ -1,0 +1,25 @@
+{
+  "conversations": 128,
+  "first_attempt_passes": 0,
+  "final_passes": 0,
+  "rendered_conversations": 0,
+  "mean_best_score": 0.0,
+  "median_seconds": 25.75,
+  "total_seconds": 3120.4,
+  "tasks": 16,
+  "samples": 8,
+  "attempts": 384,
+  "rendered_attempts": 0,
+  "attempts_with_parser_errors": 329,
+  "attempts_with_empty_objects": 55,
+  "feedback_attempts": 256,
+  "changed_after_feedback": 177,
+  "score_improved_after_feedback": 0,
+  "conversations_passed_after_feedback": 0,
+  "stop_reasons": {
+    "code_block_complete": 6,
+    "length": 98,
+    "repetition": 140,
+    "stop": 140
+  }
+}

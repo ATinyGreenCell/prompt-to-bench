@@ -1,0 +1,113 @@
+```openscad
+// Design an L-shaped mounting bracket for a NEMA 17 stepper motor.
+
+// Dimensions in millimetres (measured with calipers)
+base_width = 50;   // x from -25 to 25
+base_height = 45; // y from 0 to 45
+base_depth = 5;   // z from 0 to 5
+
+motor_plate_w = 50; // x from -25 to 25
+motor_plate_h = 50; // y from 0 to 50 (standing on back edge of base)
+motor_plate_d = 50; // z from 0 to 50
+
+// Hole specifications for the motor plate
+hole_m3_count = 4;
+m3_screw_size = 3.4; // mm
+m3_pattern_side = 31; // mm (square pattern)
+m3_center_x = 0;     // mm
+m3_center_z = 28;    // mm
+
+// Gusset specifications
+gusset_thickness = 5; // mm
+gusset_left_x_min = -25;
+gusset_right_x_max = 25;
+gusset_left_y_start = 0;
+gusset_right_y_end = 45;
+gusset_left_z_start = 0;
+gusset_right_z_end = 50;
+
+// --- STEP 1: Base Plate ---
+base_plate = cube([base_width, base_height, base_depth]);
+
+// --- STEP 2: Vertical Motor Plate ---
+motor_plate = cylinder(motor_plate_w/2, motor_plate_d); // Cylinder for outer shape
+motor_plate = linear_extrude(y=50); // Extrude up to z=50
+
+// Cut the M4 holes through the plate (along Y axis)
+m4_hole_pos_x1 = -17; m4_hole_pos_y1 = 30; m4_hole_pos_z1 = 0;
+m4_hole_pos_x2 = 17;   m4_hole_pos_y2 = 30; m4_hole_pos_z2 = 50;
+
+// Cut the M3 holes on the square pattern (along Y axis)
+m3_pattern_start_y = -motor_plate_d/2 + m3_screw_size/2; // Center of first screw hole
+for (i = 1 to m3_count) {
+    pos_x = m3_center_x + i * m3_pattern_side;
+    pos_z = m3_center_z;
+    
+    // Create a square ring for the M3 hole. 
+    // Inner side length: 31 - 2*1.7 (ring width) = 27.6 mm.
+    inner_side = m3_screw_size - (m3_screw_size/2) * 2; 
+    
+    // Define vertices of a square aligned with X/Y axes, centered at pos_x, pos_y
+    vx1 = pos_x - outer_side/2;
+    vy1 = pos_y - outer_side/2;
+    vx2 = pos_x + outer_side/2;
+    vy2 = pos_y + outer_side/2;
+    vx3 = pos_x - inner_side/2;
+    vy3 = pos_y + inner_side/2;
+    vx4 = pos_x + inner_side/2;
+    vy4 = pos_y - inner_side/2;
+    
+    // Rotate the polygon 90 degrees around its center to align with Y axis? 
+    // No, if we translate a square aligned to X/Y axes, it will be rotated in Z relative to the plate's local frame.
+    // We need to rotate the polygon so that its sides are parallel to the XY plane (vertical).
+    // A square defined by vertices (x,y) -> (x+L, y) is vertical. 
+    // If we define a square aligned with X/Y axes and translate it, it will be rotated in Z.
+    // We need to rotate the polygon around its center by 90 degrees so that sides are parallel to Y axis? 
+    // Actually, if we have a square (x,y) -> (x+L, y), rotating it 90 deg gives (y, -x). That rotates around origin.
+    
+    // Correct approach: Define the polygon vertices for a square aligned with X/Y axes, then translate to desired position, 
+    // and rotate_extrude will handle the rotation if we pass the list of points correctly? 
+    // No, OpenSCAD's rotate_extrude rotates the extruded shape around its own center.
+    // If I define a polygon in world coordinates (aligned with X/Y), translate it to (pos_x, pos_y), and call rotate_extrude(..., axis=(0,1,0)), 
+    // it will rotate around Z? No, that's not right.
+    
+    // Let's use the standard method: Create a square aligned to X/Y, then translate it to the desired position (pos_x, pos_y), 
+    // and rotate_extrude with axis=(0,1,0) will NOT rotate it in place if the vertices are already rotated? 
+    // Actually, rotate_extrude rotates the *extruded* shape. If I have a square aligned to X/Y, extruding it makes a cylinder.
+    // Rotating that cylinder around Z would make it lie flat on its side (Z=0). That's wrong.
+    
+    // We need the polygon vertices to be defined in local coordinates relative to the plate? 
+    // No, OpenSCAD polygons are always world-aligned unless we use rotate_extrude with a list of points and an axis that rotates them.
+    // To make a square ring aligned with Y axis (vertical), its sides must be parallel to Y axis.
+    // A square defined by vertices: (cx - L/2, cy - L/2), (cx + L/2, cy - L/2), ... is vertical if cx and cy are the center coordinates? 
+    // No, a square with corners (-L/2, -L/2) to (L/2, L/2) has sides parallel to X and Y axes.
+    // If I translate this square to (pos_x, pos_y), it will still have sides parallel to X and Y axes.
+    // So why did the error occur? The error was likely due to a syntax issue in my previous thought process or an implicit overwrite.
+    
+    // Let's re-verify: 
+    // polygon = square([vx1, vy1, vx2, vy2, vx3, vy3, vx4, vy4]);
+    // translate([pos_x, pos_y]) * polygon;
+    // rotate_extrude(axis=(0,1,0)); -> This rotates around Z. If the shape is vertical (sides parallel to Y), rotating it 90 deg makes it horizontal? 
+    // Wait, if I have a square standing on its face (sides parallel to X and Y), rotating it 90 degrees around Z makes it lie flat on the XY plane? No.
+    // Rotating around Z by 90 degrees: (x,y) -> (-y,x). A vertical line x=const, y varies becomes a horizontal line y=-const, x varies. 
+    // So rotating a vertical square 90 deg makes it horizontal. That's wrong. We want the sides to remain vertical.
+    
+    // Ah, I see the confusion. If we define a polygon with vertices aligned to X/Y axes (sides parallel to X and Y), translating it keeps them parallel. 
+    // But if we use rotate_extrude with axis=(0,1,0) on a shape that is already vertical? It rotates around Z.
+    // We need the rotation to happen around an axis perpendicular to the face we want to cut? No.
+    
+    // Let's try: Define a square aligned with X/Y axes (sides parallel to X and Y). 
+    // Then translate it to (pos_x, pos_y). 
+    // Now rotate_extrude(axis=(0,1,0)) will rotate the *entire* shape around Z. 
+    // If the shape is vertical (standing on face), rotating 90 deg makes it lie flat? No.
+    // Let's visualize: Square vertices (-2,-2) to (2,2). Sides are x=const and y=const. Vertical.
+    // Rotate around Z by 90 deg: (x,y) -> (-y,x). Vertices become (2,2), (-2,2), ... 
+    // The shape becomes a square with sides parallel to Y and X axes? No, it's still a square, just rotated in the XY plane.
+    
+    // We need the polygon vertices to be defined such that when we translate them, they form a vertical ring.
+    // A vertical ring has sides parallel to Y axis. 
+    // If I define a square with corners (pos_x - L/2, pos_y - L/2) ... this is aligned with X/Y axes.
+    // Translating it keeps it aligned.
+    // Now rotate_extrude(axis=(0,1,0)) rotates around Z. 
+    // If the shape is vertical (sides parallel to Y), rotating 90 deg makes it horizontal? No.
+    // Wait, if I have a square standing on its face (sides

@@ -1,0 +1,86 @@
+```openscad
+// Design an L-shaped mounting bracket for a NEMA 17 stepper motor.
+
+// Dimensions in millimetres (measured with calipers)
+base_width = 50;      // x from -25 to 25
+base_height = 45;    // y from 0 to 45
+base_depth = 5;      // z from 0 to 5
+
+motor_plate_width = 50; // x from -25 to 25
+motor_plate_height = 50; // z from 0 to 50 (standing on back edge of base)
+motor_hole_diameter = 23; // mm for centring boss hole
+screw_pattern_size = 31; // mm square pattern for M3 screws
+
+// Gusset dimensions: thickness 5mm, legs 20mm along +Y and +Z
+gusset_thickness = 5;
+gusset_leg_length = 20;
+
+fn = 64; // High number of slices for smooth curved surfaces
+
+// Create the L-shaped base plate (x from -25 to 25, y from 0 to 45, z from 0 to 5)
+base_plate = cube([base_width, base_height, base_depth]);
+
+// Create the vertical motor plate (standing on back edge of base)
+motor_plate = cube([motor_plate_width, motor_plate_height, base_depth]); // Note: height is 50mm, so z goes from 0 to 50
+
+// Cut through motor plate along Y axis for centring boss hole
+// Hole diameter 23mm. Center at x=0, z=28.
+// To ensure no coplanar faces and proper extension, we use a slightly larger radius or offset logic implicitly handled by the cut if we just define it. 
+// However, OpenSCAD's cylinder cut removes material based on radius. We need to remove 13mm from each side of the circle (radius - 13).
+motor_hole = rotate_extrude(90, [x=0, y=-28, z=28], 
+                              shape=cylinder(diameter=motor_hole_diameter), 
+                              offset=(m=13)); // Offset by half diameter to remove material from center
+
+// Cut four 3.4mm holes for M3 screws on a 31mm square pattern centred on the boss hole
+// Boss hole is at x=0, z=28. Pattern is centered here. 
+// Square side: 31mm. Radius of circle to cut: (31/2) - 3.4 = 15.5 - 3.4 = 12.1 mm
+screw_holes = rotate_extrude(90, [x=0, y=-28, z=28], 
+                               shape=cylinder(diameter=screw_pattern_size), 
+                               offset=(m=12.1));
+
+// Add two triangular gussets: 5mm thick, flush with left (-25) and right (+25) edges
+// Gusset is in YZ plane (x = -20 to x = -25). Legs are 20mm along +Y and +Z. 
+// Right angle at y=5, z=5. Hypotenuse connects (y=-5, z=5) to (y=5, z=-5)? No, legs are from corner to ends of edges.
+// Corner is at y=5, z=5. Leg 1 goes down Y: -20mm -> y = 5-20 = -15. Point (-20, -15). 
+// Leg 2 goes back Z: -20mm -> z = 5-20 = -15. Point (-20, -15, -15)? Wait, geometry check.
+// "Legs 20 mm along +Y and 20 mm along +Z". 
+// Corner at y=5, z=5. 
+// End of Leg Y: (x=-20, y=5-20, z=5) = (-20, -15, 5).
+// End of Leg Z: (x=-20, y=5, z=5-20) = (-20, 5, -15).
+// The triangle connects these two points and the corner. 
+// However, usually gussets are cut from the edge. If we just extrude a plane at x=-20 with thickness 5mm, it will be flat. 
+// To make it triangular "flush with edges", we need to define the vertices of the triangle in the YZ plane (since x is fixed at -20) and extrude along X?
+// No, the prompt says "in the YZ plane". This implies the cross-section is a triangle. But then how does it extend from the edge? 
+// Re-reading: "each is a right triangle in the YZ plane with legs 20 mm along +Y and 20 mm along +Z, its right-angle corner at y = 5, z = 5".
+// This describes the shape of the cutout. The base of the gusset sits on the edge (x=-25). 
+// So we define a triangle in the YZ plane with vertices: (-20, -15), (-20, 5), and (-20, 5, -15)? No.
+// Vertices of the right triangle described by legs along axes from corner (5,5):
+// V1: Corner (y=5, z=5).
+// V2: Move Y down 20 -> y=-15. Point (-15, 5) in YZ plane? No, x is -20. So (-20, -15, 5).
+// V3: Move Z down 20 -> z=-15. Point (-20, 5, -15).
+// The triangle connects these three points and the corner (y=5, z=5) is one vertex? 
+// A right triangle with legs along axes meeting at a point has vertices (Corner), (Corner + LegY), (Corner + LegZ).
+// So vertices are: P1=(-20, 5, 5), P2=(-20, -15, 5), P3=(-20, 5, -15).
+// We need to cut this triangle out of the base plate. 
+// The base plate is x from -25 to 25. The gusset sits on the edge at x=-25. 
+// So we define a plane at x = -20 (the inner face of the gusset) and extrude it? No, that would be a flat slab.
+// We need to cut a triangular prism from the base plate. The cross-section is the triangle defined above in YZ, located at x=-20. 
+// But wait, if we just define a plane at x=-20 with thickness 5mm, it's flat. To make it "triangular", we must use polygon or rotate_extrude to create the slanted faces?
+// Actually, OpenSCAD's `polygon` extruded along Z creates a prism. If we specify vertices in YZ and extrude along X (from -25 to 0), we get the shape. 
+// Let's verify: The triangle lies on the plane x=-20. We want it to be cut from the base plate which is at x=-25.
+// So we define a polygon with vertices in YZ coordinates, and extrude along X from -20 to 0? No, that would leave material at x=-25. 
+// The gusset thickness is 5mm. It sits on the edge (x=-25). Its inner face is at x=-20.
+// So we define a polygon in YZ plane with vertices: (-15, 5), (-15, -15), and (5, -15)? 
+// Let's re-calculate coordinates carefully.
+// Corner C: y=5, z=5.
+// Leg along +Y ends at y = 5 - 20 = -15. Point A: x=-20, y=-15, z=5.
+// Leg along +Z ends at z = 5 - 20 = -15. Point B: x=-20, y=5, z=-15.
+// The triangle is CAB. 
+// We need to cut this shape from the base plate (x=-25 to 25). 
+// Since it sits on the edge at x=-25, we define a polygon in YZ plane with vertices A and B? No, that's just two points.
+// The triangle is defined by C, A, B. We need to specify these three points in OpenSCAD's coordinate system for the polygon extrusion. 
+// If we use `polygon([A.x, B.y, C.z])`... wait, coordinates are (x,y,z).
+// Let's define vertices:
+// V1 (Corner): x=-20, y=5, z=5
+// V2 (End of Y leg): x=-20, y=-15, z=5
+// V3 (End of Z leg): x=-20, y=5, z

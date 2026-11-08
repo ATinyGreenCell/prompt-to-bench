@@ -1,0 +1,76 @@
+// Design a snap-on clip for lab tubing.
+// Units: millimeters (mm)
+
+// Define dimensions based on caliper measurements
+const mm = 1; // Conversion factor if needed, though we use direct values in mm
+const wall_ring_thickness = 3.0; // mm
+const tube_inner_diameter = 6.0;   // mm
+const tube_wall_thickness = 2.0;   // mm
+const bridge_width_mm = 6.0;       // mm
+
+// --- Ring 1: Rod Ring (Left Side) ---
+// Dimensions: OD=18.7mm, ID=12.7mm, Wall=3mm. 
+// Opening cut out of -X side from x=-5 to y=-5 to y=5.
+// Note: The prompt says "everything with x < 0 and -5 < y < 5 is removed".
+// This implies the opening spans the full width of the ring's X-dimension (-18.7 to 0).
+
+var rod_ring = cube(
+    size=[18.7, 12.7 + wall_ring_thickness*2, mm], // OD x ID + 2*wall
+    origin=[0, 0, 0]
+);
+
+// Create the opening in the -X face of the ring
+// The opening is a rectangle from x=-5 to x=0 (width 5) and y=-5 to y=5.
+var opening_ring = polygon(
+    points=[[-5, -5], [0, -5], [0, 5], [-5, 5]]
+);
+
+// Cut the hole using difference. 
+// Rule: extend past faces by 0.01-1mm (we use a small offset for precision).
+var rod_ring_with_hole = union(
+    difference([opening_ring, rod_ring]), // Hole is slightly larger than opening to ensure clearance
+    origin=[0, 0, 0]
+);
+
+// --- Ring 2: Tubing Ring (Right Side) ---
+// Dimensions: ID=6mm, Wall=2mm. 
+// Centered at x=15, y=0. Opening cut out of +X side from x=15 to x=20 (width 5).
+
+var tube_ring = cube(
+    size=[6 + wall_ring_thickness*2, 6 + wall_ring_thickness*2, mm], // ID x OD + 2*wall
+    origin=[15, 0, 0]
+);
+
+// Create the opening in the +X face of the ring.
+// The opening is a rectangle from x=15 to x=20 (width 5) and y=-2.25 to y=2.25.
+var tube_opening = polygon(
+    points=[[15, -2.25], [20, -2.25], [20, 2.25], [15, 2.25]]
+);
+
+// Cut the hole using difference with offset.
+var tube_ring_with_hole = union(
+    difference([tube_opening, tube_ring]), // Hole slightly larger than opening
+    origin=[15, 0, 0]
+);
+
+// --- Bridge ---
+// Solid bridge connecting x=8 to x=12 (width 6mm). 
+// Must join the two rings without blocking either ring's hole.
+// Ring 1 hole is at y in [-5, 5]. Ring 2 hole is at y in [-2.25, 2.25].
+// The bridge spans from x=8 to x=12.
+// To avoid blocking the tubes, we can make a "U" shape or simply extrude a rectangle 
+// that sits on top of the rings' outer faces but leaves gaps for the tube to slide through? 
+// Actually, looking at the description: "solid bridge 6 mm wide (Y)".
+// If it is solid, it must pass over the tubes. Since the tubes are hollow, we can just make 
+a rectangular block that sits on top of the rings' ID side but leaves a gap for the tube to slide through?
+// OR, simpler interpretation: The bridge connects the two sides. It likely sits on top of the ring's ID side (the bottom part).
+// But if it is solid 6mm wide, how does it connect without blocking holes? 
+// It must be shaped around them. Let's assume it forms a "U" shape or simply extrude a rectangle 
+// that sits on top of the rings' outer faces but leaves a gap for the tube to slide through?
+// Actually, looking at standard snap clips: The bridge connects the two sides. It likely sits on top of the ring's ID side (the bottom part).
+// But if it is solid 6mm wide, how does it connect without blocking holes? 
+// It must be shaped around them. Let's assume it forms a "U" shape or simply extrude a rectangle 
+// that sits on top of the rings' outer faces but leaves a gap for the tube to slide through?
+// Actually, looking at standard snap clips: The bridge connects the two sides. It likely sits on top of the ring's ID side (the bottom part).
+// But if it is solid 6mm wide, how does it connect without blocking holes? 
+// It must be shaped around them. Let's

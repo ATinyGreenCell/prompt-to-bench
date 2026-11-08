@@ -1,0 +1,89 @@
+// Lab Funnel Design Parameters (all dimensions in millimeters)
+// Spout: 10 mm OD, runs from z=0 to z=20. Bore = 6.8 mm.
+// Cone: widens from 10 mm at z=20 to 60 mm at z=50. Wall thickness = 1.6 mm.
+
+// Define the spout dimensions
+spout_outer_diameter = 10; // mm
+spout_bore_diameter   = 6.8; // mm (calculated as 10 - 2*1.6)
+spout_length          = 20; // mm
+
+// Define the cone geometry parameters
+cone_base_radius      = spout_outer_diameter / 2; // 5.0 mm
+cone_top_radius       = 30.0; // (60 / 2) mm
+cone_height           = 30.0; // (z=50 - z=20) mm
+
+// Define the funnel wall thickness
+wall_thickness      = 1.6; // mm
+
+// Create a helper function to create a hollow cylinder with specified outer and inner diameters
+// The 'hollow' parameter in OpenSCAD's cylinder creates an annular ring, but we need 
+// to ensure the bottom is flat for printing stability or simply rely on the solid body below.
+// However, standard cylinder creates a hollow shell. We will use linear_extrude with a hole 
+// defined by polygon or circle logic if needed, but here we can just define the outer and inner radii.
+
+function create_hollow_cylinder(outer_diameter, inner_diameter, length) {
+    return cylinder(length, outer_diameter / 2, inner_diameter / 2);
+}
+
+// Create the spout body (solid from z=0 to z=20)
+spout_body = linear_extrude(spout_length, radius = spout_outer_diameter / 2 - wall_thickness);
+
+// Create the cone section on top of the spout
+// The cone starts at z=20 and goes up to z=50.
+// We need to extrude this shape upwards from the spout's top face (z=20).
+cone_section = rotate_extrude(30, radius = cone_base_radius - wall_thickness);
+
+// Combine parts: Spout + Cone
+funnel_part = union([spout_body, cone_section]);
+
+// Create the funnel opening at the bottom (z=50)
+// This is a flat annular ring. We need to make sure it sits on top of the cone's base.
+// The cone's outer radius at z=20 was 5mm, but we are extruding from z=20. 
+// To ensure the bottom flange aligns perfectly with the spout's top face (z=20), 
+// we must set the cone's height to exactly match the distance between z=20 and z=50.
+// The user specified 10mm OD at z=20, so radius is 5mm.
+// We need a flat bottom of diameter 60mm (radius 30mm) at z=50.
+
+funnel_bottom = rotate_extrude(30, radius = cone_top_radius - wall_thickness); // Radius 30 - 1.6 = 28.4 mm? 
+// Wait, the user said "wide opening at top" and "rim at z=50".
+// The spout is solid from z=0 to 20.
+// The cone connects spout (z=20) to funnel rim (z=50).
+// So the cone height is 30mm.
+// At z=20, the cone radius must be 5mm (to match spout outer diameter).
+// At z=50, the cone radius must be 30mm (half of 60mm).
+
+// Let's re-verify the cone geometry using for loops or math to ensure exact radii.
+// Radius at z=20: 5 mm
+// Radius at z=50: 30 mm
+// Height = 30 mm
+// Thickness = 1.6 mm
+
+funnel_bottom = rotate_extrude(30, radius = cone_top_radius - wall_thickness); 
+
+// Final assembly
+final_part = union([spout_body, funnel_bottom]);
+
+// Print settings for FDM (Fused Deposition Modeling)
+print_settings = [
+    "material" => "PLA", // Common lab material
+    "orientation" => ["Y", "X"], // Lay flat on XY plane
+    "layer_height" => 0.2,
+    "min_width" => 15, // Ensure the part is wide enough to print without sagging
+    "max_width" => 30,
+    "min_depth" => 15,
+    "max_depth" => 40,
+    "fill_density" => 0.8,
+    "print_settings" => [
+        "material" => "PLA",
+        "orientation" => ["Y", "X"],
+        "layer_height" => 0.2,
+        "min_width" => 15,
+        "max_width" => 30,
+        "min_depth" => 15,
+        "max_depth" => 40,
+        "fill_density" => 0.8,
+    ]
+];
+
+// Print the part
+print(final_part);

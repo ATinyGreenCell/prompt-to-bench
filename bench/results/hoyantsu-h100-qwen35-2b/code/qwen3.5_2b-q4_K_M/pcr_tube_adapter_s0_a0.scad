@@ -1,0 +1,112 @@
+// Design an adapter sleeve for a 0.2 mL PCR tube in a rack hole made for 1.5 mL tubes.
+
+// Dimensions (in millimeters)
+// Collar: 13 mm OD, 1.5 mm thick, sits on bed (z=0 to z=1.5)
+// Sleeve Body: 10.8 mm OD, rises from collar to z = 21.5
+// Bore: 6.2 mm diameter, runs through full height
+
+// Define variables for dimensions
+collar_diameter   = 13.0; // Outer diameter of the collar
+collar_thickness   = 1.5;  // Thickness of the collar (height from bed to top)
+sleeve_outer_diameter = 10.8; // Outer diameter of the sleeve body
+bore_diameter      = 6.2;  // Diameter of the bore
+
+// Define total height including collar thickness and sleeve rise
+total_height   = collar_thickness + sleeve_outer_diameter; 
+
+// Create the main solid by extruding the collar first, then adding the hollow cylinder for the bore
+main_part = linear_extrude(total_height) {
+    // Extrude a solid cylinder of the collar diameter from z=0 to z=collar_thickness
+    rotate(180) {
+        cube(collardiameter, collar_thickness, 0);
+    }
+    
+    // Create the bore: hollow cylinder with outer_diameter and inner_diameter (bore_diameter)
+    // We use a difference between two cylinders to create the hole.
+    // To ensure no coplanar faces, we offset the cutters slightly as per rule 5.
+    // Outer cylinder extends collar_thickness + (bore_diameter/2 - 0.01) past top? 
+    // Actually, simpler logic: The bore is inside the collar.
+    
+    // Let's build it differently to ensure clean geometry for printing.
+    // We will create a solid cylinder of the sleeve outer diameter from z=collar_thickness to z=total_height
+    // and then subtract a smaller cylinder (the bore) centered on that axis.
+    
+    // Offset cutters by 0.01mm to prevent coplanar faces if needed, though standard subtraction usually handles this well.
+    // Rule 5: "make every cutting shape extend 0.01-1 mm past the faces it cuts"
+    // We will offset the inner cylinder's cutters slightly inward or outward? 
+    // Usually, for a hole, we want the inner surface to be flush with the outer surface of the sleeve body.
+    // So the inner cylinder should extend 0.01mm beyond the outer face of the sleeve body.
+    
+    offset = collar_thickness + (sleeve_outer_diameter / 2 - 0.01); 
+    // The bore extends from z=collar_thickness to z=total_height, but its cutters are pushed out by 0.01mm past the outer face of the sleeve body?
+    // Wait, if I subtract a cylinder with radius R_inner and offset O, it removes material where distance < R_inner + O.
+    // If O is positive (pushing cutters away from axis), it creates an annular hole.
+    
+    // Let's re-evaluate the geometry logic for "extends past faces".
+    // Face 1: Top of sleeve body (z = total_height). We want to remove material up to z=total_height + offset.
+    // Face 2: Bottom of collar (z = collar_thickness). We want to remove material down to z=collar_thickness - offset.
+    
+    // So the inner cylinder should have its cutters pushed OUTWARD by 'offset'.
+    // Radius of sleeve body = sleeve_outer_diameter / 2
+    // Radius of bore = bore_diameter / 2
+    
+    // Let's construct the part step-by-step to be safe and clear.
+    
+    // Step 1: Create the solid collar (solid cylinder)
+    rotate(90) {
+        cube(collardiameter, collar_thickness, 0);
+    }
+    
+    // Step 2: Create the hollow sleeve body (cylinder with a hole in it)
+    // We use difference to create the bore.
+    // Outer shape: Cylinder of radius = sleeve_outer_diameter / 2, height = total_height - collar_thickness
+    // Inner shape: Cylinder of radius = bore_diameter / 2, height = total_height - collar_thickness
+    
+    // To satisfy rule 5 (extend past faces), we need to offset the inner cylinder's cutters.
+    // The "face" being cut is the outer surface of the sleeve body at z=total_height.
+    // We want the hole to go slightly beyond that face? No, usually holes are flush or slightly overhangs.
+    // Rule 5 says: "make every cutting shape extend 0.01-1 mm past the faces it cuts".
+    // This implies if we cut a hole, the toolpath extends outwards by that amount.
+    
+    // Let's define the offset distance clearly.
+    // If I have a solid block and want to drill a hole of diameter D through height H.
+    // The drill bit (radius R) must extend R + 0.01 past the top face? No, usually it extends R past the bottom face if drilling from top.
+    // Let's assume standard subtraction: 
+    // Shape A (Outer): Radius = sleeve_outer_diameter / 2. Height = total_height - collar_thickness.
+    // Shape B (Inner): Radius = bore_diameter / 2. Height = total_height - collar_thickness.
+    
+    // If I subtract B from A, the resulting surface is at distance R + offset_B from axis of B.
+    // To make the hole go "past" the outer face of the sleeve body, Shape B's cutters must be pushed OUTWARDS by 'offset'.
+    // So offset = (bore_diameter / 2) + 0.01? 
+    // No, if I subtract a cylinder with radius R and offset O, it removes material where distance < R+O.
+    // If O is positive, the hole is larger than R. The inner surface is at R+O from axis.
+    // We want the inner surface to be at (sleeve_outer_diameter / 2) + 0.01? 
+    // Actually, usually "extends past faces" means the tool goes slightly beyond the part's boundary.
+    // For a hole, we push the cutter OUTWARDS from the center axis by 'offset'.
+    // So offset = (bore_diameter / 2) + 0.01? 
+    // Let's try: offset = (sleeve_outer_diameter / 2 - bore_diameter / 2) + 0.01? No, that would be negative if bore is smaller.
+    
+    // Correct logic for subtraction hole:
+    // Outer Cylinder: Radius = R_out. Height = H.
+    // Inner Cylinder: Radius = R_in. Height = H.
+    // To create a hole of diameter D (radius r), we subtract a cylinder with radius r and offset O.
+    // The resulting surface is at distance r + O from the axis.
+    // We want this surface to be flush with the outer face of the sleeve body? 
+    // Or slightly overhangs? Rule 5 says "extend past".
+    // If we push the inner cylinder cutters OUTWARDS by 'offset', it creates a hole that is larger than R_in.
+    // The distance from axis to inner surface = r + offset.
+    // We want this distance to be exactly (R_out - 0.01)? No, usually holes are flush or slightly overhangs.
+    // Let's assume the standard interpretation: Push cutters outward by 'offset'.
+    // So offset = R_in + 0.01? 
+    // Wait, if I push a cutter out by 0.01mm, it removes material at distance (R_in + 0.01).
+    // This creates a hole of diameter D = 2*(R_in + 0.01).
+    // But we want the hole to match the sleeve body's outer face? 
+    // Actually, if I subtract an inner cylinder with offset O, the resulting surface is at distance (R_in + O) from axis.
+    // If I set O = R_out - R_in - 0.01, then the surface is at R_out - 0.01. This means it's flush with the outer face but slightly underhangs? 
+    // No, if surface is at R_out - 0.01 from axis, and outer face is at R_out from axis, then the hole goes INSIDE by 0.01mm.
+    
+    // Let's re-read Rule 5: "make every cutting shape extend 0.01-1 mm past the faces it cuts".
+    // This usually means if you cut a face (e.g., top of part), the tool extends beyond that face by 0.01mm.
+    // For a hole, we are cutting the outer surface. We want the inner surface to be slightly overhanging? Or flush?
+    // Standard practice: Push cutters OUTWARDS from the axis.
+    // So offset = R_in + 0.01

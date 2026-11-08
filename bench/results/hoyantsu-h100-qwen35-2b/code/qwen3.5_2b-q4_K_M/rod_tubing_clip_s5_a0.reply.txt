@@ -1,0 +1,135 @@
+```openscad
+// Design a snap-on clip for lab tubing.
+// Units: millimeters (mm)
+
+// Define dimensions based on measurements
+const mm = 1; // Conversion factor if needed, though we work directly in mm here
+const wall_ring_inner_diameter_mm = 6.0;
+const wall_ring_outer_diameter_mm = 8.0;
+const ring_bridge_width_mm = 4.0;
+
+// Ring 1: Rod ring (left side)
+// Inner diameter: 12.7 mm -> Radius = 6.35 mm
+// Wall thickness: 3 mm -> Outer radius = 9.35 mm
+// Centred at origin, -X side removed (-x < 0 and -5 < y < 5)
+const ring1_inner_radius_mm = (12.7 / 2);
+const ring1_outer_radius_mm = (ring1_inner_radius_mm + wall_ring_inner_diameter_mm / 2);
+
+// Ring 2: Tubing ring (right side)
+// Inner diameter: 6 mm -> Radius = 3.0 mm
+// Wall thickness: 2 mm -> Outer radius = 5.0 mm
+// Centred at x=15, y=0, +X side removed (+x > 15 and -2.25 < y < 2.25)
+const ring2_inner_radius_mm = (6 / 2);
+const ring2_outer_radius_mm = (ring2_inner_radius_mm + wall_ring_inner_diameter_mm / 2);
+
+// Ring 3: Solid bridge connecting the two rings
+// Width in Y direction: 6 mm -> Radius = 3.0 mm
+// Centred at x=15, y=0
+const ring_bridge_width_mm = 6.0;
+const ring_bridge_radius_mm = (ring_bridge_width_mm / 2);
+
+// Create the profile using a polygon for precise control of openings
+// We will construct the profile by defining vertices and then extruding them.
+// However, OpenSCAD's polygon is defined by vertices in order. 
+// To ensure correct topology for holes, we define the ring as a closed loop with an opening.
+
+// Helper to create a hollow cylinder (ring) based on radius and wall thickness
+function make_ring(r_inner_mm, r_outer_mm, center_x, center_y, width_mm = 0) {
+    // Calculate vertices for a square-based polygon approximation of a circle
+    const num_vertices = 8; 
+    const side_length = 2 * r_outer_mm / num_vertices;
+    
+    var v = [];
+    for (i = 0; i < num_vertices; i++) {
+        let theta_deg = (i + 1) * 360.0 / num_vertices;
+        // Convert to radians and calculate coordinates relative to center
+        let r = side_length / 2; 
+        let x_rel = r * cos(theta_deg * PI / 180);
+        let y_rel = -r * sin(theta_deg * PI / 180); // Negative Y for clockwise
+        
+        v.push([center_x + x_rel, center_y + y_rel]);
+    }
+    
+    // Close the loop by adding a vertex at the start of the last segment to ensure connectivity
+    // Actually, standard polygon requires closing. Let's add one more point back to close it properly if needed, 
+    // but usually 'polygon' closes automatically if we list vertices correctly or use a specific method.
+    // OpenSCAD polygon: [x1,y1]...[xn,yn]. It connects xn to x1.
+    
+    return v;
+}
+
+// Alternative approach for rings with holes: 
+// Define the ring as a solid cylinder and subtract the hole, OR define vertices directly.
+// Direct vertex definition is safer for complex shapes like this.
+
+function make_ring_vertices(r_inner_mm, r_outer_mm, center_x, center_y) {
+    const num_vertices = 8;
+    const side_length = 2 * r_outer_mm / num_vertices;
+    
+    var v = [];
+    // Start at top (0 deg), go clockwise
+    for (i = 0; i < num_vertices; i++) {
+        let theta_deg = (i + 1) * 360.0 / num_vertices;
+        let r = side_length / 2; 
+        let x_rel = r * cos(theta_deg * PI / 180);
+        let y_rel = -r * sin(theta_deg * PI / 180); // Clockwise
+        
+        v.push([center_x + x_rel, center_y + y_rel]);
+    }
+    
+    return v;
+}
+
+// Create the profile vertices
+var ring_profile_vertices = [];
+
+// Ring 1: Left Ring (Rod)
+// Inner radius 6.35mm, Outer radius 9.35mm. 
+// Opening at -X side (-x < 0), y between -5 and 5.
+// We need to remove the sector defined by angle from -180 to 0 degrees? 
+// Wait, "everything with x < 0". This means the entire left half plane is removed except the strip -5<y<5.
+// So we keep the right half (x > 0) and the middle vertical strip (-5 < y < 5).
+// Actually, simpler: The ring exists for all angles EXCEPT where x <= 0 AND -5 <= y <= 5.
+// This is a complex hole. Let's define the "keep" region vertices first? 
+// No, easier to define the full circle and subtract the forbidden sector.
+
+// Forbidden Sector for Ring 1: x < 0 AND -5 < y < 5.
+// In polar coords (relative to origin): angle from 180 degrees down to 0 degrees? 
+// Or simply, keep angles where x >= 0 OR y <= -5 OR y >= 5.
+// Let's define the vertices of the "Keep" shape directly or use a polygon with holes.
+
+// Easier strategy: Define the ring as a solid cylinder and subtract the hole.
+// Hole for Ring 1: A sector starting at x=0, going clockwise through negative Y? 
+// No, "x < 0". So from angle 180 (negative X) to 0 (positive X)? 
+// The condition is x < 0 AND -5 < y < 5.
+// This corresponds to the sector between 180 and 360 degrees? No.
+// Angle 180 is (-1, 0). Angle 270 is (0, -1). Angle 360/0 is (1, 0).
+// The region x < 0 is angles 90 to 270.
+// Intersection with -5 < y < 5: This covers almost the entire left half plane except the tips at top and bottom? 
+// No, y goes from -5 to 5. So it's the whole left half plane minus the very small caps near (0,5) and (0,-5)?
+// Actually, if x < 0, then for any angle between 90 and 270 degrees, x is negative.
+// The condition "x < 0 AND -5 < y < 5" removes a large chunk of the left side.
+
+// Let's define vertices for Ring 1 (Keep):
+// We want to keep: 
+// 1. All points where x > 0 (Right half)
+// 2. Points where -5 <= y <= 5 AND x <= 0? No, "everything with x < 0 and -5 < y < 5 is removed".
+// So we KEEP:
+// A. The Right Half Plane (x >= 0). This includes the strip -5<y<5 at x=0.
+// B. The Top Cap (y > 5) AND Left Side? No, if x < 0 and y > 5 is kept? 
+// The rule says: Remove {x < 0 AND -5 < y < 5}.
+// So we KEEP the complement of that set within the ring volume.
+// Complement = (Ring Volume) - (Sector where x<0, -5<y<5).
+
+// Let's build the "Keep" polygon vertices directly to avoid subtraction errors with complex holes.
+// Keep Region:
+// 1. Right Half Plane (x >= 0): Angles from 90 to 270? No, angles where cos(theta) > 0 -> 0 to 180.
+//    So keep angles [0, 180].
+// 2. Top Cap (y > 5)? The rule doesn't explicitly say "keep y>5". It says remove the specific strip. 
+//    Usually, these clips have a continuous ring. If we just cut out that sector, it remains open at top/bottom?
+//    Let's assume standard clip design: A continuous ring with one large opening.
+//    The description implies the "opening" is the gap where it snaps onto the rod.
+//    Gap 1 (Left): x < 0 AND -5 < y < 5. This creates a huge hole on the left side? 
+//    Wait, if I cut out that sector, the ring becomes open at the top and bottom too? 
+//    Unless the "ring" is just defined by those two features.
+//

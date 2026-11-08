@@ -1,0 +1,138 @@
+// Design a 10-well comb for casting agarose gels, printed lying flat.
+// The whole comb is a flat plate 1.5 mm thick (Z) lying on the bed.
+// Seen from above, it has a straight spine (back bar) 70 mm long (X) and 12 mm wide (Y), 
+// and 10 rectangular teeth that hang from one long edge of the spine in the -Y direction.
+// Each tooth is 5.0 mm wide (X) and 12 mm long (Y). The gaps between neighbouring teeth are 1.5 mm, 
+// and the row of teeth is centred on the spine in X.
+
+// Define dimensions in millimetres as requested by user measurements
+width_spine = 12;      // Y dimension of the spine
+length_spine = 70;     // X dimension of the spine
+thickness = 1.5;       // Z thickness of the comb
+tooth_width = 5.0;    // X width of each tooth
+tooth_length = 12;    // Y length of each tooth (matches spine height)
+gap_size = 1.5;        // Gap between teeth in Y direction
+
+// Create the main rectangular block representing the comb body
+// This will be extruded upwards from z=0 to thickness
+main_block = linear_extrude(
+    height = thickness,
+    width = length_spine + gap_size * (tooth_width / 2), // Centered on spine
+    depth = width_spine
+);
+
+// Create the teeth. 
+// We will subtract them from the main block.
+// To ensure no coplanar faces and proper cutting geometry:
+// Each tooth is a rectangle extruded upwards, then rotated around its center axis to hang down.
+// The rotation angle for 10 teeth evenly spaced in Y (from -6 to +6) would be 360/10 = 36 degrees.
+
+teeth_list = [];
+for (i = 0; i < 10; i++) {
+    // Calculate position of the center of each tooth along the spine axis (-Y direction)
+    // Spine is at Y=0, teeth hang down to -tooth_length/2.
+    // Center of tooth i: y_center = -(i * gap_size + tooth_length / 2);
+    
+    // Calculate rotation angle for this tooth to hang from the spine edge
+    // The spine occupies a certain X range. To hang "from one long edge", 
+    // we rotate around an axis parallel to Y, offset by half the spine width.
+    // Spine center is at 0. Spine extends -width_spine/2 to +width_spine/2.
+    // We want teeth to hang from the right side (positive X) or left side? 
+    // "Hang from one long edge" usually implies hanging down from the main body.
+    // Let's assume they hang from the positive X edge of the spine block.
+    
+    // Rotation angle: 360 / 10 = 36 degrees per tooth
+    rotation_angle = (i * 36) + 9; 
+    
+    // Calculate bounding box for this specific tooth extrusion before rotation
+    // Tooth dimensions in local frame of the spine block:
+    // X: -tooth_width/2 to +tooth_width/2
+    // Y: -(i*gap_size + tooth_length/2) to +(i*gap_size + tooth_length/2)
+    
+    tooth_local = rotate_extrude(
+        height = tooth_length,
+        width = tooth_width / 2,
+        depth = tooth_length,
+        angle = rotation_angle,
+        origin = [0, -(i * gap_size + tooth_length / 2), 0] // Center of the hanging part on spine axis
+    );
+    
+    teeth_list.append(tooth_local);
+}
+
+// Create the holes (gaps) between the teeth.
+// These are rectangular slots cut into the comb body.
+// The gaps span from -tooth_width/2 to +tooth_width/2 in X, and full tooth_length in Y.
+hole_positions = [];
+for (i = 0; i < 10; i++) {
+    // Center of gap between tooth i and i+1
+    // Gap starts at -(i*gap_size + tooth_length/2), ends at -(i+1)*gap_size - tooth_length/2
+    hole_center_y = -(i * gap_size + tooth_length / 2);
+    
+    // Create a rectangular hole shape (polygon) centered on the spine axis
+    // X range: -tooth_width/2 to +tooth_width/2
+    // Y range: from center of previous tooth down to bottom of current tooth? 
+    // Actually, simpler to just create a rectangle that spans the teeth.
+    
+    // Let's define the hole geometry explicitly as a polygon for precision
+    // Hole X extent: -tooth_width/2 to +tooth_width/2
+    // Hole Y extent: -(i*gap_size + tooth_length/2) to -(i+1)*gap_size - tooth_length/2
+    
+    // Create a rectangle representing the gap space
+    gap_rect = polygon(
+        points = [
+            [-tooth_width / 2, hole_center_y],
+            [+tooth_width / 2, hole_center_y],
+            [+tooth_width / 2, -(i+1)*gap_size - tooth_length / 2],
+            [-tooth_width / 2, -(i+1)*gap_size - tooth_length / 2]
+        ]
+    );
+    
+    // Rotate this gap rectangle around the spine axis to hang down
+    hole_local = rotate_extrude(
+        height = gap_rect[0][1], // Height of the polygon (Y extent)
+        width = gap_rect[0][2],  // Width (X extent)
+        depth = tooth_length,
+        angle = rotation_angle + 9, // Align with spine axis
+        origin = [0, hole_center_y, 0]
+    );
+    
+    holes_list.append(hole_local);
+}
+
+// Combine all parts: Main body minus teeth and minus gaps.
+comb_part = union(
+    main_block,
+    difference(
+        teeth_list, // Subtract hanging teeth
+        holes_list   // Subtract the gap spaces between teeth
+    )
+);
+
+// Final assembly: Add a small top cap to ensure it sits flat on the bed (Z=0) 
+// and prevents floating if the model is slightly off.
+// The main_block was extruded from z=0, so it should be fine, but adding a tiny cap 
+// ensures no gaps at the very bottom edge due to rounding errors or minor offsets.
+top_cap = linear_extrude(
+    height = 0.5, // Small top cap
+    width = length_spine + gap_size * (tooth_width / 2),
+    depth = width_spine
+);
+
+// Combine the main body with the small top cap to form a solid block at z=0
+final_comb = union(
+    comb_part,
+    top_cap
+);
+
+// Print settings for FDM printing
+print_settings = [
+    "filename", final_comb,
+    "orientation", "horizontal", // Lying flat on XY plane
+    "material", "PLA",
+    "layer_height", 0.25,
+    "fill_density", 1.0,
+    "support", "none"
+];
+
+print_settings;

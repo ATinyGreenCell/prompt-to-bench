@@ -1,0 +1,62 @@
+{
+  "started": "2026-11-08T09:51:50",
+  "args": {
+    "run": "hoyantsu-h100-qwen35-2b",
+    "models": [
+      "qwen3.5:2b-q4_K_M"
+    ],
+    "tasks": null,
+    "samples": 8,
+    "max_repairs": 2,
+    "feedback": "report",
+    "temperature": 0.2,
+    "prompts": null,
+    "lang": "en",
+    "system": "bench/prompts/system.md",
+    "render_timeout": 120,
+    "seed_base": 1000,
+    "num_predict": 2048,
+    "think": false,
+    "num_ctx": 8192
+  },
+  "cpu": "Intel Xeon Platinum 8468",
+  "python": "3.12.0",
+  "hardware": {
+    "cpu_model": "Intel Xeon Platinum 8468",
+    "allocated_cpu_cores": 20,
+    "allocated_ram_gib": 200,
+    "inference_cpu_threads": 4,
+    "gpu": "NVIDIA H100 80GB HBM3",
+    "gpu_count": 1,
+    "driver": "595.58.03",
+    "os": "Ubuntu 22.04.4 LTS",
+    "kernel": "5.15.0-119-generic",
+    "llama_cpp_python": "0.3.36",
+    "openscad": "2026.01.24.nightly",
+    "model_source": "https://huggingface.co/unsloth/Qwen3.5-2B-GGUF",
+    "model_file": "Qwen3.5-2B-Q4_K_M.gguf",
+    "model_bytes": 1280835840
+  },
+  "software": {
+    "benchmark_python": "3.12.0",
+    "llama_cpp_python": "0.3.36",
+    "openscad": "2026.01.24.nightly",
+    "trimesh": "5.2.0",
+    "numpy": "2.2.6",
+    "shapely": "2.1.2",
+    "scipy": "1.17.0",
+    "rtree": "1.4.1",
+    "networkx": "3.6.1",
+    "PyYAML": "6.0.3"
+  },
+  "inference": {
+    "backend": "llama-cpp-python with CUDA offload",
+    "quantization": "Q4_K_M",
+    "chat_template": "model GGUF embedded template",
+    "enable_thinking": false,
+    "top_p": 0.95,
+    "gpu_layers": -1,
+    "cpu_threads": 4,
+    "model_url": "https://huggingface.co/unsloth/Qwen3.5-2B-GGUF/resolve/f6d5376be1edb4d416d56da11e5397a961aca8ae/Qwen3.5-2B-Q4_K_M.gguf"
+  }
+}

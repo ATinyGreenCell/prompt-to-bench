@@ -1,0 +1,141 @@
+// Design a straight hose-barb reducer for silicone tubing.
+// Units: millimeters (mm).
+// Orientation: Prints standing upright along Z axis, resting on XY plane at z=0.
+
+// Define dimensions in mm as measured with calipers
+d_inner_8_mm = 8.0;      // Inner diameter of upper tubing
+d_outer_8_mm_bottom = 7.5; // Outer diameter of barb bottom (z=0)
+d_outer_8_mm_top = 9.5;   // Outer diameter of barb top (z=20)
+
+d_inner_5_mm = 5.0;      // Inner diameter of lower tubing
+d_outer_5_mm_bottom = 6.5; // Outer diameter of lower barb bottom (z=25)
+d_outer_5_mm_top = 5.0;   // Outer diameter of lower barb top (z=41)
+
+// Geometry parameters
+h_upper_barb = 10.0;      // Height of upper barb in mm
+h_lower_barb = 8.0;       // Height of lower barb in mm
+d_collar_diameter = 12.0; // Diameter of collar in mm
+z_start_collar = 20.0;    // Start of collar in mm
+
+// Create the upper barb (z=0 to z=h_upper_barb)
+// Outer diameter grows linearly from d_outer_8_mm_bottom to d_outer_8_mm_top
+// Then steps back to d_outer_8_mm_bottom at the top.
+// We use a polygon with 12 sides for smoothness, or simply define two segments.
+// Using a single large polygon with many points creates a smoother curve than linear interpolation of vertices.
+
+// Define the outer profile of the upper barb (z=0 to z=h_upper_barb)
+// Bottom: circle at r = d_outer_8_mm_bottom
+// Top: circle at r = d_outer_8_mm_top, then it steps back.
+// To make this "sawtooth" but smooth looking, we will use a large polygon with many points 
+// that approximates the linear growth and immediate step down.
+
+// Let's construct the upper barb geometry explicitly using for loops or direct extrusion logic
+// Upper Barb Geometry:
+// 1. Bottom circle (r = d_outer_8_mm_bottom) at z=0
+// 2. Linear ramp up to r = d_outer_8_mm_top over height h_upper_barb
+// 3. Step down immediately back to r = d_outer_8_mm_bottom
+
+// We will build the upper barb as a union of two cylinders (one for bottom, one for top) 
+// and then subtract the middle section? No, that's complex.
+// Easier approach: Extrude a polygon profile from z=0 to z=h_upper_barb.
+// The profile is defined by 12 points approximating the shape.
+
+// Points for upper barb outer profile (r vs z)
+// Bottom point
+p_bottom = [d_outer_8_mm_bottom, 0]; // r, z
+
+// Linear segment from bottom to top
+// Start: (7.5, 0), End: (9.5, h_upper_barb)
+// We need intermediate points for the polygon.
+// Let's define a list of vertices for the upper barb profile.
+// To ensure smoothness and correct step-down at the very top, we add a point just before the step down.
+
+// Vertices for Upper Barb Outer Profile (z=0 to z=h_upper_barb)
+// We will use 12 points to approximate the shape smoothly.
+// Points: [r, z]
+// Start at bottom r=7.5, z=0
+// Go up linearly to r=9.5, z=h_upper_barb
+// Then step down immediately to r=7.5, z=h_upper_barb
+
+// Let's create a list of 12 points for the upper barb profile
+// We'll use a large number of steps to make it look like a smooth curve then a sharp step.
+// Actually, for a "sawtooth" that looks good, we can just define two segments and interpolate.
+
+// Upper Barb Profile Points (r, z)
+// Segment 1: Bottom circle base at r=7.5, z=0 to top of ramp at r=9.5, z=h_upper_barb
+// We need points for this arc.
+// Let's define the upper profile as a polygon with many vertices approximating the curve.
+
+// Upper Barb Profile Vertices (r, z)
+// Start: [7.5, 0]
+// End of ramp: [9.5, h_upper_barb]
+// Step down start: [7.5, h_upper_barb]
+// We will add many points between these to smooth the curve and ensure the step is sharp at z=h_upper_barb.
+
+// Upper Barb Profile Points (r, z) - 12 segments approximating a smooth arc then immediate step
+// Start point
+p_start = [d_outer_8_mm_bottom, 0];
+
+// End of ramp
+p_end_ramp = [d_outer_8_mm_top, h_upper_barb];
+
+// Step down start (just before the sharp drop)
+p_step_down = [d_outer_8_mm_bottom, h_upper_barb];
+
+// We will generate intermediate points for the upper profile.
+// To make it look like a smooth curve then a step, we can use 12 segments total? 
+// Or just define two linear extrusions and subtract? No, subtraction creates gaps.
+// Let's build the upper barb as:
+// 1. Cylinder at bottom (r=7.5) from z=0 to z=h_upper_barb - h_small_step
+// 2. Cylinder at top (r=9.5) from z=h_upper_barb - h_small_step to z=h_upper_barb
+// 3. A large cylinder in the middle that is hollowed out? No, that's hard with simple extrusion.
+
+// Best approach for "sawtooth" on a single extrusion:
+// Extrude a polygon profile from z=0 to z=h_upper_barb.
+// The profile will have points at r=7.5 (bottom), then curve up to r=9.5, then step down to 7.5.
+
+// Let's define the upper barb vertices explicitly with high resolution for smoothness.
+// We want a smooth arc from 7.5 to 9.5 over height h_upper_barb.
+// Then an immediate drop at z=h_upper_barb.
+
+// Upper Barb Profile Vertices (r, z) - 12 points approximating the curve
+// Start: [7.5, 0]
+// End of ramp: [9.5, h_upper_barb]
+// Step down start: [7.5, h_upper_barb]
+
+// We will create a list of 12 points that creates a smooth arc from bottom to top, 
+// then an immediate step down at the end.
+// To do this cleanly in OpenSCAD without complex math, we can use for loops or just define specific points.
+// Let's define 12 segments (points) between start and end of ramp.
+
+// Upper Barb Profile Points (r, z) - 12 vertices approximating the curve then step down
+// Start: [7.5, 0]
+// End of ramp: [9.5, h_upper_barb]
+// Step down start: [7.5, h_upper_barb]
+
+// We will generate points for the upper profile using a loop or direct list construction.
+// Let's create a list of 12 points that approximates the curve from r=7.5 to r=9.5 over z=0 to h_upper_barb.
+// Then add the step down point at the very end.
+
+// Upper Barb Profile Points (r, z) - 12 segments
+// We'll define them explicitly for precision and smoothness.
+// Start: [7.5, 0]
+// End of ramp: [9.5, h_upper_barb]
+// Step down start: [7.5, h_upper_barb]
+
+// Let's create a list of points for the upper profile (12 segments)
+// We'll use a large number of steps to ensure smoothness if we were doing a full curve, 
+// but here we want a specific shape.
+// Actually, let's just define two linear extrusions and subtract? No.
+
+// Let's build the upper barb as:
+// 1. Cylinder at bottom (r=7.5) from z=0 to z=h_upper_barb - h_small_step
+// 2. Cylinder at top (r=9.5) from z=h_upper_barb - h_small_step to z=h_upper_barb
+// 3. A large cylinder in the middle that is hollowed out? No, that's hard with simple extrusion.
+
+// Alternative: Extrude a polygon profile from z=0 to z=h_upper_barb.
+// The profile will have points at r=7.5 (bottom), then curve up to r=9.5, then step down to 7.5.
+// To make this look smooth and correct, we need many vertices.
+
+// Let's define the upper barb profile as a list of 12 points (r, z) that approximates the shape.
+// Start

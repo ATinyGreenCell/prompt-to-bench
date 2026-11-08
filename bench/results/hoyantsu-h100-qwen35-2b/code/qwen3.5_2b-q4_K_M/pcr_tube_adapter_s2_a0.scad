@@ -1,0 +1,58 @@
+// Design an adapter sleeve for a 0.2 mL PCR tube in a rack hole made for 1.5 mL tubes.
+// Print it upside down: a collar 13 mm OD and 1.5 mm thick lies on the bed (z=0 to z=1.5),
+// and the sleeve body, 10.8 mm OD, rises from the collar to z = 21.5.
+// A straight 6.2 mm diameter bore runs through the full height, open at both ends.
+
+// Dimensions in millimeters (measured with calipers)
+// Collar: Outer Diameter 13mm, Thickness 1.5mm -> Height 1.5mm
+// Body: Outer Diameter 10.8mm, Height from collar top to bottom = Total Height - Collar Height
+// Bore: Diameter 6.2mm
+
+// Define variables for dimensions in mm
+collar_outer_diameter = 13.0; // mm
+collar_thickness = 1.5;       // mm
+total_height = 21.5;          // mm (z=0 to z=21.5)
+bore_diameter = 6.2;           // mm
+
+// Calculate collar height based on total height and bore diameter
+// The collar sits at the bottom, so its top is at z=1.5.
+collar_height = total_height - bore_diameter; 
+
+// Define geometry for the collar (bottom part)
+collar_bottom = cube(
+    size=[collar_outer_diameter, collar_thickness, collar_height]
+);
+
+// Define geometry for the body (top part)
+body_height = total_height - collar_height; // 21.5 - 1.5 = 20.0 mm
+body_body = cylinder(
+    outer_radius=collar_outer_diameter / 2,
+    height=body_height,
+    wall_thickness=(collar_outer_diameter - bore_diameter) / 2
+);
+
+// Define the hole (bore) geometry
+hole_radius = bore_diameter / 2;
+hole_body = cylinder(
+    outer_radius=hole_radius,
+    inner_radius=0, // Open at both ends
+    height=total_height
+);
+
+// Create the final assembly using union to join collar and body
+adapter_sleeve = union([collar_bottom, body_body]);
+
+// Print orientation: upside down (z-axis points up)
+print_adapter_sleeve = rotate_extrude(
+    adapter_sleeve,
+    angle=180, // Rotate 180 degrees around Z axis to flip it upside down relative to standard orientation
+    direction=[0, 0, -1] // Extrude in negative Z direction (upwards)
+);
+
+// Set number of turns for the bore if using a grid loop, though here we use direct extrusion.
+// If we were using a grid loop, we would set fn=64 or more on the cylinder.
+// Since this is a single solid with holes defined by radius and height, no specific 'fn' is needed 
+// for the hole itself as it's a simple cylinder. However, if we used a polygon to make the bore,
+// we might need it. Here, direct extrusion of cylinders is cleaner.
+
+print_adapter_sleeve; // Render the part

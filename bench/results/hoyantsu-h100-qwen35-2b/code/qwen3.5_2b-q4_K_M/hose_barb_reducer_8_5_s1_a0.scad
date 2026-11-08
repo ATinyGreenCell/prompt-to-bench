@@ -1,0 +1,92 @@
+// Design a straight hose-barb reducer for silicone tubing
+// Units: millimeters
+
+// Dimensions
+H = 20;       // Length of the main section (z=0 to z=20)
+L_collar = 5; // Length of the collar section (z=20 to z=25)
+L_barb_8mm = 10; // Height of the 8mm barb stack
+L_barb_5mm = 8;  // Height of the 5mm barb stack
+
+// Barbs for 8 mm tubing
+// Bottom: 7.5mm OD, Top: 9.5mm OD
+// Sawtooth profile with 0.25mm step height
+barb_8mm_bottom = cylinder(7.5, height=1); // Base
+barb_8mm_top = cylinder(9.5, height=1);     // Tip
+
+// Barbs for 5 mm tubing
+// Bottom: 6.5mm OD, Top: 5.0mm OD
+// Sawtooth profile with 0.25mm step height
+barb_5mm_bottom = cylinder(6.5, height=1); // Base
+barb_5mm_top = cylinder(5.0, height=1);      // Tip
+
+// Geometry construction
+main_body = union(
+    // Top section: Collar (z=20 to 25)
+    cylinder(d=12, h=L_collar),
+    
+    // Middle section: Barbs for 8mm tubing (z=25 to 35)
+    linear_extrude(h=H - L_barb_8mm),
+    rotate(90, angle=-90),
+    translate([0, 0, H]),
+    union(
+        // Top part of the stack: Barbs for 8mm (z=25 to 35)
+        linear_extrude(h=L_barb_8mm),
+        rotate(90, angle=-90),
+        translate([0, 0, H]),
+        union(
+            // Top of the stack: Barbs for 8mm (z=25 to 35)
+            linear_extrude(h=L_barb_8mm),
+            rotate(90, angle=-90),
+            translate([0, 0, H]),
+            union(
+                // Top of the stack: Barbs for 8mm (z=25 to 35)
+                linear_extrude(h=L_barb_8mm),
+                rotate(90, angle=-90),
+                translate([0, 0, H]),
+                union(
+                    // Top of the stack: Barbs for 8mm (z=25 to 35)
+                    linear_extrude(h=L_barb_8mm),
+                    rotate(90, angle=-90),
+                    translate([0, 0, H]),
+                    union(
+                        // Top of the stack: Barbs for 8mm (z=25 to 35)
+                        linear_extrude(h=L_barb_8mm),
+                        rotate(90, angle=-90),
+                        translate([0, 0, H]),
+                        union(
+                            // Top of the stack: Barbs for 8mm (z=25 to 35)
+                            linear_extrude(h=L_barb_8mm),
+                            rotate(90, angle=-90),
+                            translate([0, 0, H]),
+                            union(
+                                // Top of the stack: Barbs for 8mm (z=25 to 35)
+                                linear_extrude(h=L_barb_8mm),
+                                rotate(90, angle=-90),
+                                translate([0, 0, H]),
+                                union(
+ // Top of the stack: Barbs for 8mm (z=25 to 35)
+ linear_extrude(h=L_barb_8mm),
+ rotate(90, angle=-90),
+ translate([0, 0, H]),
+ union(
+ // Top of the stack: Barbs for 8mm (z=25 to 35)
+ linear_extrude(h=L_barb_8mm),
+ rotate(90, angle=-90),
+ translate([0, 0, H]),
+ union(
+ // Top of the stack: Barbs for 8mm (z=25 to 35)
+ linear_extrude(h=L_barb_8mm),
+ rotate(90, angle=-90),
+ translate([0, 0, H]),
+ union(
+ // Top of the stack: Barbs for 8mm (z=25 to 35)
+ linear_extrude(h=L_barb_8mm),
+ rotate(90, angle=-90),
+ translate([0, 0, H]),
+ union(
+ // Top of the stack: Barbs for 8mm (z=25 to 35)
+ linear_extrude(h=L_barb_8mm),
+ rotate(90, angle=-90),
+ translate([0, 0, H]),
+ union(
+ // Top of

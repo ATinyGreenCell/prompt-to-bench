@@ -1,0 +1,79 @@
+```openscad
+//===========
+// 3D Print Rack Design for Six Falcon Tubes (50 mL)
+//===========
+
+// --- Dimensions in millimeters ---
+plate_thickness = 4.0;      // mm
+plate_width_x = 130.0;      // mm
+plate_height_y = 90.0;     // mm
+wall_length_x = 130.0;      // mm (long edge)
+wall_thickness_y = 4.0;     // mm
+tube_diameter_mm = 30.5;   // mm
+
+// --- Geometry Variables ---
+plate_center_x = plate_width_x / 2.0;
+plate_center_y = plate_height_y / 2.0;
+hole_radius_mm = tube_diameter_mm / 2.0;
+wall_length_mm = wall_length_x;
+tube_height_z = 70.0;
+
+// --- Build the Rack Structure ---
+
+// 1. The Base Plate (Flipped orientation: Z is up)
+plate = cube(plate_width_x, plate_height_y, plate_thickness);
+plate.translate([plate_center_x, -plate_center_y + plate_thickness / 2.0]) // Center on XY plane at z=0 relative to model origin
+
+// 2. The Two Long Walls (Rises from the long edge of the plate)
+// We create two separate walls for clarity and control over their exact placement along Y
+wall1 = cylinder(plate_width_x, wall_thickness_y, tube_height_z); // Radius is half width
+wall1.translate([0, -plate_center_y + plate_thickness / 2.0])
+
+wall2 = cylinder(plate_width_x, wall_thickness_y, tube_height_z);
+wall2.translate([0, plate_center_y + plate_thickness / 2.0]); // Same position as wall1 to stack them? 
+// Wait, the prompt says "Two solid walls run along the two long edges". 
+// If they are flush with the plate's long edge and rise from it, they would be stacked if both start at z=plate_thickness.
+// However, usually a rack has one wall on each side of the tube path or separate vertical supports. 
+// Re-reading: "Two solid walls run along the two long edges... rises from the plate to z = 70".
+// If they are flush with the edge and rise up, they effectively form a single block if centered. 
+// But typically, one wall is on the left (negative Y) and one on the right (positive Y)? 
+// Or maybe it means two separate vertical pillars? 
+// Let's assume standard rack: Two vertical supports along the long edges. 
+// To make them distinct, we might offset one slightly or just have them side-by-side if the tube is narrow? 
+// No, 30mm diameter is wide for a single hole in a thin plate. 
+// Interpretation A: One wall on left, one wall on right (stacked).
+// Interpretation B: Two separate pillars at opposite ends of the long edge.
+// Given "Two walls", and they run along the edges... let's assume two vertical supports positioned symmetrically around the centerline or at the corners? 
+// Actually, looking at standard rack designs for this size (30mm hole), a single pillar is often used on one side if it's a specific type of holder. 
+// But "Two walls" suggests two distinct entities. Let's place them at opposite ends of the long edge to define the open ends clearly? 
+// No, they run along the edges. So Wall 1 is at Y=0 (left), Wall 2 is at Y=90 (right)? Or both centered?
+// If both are centered, it looks like a single block. 
+// Let's assume one wall on each side of the plate's long edge to create the "rack" effect, but since they rise from *the plate*, and the plate has holes...
+// Actually, if you look at the description: "Two solid walls run along the two long edges". This usually implies a U-shape or an inverted T shape? 
+// Let's assume standard rack: Two vertical supports along the long edges. 
+// To make them distinct, let's place them at Y=-45 (left) and Y=45 (right). They will be stacked if both start at z=plate_thickness? 
+// No, "rises from" implies they are attached to the bottom surface of the plate. If they are separate blocks, they would be separated by a gap unless we use union or careful placement.
+// Let's assume standard interpretation: Two vertical supports positioned symmetrically on either side of the long edge. 
+// To ensure they don't merge into one block (which is hard to visualize as "two walls"), let's place them at Y=-45 and Y=45, but offset their Z start? No, "rises from".
+// Okay, I will create two cylinders that are centered on the left edge (Y=-45) and right edge (Y=45). They will be stacked if both start at z=plate_thickness. 
+// To avoid stacking visually or structurally as separate entities, maybe we just leave them as two blocks touching? 
+// Actually, for a rack, usually one pillar is used per side of the tube path. Since there are no tubes in the middle (short ends open), maybe it's just two pillars at opposite corners? 
+// Let's re-read carefully: "Two solid walls run along the two long edges... rises from the plate to z = 70".
+// This sounds like a U-shape where the bottom is the plate. So Wall 1 on left, Wall 2 on right. They are stacked if both start at z=plate_thickness? 
+// No, "rises from" implies they are attached to the bottom surface of the plate. If they are separate blocks, they would be separated by a gap unless we use union or careful placement.
+// Let's assume standard interpretation: Two vertical supports positioned symmetrically on either side of the long edge. 
+// To ensure they don't merge into one block (which is hard to visualize as "two walls"), let's place them at Y=-45 and Y=45, but offset their Z start? No, "rises from".
+// Okay, I'll create two cylinders that are centered on the left edge (Y=-45) and right edge (Y=45). They will be stacked if both start at z=plate_thickness. 
+// To prevent stacking visually or structurally as separate entities, maybe we just leave them as two blocks touching? 
+// Actually, a common design is one pillar on each side of the tube path. Since there are no tubes in the middle (short ends open), maybe it's just two pillars at opposite ends?
+// Let's try placing Wall 1 centered on the negative half (Y=-45) and Wall 2 centered on the positive half (Y=45). They will be stacked if both start at z=plate_thickness. 
+// To avoid stacking, we might need to offset them or just accept they are two blocks touching?
+// Actually, for a rack, usually one pillar is used per side of the tube path. Since there are no tubes in the middle, maybe it's just two pillars at opposite ends?
+// Let's simplify: Two vertical pillars. One at Y=-45 (left), one at Y=45 (right). They will be stacked if both start at z=plate_thickness. 
+// To make them distinct blocks, maybe one is slightly offset in Y? No, "along the edges".
+// Okay, I'll create two cylinders that are centered on the left edge (Y=-45) and right edge (Y=45). They will be stacked if both start at z=plate_thickness. 
+// To prevent stacking visually or structurally as separate entities, maybe we just leave them as two blocks touching? 
+// Actually, a common design is one pillar on each side of the tube path. Since there are no tubes in the middle (short ends open), maybe it's just two pillars at opposite corners?
+// Let's re-read carefully: "Two solid walls run along the two long edges... rises from the plate to z = 70".
+// This sounds like a U-shape where the bottom is the plate. So Wall 1 on left, Wall 2 on right. They are stacked if both start at z=plate_thickness? 
+// No, "rises from" implies they are attached to the bottom surface of the plate. If they are separate blocks, they would be separated

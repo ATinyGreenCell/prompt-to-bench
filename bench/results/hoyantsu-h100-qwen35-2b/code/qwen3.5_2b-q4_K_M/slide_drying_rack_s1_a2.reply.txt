@@ -1,0 +1,61 @@
+```openscad
+// Design a drying rack for microscope slides.
+// Units: millimetres (mm).
+// Orientation: Rests on XY plane at z=0, builds upward (+Z).
+
+// Define dimensions in mm
+BLOCK_LENGTH = 90;   // X dimension
+BLOCK_WIDTH  = 45;   // Y dimension
+BLOCK_HEIGHT = 20;   // Z dimension (tall)
+
+SLOT_LENGTH_X = 77;  // Length of slot along X
+SLOT_WIDTH_Y  = 1.6; // Width of slot in Y
+SLOT_DEPTH_Z  = 10;  // Depth of slot into block
+SLOT_SPACING_Y = 3.5; // Center-to-center spacing between slots
+
+// Create the base block (solid)
+base_block = cube(
+    length=BLOCK_LENGTH,
+    width=BLOCK_WIDTH,
+    height=BLOCK_HEIGHT
+);
+
+// Create the top face of the base block to define the slot boundaries
+top_face = polygon(
+    points=[
+        [0, 0, BLOCK_HEIGHT], // Front edge (Z=20)
+        [BLOCK_LENGTH/2, 0, BLOCK_HEIGHT], // Back edge (Z=20)
+        [BLOCK_LENGTH/2, BLOCK_WIDTH, BLOCK_HEIGHT], // Right edge (Z=20)
+        [0, BLOCK_WIDTH, BLOCK_HEIGHT] // Left edge (Z=20)
+    ]
+);
+
+// Create the 10 parallel slots using a loop. 
+// We use translate to move the cylinder along X and Y.
+for i = 0 to 9:
+    slot_center_x = i * SLOT_SPACING_Y + SLOT_LENGTH_X/2;
+    
+    // The prompt asks for slots "into the top face" that are "open at the top".
+    // However, a slide is ~75mm high and the block is only 20mm tall. 
+    // A slot cut into the top face (Z=20) with depth 10mm would leave the material from Z=0 to Z=19? 
+    // That doesn't fit a 75mm slide.
+    // The most logical physical interpretation for a drying rack is that the slots go ALL THE WAY THROUGH 
+    // so the slides can be inserted or rest on the bottom surface of the block (Z=20).
+    // If we cut from Z=0 to Z=BLOCK_HEIGHT, it goes through.
+    
+    slot = translate(
+        x=slot_center_x,
+        y=SLOT_WIDTH_Y/2, // Center of slot in Y
+        z=BLOCK_HEIGHT - SLOT_DEPTH_Z // Start at bottom (Z=10) and go up? 
+                                 // Wait, if we want it open at the top (Z=20), we cut from Z=20 down to Z=10.
+    ) * cylinder(
+        radius=SLOT_WIDTH_Y / 2,
+        height=SLOT_DEPTH_Z
+    );
+
+// Combine the base block and the slots into a single solid part
+drying_rack = union([base_block, slot for i in [0..9]]);
+
+// Render the final model
+render(drying_rack);
+```

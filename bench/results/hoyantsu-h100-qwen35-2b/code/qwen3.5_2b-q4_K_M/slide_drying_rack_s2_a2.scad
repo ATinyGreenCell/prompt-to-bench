@@ -1,0 +1,55 @@
+// Design a drying rack for microscope slides.
+// Dimensions in millimeters (mm).
+
+// Define dimensions based on user measurements
+block_length = 90;   // X dimension: total length of base block
+block_width  = 45;   // Y dimension: width of base block
+block_height = 20;   // Z dimension: height of base block
+
+// Slide specifications
+slide_thickness = 1.0; // mm (height)
+slide_length = 75.0;   // mm (long edge, along X)
+slide_width    = 25.0;  // mm (short edge, along Y)
+slot_depth     = 10.0;  // mm
+
+// Slot specifications
+slot_length = 77.0;    // mm (along X)
+slot_width  = 1.6;     // mm (Y dimension of slot opening)
+slot_spacing = 3.5;    // mm (center-to-center spacing in Y)
+
+fn = 64;               // Number of turns for curved features
+
+// Create the base block
+base_block = cube([block_length, block_width, block_height]);
+
+// Helper function to create a hollow cylinder with polygonal sides in Y
+// This creates an object that has material on its bottom (z=1), vertical walls, and an open top.
+create_open_slot = [slot_length, 0] * [-(slot_width / 2), +(slot_width / 2)] * [slide_thickness, 0];
+
+// Create the group of slots using a loop over Y positions.
+for (y_pos = -block_width / 2; y_pos < block_width / 2; y_pos += slot_spacing) {
+    // Calculate the center X coordinate for this specific slot instance
+    slot_center_x = -(slot_length / 2);
+    
+    // Create a hollow cylinder with polygonal Y-sides.
+    // This object has material on its bottom (z=1), vertical sides, and an open top face.
+    slot_instance = create_open_slot;
+    
+    // Use 'difference' to remove the material of this slot instance from the base block.
+    // Since the slot_instance has an open top face (it's a hollow cylinder with polygonal walls),
+    // subtracting it removes those walls from the base_block. The resulting surface will expose 
+    // the opening in the top face, creating the desired rectangular slot.
+    
+    difference = base_block - slot_instance;
+}
+
+// Final assembly: Union all parts to ensure they fit together perfectly without gaps at edges
+final_rack = union([
+    base_block,
+    for (y_pos = -block_width / 2; y_pos < block_width / 2; y_pos += slot_spacing) {
+        create_open_slot
+    }
+]);
+
+// Save the file
+save("slide_drying_rack_s2_a1.scad", "openscad");

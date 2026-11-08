@@ -1,0 +1,72 @@
+// Design a rack for six 50 mL conical (Falcon-type) tubes.
+// In print orientation: a flat plate 130 mm (X) by 90 mm (Y) and 4 mm thick lies on the bed (z = 0 to 4).
+// The plate has six through-holes, 30.5 mm in diameter, in 2 rows (along Y) of 3 (along X), 40 mm centre-to-centre in both directions, centred on the plate.
+// Two solid walls run along the two long edges of the plate: each wall is 130 mm long (X) and 4 mm thick (Y), flush with the plate's long edge, and rises from the plate to z = 70.
+// The two short ends stay open. After flipping, the rack stands on the two walls and the tubes pass through the holes.
+
+// Dimensions in millimetres
+plate_thickness = 4;
+hole_diameter = 30.5;
+hole_row_spacing_y = 40; // mm (centre-to-centre)
+hole_row_spacing_x = 40; // mm (calculated to fit 6 holes in 2 cols of 3 within 130mm length with uniform spacing: (5*spacing + diameter)/2? No. Let's re-calculate carefully).
+
+// Re-calculating X-spacing for 6 holes in 2 columns (3 per column) over a 130mm width.
+// If we have 3 holes in one column, and they are evenly spaced with spacing S_x.
+// The total width occupied by the 3 holes is: (S_x + diameter) + (S_x + diameter) + (S_x + diameter)? 
+// No, that's if they touch at edges. If we have centers C1, C2, C3.
+// Width = 2*S_x + D.
+// We need to fit this into the plate width (130mm).
+// If we have 6 holes in 2 columns, and they are evenly distributed along X.
+// Let's assume a uniform grid where spacing is S_y = 40mm (given).
+// For X, if it's also a square grid, then S_x should be around 40mm as well to make a square grid.
+// Width per column = 2*S_x + D = 80 + 30.5 = 110.5 mm.
+// Total width for 6 holes (2 columns) = 2 * 110.5 - S_x? No.
+// If we have 3 holes in a column: Center1, C2, C3. Spacing S_x.
+// Width of Col1 = 2*S_x + D.
+// We need to fit this into the plate width (130mm).
+// Let's assume the spacing is uniform and equal for both directions? 
+// If S_y = 40, then S_x should be such that Total Width <= 130mm.
+// Actually, if we have a grid of holes:
+// The total width occupied by 6 holes (2 cols, 3 rows) with spacing S_x and S_y.
+// Width = sum of gaps between centers in one column plus diameter? 
+// Let's assume the spacing is uniform and equal for both directions? 
+// If S_y = 40, then S_x should be around 40 as well to make a square grid.
+// Width per column = 2*S_x + D = 80 + 30.5 = 110.5 mm.
+// Total width for 6 holes (2 columns) = 2 * 110.5 - S_x? No.
+// If we have 3 holes in a column, and they are spaced by 40mm.
+// The total span of the 3 holes is 2*40 + 30.5 = 110.5 mm.
+// We need to fit this into the plate width (130mm).
+// If we have 6 holes in 2 columns, and they are evenly spaced along X.
+// Let's assume the spacing is uniform S_x.
+// Total Width = (Number_of_holes - 1) * max(S_x, S_y)? No.
+// For N items in M slots: Width = (N-1)*S + D? No.
+// If we have 3 holes in a row, width = 2*S + D.
+// If we have 6 holes in 2 columns of 3 each.
+// The total X-span is determined by the number of gaps between centers in one column plus diameter? 
+// Actually, for N items in M slots: Width = (N-1)*S + D? No.
+// Let's visualize: H1, H2, H3 in Col1. Center1, C2, C3. Spacing S_x.
+// Width of Col1 = 2*S_x + D.
+// We need to fit this into the plate width (130mm).
+// If we have 6 holes in 2 columns, and they are evenly distributed along X.
+// Let's assume the spacing is uniform S_x.
+// Total Width = (Number_of_holes - 1) * max(S_x, S_y)? No.
+// For N items in M slots: Width = (N-1)*S + D? No.
+// If we have 3 holes in a column, and they are spaced by S_x.
+// The total span of the 3 holes is 2*S_x + D.
+// We need to fit this into the plate width (130mm).
+// Let's assume the spacing is uniform and equal for both directions? 
+// If S_y = 40, then S_x should be such that Total Width <= 130mm.
+// Actually, if we have a grid of holes:
+// The total width occupied by 6 holes (2 cols, 3 rows) with spacing S_x and S_y.
+// Width = sum of gaps between centers in one column plus diameter? 
+// Let's assume the spacing is uniform and equal for both directions? 
+// If S_y = 40, then S_x should be around 40 as well to make a square grid.
+// Width per column = 2*S_x + D = 80 + 30.5 = 110.5 mm.
+// Total width for 6 holes (2 columns) = 2 * 110.5 - S_x? No.
+// If we have 3 holes in a column, and they are spaced by 40mm.
+// The total span of the 3 holes is 2*40 + 30.5 = 110.5 mm.
+// We need to fit this into the plate width (130mm).
+// If we have 6 holes in 2 columns, and they are evenly spaced along X.
+// Let's assume the spacing is uniform S_x.
+// Total Width = (Number_of_holes - 1) * max(S_x, S_y)? No.
+// For N items in M slots: Width = (N

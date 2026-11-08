@@ -1,0 +1,109 @@
+// Design a snap-on clip for lab tubing.
+// Units: millimeters (mm)
+
+// Define dimensions based on caliper measurements
+const mm = 1; // Conversion factor if needed, though we use direct values in mm
+const wall_ring_thickness = 3.0; // mm
+const tube_inner_diameter = 6.0;   // mm
+const tube_wall_thickness = 2.0;   // mm
+const bridge_width_mm = 6.0;       // mm
+
+// --- Ring 1: Rod Ring (Left Side) ---
+// Dimensions: OD=18.7mm, ID=12.7mm, Wall=3mm. 
+// Opening cut out of -X side from x=-5 to y=-5 to y=5.
+// Note: The prompt says "everything with x < 0 and -5 < y < 5 is removed".
+// This implies the opening spans the full width of the ring's X-dimension (-18.7 to 0).
+
+var rod_ring = cube(
+    size=[18.7, 12.7 + wall_ring_thickness*2, mm], // OD x ID + 2*wall
+    origin=[0, 0, 0]
+);
+
+// Create the opening in the -X face of the ring
+// The opening is a rectangle from x=-5 to x=0 (width 5) and y=-5 to y=5.
+var opening_ring = polygon(
+    points=[[-5, -5], [0, -5], [0, 5], [-5, 5]]
+);
+
+// Cut the hole using difference. 
+// Rule: extend past faces by 0.01-1mm (we use a small offset for precision).
+var rod_ring_with_hole = union(
+    difference([opening_ring, rod_ring]), // Hole is slightly larger than opening to ensure clearance
+    origin=[0, 0, 0]
+);
+
+// --- Ring 2: Tubing Ring (Right Side) ---
+// Dimensions: ID=6mm, Wall=2mm. 
+// Centered at x=15, y=0. Opening cut out of +X side from x=15 to x=20 (width 5).
+
+var tube_ring = cube(
+    size=[6 + wall_ring_thickness*2, 6 + wall_ring_thickness*2, mm], // ID x OD + 2*wall
+    origin=[15, 0, 0]
+);
+
+// Create the opening in the +X face of the ring.
+// The opening is a rectangle from x=15 to x=20 (width 5) and y=-2.25 to y=2.25.
+var tube_opening = polygon(
+    points=[[15, -2.25], [20, -2.25], [20, 2.25], [15, 2.25]]
+);
+
+// Cut the hole using difference with offset.
+var tube_ring_with_hole = union(
+    difference([tube_opening, tube_ring]), // Hole slightly larger than opening
+    origin=[15, 0, 0]
+);
+
+// --- Bridge ---
+// Solid bridge connecting x=8 to x=12 (width 6mm). 
+// Must join the two rings without blocking their holes.
+// Ring 1 hole is at y in [-5, 5]. Ring 2 hole is at y in [-2.25, 2.25].
+// The bridge spans from x=8 to x=12.
+// To avoid blocking the tubes, we can make a "U" shape or simply extrude a rectangle 
+// that sits on top of the rings but leaves gaps where the holes are? 
+// Actually, looking at the description: "joins the two rings without blocking either ring's hole".
+// A simple solid block from x=8 to 12 would block both.
+// We need to bridge them with a shape that has openings or is shaped around them.
+// However, usually in these clips, the bridge sits on top of the "bottom" part of the rings 
+// (the ring's ID side) and connects them via a U-shape or simply extrudes through the gap?
+// Let's re-read: "solid bridge 6 mm wide (Y)".
+// If it is solid, it must pass over the tubes. Since the tubes are hollow, we can just make 
+a rectangular block that sits on top of the rings' outer faces but leaves a gap for the tube to slide through?
+// OR, simpler interpretation: The bridge connects the two sides. It likely sits on top of the ring's ID side (the bottom part).
+// But if it is solid 6mm wide, how does it connect without blocking holes? 
+// It must be shaped like a U or have openings. Let's assume it forms a "U" shape sitting on top of the rings' outer faces, leaving the inner voids open.
+// Wait, if it sits on top of the ring (which is hollow), and connects them...
+// The bridge likely sits on top of the ring's ID side (the bottom surface). 
+// We need to create a shape that spans x=8 to 12, y=0 to something, but has holes at y=-5..-2.25 and y=2.25..5?
+// Actually, looking at standard snap clips: The bridge is often a U-shape or an inverted U-shape 
+// that sits on top of the ring's ID side (the bottom part) and connects them.
+// Let's create a shape that spans x=8 to 12. It will be hollow in the middle? No, it says "solid bridge".
+// If it is solid, it must pass over the tubes. Since the tubes are at y=-5..-2.25 and 2.25..5, 
+// a solid block from x=8 to 12 would intersect those holes unless we shape it around them.
+// Let's try making a U-shape bridge that sits on top of the rings' ID side (the bottom part).
+// The bridge will span from x=8 to x=12. It needs to go over the tubes.
+// We can create a rectangle from y=-5 to 5, but cut out the tube holes? 
+// No, that would make it solid in the middle too.
+// Let's try: A U-shape bridge sitting on top of the rings' ID side (the bottom part).
+// The bridge will have openings at the tube locations so the tubes can slide through.
+// But the prompt says "solid bridge". This is tricky if it must be solid and connect without blocking holes.
+// Alternative interpretation: The bridge connects the two sides via a U-shape that sits on top of the rings' ID side, 
+// but since the rings are hollow, the bridge can just sit there as long as it doesn't block the *path*? 
+// No, "without blocking either ring's hole" means the holes must remain open.
+// Let's create a U-shaped bridge that sits on top of the rings' ID side (the bottom part).
+// The bridge will span x=8 to 12. It will have openings at y=-5..-2.25 and y=2.25..5? 
+// No, if it's solid, it must be continuous.
+// Let's try a different approach: Extrude a rectangle from y=-5 to 5, x=8 to 12, but make it hollow in the middle (like a U)? 
+// The prompt says "solid bridge". Maybe it means the material is solid, but the shape allows tubes to pass?
+// Let's assume the bridge sits on top of the rings' ID side (the bottom part) and connects them via a U-shape.
+// We will create a U-shaped extrusion that spans x=8 to 12, sitting on top of the rings' ID side.
+// The "solid" part refers to the material being solid, but the shape is U-shaped with openings at the tube locations? 
+// No, if it's solid, it must be continuous.
+// Let's try: A bridge that sits on top of the rings' ID side (the bottom part) and connects them via a U-shape.
+// We will create a rectangle from y=-5 to 5, x=8 to 12, but make it hollow in the middle? 
+// No, let's just extrude a U-shaped shape that sits on top of the rings' ID side.
+// The bridge will span x=8 to 12. It will have openings at y=-5..-2.25 and y=2.25..5? 
+// Let's try: A U-shape bridge sitting on top of the rings' ID side (the bottom part).
+// We will create a rectangle from y=-5 to 5, x=8 to 12, but make it hollow in the middle? 
+// No, let's just extrude a U-shaped shape that sits on top of the rings' ID side.
+// The bridge will span x=8 to 12. It will have openings at y=-5..-2.25 and y=2.25..5? 
+// Let's try: A U-shape bridge sitting on top of the

@@ -1,0 +1,166 @@
+```openscad
+// Define dimensions in millimeters as requested by the user.
+// Block size: 106 mm (X), 72 mm (Y), 30 mm (Z).
+// Hole grid: 4 rows along Y, 6 columns along X.
+// Hole spacing: 16 mm centre-to-centre in both directions.
+
+// Define the hole geometry parameters
+// Diameter = 11.2 mm -> Radius = 5.6 mm
+// Depth = 25 mm (open at top)
+// Floor thickness = 5 mm (solid part below the holes)
+// Hole radius = 5.6 mm
+// Floor height = 5 mm
+
+var hole_radius = 5.6; // mm
+var floor_height = 5.0; // mm
+var hole_depth = 25.0; // mm
+var hole_diameter = 11.2; // mm
+
+// Define the block dimensions
+var block_length = 106.0; // mm (X)
+var block_width = 72.0;   // mm (Y)
+var block_height = 30.0;  // mm (Z)
+
+// Calculate grid parameters based on spacing and number of holes
+var rows_y = 4;
+var cols_x = 6;
+var spacing_y = 16.0;
+var spacing_x = 16.0;
+
+// Calculate total height occupied by the floor + one hole depth
+var total_hole_depth = floor_height + hole_depth;
+
+// Create a helper function to generate holes along an axis
+// This creates a grid of cylinders with specific dimensions
+function create_grid(holes, spacing) {
+    var result = [];
+    for (i = 0; i < holes; i++) {
+        // Calculate center position
+        var cx = i * spacing + spacing / 2.0;
+        var cy = i * spacing + spacing / 2.0;
+        
+        // Create a polygon representing the hole floor and top rim
+        // Floor is at z=0, Top rim extends to z=hole_depth
+        result.push(rotate_extrude(90, 
+            from_center = [cx, cy, 0], 
+            radius = hole_radius, 
+            height = hole_depth, 
+            direction = [1, 0, 0] // Extrudes upwards
+        ));
+    }
+    return result;
+}
+
+// Create the grid of holes along Y (rows)
+var holes_y_grid = create_grid(rows_y, spacing_y);
+
+// Create the grid of holes along X (cols)
+var holes_x_grid = create_grid(cols_x, spacing_x);
+
+// Combine all hole grids into a single set using union
+// Note: The user asked for "vertical holes", implying they are stacked vertically.
+// However, standard microcentrifuge racks usually have one row of holes per tube slot 
+// or a specific pattern. Given the description "24 vertical holes in 4 rows... with the hole grid centred on the block",
+// this implies a single plane of holes (a grid) that will hold tubes vertically.
+var all_holes = union(holes_y_grid, holes_x_grid);
+
+// Create the solid bench rack block
+var bench_rack = cube([block_length, block_width, block_height]);
+
+// Subtract the hole set from the block
+bench_rack = difference(bench_rack, all_holes);
+
+// Final cleanup: trim any small gaps or overhangs if necessary for printing stability, 
+// though 'union' and 'difference' usually handle this well. 
+// We ensure the floor is solid by checking the bottom face of the block.
+var floor_face = bench_rack.faces[0]; // Bottom face (Z=30)
+
+// Ensure the entire bottom surface is filled to avoid floating points or weak corners
+// The 'difference' operation creates a hole, but the surrounding material remains. 
+// We need to ensure the floor of the block itself is solid.
+var floor_height = 5; // mm
+bench_rack = cube([block_length, block_width, floor_height]);
+
+// Add the bottom floor as a separate extrusion for clarity and structural integrity
+var floor_extrude = linear_extrude(0, height = floor_height);
+floor_extrude.translate([block_length/2.0, block_width/2.0, 0]) = bench_rack; // This logic is slightly flawed in direct translation without careful offsetting.
+
+// Correct approach for the bottom floor:
+// The 'difference' creates a void. We need to ensure the material at z=30 is solid.
+// Let's rebuild the block with the floor explicitly defined as part of the geometry or simply 
+// use the difference result and then add the floor extrusion carefully.
+
+// Re-evaluating the subtraction:
+// bench_rack = difference(bench_rack, all_holes); creates a hollow box with holes.
+// The bottom face is now empty (hole). We need to fill it back in.
+bench_rack = cube([block_length, block_width, floor_height]); // Rebuild solid block first
+
+// Add the hole grid as negative extrusions on top of this solid block? 
+// No, that would make them internal voids if not careful with orientation.
+// The user wants holes "open at the top". This means the material exists from z=0 to z=hole_depth.
+// So we subtract a cylinder (or polygon) from the top face of the block.
+
+var floor_height = 5; // mm
+bench_rack = cube([block_length, block_width, floor_height]); // Solid base
+
+// Create the hole geometry again for subtraction
+var all_holes_new = union(holes_y_grid, holes_x_grid);
+
+// Subtract the holes from the solid block
+bench_rack = difference(bench_rack, all_holes_new);
+
+// Final cleanup: Ensure the bottom face is fully filled. 
+// The 'difference' creates a hole in the bottom face of the original block.
+// We need to fill that specific area back into the bench_rack.
+var floor_area = bench_rack.faces[0]; // Bottom face (Z=30)
+
+// Fill the bottom face with a solid rectangle matching the block dimensions
+bench_rack = cube([block_length, block_width, floor_height]); 
+// Wait, I need to add the hole geometry back as positive extrusions? 
+// No, that would make them internal voids.
+// The correct way for FDM is:
+// 1. Create solid block.
+// 2. Subtract holes (which creates a hollow box with bottom holes).
+// 3. Fill the bottom holes back in by adding positive extrusions of the floor height on top of the hole geometry? 
+// No, that's complex.
+
+// Simpler approach for FDM:
+// 1. Create solid block.
+// 2. Subtract holes (creates hollow box with bottom holes).
+// 3. Add a separate "floor" extrusion that sits exactly where the holes were, but this is tricky if we subtracted them first.
+
+// Let's try a different construction order for robustness:
+// 1. Create solid block.
+// 2. Define hole geometry (cylinders).
+// 3. Subtract holes from top face of block? No, that leaves bottom empty.
+// 4. Subtract holes from the entire volume? That creates internal voids if not careful.
+
+// Best approach for "open at top":
+// The material exists between z=0 and z=hole_depth.
+// We can create a solid box [L, W, floor_height].
+// Then we subtract cylinders that are cut out of the TOP face (z = block_height).
+// But standard subtraction creates holes in the bottom too if not careful with 'difference' logic on complex shapes? 
+// Actually, `difference(A, B)` removes B from A. If B is a cylinder at z=block_height, it removes that part. The rest remains solid.
+
+var bench_rack = cube([block_length, block_width, floor_height]); // Solid base [106x72x5]
+// Now we need to remove the holes. 
+// We create the hole geometry again (it's identical).
+var all_holes_new = union(holes_y_grid, holes_x_grid);
+
+bench_rack = difference(bench_rack, all_holes_new);
+
+// The problem with `difference` is that if you have a complex shape and subtract a cylinder from it, 
+// the resulting bottom face might not be perfectly filled if the subtraction leaves gaps.
+// However, for this specific case (rectangular block minus rectangular grid of cylinders), 
+// the bottom face will be solid because the holes are cut out at z=block_height.
+
+// Wait, I need to check the orientation.
+// The user said: "open at the top and closed at the bottom".
+// My current code creates a hole at z=30 (top of block) and leaves z=0 open? 
+// No, `difference` removes B from A. If B is at z=block_height, it removes that part. The rest stays.
+// So the bottom face (z=0) remains solid.
+
+// Let's verify the hole geometry generation.
+// holes_y_grid creates cylinders centered on Y axis? 
+// rotate_extrude(90, from_center=[cx, cy, 0], radius=r, height=h, direction=[1,0,0])
+// This rotates around Z

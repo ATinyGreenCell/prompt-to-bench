@@ -1,0 +1,82 @@
+```openscad
+// Design a 10-well comb for casting agarose gels, printed lying flat.
+// The whole comb is a flat plate 1.5 mm thick (Z) lying on the bed.
+// Seen from above, it has a straight spine (back bar) 70 mm long (X) and 12 mm wide (Y), 
+// and 10 rectangular teeth that hang from one long edge of the spine in the -Y direction.
+// Each tooth is 5.0 mm wide (X) and 12 mm long (Y). The gaps between neighbouring teeth are 1.5 mm, 
+// and the row of teeth is centred on the spine in X.
+
+// Dimensions defined in millimeters
+length_spine = 70.0;   // Length of the spine along X axis
+width_spine  = 12.0;   // Width of the spine along Y axis
+thickness  = 1.5;     // Thickness of the comb along Z axis
+
+// Tooth dimensions
+tooth_width = 5.0;    // Width of each tooth along X axis
+tooth_length = 12.0; // Length of each tooth hanging down (along -Y)
+gap_size   = 1.5;     // Gap between adjacent teeth along Y axis
+
+// Number of teeth
+num_teeth = 10;
+
+// Centering offset to align the row of teeth on the spine centerline
+center_offset = width_spine / 2.0;
+
+// Create the main body: a flat rectangular block representing the comb base
+// This will be extruded upwards from the XY plane (z=0)
+main_body = cube(
+    size = [length_spine, width_spine, thickness]
+);
+
+// Define the spine as a separate entity to allow easy offsetting of teeth
+spine_entity = cube(
+    size = [length_spine, width_spine, 0.1]; // Small gap for tolerance
+);
+
+// Create the row of teeth using a loop
+for (i = 0; i < num_teeth; i++) {
+    tooth_offset_y = i * gap_size + center_offset;
+    
+    // Each tooth is a rectangular prism hanging down from the spine.
+    // It starts at the spine surface and extends downwards.
+    // We use rotate_extrude to orient it vertically (Y axis) for easier slicing, 
+    // then translate it back to its final position.
+    tooth = cylinder(
+        size = [tooth_width, 0.1, tooth_length]
+    );
+    
+    // Orient the cylinder along Y-axis so we can easily move it up/down
+    rotate_extrude(angle = 90); 
+    
+    // Translate to the correct position on the spine surface
+    translate([0, tooth_offset_y, -tooth_length/2])
+        tooth;
+}
+
+// Final assembly: Combine all parts into a single solid
+comb = union(
+    main_body,
+    spine_entity,
+    for (i = 0; i < num_teeth; i++) {
+        rotate_extrude(angle = 90) translate([0, i * gap_size + center_offset, -tooth_length/2]) tooth
+    }
+);
+
+// Optional: Add a small chamfer or bevel to the top edge of the spine for better printability and aesthetics
+// This creates a slight overhang that helps with support if needed, though not strictly required.
+chamfer = rotate_extrude(angle = 90) translate([length_spine/2, width_spine/2 + gap_size/2, -tooth_length/2]) cube(
+    size = [gap_size, tooth_width, 1] // Small overhang above the teeth
+);
+
+// Final union to include the chamfer if it overlaps with teeth (it shouldn't here due to geometry)
+final_comb = union(comb, chamfer);
+
+print("Printed comb dimensions:");
+print("Spine length: " + length_spine + " mm");
+print("Spine width:  " + width_spine + " mm");
+print("Thickness:   " + thickness + " mm");
+print("Teeth count: " + num_teeth);
+print("Tooth width:  " + tooth_width + " mm");
+print("Tooth length: " + tooth_length + " mm");
+print("Gap size:      " + gap_size + " mm");
+```

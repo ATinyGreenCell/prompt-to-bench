@@ -1,0 +1,77 @@
+```openscad
+// Design an adapter sleeve for a 0.2 mL PCR tube in a rack hole made for 1.5 mL tubes.
+// Print it upside down: a collar 13 mm in diameter and 1.5 mm thick lies on the bed (z = 0 to 1.5), 
+// and the sleeve body, 10.8 mm in outer diameter, rises from the collar to z = 21.5.
+// A straight 6.2 mm diameter bore runs through the full height, open at both ends.
+
+// Dimensions (in millimeters)
+// Collar: OD=13mm, Thickness=1.5mm -> Height = 1.5mm
+// Body: OD=10.8mm, Length = Total Height - Collar Height
+// Bore: Diameter=6.2mm, Runs full height
+
+// Define the total length of the adapter based on the rack hole requirement (1.5 mL tubes)
+// and the collar thickness. The 1.5mL tube has a specific OD profile, but here we define 
+// the physical dimensions required for the adapter itself as described.
+// Note: The prompt specifies the body rises to z=21.5. We must ensure this matches the rack hole depth.
+// Assuming the rack hole is designed for the 0.2mL tube (which has a shorter OD profile than 1.5mL), 
+// but the prompt explicitly states "rises from the collar to z = 21.5".
+// We will follow the explicit geometric instructions provided in the text.
+
+// Variables
+total_length_z = 21.5; // Height of the adapter body + collar
+collar_height = 1.5;   // Thickness of the collar (matches rack hole depth for 1.5mL tubes)
+body_length = total_length_z - collar_height; // 20.0 mm
+
+// Define the geometry step-by-step to ensure clean separation and correct orientation
+
+// 1. The Collar (Bottom part, z=0 to 1.5)
+collar = cube(
+    size=[13, 13, 1.5] // OD x OD x Height
+);
+
+// 2. The Bore Hole (Cylindrical hole running through the full height)
+// We create a cylinder and then subtract it from both sides of the total length to make it open-ended.
+// To ensure no coplanar faces, we offset by 0.01mm on all axes for the cutouts.
+
+bore_hole = cylinder(
+    size=[6.2, 6.2, body_length] // OD x OD x Length
+);
+
+// Cut out the bore from the bottom of the collar (z=0 to z=collar_height)
+bottom_cut = difference(
+    union([collar, bore_hole]),
+    translate([0, 0, -collar_height/2]) cylinder(size=[6.2, 6.2, collar_height]) // Offset by half height for cutout
+);
+
+// Cut out the bore from the top of the body (z=body_length to z=total_length_z)
+top_cut = difference(
+    union([bore_hole, collar]),
+    translate([0, 0, total_length_z - collar_height/2]) cylinder(size=[6.2, 6.2, collar_height]) // Offset by half height for cutout
+);
+
+// Combine the parts into a single solid
+adapter = hull(union([collar, bore_hole]));
+
+// Final assembly: Place the adapter at z=0 (resting on bed) and rotate it upside down so the open end is up.
+// The prompt says "Print it upside down". This means the open end of the hole should be facing +Z.
+// Currently, our 'bottom_cut' has the bore going from z=-collar_height/2 to z=0 (relative to collar).
+// We need to flip the orientation so the open part is at the top (+Z) and closed at the bottom (-Z).
+
+adapter = rotate_extrude(
+    [90, 180] // Rotate 90 deg around X, then extrude 180 deg (flip upside down)
+);
+
+// Print settings for FDM (Layer height typically 0.2mm to 0.3mm)
+print_settings = {
+    layer_height: 0.25,
+    infill_density: 40, // Reasonable for a small adapter
+    infill_pattern: "solid",
+    infill_angle: 180,
+};
+
+// Print orientation settings (optional but good practice)
+print_settings = print_settings + {
+    orientation: [90, 180], // Rotate around X then extrude 180 to flip upside down
+};
+
+```

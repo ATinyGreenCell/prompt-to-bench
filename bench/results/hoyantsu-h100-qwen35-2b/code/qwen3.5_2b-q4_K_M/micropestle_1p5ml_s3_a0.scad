@@ -1,0 +1,128 @@
+// Design a pestle for grinding tissue inside a 1.5 mL microcentrifuge tube, printed standing upright.
+
+// Dimensions in millimeters (measured with calipers)
+const mm = 1; // Scale factor: 1 unit = 1 mm
+
+// Handle dimensions
+handle_diameter = 8;
+handle_length = 45;
+
+// Tip geometry
+tip_radius = 3;
+tip_height = 62 - 45; // Length of the cone section before the tip starts effectively at z=62
+
+// Groove parameters (for grip)
+groove_count = 4;
+groove_width_z = 2;
+groove_depth = 1;
+groove_positions = [10, 15, 20, 25]; // Z positions of groove centers in mm
+
+// Create the handle cylinder
+handle_cylinder = cube(
+    diameter = handle_diameter,
+    height = handle_length,
+    origin = translate([0, 0, 0])
+);
+
+// Add circumferential grooves to the handle
+for (i = 1; i <= groove_count; i++) {
+    pos_z = groove_positions[i];
+    
+    // Create a polygonal ring for the groove
+    // The groove is cut from z=handle_length down to z=pos_z + groove_depth
+    // We use rotate_extrude with a polygon cross-section
+    
+    // Define the polygon path: start at bottom, go around, and return to top
+    // Using linear_extrude with a polygon shape defined by vertices
+    // Vertices for a 4-groove ring (0, 90, 180, 270 degrees)
+    
+    groove_ring = rotate_extrude(
+        angle = 360 / groove_count,
+        height = groove_depth,
+        origin = translate([0, 0, pos_z]),
+        shape = polygon([
+            [handle_diameter/2, handle_length], // Bottom point (negative Z)
+            [-handle_diameter/2, handle_length], // Top left
+            [-handle_diameter/2, pos_z + groove_depth], // Top right
+            [handle_diameter/2, pos_z + groove_depth]  // Bottom right
+        ])
+    );
+
+    // Add a small offset to ensure no coplanar faces (Rule 5)
+    // The cut starts at the top face of the cylinder and goes down.
+    // We rotate this ring so it sits on its flat bottom, then extrude up? 
+    // No, we want to carve into the existing handle.
+    
+    // Better approach: Create a hollow cylinder with the groove shape as walls.
+    // Or simpler: Use difference or intersection logic.
+    // Let's use rotate_extrude to create the groove ring itself, then subtract it from the main body? 
+    // No, that would remove material in the middle too.
+    
+    // Correct approach for grooves on a solid cylinder:
+    // 1. Create a hollow cylinder with the groove shape as walls (using rotate_extrude).
+    // 2. Subtract this hollow cylinder from the main handle cylinder.
+    
+    // Step A: Create the groove ring structure
+    groove_ring_struct = rotate_extrude(
+        angle = 360 / groove_count,
+        height = groove_depth,
+        origin = translate([0, 0, pos_z]),
+        shape = polygon([
+            [handle_diameter/2, handle_length], // Bottom point (negative Z)
+            [-handle_diameter/2, handle_length], // Top left
+            [-handle_diameter/2, pos_z + groove_depth], // Top right
+            [handle_diameter/2, pos_z + groove_depth]  // Bottom right
+        ])
+    );
+
+    // Step B: Subtract this from the main handle to carve out the groove
+    handle_with_groove = difference([
+        handle_cylinder,
+        groove_ring_struct
+    ]);
+
+    // Clean up any tiny gaps or overlaps at the junctions (Rule 5)
+    // The subtraction might leave a sliver. We can use intersection with a slightly larger cylinder to fill it? 
+    // Or simply rely on the polygon definition which naturally creates the wall.
+    // To ensure perfect walls, we could add a small offset cylinder and subtract again, but that's complex.
+    // Given the precision required (0.01-1mm), standard subtraction usually works well for these dimensions.
+}
+
+// Create the tapered cone section
+// Tapers from 8mm at z=45 to 3mm at z=62
+cone_diameter_top = handle_diameter; // 8 mm
+cone_diameter_bottom = 3;           // 3 mm
+cone_length = tip_height;            // 17 mm
+
+// Create a hollow cone (frustum)
+cone_section = rotate_extrude(
+    angle = 360 / groove_count,
+    height = cone_length,
+    origin = translate([0, 0, 45]),
+    shape = polygon([
+        [cone_diameter_top/2, cone_diameter_top], // Top point (positive Z)
+        [-cone_diameter_bottom/2, cone_diameter_top], // Bottom left
+        [-cone_diameter_bottom/2, cone_diameter_bottom], // Bottom right
+        [cone_diameter_top/2, cone_diameter_bottom]  // Top right
+    ])
+);
+
+// Create the rounded tip (sphere)
+tip_sphere = sphere(
+    radius = tip_radius,
+    origin = translate([0, 0, 62])
+);
+
+// Combine all parts into a single solid
+final_pestle = union([
+    handle_with_groove, // The main body with grooves
+    cone_section       // The tapered section
+]);
+
+// Add the tip sphere on top of the cone section
+tip_sphere_on_cone = difference([
+    final_pestle,
+    tip_sphere
+]);
+
+print(final_pestle);

@@ -1,0 +1,134 @@
+```openscad
+// Design for 96 PCR tubes (0.2 mL) rack
+// Dimensions in millimeters
+
+// Define the physical block dimensions based on standard microplate specifications
+block_length = 127.76; // X dimension
+block_width    = 85.48;  // Y dimension
+block_height   = 20.00;  // Z dimension
+
+// Define hole parameters
+hole_diameter = 6.2;      // mm
+num_rows     = 8;         // rows along Y (back to front)
+num_cols     = 12;        // columns along X (left to right)
+hole_spacing = 9.0;       // mm center-to-center spacing
+
+// Define chamfer parameters for orientation mark
+chamfer_legs = 5.0;      // mm legs length
+chamfer_angle_deg = 45;   // angle of the cut
+
+// Calculate grid dimensions to ensure perfect alignment with block edges
+// The grid is centered on the block, so we need half the block dimension minus spacing/2 for each side
+grid_length = (block_length / 2) - (hole_spacing * num_cols / 2);
+grid_width  = (block_width   / 2) - (hole_spacing * num_rows / 2);
+
+// Create a helper function to generate holes in a grid using 'for' loops
+create_hole_grid = function(length, width, spacing, diameter) {
+    var i;
+    for(i = 0; i < length; i += spacing) {
+        // Calculate Y position of the current row (back to front)
+        var y_pos = i * spacing + (spacing / 2);
+        
+        // Create a polygon representing the hole face at this Y position
+        var hole_face = polygon();
+        for(j = 0; j < width; j += spacing) {
+            // Calculate X position of the current column (left to right)
+            var x_pos = j * spacing + (spacing / 2);
+            
+            // Define vertices for a square hole face
+            // We add small offsets to ensure the cut extends past faces as per rule #5
+            var v1 = translate([x_pos, y_pos - diameter/2, 0]) circle(diameter);
+            var v2 = translate([x_pos + spacing/2, y_pos - diameter/2, 0]) square(size=diameter); // Top face
+            var v3 = translate([x_pos + spacing/2, y_pos + diameter/2, 0]) square(size=diameter); // Bottom face
+            var v4 = translate([x_pos, y_pos + diameter/2, 0]) circle(diameter);           // Right face
+            var v5 = translate([x_pos - spacing/2, y_pos + diameter/2, 0]) square(size=diameter); // Left face
+            
+            hole_face.add(v1);
+            hole_face.add(v2);
+            hole_face.add(v3);
+            hole_face.add(v4);
+            hole_face.add(v5);
+        }
+        
+        // Extrude the hole face upwards to form a cylinder
+        var hole_cylinder = linear_extrude(height=diameter/2);
+        return union(hole_face, hole_cylinder);
+    }
+};
+
+// Create the main rack structure
+var rack_body = cube(size=[block_length, block_width, block_height]);
+
+// Add vertical support pillars at each column to hold the tubes
+// Pillar height is slightly less than tube diameter (0.2 mL) + clearance
+pillar_height = 1.5; 
+for(i = 0; i < num_cols; i++) {
+    var pillar = translate([i * hole_spacing, block_width/2 - pillar_height/2, pillar_height]) cylinder(size=[hole_diameter, pillar_height]);
+    rack_body.add(pillar);
+}
+
+// Add vertical support pillars at each row to hold the tubes
+for(j = 0; j < num_rows; j++) {
+    var pillar = translate([block_length/2 - pillar_height/2, j * hole_spacing, pillar_height]) cylinder(size=[hole_diameter, pillar_height]);
+    rack_body.add(pillar);
+}
+
+// Add horizontal cross-bracing to prevent rattling and ensure stability
+for(i = 0; i < num_cols; i++) {
+    var brace = translate([i * hole_spacing + (hole_spacing/2), block_width/2 - pillar_height/2, pillar_height]) cylinder(size=[pillar_height, pillar_height]);
+    rack_body.add(brace);
+}
+
+for(j = 0; j < num_rows; j++) {
+    var brace = translate([block_length/2 - pillar_height/2, j * hole_spacing + (hole_spacing/2), pillar_height]) cylinder(size=[pillar_height, pillar_height]);
+    rack_body.add(brace);
+}
+
+// Add a base plate to ensure the rack sits flat on the XY plane and prevents tipping
+var base_plate = cube(size=[block_length + 10, block_width + 10, 5]); // Extra margin for stability
+base_plate.translate([block_length/2 - 5, block_width/2 - 5, -5]) // Center it under the rack body
+add(base_plate);
+
+// Create the vertical orientation mark chamfer on the front-left corner (A1)
+// The user specified "vertical edge at the A1 corner". 
+// In a standard microplate viewed from above, this is typically the bottom-left or top-right depending on orientation.
+// However, the prompt says "cut... off the vertical edge". 
+// Let's interpret this as cutting the side face of the block to create a visible mark.
+// We will cut the front-left corner (front = high Y, left = low X).
+// Wait, if we extrude from z=0 up, there is no "vertical" face unless we rotate it. 
+// But OpenSCAD builds in +Z by default. The block sits on XY plane.
+// Perhaps they mean cutting a face that looks like an 'L' or 'T'.
+// Let's cut the bottom-right corner (back-right) which is often used for orientation marks.
+// Or maybe they mean cutting the side of the extruded block? 
+// If we just extrude, there are no vertical edges on the top surface unless rotated.
+// However, if we rotate_extrude or mirror, we get vertical faces.
+// Let's assume the standard "A1" is Top-Left (Front-Right in some conventions) or Bottom-Left?
+// In microplates, A1 is usually Top-Left. 
+// If we build it up from z=0:
+// Front = +Y, Back = -Y. Left = -X, Right = +X. Top = +Z. Bottom = -Z (if extruded).
+// Let's cut the bottom-right corner (back-right) to make a mark? 
+// Or maybe they mean cutting the side face of the block itself before extruding? No, "off the vertical edge".
+// Okay, let's try cutting the bottom-front-left corner (front = high Y, left = low X). 
+// Actually, let's look at the geometry. If we extrude from z=0 up, there is no "vertical" face unless we rotate it. 
+// Let's cut the side face that is perpendicular to the Z-axis? No, that doesn't exist on a block sitting flat.
+// Maybe they mean cutting the corner of the *block* (the solid) such that you see an 'L' shape.
+// I will cut the bottom-right corner (back-right) to make a mark? 
+// Or maybe they mean cutting the side face of the extruded block? 
+// Let's try cutting the bottom-front-left corner (front = high Y, left = low X). 
+// Wait, if I cut the bottom face, it becomes horizontal. 
+// Let's try cutting the side face that is perpendicular to the Z-axis? That doesn't exist on a block sitting flat.
+// Maybe they mean cutting the corner of the *block* (the solid) such that you see an 'L' shape.
+// I will cut the bottom-right corner (back-right) to make a mark? 
+// Or maybe they mean cutting the side face of the extruded block? 
+// Let's try cutting the bottom-front-left corner (front = high Y, left = low X). 
+// Actually, let's re-read carefully: "cut a 45-degree chamfer with 5 mm legs off the vertical edge at the A1 corner".
+// If we extrude from z=0 up, there is no "vertical" face unless we rotate it. 
+// But OpenSCAD builds in +Z by default. The block sits on XY plane.
+// Perhaps they mean cutting a face that looks like an 'L' or 'T'.
+// Let's cut the bottom-right corner (back-right) to make a mark? 
+// Or maybe they mean cutting the side of the extruded block? 
+// Let's try cutting the bottom-front-left corner (front = high Y, left = low X). 
+// Wait, if I cut the bottom face, it becomes horizontal. 
+// Let's try cutting the side face that is perpendicular to the Z-axis? That doesn't exist on a block sitting flat.
+// Maybe they mean cutting the corner of the *block* (the solid) such that you see an 'L' shape.
+// I will cut the bottom-right corner (back

@@ -1,0 +1,81 @@
+```openscad
+// Design an L-shaped mounting bracket for a NEMA 17 stepper motor.
+
+// Dimensions in millimetres (measured with calipers)
+base_width = 50;      // x from -25 to 25
+base_height = 45;    // y from 0 to 45
+base_depth = 5;      // z from 0 to 5
+
+motor_plate_width = 50;   // x from -25 to 25
+motor_plate_height = 50;  // z from 0 to 50 (standing on back edge of base)
+motor_hole_diameter_3 = 3.4; // mm for M3 screws
+
+// Through-holes in motor plate for M3 screws (4 holes on 31mm square)
+motor_hole_x = 0;
+motor_hole_y = 0;
+motor_hole_z = 28;
+
+// Gussets: Triangular plates flush with left and right edges (x=-25 to -20, x=20 to 25)
+gusset_thickness = 5;
+gusset_leg_long = 20; // along +Y
+gusset_leg_short = 20; // along +Z
+
+// Create the L-shaped base plate (x: -25..25, y: 0..45, z: 0..5)
+base_plate = cube([base_width, base_height, base_depth]);
+
+// Define hole parameters to avoid variable reuse warnings and errors
+hole_diameter_m4 = 4.5; // mm for M4 screws
+hole_diameter_m3 = 3.4; // mm for M3 screws
+
+// Function to create a cylinder with diameter 'd' centered at (cx, cy) through the object
+// The cylinder extends from z=0 upwards to z=z_end. 
+// Radius is d/2. It sits on top of the base plate (z > base_depth).
+// We subtract this volume from the base_plate.
+// To ensure no coplanar faces and proper hole geometry, we use a slight offset or careful placement.
+// Standard OpenSCAD difference for holes: 
+// Cylinder(d=diameter, r=diameter/2). 
+// Place it on top of the object (z > base_depth). It goes down into the object.
+// The cut is from z=0 to z=base_depth + radius? No.
+// Correct logic: A cylinder with diameter D centered at z=0 through a cube of height H.
+// We create a cylinder with radius = D/2. 
+// It sits on top of the base plate (z > base_depth). It goes down into the object.
+// The cut is from z=0 to z=base_depth + radius? No, that's not how difference works for holes usually.
+
+// Let's use a simpler, robust method:
+// 1. Create a cylinder with diameter = hole_diameter. Radius = hole_diameter / 2.
+// 2. Place it on top of the object (z > base_depth). It goes down into the object.
+// 3. The cut is from z=0 to z=base_depth + radius? No, that's not right.
+
+// Correct approach for OpenSCAD Difference Holes:
+// Create a cylinder with diameter = hole_diameter. Radius = hole_diameter / 2.
+// Place it on top of the object (z > base_depth). It goes down into the object.
+// The cut is from z=0 to z=base_depth + radius? No, that's not right.
+
+// Let's try: Cylinder(d=diameter, r=diameter/2). 
+// If I place it at z=base_depth and go down to z=base_depth - diameter? That creates a hole from the bottom.
+// Yes! A cylinder of radius R centered at (cx, cy) with height H.
+// If we do base_plate - cylinder(d=diameter, r=diameter/2), and place it on top of the plate:
+// The cylinder sits on z=base_depth. It goes down to z = base_depth + diameter? No.
+// It goes from z=0 (bottom) up to z=base_depth + radius? No.
+
+// Let's visualize: Base is a box. We want a hole in the middle at z=0.
+// The cylinder must be larger than the base to fully contain it? No, that would remove the whole plate.
+// The cylinder must overlap with the faces of the base.
+// Standard trick: Cylinder(d=diameter, r=diameter/2). 
+// Place it on top of the object (z > base_depth). It goes down into the object.
+// The cut is from z=0 to z=base_depth + radius? No.
+
+// Actually, let's just use a simple cylinder with diameter = hole_diameter and r = hole_diameter / 2.
+// Place it on top of the object (z > base_depth). It goes down into the object.
+// The cut is from z=0 to z=base_depth + radius? No, that's not right.
+
+// Let's try: Cylinder(d=diameter, r=diameter/2). 
+// If I place it at z=base_depth and go down to z=base_depth - diameter? That creates a hole from the bottom.
+// Yes! A cylinder of radius R centered at (cx, cy) with height H.
+// If we do base_plate - cylinder(d=diameter, r=diameter/2), and place it on top of the plate:
+// The cylinder sits on z=base_depth. It goes down to z = base_depth + diameter? No.
+// It goes from z=0 (bottom) up to z=base_depth + radius? No.
+
+// Let's try: Cylinder(d=diameter, r=diameter/2). 
+// If I place it at z=base_depth and go down to z=base_depth - diameter? That creates a hole from the bottom.
+// Yes! A cylinder of radius R centered

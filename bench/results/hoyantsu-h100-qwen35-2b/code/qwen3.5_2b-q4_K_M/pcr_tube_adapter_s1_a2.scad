@@ -1,0 +1,69 @@
+// Design an adapter sleeve for a 0.2 mL PCR tube in a rack hole made for 1.5 mL tubes.
+// Print it upside down: a collar 13 mm in diameter and 1.5 mm thick lies on the bed (z = 0 to 1.5), 
+// and the sleeve body, 10.8 mm in outer diameter, rises from the collar to z = 21.5.
+// A straight 6.2 mm diameter bore runs through the full height, open at both ends.
+
+// Dimensions (in millimeters)
+collar_diameter = 13;      // Outer Diameter of the collar
+collar_thickness = 1.5;    // Thickness of the collar
+body_outer_diameter = 10.8; // OD of the body
+bore_diameter = 6.2;       // Diameter of the bore
+
+// Calculate total length based on rack hole requirement (1.5 mL tubes) and collar thickness.
+// The prompt specifies the body rises to z=21.5, which implies the total height is fixed at this value.
+total_height = 21.5;      // Height from bed (z=0) to open end of bore
+
+// Define geometry variables for clarity
+collar_h = collar_thickness;
+body_len = total_height - collar_h;
+
+// 1. The Collar (Bottom part, z=0 to 1.5)
+// We model the collar as a cylinder with an offset hole in it to create the internal bore immediately.
+collar_body = cylinder(
+    size=[collar_diameter, collar_diameter, collar_h] // OD x OD x Height
+);
+
+// Create the bore inside the collar by subtracting a smaller cylinder from the outer surface.
+// We use offset=0.01 to ensure no coplanar faces and good FDM support.
+bore_in_collar = difference(
+    union([collar_body, cylinder(size=[bore_diameter, bore_diameter, 0])]), // Outer shell of collar
+    translate([0, 0, -collar_h/2]) cylinder(size=[bore_diameter, bore_diameter, collar_h]) // Inner hole
+);
+
+// 2. The Body (Top part)
+// This is a hollow cylinder with the same outer diameter as the body.
+body_body = cylinder(
+    size=[body_outer_diameter, body_outer_diameter, body_len] // OD x OD x Length
+);
+
+// Create the bore inside the body by subtracting a smaller cylinder from the outer surface.
+bore_in_body = difference(
+    union([body_body, cylinder(size=[bore_diameter, bore_diameter, 0])]), // Outer shell of body
+    translate([0, 0, -collar_h/2]) cylinder(size=[bore_diameter, bore_diameter, collar_h]) // Inner hole
+);
+
+// Combine the parts into a single solid using union.
+adapter = hull(union([collar_body, body_body]));
+
+// 3. Orientation and Print Settings
+// The prompt specifies "Print it upside down". 
+// Currently, our 'bore_in_collar' has the bore going from z=-collar_h/2 to z=0 (relative to collar).
+// To make the open end face +Z, we need to rotate the assembly so that the bottom of the hole is at -z and top at +z.
+// We can achieve this by rotating around X axis 90 degrees, then extruding 180 degrees (flipping upside down).
+
+adapter = rotate_extrude(
+    [90, 180] // Rotate 90 deg around X, Extrude 180 deg to flip orientation
+);
+
+// Print settings for FDM printing
+print_settings = {
+    layer_height: 0.25,
+    infill_density: 40,
+    infill_pattern: "solid",
+    infill_angle: 180,
+};
+
+// Optional: Explicitly set orientation to ensure the open end is up (+Z)
+print_settings = print_settings + {
+    orientation: [90, 180] 
+};

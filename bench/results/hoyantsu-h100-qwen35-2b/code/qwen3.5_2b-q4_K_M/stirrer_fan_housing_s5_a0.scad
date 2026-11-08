@@ -1,0 +1,144 @@
+// Design for DIY Magnetic Stirrer Housing
+// Units: millimeters
+
+// Dimensions in mm
+box_thickness = 2.0; // Top plate thickness (z=0 to 2)
+wall_thickness = 2.5; // Wall thickness (z=2 to z=40)
+outer_size_x = 90.0;
+outer_size_y = 90.0;
+
+// Hole specifications for M4 screws
+hole_diameter = 4.5;
+hole_pitch = 71.5; // Square pattern spacing in mm
+hole_offset_x = 45.0;
+hole_offset_y = 45.0;
+
+// Notch specification (Power cable)
+notch_width = 12.0;
+notch_depth_from_open_edge = 8.0; // From z=32 to z=40
+
+// Create the main box body
+// The box is built as a hollow shell: walls + top plate
+// We will construct it by extruding walls and then cutting out the top hole and notch
+
+// 1. Define variables for easy reference
+var x = outer_size_x;
+var y = outer_size_y;
+var z_max = wall_thickness * 20; // Total height in mm (z=40)
+
+// 2. Create the four walls of the box
+// Walls are extruded from z=2 to z=z_max, centered on the box outline
+for (i = -1; i <= 1; i++) {
+    var wall_x = x/2 + i * (x/4); // Centered at 0, spaced by x/4
+    for (j = -1; j <= 1; j++) {
+        var wall_y = y/2 + j * (y/4); // Centered at 0, spaced by y/4
+        
+        // Create a hollow box using rotate_extrude and mirror
+        // We use a large cylinder to define the outer shape, then cut out the top hole and notch
+        var wall_height = z_max - 2;
+        
+        // Rotate around Z axis
+        for (k = -1; k <= 1; k++) {
+            var rot_x = x/2 + k * (x/4);
+            var rot_y = y/2 + k * (y/4);
+            
+            // Create a hollow cylinder using rotate_extrude with mirror to make it open at top
+            // The 'mirror' command makes the top face of this cylinder an opening
+            // We need to define the bottom and sides carefully.
+            // Actually, easiest way for a box: Extrude a solid rectangle, then use difference or holes.
+            
+            // Let's build each wall as a hollow shell using rotate_extrude with mirror on the top face? 
+            // No, rotate_extrude with mirror makes the top an opening but the bottom is closed by default unless specified.
+            // Better approach: Create a solid rectangle for each quadrant, then use hull or difference to make it open at top.
+            
+            // Let's try rotating around Z axis and using mirror on the top face of the extrusion? 
+            // rotate_extrude with mirror makes the top surface an opening (like a cup). The bottom is closed.
+            // This works perfectly for walls.
+            
+            var wall_radius = x/2 + rot_x;
+            var wall_height = z_max - 2;
+            
+            // Rotate around Z axis
+            rotate_extrude(
+                height=wall_height,
+                radius=wall_radius,
+                mirror=(0,1) // Makes the top face an opening (z=wall_height), bottom closed.
+            );
+        }
+    }
+}
+
+// 3. Create the Top Plate (z = 2 to z_max)
+// It is a solid plate covering the fan area.
+// We will create it as a large cylinder and then cut out the hole and notch.
+var top_radius = x/2; // Radius of top plate
+var top_height = wall_thickness;
+
+// Create a hollow cylinder for the top plate (open at bottom)
+rotate_extrude(
+    height=top_height,
+    radius=top_radius,
+    mirror=(0,-1) // Makes the bottom face an opening (z=0), top closed.
+);
+
+// 4. Cut out the Top Hole (M4 screws)
+// Pattern: 71.5 mm square centered on plate
+for (i = -1; i <= 1; i++) {
+    var hole_x = x/2 + i * (x/4); // Centered at 0, spaced by x/4
+    for (j = -1; j <= 1; j++) {
+        var hole_y = y/2 + j * (y/4); // Centered at 0, spaced by y/4
+        
+        // Create a hollow cylinder for the hole (open at top)
+        var hole_radius = hole_diameter / 2;
+        rotate_extrude(
+            height=hole_radius,
+            radius=hole_radius,
+            mirror=(1,-1) // Makes the top face an opening (z=hole_radius), bottom closed.
+        );
+    }
+}
+
+// 5. Cut out the Notch (Power Cable)
+// Location: One wall, centered along that wall, reaching 8 mm down from open edge
+// Open edge is at z = wall_thickness = 2 mm. So notch starts at z=10 and ends at z=40? 
+// Wait, user said "reaching 8 mm down from the open edge (from z = 32 to z = 40)".
+// This implies the cut happens between z=32 and z=40.
+// The notch is on ONE of the walls. Let's pick the right wall (e.g., i=-1, j=-1).
+
+var notched_wall_x = x/2 - 1 * (x/4); // Left-most wall
+var notched_wall_y = y/2 - 1 * (y/4);
+
+// Create a hollow cylinder for the notch (open at top)
+var notch_radius = notch_width / 2;
+rotate_extrude(
+    height=notch_depth_from_open_edge, // From z=32 to z=40? 
+    radius=notch_radius,
+    mirror=(1,-1) // Makes the top face an opening (z=notch_radius), bottom closed.
+);
+
+// Wait, user specified "from z = 32 to z = 40".
+// The notch is cut into the wall. The wall exists from z=2 to z=40.
+// If we use rotate_extrude with mirror=(1,-1) on a cylinder of height H, it opens at z=H and closes at z=0.
+// We need the opening to be between z=32 and z=40.
+// So the cut depth should be 8 mm? No, that's just the length of the notch.
+// The "depth" in rotate_extrude is how far down it goes from the open face.
+// If we want an opening at z=32 to z=40 (length 8mm), we need a cylinder cut from z=32 to z=40? 
+// No, rotate_extrude creates a solid block. To make an opening, mirror=(1,-1) makes the top face open.
+// We want the top face of this rotated object to be at z=32. So we need height = 8mm (from z=32 to z=40).
+// And the notch width is 12mm? No, rotate_extrude radius defines the hole size.
+// The user said "12 mm wide". This usually refers to the physical width of the cut slot.
+// If we use a cylinder with radius = 6mm (diameter 12mm), and mirror=(1,-1) on it...
+// It will create an opening at z=height.
+// We want this opening to be centered along the wall, starting at z=32? 
+// Or does "reaching 8 mm down" mean the slot goes from z=32 to z=40 (length 8mm)? Yes.
+// So we need a cylinder of height 8mm (from z=32 to z=40).
+// And radius = notch_width / 2 = 6mm? No, that would make the hole diameter 12mm. 
+// But the user said "12 mm wide". Usually slot width is the physical dimension.
+// If we cut a cylinder of radius 6mm, the hole diameter is 12mm. That matches "12 mm wide" if referring to diameter? 
+// Or does it mean the slot itself is 12mm wide? A cylindrical slot would have varying width.
+// Let's assume standard interpretation: The notch is a rectangular cutout of 12mm width and 8mm depth, centered on the wall.
+// To achieve this with OpenSCAD primitives:
+// We can use polygon or simply define the geometry manually for the notch since it's complex to do perfectly with cylinders alone without offsets.
+// However, user allowed "polygon". Let's use a polygon for the notch to get exact rectangular shape and centering.
+
+var notched_wall_x = x/2 - 1 *

@@ -1,0 +1,57 @@
+```openscad
+// Design a drying rack for microscope slides.
+// Dimensions are in millimeters (mm).
+
+// Define dimensions based on user measurements
+block_length = 90;      // X dimension: total length of the base block
+block_width  = 45;      // Y dimension: width of the base block
+block_height = 20;      // Z dimension: height of the base block
+
+slot_length   = 77;     // Length of each slot along X (mm)
+slot_depth    = 10;     // Depth of slots into the block (Z, mm)
+slot_width_y  = 1.6;    // Width of slots in Y direction (mm)
+slot_spacing  = 3.5;    // Center-to-center spacing between slots along Y (mm)
+
+// Number of slides to hold
+num_slides = 10;
+
+// Create the base block as a solid cube
+base_block = cube([block_length, block_width, block_height]);
+
+// Define the geometry for one slot
+slot_geometry = cylinder(
+    radius = slot_depth / 2.0,
+    height = slot_depth + 0.01, // Ensure slight overlap to avoid coplanar faces as per rule 5
+    center_x = (block_length - slot_length) / 2.0,
+    center_y = slot_spacing * num_slides / 2.0,
+    center_z = block_height / 2.0 + slot_depth / 2.0 // Center the cylinder vertically within the block height
+);
+
+// Create a single slot using union of the base and the cutout
+single_slot = difference(
+    [base_block],
+    [slot_geometry]
+);
+
+// Build the rack by stacking slots along the Y axis (which corresponds to the long edge of the slides)
+// The slots are arranged in a grid. Since we want 10 slides, and each slot holds one slide,
+// we need to arrange them such that they form a rectangular array or simply stack them?
+// Re-reading: "holds 10 microscope slides... standing upright on their long edge".
+// Usually, drying racks hold multiple rows. However, the prompt says "Cut 10 parallel slots... into the top face".
+// This implies a single row of 10 slots or perhaps a grid? 
+// Given "parallel slots" and "group of slots is centred", it strongly suggests a single line of 10 slots running along the width.
+// Let's assume a single row of 10 slots to hold exactly 10 slides in one continuous strip, centered on the block.
+
+rack_slots = for (i = 0; i < num_slides; i++) {
+    translate([slot_length * i / 2.0, slot_spacing * i, 0]) single_slot;
+};
+
+// Final assembly: Union of base and rack slots
+drying_rack = union(
+    [base_block],
+    [rack_slots]
+);
+
+// Optional: Add a small top cap to prevent sliding if desired, but prompt implies just the block with slots.
+// The prompt asks for "a drying rack", which is the assembly of base and slots.
+```

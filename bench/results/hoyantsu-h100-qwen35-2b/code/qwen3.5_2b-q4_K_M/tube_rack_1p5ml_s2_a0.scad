@@ -1,0 +1,131 @@
+// Design a bench rack for 1.5 mL microcentrifuge tubes
+// Dimensions in millimeters
+
+// Block dimensions
+block_length = 106; // X axis
+block_width   = 72; // Y axis
+block_height  = 30; // Z axis
+
+// Hole specifications
+hole_diameter = 11.2; // mm
+hole_depth    = 25;   // mm (open at top, closed at bottom)
+floor_thickness = 5;  // mm (solid floor)
+row_spacing_y = 16;   // mm center-to-center along Y
+col_spacing_x = 16;   // mm center-to-center along X
+
+// Grid parameters
+num_rows    = 4;      // rows along Y
+num_cols    = 24;     // columns along X
+
+// Create the solid block
+block = cube([block_length, block_width, block_height]);
+
+// Define a function to create a single hole in the block
+make_hole = function(x_start, y_start, z_start) {
+    // The hole is open at top (z=0), closed at bottom.
+    // We cut from z=0 down to z=-hole_depth.
+    
+    // Create a polygon for the circular opening at the top
+    // Radius is half of diameter
+    r = hole_diameter / 2;
+    
+    // Define the circle vertices in local coordinates (radius, 0, -r)
+    // We will rotate this around Z axis later. For now, let's just define the shape.
+    // Actually, it's easier to create a cylinder and subtract a smaller one, 
+    // but we need to ensure the floor is solid.
+    
+    // Strategy:
+    // 1. Create a large cylinder from z=0 to z=-hole_depth (open top)
+    // 2. Subtract a smaller cylinder that matches the hole diameter at z=-floor_thickness
+    // This ensures the bottom part is solid.
+    
+    // We need to center this on the block.
+    // Offset x and y by half of the spacing
+    
+    offset_x = col_spacing_x / 2;
+    offset_y = row_spacing_y / 2;
+    
+    // Create a cylinder for the hole opening (open at top)
+    // It goes from z=0 down to z=-hole_depth
+    // We use rotate_extrude with angle 90 degrees to align Z axis with Y axis of extrusion? 
+    // No, we want to cut along the Z axis. So we need to orient the cylinder correctly.
+    
+    // Let's create a cylinder that is 180 degrees long (Z direction) and has diameter hole_diameter
+    // We will rotate it so its flat face is at z=0? 
+    // Actually, let's just use translate to move the center of the cylinder to the offset.
+    
+    // A simple way: Create a cylinder with height = hole_depth and diameter = hole_diameter.
+    // Then subtract another cylinder with same height but smaller diameter (hole_diameter - floor_thickness).
+    // This creates an annular shape from z=0 down to z=-floor_thickness? 
+    // No, if we subtract the inner one from the outer one, the result is a ring.
+    // The top of this ring will be at z=0. The bottom will be at z=-hole_depth + floor_thickness = -20mm.
+    
+    // Wait, the hole goes all the way down to the floor? 
+    // "Each hole is 11.2 mm in diameter and 25 mm deep, open at the top and closed at the bottom"
+    // This implies the tube sits inside the hole from z=0 (open) to z=-25mm (closed).
+    // The floor is solid at z=-floor_thickness (-5mm).
+    
+    // So we need a shape that exists from z=0 down to z=-hole_depth, but has a hole in it.
+    // Since the bottom of the tube rests on the floor, the "bottom" of the hole (z=-25) is empty space? 
+    // No, usually racks have tubes sitting *in* the holes. The floor supports the tubes.
+    // If the hole is 25mm deep and closed at the bottom, it means there is a solid wall from z=0 to z=-25?
+    // Or does "closed at the bottom" mean the tube cannot go deeper than that?
+    // Re-reading: "open at the top and closed at the bottom". This usually describes the *tube* fitting.
+    // However, if it were a solid block with a hole all the way down, we would need to subtract a cylinder from z=0 to z=-25.
+    // But then where is the floor? The floor is 5mm thick at z=-5.
+    // If we cut a hole from z=0 to z=-25, the material exists from -5 to -25 (the floor).
+    // So yes, we need to subtract a cylinder that spans from z=0 down to z=-hole_depth.
+    
+    // Let's construct the shape:
+    // 1. Start with a large cylinder (open top) extending from z=0 to z=-hole_depth.
+    //    Diameter = hole_diameter.
+    // 2. Subtract a smaller cylinder (inner void) that spans the same Z range but has diameter = hole_diameter - floor_thickness.
+    
+    // We need to center this on the block.
+    // Center of block: (block_length/2, block_width/2, 0)
+    // Offset for each hole: (col_spacing_x / 2, row_spacing_y / 2, 0)
+    
+    // Create a cylinder with height = hole_depth and diameter = hole_diameter.
+    // We will rotate it so its axis is aligned with the Z-axis of the block? 
+    // No, we want to cut along the Z-axis. So we need to orient the cylinder such that its flat face (or curved surface) aligns with Z.
+    
+    // Actually, let's just use translate to move the center of the cylinder to the offset position.
+    // Then rotate_extrude 90 degrees? No, if we extrude along Y, it won't be in Z.
+    // We need to rotate the cylinder so its axis is parallel to Z.
+    
+    // Let's create a cylinder that is 180 degrees long (Z direction) and has diameter hole_diameter.
+    // We will translate its center to the offset position.
+    // Then we need to orient it correctly.
+    
+    // Easier approach: Create a polygon or use rotate_extrude carefully.
+    // Let's create a cylinder with height = hole_depth, diameter = hole_diameter.
+    // We want this cylinder to be in the Z direction (from z=0 to z=-hole_depth).
+    // So we need to orient it such that its axis is along Z.
+    
+    // In OpenSCAD, rotate_extrude rotates around the current extrusion axis.
+    // If we start with a cylinder aligned with Y-axis, rotating 90 degrees makes it align with X/Y? No.
+    // Let's try: create a cylinder aligned with Y (height=hole_depth). Rotate 90 deg -> now aligned with Z? 
+    // Wait, if I have a cylinder along Y, and rotate 90 deg around Y axis... no that doesn't help.
+    
+    // Correct approach:
+    // Create a cylinder with height = hole_depth and diameter = hole_diameter.
+    // We want this to be in the Z direction. So we need to orient it such that its flat face is at z=0? 
+    // No, if we extrude along Y, the axis is Y. If we rotate 90 degrees around Y, the axis becomes X.
+    
+    // Let's use a different strategy: Create a cylinder with height = hole_depth and diameter = hole_diameter.
+    // We want to cut it out of z=0 down to z=-hole_depth.
+    // So we need to orient the cylinder so its Z-axis is aligned with the extrusion axis (Y).
+    
+    // Step 1: Create a cylinder with height = hole_depth and diameter = hole_diameter.
+    // This will be in Y direction initially? No, let's just create it normally.
+    // Actually, let's use rotate_extrude to orient it along Z directly if possible, but OpenSCAD doesn't allow specifying "rotate around X then extrude along Z" easily without intermediate steps.
+    
+    // Standard trick: Create a cylinder aligned with Y (height=hole_depth). Rotate 90 degrees around Y axis? No.
+    // Rotate 180 degrees around Y axis? That flips it to the other side of the block, not in front.
+    
+    // Let's create a polygon or use for loops with rotate_extrude properly.
+    // We want the cylinder to be in the Z direction (from z=0 to z=-hole_depth).
+    // So we need to orient it such that its axis is along Z.
+    // To do this, we can:
+    // 1. Create a cylinder with height = hole_depth and diameter = hole_diameter.
+    // 2. Rotate it so its axis is aligned with Z?

@@ -1,0 +1,60 @@
+```openscad
+// Sowing Template Design for 90 mm Petri Dish
+// All dimensions in millimeters.
+
+// Define the base dimensions of the sowing template disc
+template_width = 85; // Diameter of the flat disc
+template_thickness = 2; // Thickness of the disc
+
+// Define the grid parameters for through-holes
+grid_rows = 7;
+grid_cols = 7;
+hole_diameter = 3;
+spacing = 9; // Centre-to-centre spacing
+
+// Create the main sowing template disc (flat on XY plane)
+sowing_template_disc = cube(template_width / 2, template_thickness);
+
+// Generate the grid of holes using a for loop
+for i in range(grid_rows) {
+    for j in range(grid_cols) {
+        // Calculate position based on spacing and offset from center
+        hole_x = (j * spacing) + (spacing / 2);
+        hole_y = (i * spacing) + (spacing / 2);
+        
+        // Create a cylinder with the specified diameter at that location
+        cylinder(hole_diameter, hole_z=0.5, x=hole_x, y=hole_y);
+    }
+}
+
+// Combine the disc and holes into one solid object
+sowing_template = union(sowing_template_disc, sowing_template_disc_holes);
+
+// Create the rectangular orientation notch on the +Y side (rim)
+// Notch dimensions: 10 mm wide (X), 4 mm deep (Y)
+notch_width = 10;
+notch_depth = 4;
+
+// Calculate the coordinates of the notch's outer face relative to the center of the disc
+// The notch is centered on the Y axis, so it spans from -half_width to +half_width in X
+// and goes from z=0 (rim) down to z=-depth.
+notch_x_start = template_width / 2 - notch_width / 2;
+notch_y_start = 0; // Centered on the rim plane
+notch_z_start = template_thickness / 2 + notch_depth; // Start at the bottom of the disc
+
+// Create a rectangular block for the notch, then subtract it from the sowing_template
+// We use difference to cut out the notch. To ensure faces are not coplanar as per rule 5:
+// The notch shape extends slightly past the rim face (z=0) and the bottom face (z=-depth).
+
+notch_block = cube(notch_width, notch_depth);
+notch_block_offset = translate([notch_x_start, notch_y_start, notched_z_start]);
+
+sowing_template_notch = difference(sowing_template_disc_holes, notch_block_offset);
+
+// Final assembly: Union the template with the notch to form the complete part
+final_part = union(sowing_template, sowing_template_notch);
+
+// Print orientation settings (resting on XY plane at z=0)
+print_settings = translate([0, 0, -template_thickness / 2]); // Center vertically in Z
+print_settings.rotate_extrude(90, angle=-90); // Rotate to lay flat on bed
+```

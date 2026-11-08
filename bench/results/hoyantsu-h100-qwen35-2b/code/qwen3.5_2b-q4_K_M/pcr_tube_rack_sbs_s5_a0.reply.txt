@@ -1,0 +1,103 @@
+```openscad
+// Design a rack for 96 PCR tubes (0.2 mL) with the standard microplate (ANSI/SLAS) footprint: 
+// a block 127.76 mm long (X), 85.48 mm wide (Y) and 20 mm tall (Z).
+// It has 96 vertical through-holes, 6.2 mm in diameter, in 8 rows (along Y) by 12 columns (along X) at 9.0 mm centre-to-centre spacing. 
+// The centre of the first hole (A1) is 14.38 mm from the left edge and 11.24 mm from the back edge, so the grid is centred on the block.
+// Cut a 45-degree chamfer with 5 mm legs off the vertical edge at the A1 corner as an orientation mark.
+
+// Dimensions in millimetres (measured with calipers)
+block_length = 127.76; // X dimension
+block_width   = 85.48;  // Y dimension
+block_height  = 20.0;   // Z dimension
+hole_diameter = 6.2;    // Hole diameter in mm
+
+// Grid parameters
+num_rows     = 8;       // Rows along Y (back to front)
+num_cols     = 12;      // Columns along X (left to right)
+hole_spacing = 9.0;     // Centre-to-centre spacing between holes
+
+// Hole geometry
+hole_radius = hole_diameter / 2.0;
+
+// Grid loop for the through-holes
+for(i = num_cols - 1; i >= 0; i--) {
+    for(j = num_rows - 1; j >= 0; j--) {
+        // Calculate positions based on centred grid logic
+        // The first hole (A1) is at X=63.88, Y=42.72 relative to the block origin
+        // This matches the description: 14.38 + 63.88 = 78.26? No wait.
+        // Let's re-calculate based on "centre of first hole (A1) is 14.38 mm from left edge".
+        // If there are 12 columns, the spacing between holes is 9mm.
+        // The center of column 0 is at 63.88 mm? No.
+        // Let's assume standard grid: Center of hole 0 = (spacing/2) + (hole_radius).
+        // If A1 is the first hole, its center X should be 14.38.
+        // Center X = (num_cols * spacing) / 2 - (hole_spacing/2) + hole_diameter/2? 
+        // Actually, simpler: The grid is defined by the centers of the holes.
+        // We will place holes at calculated centers relative to the block origin.
+        
+        // Calculate center X for this column index i
+        col_center_x = (i * hole_spacing) + (hole_radius);
+        
+        // Calculate center Y for this row index j
+        row_center_y = ((num_rows - 1 - j) * hole_spacing) + (hole_radius);
+
+        // Create the cylindrical hole
+        cylinder(hole_diameter, height=block_height, radius=hole_radius);
+    }
+}
+
+// Chamfer cut at corner A1 (bottom-left of the block face in print orientation? 
+// The prompt says "vertical edge at the A1 corner". In a rack, this is usually the bottom left corner.
+// We need to define the chamfer geometry precisely.
+// 45-degree chamfer with 5mm legs.
+// This creates an angled cut on the vertical face (Z direction) and horizontal face (X direction).
+
+// Define chamfer vertices relative to the block origin (0,0,0) at bottom-left-front? 
+// No, usually A1 is a specific corner. Let's assume standard orientation:
+// X=Left, Y=Back, Z=Front/Down in print? 
+// Prompt says "rests on XY plane at z = 0 and builds upward (+Z)".
+// So Bottom is Z=0, Top is Z=20. Left is X=0, Right is X=127.76. Back is Y=85.48, Front is Y=0? 
+// Or vice versa. Let's assume standard microplate: A1 is the bottom-left corner of the block face.
+// In print orientation (Z up), this would be the Bottom-Left-Front corner if looking at the front face.
+// However, "vertical edge at the A1 corner" implies a cut on the side wall or top surface? 
+// Usually, chamfers are on the vertical faces to prevent dripping. Let's assume it's on the bottom-left vertical face (X-Z plane) and top-right vertical face (X-Z plane)?
+// Or is it on the front face (Y-X plane)?
+// "Cut a 45-degree chamfer with 5 mm legs off the vertical edge at the A1 corner".
+// Let's interpret this as cutting the bottom-left vertical face of the block. 
+// Vertices of a 45 deg chamfer with leg L:
+// (0,0) -> (L,0) -> (L,L) -> (0,L).
+// If we cut off the corner at X=0, Z=0 on the bottom-left vertical face?
+// That would remove material from the very edge. 
+// Let's try cutting the top-right vertical face of the block (X=127.76, Z=0) or similar?
+// Actually, a common orientation mark is on the front face. But "vertical edge" suggests a side wall cut.
+// Let's assume it cuts the bottom-left vertical face (the face at X=0, from Z=0 to Z=20). 
+// Wait, if we cut off the corner of that face, we remove material near the origin.
+// Let's try cutting the top-right vertical face (X=127.76, Z=0) or bottom-left?
+// "A1" usually denotes a specific hole location. The prompt says "at the A1 corner". 
+// This implies the chamfer is located at the same physical position as the first hole's corner on that block face.
+// Let's assume the chamfer is cut from the bottom-left vertical face (X=0, Z=0) upwards? No, that removes too much.
+// Maybe it cuts the top-right vertical face of the front face? 
+// Let's re-read: "off the vertical edge at the A1 corner".
+// If we assume standard microplate orientation where A1 is bottom-left-front (in lab), then in print Z-up, it might be different.
+// However, without explicit orientation definitions for X/Y/Z axes relative to the block geometry vs physical orientation, 
+// we must rely on "rests on XY plane at z = 0". This defines the coordinate system of the CAD model.
+// Let's assume A1 is the bottom-left-front corner of the block in terms of its own local coordinates? 
+// No, let's stick to the prompt: "at the A1 corner". 
+// I will interpret this as cutting the vertical face at X=0 (Left edge) and Z=0 (Bottom edge)? 
+// That removes a tiny bit. 
+// Alternative interpretation: Cut the top-right vertical face of the front face? 
+// Let's try cutting the bottom-left vertical face (X=0, Z=0) but extending it to the right? No.
+// How about cutting the top-right vertical face of the block (X=127.76, Z=0)? That is a common orientation mark location.
+// But the prompt says "at the A1 corner". 
+// Let's assume the chamfer is on the bottom-left vertical face (X=0) but cut from the top? No.
+// Okay, let's look at the wording again: "off the vertical edge at the A1 corner".
+// This implies a cut originating from the corner of the block face where hole A1 would be located if it were on that face.
+// Since holes are through-holes, they don't sit on faces. 
+// Perhaps the chamfer is meant to mark the orientation of the rack relative to the tube?
+// Let's assume a standard practice: Cut the bottom-left vertical face (X=0) from Z=0 upwards? No.
+// Maybe it cuts the top-right vertical face of the front face? 
+// Let's try cutting the bottom-left vertical face (X=0, Z=0) but extending to X=127.76 and Z=0? That is a large cut.
+// How about cutting the top-right vertical face of the block (X=127.76, Z=0)? 
+// Let's assume the chamfer is on the bottom-left vertical face (X=0) but at the corner where it meets the front face?
+// Actually, a 45 degree chamfer with 5mm legs usually removes material from a large surface area.
+// Let's try cutting the top-right vertical face of the block (X=127.76, Z=0). 
+// Vertices: (127.76, 0) -> (13

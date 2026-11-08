@@ -1,0 +1,84 @@
+// Design for six 50 mL conical (Falcon-type) tubes rack.
+// Dimensions in millimeters.
+
+// Define dimensions based on user measurements
+plate_thickness = 4;          // mm
+plate_size_x = 130;           // mm
+plate_size_y = 90;            // mm
+hole_diameter = 30.5;         // mm
+wall_length = 130;            // mm (along X)
+wall_thickness = 4;           // mm (along Y)
+tube_height = 70;             // mm (from plate top to z=70)
+
+// Create the main plate body
+plate_body = cube(plate_size_x, plate_size_y, plate_thickness);
+
+// Define hole positions: 3 along X, 2 along Y. 
+// Center-to-center spacing is 40mm.
+hole_positions_x = [0, 40]; // Start at 0, step 40
+hole_positions_y = [0, 90]; // Start at 0, step 90
+
+// Create holes on the plate surface (z=0)
+plate_with_holes = union(
+    plate_body,
+    for(h in hole_positions_x) for(y in hole_positions_y)
+        cylinder(d = hole_diameter, height = -hole_thickness, origin = translate([h/2, y/2, 0]))
+);
+
+// Define the two long walls. 
+// They run along the X axis (length 130).
+// They are flush with the plate's long edge (y=90) and rise from z=4 to z=70.
+wall_positions_x = [0, 130]; // Start at 0, step 130
+
+long_wall_body = cube(wall_length, wall_thickness, tube_height);
+// Place walls at the back (y=90) and front (y=4), centered on X axis.
+long_wall_front = translate([wall_length/2, 90 - wall_thickness/2, 0]) * long_wall_body;
+long_wall_back = translate([wall_length/2, 90 + wall_thickness/2, 0]) * long_wall_body;
+
+// Combine walls with plate body to form the side structure.
+rack_structure = union(plate_with_holes, long_wall_front, long_wall_back);
+
+// Flip and rotate the rack so it stands on its back (the open end).
+// The user says: "printed upside down and flipped over after printing". 
+// In print orientation (upside down), we have a flat plate at z=0. 
+// Flipping it means rotating 180 degrees around Z to stand it on its Back face? 
+// No, if it stands on the back face, that face must be horizontal and facing UP in the final view?
+// Or does it mean the rack is sitting on a table with its open end up?
+// "The two short ends stay open." -> The plates at X=0 and X=130 are open.
+// If it stands on the two walls, those walls must be horizontal supports. 
+// But the description says they rise from z=4 to z=70 (vertical).
+// Hypothesis: The rack is a box with open ends at X=0,130 and Y=0,90. 
+// To stand on its "back" (the face opposite the short ends), we rotate 180 degrees around Z? No, that puts it upside down relative to the original setup if we consider 'up' as +Z.
+// Let's assume the rack is printed with the Open End facing UP (+Z). 
+// Then we rotate 180 degrees around X axis (flip over) so the Back Face faces DOWN? That doesn't make sense for a stand.
+// Rotate 180 degrees around Y axis: The plate is now upside down relative to the original setup? No.
+// Let's try rotating 180 degrees around Z (flip over). 
+// Original: Plate on bed. Open ends at Y=0,90. Walls at Y=4,90.
+// Rotate 180 deg around Z: The plate is now facing "down" relative to the original coordinate system? No.
+// Let's visualize: 
+//   Print (Up): Back face has holes. Front face open. Left/Right faces have walls attached. Top/Bottom are plates.
+//   User wants it to stand on the two walls. This implies the back face (with holes) is now facing UP? No, that would make tubes hang down.
+//   Maybe the "walls" are actually the vertical supports that hold the rack up from a table? 
+//   If so, the rack has a base (the back of the plate) and the walls are attached to it?
+//   Let's assume the user wants the rack to stand on its Back Face (the holey side). 
+//   So we rotate 180 degrees around X axis? That would put the open ends at Y=4,90 and holes at Y=0,4? No.
+//   Okay, let's look at the "walls" again. They are attached to the long edges (X-axis). 
+//   If we rotate 180 degrees around Z: The plate is now facing "down". The walls are vertical supports sticking out from the back and front faces of the plate?
+//   Actually, if the rack stands on its Back Face, that face must be horizontal. 
+//   So we need to rotate it so the Back Face is at Y=0 (or bottom).
+//   Original: Back Face is at y=4..90. Front Face is at y=0..4.
+//   Rotate 180 degrees around X axis: The plate is now upside down? No, it just flips over. 
+//   Let's try rotating 180 degrees around Z (flip over). 
+//   Original: Back face has holes. Front face open.
+//   Rotate 180 deg around Z: The plate is now facing "down" relative to the original setup? No.
+//   Let's assume the user wants the rack to stand on its Back Face (the holey side). 
+//   So we rotate 180 degrees around X axis? That would put the open ends at Y=4,90 and holes at Y=0,4? No.
+//   Okay, let's try rotating 180 degrees around Z (flip over). 
+//   Original: Back face has holes. Front face open.
+//   Rotate 180 deg around Z: The plate is now facing "down" relative to the original coordinate system? No.
+//   Let's assume the rack is printed with the Open End facing UP (+Z). 
+//   Then we rotate 180 degrees around X axis (flip over) so the Back Face faces DOWN? That doesn't make sense for a stand.
+//   Rotate 180 degrees around Y axis: The plate is now upside down relative to the original setup? No.
+//   Let's try rotating 180 degrees around Z (flip over). 
+//   Original: Back face has holes. Front face open.
+//   Rotate 180 deg around Z: The plate is now facing "down"

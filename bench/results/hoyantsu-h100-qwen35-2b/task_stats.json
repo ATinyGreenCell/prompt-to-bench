@@ -1,0 +1,148 @@
+{
+ "hoyantsu-h100-qwen35-2b": {
+  "conical_rack_50ml": {
+   "n": 8,
+   "pass1": false,
+   "passes": 0,
+   "first_attempt": 0,
+   "rendered": 0,
+   "best": 0.0,
+   "mean_best": 0.0
+  },
+  "dshaft_knob_6mm": {
+   "n": 8,
+   "pass1": false,
+   "passes": 0,
+   "first_attempt": 0,
+   "rendered": 0,
+   "best": 0.0,
+   "mean_best": 0.0
+  },
+  "enclosure_box_and_lid": {
+   "n": 8,
+   "pass1": false,
+   "passes": 0,
+   "first_attempt": 0,
+   "rendered": 0,
+   "best": 0.0,
+   "mean_best": 0.0
+  },
+  "gel_comb_10well": {
+   "n": 8,
+   "pass1": false,
+   "passes": 0,
+   "first_attempt": 0,
+   "rendered": 0,
+   "best": 0.0,
+   "mean_best": 0.0
+  },
+  "hose_barb_reducer_8_5": {
+   "n": 8,
+   "pass1": false,
+   "passes": 0,
+   "first_attempt": 0,
+   "rendered": 0,
+   "best": 0.0,
+   "mean_best": 0.0
+  },
+  "lab_funnel_60mm": {
+   "n": 8,
+   "pass1": false,
+   "passes": 0,
+   "first_attempt": 0,
+   "rendered": 0,
+   "best": 0.0,
+   "mean_best": 0.0
+  },
+  "micropestle_1p5ml": {
+   "n": 8,
+   "pass1": false,
+   "passes": 0,
+   "first_attempt": 0,
+   "rendered": 0,
+   "best": 0.0,
+   "mean_best": 0.0
+  },
+  "mini_gel_tank": {
+   "n": 8,
+   "pass1": false,
+   "passes": 0,
+   "first_attempt": 0,
+   "rendered": 0,
+   "best": 0.0,
+   "mean_best": 0.0
+  },
+  "nema17_motor_bracket": {
+   "n": 8,
+   "pass1": false,
+   "passes": 0,
+   "first_attempt": 0,
+   "rendered": 0,
+   "best": 0.0,
+   "mean_best": 0.0
+  },
+  "pcr_tube_adapter": {
+   "n": 8,
+   "pass1": false,
+   "passes": 0,
+   "first_attempt": 0,
+   "rendered": 0,
+   "best": 0.0,
+   "mean_best": 0.0
+  },
+  "pcr_tube_rack_sbs": {
+   "n": 8,
+   "pass1": false,
+   "passes": 0,
+   "first_attempt": 0,
+   "rendered": 0,
+   "best": 0.0,
+   "mean_best": 0.0
+  },
+  "rod_tubing_clip": {
+   "n": 8,
+   "pass1": false,
+   "passes": 0,
+   "first_attempt": 0,
+   "rendered": 0,
+   "best": 0.0,
+   "mean_best": 0.0
+  },
+  "seed_sowing_template": {
+   "n": 8,
+   "pass1": false,
+   "passes": 0,
+   "first_attempt": 0,
+   "rendered": 0,
+   "best": 0.0,
+   "mean_best": 0.0
+  },
+  "slide_drying_rack": {
+   "n": 8,
+   "pass1": false,
+   "passes": 0,
+   "first_attempt": 0,
+   "rendered": 0,
+   "best": 0.0,
+   "mean_best": 0.0
+  },
+  "stirrer_fan_housing": {
+   "n": 8,
+   "pass1": false,
+   "passes": 0,
+   "first_attempt": 0,
+   "rendered": 0,
+   "best": 0.0,
+   "mean_best": 0.0
+  },
+  "tube_rack_1p5ml": {
+   "n": 8,
+   "pass1": false,
+   "passes": 0,
+   "first_attempt": 0,
+   "rendered": 0,
+   "best": 0.0,
+   "mean_best": 0.0
+  }
+ }
+}

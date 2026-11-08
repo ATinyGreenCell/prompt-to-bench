@@ -1,0 +1,74 @@
+```openscad
+// Lab Funnel Design Parameters (all dimensions in millimeters)
+const float spout_length = 20;       // Spout length in mm
+const float cone_height = 30;        // Height of the conical section from z=20 to z=50
+const float rim_diameter_top = 60;   // Diameter at top of cone in mm
+const float base_diameter_bottom = 10; // Diameter at bottom of funnel in mm
+const float wall_thickness = 1.6;    // Wall thickness in mm
+
+// Define variables for dimensions and geometry parameters
+const float spout_outer_diameter = 10;
+const float spout_bore_radius = spout_outer_diameter / 2;
+const float spout_bore_diameter = spout_outer_diameter * 2;
+
+const float cone_top_radius = rim_diameter_top / 2;
+const float cone_bottom_radius = base_diameter_bottom / 2;
+
+// --- Main Part Construction ---
+
+// 1. The Spout Section (Cylinder)
+// Extends from z = 0 to z = 20
+const float spout_z_start = 0;
+const float spout_z_end = spout_length; // 20 mm
+
+// Create a hollow cylinder for the spout
+// We use rotate_extrude with a polygon (circle) to define the hole.
+// The outer radius is spout_bore_radius, inner radius is spout_bore_radius - wall_thickness/2.
+const float spoint_inner_radius = spout_bore_radius - wall_thickness / 2;
+
+rotate_extrude(spout_z_start, spout_z_end) {
+    // Outer surface of the spout (Cylinder)
+    polygon([[-spout_outer_diameter/2, 0], [spout_outer_diameter/2, 0], [spout_outer_diameter/2, spout_length], [-spout_outer_diameter/2, spout_length]]) {
+        rotate(90) cylinder(spout_bore_radius, spoint_inner_radius); // Outer wall
+    }
+
+    // Inner surface of the spout (Hollow hole)
+    polygon([[-spout_outer_diameter/2, 0], [spout_outer_diameter/2, 0], [spout_outer_diameter/2, spout_length], [-spout_outer_diameter/2, spout_length]]) {
+        rotate(90) cylinder(spoint_inner_radius, spoint_inner_radius); // Inner hole
+    }
+
+    // Bottom flat face of the spout (at z=0)
+    square([[-spout_outer_diameter/2, 0], [spout_outer_diameter/2, 0]]) {
+        rotate(90) box(spoint_inner_radius, spoint_inner_radius); // Bottom base of hole
+    }
+
+    // Top flat face of the spout (at z=20)
+    square([[-spout_outer_diameter/2, 0], [spout_outer_diameter/2, 0]]) {
+        rotate(90) box(spoint_inner_radius, spoint_inner_radius); // Top base of hole
+    }
+
+    // Side walls (Z-direction extrusion to close the cylinder)
+    for (z = 1; z < spout_length; z += 0.5) {
+        translate([0, 0, z]) box(spout_outer_diameter - wall_thickness * 2, spoint_inner_radius); // Outer side
+        rotate(90) box(spout_outer_diameter - wall_thickness * 2, spoint_inner_radius); // Inner side
+    }
+
+    // Bottom flat face of the spout (at z=0)
+    square([[-spout_outer_diameter/2, 0], [spout_outer_diameter/2, 0]]) {
+        rotate(90) box(spoint_inner_radius, spoint_inner_radius); // Bottom base of hole
+    }
+
+    // Top flat face of the spout (at z=20)
+    square([[-spout_outer_diameter/2, 0], [spout_outer_diameter/2, 0]]) {
+        rotate(90) box(spoint_inner_radius, spoint_inner_radius); // Top base of hole
+    }
+
+    // Side walls (Z-direction extrusion to close the cylinder)
+    for (z = 1; z < spout_length; z += 0.5) {
+        translate([0, 0, z]) box(spout_outer_diameter - wall_thickness * 2, spoint_inner_radius); // Outer side
+        rotate(90) box(spout_outer_diameter - wall_thickness * 2, spoint_inner_radius); // Inner side
+    }
+
+    // Bottom flat face of the spout (at z=0)
+    square([[-spout_outer_diameter/2, 0], [spout_outer_diameter/2, 0]]) {
+        rotate(90) box(spoint_inner_radius, spoint_inner_radius); // Bottom base

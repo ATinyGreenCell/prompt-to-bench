@@ -1,0 +1,86 @@
+// Design a pestle for grinding tissue inside a 1.5 mL microcentrifuge tube, printed standing upright.
+
+// Dimensions in millimeters (measured with calipers)
+const mm = 1; // Conversion factor to make units consistent if needed, though we will use raw mm directly
+const fn = 64; // Number of segments for curved surfaces
+
+// Define the handle dimensions and position
+const h_handle_diameter = 8.0; // mm (diameter)
+const h_handle_height = 45.0;  // mm (height from z=0 to z=45)
+const h_handle_center_z = 22.5; // mm (midpoint of handle height)
+
+// Define the cone dimensions and position
+const cone_base_diameter = 8.0; // mm (at z=45)
+const cone_tip_height_from_base = 17.0; // mm (from z=45 to z=62)
+const cone_tip_diameter = 3.0;     // mm (at z=62)
+
+// Define the tip dimensions and position
+const tip_radius = 1.5;            // mm (half of 3mm diameter)
+const tip_height_from_base = 17.0;  // mm (from z=45 to z=62)
+const tip_center_z = 62.0;         // mm
+
+// Define the groove parameters for grip
+const num_grooves = 4;             // Four circumferential grooves
+const groove_width = 2.0;          // mm (in Z direction, depth of cut)
+const groove_depth = 1.0;          // mm (depth of cut into handle)
+
+// Create the handle: Cylinder from z=0 to z=h_handle_height
+handle_cylinder = cube(
+    h_handle_diameter,
+    h_handle_height,
+    1.5 // Thickness for extrusion
+);
+
+// Add grooves to the handle using a loop
+for (i = 0; i < num_grooves; i++) {
+    const angle_deg = 360.0 / num_grooves;
+    
+    // Convert to radians for trig functions
+    const angle_rad = angle_deg * pi / 180.0;
+
+    // Define the groove shape (a cylinder with a hole)
+    // The groove is centered at z=handle_center_z + i*groove_depth
+    // It cuts into the handle, so we subtract from the handle's height
+    const groove_z = h_handle_center_z + i * groove_depth;
+
+    // Create a hollow cylinder for the groove
+    // Radius of groove: half of handle diameter minus groove width
+    const groove_radius = (h_handle_diameter / 2.0) - (groove_width / 2.0);
+    
+    // The groove extends from z=handle_center_z to z=handle_center_z + groove_depth
+    // We use rotate_extrude with a negative angle to cut into the solid
+    handle_cylinder = rotate_extrude(
+        h_handle_diameter,
+        1.5,
+        [
+            translate([0, 0, groove_z]) * cylinder(groove_radius, groove_depth)
+        ]
+    );
+
+    // Rotate the whole assembly by angle_deg to position the groove around the Z axis
+    handle_cylinder = rotate(angle_deg);
+}
+
+// Create the cone from z=45 (base of cone) to z=62 (top of cone base, before tip)
+// The cone is centered on the origin in X and Y
+cone_base = cylinder(
+    cone_base_diameter / 2.0, // Radius at bottom
+    cone_tip_height_from_base + h_handle_height, // Height from z=45 to z=62+handle_height
+    1.5 // Thickness for extrusion
+);
+
+// Create the rounded tip (sphere) centered at z=62
+tip_sphere = sphere(
+    tip_radius,
+    cone_tip_height_from_base + h_handle_height, // Height from z=45 to z=62+handle_height
+    1.5 // Thickness for extrusion
+);
+
+// Combine the handle and the rest of the pestle into a single solid
+pestle = union([
+    handle_cylinder,
+    cone_base,
+    tip_sphere
+]);
+
+// Final cleanup: remove any tiny gaps or artifacts if necessary (though union handles this)

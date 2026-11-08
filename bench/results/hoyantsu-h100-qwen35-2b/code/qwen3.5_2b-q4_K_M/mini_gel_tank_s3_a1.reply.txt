@@ -1,0 +1,109 @@
+```openscad
+// Buffer tank dimensions in mm
+tank_outer_X = 120;
+tank_outer_Y = 70;
+tank_outer_Z = 40;
+
+wall_thickness = 3;
+floor_thickness = 3;
+
+// Define the main outer rectangular prism (Tank Body)
+// Dimensions: X=120, Y=70, Z=6 (walls + floor thickness)
+main_box = cube([tank_outer_X, tank_outer_Y, wall_thickness + floor_thickness]);
+
+// Subtract the floor (bottom layer)
+floor_cut = cylinder(d = floor_thickness * 2, h = floor_thickness);
+tank_body = difference([main_box, floor_cut]);
+
+// Subtract side walls. 
+// We use a loop to create multiple cylinders for each end of the tank.
+// Each wall is a cylinder with diameter (wall_thickness*2) and height equal to total Z minus floor thickness?
+// No, the walls are vertical sides extending from z=0 to z=tank_outer_Z.
+// However, we must ensure they don't overlap with the floor cut or each other in a way that creates coplanar faces if not careful.
+// Standard difference handles this well for non-coplanar cuts (z=0 vs z>3).
+
+wall_height = tank_outer_Z - wall_thickness; // 40 - 3 = 37 mm height of the wall cylinder
+walls_cut = [];
+
+for(i = 1; i <= 2; i++) {
+    walls_cut += rotate_extrude([i, 90], [tank_outer_X/2, tank_outer_Y/2], 
+                               translate([i * (wall_thickness + floor_thickness), 0, 0]), 
+                               cylinder(d = wall_thickness * 2, h = wall_height));
+}
+
+// Combine all walls into one cut for efficiency and to ensure a single solid volume
+tank_body = difference([tank_body, union(walls_cut)]);
+
+// Ensure no coplanar faces as per rule 5.
+// The floor is at z=0. Walls are from z=6 (top of floor) to z=40. 
+// No overlap between floor and walls.
+// The platform will be subtracted later, which might create new coplanar issues if not handled carefully.
+
+// Define the raised platform
+platform_length_X = 60; // Full inner width Y
+platform_height_from_floor_mm = 10; // Top is 10mm above inner floor (z=30)
+platform_top_Z = wall_thickness + floor_thickness + platform_height_from_floor_mm; 
+// Inner floor height: z = wall_thickness + floor_thickness = 6 mm.
+// Platform top Z = 6 + 10 = 16 mm.
+
+platform_box = cube([platform_length_X, tank_outer_Y, platform_top_Z]); // 60 x 70 x 16
+
+// The platform sits on the tank body. 
+// We subtract the part of the tank_body that is below the top of the platform.
+tank_body_cut = difference([tank_body, platform_box]);
+
+// Define the end walls for the buffer chambers (at X=0 and X=tank_outer_X)
+// These are vertical planes at the ends of the tank body.
+end_wall_thickness = wall_thickness; // 3 mm
+end_wall_height = tank_outer_Z - floor_thickness; // 40 - 3 = 37 mm
+
+// Create two end walls using rotate_extrude to avoid coplanar issues with the main box faces
+end_wall_1 = rotate_extrude([tank_outer_X/2, end_wall_height], 
+                               translate([0, 0, tank_outer_Y/2]), 
+                               square(d = end_wall_thickness * 2));
+
+// Create two end walls at the other side (X=120)
+end_wall_2 = rotate_extrude([tank_outer_X/2, end_wall_height], 
+                               translate([tank_outer_X - wall_thickness - floor_thickness, 0, tank_outer_Y/2]), 
+                               square(d = end_wall_thickness * 2));
+
+// Combine end walls into one cut for the final body
+end_walls_cut = union(end_wall_1, end_wall_2);
+
+tank_body_final = difference([tank_body_final, end_walls_cut]);
+
+// Define the holes in the end walls (at z=30)
+hole_diameter_mm = 2; // 2 mm diameter
+hole_height_from_bottom = wall_thickness + floor_thickness; // z = 6 mm
+hole_depth = tank_outer_Z - hole_height_from_bottom; // 40 - 6 = 34 mm
+
+// Create holes in the first end wall (X=0)
+hole_1 = rotate_extrude([hole_diameter_mm/2, hole_depth], 
+                          translate([0, 0, hole_height_from_bottom]), 
+                          polygon([[-hole_diameter_mm/2, -hole_diameter_mm/2, hole_height_from_bottom], 
+ [hole_diameter_mm/2, -hole_diameter_mm/2, hole_height_from_bottom],
+ [hole_diameter_mm/2, hole_diameter_mm/2, hole_height_from_bottom],
+ [-hole_diameter_mm/2, hole_diameter_mm/2, hole_height_from_bottom]]));
+
+// Create holes in the second end wall (X=120)
+hole_2 = rotate_extrude([hole_diameter_mm/2, hole_depth], 
+                          translate([tank_outer_X - wall_thickness - floor_thickness, 0, hole_height_from_bottom]), 
+                          polygon([[[-hole_diameter_mm/2, -hole_diameter_mm/2, hole_height_from_bottom], 
+ [hole_diameter_mm/2, -hole_diameter_mm/2, hole_height_from_bottom],
+ [hole_diameter_mm/2, hole_diameter_mm/2, hole_height_from_bottom],
+ [-hole_diameter_mm/2, hole_diameter_mm/2, hole_height_from_bottom]]]));
+
+// Combine holes into one cut for the final body
+holes_cut = union(hole_1, hole_2);
+
+tank_final = difference([tank_body_final, holes_cut]);
+
+// Center the tank on the XY plane (origin) by translating X and Y
+translate([tank_outer_X/2, tank_outer_Y/2], 0, 0, 0, 0, 0, 0, 0);
+
+// Set number of turns for curved shapes to ensure round holes as per rule 6
+fn = 64;
+
+// Render the final part
+render(tank_final, [150, 150], [0.2]); // Viewbox size in mm
+```

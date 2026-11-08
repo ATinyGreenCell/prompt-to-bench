@@ -1,0 +1,46 @@
+```openscad
+// Design for DIY Magnetic Stirrer Housing
+// Material: PC Case Fan (80mm)
+// Orientation: Upside down, resting on XY plane at z=0
+
+// Dimensions in millimeters
+box_thickness = 2.0; // Top plate thickness
+wall_thickness = 2.5; // Wall thickness
+outer_size_x = 90.0; // X dimension (width)
+outer_size_y = 90.0; // Y dimension (depth)
+fan_mount_hole_diameter = 4.5; // Diameter of M4 holes
+fan_mount_pattern = 71.5; // Square pattern spacing for fan mounting
+power_cable_notch_width = 12.0; // Width of notch in wall
+power_cable_notch_depth = 8.0; // Depth of notch from open edge
+
+// Create the main box structure using linear_extrude and rotate_extrude
+// This creates a hollow box with walls, top, and bottom
+box_model = rotate_extrude(outer_size_x * outer_size_y / 2, wall_thickness) {
+    for (i = -1; i <= 1; i++) { // Loop to create the four sides of the box
+        translate([0.5 * outer_size_x, 0.5 * outer_size_y, 0]) rotate(90) cube([outer_size_x, outer_size_y, wall_thickness]);
+    }
+    
+    // Add top and bottom plates
+    translate([0.5 * outer_size_x, 0.5 * outer_size_y, box_thickness / 2]) rotate(180) cube([outer_size_x, outer_size_y, box_thickness]);
+}
+
+// Define the fan mounting holes on the top plate
+// Pattern: 71.5mm square centered at (45, 45) with diameter 4.5mm
+fan_holes = for(i = -2; i <= 2; i++) { // Loop to create 9 holes in a 3x3 grid
+    translate([0.5 * fan_mount_pattern, 0.5 * fan_mount_pattern, box_thickness / 2]) rotate(180) polygon([fan_mount_hole_diameter, fan_mount_hole_diameter]);
+}
+
+// Add the power cable notch in one of the walls (e.g., Left wall at x = -45mm)
+// Notch starts from z=32 down to z=40, width 12mm centered on the wall face
+power_notch = rotate_extrude(outer_size_x / 2, power_cable_notch_width) { // Extrude along X axis (width of notch)
+    translate([0.5 * outer_size_y, -fan_mount_hole_diameter / 2, box_thickness / 2]) rotate(90) cube([power_cable_notch_depth, fan_mount_hole_diameter, power_cable_notch_width]); // Cut out the notch
+    
+    // Add a small gap at the bottom of the notch to ensure it doesn't touch the top plate exactly
+    translate([0.5 * outer_size_y, -fan_mount_hole_diameter / 2, box_thickness + power_cable_notch_depth]) rotate(90) cube([power_cable_notch_width, fan_mount_hole_diameter, 1]); 
+}
+
+// Final assembly: Union of the box model and the holes
+final_part = union(box_model, fan_holes); // Note: union handles overlapping shapes by keeping only the outer boundary, which is correct for a solid housing with holes
+
+// Print settings (optional but good practice)
+// print_settings(fn=64); // Uncomment if you want to see the rendered mesh

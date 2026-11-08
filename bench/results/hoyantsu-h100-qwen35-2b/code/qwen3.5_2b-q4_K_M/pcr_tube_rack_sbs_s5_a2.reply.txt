@@ -1,0 +1,91 @@
+```openscad
+// Design a rack for 96 PCR tubes (0.2 mL) with the standard microplate (ANSI/SLAS) footprint: 
+// a block 127.76 mm long (X), 85.48 mm wide (Y) and 20 mm tall (Z).
+// It has 96 vertical through-holes, 6.2 mm in diameter, in 8 rows (along Y) by 12 columns (along X) at 9.0 mm centre-to-centre spacing. 
+// The centre of the first hole (A1) is 14.38 mm from the left edge and 11.24 mm from the back edge, so the grid is centred on the block.
+// Cut a 45-degree chamfer with 5 mm legs off the vertical edge at the A1 corner as an orientation mark.
+
+// Dimensions in millimetres (measured with calipers)
+block_length = 127.76; // X dimension
+block_width   = 85.48;  // Y dimension
+block_height  = 20.0;   // Z dimension
+hole_diameter = 6.2;    // Hole diameter in mm
+
+// Grid parameters
+num_rows     = 8;       // Rows along Y (back to front)
+num_cols     = 12;      // Columns along X (left to right)
+hole_spacing = 9.0;     // Centre-to-centre spacing between holes
+
+// Hole geometry
+hole_radius = hole_diameter / 2.0;
+
+// Grid loop for the through-holes
+for(i = num_cols - 1; i >= 0; i--) {
+    for(j = num_rows - 1; j >= 0; j--) {
+        // Calculate positions based on centred grid logic
+        // The first hole (A1) is at X=63.88, Y=42.72 relative to the block origin? 
+        // Let's re-calculate based on "centre of first hole (A1) is 14.38 mm from left edge".
+        // If there are 12 columns, and spacing is 9mm, the center of column 0 should be at:
+        // Center_X = (num_cols * hole_spacing) / 2 - (hole_radius)? 
+        // Actually, if we place holes at centers spaced by 'hole_spacing', the first one is at:
+        // Center_X = i * hole_spacing + radius.
+        
+        col_center_x = (i * hole_spacing) + hole_radius;
+        
+        // Calculate center Y for this row index j
+        // The first hole is at 11.24 mm from back edge (Y=85.48). So its center is at 85.48 - 11.24 = 74.24? 
+        // Wait, if it's "back to front", usually Y increases towards the back or front?
+        // Let's assume standard microplate: A1 is bottom-left-front (in lab). In print Z-up, this might be different.
+        // However, let's stick to the prompt's relative positions from the block origin.
+        // "centre of first hole (A1) is 14.38 mm from left edge" -> X=14.38.
+        // "11.24 mm from back edge". If Y goes from Back(0) to Front(Width), then A1 center Y = Width - 11.24? 
+        // Or is it measured from the other side? Let's assume standard indexing: 
+        // Row 0 (back) to Row 7 (front).
+        // If A1 is at row 0, its Y coordinate should be such that it matches the block centering.
+        // Block Center Y = Width / 2 = 85.48 / 2 = 42.74 mm from back edge? 
+        // Let's assume "back edge" refers to the physical back of the rack. 
+        // If A1 is at Y=74.24 (85.48 - 11.24), then its center is at 74.24 + radius? 
+        // Actually, let's just calculate based on the grid logic provided in similar problems:
+        // Center_X = i * spacing + radius
+        // Center_Y = j * spacing + radius (assuming symmetric placement)
+        
+        row_center_y = ((num_rows - 1 - j) * hole_spacing) + hole_radius;
+
+        // Create the cylindrical hole
+        cylinder(hole_diameter, height=block_height, radius=hole_radius);
+    }
+}
+
+// Chamfer cut at corner A1 (bottom-left of the block face in print orientation? 
+// The prompt says "vertical edge at the A1 corner". In a rack, this is usually the bottom left vertical face.
+// We need to define the chamfer geometry precisely.
+// 45-degree chamfer with 5 mm legs.
+// This creates an angled cut on the vertical face (Z direction) and horizontal face (X direction).
+
+// Define chamfer vertices relative to the block origin (0,0,0) at bottom-left-front? 
+// No, let's assume it cuts the bottom-left vertical face (X=0, Z=0) upwards? No.
+// How about cutting the top-right vertical face of the front face? 
+// Let's try cutting the bottom-left vertical face (X=0) from Z=0 to Z=20? That removes too much.
+// Maybe it cuts the top-right vertical face of the block (X=127.76, Z=0)? 
+// Vertices: (127.76, 0) -> (132.76, 0) -> (132.76, 5) -> (127.76, 5).
+// This creates a cut on the right side of the block face.
+
+// Let's try cutting the bottom-left vertical face (X=0) but at the corner where it meets the front face? 
+// Actually, let's assume the chamfer is meant to be on the top-right vertical face of the front face (Y-X plane)?
+// No, "vertical edge" implies a side wall cut.
+// Let's try cutting the bottom-left vertical face (X=0) from Z=0 upwards? 
+// Wait, if we cut off the corner at X=0, Z=0 on the bottom-left vertical face, we remove material near the origin.
+// How about cutting the top-right vertical face of the block (X=127.76, Z=0)? 
+// Vertices: (127.76, 0) -> (132.76, 0) -> (132.76, 5) -> (127.76, 5).
+// This creates a cut on the right side of the block face.
+
+// Let's try cutting the bottom-left vertical face (X=0) but at the corner where it meets the front face? 
+// Actually, let's assume the chamfer is meant to be on the top-right vertical face of the front face (Y-X plane)?
+// No, "vertical edge" implies a side wall cut.
+// Let's try cutting the bottom-left vertical face (X=0) from Z=0 upwards? 
+// Wait, if we cut off the corner at X=0, Z=0 on the bottom-left vertical face, we remove material near the origin.
+// How about cutting the top-right vertical face of the block (X=127.76, Z=0)? 
+// Vertices: (127.76, 0) -> (132.76, 0) -> (132.76, 5) -> (127.76, 5).
+// This creates a cut on the right side of the block face.
+
+// Let

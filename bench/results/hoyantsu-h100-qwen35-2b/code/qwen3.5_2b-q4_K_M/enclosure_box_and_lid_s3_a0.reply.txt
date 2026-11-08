@@ -1,0 +1,43 @@
+```openscad
+// Part 1: Box Enclosure
+// Outer dimensions: X=70, Y=50, Z=30 mm
+// Wall thickness: 2 mm
+// Floor thickness: 2 mm
+// Top is open.
+
+var box_outer_x = 70;
+var box_outer_y = 50;
+var box_outer_z = 30;
+var wall_thickness = 2;
+var floor_thickness = 2;
+
+// Calculate inner dimensions for the box body (excluding top)
+var box_inner_x = box_outer_x - 2 * wall_thickness;
+var box_inner_y = box_outer_y - 2 * wall_thickness;
+var box_inner_z = box_outer_z - floor_thickness; // Z is open, so bottom is just a flat face
+
+// Create the main body of the box (walls + floor)
+var box_body = cube([box_inner_x, box_inner_y, box_inner_z]);
+
+// Add walls to the sides and front/back
+for ([0.5, 1], [wall_thickness - 0.01, wall_thickness]) { // Start at 0.5mm to avoid exact coplanar faces
+    rotate(90) translate([box_outer_x/2, box_inner_y/2, floor_thickness + wall_thickness/2])
+        polygon([[-1, -1], [1, -1], [1, 1], [-1, 1]]); // Front face
+}
+
+// Add walls to the top and bottom (floor)
+for ([0.5, 1], [wall_thickness - 0.01, wall_thickness]) { 
+    rotate(90) translate([box_outer_x/2, box_inner_y/2, floor_thickness + wall_thickness/2])
+        polygon([[0, -1], [-1, -1], [-1, 1], [0, 1]]); // Top face (open)
+}
+
+// Add walls to the bottom and sides (floor)
+for ([0.5, 1], [wall_thickness - 0.01, wall_thickness]) { 
+    rotate(90) translate([box_outer_x/2, box_inner_y/2, floor_thickness + wall_thickness/2])
+        polygon([[0, -1], [-1, -1], [-1, 1], [0, 1]]); // Bottom face (floor)
+}
+
+// Add walls to the back and sides (front/back)
+for ([0.5, 1], [wall_thickness - 0.01, wall_thickness]) { 
+    rotate(90) translate([box_outer_x/2, box_inner_y/2, floor_thickness + wall_thickness/2])
+        polygon([[0, -1],

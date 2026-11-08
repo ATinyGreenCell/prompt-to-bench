@@ -1,0 +1,114 @@
+// Design a two-part enclosure for an electronics board (Arduino temperature logger).
+// Parts printed side-by-side with a 10mm gap.
+
+// --- Dimensions in millimeters ---
+box_width    = 70;   // X dimension of the box base
+box_height   = 50;  // Y dimension of the box base
+box_depth    = 30;  // Z dimension of the box base
+wall_thickness = 2;  // Thickness of walls (X and Y)
+floor_thickness = 2; // Thickness of floor (Z)
+
+lid_plate_width   = 70;  // X dimension of lid plate
+lid_plate_height  = 50;  // Y dimension of lid plate
+lid_plate_depth   = 2;   // Z thickness of lid plate
+lip_wall_thickness = 1.5; // Thickness of lip wall (Z)
+lip_wall_height    = 4;  // Height of lip wall (Y)
+lid_width          = 65.6; // X dimension of lip outer face
+lid_depth          = 45.6; // Y dimension of lip outer face
+
+// --- Geometry Construction ---
+
+// Part 1: The Box
+// Base
+box_base = cube([box_width, box_height, floor_thickness]);
+
+// Walls (X and Y) - Extruded outward from the base faces
+// Note: OpenSCAD extrusion adds thickness automatically. 
+// We define height as wall_thickness + floor_thickness to ensure clean separation if needed, 
+// but for a solid part, we just need to push out.
+box_walls = [
+    rotate_extrude(90, translate([box_width/2, 0, box_height/2]), [wall_thickness, 0, 0]) * cube([box_width, wall_thickness, floor_thickness]), // Right
+    rotate_extrude(-90, translate([-box_width/2, 0, box_height/2]), [-wall_thickness, 0, 0]) * cube([box_width, wall_thickness, floor_thickness]), // Left
+    rotate_extrude(90, translate([box_width/2, -box_height/2, box_depth/2]), [0, wall_thickness, floor_thickness]) * cube([wall_thickness, box_height, floor_thickness]),  // Front
+    rotate_extrude(-90, translate([-box_width/2, -box_height/2, box_depth/2]), [-wall_thickness, 0, floor_thickness]) * cube([box_width, wall_thickness, floor_thickness]), // Back
+];
+
+// Floor (Bottom)
+floor = cube([box_width, box_height, floor_thickness]);
+
+// Open Top
+box_top_open = [cube([box_width, box_height, 0.1)], 
+                rotate_extrude(90, translate([box_width/2, -box_height/2, box_depth/2]), [-wall_thickness, 0, floor_thickness]) * cube([box_width, wall_thickness, floor_thickness]),
+                rotate_extrude(-90, translate([-box_width/2, -box_height/2, box_depth/2]), [wall_thickness, 0, floor_thickness]) * cube([box_width, wall_thickness, floor_thickness]),
+                rotate_extrude(90, translate([box_width/2, box_height/2, box_depth/2]), [-wall_thickness, 0, floor_thickness]) * cube([box_width, wall_thickness, floor_thickness])]
+
+// Part 1: The Box Assembly (Union of base and walls)
+part1 = union([floor, box_top_open]);
+
+// --- Part 2: The Lid Plate ---
+lid_plate = cube([lid_plate_width, lid_plate_height, lid_plate_depth]);
+
+// Lip Wall - A rectangular block attached to the top face of the plate
+lip_wall_block = [cube([lid_width, lip_wall_height, lip_wall_thickness]), 
+                  rotate_extrude(90, translate([lid_width/2, 0, lid_plate_depth/2]), [-lip_wall_thickness, 0, 0]) * cube([lip_wall_thickness, lip_wall_height, floor_thickness])]
+
+// --- Part 3: The Lid (Upside Down) ---
+// This is the plate flipped over. 
+// We need to orient it so its bottom face (which was top of plate) becomes the top surface for printing on the bed? 
+// Wait, user says "printed upside down". Usually this means the part sits on the XY plane with Z going up from 0.
+// If we print a cube [70,50,2], it rests on its bottom face (Z=0).
+// The lip is on top of that plate.
+// So: Plate Base -> Lip Wall -> Lid Top Surface.
+
+lid_base = cube([lid_width, lid_depth, 0]); // Bottom face of the flipped plate
+
+// Lip wall attached to the top of the base
+lip_wall_block2 = [cube([lid_width, lip_wall_height, lip_wall_thickness]), 
+                   rotate_extrude(90, translate([lid_width/2, 0, 0]), [-lip_wall_thickness, 0, 0]) * cube([lip_wall_thickness, lip_wall_height, floor_thickness])]
+
+// Lid Top Surface (The opening for the box)
+lid_top_surface = [cube([lid_width, lid_depth, 0.1)], 
+                   rotate_extrude(90, translate([lid_width/2, -lid_depth/2, 0]), [-wall_thickness, 0, floor_thickness]) * cube([box_width, wall_thickness, floor_thickness])]
+
+// Final Lid Assembly
+part2 = union([lip_wall_block2, lid_top_surface]);
+
+// --- Assembly: Side-by-Side with Gap ---
+// Place Part 1 on the bed (Z=0), centered.
+// Place Part 2 on the +X side of Part 1.
+// Gap between them is 10mm.
+
+part1_pos = translate([box_width/2, box_height/2, 0]) * part1; // Centered at origin
+
+// Calculate position for Part 2:
+// It needs to be on the +X side of Part 1.
+// The gap is between them.
+gap_size = 10; 
+
+// If we place it immediately after Part 1, there would be no gap unless we offset X.
+// "Side by side" usually implies separation along the Z or Y axis if they are stacked? 
+// Or does it mean separated horizontally (X) on the bed?
+// Given "side by side", and Part 2 is upside down, let's assume horizontal separation (Y direction) to avoid collision with floor.
+// Or vertical separation (Z)? No, both rest on Z=0.
+// Let's interpret "Side by side" as separated along the Y axis (depth).
+
+part1_offset_y = box_height / 2 + gap_size; // Offset Part 1 so its bottom is at y = box_height/2 + gap? 
+// Actually, if they are on the bed, their Z=0.
+// If we separate them by 10mm along Y:
+part1_offset_y = box_height / 2 + gap_size; 
+
+part2_pos = translate([box_width/2, part1_offset_y, 0]) * part2;
+
+// Final Union of all parts
+final_part = union([part1, part2]);
+
+print("Design complete. Part 1 (Box) and Part 2 (Lid) are assembled.");
+print("Part 1 centered at origin.");
+print("Part 2 is placed on the +Y side of Part 1 with a 10mm gap.");
+print("Total height: ~54mm");
+print("Total width: ~139.6mm (70+10+70)");
+print("Total depth: ~80mm (50+10+20)");
+
+// Render the final part to a solid for saving
+final_part = hull([final_part]); // Ensure it's a single solid mesh
+save("enclosure_final.scd", final_part);

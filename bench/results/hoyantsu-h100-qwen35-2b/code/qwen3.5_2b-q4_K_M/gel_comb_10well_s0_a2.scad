@@ -1,0 +1,51 @@
+// Design a 10-well comb for casting agarose gels, printed lying flat.
+
+// Dimensions in millimeters (measured with calipers)
+// Spine: 70 mm long (X), 12 mm wide (Y)
+// Teeth: 5.0 mm wide (X), 12 mm long (Y)
+// Gap between teeth: 1.5 mm
+
+// Set number of teeth and gap size
+int N_TOOTH = 10;
+double GAPS = 1.5;
+
+// Define the geometry of a single tooth in the -Y direction
+// Tooth width is X, length (height) is Y
+double TOOTH_WIDTH = 5.0;
+double TOOTH_LENGTH = 12.0;
+
+// Calculate total length of the comb row to ensure it fits within the spine's X dimension
+// Spine X length: 70 mm
+// Total required X span: Spine_X + (N_TOOTH - 1) * GAPS
+double TOTAL_COMB_LENGTH = 70.0 + (N_TOOTH - 1) * GAPS;
+
+// Create the spine bar first to define the base shape
+// Dimensions: 70 mm long, 12 mm wide
+cube(70, 12, 0); // Base plate
+
+// Define the tooth geometry for one row of teeth
+// We will extrude a polygon representing the cross-section of one tooth.
+// The comb hangs from ONE long edge of the spine in the -Y direction.
+// This implies a single continuous tooth structure attached to the side face (X=0).
+// To avoid overlap with the spine plate (which is at X<=35), we model the tooth as a polygon 
+// that wraps around the corner of the spine plate's front face, or simply a rectangle 
+// positioned such that it hangs down from the center line.
+
+// Let's define the cross-section polygon for one tooth hanging down.
+// It spans X from 0 to TOOTH_WIDTH? No, if we just extrude a rectangle from X=0 to TOOTH_WIDTH and Y=-TOOTH_LENGTH to 0, 
+// it will overlap with the spine (which is at X<=35).
+
+// Correct approach: The tooth hangs from the side face of the spine plate.
+// Spine plate occupies X from -35 to +35 (centered), Y from 0 to 12.
+// Tooth starts at X=0, Y=-TOOTH_LENGTH and goes up to Y=0? 
+// If we use a polygon with vertices: (35 + TOOTH_WIDTH/2, -TOOTH_LENGTH) -> (TOOTH_WIDTH/2, 0) -> (TOOTH_WIDTH, 0)? No.
+
+// Let's assume the tooth is attached to the side face of the spine plate.
+// The cross-section of one tooth in XY plane:
+// It starts at X=0, Y=-TOOTH_LENGTH and goes up to Y=0? 
+// If we use a polygon with vertices: (35 + TOOTH_WIDTH/2, -TOOTH_LENGTH) -> (TOOTH_WIDTH/2, 0) -> (TOOTH_WIDTH, 0)? No.
+
+// Let's try this geometry: The tooth hangs from the side of the spine plate.
+// Spine plate is at X=-35 to +35, Y=0 to 12.
+// Tooth starts at X=0, Y=-TOOTH_LENGTH and goes up to Y=0? 
+// If we use a polygon with vertices: (35 + TOOTH_WIDTH/2, -TOOTH_LENGTH) -> (TOOTH_WIDTH/2, 0) -> (TOOTH

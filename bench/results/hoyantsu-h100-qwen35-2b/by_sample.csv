@@ -1,0 +1,9 @@
+sample,conversations,first_attempt_passes,final_passes,rendered_conversations,mean_best_score,median_seconds,total_seconds
+0,16,0,0,0,0.0,34.85,504.3
+1,16,0,0,0,0.0,23.2,371.9
+2,16,0,0,0,0.0,21.2,359.6
+3,16,0,0,0,0.0,20.2,329.2
+4,16,0,0,0,0.0,27.95,387.9
+5,16,0,0,0,0.0,26.9,382.8
+6,16,0,0,0,0.0,25.65,396.2
+7,16,0,0,0,0.0,20.3,388.5
