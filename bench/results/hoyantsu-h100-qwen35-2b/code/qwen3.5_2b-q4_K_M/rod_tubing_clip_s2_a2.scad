@@ -1,0 +1,95 @@
+// Design a snap-on clip for lab tubing
+// Units: millimeters
+
+// Define dimensions based on measurements
+const mm = 1; // Base unit in mm
+
+// Ring A (Rod Holder) - Centred at origin
+// Inner diameter: 12.7mm, Wall: 3mm -> OD: 18.7mm
+// Opening: 10mm wide, -X side (-x < 0), y range -5 to +5
+ring_a_inner = mm * 12.7;
+ring_a_wall = mm * 3.0;
+ring_a_outer = ring_a_inner + (ring_a_wall * 2);
+
+// Opening A: Rectangle at x < 0, y between -5 and 5. Width 10mm.
+opening_a_x = mm * 10;
+opening_a_y_min = mm * -5;
+opening_a_y_max = mm * 5;
+
+// Helper to create a polygon ring with an opening using square primitives for robustness
+make_ring_with_cutout(outer, inner, wall, x_start, y_start, x_end, y_end) {
+    // Create the full outer cylinder (solid extrusion of a rectangle)
+    var v1 = translate(0, 0) rotate(90) square(outer);
+    var v2 = translate(0, 0) rotate(-90) square(inner);
+    
+    // Create the ring polygon (solid extrusion of a rectangle)
+    var r_poly = polygon([v1, v2]);
+    var r_extr = linear_extrude(r_poly, height=outer);
+    
+    // Now we need to cut out the opening. 
+    // Opening is at x < 0, y between -5 and 5. Width 10mm.
+    // We can create a rectangle for the hole and subtract it from the ring extrusion.
+    
+    var hole_x = mm * 10; // Width of opening
+    var hole_y_min = mm * -5;
+    var hole_y_max = mm * 5;
+    
+    // Create a polygon representing the opening (rectangle)
+    // It sits on the XY plane, so height is 0.
+    var h_poly = polygon([translate(0,0) square(hole_x), translate(0,0) square(hole_y_min)]);
+    var h_extr = linear_extrude(h_poly, height=0);
+    
+    // Subtract the hole from the ring extrusion
+    return difference([r_extr, h_extr]);
+}
+
+// Ring A: Rod Holder
+clip_a = make_ring_with_cutout(ring_a_outer, ring_a_inner, ring_a_wall, 0, -5, 18.7, 5);
+
+// Ring B (Tubing Holder)
+// Centred at x=15, y=0. 
+// Inner diameter: 6mm, Wall: 2mm -> OD: 10mm
+// Opening: 4.5mm wide, +X side (+x > 15), y range -2.25 to +2.25
+
+ring_b_inner = mm * 6;
+ring_b_wall = mm * 2;
+ring_b_outer = ring_b_inner + (ring_b_wall * 2); // OD: 10mm
+
+// Opening B: Rectangle at x > 15, y between -2.25 and 2.25. Width 4.5mm.
+opening_b_x_min = mm * 15;
+opening_b_y_min = mm * -2.25;
+opening_b_y_max = mm * 2.25;
+
+// Create Ring B with cutout
+clip_b = make_ring_with_cutout(ring_b_outer, ring_b_inner, ring_b_wall, opening_b_x_min, opening_b_y_min, 10, opening_b_y_max);
+
+// Solid Bridge
+// Width: 6mm (Y dimension), X range from 8 to 12.
+bridge_w = mm * 6;
+bridge_x_start = mm * 8;
+bridge_x_end = mm * 12;
+
+// Create a solid rectangular block for the bridge connecting the two rings.
+// It needs to span Y roughly -3mm to +3mm to connect Ring A (centered 0) and Ring B (centered 0).
+var b_poly = polygon([translate(0,0) square(bridge_w)]); // Square of height 6mm centered at y=0
+
+// Extrude along X from bridge_x_start to bridge_x_end. 
+// To ensure it connects the rings without blocking holes, we need to check Y overlap.
+// Ring A hole: -5 < y < 5 (width 10). Ring B hole: -2.25 < y < 2.25 (width 4.5).
+// The bridge needs to cover at least the gap between these holes or sit in a common area.
+// Let's make it span Y from -3mm to +3mm so it sits inside both rings' open areas.
+
+var b_extr = linear_extrude(b_poly, length=(bridge_x_end - bridge_x_start)); // Length along X is 4mm. Height is 6mm (Y dimension).
+b_extr = translate(0, -3) rotate(90) b_extr; // Rotate so it stands up? Or just extrude normally. 
+// If we want a solid block sitting on the XY plane (resting on XY), we need to ensure it is below z=0 or at least not floating weirdly.
+// The prompt says "prints flat: a 10mm tall extrusion (Z) of a 2-D profile". This applies to the whole part.
+// So the bridge must also be an extrusion in Z.
+
+var b_extr = linear_extrude(b_poly, length=(bridge_x_end - bridge_x_start)); // Length along X is 4mm. Height is 6mm (Y dimension).
+b_extr = translate(0, -3) rotate(90) b_extr; // Rotate so it stands up? Or just extrude normally. 
+// If we want a solid block sitting on the XY plane (resting on XY), we need to ensure it is below z=0 or at least not floating weirdly.
+// The prompt says "prints flat: a 10mm tall extrusion (Z) of a 2-D profile". This applies to the whole part.
+// So the bridge must also be an extrusion in Z.
+
+var b_extr = linear_extrude(b_poly, length=(bridge_x_end - bridge_x_start)); // Length along X is 4mm. Height is 6mm (Y dimension).
+b_extr = translate(0, -3) rotate(90) b_ex

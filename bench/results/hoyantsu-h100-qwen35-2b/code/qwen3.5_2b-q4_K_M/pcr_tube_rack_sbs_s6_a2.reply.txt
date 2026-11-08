@@ -1,0 +1,137 @@
+```openscad
+// Design a rack for 96 PCR tubes (0.2 mL) with the standard microplate (ANSI/SLAS) footprint: 
+// a block 127.76 mm long (X), 85.48 mm wide (Y) and 20 mm tall (Z).
+// It has 96 vertical through-holes, 6.2 mm in diameter, in 8 rows (along Y) by 12 columns (along X) 
+// at 9.0 mm centre-to-centre spacing. The centre of the first hole (A1) is 14.38 mm from the left edge and 
+// 11.24 mm from the back edge, so the grid is centred on the block. Cut a 45-degree chamfer with 5 mm legs off the vertical edge at the A1 corner as an orientation mark.
+
+// Dimensions in millimetres
+block_length = 127.76;   // X dimension (mm)
+block_width    = 85.48;   // Y dimension (mm)
+block_height   = 20.0;    // Z dimension (mm)
+hole_diameter  = 6.2;     // Hole diameter (mm)
+row_spacing_y  = 9.0;     // Spacing between rows along Y (mm)
+col_spacing_x  = 9.0;     // Spacing between columns along X (mm)
+chamfer_leg    = 5.0;     // Chamfer leg length (mm)
+
+// Create the main block body
+block = cube([block_length, block_width, block_height]);
+
+// Define hole parameters
+hole_radius = hole_diameter / 2;
+num_rows_y  = 8;
+num_cols_x  = 12;
+total_holes = num_rows_y * num_cols_x;
+
+// Create the grid of holes using a for loop
+for (i = 0; i < total_holes; i++) {
+    // Calculate position based on spacing and starting offset
+    col_idx = i % num_cols_x;
+    row_idx = floor(i / num_cols_x);
+    
+    x_pos = (block_length / 2) - (col_spacing_x * col_idx);
+    y_pos = (block_width / 2) - (row_spacing_y * row_idx);
+    
+    // Create the hole cylinder with a small top cap to ensure it sits flush on the block surface
+    hole = cylinder([hole_diameter, 0.1], [x_pos, y_pos, block_height]);
+    
+    // Add a tiny top cap to prevent floating holes and ensure alignment
+    cap = cube([hole_diameter - 0.2, hole_diameter - 0.2, 0.1]);
+    cap_center_x = x_pos + (hole_diameter / 2);
+    cap_center_y = y_pos + (hole_diameter / 2);
+    
+    // Union the cylinder and cap to form a solid block with holes
+    hole_block = union(hole, cap);
+    
+    // Add chamfer at the A1 corner if it exists (first hole in first column)
+    // Coordinates of A1: Left edge + col_spacing_x * 0, Back edge + row_spacing_y * 0
+    chamfer_pos_x = block_length / 2 - (col_spacing_x * col_idx);
+    chamfer_pos_y = block_width / 2 - (row_spacing_y * row_idx);
+    
+    // Chamfer geometry: A pyramid-like cut with legs of length 'chamfer_leg'
+    chamfer_shape = cube([chamfer_leg, chamfer_leg, 0.1]);
+    
+    if (col_idx == 0 && row_idx == 0) {
+        // A1 corner: Left edge, Back edge
+        chamfer_pos_x = block_length / 2 - (col_spacing_x * col_idx);
+        chamfer_pos_y = block_width / 2 - (row_spacing_y * row_idx);
+        
+        // Create a small cylinder for the chamfer leg
+        chamfer_leg_cyl = cylinder([chamfer_leg, chamfer_leg, 0.1]);
+        chamfer_leg_cyl_center_x = chamfer_pos_x + chamfer_leg / 2;
+        chamfer_leg_cyl_center_y = chamfer_pos_y + chamfer_leg / 2;
+        
+        // Create a small flat face for the chamfer leg (top and bottom)
+        chamfer_top_face = cube([chamfer_leg, chamfer_leg - chamfer_leg * 0.5, 0.1]);
+        chamfer_bottom_face = cube([chamfer_leg - chamfer_leg * 0.5, chamfer_leg - chamfer_leg * 0.5, 0.1]);
+        
+        // Add the chamfer shape (subtracting a smaller cylinder from the leg cylinder)
+        chamfer_leg_cyl_large = cylinder([chamfer_leg, chamfer_leg - chamfer_leg * 0.5, 0.1]);
+        
+        chamfer_shape = difference(chamfer_leg_cyl_large, chamfer_top_face); // Top part of leg
+        
+        // Add the bottom face to complete the pyramid shape for subtraction
+        chamfer_bottom_face = cube([chamfer_leg - chamfer_leg * 0.5, chamfer_leg - chamfer_leg * 0.5, 0.1]);
+        
+        block_with_chamfer = difference(block, chamfer_shape);
+    } else {
+        // Regular holes: Cylinder with a flat top cap
+        hole_block = union(hole, cap);
+    }
+    
+    // Add chamfer to regular holes if they are in the A1 corner (first row, first column)
+    if (col_idx == 0 && row_idx == 0) {
+        chamfer_pos_x = block_length / 2 - (col_spacing_x * col_idx);
+        chamfer_pos_y = block_width / 2 - (row_spacing_y * row_idx);
+        
+        // Create a small cylinder for the chamfer leg
+        chamfer_leg_cyl = cylinder([chamfer_leg, chamfer_leg, 0.1]);
+        chamfer_leg_cyl_center_x = chamfer_pos_x + chamfer_leg / 2;
+        chamfer_leg_cyl_center_y = chamfer_pos_y + chamfer_leg / 2;
+        
+        // Create a small flat face for the chamfer leg (top and bottom)
+        chamfer_top_face = cube([chamfer_leg, chamfer_leg - chamfer_leg * 0.5, 0.1]);
+        chamfer_bottom_face = cube([chamfer_leg - chamfer_leg * 0.5, chamfer_leg - chamfer_leg * 0.5, 0.1]);
+        
+        // Add the chamfer shape (subtracting a smaller cylinder from the leg cylinder)
+        chamfer_leg_cyl_large = cylinder([chamfer_leg, chamfer_leg - chamfer_leg * 0.5, 0.1]);
+        
+        chamfer_shape = difference(chamfer_leg_cyl_large, chamfer_top_face); // Top part of leg
+        
+        // Add the bottom face to complete the pyramid shape for subtraction
+        chamfer_bottom_face = cube([chamfer_leg - chamfer_leg * 0.5, chamfer_leg - chamfer_leg * 0.5, 0.1]);
+        
+        block_with_chamfer = difference(block_with_chamfer, chamfer_shape);
+    }
+}
+
+// Final assembly: Combine all hole blocks into one solid part
+final_rack = union(hole_block for i in range(total_holes));
+
+// Add a small top cap to the entire rack so it sits flush on the block surface
+top_cap = cube([block_length, block_width - 0.2, 0.1]);
+top_cap_center_x = (block_length / 2);
+top_cap_center_y = (block_width / 2) - (row_spacing_y * num_rows_y / 2);
+
+rack_with_top = union(final_rack, top_cap);
+
+// Add a small bottom cap to the entire rack so it sits flush on the block surface
+bottom_cap = cube([block_length, block_width - 0.2, 0.1]);
+bottom_cap_center_x = (block_length / 2);
+bottom_cap_center_y = (block_width / 2) - (row_spacing_y * num_rows_y / 2);
+
+rack_with_bottom = union(rack_with_top, bottom_cap);
+
+// Add a small top cap to the entire rack so it sits flush on the block surface
+top_cap = cube([block_length, block_width - 0.2, 0.1]);
+top_cap_center_x = (block_length / 2);
+top_cap_center_y = (block_width / 2) - (row_spacing_y * num_rows_y / 2);
+
+rack_with_top = union(rack_with_bottom, top_cap);
+
+// Add a small bottom cap to the entire rack so it sits flush on the block surface
+bottom_cap = cube([block_length, block_width - 0.2, 0.1]);
+bottom_cap_center_x = (block_length / 2);
+bottom_cap_center_y = (block_width / 2) - (row_spacing_y * num_rows_y / 2);
+
+rack_with_bottom = union(rack_with_top

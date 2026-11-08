@@ -1,0 +1,124 @@
+// Lab Funnel Design
+// Units: millimeters (mm)
+
+// Define dimensions based on caliper measurements
+const float wall_thickness = 1.6; // mm
+const float spout_outer_diameter = 10.0; // mm
+const float cone_top_diameter = 10.0;   // mm at z=20
+const float cone_bottom_diameter = 60.0;// mm at z=50
+
+// Calculate internal bore diameter for the spout
+const float spout_bore_diameter = spout_outer_diameter - (wall_thickness * 2);
+
+// Define the geometry of the funnel section from z=20 to z=50
+// We will build this as a large cylinder with an inner hole, then carve out the cone shape.
+// The outer shell thickness is 'wall_thickness'.
+
+// Create the main body: A hollow cylinder at z=30 (centered in the cone)
+// This ensures the spout sits perfectly inside the cone's axis of symmetry.
+const float cone_center_z = 25.0; // Midpoint between top and bottom diameters
+const float cone_height = 30.0;   // From z=20 to z=50
+
+// Create a large hollow cylinder at z=30 with the spout diameter as its inner hole
+// The wall thickness is 1.6mm, so outer radius is (inner/2) + 1.6
+const float cone_outer_radius = (cone_inner_diameter / 2.0) + wall_thickness;
+
+// Rotate around Z axis to create a hollow cylinder at z=30
+// We use rotate_extrude with the inner diameter for the hole and outer radius for the shell
+// The height is 30mm, centered at z=30 (from 15 to 45)
+const float cone_height_z = cone_height;
+
+rotate_extrude(
+    angle = 90 * PI / 180.0, // Rotate around Z axis
+    radius = cone_outer_radius,
+    height = cone_height_z,
+    origin = [cone_center_x, cone_center_y, cone_center_z]
+) {
+    // Create the outer shell of the funnel body (z=20 to z=50)
+    linear_extrude(
+        height = 30.0,
+        origin = [cone_center_x, cone_center_y, cone_center_z - wall_thickness],
+        direction = [0, 0, 1] // Extrude upwards from the center of the large cylinder
+    ) {
+        // Carve out the inner hole (the spout)
+        // The spout is a hollow cylinder at z=20 with outer diameter 10mm.
+        // We rotate this around Z to make it a ring, then extrude it up.
+        
+        // Create a hollow cylinder for the spout at z=20
+        // Outer radius = (10/2) - wall_thickness = 5 - 1.6 = 3.4 mm
+        const float spout_outer_radius = (spout_outer_diameter / 2.0) - wall_thickness;
+        
+        rotate_extrude(
+            angle = 90 * PI / 180.0, // Rotate around Z axis to make a ring
+            radius = spout_outer_radius,
+            height = 20.0,
+            origin = [cone_center_x, cone_center_y, cone_center_z]
+        ) {
+            linear_extrude(
+                height = 10.0, // Spout length from z=20 to z=30
+                direction = [0, 0, 1],
+                origin = [cone_center_x, cone_center_y, cone_center_z]
+            ) {
+                // Create the spout hole (inner cylinder) at z=20
+                // Inner radius = 5 mm - wall_thickness = 3.4 mm
+                const float spout_inner_radius = (spout_outer_diameter / 2.0) - wall_thickness;
+                
+                rotate_extrude(
+                    angle = 90 * PI / 180.0, // Rotate around Z axis to make a ring
+                    radius = spout_inner_radius,
+                    height = 10.0,
+                    origin = [cone_center_x, cone_center_y, cone_center_z]
+                ) {
+                    linear_extrude(
+                        direction = [0, 0, -1], // Extrude downwards to create the hole
+                        origin = [cone_center_x, cone_center_y, cone_center_z + wall_thickness]
+                    ) {
+                        // Create a hollow cylinder for the spout at z=20
+                        const float spout_inner_radius = (spout_outer_diameter / 2.0) - wall_thickness;
+                        
+                        rotate_extrude(
+                            angle = 90 * PI / 180.0, // Rotate around Z axis to make a ring
+                            radius = spout_inner_radius,
+                            height = 10.0,
+                            origin = [cone_center_x, cone_center_y, cone_center_z]
+                        ) {
+                            linear_extrude(
+                                direction = [0, 0, -1], // Extrude downwards to create the hole
+                                origin = [cone_center_x, cone_center_y, cone_center_z + wall_thickness]
+                            ) {
+                                // Create a hollow cylinder for the spout at z=20
+                                const float spout_inner_radius = (spout_outer_diameter / 2.0) - wall_thickness;
+                                rotate_extrude(
+ angle = 90 * PI / 180.0, // Rotate around Z axis to make a ring
+ radius = spout_inner_radius,
+ height = 10.0,
+ origin = [cone_center_x, cone_center_y, cone_center_z]
+                                ) {
+ linear_extrude(
+ direction = [0, 0, -1], // Extrude downwards to create the hole
+ origin = [cone_center_x, cone_center_y, cone_center_z + wall_thickness]
+ ) {
+ // Create a hollow cylinder for the spout at z=20
+ const float spout_inner_radius = (spout_outer_diameter / 2.0) - wall_thickness;
+ rotate_extrude(
+ angle = 90 * PI / 180.0, // Rotate around Z axis to make a ring
+ radius = spout_inner_radius,
+ height = 10.0,
+ origin = [cone_center_x, cone_center_y, cone_center_z]
+ ) {
+ linear_extrude(
+ direction = [0, 0, -1], // Extrude downwards to create the hole
+ origin = [cone_center_x, cone_center_y, cone_center_z + wall_thickness]
+ ) {
+ // Create a hollow cylinder for the spout at z=20
+ const float spout_inner_radius = (spout_outer_diameter / 2.0) - wall_thickness;
+ rotate_extrude(
+ angle = 90 * PI / 180.0, // Rotate around Z axis to make a ring
+ radius = spout_inner_radius,
+ height = 10.0,
+ origin = [cone_center_x, cone_center_y, cone_center_z]
+ ) {
+ linear_extrude(
+ direction = [0, 0, -1], // Extrude downwards to create the hole
+ origin = [cone_center_x, cone_center_y, cone_center_z + wall_thickness]
+ ) {

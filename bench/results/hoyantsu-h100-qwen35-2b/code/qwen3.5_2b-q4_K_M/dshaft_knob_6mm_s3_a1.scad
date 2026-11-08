@@ -1,0 +1,98 @@
+// Design: Hotplate Stirrer Knob Replacement
+// Units: Millimeters
+
+// Dimensions defined in millimeters
+D_SHaft_Diameter = 6.0; // mm
+Knob_Diameter = 30.0;   // mm
+Knob_Height = 15.0;     // mm
+Blind_Bore_Start_Z = 12.0; // mm (distance from bottom to start of bore)
+Blind_Bore_Diameter = 6.2; // mm
+Blind_Bore_Flat_Depth = 4.7; // mm (depth of the flat side relative to the circle center)
+
+// Number of grooves around the circumference
+Groove_Count = 18;
+
+// Groove geometry parameters
+Groove_Diameter = 2.0; // mm
+Groove_Start_Z = Knob_Height / 2.0; // Centered vertically on top face
+
+// Pointer groove dimensions
+Pointer_Groove_Width = 1.5; // mm
+Pointer_Groove_Depth = 1.0; // mm
+
+fn = 64; // High feature count for smooth curved surfaces and holes
+
+// Create the main cylindrical body
+main_body = cylinder(
+    radius = Knob_Diameter / 2,
+    height = Knob_Height,
+    center = [0, 0, 0]
+);
+
+// Define the D-shaped blind bore
+// The circle is centered at Z=Blind_Bore_Start_Z.
+// It has a flat face on one side and an open concave side on the other.
+// We use rotate_extrude to create the hole shape.
+// To ensure no coplanar faces, we construct the geometry such that the cut extends past the faces.
+
+D_Bore_Center = [0, 0, Blind_Bore_Start_Z];
+D_Bore_Radius = Blind_Bore_Diameter / 2; // 3.1 mm
+
+// Create the D-shaped hole using rotate_extrude
+// The extrusion length is set to the flat depth (4.7mm) plus a small offset (0.5mm) 
+// to ensure the cut extends past the face, preventing coplanar faces in difference().
+D_Bore_Extrude_Length = Blind_Bore_Flat_Depth + 0.5; 
+
+d_bore_hole = rotate_extrude(
+    angle = 180 * PI / 360, // Rotate 180 degrees to form the 'D' shape (flat side down)
+    radius = D_Bore_Radius,
+    length = D_Bore_Extrude_Length,
+    center = [0, 0, Blind_Bore_Start_Z]
+);
+
+// Create vertical grip grooves around the outside
+groove_loop = for(groove = 1 to Groove_Count) {
+    // Calculate angle for each groove position
+    theta = (groove - 1.0) * 2 * PI / Groove_Count;
+    
+    // Define a half-cylinder shape that is cut into the body
+    // We use rotate_extrude with a negative radius to create an inward cut
+    // The length of this cut must be sufficient to reach the bottom (z=0).
+    // Since the groove starts at Knob_Height/2, it extends from there down.
+    
+    half_cylinder = rotate_extrude(
+        angle = theta + PI / 2, // Start at 90 degrees (flat side up)
+        radius = Groove_Diameter / 2,
+        length = Knob_Height - groove * Groove_Diameter, // Length of the cut segment
+        center = [0, 0, Knob_Height / 2]
+    );
+    
+    // Combine half-cylinders to form a full cylinder ring (using union)
+    current_groove_ring = rotate_extrude(
+        angle = theta + PI / 2,
+        radius = Groove_Diameter / 2,
+        length = Knob_Height - groove * Groove_Diameter,
+        center = [0, 0, Knob_Height / 2]
+    );
+    
+    // Add the current ring to the main body using union
+    main_body = union(main_body, current_groove_ring);
+};
+
+// Create the pointer groove on top face
+// Runs from center (z=Knob_Height) down to z=Pointer_Groove_Depth
+pointer_groove = rotate_extrude(
+    angle = 0 * PI / 360, // Pointing straight up
+    radius = Knob_Diameter / 2 - Pointer_Groove_Width / 2,
+    length = Knob_Height - Pointer_Groove_Depth,
+    center = [0, 0, Knob_Height]
+);
+
+// Combine pointer groove with the main body using union
+knob_with_pointer = union(main_body, pointer_groove);
+
+// Final assembly: Add the D-bore to the knob with pointer
+final_part = difference(
+    shape = knob_with_pointer, // The solid part including pointer and grooves
+    cutout = d_bore_hole      // The hole that goes through it
+);

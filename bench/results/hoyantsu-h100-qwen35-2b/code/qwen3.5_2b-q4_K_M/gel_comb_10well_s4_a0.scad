@@ -1,0 +1,140 @@
+// Design a 10-well comb for casting agarose gels, printed lying flat.
+// The whole comb is a flat plate 1.5 mm thick (Z) lying on the bed.
+// Seen from above, it has a straight spine (back bar) 70 mm long (X) and 12 mm wide (Y), 
+// and 10 rectangular teeth that hang from one long edge of the spine in the -Y direction.
+// Each tooth is 5.0 mm wide (X) and 12 mm long (Y). The gaps between neighbouring teeth are 1.5 mm, 
+// and the row of teeth is centred on the spine in X.
+
+// Dimensions in millimetres
+// Spine dimensions
+long_spine_X = 70.0; // Length along X
+wide_spine_Y = 12.0; // Width along Y (height of comb)
+thick_comb_Z = 1.5;  // Thickness along Z
+
+// Tooth dimensions
+tooth_width_X = 5.0;  // Width along X
+tooth_length_Y = 12.0; // Length hanging down in -Y direction
+
+// Gap between teeth (in mm)
+gap_between_teeth = 1.5;
+
+// Number of teeth
+num_teeth = 10;
+
+// Total length of the comb spine
+total_comb_X = long_spine_X + ((num_teils - 1) * gap_between_teeth);
+
+// Centering offset to align teeth on the spine
+center_offset_X = (long_spine_X / 2.0) - (tooth_width_X / 2.0);
+
+// Total height of the comb (spine length + tooth lengths)
+total_comb_Y = long_spine_Y + (num_teils * tooth_length_Y);
+
+// Total width of the comb (width of spine + gaps between teeth)
+total_comb_W = wide_spine_Y + ((num_teils - 1) * gap_between_teeth);
+
+// Centering offset for Y axis to center the row on the spine
+center_offset_Y = (wide_spine_Y / 2.0) - (tooth_length_Y / 2.0);
+
+// Total height of the comb (thickness + tooth lengths)
+total_comb_Z = thick_comb_Z + (num_teils * tooth_length_Y);
+
+// Create a helper function to generate teeth using a for loop
+// This creates N teeth, each with width X and length Y, hanging from spine.
+// The teeth are centered on the spine in X and aligned along the spine's Y axis.
+create_teeth = function(
+    long_spine_X, wide_spine_Y, tooth_width_X, tooth_length_Y, gap_between_teeth, num_teils) {
+
+    var teeth_list; // List to store tooth extrusions
+
+    for (i = 0; i < num_teils; i++) {
+        // Calculate X position of the current tooth center relative to spine start
+        // Spine starts at 0. Tooth width is centered on spine, so offset is half tooth width.
+        // We need to place them sequentially along Y.
+        
+        var x_pos = (i * gap_between_teeth) + (tooth_width_X / 2.0);
+
+        teeth_list += linear_extrude(
+            length = tooth_length_Y,
+            width = tooth_width_X,
+            height = thick_comb_Z, // Thickness of the comb body
+            origin = translate(x_pos, wide_spine_Y/2.0 - tooth_length_Y/2.0, 0)
+        );
+    }
+
+    return teeth_list;
+};
+
+// Create the main comb structure: spine + teeth
+var comb_body;
+
+comb_body = union(
+    // The spine itself (a flat plate)
+    linear_extrude(
+        length = long_spine_Y,
+        width = wide_spine_Y,
+        height = thick_comb_Z,
+        origin = translate(center_offset_X, 0.0, 0)
+    ),
+
+    // Add the teeth hanging from the spine
+    create_teeth(long_spine_X, wide_spine_Y, tooth_width_X, tooth_length_Y, gap_between_teeth, num_teils),
+
+    // Ensure no gaps between the spine and the first tooth (they are joined at Y=0)
+    // The linear_extrude of teeth starts at Y = wide_spine_Y/2 - tooth_length_Y/2.
+    // We need to add a small offset or modify the origin of the teeth to touch the spine bottom.
+    
+    // Correction: The teeth are extruded from the center line (Y=0) downwards.
+    // To join them seamlessly, we can simply use the union above because the spine is at Y=0 and teeth start at negative Y.
+    // However, if we want to be strictly "joined", we might need a slight overlap or just rely on the geometry.
+    // Actually, looking at the coordinates:
+    // Spine bottom is at Y = 0 (relative to spine origin).
+    // Teeth are extruded from center line (Y=0) downwards by tooth_length_Y/2.
+    // So the teeth start at Y = -tooth_length_Y/2 and end at Y = -tooth_length_Y/2 + thick_comb_Z.
+    // The spine ends at Y = 0.
+    // There is a gap of (tooth_length_Y / 2) between them unless we adjust the origin or use intersection.
+    
+    // Let's use intersection to ensure perfect contact, or simply add a small overlap if needed. 
+    // But standard union works fine here as long as the spine bottom touches the tooth top.
+    // Spine bottom: Y=0. Tooth top (relative to its own origin): Y = -tooth_length_Y/2 + thick_comb_Z? No.
+    
+    // Let's re-evaluate coordinates.
+    // Spine extrusion: origin=(0,0), length=Y, width=W, height=H. Bottom face at Z=0. Top face at Z=Y+H.
+    // Teeth extrusion: origin=(x, W/2 - L/2), length=L, width=w, height=H. 
+    // The teeth are centered on the spine's Y axis (which is 0). So their center line is at Y=0.
+    // Their bottom face is at Z = -L/2 + H. Their top face is at Z = L/2 + H.
+    // The Spine's bottom face is at Z = 0.
+    // There is a gap of (L/2) between the spine and the first tooth.
+    
+    // To fix this, we can add an intersection with the spine to fill that gap, or simply use union if we adjust the teeth origin slightly? 
+    // No, geometry is rigid. We must ensure they touch.
+    // Option 1: Add a small overlap to the spine extrusion (e.g., +0.5mm).
+    // Option 2: Use intersection between the spine and the first tooth.
+    
+    // Let's use intersection for robustness, or simply add an extra linear_extrude at the bottom of the spine? 
+    // Actually, a simple fix is to make the teeth slightly larger in height or overlap the spine.
+    // Since we are printing, slight overhangs are okay as long as they don't break.
+    // But for "no gaps", let's use intersection logic conceptually by adding an extra extrusion at the bottom of the spine? 
+    // No, that would make a mess.
+    
+    // Best approach: Use union. The gap is small (12mm / 2 = 6mm). It might be visible but functionally acceptable for printing.
+    // However, to strictly follow "no gaps", let's add an intersection between the spine and the first tooth? 
+    // Or simply accept that standard OpenSCAD union handles this if we trust the math.
+    // Wait, I can just add a small linear_extrude at the bottom of the spine (Z=0) to bridge it? No, that's redundant.
+    
+    // Let's try using intersection between the spine and the first tooth to ensure 100% contact.
+    var gap_fill;
+    gap_fill = difference(
+        linear_extrude(length=tooth_length_Y, width=tooth_width_X, height=thick_comb_Z, origin=translate(center_offset_X, wide_spine_Y/2.0 - tooth_length_Y/2.0, 0)), // First tooth
+        linear_extrude(length=long_spine_Y, width=wide_spine_Y, height=thick_comb_Z, origin=translate(0,0,0)) // Spine
+    );
+
+    comb_body = union(linear_extrude(...), gap_fill);
+
+// Final assembly: Center the whole thing on the XY plane at Z=0.
+var final_part;
+final_part = translate(center_offset_X, center_offset_Y, 0) - hull(comb_body); // Subtracting hull centers it? No, subtracting hull moves origin to center of mass.
+// Better: Translate the entire assembly so its centroid is at (0,0).
+// Or simply use translate on the union before hull subtraction if we want exact positioning relative to a grid.
+// The prompt says "centre it on the origin in X and Y".
+// So we translate the

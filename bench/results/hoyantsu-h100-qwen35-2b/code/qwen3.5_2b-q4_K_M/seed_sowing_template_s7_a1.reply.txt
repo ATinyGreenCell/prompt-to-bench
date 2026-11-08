@@ -1,0 +1,94 @@
+```openscad
+// Sowing Template Design for 90 mm Petri Dish
+// All dimensions in millimeters.
+
+// Define the main disc parameters
+disc_diameter = 85; // mm
+disc_thickness = 2; // mm
+
+// Define grid parameters
+grid_rows = 7;
+grid_cols = 7;
+hole_diameter = 3; // mm
+spacing = 9;       // mm (centre-to-centre)
+
+// Create the main disc body as a cylinder
+main_disc = cylinder(
+    height = disc_thickness,
+    radius = disc_diameter / 2
+);
+
+// Add holes using for loop
+for (i = 0; i < grid_rows; i++) {
+    for (j = 0; j < grid_cols; j++) {
+        // Calculate position based on spacing and offset from center
+        // Center of disc is at radius = disc_diameter/2
+        // Offset in X: -spacing * j / 2
+        // Offset in Y: -spacing * i / 2
+        
+        hole_pos_x = (disc_diameter / 2) - (spacing * j);
+        hole_pos_y = (disc_diameter / 2) - (spacing * i);
+
+        // Create a cylinder for the hole, extending slightly past faces to ensure no coplanar faces in difference()
+        // We use a small negative radius offset so it cuts through the existing surface cleanly.
+        hole_radius = hole_diameter / 2; 
+        hole_offset = -0.15; 
+        
+        holes[i][j] = cylinder(
+            height = disc_thickness,
+            radius = hole_pos_x + hole_offset, // X position relative to center
+            radius = hole_pos_y + hole_offset, // Y position relative to center
+            length = disc_thickness
+        );
+    }
+}
+
+// Create the rectangular orientation notch on the +Y side (rim)
+notch_width = 10;
+notch_depth = 4;
+
+// The rim is a square ring of radius roughly half the diameter, but slightly smaller to fit inside.
+// Since we are cutting into the solid, we define the cut path relative to the center.
+// We will create a large cylinder that encompasses the whole part, then subtract the notch shape.
+// To ensure clean cuts in difference(), the notch shapes must extend past the faces of the main disc.
+
+notch_shape = polygon(
+    points = [
+        0, -notch_depth/2, // Bottom
+        notch_width/2, notch_depth/2, // Right rim edge
+        notch_width/2, -notch_depth/2, // Top rim edge (opposite)
+        -notch_width/2, notch_depth/2, // Left rim edge
+        -notch_width/2, -notch_depth/2  // Bottom rim edge
+    ]
+);
+
+// The notch is cut on the +Y side. 
+// We define a large cylinder that encompasses the whole part.
+large_cylinder = cylinder(
+    height = disc_thickness * 2 + notch_depth, // Extend past top and bottom of main disc
+    radius = disc_diameter / 2 - notch_width/2 // Radius of the rim area where we cut
+);
+
+// Define the notch shape to be subtracted. 
+// It needs to extend past the faces of the large_cylinder (which is effectively the part) by 0.15mm.
+notch_cut = polygon(
+    points = [
+        -notch_depth/2, // Bottom face center
+        notch_width/2 + 0.15, // Right cut edge (past rim)
+        notch_width/2 - 0.15, // Left cut edge (past rim)
+        notch_width/2, notch_depth/2 + 0.15, // Top cut face center
+        notch_width/2, -notch_depth/2 + 0.15 // Bottom cut face center
+    ]
+);
+
+// Combine all parts into the final solid
+final_part = union(
+    main_disc,
+    holes[0..grid_rows-1][0..grid_cols-1],
+    large_cylinder,
+    notch_cut
+);
+
+// Optional: Add a small fillet or chamfer to the rim for better printability if desired, 
+// but the prompt didn't specify, so we stick to the exact geometry.
+```

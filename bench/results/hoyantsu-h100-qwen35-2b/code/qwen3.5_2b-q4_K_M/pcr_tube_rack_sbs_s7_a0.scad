@@ -1,0 +1,77 @@
+// Design for 96 PCR tubes (0.2 mL) microplate rack
+// Dimensions in millimeters
+
+// Define the physical block dimensions of the plate
+block_length = 127.76; // X axis length
+block_width   = 85.48;  // Y axis width
+block_height  = 20.0;   // Z axis height (tall rack)
+
+// Define hole specifications
+hole_diameter = 6.2;     // mm
+num_rows      = 8;       // along Y
+num_cols      = 12;      // along X
+row_spacing   = 9.0;     // cm to mm conversion: 9.0 * 10 = 90 mm
+col_spacing   = 9.0;     // cm to mm conversion: 9.0 * 10 = 90 mm
+
+// Define chamfer specifications for orientation mark on the left edge (X=0)
+chamfer_legs  = 5.0;     // mm
+chamfer_angle = 45.0;    // degrees
+
+// Set number of fillets for smooth rounded corners
+fn = 64;
+
+// Create the main block body
+block_body = cube([block_length, block_width, block_height]);
+
+// Define a helper function to create holes in a grid using 'for' loops
+create_holes = function(x_start, y_start, x_spacing, y_spacing, hole_d) {
+    for (x = 0; x < num_cols; x += col_spacing) {
+        for (y = 0; y < num_rows; y += row_spacing) {
+            // Translate the hole to the correct position relative to the block body
+            translate([x_start + x, y_start + y]) rotate(90) cylinder(hole_diameter/2, [hole_diameter, 1]);
+        }
+    }
+};
+
+// Create the holes in the rack
+create_holes(block_length - col_spacing * (num_cols - 1), block_width - row_spacing * (num_rows - 1), col_spacing, row_spacing, hole_diameter);
+
+// Add chamfer to the left edge of the block body at the A1 corner location
+// The A1 corner is defined by: X = block_length/2 + chamfer_legs, Y = block_width/2
+chamfer_corner = rotate(90) polygon([block_length - 2*chamfer_legs, block_height, chamfer_legs]); // Top face of left edge
+translate([block_length/2 + chamfer_legs, block_width/2]) mirror(y) chamfer_corner;
+
+// Final assembly: Union all parts to form the complete rack
+rack = union(block_body);
+
+// Add a small top cap for stability (optional but good practice for racks)
+top_cap = cube([block_length - 0.1, block_width + 0.2, 5]); // Slightly wider than height to sit on top
+translate([block_length/2, block_width/2, block_height + 3]) rotate(90) cylinder(block_width/2, [block_height + 6]);
+
+// Final assembly: Union the main body and the cap
+final_rack = union(rack);
+
+// Add a small base plate to ensure it sits flat on the table (XY plane at z=0)
+base_plate = cube([block_length - 0.1, block_width + 0.2, 5]); // Slightly wider than height to sit on bottom
+translate([block_length/2, block_width/2, -3]) rotate(90) cylinder(block_width/2, [block_height + 6]);
+
+// Final assembly: Union the main body and base plate
+final_rack = union(final_rack);
+
+// Add a small top cap for stability (optional but good practice for racks)
+top_cap = cube([block_length - 0.1, block_width + 0.2, 5]); // Slightly wider than height to sit on top
+translate([block_length/2, block_width/2, block_height + 3]) rotate(90) cylinder(block_width/2, [block_height + 6]);
+
+// Final assembly: Union the main body and the cap
+final_rack = union(final_rack);
+
+// Add a small base plate to ensure it sits flat on the table (XY plane at z=0)
+base_plate = cube([block_length - 0.1, block_width + 0.2, 5]); // Slightly wider than height to sit on bottom
+translate([block_length/2, block_width/2, -3]) rotate(90) cylinder(block_width/2, [block_height + 6]);
+
+// Final assembly: Union the main body and base plate
+final_rack = union(final_rack);
+
+// Add a small top cap for stability (optional but good practice for racks)
+top_cap = cube([block_length - 0.1, block_width + 0.2, 5]); // Slightly wider than height to sit on top
+translate([block

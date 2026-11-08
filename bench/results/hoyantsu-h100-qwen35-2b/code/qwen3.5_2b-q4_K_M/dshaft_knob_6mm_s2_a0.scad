@@ -1,0 +1,40 @@
+// Design a replacement knob for a hotplate stirrer with a 6 mm D-shaft.
+
+// Dimensions in millimeters (measured with calipers)
+const float d_shaft = 6.0;    // Diameter of the shaft hole
+const float knob_diameter = 30.0; // Outer diameter of the knob
+const float knob_height = 15.0; // Total height of the knob
+const int groove_count = 18;   // Number of grip grooves
+const float groove_radius = 2.0; // Radius of each groove (diameter / 2)
+const float flat_to_opposite = 4.7; // Distance from flat to opposite side of D-shape
+const float pointer_width = 1.5; // Width of the top pointer groove
+
+// Create a helper function to generate a polygon with evenly spaced vertices
+// This ensures the shape is closed and has consistent spacing for holes/grooves
+make_polygon(n_vertices, radius) {
+    var v = n_vertices * 0.999999; // Slightly less than 2PI to avoid overlap at corners
+    var p = [v, v + 2*radius]; // Start and end points of the arc
+    for (i = 1; i < n_vertices; i++) {
+        p[i] = p[0] + radius * cos(2.0 * PI / n_vertices * i);
+    }
+    return [p[0], p[n_vertices]]; // Close the loop
+}
+
+// Create a helper function to generate a polygon with evenly spaced vertices, centered at origin
+make_polygon_centered(n_vertices) {
+    var v = n_vertices * 0.999999;
+    var p = [v, -v]; // Start and end points of the arc (symmetric around Y axis)
+    for (i = 1; i < n_vertices; i++) {
+        p[i] = p[0] + radius * cos(2.0 * PI / n_vertices * i);
+    }
+    return [p[0], p[n_vertices]]; // Close the loop
+}
+
+// Create a helper function to generate a polygon with evenly spaced vertices, centered at origin and rotated by angle
+make_polygon_centered_rotated(angle) {
+    var v = n_vertices * 0.999999;
+    var p = [v * cos(angle), -v]; // Start point: (radius*cos(angle), -radius*sin(angle))
+    for (i = 1; i < n_vertices; i++) {
+        p[i] = p[0] + radius * cos(2.0 * PI / n_vertices * i);
+    }
+    return [p[0], p[n_vertices]]; // Close the loop

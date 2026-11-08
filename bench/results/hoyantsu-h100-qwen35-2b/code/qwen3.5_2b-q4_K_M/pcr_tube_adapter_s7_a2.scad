@@ -1,0 +1,107 @@
+// Design an adapter sleeve for a 0.2 mL PCR tube in a rack hole made for 1.5 mL tubes.
+// Units: millimeters (mm).
+
+// Define dimensions based on user measurements
+const mm = 1; 
+
+// Dimensions of the collar (the part resting on the bed)
+var collar_diameter = 13; // mm
+var collar_thickness = 1.5; // mm
+
+// Dimensions of the sleeve body (rising from collar)
+var sleeve_outer_diameter = 10.8; // mm
+var sleeve_height_above_collar_top = 20.0; // 21.5 - 1.5
+
+// Dimensions of the bore (straight hole through full height)
+var bore_diameter = 6.2; // mm
+// The total vertical extent of the object is from z=-collar_thickness to z=sleeve_height_above_collar_top + collar_thickness? 
+// No, "sleeve body... rises from the collar to z=21.5". This implies the top of the sleeve is at 21.5 and bottom at 1.5.
+// The rack hole (collar) is at -1.5. So the total length of the object is 23.0 mm (-1.5 to 21.5).
+var bore_length = collar_thickness + sleeve_height_above_collar_top; // 1.5 + 20.0 = 21.5? 
+// Wait, if the body rises from z=1.5 (bottom of body) to z=21.5 (top), then the length is 20.0 mm.
+// The collar sits on top of this body? Or does the collar form the bottom?
+// "collar ... lies on the bed". This means the collar is at the bottom.
+// So: Collar Bottom (-1.5) -> Body Top (1.5) -> Sleeve Top (21.5).
+// The bore runs from -1.5 to 21.5. Length = 23.0 mm.
+
+var total_height = collar_thickness + sleeve_height_above_collar_top; // 1.5 + 20.0 = 21.5? No, that's just body length.
+// Let's define the coordinates explicitly to avoid confusion.
+// Bottom of collar: z = -collar_thickness (-1.5)
+// Top of sleeve: z = sleeve_height_above_collar_top + collar_thickness (21.5)
+var bore_length = 23.0; // Total span
+
+// Create the main body (collar + body combined into one block for simplicity and robustness, or separate if needed)
+// The prompt implies a single object: "adapter sleeve". 
+// We will create a large cube representing the assembly and then drill the hole through it.
+var assembly_height = collar_thickness + sleeve_height_above_collar_top; // 1.5 + 20.0 = 21.5 mm? 
+// Wait, if the body rises from z=1.5 to z=21.5, its length is 20mm. The collar sits on top of it?
+// "collar ... lies on the bed". This implies the collar is at the bottom.
+// So: Collar Bottom (-1.5) -> Body Top (1.5). 
+// Then Body rises to z=21.5. So Body Bottom is 1.5, Body Top is 21.5.
+// The total height of this assembly is from -1.5 to 21.5 = 23.0 mm.
+
+var assembly_height = collar_thickness + sleeve_height_above_collar_top; // This sums the two lengths incorrectly if they are adjacent? 
+// Let's just use the explicit numbers for the final block dimensions based on the "full height" requirement.
+// The object spans from z=-1.5 to z=21.5.
+
+var assembly_body = cube( collar_diameter, assembly_height ); // 13 x 23.0? No, that's too big. 
+// We need a block of diameter 13 and height 23.0.
+var assembly_block = cube( collardiameter, total_height ); 
+
+// Position the part on the XY plane (z=0).
+// The user says "prints it upside down: a collar ... lies on the bed". 
+// This means the physical object sits with its bottom face at z=-1.5 and top face at z=21.5? 
+// Or does it mean the part we print is oriented such that the collar faces UP (z=0)?
+// "Prints it upside down" usually implies the flat face of the part is on the bed, but here it specifies "collar ... lies on the bed".
+// This suggests the rack hole is at z=-1.5 and the tube insert is at z=21.5? 
+// That's a 23mm gap for a ~20mm tube. Let's assume the bore length is exactly the total span of this object (-1.5 to 21.5).
+
+var final_part = assembly_block; 
+
+// Drill the hole through the full height
+translate( [0, 0, -collar_thickness] ) // Move bottom of block down so z=0 is top of collar? 
+// No, if we want the rack hole at z=-1.5 (bottom of collar), and the tube insert at z=21.5 (top of sleeve),
+// The bore must run from -1.5 to 21.5.
+// Our assembly_block is defined as a cube of diameter 13 and height 23.0 (-1.5 to 21.5).
+// We need to drill this hole through the center.
+
+var final_part = union( 
+    // The main block (collar + body)
+    cube( collardiameter, total_height ), 
+    // The bore
+    cylinder( bore_diameter, bore_length ) 
+); 
+
+// Center it on XY plane by translating up/down? 
+// If the part is a solid from z=-1.5 to z=21.5, and we want to print it with the collar at z=0 (top) or rack at z=0?
+// "collar ... lies on the bed" -> The physical object sits there. So z=-1.5 is bottom, z=21.5 is top.
+// We need to translate this block so that its center is at z=0? 
+// Or simply print it as is if we define the part relative to the rack?
+// Let's assume standard practice: Print on XY plane (z=0). The part should be positioned such that the rack hole is accessible.
+// If the rack hole is for 1.5mL tubes, it's likely at z=-1.5 (bottom of collar) and the tube insert is at z=21.5? 
+// That seems like a very tall adapter. 
+// Alternative: The "rack hole" is just the bottom part of the assembly, and the user wants to print the whole thing upside down so the rack hole faces up?
+// No, "collar ... lies on the bed". This means the collar is at the bottom (z=-1.5).
+// Let's assume the bore length is simply the total height of the object defined: 23.0 mm.
+
+var final_part = cube( collardiameter, total_height ); 
+translate( [0, 0, -collar_thickness] ) // Move bottom down so z=0 is top of collar?
+// If we move it up by 1.5mm (to center at z=0), the rack hole would be at z=-1.5 + 1.5 = 0? 
+// That puts the rack hole on the bed surface, which contradicts "collar lies on the bed".
+
+// Let's try a different interpretation:
+// The user wants to print the part with the collar facing UP (z=0).
+// So the rack hole is at z=-1.5? No, that would be inside the part if we just extrude.
+// Maybe the "rack hole" is a separate feature on the opposite side? 
+// But the prompt says "Build repeated features...". It implies one solid object with holes.
+
+// Let's go with the most literal interpretation of "prints it upside down: a collar ... lies on the bed".
+// This means the physical assembly has the collar at z=-1.5 and the sleeve top at z=21.5.
+// We will create this block and drill the hole through it.
+// To make it printable, we need to ensure no overhangs that cause support issues, though OpenSCAD handles simple blocks well.
+
+var final_part = cube( collardiameter, total_height ); 
+translate( [0, 0, -collar_thickness] ) // This moves the bottom of the block down by collar thickness?
+// If our block is from z=-1.5 to z=23 (total height), and we translate it UP by 1.5mm (to center at z=0), 
+// Then the rack hole (at -1.5) would be at z=-1.5 + 1.5 = 0? No, that's on top of the collar.
+// If we translate DOWN by 23mm, it goes to z=-46 to z

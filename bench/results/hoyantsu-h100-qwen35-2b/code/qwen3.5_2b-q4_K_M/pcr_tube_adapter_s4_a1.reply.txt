@@ -1,0 +1,51 @@
+```openscad
+// Design an adapter sleeve for PCR tubes.
+// Units: millimeters (mm)
+
+// Define dimensions based on user measurements
+outer_diameter = 10.8; // mm
+inner_bore_diameter = 6.2; // mm
+bore_height = 21.5;     // mm
+collar_thickness = 1.5; // mm
+collar_outer_diameter = 13.0; // mm
+
+// Create the bore hole (open at both ends)
+// Centered on origin, extends from z=-10.75 to +10.75
+bore_hole = cylinder(
+    inner_diameter = inner_bore_diameter,
+    height = bore_height,
+    center_x = 0,
+    center_y = 0,
+    center_z = -bore_height / 2 // Center the hole on the origin so it extends from z=-10.75 to +10.75
+);
+
+// Create the collar (sleeve top)
+// Inner diameter matches outer_diameter, height is thickness
+collar_body = cylinder(
+    inner_diameter = outer_diameter,
+    height = collar_thickness,
+    center_x = 0,
+    center_y = 0,
+    center_z = -bore_height / 2 // Align with bore hole bottom
+);
+
+// Create the sleeve body (sleeve bottom)
+// Inner diameter matches outer_diameter, height is bore_height
+sleeve_body = cylinder(
+    inner_diameter = outer_diameter,
+    height = bore_height,
+    center_x = 0,
+    center_y = 0,
+    center_z = -bore_height / 2 // Align with bore hole top
+);
+
+// Combine the parts into a single solid using union
+adapter_sleeve = union(
+    collar_body,
+    sleeve_body,
+    difference(bore_hole, collar_body) // Cut out the bore from the collar
+);
+
+// Print orientation: upside down (collar on bed, body extends up)
+print_adapter_sleeve = rotate_extrude(adapter_sleeve, angle = 180);
+```

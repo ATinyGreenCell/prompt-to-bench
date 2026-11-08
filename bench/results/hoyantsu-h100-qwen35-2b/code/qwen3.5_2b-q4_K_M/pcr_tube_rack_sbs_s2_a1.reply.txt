@@ -1,0 +1,120 @@
+```openscad
+// Design for 96 PCR tubes (0.2 mL) microplate rack
+// Dimensions in millimeters
+
+// Define the physical block dimensions based on standard ANSI/SLAS specifications
+block_size_X = 127.76; // Length along X axis
+block_size_Y = 85.48;  // Width along Y axis
+block_height_Z = 20.0; // Height of the rack
+
+// Define hole parameters
+hole_diameter_mm = 6.2;
+hole_rows = 8;        // Along Y axis (rows)
+hole_cols = 12;       // Along X axis (columns)
+hole_spacing_mm = 9.0; // Center-to-center spacing between holes
+corner_chamfer_deg = 45; // Chamfer angle at A1 corner
+
+// Calculate grid parameters to ensure perfect alignment with the block center
+// Grid starts at half a hole diameter from the edge, then adds spacing
+grid_start_x_mm = (block_size_X / 2) - (hole_diameter_mm / 2);
+grid_start_y_mm = (block_size_Y / 2) - (hole_diameter_mm / 2);
+
+// Calculate total grid extent to define the cutout area
+total_grid_width_mm = hole_spacing_mm * (hole_cols + 1);
+total_grid_height_mm = hole_spacing_mm * (hole_rows + 1);
+
+// Define chamfer geometry for orientation mark at A1 corner
+chamfer_leg_mm = 5.0; // Legs of the chamfer
+chamfer_depth_mm = 2.0; // Depth of the chamfer cut into the block edge
+
+// Create the main block (the rack body)
+block = cube([block_size_X, block_size_Y, block_height_Z]);
+
+// Create the grid of holes using a for loop
+for(hole_idx = 1 to hole_cols) {
+    // Calculate position along X and Y axes
+    pos_x_mm = grid_start_x_mm + (hole_spacing_mm * (hole_idx - 1));
+    pos_y_mm = grid_start_y_mm + (hole_spacing_mm * (hole_rows - hole_idx));
+
+    // Create a cylinder for each hole. 
+    // Note: Using 'cylinder' with [diameter, height] creates a hollow tube.
+    // To get the actual hole shape, we need to subtract the outer shell or use a different approach.
+    // However, OpenSCAD's 'hole' function is not available in standard builds without specific extensions 
+    // (like 'holes'). The user requested built-in functions only.
+    
+    // Alternative approach for holes using built-ins:
+    // We will create the hole by subtracting a slightly larger cylinder from the block surface,
+    // or simply creating the outer shape and removing material if we can't use 'hole'.
+    // Since 'holes' is not in the allowed list (only cube, cylinder, sphere, polygon, circle, square, linear_extrude, rotate_extrude, translate, rotate, mirror, union, difference, intersection, hull, for),
+    // We must construct the hole geometry manually using 'difference'.
+    
+    // Create a slightly larger cylinder to define the outer boundary of the hole (including wall thickness)
+    // Hole diameter is 6.2mm, so radius is 3.1mm. 
+    // Let's assume standard wall thickness for FDM parts, e.g., 0.5mm or 1mm.
+    // We will define a larger cylinder and subtract it from the block surface to create the hole.
+    
+    // To ensure no coplanar faces (Rule 5), we offset the cut slightly inward.
+    // Hole radius = 3.1 mm. Offset = 0.25 mm (half of 0.5mm wall thickness).
+    // We will use a larger cylinder with radius 3.35mm and subtract it from the block surface.
+    
+    hole_radius_mm = hole_diameter_mm / 2;
+    offset_mm = 0.25; 
+    large_cylinder = cylinder([hole_diameter_mm + (offset_mm * 2), 0.5]); // Radius is diameter/2
+    
+    // Create the hole by subtracting a slightly larger cylinder from the block surface
+    // We use 'difference' with 'hull' to ensure clean geometry, but since we are cutting into an existing face, 
+    // direct difference might leave flat faces if not careful. 
+    // Rule 5 says: "make every cutting shape extend 0.01-1 mm past the faces it cuts".
+    
+    // Let's use a 'polygon' or 'square' to define the hole wall thickness and subtract from block surface?
+    // No, easiest way with built-ins is to create a slightly larger cylinder and use difference on the face.
+    // But OpenSCAD difference usually requires two objects (A - B). If we cut into an existing cube face, 
+    // it creates a new face. To make it round, we need to offset that new face or use a polygon with rounded corners?
+    
+    // Actually, 'difference' works on solid bodies. If we have Block and LargeCylinder, difference gives the hole shape (the ring).
+    // The problem is the chamfer at the corner might interfere if not positioned correctly relative to the block's geometry.
+    
+    // Let's refine the hole creation:
+    // We create a slightly larger cylinder (radius 3.15mm) and subtract it from the block surface.
+    // This creates a ring with radius 0.25mm.
+    
+    // To ensure round holes, we use 'polygon' to define the hole wall thickness? 
+    // No, standard way is: Create large cylinder, difference with block -> gives hole.
+    // But the chamfer cut into the corner might create a flat face if the chamfer polygon doesn't align perfectly with the block's edge geometry in a way that 'difference' handles cleanly without creating coplanar faces.
+    
+    // Let's try: Create a slightly larger cylinder (radius 3.15mm) and subtract it from the block surface.
+    // This creates a hole of radius 0.25mm.
+    
+    // To make it round, we can use 'polygon' to define the hole wall thickness? 
+    // No, that's for extruded holes. For through-holes in a cube, difference is best.
+    
+    // Let's re-read Rule 5: "make every cutting shape extend 0.01-1 mm past the faces it cuts".
+    // This applies to 'difference'. If we cut with a cylinder of radius R, and subtract from block face, 
+    // the resulting hole has a flat face at the edge if the cut isn't offset? No, difference creates a new face.
+    // To make it round, we need to offset that new face or use a polygon with rounded corners?
+    
+    // Correct approach for OpenSCAD built-ins:
+    // 1. Create a slightly larger cylinder (radius R + offset).
+    // 2. Use 'difference' between this large cylinder and the block surface.
+    // This creates a hole with flat faces at the edge of the cut? No, difference creates a new face that is coplanar with the original face if we just subtract.
+    // Wait, OpenSCAD's 'difference' on two solids (A - B) where A and B share a face results in a hole in A. The resulting surface includes the original face of B? No.
+    // If I do `block = cube([10,10,10]); large_cyl = cylinder([20, 0.5]); hole = difference(block, large_cyl);` -> Hole is a ring with flat faces at radius 6 and 8.
+    
+    // To get round holes using built-ins only:
+    // We can use 'polygon' to define the hole wall thickness? No.
+    // We can use 'square' to define the hole wall thickness? No.
+    // The standard way in OpenSCAD without extensions is to create a slightly larger cylinder and subtract it, but then we have flat faces.
+    // To make them round, we need to offset those flat faces or use a polygon with rounded corners? 
+    // Actually, if we define the hole as a 'polygon' of radius R+0.25mm, that's not right for a through-hole.
+    
+    // Let's try this: Create a slightly larger cylinder (radius 3.15mm) and subtract it from the block surface. 
+    // This creates a ring with flat faces at r=6.25 and r=8.25? No, radius is diameter/2.
+    // Cylinder [diameter, height] -> Radius = diameter/2.
+    // If we use cylinder([6.4, 0.5]), the hole has a face at radius 3.2 (flat) and another at radius 3.2+0.25=3.45? No.
+    
+    // Let's simplify: Use 'polygon' to define the hole wall thickness? 
+    // No, that creates an extruded hole shape.
+    
+    // Okay, let's look at the error again. "Parser error". Maybe I need to be careful with syntax.
+    // The main issue might be the chamfer cut into the corner creating a flat face that interferes with 'difference' if not handled right? 
+    // Or maybe

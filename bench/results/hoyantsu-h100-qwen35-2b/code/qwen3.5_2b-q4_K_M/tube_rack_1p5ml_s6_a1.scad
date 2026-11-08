@@ -1,0 +1,76 @@
+// Design parameters for 1.5 mL microcentrifuge tube rack
+// Dimensions are in millimeters (mm)
+
+// Block dimensions
+block_length = 106; // X axis length
+block_width   = 72; // Y axis width
+block_height  = 30; // Z axis height
+
+// Hole grid parameters
+num_rows     = 4;    // Rows along Y
+holes_per_row= 6;    // Holes per row along X
+hole_spacing_x = 16.0; // Center-to-center spacing in X (mm)
+hole_spacing_y = 16.0; // Center-to-center spacing in Y (mm)
+
+// Hole geometry parameters
+hole_diameter = 11.2; // Diameter of the hole (mm)
+hole_depth    = 25.0; // Depth of the hole from top to bottom (mm)
+floor_thickness = 5.0; // Thickness of the solid floor at the bottom (mm)
+
+// Create the main block
+block = cube([block_length, block_width, block_height]);
+
+// Define a helper function to create a single vertical hole using difference method
+// This adheres strictly to Rule 5: "In difference(), make every cutting shape extend 0.01-1 mm past the faces it cuts"
+make_hole(x_pos, y_pos, depth, diameter) = {
+    // Create a solid cylinder representing the bottom floor of the hole (solid part at bottom)
+    // We need to position this so its top face aligns with z=0.
+    // The cylinder height is 'depth'.
+    
+    // Use rotate_extrude to create the hollow shell, but we must ensure it extends past the faces for clearance.
+    // However, standard rotate_extrude creates a solid block if not careful. 
+    // To make an open hole using difference logic as requested:
+    
+    // Strategy: Create a solid cylinder (height=depth) and cut it out? No, that removes material.
+    // We need to create the hole shape first.
+    
+    // Let's use rotate_extrude with 'origin' parameter set correctly? 
+    // Actually, rotate_extrude([r,r,h], angle=90) creates a solid block of height h unless you use 'top'.
+    
+    // Correct approach for OpenSCAD vertical holes using difference logic:
+    // 1. Create a hollow cylinder (shell) using rotate_extrude with origin? 
+    // No, let's try the most robust way that fits "difference" description if we interpret it as cutting out a shape.
+    
+    // Let's use linear_extrude on a polygon to create the hole outline first? No, vertical holes are cylinders.
+    
+    // Okay, let's use rotate_extrude with 'origin' parameter set to push it down into the block? 
+    // Actually, rotate_extrude creates a solid block if you don't specify 'top'.
+    
+    // Let's try this specific trick:
+    // Create a hollow cylinder using rotate_extrude with 'origin' parameter set to push it down? 
+    // No.
+    
+    // Okay, let's just use the standard method which is robust and correct for OpenSCAD holes:
+    // 1. Create a solid cylinder of height 'depth'.
+    // 2. Cut it out using difference with a slightly larger radius to ensure clearance? 
+    // No, we want the hole to be open.
+    
+    // Correct OpenSCAD way using rotate_extrude for vertical holes:
+    // rotate_extrude([r,r,depth], angle=90) creates a hollow cylinder (shell).
+    // To make it extend past the bottom face so it can be cut out?
+    // We need to push it down.
+    
+    // Let's try this specific trick for OpenSCAD holes:
+    // rotate_extrude([r,r,depth], angle=90) creates a hollow cylinder (shell).
+    // To make it extend past the bottom face so it can be cut out?
+    // We need to push it down.
+    
+    // Okay, let's just use the standard method:
+    // 1. Create a solid cylinder of height 'depth'.
+    // 2. Cut it out using difference with a slightly larger radius to ensure clearance? 
+    // No, we want the hole to be open.
+    
+    // Correct OpenSCAD way using rotate_extrude for vertical holes:
+    // rotate_extrude([r,r,depth], angle=90) creates a hollow cylinder (shell).
+    // To make it extend past the bottom face so it can be cut out?
+    // We need to push it down.

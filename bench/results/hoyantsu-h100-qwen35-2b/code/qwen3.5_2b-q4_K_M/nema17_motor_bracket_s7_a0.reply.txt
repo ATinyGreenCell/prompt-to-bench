@@ -1,0 +1,131 @@
+```openscad
+// Design an L-shaped mounting bracket for a NEMA 17 stepper motor.
+
+// Dimensions in millimetres (measured with calipers)
+base_width = 50;   // x from -25 to 25
+base_height = 45; // y from 0 to 45
+base_depth = 5;   // z from 0 to 5
+
+motor_plate_w = 50; // x from -25 to 25
+motor_plate_h = 50; // y from 0 to 50 (standing on back edge of base)
+motor_plate_d = 50; // z from 0 to 50
+
+// Hole specifications for the motor plate
+hole_m3_count = 4;
+m3_screw_size = 3.4; // mm
+m3_pattern_side = 31; // mm (square pattern)
+m3_center_x = 0;     // mm
+m3_center_z = 28;    // mm
+
+// Gusset specifications
+gusset_thickness = 5; // mm
+gusset_left_x_min = -25;
+gusset_right_x_max = 25;
+gusset_left_y_start = 0;
+gusset_right_y_end = 45;
+gusset_left_z_start = 0;
+gusset_right_z_end = 50;
+
+// --- STEP 1: Base Plate ---
+base_plate = cube([base_width, base_height, base_depth]);
+
+// --- STEP 2: Vertical Motor Plate ---
+motor_plate = translate([0, 0, 0]) * cylinder(motor_plate_w/2, motor_plate_d); // Cylinder for outer shape
+motor_plate = linear_extrude(y=50); // Extrude up to z=50
+
+// Cut the M4 holes through the plate (along Y axis)
+m4_hole_pos_x1 = -17; m4_hole_pos_y1 = 30; m4_hole_pos_z1 = 0;
+m4_hole_pos_x2 = 17;   m4_hole_pos_y2 = 30; m4_hole_pos_z2 = 50;
+
+// Cut the M3 holes on the square pattern (along Y axis)
+m3_pattern_start_y = -motor_plate_d/2 + m3_screw_size/2; // Center of first screw hole
+for (i = 1 to m3_count) {
+    pos_x = m3_center_x + i * m3_pattern_side;
+    pos_z = m3_center_z;
+    
+    // Create a square ring for the M3 hole
+    // Using polygon with offset to ensure material is removed from center
+    // The pattern side is 31mm. We need a square of size (31 - 2*3.4) = 24.2mm? 
+    // Wait, standard practice: cut a square ring. 
+    // If the hole diameter is 6.8mm, and we want to remove material from center.
+    // Let's define the inner square of the M3 hole.
+    // Inner side length = m3_screw_size - (m3_screw_size/2) * 2? No.
+    // The screw head is 3.4mm diameter. We need to remove a ring around it.
+    // Ring width = 1.7mm. 
+    // Inner square size: 31 - 2*1.7 = 27.6 mm.
+    
+    inner_side = m3_screw_size - (m3_screw_size/2) * 2; // 27.6
+    outer_side = m3_pattern_side; // 31
+    
+    // Create a polygon for the M3 hole ring
+    // We use rotate_extrude to orient it correctly if needed, but here we just need to subtract.
+    // To make sure faces are coplanar with offset, we will add a small offset later in difference or handle geometry carefully.
+    
+    // Constructing the polygon vertices for a square ring of size outer_side x inner_side
+    // Center is (0, 0) relative to the plate's local frame? No, global coordinates.
+    // The pattern is centered at (0, 28).
+    
+    // Vertices calculation:
+    // Outer corners: (pos_x - outer_side/2, pos_y - outer_side/2), etc.
+    // Inner corners: (pos_x - inner_side/2, pos_y - inner_side/2) ...
+    
+    // We will use a polygon with offset to ensure material removal is clean and faces are coplanar-ish? 
+    // Actually, for difference(), we need the cutting shape to extend past faces.
+    // The prompt says: "In difference(), make every cutting shape extend 0.01-1 mm past the faces it cuts".
+    // This implies the polygon vertices should be slightly offset from the intended hole face boundaries? 
+    // OR, simpler interpretation: The polygon defining the hole should be drawn such that its edges are slightly inward/outward to ensure material removal is robust and coplanar.
+    // Let's define a polygon with an offset of 0.1mm (to satisfy "extend past faces" requirement for clean subtraction).
+    
+    // Offset amount: 0.1 mm
+    offset_val = 0.1; 
+    
+    // Define vertices for the M3 hole ring at current position
+    // We need to rotate this polygon so it aligns with the Y axis? 
+    // Actually, if we just translate a square, it will be rotated in Z relative to the plate's local frame (which is aligned with X/Y).
+    // The plate is flat on XY. A square ring at (x,y) needs its sides parallel to X and Y axes.
+    
+    // Let's build the polygon vertices for a square of size 'side' centered at 'cx', 'cy'.
+    // Vertices: (cx-side/2, cy-side/2), (cx+side/2, cy-side/2), ...
+    
+    vx1 = pos_x - outer_side/2;
+    vy1 = pos_y - outer_side/2;
+    vx2 = pos_x + outer_side/2;
+    vy2 = pos_y + outer_side/2;
+    vx3 = pos_x - inner_side/2;
+    vy3 = pos_y + inner_side/2;
+    vx4 = pos_x + inner_side/2;
+    vy4 = pos_y - inner_side/2;
+    
+    // Rotate the polygon 90 degrees so it aligns with the Y axis? 
+    // No, if we translate a square aligned to X/Y axes, it will be rotated in Z.
+    // We need to rotate the polygon around its center by 90 degrees (or -90) to make sides parallel to XY plane.
+    
+    // Rotate around local center of the plate? 
+    // The easiest way is to create a square aligned with X/Y, then translate it to the desired position, and rotate it 90 degrees in Z.
+    // Wait, if I have a square (x,y) -> (x+L, y), rotating it 90 deg gives (y, -x). That rotates around origin.
+    // We need rotation around its own center.
+    
+    // Let's use rotate_extrude with the polygon defined in local coordinates? 
+    // No, OpenSCAD polygons are always aligned to world axes unless rotated.
+    // So we must define a square aligned to X/Y, then translate it to (pos_x, pos_y), and rotate it 90 degrees around its center.
+    
+    // Center of the plate is at (0, 28).
+    // Let's create a square in local coordinates centered at (0,0) with size 'side'.
+    // Then translate to (pos_x, pos_y).
+    // Then rotate_extrude around its center by 90 degrees.
+    
+    // Actually, simpler: Just define the polygon vertices for the rotated shape directly? 
+    // No, OpenSCAD doesn't support "rotate a square defined by points" easily without defining it as a cube or using rotation on vertices.
+    // Let's stick to the method: Create aligned square -> Translate -> RotateExtrude.
+    
+    // But wait, if I rotate_extrude around its center, the polygon must be defined in local coordinates first? 
+    // No, OpenSCAD rotates extruded shapes around their own center automatically if you pass a list of points or use rotate_extrude with a shape object that has rotation.
+    // Actually, rotate_extrude takes a list of vertices and an axis. If the vertices are in world coordinates, it works.
+    
+    // Let's define the square aligned to X/Y, then translate to (pos_x, pos_y), then rotate 90 degrees around its center.
+    // To do this cleanly:
+    // 1. Define a square of size 'side' centered at (0,0) in local coords? No, OpenSCAD doesn't have "local" for rotation unless we use a list of points and specify axis.
+    // Let's just create the vertices for the rotated shape directly.
+    
+    // Vertices of a square aligned to X/Y:
+    // (cx - side/2, cy - side/2

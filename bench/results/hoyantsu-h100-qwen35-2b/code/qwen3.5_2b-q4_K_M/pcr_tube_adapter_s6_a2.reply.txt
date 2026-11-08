@@ -1,0 +1,68 @@
+```openscad
+// Design an adapter sleeve for a 0.2 mL PCR tube in a rack hole for 1.5 mL tubes.
+// Dimensions are in millimeters (mm).
+
+// Define the part dimensions and geometry variables
+part_height = 21.5;      // Total height of the body from collar to top
+collar_thickness = 1.5;  // Thickness of the collar on the bed
+collar_outer_diameter = 13.0; // Diameter of the collar base
+sleeve_body_outer_diameter = 10.8; // Outer diameter of the main sleeve body
+bore_diameter = 6.2;      // Diameter of the central bore
+
+// Create a helper function to generate circular rings (slots) for the rack holes
+make_ring_slots(d_inner, d_outer, height, n_holes, angle_step_deg) {
+    var i = 0;
+    while(i < n_holes) {
+        var theta = (i * angle_step_deg) / n_holes;
+        
+        // Define ring geometry using polar coordinates logic via polygon approximation or simple math
+        var r_inner = d_inner / 2.0;
+        var r_outer = d_outer / 2.0;
+        
+        // Top Cap (flat) - extends past the hole to ensure no coplanar faces in difference
+        var z_top = height - part_height + collar_thickness;
+        var h_top = z_top * PI / 180.0;
+        var theta_half = theta + h_top/2.0;
+        
+        // Bottom Cap (flat) - extends past the hole to ensure no coplanar faces in difference
+        var z_bottom = height - part_height;
+        var h_bot = z_bottom * PI / 180.0;
+        var theta_bot = theta + h_bot/2.0;
+        
+        // Create the polygon ring for this slot (excluding caps) using high segment count
+        var n_segments = 64; 
+        var i_seg = 0;
+        
+        // Define vertices for the top cap of this slot
+        var v_top = [];
+        while(i_seg < n_segments) {
+            var theta_curr = (i_seg * PI / 180.0);
+            var phi_curr = PI/2.0;
+            
+            var x = r_inner + r_outer * cos(theta_curr);
+            var y = r_inner + r_outer * sin(theta_curr);
+            
+            v_top.push([x, y]);
+            i_seg++;
+        }
+        
+        // Define vertices for the bottom cap of this slot
+        var v_bot = [];
+        while(i_seg < n_segments) {
+            var theta_curr = (i_seg * PI / 180.0);
+            var phi_curr = PI/2.0;
+            
+            var x = r_inner + r_outer * cos(theta_curr);
+            var y = r_inner + r_outer * sin(theta_curr);
+            
+            v_bot.push([x, y]);
+            i_seg++;
+        }
+        
+        // Create the polygon ring for this slot (excluding caps) - Top
+        var p_top = [];
+        while(i_seg < n_segments) {
+            var theta_curr = (i_seg * PI / 180.0);
+            var phi_curr = PI/2.0;
+            
+            var x = r

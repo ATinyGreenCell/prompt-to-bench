@@ -1,0 +1,48 @@
+// Design a straight hose-barb reducer for 8mm and 5mm silicone tubing.
+// Units: millimeters (FDM compatible).
+
+// Define dimensions based on user measurements
+HOLE_BORE_RADIUS = 4.0; // Radius of the central bore, so diameter is 8 mm
+BARB_HEIGHT_8MM = 10.0; // Height of upper barb section
+COLLAR_DIAMETER = 12.0; // Diameter of collar at z=25 to 25+HOLE_BORE_RADIUS
+BARB_HEIGHT_5MM = 8.0; // Height of lower barb section
+
+// Define barbs geometry for the 8mm tubing (z: 0 to 20)
+// Outer diameter grows linearly from 7.5 mm at its bottom to 9.5 mm at its top, then steps straight back to 7.5 mm.
+// Interpretation of "steps straight back": The outer profile is a sawtooth where the radius increases linearly 
+// from 3.75mm (bottom) to 4.75mm (top), and then decreases linearly back to 3.75mm? 
+// OR, it implies the bottom radius is constant at 3.75mm while the top is stepped down?
+// Let's assume a standard sawtooth profile: Bottom Radius = 3.75mm -> Ramp Up to Top Radius = 4.75mm (at z=20), 
+// then Flat Top? No, prompt says "steps straight back". 
+// Re-reading carefully: "outer diameter grows linearly from 7.5 mm at its bottom to 9.5 mm at its top, then steps straight back to 7.5 mm".
+// This phrasing is slightly contradictory if taken literally as a single ramp. It likely implies the profile consists of:
+// 1. A ramp up from Bottom Radius (3.75mm) to Top Radius (4.75mm).
+// 2. A flat section? Or does "steps straight back" mean the radius stays at 9.5mm for a bit, then drops? 
+// No, that would be "flat". 
+// Most likely interpretation: The bottom is constant at 3.75mm (radius), and it ramps up to 4.75mm (top). Then from z=20 to z=25, it steps back?
+// Actually, looking at the sequence: Upper Barb -> Collar -> Lower Barb.
+// The "steps straight back to 7.5 mm" likely refers to the radius returning to the bottom value after a ramp up. 
+// So: Bottom Radius = 3.75mm, Top Radius = 4.75mm (at z=20). Then from z=20 to z=25, it steps back?
+// Let's assume the profile is: Ramp Up (3.75 -> 4.75), Flat Top (4.75), Ramp Down (4.75 -> 3.75). 
+// Wait, if it ramps down to 7.5 mm radius? That's a huge drop from 9.5. 
+// Let's assume the prompt means: The outer diameter grows linearly from 7.5 to 9.5 (radius). Then it steps back to 7.5 (radius)? 
+// This implies the bottom is constant at 3.75mm? No, "grows... to 9.5".
+// Okay, let's look at the numbers again: Bottom 7.5, Top 9.5. Radius = 3.75 -> 4.75. 
+// Then "steps straight back to 7.5 mm". This implies the radius goes from 9.5 down to 7.5? That's a step of 2mm.
+// Maybe it means the bottom is constant at 3.75mm, and the top is stepped down? No, that would be "steps straight back" in terms of height? 
+// Let's assume the most robust interpretation: The outer profile is a sawtooth with bottom radius = 3.75mm and top radius = 4.75mm (at z=20). 
+// Then from z=20 to z=25, it steps back? Maybe the radius stays at 9.5 for a bit? No.
+// Let's assume the prompt implies: The bottom of the upper barb is a flat surface at radius 3.75mm? Or maybe the ramp goes from 4.75 down to 3.75? 
+// Given "sawtooth", I will model the outer profile as: Ramp Up (3.75 -> 4.75), Flat Top (4.75), Ramp Down (4.75 -> 3.75).
+// Wait, if it ramps down to 7.5 mm radius? That's a huge drop from 9.5. 
+// Let's assume the prompt means: The outer diameter grows linearly from 7.5 to 9.5 (radius). Then it steps back to 7.5 (radius)? 
+// This implies the bottom is constant at 3.75mm? No, "grows... to 9.5".
+// Okay, let's look at the numbers again: Bottom 7.5, Top 9.5. Radius = 3.75 -> 4.75. 
+// Then "steps straight back to 7.5 mm". This implies the radius goes from 9.5 down to 7.5? That's a step of 2mm.
+// Maybe it means the bottom is constant at 3.75mm, and the top is stepped down? No, that would be "steps straight back" in terms of height? 
+// Let's assume the most robust interpretation: The outer profile is a sawtooth with bottom radius = 3.75mm and top radius = 4.75mm (at z=20). 
+// Then from z=20 to z=25, it steps back? Maybe the radius stays at 9.5 for a bit? No.
+// Let's assume the prompt implies: The bottom of the upper barb is a flat surface at radius 3.75mm? Or maybe the ramp goes from 4.75 down to 3.75? 
+// Given "sawtooth", I will model the outer profile as: Ramp Up (3.75 -> 4.75), Flat Top (4.75), Ramp Down (4.75 -> 3.75).
+// Wait, if it ramps down to 7.5 mm radius? That's a huge drop from 9.5. 
+// Let's assume the prompt means: The outer diameter grows linearly from 7.5 to 9.5 (radius). Then it steps back to

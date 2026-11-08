@@ -1,0 +1,78 @@
+// Part 1: The Box Enclosure
+// Outer dimensions: X=70, Y=50, Z=30 mm
+// Wall thickness: 2 mm
+// Floor thickness: 2 mm
+// Top is open.
+
+var box_outer_x = 70;
+var box_outer_y = 50;
+var box_outer_z = 30;
+var wall_thickness = 2;
+var floor_thickness = 2;
+
+// Calculate inner dimensions and volume for the box body
+var box_inner_x = box_outer_x - (wall_thickness * 2);
+var box_inner_y = box_outer_y - (wall_thickness * 2);
+var box_inner_z = box_outer_z - floor_thickness; // Floor is separate extrusion
+
+// Create the box body using linear_extrude with a polygon for the top face
+box_body = linear_extrude(0, height=box_inner_z) \
+    rotate_extrude(90, angle=-90) \
+    translate([box_outer_x/2, box_outer_y/2]) \
+    hull() \
+    polygon(x=[box_inner_x - wall_thickness, 0], y=[box_inner_y - wall_thickness, box_inner_z], z=wall_thickness);
+
+// Create the floor separately to ensure it sits on the bed and doesn't overlap with the top face of the body
+floor = linear_extrude(0, height=floor_thickness) \
+    rotate_extrude(90, angle=-90) \
+    translate([box_outer_x/2, box_outer_y/2]) \
+    polygon(x=[box_inner_x - wall_thickness, 0], y=[box_inner_y - wall_thickness, floor_thickness], z=wall_thickness);
+
+// Create the open top (lid for now, will be removed later)
+top_open = linear_extrude(0, height=box_outer_z) \
+    rotate_extrude(90, angle=-90) \
+    translate([box_outer_x/2, box_outer_y/2]) \
+    polygon(x=[box_inner_x - wall_thickness, 0], y=[box_inner_y - wall_thickness, box_inner_z], z=wall_thickness);
+
+// Part 1: The Box (assembled from body + floor)
+part_box = union([box_body, floor]);
+
+// Part 2: The Lid
+// Plate dimensions: X=70, Y=50, Z=2 mm
+var plate_outer_x = 70;
+var plate_outer_y = 50;
+var plate_thickness = 2;
+
+// Lip dimensions: Outer X=65.6, Outer Y=45.6, Height=1.5 mm
+var lip_width = 65.6;
+var lip_height = 1.5;
+var lip_depth = 4; // Thickness of the wall on top
+
+// Calculate inner dimensions for the lip
+var lip_inner_x = plate_outer_x - (lip_thickness * 2);
+var lip_inner_y = plate_outer_y - (lip_thickness * 2);
+var lip_inner_z = plate_thickness + lip_height;
+
+// Create the lip using a polygon with rounded corners (using circle)
+lip_body = linear_extrude(0, height=lip_inner_z) \
+    rotate_extrude(90, angle=-90) \
+    translate([plate_outer_x/2, plate_outer_y/2]) \
+    hull() \
+    polygon(x=[lip_inner_x - lip_thickness, 0], y=[lip_inner_y - lip_thickness, lip_inner_z], z=lip_thickness);
+
+// Create the plate body (the bottom part of the lid)
+plate_body = linear_extrude(0, height=plate_thickness) \
+    rotate_extrude(90, angle=-90) \
+    translate([plate_outer_x/2, plate_outer_y/2]) \
+    polygon(x=[lip_inner_x - lip_thickness, 0], y=[lip_inner_y - lip_thickness, plate_thickness], z=lip_thickness);
+
+// Create the lid assembly (lip + plate body)
+lid_assembly = union([lip_body, plate_body]);
+
+// Final Part 2: The Lid
+part_lid = union([lid_assembly, top_open]); // Note: top_open is removed from part_box above
+
+// Combine all parts into a single print job
+final_print = union([box_part1, box_part2, lid_part2]);
+
+print(final_print);

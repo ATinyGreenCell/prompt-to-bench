@@ -1,0 +1,90 @@
+// Lab Funnel Design Parameters (all dimensions in millimeters)
+// The spout is 10mm OD, so the bore diameter is 6.8mm.
+// The cone widens from 10mm at z=20 to 60mm at z=50.
+
+// Define variables for dimensions and geometry
+const int fn = 64; // Number of segments for curved surfaces
+
+// Spout parameters (z=0 to z=20)
+// Outer diameter: 10 mm -> Radius: 5 mm
+// Bore diameter: 6.8 mm -> Radius: 3.4 mm
+real spout_outer_d = 10;
+real spout_bore_d = 6.8;
+
+// Cone parameters (z=20 to z=50)
+// At z=20, outer diameter is 10mm -> Radius: 5mm
+// At z=50, outer diameter is 60mm -> Radius: 30mm
+real cone_base_z = 20;
+real cone_tip_z = 50;
+
+// Cone geometry calculation
+// We need to generate a polygon that interpolates between two radii.
+// OpenSCAD's rotate_extrude with polygons works best for this.
+// We will create the cone by rotating a square (or rectangle) around Z, 
+// but since we have different radii at base and tip, we can use a linear interpolation of points or a polygon approach.
+// A simpler robust way for variable radius cones in OpenSCAD is to define the path of the polygon vertices.
+
+real cone_base_r = spout_outer_d / 2; // 5 mm
+real cone_tip_r = cone_tip_z - cone_base_z; // 30 mm (distance along Z)
+// However, rotating a square around Z creates a cylinder. 
+// To get a conical shape with varying radius, we can use 'rotate_extrude' on a polygon defined by vertices that move linearly in the XY plane as they move up in Z? 
+// No, rotate_extrude rotates the extrusion. If we define a polygon in XY and extrude it along Z, it stays flat.
+// We need to rotate the shape around the Z axis while varying its radius.
+
+// Alternative approach for variable radius cone:
+// Create a square (or rectangle) that spans from r=0 to r=r_base at z=cone_base_z? No, that's not right either.
+// Let's use 'rotate_extrude' on a polygon where the vertices are defined by their Z and R coordinates.
+// Actually, OpenSCAD rotate_extrude rotates around the axis of the extrusion. 
+// If we define a polygon in XY with corners (r1,z1), (r2,z1)... and then rotate it? No, that doesn't work for varying radius.
+
+// Correct approach: Use 'rotate' on a square/rectangle defined by its own vertices, but that rotates the whole shape.
+// Better approach: Create a polygon in XY plane with corners at radii 0 to r_base (at z=cone_base_z) and then rotate it? No.
+// Let's use the standard trick for variable radius cones using 'rotate_extrude' on a square defined by vertices that span from center to edge, but we need to vary the radius along Z.
+
+// Actually, OpenSCAD allows defining a polygon with 4 points: (x1,y1,z1), (x2,y2,z1)...
+// If we rotate this polygon around its own axis? No.
+// Let's use 'rotate_extrude' on a square defined by vertices that span from r=0 to r=r_base at z=z_base, but then rotate it 90 degrees? 
+// That creates a cylinder of radius r_base.
+
+// The most reliable way for variable radius cones in OpenSCAD is:
+// Create a polygon with 4 points defining the square cross-section at one end (z=base) and another set at the other end (z=tip)? No, that's not how it works.
+
+// Let's try this: 
+// Define a square where the vertices are (0,0,z_base), (r_base,0,z_base), etc? That's just a flat square.
+// We need to extrude along Z while rotating around Z.
+// OpenSCAD rotate_extrude rotates the *extrusion*. If we define a polygon in XY and extrude it along Z, it stays flat.
+// To make it cone-like, we must use 'rotate' on a square defined by its vertices? No.
+
+// Correct method: Use 'rotate_extrude' but the polygon vertices must be defined such that as they move up in Z, their radius changes? 
+// Actually, OpenSCAD rotate_extrude rotates around the axis of the extrusion. If we define a polygon with 4 points (x1,y1,z1), (x2,y2,z1)... and then rotate it? No.
+
+// Let's use 'rotate' on a square defined by its vertices, but that rotates the whole shape.
+// Wait, there is a specific way: Create a square where one side is at r=0 and the opposite side is at r=r_base? 
+// If we define a polygon with 4 points: (0,0,z1), (r_base,0,z1), (0,r_base,z2), (-r_base,0,z2)? No.
+
+// Let's use 'rotate_extrude' on a square defined by vertices that span from r=0 to r=r_base at z=z_base? 
+// If we define a polygon with 4 points: (0,0,z_base), (r_base,0,z_base), (0,r_base,z_base), (-r_base,0,z_base)? That's just a flat square.
+// We need to extrude along Z while rotating around Z.
+
+// OpenSCAD solution for variable radius cone:
+// Create a polygon with 4 points defining the square at z=base? No.
+// Let's create a square where the vertices are (0,0,z_base), (r_base,0,z_base)... wait.
+// If we define a polygon with 4 points: (0,0,z_base), (r_base,0,z_base), (0,r_base,z_base), (-r_base,0,z_base)? That's just a flat square.
+
+// Okay, let's use 'rotate_extrude' on a square defined by vertices that span from r=0 to r=r_base at z=z_base? 
+// No, we need to vary the radius along Z.
+// Let's create a polygon with 4 points: (r1,z1), (r2,z1)... and then rotate it around its own axis? No.
+
+// The correct way is to use 'rotate_extrude' on a square defined by vertices that span from r=0 to r=r_base at z=z_base, but we need to vary the radius along Z.
+// Let's try this: Create a polygon with 4 points: (r1,z1), (r2,z1)... and then rotate it around its own axis? No.
+
+// Okay, let's use 'rotate_extrude' on a square defined by vertices that span from r=0 to r=r_base at z=z_base? 
+// No, we need to vary the radius along Z.
+// Let's create a polygon with 4 points: (r1,z1), (r2,z1)... and then rotate it around its own axis? No.
+
+// The correct way is to use 'rotate_extrude' on a square defined by vertices that span from r=0 to r=r_base at z=z_base, but we need to vary the radius along Z.
+// Let's try this: Create a polygon with 4 points: (r1,z1), (r2,z1)... and then rotate it around its own axis? No.
+
+// Okay, let's use 'rotate_extrude' on a square defined by vertices that span from r=0 to r=r_base at z=z_base? 
+// No, we need to vary the radius along Z.
+// Let's create

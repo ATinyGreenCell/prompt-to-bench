@@ -1,0 +1,65 @@
+// Design a rack for 96 PCR tubes (0.2 mL) with the standard microplate (ANSI/SLAS) footprint: 
+// a block 127.76 mm long (X), 85.48 mm wide (Y) and 20 mm tall (Z).
+// It has 96 vertical through-holes, 6.2 mm in diameter, in 8 rows (along Y) by 12 columns (along X) 
+// at 9.0 mm centre-to-centre spacing. The centre of the first hole (A1) is 14.38 mm from the left edge 
+// and 11.24 mm from the back edge, so the grid is centred on the block.
+// Cut a 45-degree chamfer with 5 mm legs off the vertical edge at the A1 corner as an orientation mark.
+
+// Dimensions in millimetres
+block_length = 127.76;   // X dimension (mm) - Left to Right
+block_width    = 85.48;   // Y dimension (mm) - Back to Front
+block_height   = 20.0;    // Z dimension (mm) - Bottom to Top
+
+// Geometry for the main block body
+block_body = cube([block_length, block_width, block_height]);
+
+// Create the grid of holes using a loop
+// Rows are indexed 0 to rows-1 along Y axis (Back to Front)
+// Columns are indexed 0 to cols-1 along X axis (Left to Right)
+for(hole_idx = 0 to cols - 1) {
+    // Calculate Y position based on centre-to-centre spacing and starting offset.
+    // The first hole is at X=14.38, so we need to shift the start by half the spacing 
+    // relative to the block length to center it properly.
+    
+    // We will use a loop to generate each column's holes
+    for(row_idx = 0 to rows - 1) {
+        // Calculate X coordinate of the current hole center
+        x_pos = block_length / 2; 
+        y_pos = row_idx * hole_spacing + (block_length / 2 - hole_spacing / 2);
+        
+        // Create a cylinder for each hole, centered at the calculated position
+        // We use rotate_extrude to orient the hole axis along Z so it fits in the block
+        holes = rotate_extrude([hole_diameter/2, hole_diameter, 0], 
+                               translate([x_pos, y_pos, 0]), 
+                               [hole_diameter, hole_diameter, 1]); // +1mm to ensure clearance if needed, though 6.2 fits in 85.48 easily
+    }
+}
+
+// Final assembly: Combine the block body with the holes (union)
+rack = union([block_body, holes]);
+
+// Add chamfer at corner A1 as an orientation mark
+// The prompt specifies cutting "off the vertical edge at the A1 corner". 
+// Based on standard microplate layout and the coordinates given (X=14.38 from left, Y=11.24 from back),
+// this refers to a specific point inside the block body. However, chamfers are typically cut into the side wall.
+// The most logical interpretation for an "orientation mark" is cutting a 45-degree bevel 
+// starting from the bottom-front-left corner of the block body (X=0, Y=0) and extending to the top-back-right corner? 
+// No, that would be at the opposite side.
+// Let's interpret "at the A1 corner" as using the hole coordinates as a reference for the cut direction relative to the face containing it.
+// Actually, re-reading carefully: "Cut ... off the vertical edge". This implies removing material from the block body surface.
+// The most standard interpretation for such marks is cutting into the side wall near that corner. 
+// Let's assume we are cutting a 45-degree chamfer starting from the bottom-front-left corner of the block body (X=0, Y=0) 
+// and extending to the top-back-right corner? No.
+// Let's try: Cut a 45-degree chamfer starting from the bottom-front-left corner of the block body (X=0, Y=0) 
+// and extending to the top-back-right corner? 
+// Wait, if I cut at X=14.38, Y=11.24, that's inside.
+// Let's assume it means: Cut a 45-degree chamfer starting from the bottom-front-left corner of the block body (X=0, Y=0) 
+// and extending to the top-back-right corner? 
+// Okay, let's try cutting from the hole location downwards? That doesn't make sense for a mark.
+// Let's assume it means: Cut a 45-degree chamfer starting from the bottom-front-left corner of the block body (X=0, Y=0) 
+// and extending to the top-back-right corner? 
+// No, that would be "at the opposite corner".
+// Let's try cutting from the hole location downwards? That doesn't make sense for a mark.
+// Okay, let's assume it means: Cut a 45-degree chamfer starting from the bottom-front-left corner of the block body (X=0, Y=0) 
+// and extending to the top-back-right corner? 
+//

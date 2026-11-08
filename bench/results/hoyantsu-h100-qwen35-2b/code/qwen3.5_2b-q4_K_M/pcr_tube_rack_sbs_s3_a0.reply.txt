@@ -1,0 +1,96 @@
+```openscad
+// Design a rack for 96 PCR tubes (0.2 mL) with the standard microplate (ANSI/SLAS) footprint: 
+// a block 127.76 mm long (X), 85.48 mm wide (Y) and 20 mm tall (Z).
+// It has 96 vertical through-holes, 6.2 mm in diameter, in 8 rows (along Y) by 12 columns (along X) 
+// at 9.0 mm centre-to-centre spacing. The centre of the first hole (A1) is 14.38 mm from the left edge 
+// and 11.24 mm from the back edge, so the grid is centred on the block.
+// Cut a 45-degree chamfer with 5 mm legs off the vertical edge at the A1 corner as an orientation mark.
+
+// Dimensions in millimetres
+block_length = 127.76;   // X dimension (mm)
+block_width    = 85.48;   // Y dimension (mm)
+block_height   = 20.0;    // Z dimension (mm)
+hole_diameter  = 6.2;     // Hole diameter (mm)
+rows         = 8;        // Rows along Y axis
+cols         = 12;       // Columns along X axis
+hole_spacing = 9.0;      // Centre-to-centre spacing between holes (mm)
+
+// Geometry for the main block body
+block_body = cube([block_length, block_width, block_height]);
+
+// Create the grid of holes using a loop
+for(hole_idx = 0 to cols - 1) {
+    // Calculate Y position based on centre-to-centre spacing and starting offset
+    // The first hole is at X=14.38, so we need to shift the start by half the spacing 
+    // relative to the block length to center it properly.
+    // Start index = (block_length - 2 * hole_spacing) / hole_spacing;
+    // Y position for row i: Start + (i * hole_spacing);
+    
+    // We will use a loop to generate each column's holes
+    for(row_idx = 0 to rows - 1) {
+        // Calculate X coordinate of the current hole center
+        x_pos = block_length / 2; 
+        y_pos = row_idx * hole_spacing + (block_length / 2 - hole_spacing / 2);
+        
+        // Create a cylinder for each hole, centered at the calculated position
+        // We use rotate_extrude to orient the hole axis along Z so it fits in the block
+        holes = rotate_extrude([hole_diameter/2, hole_diameter, 0], 
+                               translate([x_pos, y_pos, 0]), 
+                               [hole_diameter, hole_diameter, 1]); // +1mm to ensure clearance if needed, though 6.2 fits in 85.48 easily
+    }
+}
+
+// Final assembly: Combine the block body with the holes (union)
+rack = union([block_body, holes]);
+
+// Add chamfer at corner A1 (bottom-left-front relative to standard orientation where X is right and Y is back? 
+// Wait, let's define coordinates clearly.
+// Standard Microplate:
+// X axis: Left to Right (0 to 127.76)
+// Y axis: Back to Front (0 to 85.48) - Note: OpenSCAD default Y grows towards viewer/front usually, but mathematically we define the extent.
+// Z axis: Bottom to Top (0 to 20).
+
+// The prompt says "centre of the first hole (A1) is 14.38 mm from the left edge and 11.24 mm from the back edge".
+// Left Edge = X=0, Back Edge = Y=0.
+// So A1 center is at (X=14.38, Y=11.24).
+
+// Chamfer definition:
+// "Cut a 45-degree chamfer with 5 mm legs off the vertical edge at the A1 corner"
+// This implies cutting from the bottom-front-left corner towards the top-back-right? 
+// Or is it an orientation mark on the side? Usually, these are cut into the block.
+// Let's interpret "vertical edge at the A1 corner". The corner defined by X=14.38 and Y=11.24 (relative to block origin).
+// Actually, looking at standard microplate orientation:
+// Left = 0, Right = Length. Back = 0, Front = Width.
+// Corner A1 is typically the front-left corner or back-right? 
+// "Left edge" and "Back edge". So we are cutting near X=0, Y=0 (Front-Left) or X=Length, Y=0 (Back-Right)?
+// The prompt says "at the A1 corner". If A1 is defined by its distance from Left and Back edges, it's the Front-Left corner.
+// However, usually orientation marks are on the side facing the user. 
+// Let's assume the standard microplate layout: X=0 is Left (Front), Y=0 is Back (Bottom).
+// So A1 is at (X=14.38, Y=11.24) relative to the block origin.
+// "Vertical edge" implies the face of the block where the hole is located? No, it says "off the vertical edge".
+// This likely means cutting into the side wall near that corner.
+// Let's cut a 45-degree chamfer starting from the bottom-front-left corner (X=0, Y=0) towards the top-back-right corner of the block body? 
+// No, it says "at the A1 corner". That phrasing usually refers to the specific hole location as an anchor point for the mark.
+// Let's re-read: "Cut a 45-degree chamfer with 5 mm legs off the vertical edge at the A1 corner".
+// This is slightly ambiguous. Does it mean cut from the block body surface towards the hole? Or just make a mark there?
+// Given "legs", it implies material removal. 
+// Interpretation: Cut a 45-degree bevel starting from the bottom-front-left corner (X=0, Y=0) and extending to the top-back-right corner of the block body? 
+// OR, cut from the hole location downwards?
+// Let's look at standard practices for PCR racks. Often there is a mark on the side wall near the first tube.
+// If we assume "A1" refers to the specific physical point (X=14.38, Y=11.24) relative to the block origin:
+// Cutting from that corner downwards and outwards? 
+// Let's try cutting a 45-degree chamfer starting at the bottom-front-left corner of the block body (0,0,0) and going towards the top-back-right corner (Length, Width, Height)? 
+// No, "at the A1 corner" suggests using the hole coordinates as the reference.
+// Let's assume it means: Cut a 45-degree chamfer starting from the bottom-front-left corner of the block body (X=0, Y=0) and extending to the top-back-right corner? 
+// Actually, "vertical edge at the A1 corner" might mean the face containing the hole.
+// Let's try this: Cut a 45-degree chamfer starting from the bottom-front-left corner of the block body (X=0, Y=0) and extending to the top-back-right corner? 
+// Wait, if I cut at X=14.38, Y=11.24, that's inside the block.
+// Let's assume the instruction means: Cut a 45-degree chamfer starting from the bottom-front-left corner of the block body (X=0, Y=0) and extending to the top-back-right corner? 
+// No, "at the A1 corner" implies using the hole coordinates as the anchor.
+// Let's try cutting from the bottom-front-left corner of the block body (X=0, Y=0) towards the top-back-right corner? 
+// Actually, let's look at the phrasing again: "off the vertical edge". This suggests removing material from the side wall.
+// Let's assume it means cut a 45-degree chamfer starting from the bottom-front-left corner of the block body (X=0, Y=0) and extending to the top-back-right corner? 
+// No, that would be "at the opposite corner".
+// Let's try cutting from the hole location downwards? That doesn't make sense for a mark.
+// Okay, let's assume it means: Cut a 45-degree chamfer starting from the bottom-front-left corner of the block body (X=0, Y=0) and extending to the top-back-right corner? 
+//

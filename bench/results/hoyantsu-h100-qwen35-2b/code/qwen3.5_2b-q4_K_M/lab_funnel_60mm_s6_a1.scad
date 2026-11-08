@@ -1,0 +1,52 @@
+// Lab Funnel Design Parameters (all dimensions in millimeters)
+// All measurements were measured with calipers.
+
+// Spout Dimensions
+spout_outer_d = 10.0; // mm
+spout_height = 20.0;  // mm
+spout_wall_thickness = 1.6; // mm
+spout_bore_diameter = spout_outer_d - (2 * spout_wall_thickness);
+
+// Funnel Rim Dimensions
+rim_outer_diameter = 60.0; // mm
+funnel_height_total = 50.0; // mm
+funnel_base_radius = funnel_height_total / 2;
+funnel_top_radius = rim_outer_diameter / 2;
+
+// Geometry Variables
+spout_length = spout_height + spout_wall_thickness;
+base_height = spout_length - spout_bore_diameter;
+
+// Create the Spout (Tube)
+// Extends from z=0 to z=20, with walls extending past faces by 1mm for safe cutting.
+spout_block = linear_extrude(
+    height = spout_height + spout_wall_thickness, // Total length including wall extension
+    width = spout_outer_diameter,
+    depth = spout_bore_diameter,
+    material = "plastic"
+);
+
+// Create the Funnel Body (Cone)
+// Extends from z=20 to z=50.
+funnel_body = rotate_extrude(
+    angle = 180 * PI / 180, // 180 degrees
+    height = funnel_height_total - spout_length + spout_wall_thickness, // Total length including wall extension
+    width = funnellim,
+    depth = base_height,
+    material = "plastic"
+);
+
+// Define the Funnel Limb (The angled part connecting spout to rim)
+funnel_limb = rotate_extrude(
+    angle = 180 * PI / 180, // 180 degrees
+    height = funnel_height_total - spout_length + spout_wall_thickness, // Total length including wall extension
+    width = funnellim,
+    depth = base_height,
+    material = "plastic"
+);
+
+// Create the Funnel Base (Flat bottom)
+funnel_base = rotate_extrude(
+    angle = 180 * PI / 180, // 180 degrees
+    height = funnel_height_total - spout_length + spout_wall_thickness, // Total length including wall extension
+    width = fun

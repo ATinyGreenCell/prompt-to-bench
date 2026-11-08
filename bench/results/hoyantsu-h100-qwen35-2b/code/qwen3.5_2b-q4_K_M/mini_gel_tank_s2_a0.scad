@@ -1,0 +1,89 @@
+// Design parameters for the mini horizontal gel-electrophoresis buffer tank
+// All dimensions are in millimeters (mm)
+
+// Tank Outer Dimensions
+tank_outer_w = 120.0 // mm
+tank_outer_d = 70.0  // mm
+tank_outer_h = 40.0  // mm
+
+// Wall thickness and floor thickness
+wall_thickness = 3.0   // mm
+floor_thickness = 3.0  // mm
+
+// Inner Dimensions (Tank)
+inner_w = tank_outer_w - wall_thickness * 2
+inner_d = tank_outer_d - wall_thickness * 2
+inner_h = tank_outer_h - floor_thickness
+
+// Platform Dimensions and Positioning
+platform_length_x = 60.0   // mm (centred on Y axis, so extends from inner_w/2 to inner_w/2 + length)
+platform_height_above_floor = 10.0 // mm
+platform_top_z = inner_h + platform_height_above_floor
+
+// Hole Dimensions and Positioning
+hole_diameter = 2.0       // mm
+hole_y_pos = 0.0         // mm (at the bottom of the tank, y=0)
+hole_z_pos = 30.0        // mm (along X axis at z=30)
+
+// Hole Length along X
+hole_length_x = inner_w - hole_diameter * 2
+
+// Create the main outer box
+main_box = cube([tank_outer_w, tank_outer_d, tank_outer_h])
+
+// Create the floor plate
+floor_plate = cube([inner_w, inner_d, floor_thickness])
+floor_plate.translate([0.0, 0.0, -floor_thickness/2]) // Center it on XY plane at z=0
+
+// Create the walls (left and right)
+wall_left = box([inner_w, wall_thickness, tank_outer_h], [0.0, inner_d/2, 0.0])
+wall_right = box([inner_w, wall_thickness, tank_outer_h], [inner_w - inner_w + wall_thickness, inner_d/2, 0.0])
+
+// Create the top lid (open)
+lid = cube([tank_outer_w, tank_outer_d, 1.0]) // 1mm height for printing support
+lid.translate([0.0, 0.0, -wall_thickness/2]) // Center on XY plane at z=0
+
+// Union all parts to form the solid tank
+tank_body = union([main_box, floor_plate, wall_left, wall_right, lid])
+
+// Create the platform (raised section)
+// Platform sits on top of the floor plate.
+// We need to ensure it is supported by the floor.
+platform_base = cube([inner_w, inner_d, 10.0]) // Base thickness for support
+platform_base.translate([0.0, 0.0, -floor_thickness/2])
+
+// Platform top surface (at z = platform_top_z)
+platform_top_surface = box([platform_length_x, inner_d, platform_top_z - floor_thickness], [inner_w/2, inner_d/2, 0.0])
+
+// Create the hole in the right wall (X end)
+hole_right_wall = cylinder(hole_diameter, z=30.0) // Horizontal cylinder along X axis
+hole_right_wall.translate([inner_w - inner_w + hole_length_x/2, inner_d/2, 0.0])
+
+// Create the hole in the left wall (X end)
+hole_left_wall = cylinder(hole_diameter, z=30.0) // Horizontal cylinder along X axis
+hole_left_wall.translate([-inner_w - inner_w + hole_length_x/2, inner_d/2, 0.0])
+
+// Create the platform support base (attached to floor plate)
+platform_support_base = box([inner_w, inner_d, wall_thickness], [inner_w/2, inner_d/2, 0.0])
+platform_support_base.translate([0.0, 0.0, -wall_thickness/2])
+
+// Create the platform top (attached to support base)
+platform_top_surface.translate([0.0, 0.0, wall_thickness/2 + floor_thickness/2]) // Align with tank floor level? 
+// Wait, user said "top is 10 mm above the inner floor". Inner floor is at z=0.
+// So platform top should be at z = 10.
+platform_top_surface.translate([0.0, 0.0, wall_thickness/2 + floor_thickness/2]) // This places it at z=10
+
+// Create the union of tank body and platform
+tank_with_platform = union([tank_body, platform_support_base, platform_top_surface])
+
+// Add holes for electrode wires
+hole_right_hole = cylinder(hole_diameter, z=30.0)
+hole_right_hole.translate([inner_w - inner_w + hole_length_x/2, inner_d/2, 0.0])
+
+hole_left_hole = cylinder(hole_diameter, z=30.0)
+hole_left_hole.translate([-inner_w - inner_w + hole_length_x/2, inner_d/2, 0.0])
+
+// Final assembly: Union tank body with platform and holes
+final_part = union([tank_with_platform, hole_right_hole, hole_left_hole])
+
+print("Design complete.")

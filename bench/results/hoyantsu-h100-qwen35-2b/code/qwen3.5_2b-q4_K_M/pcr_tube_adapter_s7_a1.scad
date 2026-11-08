@@ -1,0 +1,92 @@
+// Design an adapter sleeve for a 0.2 mL PCR tube in a rack hole made for 1.5 mL tubes.
+// Units: millimeters (mm).
+
+// Define dimensions based on user measurements
+const mm = 1; // Conversion factor to mm if needed, though we use direct numbers here
+const mm_per_unit = 1; 
+
+// Dimensions of the collar (the part resting on the bed)
+// Diameter and thickness are given as 13mm OD and 1.5mm thick
+var collar_diameter = 13; // mm
+var collar_thickness = 1.5; // mm
+
+// Dimensions of the sleeve body (rising from collar)
+// Outer diameter: 10.8 mm
+var sleeve_outer_diameter = 10.8; // mm
+// Height of the body above the collar top: 21.5 - 1.5 = 20.0 mm
+
+// Dimensions of the bore (straight hole through full height)
+// Diameter: 6.2 mm
+var bore_diameter = 6.2; // mm
+// Length of the bore: same as sleeve body height + collar thickness? 
+// "collar ... lies on the bed (z=0 to 1.5), and the sleeve body... rises from the collar to z=21.5".
+// The total vertical extent of this object is from -1.5 (bottom of collar) to 21.5 (top of body).
+// A standard 1.5mL tube is roughly 20mm long, so a 23mm hole accommodates it with clearance.
+var bore_length = collar_thickness + sleeve_outer_diameter; // -1.5 + 10.8 = 9.3? No, the total span is from bottom to top of body.
+// Let's re-calculate: Bottom of collar (z=-1.5) to Top of body (z=21.5). Total length = 21.5 - (-1.5) = 23.0 mm.
+var bore_length = sleeve_outer_diameter + collar_thickness; // This calculates 9.3mm which is incorrect for total span.
+// Correct logic: The object spans from z=-collar_thickness to z=sleeve_height_top.
+// So the length of the part is collar_thickness + sleeve_outer_diameter? No, that's just the body height if we ignore the collar bottom offset in a simple sum.
+// Let's define the coordinates explicitly for clarity and correctness based on the prompt's geometry.
+var total_height = collar_thickness + sleeve_outer_diameter; // 1.5 + 10.8 = 12.3? No, that's just body length from collar top to bottom of body.
+// The prompt says: "collar ... lies on the bed (z=0 to 1.5)". This implies the physical part has a height of 1.5mm at z=0 and extends down to -1.5? 
+// Or does it mean the collar itself is 13x1.5, so it sits from z=-1.5 to z=1.5? Yes.
+// "sleeve body... rises from the collar to z = 21.5". This implies the top of the body is at z=21.5 and the bottom of the body is at z=1.5.
+// Therefore, the total height of the object (from bottom of collar to top of sleeve) is 21.5 - (-1.5) = 23.0 mm.
+var bore_length = 23.0; // Total vertical span
+
+// Create the main body (collar)
+var collar_body = cube( collardiameter, collar_thickness, total_height ); 
+// Note: In OpenSCAD, 'cube' extrudes from bottom to top. So if we define height as 23.0, it goes from z=-15 to z=8? No.
+// Let's use translate to position the part correctly on the XY plane (z=0).
+
+var collar_body = cube( collardiameter, collar_thickness, total_height ); 
+translate( [0, 0, -collar_thickness] ) // Move bottom of body down by collar thickness so it sits at z=-1.5
+// Wait, if we define the part as a single block from z=0 to z=23 (top of collar to top of sleeve), then:
+// The collar is the top 1.5mm? No, "collar ... lies on the bed". 
+// Usually, this means the flat face at z=0 is the collar's top surface.
+// So the part should be defined from z=-1.5 (bottom of collar) to z=23 (top of sleeve)? 
+// Or is the "sleeve body" the only thing that rises? 
+// Let's assume the object consists of a collar at the bottom and a body on top, or vice versa based on "prints it upside down".
+// If I print it upside down, z=0 is the top. The rack hole is at z=-1.5 (bottom of collar).
+// The tube insert is at z=23 (top of sleeve)? That seems very tall for a 1.5mL tube (~20mm). 
+// Let's reconsider the "full height" and dimensions. Maybe the bore length isn't 23mm?
+// If the rack hole is for 1.5mL tubes, it should be ~20mm. The sleeve body rises to z=21.5. 
+// Perhaps the collar sits on the bed at z=-1.5 and the tube insert is at z=21.5? That's a 23mm gap.
+// Let's assume the bore length is exactly the total vertical extent of the object as described: from -1.5 to 21.5.
+
+var collar_body = cube( collardiameter, collar_thickness, sleeve_outer_diameter ); 
+translate( [0, 0, -collar_thickness] ) // Move bottom down so z=0 is top of collar
+// This creates a block from z=-1.5 to z=sleeve_outer_diameter (which is 23).
+// The bore runs through this entire length.
+
+var hole = cylinder( bore_diameter, bore_length ); 
+translate( [0, 0, -collar_thickness] ) // Align the hole with the collar's bottom face? No, the hole must be centered on the part.
+// If we translate the hole to z=-1.5 (the bottom of the collar), it will cut through the whole object.
+
+var final_part = union( 
+    cube( collardiameter, collar_thickness, sleeve_outer_diameter ), // The main block
+    cylinder( bore_diameter, bore_length ) // The hole
+); 
+
+// Center the part on the XY plane (z=0) by translating it up by its own height/offset?
+// No, we need to place the part so that z=0 is the top of the collar.
+// Our block is defined from z=-1.5 to z=23. We want z=0 at the top of this block (z=23).
+// So we translate UP by 23 mm? No, that would put it on a table at z=23.
+// The user says "prints it upside down: a collar ... lies on the bed". This implies the physical object sits with its bottom face on the bed (z=-1.5) and top face on the rack (z=21.5).
+// So we need to translate the block DOWN by 23 mm so that z=0 becomes the top of the collar? 
+// No, if the part is at z=-1.5 to z=23, translating it UP by 23 puts it at z=0 to z=46.
+// We want z=0 to be the TOP of the collar (z=23 in our block). So we translate DOWN by 23 mm? 
+// If we translate down by 23, the new top is at z=-1.5 and bottom at z=-46. That's upside down relative to the rack.
+// Let's restart the positioning logic clearly.
+
+// Goal: Print on XY plane (z=0). The part should sit with its collar facing UP? 
+// "prints it upside down" usually means the flat face is at the bottom of the print bed, but here it says "collar ... lies on the bed".
+// This implies the collar is the BOTTOM part of the assembly.
+// So the rack hole is at z=-1.5 (bottom of collar). The tube insert is at z=21.5 (top of sleeve)? 
+// That's a 23mm gap. Let's assume the bore length is indeed 23mm based on "full height".
+
+// We need to position the block so that:
+// Top face (z=0) = Top of collar? No, if it lies on the bed, z=-1.5 is bottom.
+// So we translate the block DOWN by 23 mm? 
+// If our block is from -1.5 to 23, translating down by 23 gives us a block from -46 to 0. The top face is at z=0. This matches "collar lies on bed" (if collar bottom is -1.5).

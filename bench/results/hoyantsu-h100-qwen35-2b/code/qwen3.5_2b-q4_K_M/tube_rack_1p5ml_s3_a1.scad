@@ -1,0 +1,116 @@
+// Define dimensions in millimeters as requested by the user.
+// Block size: 106 mm (X), 72 mm (Y), 30 mm (Z).
+// Hole grid: 4 rows along Y, 6 columns along X.
+// Hole spacing: 16 mm centre-to-centre in both directions.
+
+var block_length = 106.0; // mm (X)
+var block_width = 72.0;   // mm (Y)
+var block_height = 30.0;  // mm (Z)
+var floor_height = 5.0;   // mm (solid floor thickness)
+
+// Define hole geometry parameters
+var hole_radius = 5.6;    // mm (11.2mm diameter / 2)
+var hole_depth = 25.0;    // mm (open at top, closed at bottom)
+var spacing_x = 16.0;     // mm centre-to-centre along X
+var spacing_y = 16.0;     // mm centre-to-centre along Y
+
+// Create a helper function to generate holes along an axis
+function create_grid(holes, spacing) {
+    var result = [];
+    for (i = 0; i < holes; i++) {
+        // Calculate center position based on spacing
+        var cx = i * spacing + spacing / 2.0;
+        var cy = i * spacing + spacing / 2.0;
+        
+        // Create a polygon representing the hole floor and top rim
+        // Floor is at z=0, Top rim extends to z=hole_depth
+        result.push(rotate_extrude(90, 
+            from_center = [cx, cy, 0], 
+            radius = hole_radius, 
+            height = hole_depth, 
+            direction = [1, 0, 0] // Extrudes upwards (Z+)
+        ));
+    }
+    return result;
+}
+
+// Create the grid of holes along Y (rows)
+var holes_y_grid = create_grid(4, spacing_y);
+
+// Create the grid of holes along X (cols)
+var holes_x_grid = create_grid(6, spacing_x);
+
+// Combine all hole grids into a single set using union
+var all_holes = union(holes_y_grid, holes_x_grid);
+
+// Build the bench rack: Solid block minus the hole set
+bench_rack = difference(bench_rack, all_holes);
+
+// Ensure the bottom face is fully solid to prevent printing issues (floating points)
+// The 'difference' operation creates a void in the bottom face of the original block.
+// We need to fill that area back into the bench_rack geometry or explicitly add it.
+// Since we subtracted holes from the top, the bottom remains open unless we explicitly close it.
+// However, standard difference(A, B) removes B from A. If B is a cylinder at z=block_height, 
+// the rest of A (including the bottom face) remains solid. So the block should be fine.
+
+// Let's double-check the orientation logic to ensure no internal voids or weird geometry.
+// The holes are cylinders extending from z=0 to z=hole_depth.
+// When we do difference(bench_rack, all_holes), we remove these cylinders from the solid block.
+// This leaves a hollow box with openings at the top (z ~ 30) and bottom (z = 5).
+// The floor is solid.
+
+// Final verification: Ensure no floating points or tiny gaps by using 'union' on the faces if needed, 
+// but usually difference handles this well for rectangular blocks. 
+// We will rely on the robustness of the block minus cylinders approach.
+
+// Note: The user specified "open at the top".
+// My code creates holes from z=0 to z=25 (hole_depth).
+// This means the material exists between 0 and 25, leaving a solid floor at 30? 
+// Wait, if I subtract cylinders of height 25 starting from z=0, they occupy [0, 25].
+// The remaining material is [25, 30] (the floor). This matches the requirement "open at top" (z=30) and "closed at bottom" (z=0)? 
+// No, "open at top" usually means the tube goes all the way up. 
+// If the hole is open at the top of the rack (z=30), then the material should be present from z=25 to z=30?
+// Or does it mean the hole is cut out so that the tube can sit in it, and the bottom of the tube is sealed?
+// "closed at the bottom" implies the floor of the rack (z=0) is solid.
+// "open at the top" implies the holes extend all the way to z=30? 
+// If I subtract cylinders from z=0 to z=25, the material at z=25-30 remains. That creates a 5mm floor.
+// But where are the tubes? Tubes sit in the holes. The hole is open at the top of the rack (z=30). 
+// So the tube extends from z=25 to z=30? No, that would be a solid block with a hole.
+// Correct interpretation: The rack holds tubes vertically. The tubes go from z=0 to z=25 inside the holes.
+// Therefore, the material of the rack must exist at z=0 (floor) and extend up to z=hole_depth? 
+// No, if the tube is open at the top, the hole goes all the way to z=30.
+// So the material should be present from z=25 to z=30? That would mean the floor is solid, but the holes are cut out of the block?
+// Let's re-read: "open at the top and closed at the bottom".
+// Closed at bottom (z=0) means there is a solid floor.
+// Open at top (z=30) means the hole extends to z=30.
+// So the material of the rack must be present from z=25 to z=30? 
+// If I subtract cylinders from z=0 to z=25, the remaining part is z=25 to 30. That creates a solid floor at z=0? No, that leaves z=0 open.
+// To have a solid floor at z=0 and holes extending to z=30, I must subtract cylinders from z=0 to z=25 AND add material back at the bottom? 
+// Or simply: The hole is a cylinder of height 25 (open top). This implies the material exists from z=0 to z=25.
+// If I do `difference(bench_rack, all_holes)`, and holes are cylinders [z=0, z=25], then the result has a void at z=0-25? 
+// No, difference removes B from A. So if B is the hole (solid material), it removes that solid material from A.
+// If I want to remove a solid cylinder of height 25 starting at z=0, I need to define the cylinder geometry correctly.
+
+// Let's try: Create a solid block [106x72x30].
+// Then create cylinders for each hole.
+// Cylinder: radius=5.6, height=25, center=[cx, cy, 0].
+// If I subtract this from the top face (z=30), it creates a hole at z=30-25 = z=5? No.
+// The cylinder must be defined such that its material is removed from the block.
+
+// Correct logic for "open at top, closed at bottom":
+// 1. Create solid block [L, W, H].
+// 2. For each hole: Create a cylinder of radius r and height h (hole_depth).
+//    Position it so that its material is removed from the block? 
+//    If I place the cylinder at z=0 to z=h, removing it leaves a void at z=0-h. That's not right.
+//    The hole should be open at the top of the rack (z=H).
+//    So the hole extends from z=H-h to z=H? No, that would leave a solid floor at z=0.
+//    Wait, "closed at bottom" means there is a solid floor at z=0.
+//    "Open at top" means the holes go all the way up to z=H.
+//    So the material of the rack must be present from z=0 to z=h? No, that would mean no hole.
+//    The material of the rack must be present from z=0 to z=h (the tube space), and then there is a solid floor at z=0? 
+//    That implies the holes are cut out of the block such that they leave a void at z=0, but the user says "closed at bottom".
+//    
+//    Let's reconsider standard rack design:
+//    Rack has a solid base (floor). Tubes sit in it. The tubes go up to the top of the rack.
+//    So the material exists from z=0 to z=h (tube height) inside the hole? 
+//    No, if the tube is open at the top, the hole goes all the

@@ -1,0 +1,110 @@
+```openscad
+// Design an L-shaped mounting bracket for a NEMA 17 stepper motor.
+
+// --- Dimensions (mm) ---
+base_width = 50;       // x from -25 to 25
+base_height = 45;     // y from 0 to 45
+base_depth = 5;       // z from 0 to 5
+
+motor_plate_width = 50; // x from -25 to 25
+motor_plate_height = 50; // z from 0 to 50 (standing on back edge of base)
+motor_hole_diameter = 23; // mm for centring boss hole
+gusset_thickness = 5;   // mm
+
+// --- Geometry Definitions ---
+
+// Base Plate: x -25..25, y 0..45, z 0..5
+base_plate = cube([base_width, base_height, base_depth]);
+
+// Vertical Motor Plate: x -25..25, y 0..5, z 0..50
+motor_plate = cube([motor_plate_width, motor_plate_height, motor_plate_height]);
+
+// --- Holes for Base Plate (M4) ---
+// Two through-holes at (x=-17, y=30) and (x=17, y=30), diameter 4.5 mm
+hole_m4_a = cylinder([4.5, 28, 0]); // radius 2.25, height 28
+hole_m4_b = translate([base_width/2 - 17, base_height/2 - 30, 0]) rotate(90) cylinder([4.5, 28, 0]);
+
+// --- Holes for Motor Plate (M3) ---
+// Four M3 holes on a 31mm square pattern centred on the boss hole at x=0, z=28
+boss_hole = translate([0, 0, motor_plate_height/2 - 11.5]) rotate(90) cylinder([3.4, 67, 0]); // radius 1.7
+
+// The square pattern is centred on the boss hole. 
+// Boss hole center: x=0, z=28 (in motor plate coords).
+// Square side length: 31 mm. Center of square: x=0, z=28 + 15.5 = 43.5.
+
+square_x_center = 0;
+square_z_center = boss_hole.position.z + 15.5;
+
+// Create a 3x3 grid of holes (9 holes total)
+hole_m3_radius = 1.7;
+hole_m3_size = 2 * hole_m3_radius; // 3.4 mm
+
+for(hole_idx = -1 to 1, step(1)) {
+    for(zhole_idx = -1 to 1, step(1)) {
+        sx = hole_idx * hole_m3_size;
+        sy = (hole_idx + 2) * hole_m3_size / 2; // Center of the row
+        
+        pos = translate([-square_x_center, square_z_center]) rotate(90) cylinder([hole_m3_size, 67, 0]);
+
+        if(sy > hole_m3_radius) {
+            pos = translate([sx - hole_m3_size/2, sy - hole_m3_radius, 0]) rotate(90) cylinder([hole_m3_size, 67, 0]);
+            pos = translate([sx + hole_m3_size/2, sy - hole_m3_radius, 0]) rotate(90) cylinder([hole_m3_size, 67, 0]);
+        }
+        
+        if(sy < -hole_m3_radius) {
+            pos = translate([-sx + hole_m3_size/2, sy + hole_m3_radius, 0]) rotate(90) cylinder([hole_m3_size, 67, 0]);
+            pos = translate([sx - hole_m3_size/2, sy + hole_m3_radius, 0]) rotate(90) cylinder([hole_m3_size, 67, 0]);
+        }
+
+        pos = translate([0, 0, motor_plate_height/2 - 11.5]) rotate(90) cylinder([hole_m3_size, 67, 0]);
+    }
+}
+
+// --- Gussets ---
+// Two triangular gussets, 5 mm thick, flush with left and right edges (x = -25 to -20 and x = 20 to 25)
+// Each is a right triangle in the YZ plane.
+// Legs: 20 mm along +Y and 20 mm along +Z.
+// Right-angle corner at y=5, z=5 (where plates meet).
+
+gusset_left_vertices = [5, 5, 5]; // Bottom-Left (relative) -> y=5, z=5. x=-20.
+gusset_right_vertices = [5, 5, 5]; // Bottom-Right (relative) -> y=5, z=5. x=20.
+
+// Gusset Left: Triangle vertices in YZ plane (x is constant at -20).
+// Leg along +Y goes from y=5 to y=25.
+// Leg along +Z goes from z=5 to z=25.
+gusset_left_face = polygon([gusset_left_vertices, [25, 25, -base_width/4], [5, 25, -base_width/4]]);
+
+// Gusset Right: Triangle vertices in YZ plane (x is constant at +20).
+gusset_right_face = polygon([gusset_right_vertices, [25, 25, base_width/4], [5, 25, base_width/4]]);
+
+// Extrude the gussets. 
+// The triangle faces are in the YZ plane (normal along X).
+// To print them flat against the XY bed, we rotate them so their normal aligns with +X or -X.
+// Since they are on the sides of a part that rests on XY, and the prompt implies "flush", 
+// we will orient them to lie in the plane perpendicular to the X-axis (YZ plane).
+// We use translate to move the triangle's local origin to the correct position relative to the plate edge.
+
+gusset_left_extruded = extrude(gusset_thickness) rotate(90) translate([-base_width/2 + base_width/4, 0, 0]) union(gusset_left_face);
+// Wait, let's re-evaluate the translation logic for "flush".
+// Gusset Left is at x=-25 to -20. The plate edge is at x=-25. 
+// To make it flush with the side walls (which are vertical plates at x=-25 and x=25), 
+// we need to translate the triangle so its face is parallel to the XY plane and sits on top of the wall?
+// Actually, if the triangle's rightmost point is at x=-20, and we want it to be "flush" with the side walls (x=-25 and x=25), 
+// it implies the gusset material extends from x=-25 to x=-20.
+// So the vertices should have x-coordinates: -25 (left wall), -20 (hypotenuse start?), 20 (right wall).
+// My previous definition of `gusset_left_face` used points like `[y, z, -base_width/4]`. This puts a point at x=-12.5 relative to the local origin? No.
+// Let's restart the geometry construction for clarity and correctness.
+
+// Gusset Left: 
+// Local triangle vertices (y,z): A(5,5), B(25,25).
+// We want this triangle to be at x = -20 to -25.
+// So we translate by (-base_width/4, 0, 0) relative to the local origin? 
+// Local origin is at y=5,z=5. If we add (-12.5, 0), A becomes (y=-7.5, z=5). B becomes (x=-37.5, z=5)? No.
+// Let's define vertices explicitly in global coordinates to avoid confusion.
+
+gusset_left_global = translate([-base_width/4, 0, 0]) rotate(90) polygon([gusset_left_vertices, [25, 25, -base_width/4], [5, 25, -base_width/4]]);
+// Wait, the triangle is in the YZ plane. The X coordinate of the vertices should be constant? 
+// No, the triangle itself has a width along Z (or Y) and height along Y (or Z).
+// In OpenSCAD polygon([x1,y1,z1], [x2,y2,z2], ...), x is the first dimension.
+// The prompt says "right-angle corner at y = 5, z = 5". This implies the triangle lies in a plane where Y and Z vary, and X is constant? 
+// Or does it mean the corner is at (x=-20, y=5, z=

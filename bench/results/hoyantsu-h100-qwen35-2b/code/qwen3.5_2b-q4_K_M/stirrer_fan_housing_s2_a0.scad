@@ -1,0 +1,115 @@
+// Design for DIY Magnetic Stirrer Housing from PC Case Fan
+// Units: millimeters
+
+// Dimensions
+box_thickness = 2.0; // mm (top plate)
+wall_thickness = 2.5; // mm (walls)
+outer_size_x = 90.0; // mm
+outer_size_y = 90.0; // mm
+fan_diameter_mm = 80.0; // mm
+drill_hole_diameter_mm = 4.5; // mm
+drill_hole_pitch_mm = 71.5; // mm
+power_cable_notch_width_mm = 12.0; // mm (width of notch)
+power_cable_cut_depth_mm = 8.0; // mm (depth from open edge to cut)
+
+// Create the main box structure using a single extrusion for simplicity and accuracy
+// This creates one solid block, which is then modified with holes and cuts.
+// We will use union of boxes or difference logic carefully. 
+// Strategy: Build the full outer box first, then remove the top plate (difference), 
+// then drill holes (difference), then cut power cable notch (difference).
+
+// 1. Define variables for easy referencing
+var x = outer_size_x;
+var y = outer_size_y;
+var z_top = box_thickness; // Top surface at z=2
+var z_bottom = wall_thickness + z_top; // Bottom of walls at z=40
+
+// 2. Create the main housing block (the "box" before removing top)
+// This is a single solid extrusion to ensure no gaps between walls initially
+main_housing_block = linear_extrude(z = z_bottom);
+
+// 3. Remove the top plate (z_top to z_bottom - box_thickness)
+// We use difference(). The cut shape extends slightly past faces as per rules.
+top_plate_cut = cube(x = x, y = y, z = box_thickness + 0.01); // Slightly larger than actual thickness
+
+housing_with_top_removed = main_housing_block - top_plate_cut;
+
+// 4. Drill four holes for M4 screws on a square pattern
+// Pattern: centered at (x/2, y/2) with pitch x_pitch and y_pitch
+hole_pattern_x = drill_hole_pitch_mm / 2;
+hole_pattern_y = drill_hole_pitch_mm / 2;
+
+// Create the hole geometry. 
+// We use rotate_extrude to create a cylinder that is slightly larger than the drill hole diameter
+// so it fits snugly and removes material effectively, extending past faces by default if not specified otherwise? 
+// Actually, standard rotate_extrude cuts through the model. To ensure "extend 0.01-1mm past", we need to be careful.
+// The rule says: "In difference(), make every cutting shape extend 0.01-1 mm past the faces it cuts".
+// rotate_extrude does not automatically add extra material beyond its path unless specified with a larger radius or using specific modifiers, 
+// but standard behavior is to cut exactly where defined. However, for holes, we usually want the hole diameter > drill diameter.
+// Let's create a slightly oversized cylinder and use difference.
+
+hole_cyl_x = x / 2;
+hole_cyl_y = y / 2;
+hole_cyl_z = box_thickness + 0.5; // Center of top plate
+
+// Create four holes using for loop
+for (i = 1 to 4) {
+    hole_i = rotate_extrude(
+        angle = 90 * i, 
+        radius = drill_hole_diameter_mm / 2 + 0.05, // Slightly larger than drill hole diameter for clearance and "extend" effect
+        length = box_thickness - drill_hole_diameter_mm, // Length of the cylinder segment
+        direction = [1, 0, 0] if i == 1 else [0, 1, 0], // Rotate around X or Y axis
+        center = hole_cyl_x + (i-1)*hole_pattern_x, 
+        end = hole_cyl_y + (i-1)*hole_pattern_y,
+        z_center = box_thickness - drill_hole_diameter_mm / 2
+    );
+}
+
+housing_with_top_removed_drilled = housing_with_top_removed - hole_i; // This removes the holes
+
+// 5. Cut the power cable notch in one wall (e.g., the right wall at y=wall_thickness)
+// The wall is from z_bottom to z_bottom + box_thickness
+// Notch starts at open edge of top plate (z = box_thickness) and goes down to z = box_thickness + cut_depth_mm
+// Width of notch is power_cable_notch_width_mm
+
+notch_start_z = box_thickness; // Open edge of top plate
+notch_end_z = box_thickness + power_cable_cut_depth_mm;
+notch_wide_x = power_cable_notch_width_mm / 2; // Half width for rotation logic if needed, but here we just cut a plane
+
+// Create the notch geometry. 
+// We use rotate_extrude to create a rectangular prism that is slightly larger than the notch dimensions.
+// This ensures the "extend past faces" rule is met effectively by cutting through the solid.
+notch_cyl_x = x / 2; // Center of wall
+notch_cyl_y = y / 2 - wall_thickness + notch_wide_x; // Position on Y axis (wall thickness from center)
+notch_cyl_z = box_thickness + power_cable_cut_depth_mm / 2; // Center of the cut
+
+// The notch shape is a rectangle. rotate_extrude creates a cylinder-like extrusion. 
+// To make it rectangular, we can use polygon or simply define the extent and let the rotation handle it?
+// No, rotate_extrude with [1,0,0] rotates around X axis, creating a circle. We need to cut a plane.
+// Better approach: Create a slightly larger rectangle (using for loop or simple geometry) that is then rotated out of the way? 
+// Actually, standard OpenSCAD rotate_extrude creates a cylinder. To cut a rectangular notch, we can use difference with a polygon or simply define the shape to be removed as a plane extrusion.
+// However, the prompt says "In difference(), make every cutting shape extend 0.01-1 mm past the faces it cuts".
+// If I create a rectangle and rotate_extrude it around X, it becomes a cylinder. That won't cut a notch unless I use polygon or define the geometry differently.
+
+// Alternative for rectangular cut: Use difference with a slightly larger rectangle (using for loop to make 4 corners) OR simply use a plane extrusion that is rotated? 
+// No, rotating a plane extrusion creates a torus-like shape if not careful, but actually rotate_extrude of a flat object rotates it.
+// Let's try: Create the notch as a slightly larger rectangle (using for loop to make 4 corners) and use difference.
+// Or simpler: Use polygon with a large enough radius? No, that makes a hole.
+
+// Correct approach for rectangular cut in OpenSCAD:
+// Define the notch shape using a polygon or simply create a slightly oversized rectangle and rotate_extrude it around X axis to make it a cylinder? 
+// Wait, if I have a rectangle [x1,y1,x2,y2] and rotate_extrude(angle=90, direction=[1,0,0]), it creates a cylinder.
+// To cut a rectangular notch, I need the shape to be removed as a plane (or slightly larger). 
+// Since rotate_extrude rotates around X, if I define the shape in YZ plane and rotate 90 deg, it becomes a cylinder along Z? No.
+// If I have a rectangle in XY plane at z=const, and rotate_extrude(angle=90, direction=[1,0,0]), it creates a cylinder around X axis.
+// To cut a notch on the side (Y wall), I need to remove material from that Y position. 
+// The easiest way is to create the notch shape as a slightly larger rectangle in the plane of the wall and use difference? No, difference removes the whole object.
+
+// Let's re-read: "In difference(), make every cutting shape extend 0.01-1 mm past the faces it cuts".
+// This implies I should define the cut shape (e.g., a slightly larger rectangle) and then call difference().
+// But if I use rotate_extrude, it rotates the object. 
+// Let's try this: Create the notch as a slightly larger rectangle in the plane of the wall (Y=wall_thickness), centered on X axis? No, that would be a hole.
+// To cut a rectangular notch, we can create the shape using for loop to make 4 corners and use difference? 
+// Actually, standard practice: Create the notch as a slightly larger rectangle in the plane of the wall (e.g., at Y = wall_thickness + notch_wide_x/2), centered on X axis. Then rotate_extrude it around X axis? No, that makes a cylinder.
+// Rotate_extrude with direction=[1,0,0] rotates around X. If I have a shape in the YZ plane (rectangle), rotating 90 degrees creates a cylinder along Z? 
+// Let's visualize: Rectangle at y=2.5, z=32..40. Centered on X axis. Rotate_extrude

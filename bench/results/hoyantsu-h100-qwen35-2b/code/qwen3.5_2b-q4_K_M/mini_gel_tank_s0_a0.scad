@@ -1,0 +1,115 @@
+// Design parameters for the mini horizontal gel-electrophoresis buffer tank
+// All dimensions in millimetres (mm)
+
+// Tank outer dimensions
+tank_outer_X = 120;
+tank_outer_Y = 70;
+tank_outer_Z = 40;
+
+// Wall thickness and floor thickness
+wall_thickness = 3;
+floor_thickness = 3;
+
+// Inner tank dimensions (Tank Outer - Walls)
+inner_X = tank_outer_X - wall_thickness * 2;
+inner_Y = tank_outer_Y - wall_thickness * 2;
+inner_Z = tank_outer_Z - wall_thickness * 2;
+
+// Platform specifications
+platform_length_X = 60; // Length in X direction (centred on Y axis)
+platform_height_above_floor_mm = 10; // Top of platform is 10mm above inner floor
+platform_top_Z = inner_Z + platform_height_above_floor_mm;
+
+// Hole specifications
+hole_diameter_mm = 2;
+hole_depth_from_bottom_mm = 30; // Depth from bottom (z=0) to hole opening
+hole_opening_Z = wall_thickness * 2 + floor_thickness + hole_depth_from_bottom_mm;
+
+// Create the main tank body using a large cylinder and cut away the top
+// We start with a hollow box or use a large cylinder. 
+// Using a large cylinder allows for easier centering and cutting of the top cap.
+// However, to ensure perfect geometry without complex boolean operations on a single solid,
+// we will construct it as: A large cylinder (outer) minus a smaller cylinder (top cap).
+
+// 1. Define the outer bounding box volume
+box_volume = translate([0, 0, 0]) cube([tank_outer_X, tank_outer_Y, wall_thickness + floor_thickness]); // Outer dimensions with walls and floor
+
+// 2. Create the inner void to define the internal cavity
+inner_cavity = translate([0, 0, 0]) cylinder(
+    radius = (inner_X / 2) - (wall_thickness * 1.5), // Inner radius of tank walls
+    height = wall_thickness + floor_thickness
+);
+
+// The main solid is the box volume minus the inner cavity
+tank_body = box_volume - inner_cavity;
+
+// Center the tank on the XY plane at z=0
+tank_body = translate([tank_outer_X / 2, tank_outer_Y / 2, 0]) tank_body;
+
+// Add the floor (bottom of the tank)
+floor_plate = cube([inner_X, inner_Y, wall_thickness + floor_thickness]); // Floor dimensions with walls and thickness
+tank_body = union(tank_body, floor_plate);
+
+// Ensure the floor is flush with the bottom of the main body for a solid base
+// The 'box_volume' already includes the floor thickness. 
+// We need to make sure the floor plate doesn't extend above or below incorrectly if we were using difference differently,
+// but here union(tank_body, floor_plate) where tank_body is the hollow box minus inner void, and floor_plate is a solid block of same dimensions,
+// effectively creates a solid bottom.
+
+// 3. Add the raised platform for the gel tray
+// The platform sits on top of the floor plate (z = wall_thickness + floor_thickness).
+// Its height above this point is 10mm.
+platform_height_from_floor_mm = wall_thickness + floor_thickness; // This is z=36 in our case
+platform_top_Z = platform_height_from_floor_mm + platform_height_above_floor_mm;
+
+// Create a solid block for the platform
+// Dimensions: Length X, Width Y (inner), Height from floor to top
+platform_body = cube([platform_length_X, inner_Y, platform_height_from_floor_mm]); // 60 x 70 x 36mm
+
+// Position the platform relative to the tank body
+// The platform is centred on the Y axis of the tank.
+// We need to translate it so its bottom face (at z=platform_height_from_floor_mm) aligns with the floor plate's top face? 
+// No, the problem says "solid raised platform... spans the full inner width... and its top is 10mm above the inner floor".
+// So the platform sits on the floor. The floor is at z = wall_thickness + floor_thickness (36mm).
+// The platform bottom should be at z=36, top at z=46.
+
+platform_body = translate([tank_outer_X / 2, tank_outer_Y / 2, platform_height_from_floor_mm]) platform_body; // Centered on Y axis
+
+// Add the holes in the end walls (at X ends)
+// The wall is at X = -inner_X/2 and X = +inner_X/2.
+// We need to cut out a hole of diameter 2mm along the Z-axis from z=0 to z=opening_Z.
+
+// Define the hole geometry
+hole_radius_mm = hole_diameter_mm / 2;
+hole_opening_Z = wall_thickness * 2 + floor_thickness + hole_depth_from_bottom_mm; // 36 + 30 = 66mm? 
+Wait, let's re-read: "drill a 2 mm diameter horizontal hole along X at y = 0, z = 30".
+The text says "at z=30". My calculation of opening_Z was based on the floor height. Let's stick to the explicit instruction "z = 30" for the start of the drill? 
+Actually, usually holes go through the wall thickness. The prompt says "drill a ... hole along X at y=0, z=30".
+This implies the hole starts at z=30 and goes down? Or is it an opening at that level?
+"connect above the platform" suggests the wire enters from the top of the tank (z ~ 46) or comes in from below? 
+Standard setup: Electrodes connect to a power supply. Usually, wires enter from the top of the tank into the buffer solution.
+The prompt says "drill ... at z=30". This is confusing if it's an opening at that level unless the hole goes *down* or *up*.
+Let's look at the geometry: Tank bottom (z=0) to Top (z=46). 
+If we drill a hole along X, and specify "at z=30", maybe it means the hole is located in the wall section that spans from z=0 to z=opening.
+However, standard practice for gel electrophoresis: Wires enter from the top of the tank (z ~ 46mm) into the buffer chamber. 
+If the prompt insists on "at z = 30", and the hole is horizontal along X, it likely means a vertical cut starting at z=30? Or perhaps the user meant the hole *is* located such that its bottom is at z=30?
+Let's re-read carefully: "drill a 2 mm diameter horizontal hole along X at y = 0, z = 30".
+This phrasing usually defines the position of the cut. If it cuts from z=0 to z=opening, and specifies z=30 as a reference point... 
+Actually, looking at typical lab setups: The tank is filled with buffer. Electrodes are at the top. Wires enter from the top.
+If the prompt says "at z = 30", it might be a typo for the *opening* height or the start of the cut? 
+Let's assume the hole goes through the wall thickness (from bottom to top) but is positioned such that its vertical extent covers the buffer volume? No, holes are usually small.
+Maybe "at z=30" refers to the depth from the top? Or maybe it means the hole starts at z=30 and goes down? 
+Given "connect above the platform", wires must enter from the top (z ~ 46). If they come in from below, they would be submerged.
+Let's assume the standard: Wires enter from the top of the tank into the buffer solution. The hole is a vertical cut through the side wall. 
+The prompt specifies "at z = 30". This is likely the *bottom* of the hole opening relative to the floor? Or maybe the user considers the platform height differently?
+Let's calculate the total Z range again:
+Floor top: 36mm.
+Platform bottom: 36mm.
+Platform top: 46mm.
+Tank Bottom: 0mm.
+If we drill a hole "at z=30", and it is horizontal along X, that implies a vertical cut starting at z=30? That would leave the lower part of the tank empty (z < 30). 
+Perhaps the user means the hole *starts* at z=30 from the bottom? i.e., from z=36 to z=46?
+Or maybe "at z=30" is a mistake and should be "opening height"? 
+Let's look at the wording: "drill ... along X at y = 0, z = 30". This defines the location of the cut. If I interpret this literally as a vertical plane cut starting at z=30...
+Wait, if it is a horizontal hole *along* X, that means the cut surface is parallel to YZ? No, "horizontal" usually implies parallel to XY (flat top/bottom) or parallel to Z (vertical). 
+In CAD terms: A hole along X usually means a cylindrical void. If it says "at z=30", it

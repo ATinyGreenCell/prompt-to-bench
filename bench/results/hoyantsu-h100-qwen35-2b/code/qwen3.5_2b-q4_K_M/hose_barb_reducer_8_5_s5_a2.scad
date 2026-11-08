@@ -1,0 +1,151 @@
+// Design a straight hose-barb reducer for silicone tubing.
+// Units: millimeters (mm).
+// Orientation: Print standing upright along Z axis, resting on XY plane at z=0.
+
+// Define dimensions in mm as measured with calipers
+diameter_8_mm_in = 8.0;      // Inner diameter of upper tubing
+diameter_5_mm_in = 5.0;      // Inner diameter of lower tubing
+barb_height_upper = 10.0;    // Height of upper barb in mm
+collar_diameter = 12.0;     // Diameter of collar in mm
+
+// Define the sawtooth profile dimensions for the upper barb (z=0 to z=20)
+// Bottom: OD 7.5mm, Top: OD 9.5mm
+barb_bottom_outer = 7.5;   // Outer diameter at bottom of upper barb
+barb_top_outer      = 9.5;  // Outer diameter at top of upper barb
+
+// Define the sawtooth profile dimensions for the lower barb (z=20 to z=41)
+// Bottom: OD 6.5mm, Top: OD 5.0mm
+lower_barb_bottom_outer = 6.5;
+lower_barb_top_outer      = 5.0;
+
+// Define the collar height and length
+collar_height = 20.0 - 12.0; // Total length of upper section minus collar thickness? No, just total length from z=0 to z=41 is 41mm.
+// Wait, let's re-read carefully: "From z = 0 to z = 20: two identical barbs... From z = 20 to z = 25: a cylindrical collar".
+// Total height of the part = 25 mm.
+
+// Create the upper section (z=0 to z=20)
+upper_part = linear_extrude(
+    length = barb_height_upper, // 10mm
+    direction = [0, 0, -1]      // Extrude upwards from bottom of part
+);
+
+// Add two barbs for the upper tubing (8mm ID) stacked on top of each other.
+// Each is 10mm tall. Total height added = 20mm. This matches z=0 to z=20 exactly.
+upper_barb_1 = rotate_extrude(
+    angle = [0, 0, 90], // Rotate around Z axis by 90 degrees (flat on XY plane)
+    length = barb_height_upper,
+    direction = [0, 0, -1]
+);
+
+upper_barb_2 = rotate_extrude(
+    angle = [0, 0, 90], // Rotate around Z axis by 90 degrees (flat on XY plane)
+    length = barb_height_upper,
+    direction = [0, 0, -1]
+);
+
+upper_part = union([upper_barb_1, upper_barb_2]);
+
+// Create the lower section (z=20 to z=41). Total height of this section is 21mm.
+lower_section_length = 25.0 - 20.0; // 21mm
+
+// Define a function to create a single barb with specific OD profile and rotation
+create_single_barb(
+    id_in,        // Inner diameter in mm
+    bottom_od,    // Outer diameter at bottom of barb (z=0)
+    top_od,       // Outer diameter at top of barb (z=max_height)
+    height,       // Height of the barb in mm
+    rotation_deg  // Rotation around Z axis to make it flat on XY plane
+) {
+    // Create a hollow cylinder with the given inner and outer diameters
+    barb = cylinder(
+        radius = id_in / 2.0,
+        height = height,
+        direction = [0, 0, -1]
+    );
+
+    // Rotate around Z axis by rotation_deg to make it flat on XY plane (90 degrees)
+    rotated_barb = rotate_extrude(
+        angle = [0, 0, rotation_deg],
+        length = height,
+        direction = [0, 0, -1]
+    );
+
+    // Create the outer profile using polygon to simulate the sawtooth shape.
+    // We need a large enough polygon to cover the entire volume of the barbed section.
+    // The max OD is top_od. The min OD is bottom_od.
+    
+    // Calculate total height for the polygon path
+    total_height = height;
+
+    // Create a polygon that traces the outer profile (sawtooth) and closes it at the bottom to form a solid block
+    // We will use a large circle as base, then cut out the barbs.
+    
+    // 1. Define the polygon path for the sawtooth shape
+    // Start at center of bottom tip, go up to top tip, come back down to bottom tip, close loop.
+    // Coordinates: (0,0) -> (0, total_height/2) -> ... -> (0, -total_height/2) -> (0,0)
+    
+    // Vertices for the sawtooth profile:
+    v1 = [0, 0];          // Bottom center
+    v2 = [0, total_height/2]; // Top tip
+    v3 = [0, -total_height/2]; // Bottom tip
+    
+    // Create a polygon with these vertices. To make it solid and robust, we can add a small offset or just close the loop.
+    // OpenSCAD polygons work by defining points in order.
+    
+    poly_path = polygon([v1, v2, v3]);
+    
+    // Now create the barbs using this outer shape.
+    // We will use difference to cut out the inner holes.
+    
+    // Barb 1 (Top)
+    barb_1 = rotate_extrude(
+        angle = [0, 0, rotation_deg],
+        length = height,
+        direction = [0, 0, -1]
+    );
+    
+    // Barb 2 (Bottom)
+    barb_2 = rotate_extrude(
+        angle = [0, 0, rotation_deg],
+        length = height,
+        direction = [0, 0, -1]
+    );
+
+    // Use difference to create the hollow barbs.
+    // Note: The problem states "From z=0 to z=20... two identical barbs".
+    // This implies the barbs are stacked on top of each other within the upper section.
+    // So we subtract barb_1 and barb_2 from the outer shell.
+    
+    upper_barb_shell = union([barb_1, barb_2]);
+    
+    // Create the hollow barbed section for z=0 to 20
+    lower_section_upper = difference([upper_part, upper_barb_shell]);
+
+    // Now create the lower section (z=20 to z=41)
+    // This is a cylinder of length 21mm with an inner hole.
+    
+    // Define the outer shape for the lower section: Cylinder of diameter collar_diameter
+    lower_outer = cylinder(
+        radius = collar_diameter / 2.0,
+        height = lower_section_length,
+        direction = [0, 0, -1]
+    );
+
+    // Create the inner hole for the lower tubing (5mm ID)
+    lower_inner_hole = rotate_extrude(
+        angle = [0, 0, 90], // Flat on XY plane
+        length = lower_section_length,
+        direction = [0, 0, -1]
+    );
+
+    // Create the hollow lower section using difference
+    lower_section_lower = difference([lower_outer, lower_inner_hole]);
+
+    // Combine upper and lower sections
+    final_part = union([upper_barb_shell, lower_section_lower]);
+
+    return(final_part);
+}
+
+// Build the complete part: Upper Section + Lower Section
+final_part = create_single_barb(diameter_8_mm_in, barb_bottom_outer, barb_top_outer, barb_height_upper, 90) * 1.5; // Scale up slightly for better visibility in print preview (optional)

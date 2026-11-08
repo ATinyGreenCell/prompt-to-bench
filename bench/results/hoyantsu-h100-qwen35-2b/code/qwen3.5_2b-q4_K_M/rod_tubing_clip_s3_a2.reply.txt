@@ -1,0 +1,57 @@
+```openscad
+// Design a snap-on clip for lab tubing.
+// Units: millimeters (mm)
+
+// --- Dimensions ---
+// Rod ring parameters
+ROD_IN_DIAMETER = 12.7; // mm
+ROD_WALL_THICKNESS = 3.0; // mm
+ROD_OUTER_DIAMETER = ROD_IN_DIAMETER + 2 * ROD_WALL_THICKNESS; // 18.7 mm
+
+// Tubing ring parameters
+TUBING_IN_DIAMETER = 6.0; // mm
+TUBING_WALL_THICKNESS = 2.0; // mm
+TUBING_OUTER_DIAMETER = TUBING_IN_DIAMETER + 2 * TUBING_WALL_THICKNESS; // 10.0 mm
+
+// Bridge parameters
+BRIDGE_WIDTH = 6.0; // mm
+
+// --- Geometry Construction ---
+
+// Helper to create a ring (cylinder with hole)
+make_ring(outer_diameter, inner_diameter, wall_thickness, center_x, center_y, cut_out_x, cut_out_y) {
+    var r = outer_diameter / 2.0;
+    var h = wall_thickness;
+    
+    // Extrude the ring shape
+    var ring_vol = cylinder(r, h);
+    
+    // Create a polygon hole in the XY plane at the specified coordinates
+    // The cut-out is defined by its width and center. 
+    var hole_shape = polygon([
+        [cut_out_x - cut_out_width/2.0, cut_out_y - cut_out_height/2.0],
+        [cut_out_x + cut_out_width/2.0, cut_out_y - cut_out_height/2.0],
+        [cut_out_x + cut_out_width/2.0, cut_out_y + cut_out_height/2.0],
+        [cut_out_x - cut_out_width/2.0, cut_out_y + cut_out_height/2.0]
+    ]);
+
+    // Create a slightly larger shape for the hole to ensure it extends past faces (Rule 5)
+    var hole_large = translate([0.01, 0.01]) rotate_extrude(hole_shape);
+    
+    return union(ring_vol, difference(cylinder(r, h), hole_large));
+}
+
+// --- Part Assembly ---
+
+clip_body = make_ring(ROD_OUTER_DIAMETER, ROD_IN_DIAMETER, ROD_WALL_THICKNESS, 0.0, 0.0, -5.0, 5.0); // Rod ring
+
+tubing_body = make_ring(TUBING_OUTER_DIAMETER, TUBING_IN_DIAMETER, TUBING_WALL_THICKNESS, 15.0, 0.0, -2.25, 2.25); // Tubing ring
+
+bridge_body = cube(BRIDGE_WIDTH, BRIDGE_WIDTH, 6.0); // 6mm wide (Y), centered at origin X,Y for easy placement between them
+
+// Combine all parts into a single solid
+final_part = union(clip_body, tubing_body, bridge_body);
+
+// Final print orientation: Flat on XY plane, extruded up Z
+printable_part = linear_extrude(Z=10.0) final_part;
+```

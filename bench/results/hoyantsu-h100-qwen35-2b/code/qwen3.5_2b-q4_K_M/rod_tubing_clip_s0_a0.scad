@@ -1,0 +1,93 @@
+// Design a snap-on clip for lab tubing.
+// Units: millimeters (mm).
+
+// Dimensions in mm
+RING_IN_DIAMETER = 12.7; // Rod ring inner diameter
+RING_WALL_THICKNESS = 3.0; // Rod ring wall thickness
+RING_OUTER_DIAMETER = RING_IN_DIAMETER + (2 * RING_WALL_THICKNESS); // 18.7 mm
+
+TUBING_IN_DIAMETER = 6.0; // Tubing ring inner diameter
+TUBING_WALL_THICKNESS = 2.0; // Tubing ring wall thickness
+TUBING_OUTER_DIAMETER = TUBING_IN_DIAMETER + (2 * TUBING_WALL_THICKNESS); // 14 mm
+
+// Geometry variables for the profile construction
+ROD_RING_RADIUS = RING_OUTER_DIAMETER / 2;
+ROD_RING_CENTER_X = 0.0;
+TUBING_RING_CENTER_X = 15.0;
+
+// Create the rod ring: a cylinder with an opening cut from -X side
+// Opening: x < 0 and -5 < y < 5 (width 10 mm)
+ROD_RING = rotate_extrude(
+    [ROD_RING_RADIUS, ROD_RING_CENTER_X], // Radius in X, Centered at origin
+    cylinder_radius = RING_IN_DIAMETER / 2.0,
+    height = 10.0,
+    cutout_x_min = -5.0,
+    cutout_y_min = -5.0,
+    cutout_y_max = 5.0,
+    cutout_width = 10.0, // Width of the opening in X direction
+    cutout_height = 10.0  // Height of the opening in Y direction (same as extrusion)
+);
+
+// Create the tubing ring: a cylinder with an opening cut from +X side
+// Opening: x > 15 and -2.25 < y < 2.25 (width 4.5 mm)
+TUBING_RING = rotate_extrude(
+    [ROD_RING_RADIUS, TUBING_RING_CENTER_X], // Radius in X, Centered at x=15
+    cylinder_radius = RING_IN_DIAMETER / 2.0,
+    height = 10.0,
+    cutout_x_min = 15.0,
+    cutout_y_min = -2.25,
+    cutout_y_max = 2.25,
+    cutout_width = 4.5, // Width of the opening in X direction (positive)
+    cutout_height = 10.0  // Height of the opening in Y direction
+);
+
+// Create the solid bridge: connects x=8 to x=12, width 6 mm along Y axis
+// This joins the two rings without blocking their holes.
+BRIDGE = rotate_extrude(
+    [ROD_RING_RADIUS + ROD_RING_WALL_THICKNESS / 2.0, TUBING_RING_CENTER_X], // Radius in X, Centered at x=15
+    cylinder_radius = RING_IN_DIAMETER / 2.0,
+    height = 10.0,
+    cutout_x_min = -6.0,
+    cutout_y_min = -3.0,
+    cutout_y_max = 3.0, // Cut out a hole in the bridge to allow flow? 
+    // Wait, re-reading prompt: "without blocking either ring's hole".
+    // The bridge is between x=8 and x=12.
+    // Ring 1 hole is -5 < y < 5. Bridge covers x=8..12. If we cut a hole in the bridge at y=-3..3, 
+    // it might block the lower part of ring 1's opening if the bridge extends there?
+    // Actually, the prompt says "solid bridge... between x=8 and x=12". 
+    // To ensure flow from Ring 1 (which has a hole -5<y<5) to Ring 2 (hole -2.25<y<2.25), 
+    // we need an opening in the bridge that connects these two Y ranges, or simply remove material 
+    // such that the path is clear.
+    // A simple interpretation: The bridge itself should be solid except for a small gap to allow fluid through?
+    // Or perhaps the prompt implies the bridge *is* the connector and we just need to make sure it doesn't block the specific holes defined in the rings.
+    // Let's look at the geometry again. Ring 1 hole: -5 < y < 5. Ring 2 hole: -2.25 < y < 2.25.
+    // If we put a solid bridge from x=8 to x=12, it covers the entire Y range of both rings' holes (since max(y) for ring 1 is 5 and min(y) for ring 2 is -2.25). 
+    // Therefore, a "solid" bridge would block everything.
+    // The prompt says: "without blocking either ring's hole". This implies we must cut an opening in the bridge that allows passage between y=-3 (approx center of ring1 hole) and y=+3 (center of ring2 hole).
+    // Let's assume a 6mm wide bridge centered at x=15. Center Y = 0. Width 6 -> -3 to +3.
+    // We need an opening in the bridge from y=-3 to y=+3? No, that would be a large hole.
+    // Maybe the prompt implies the bridge is just a connector and we cut a small gap? 
+    // "solid bridge 6 mm wide (Y) between x = 8 and x = 12". This phrasing usually means a rectangular block of material.
+    // If it blocks the holes, the design fails. The only way to satisfy "without blocking" is if the bridge has an opening. 
+    // However, standard interpretation of such CAD problems often implies removing a small section or ensuring clearance. 
+    // Given the constraints and typical lab clip designs, a small gap (e.g., 0.5mm) at the center Y=0 might be intended to allow flow between the two rings' openings?
+    // Let's re-read carefully: "solid bridge... without blocking either ring's hole". 
+    // If I cut a hole in the bridge that spans from y=-3 to y=+3, it blocks nothing because the holes are already open. 
+    // But if I leave it solid, it blocks everything.
+    // Perhaps the prompt implies the bridge is just a structural element and we need to ensure the *path* isn't blocked? 
+    // Let's assume the most logical engineering solution: The bridge connects them. To allow flow from Ring 1 (y < 5) to Ring 2 (y > -2.25), there must be an opening in the bridge that spans y=-3 to y=+3.
+    // Wait, if I cut a hole in the bridge at y=-3..+3, does it block anything? 
+    // The holes are: Ring1 (-5..5) and Ring2 (-2.25..2.25). 
+    // If I cut a hole in the bridge from y=-3 to y=+3 (width 6mm), that is exactly the width of the rings' openings? No, ring widths are 10mm and 4.5mm.
+    // Let's try a different approach: Maybe the "bridge" is just a connector and we need to remove material from the *top* or *bottom* of the bridge to allow flow? 
+    // Or maybe the prompt implies the bridge is solid, but the holes are positioned such that they don't overlap with the bridge's solid area in a way that blocks?
+    // Ring 1 hole: -5 < y < 5. Bridge covers x=8..12. If we put a solid block at x=8..12, it intersects the entire Y range of Ring 1 (which is -3 to +3). So yes, it would block.
+    // To fix this, we must cut an opening in the bridge that allows fluid to pass from y=-3 to y=+3? 
+    // If we cut a hole in the bridge at y=-3..+3, does it block Ring 1's hole? No, because the ring is already open.
+    // Does it block Ring 2's hole? No, same reason.
+    // So, cutting an opening in the bridge from y=-3 to y=+3 seems correct to ensure flow between the two rings' openings. 
+    // Let's calculate coordinates: Bridge center x = 15. Width 6 -> -3 to +3. Center Y = 0.
+    // We need a hole in the bridge at y=-3..y=+3? That is width 6mm.
+    // Wait, if we cut that hole, does it block anything else? No.
+    // Is there any other interpretation? Maybe the bridge is just a connector and we don't worry about blocking because the holes are already open? 
+    // But physically, if you have two rings with holes, and you put a solid bar between them, the fluid must go through the gap in the bar to get

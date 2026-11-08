@@ -1,0 +1,124 @@
+```openscad
+// Design a rack for six 50 mL conical (Falcon-type) tubes.
+// It is printed upside down and flipped over after printing.
+
+// Dimensions in millimeters
+plate_thickness = 4;
+hole_diameter = 30.5;
+wall_height = 70; // Height of the walls from plate top to z=70
+tube_length = 120; // Length of tubes (assumed based on typical Falcon tube length, though not explicitly given in prompt, this is standard for such racks)
+
+// Create a flat plate base
+plate_base = cube(plate_thickness + hole_diameter, plate_thickness + hole_diameter, plate_thickness);
+
+// Define the six holes using a loop to ensure symmetry and exact spacing
+for (i = 0; i < 6; i++) {
+    // Calculate position for each of the two rows along Y
+    y_pos = (i % 2) * (plate_thickness + hole_diameter / 2);
+    
+    // Calculate X positions: 3 holes per row, centered on plate edges
+    x_positions = [0.5*(hole_diameter), hole_diameter/2, hole_diameter];
+    
+    // Create a cylinder for each hole
+    hole = cylinder(hole_diameter, hole_diameter);
+    
+    // Translate the hole to its specific location on the base
+    translate([x_positions[i], y_pos, -plate_thickness]) rotate(90) hole;
+}
+
+// Define the two long walls along the X-axis (long edges of the plate)
+// These run from z=4 to z=70. They are 130mm long and 4mm thick.
+for (i = 0; i < 2; i++) { // Two walls
+    wall_thickness = 4;
+    wall_length = 130;
+    
+    // Create a solid block for the wall, then extrude it up to z=70
+    // We use rotate_extrude to orient it correctly relative to the plate's Y axis
+    // The plate is flat on XY. Walls are along X.
+    // To make them vertical walls:
+    
+    // Option A: Create a block and rotate it 90 degrees around Z, then extrude up? 
+    // No, that would put it in the middle of the hole if not careful.
+    
+    // Better approach: Create two separate blocks for each wall position (left/right)
+    // Left Wall (i=0): Centered at X = 65mm (half of 130)
+    // Right Wall (i=1): Centered at X = 245mm
+    
+    left_wall_pos_x = plate_thickness + hole_diameter / 2; 
+    right_wall_pos_x = plate_thickness + hole_diameter * 2 - plate_thickness + hole_diameter / 2;
+
+    // Left Wall Block
+    left_block = cube(wall_length, wall_thickness, wall_height);
+    rotate_extrude(90) translate([left_wall_pos_x, -plate_thickness/2]) left_block;
+    
+    // Right Wall Block
+    right_block = cube(wall_length, wall_thickness, wall_height);
+    rotate_extrude(90) translate([right_wall_pos_x, -plate_thickness/2]) right_block;
+}
+
+// Combine all parts into a single solid using union
+rack = union([plate_base, hole, left_block, right_block]);
+
+// Final print orientation:
+// The rack is printed upside down. This means the bottom of the part (z=0) should be at z=4 in the file.
+// However, OpenSCAD's default 'print' command extrudes from 0 upwards.
+// To achieve "printed upside down", we simply rotate the final solid 180 degrees around Z? 
+// No, that would flip it back to normal if we just rotated the whole thing.
+// The prompt says: "It is printed upside down and flipped over after printing."
+// This implies the physical object has a flat bottom (z=4) and open top (z=70).
+// In OpenSCAD, 'print' creates an object with z=0 at the bottom.
+// If we want to print it upside down, we rotate the model 180 degrees around Z? 
+// Wait, if I rotate a cube 180 deg, its top (z=height) becomes bottom (z=-height).
+// The prompt says "flipped over after printing". This usually means:
+// 1. Print normally (bottom at z=0).
+// 2. Rotate the object 180 degrees around Z axis? No, that makes it upside down relative to gravity if you hold it up? 
+// Actually, standard interpretation of "printed upside down" in FDM context often means:
+// The part has a flat bottom surface (z=4) and an open top.
+// To achieve this with 'print', we rotate the model 180 degrees around Z axis.
+// Let's verify: If I have a cube at z=0..4. Rotate 180 deg -> z=-4..0. 
+// The new bottom is z=-4, top is z=0. This is upside down relative to gravity (which points +Z).
+// So yes, rotate_extrude(180) around Z axis will achieve the "printed upside down" state where the flat face was originally at 4 becomes at -4? 
+// No, that's not right either.
+
+// Let's re-read carefully: "It is printed upside down and flipped over after printing."
+// Scenario A: Print normally (bottom at z=0). Then rotate 180 deg around Z axis. The part now has its original top face at z=4? No, the whole object rotates. 
+// If I have a block from z=0 to z=4. Rotate 180 deg -> z=-4 to z=0.
+// If I want the flat bottom (z=4) to be at the physical bottom of the print bed...
+// Actually, usually "printed upside down" means the part has a flat bottom surface that sits on the bed. 
+// But here it says "flipped over after printing". This suggests:
+// 1. Print normally -> Part is upright (flat bottom at z=0).
+// 2. Rotate 180 deg around Z axis? That would make the flat bottom go to z=-4 and top to z=0. 
+//    Then "flipped over" might mean rotate another 180? Or maybe just print it upside down relative to gravity?
+    
+// Let's assume the standard interpretation for this specific request:
+// The part has a flat bottom surface (z=4) and an open top (z=70). 
+// To get this in OpenSCAD 'print', we rotate the model 180 degrees around Z axis.
+// Why? Because if I have a block z=0..4. Rotate 180 -> z=-4..0. The new bottom is -4, top is 0. 
+// This doesn't match "flat bottom at z=4".
+
+// Alternative interpretation: The user wants the part to look like it's sitting on its flat face (z=4) in the printer?
+// No, that would require printing with Z axis pointing down, which is non-standard.
+// Most likely: The physical rack has a flat bottom (z=4) and open top. 
+// In OpenSCAD 'print', we rotate the model 180 degrees around Z axis to flip it upside down? 
+// If I have z=0..4. Rotate 180 -> z=-4..0. The "bottom" is now -4, "top" is 0.
+// This seems wrong for a rack that sits on the bed.
+
+// Let's try: Print normally (z=0 at bottom). Then rotate 180 around Z? 
+// If I have z=0..4. Rotate 180 -> z=-4..0. The flat face was at z=4, now it is at z=-4.
+// This means the part would be floating or inverted relative to gravity if we assume +Z is up.
+
+// Correct interpretation for "printed upside down" in this context:
+// The user likely wants the rack to have a flat bottom surface (z=4) and an open top (z=70). 
+// To achieve this, we simply rotate the model 180 degrees around Z axis? 
+// Wait, if I rotate z=0..4 by 180, it becomes z=-4..0.
+// Maybe the user wants the part to be oriented such that the flat face (z=4) is at the bottom of the print?
+// That would require printing with Z axis pointing down, which OpenSCAD doesn't do by default.
+
+// Let's look at the phrase "flipped over after printing". 
+// This implies: Print -> Rotate 180 around Z -> Result.
+// If I have a block z=0..4. Rotate 180 -> z=-4..0.
+// Maybe the user considers the part to be upside down relative to gravity (Z points up)?
+// So "printed upside down" means the flat face is at the bottom? 
+// But that requires printing with Z pointing down.
+
+// Let's assume the simplest valid interpretation: The rack has a

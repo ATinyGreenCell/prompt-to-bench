@@ -1,0 +1,69 @@
+```openscad
+// Design a drying rack for microscope slides.
+// Dimensions in millimeters (mm).
+
+// Define dimensions based on user measurements
+block_length = 90;       // X dimension: total length of base block
+base_width   = 45;       // Y dimension: width of the base block
+base_height  = 20;      // Z dimension: height of the base block
+
+// Slide specifications (standing upright on long edge)
+slide_length = 75;       // Length along X axis
+slide_width  = 25;       // Width along Y axis
+slide_depth  = 1;        // Depth along Z axis
+
+// Slot specifications
+slot_length  = 77;      // Length of slot along X axis (matches block length)
+slot_height  = 1.6;     // Height of slot opening in Y direction
+slot_depth   = 10;      // Depth of slot into the base in Z direction
+
+// Spacing between slots
+slot_spacing = 3.5;    // Center-to-center distance along Y axis
+
+// Number of slides to hold
+num_slides = 10;
+
+// Create the main base block
+base_block = cube([block_length, base_width, base_height]);
+
+// Create a hole grid for the slots using 'for' loop
+// We iterate through each slide position and cut out the slot.
+// To ensure no coplanar faces (Rule 5), we use a small offset in the difference operation.
+// The offset is applied to the Y dimension of the base block so that the hole starts slightly inside, 
+// effectively creating a "cut" rather than an exact plane removal.
+
+for (i = 0; i < num_slides; i++) {
+    // Calculate center position for this slide along Y axis
+    current_y_center = slot_spacing * (i + 0.5); 
+    
+    // Create the hole shape: a cylinder with a flat top and bottom, 
+    // but we need to cut it into the base block.
+    // We use rotate_extrude to orient the hole correctly for cutting.
+    
+    // The hole runs along X (length of slot) and Z (depth).
+    // It is centered at current_y_center in Y.
+    // Its length is 'slot_length' and depth is 'slot_depth'.
+    
+    // We define a shape that represents the slot opening.
+    // Since we are cutting this into the base, we can model it as a hole 
+    // or use difference with an offset. Using difference with offset is cleaner for "cutting".
+    
+    // Offset amount: 0.01 mm to ensure faces aren't exactly coplanar (Rule 5).
+    // We cut this shape from the base block.
+    
+    slot_hole = rotate_extrude([slot_length, -slot_depth], [current_y_center, 0]);
+    
+    // Apply offset to the hole so it doesn't touch the exact face of the base block
+    // This creates a small gap between the cut and the solid material.
+    slot_hole_offset = translate([0, 0.01, 0]) rotate_extrude([slot_length, -slot_depth], [current_y_center, 0]);
+    
+    // Cut the hole into the base block
+    difference([base_block, slot_hole_offset]);
+}
+
+// Final assembly: Base Block + Slots
+final_rack = union([base_block, final_slides]);
+
+// Optional: Add a label or title for clarity in the print file
+title("Microscope Slide Drying Rack");
+```

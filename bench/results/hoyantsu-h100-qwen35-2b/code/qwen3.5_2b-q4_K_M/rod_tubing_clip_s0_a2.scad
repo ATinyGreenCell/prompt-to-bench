@@ -1,0 +1,69 @@
+// Design a snap-on clip for lab tubing.
+// Units: millimeters (mm).
+
+// Dimensions in mm
+RING_IN_DIAMETER = 12.7; // Rod ring inner diameter
+RING_WALL_THICKNESS = 3.0; // Rod ring wall thickness
+RING_OUTER_DIAMETER = RING_IN_DIAMETER + (2 * RING_WALL_THICKNESS); // 18.7 mm
+
+TUBING_IN_DIAMETER = 6.0; // Tubing ring inner diameter
+TUBING_WALL_THICKNESS = 2.0; // Tubing ring wall thickness
+TUBING_OUTER_DIAMETER = TUBING_IN_DIAMETER + (2 * TUBING_WALL_THICKNESS); // 14 mm
+
+// Geometry variables for the profile construction
+ROD_RING_RADIUS = RING_OUTER_DIAMETER / 2.0;
+ROD_RING_CENTER_X = 0.0;
+TUBING_RING_CENTER_X = 15.0;
+
+// Create the rod ring: a cylinder with an opening cut from -X side
+// Opening: x < 0 and -5 < y < 5 (width 10 mm)
+ROD_RING = extrude(
+    [ROD_RING_RADIUS, ROD_RING_CENTER_X], // Radius in X, Centered at origin
+    cylinder_radius = RING_IN_DIAMETER / 2.0,
+    height = 10.0,
+    cutout_x_min = -5.0,
+    cutout_y_min = -5.0,
+    cutout_y_max = 5.0,
+    cutout_width = 10.0, // Width of the opening in X direction
+    cutout_height = 10.0  // Height of the opening in Y direction (same as extrusion)
+);
+
+// Create the tubing ring: a cylinder with an opening cut from +X side
+// Opening: x > 15 and -2.25 < y < 2.25 (width 4.5 mm)
+TUBING_RING = extrude(
+    [ROD_RING_RADIUS, TUBING_RING_CENTER_X], // Radius in X, Centered at x=15
+    cylinder_radius = RING_IN_DIAMETER / 2.0,
+    height = 10.0,
+    cutout_x_min = 15.0,
+    cutout_y_min = -2.25,
+    cutout_y_max = 2.25,
+    cutout_width = 4.5, // Width of the opening in X direction (positive)
+    cutout_height = 10.0  // Height of the opening in Y direction
+);
+
+// Create the solid bridge: connects x=8 to x=12, width 6 mm along Y axis
+// This joins the two rings without blocking either ring's hole.
+BRIDGE = extrude(
+    [ROD_RING_RADIUS + ROD_RING_WALL_THICKNESS / 2.0, TUBING_RING_CENTER_X], // Radius in X, Centered at x=15
+    cylinder_radius = RING_IN_DIAMETER / 2.0,
+    height = 10.0,
+    cutout_x_min = -6.0,
+    cutout_y_min = -3.0,
+    cutout_y_max = 3.0, // Cut out a hole in the bridge to allow flow between rings' openings? 
+    // Re-evaluating prompt: "solid bridge... without blocking either ring's hole".
+    // If we leave it solid, it blocks everything because the holes overlap with the bridge's Y-range (-3 to +3).
+    // To satisfy the condition of not blocking the holes, we must cut an opening in the bridge 
+    // that spans the gap between the two rings' openings. The largest continuous path is from y=-3 (center of Ring 1 hole) to y=+3 (center of Ring 2 hole).
+    cutout_x_min = -6.0,
+    cutout_y_min = -3.0,
+    cutout_y_max = 3.0,
+    cutout_width = 6.0, // Width of the opening in Y direction (connecting the two rings)
+    cutout_height = 10.0  // Height of the opening in X direction (same as extrusion)
+);
+
+// Final assembly: Union all parts to form the clip
+CLIP = union(ROD_RING, TUBING_RING, BRIDGE);
+
+// Print settings for FDM printing
+fn = 64;
+print_settings(fn = fn);

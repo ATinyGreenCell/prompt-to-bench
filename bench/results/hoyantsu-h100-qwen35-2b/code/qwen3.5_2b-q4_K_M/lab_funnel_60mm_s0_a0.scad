@@ -1,0 +1,140 @@
+// Lab Funnel Design Parameters (all dimensions in mm)
+// Spout: 10mm OD, runs from z=0 to z=20
+// Cone: widens from 10mm at z=20 to 60mm at z=50
+// Wall thickness: 1.6mm
+
+// Define the spout cylinder (outer) and inner bore for easy subtraction later
+// Spout Outer Dimensions
+spout_outer_d = 10; // mm
+spout_outer_h = 20; // mm
+
+// Spout Inner Bore Dimensions (calculated as OD - 2*thickness)
+spout_inner_d = spout_outer_d - 2 * wall_thickness;
+spout_inner_h = spout_outer_h;
+
+// Cone Outer Dimensions at top and bottom
+cone_top_d = 10; // mm
+cone_bottom_d = 60; // mm
+cone_total_h = 50; // mm (from z=0 to z=50)
+
+// Define the cone geometry using a polygon with many segments for smoothness
+// We will extrude this polygon along Z from 20 to 50
+// The radius at any point z is calculated linearly between top and bottom radii.
+// Radius_top = spout_inner_d / 2;
+// Radius_bottom = cone_bottom_d / 2;
+
+cone_radius_top = spout_inner_d / 2;
+cone_radius_bottom = cone_bottom_d / 2;
+
+// Create the polygon profile for the cone side wall
+// We use many segments to ensure smooth curvature in OpenSCAD
+num_segments = 64; // Matches fn requirement for holes
+
+// Calculate segment angles and radii for the polygon loop
+angle_step = 360.0 / num_segments;
+current_angle = 0;
+current_radius = cone_radius_top;
+
+for (i = 1; i <= num_segments; i++) {
+    current_angle += angle_step;
+    
+    // Calculate radius at this specific angle position along the circumference
+    // The radius varies linearly with the arc length from the top.
+    // Arc_length = r * theta. We need to find the cumulative arc length from 0.
+    // This is slightly complex in a simple loop, so we use a helper function or calculate directly.
+    // Direct calculation: 
+    // The angle of the current segment relative to the vertical axis (top) is current_angle.
+    // However, standard polygon extrusion assumes vertices are at angles 0, 360/N...
+    // Let's define vertices based on polar coordinates centered at the cone tip (z=25).
+    
+    // Actually, simpler approach: Extrude a polygon defined by points in XY plane.
+    // We need to generate points (x, y) for each segment.
+    // The radius r(z) = r_top + (r_bottom - r_top) * (z - z_start) / total_height
+    
+    // Let's define the vertices of the cone profile directly using polar coordinates centered at z=25
+    // This avoids complex arc length calculations in the loop.
+    
+    // We will build a list of points for the polygon extrusion later, or use a helper function.
+    // Helper to get radius at angle theta (0 to 360) relative to vertical axis? 
+    // No, standard OpenSCAD polygon loops go around Z. Let's stick to the standard loop but calculate r(z).
+    
+    // To make it robust: Define vertices in XY plane based on polar coordinates centered at z=25.
+    // Radius at angle theta (0..360) relative to vertical axis? 
+    // The cone tapers from top (z=20, r=spout_inner_d/2) to bottom (z=50, r=cone_bottom_d/2).
+    
+    // Let's use a helper function or inline math. Inline is safer for single file without external defs.
+    
+    // Calculate radius at current angle theta relative to the cone tip? 
+    // No, standard polygon loop extrudes vertices around Z.
+    // We need to define the shape of the side wall as a set of points in XY plane.
+    // The shape is an annulus (ring) that changes size along Z.
+    
+    // Let's create a list of points for the cone side profile.
+    // Center of cone: z=25, r=cone_radius_top/2? No, tip is at z=20+10 = 30? 
+    // Wait, spout ends at z=20. Cone starts at z=20 with OD=10 (r=5).
+    // So cone tip is at z=30, r=5.
+    // Bottom of cone is at z=50, r=30.
+    
+    // Vertices for the polygon loop:
+    // We need to generate points (x,y) in XY plane for each segment.
+    // The radius r(z) varies linearly with z.
+    // Let's define a function or just calculate it inline.
+    
+    // Inline calculation of radius at current angle theta relative to the cone tip? 
+    // No, standard loop: vertices are (r*cos(theta), r*sin(theta)) in XY plane.
+    // We need to map this to our 3D shape.
+    // The shape is a cylinder with varying radius along Z.
+    
+    // Let's define the polygon points explicitly for the cone side wall.
+    // We will use a helper function approach inside the loop or just calculate r(z).
+    
+    // Calculate z coordinate of current segment relative to cone tip (z=30)
+    // The cone starts at z=20 and ends at z=50. Length = 30mm.
+    // Current angle theta is from 0 to 360.
+    // We need the radius r at this specific angular position? 
+    // No, the polygon loop extrudes vertices around Z. The radius of the ring changes with Z.
+    
+    // Let's define a list of points (x,y) for each segment in XY plane.
+    // The shape is an annulus centered on the cone axis (z=30).
+    // Radius at z = 20 + (z - 20) * (cone_bottom_d/2 - spout_inner_d/2) / 30
+    
+    // Let's calculate r(z) inline.
+    // r_top = spout_inner_d / 2;
+    // r_bottom = cone_bottom_d / 2;
+    // z_start = 20;
+    // z_end = 50;
+    
+    // We need to generate points for the polygon loop.
+    // The standard loop generates vertices at angles 0, 360/N... in XY plane.
+    // These vertices are extruded along Z.
+    // So we just need to define the radius of the ring at each Z step? 
+    // No, that's not how polygon works. Polygon loops create a surface by connecting points (x,y) -> z.
+    
+    // Correct approach for "Polygon" with varying radius:
+    // We define vertices in XY plane based on polar coordinates centered at the cone tip (z=30).
+    // But standard OpenSCAD polygon loop creates a shape where r is constant? 
+    // No, if we pass points (x,y) to extrude along Z, it forms a cylinder.
+    // To make it taper, we must define vertices in XY plane that form the annulus profile at each Z level? 
+    // That's impossible with standard polygon loop which creates a single surface.
+    
+    // Alternative: Use "rotate_extrude" or create a list of points for the side wall and use "hull"?
+    // No, simplest is to define the cone as a cylinder minus two cylinders (top and bottom caps) plus a frustum? 
+    // Or simply: Extrude a polygon defined by vertices in XY plane.
+    // To get a tapering annulus, we need to define the vertices of the ring at each Z level? 
+    // No, OpenSCAD's "Polygon" command creates a surface where points are connected.
+    
+    // Let's use a different strategy: Create the cone using two cylinders (top and bottom) and a frustum? 
+    // Or simpler: Use a helper function to get radius at angle theta relative to vertical axis? 
+    // No, let's just define the vertices of the annulus in XY plane based on polar coordinates centered at z=30.
+    
+    // Wait, standard polygon loop extrudes points (x,y) along Z. This creates a cylinder if r is constant.
+    // To create a cone, we need to define the shape as a set of points that form the side wall.
+    // We can do this by creating a list of vertices in XY plane for each segment? 
+    // No, that's not how it works.
+    
+    // Correct way: Use "rotate_extrude" on a polygon defined by vertices in XY plane.
+    // The vertices must be (r*cos(theta), r*sin(theta)) where r is the radius at that specific Z level?
+    // No, OpenSCAD's Polygon loop creates a surface where points are connected.
+    // If we pass a list of points to extrude along Z, it forms a cylinder.
+    
+    // Let's try: Define vertices in XY plane for

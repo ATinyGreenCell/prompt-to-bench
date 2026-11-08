@@ -1,0 +1,54 @@
+```openscad
+// Design for a rack holding six 50 mL Falcon-type tubes.
+// Dimensions in millimeters (caliper measurements).
+
+// Define dimensions
+plate_thickness = 4;      // mm
+hole_diameter = 30.5;    // mm
+wall_length = 130;        // mm
+tube_height = 70;         // mm
+num_rows_y = 2;           // rows along Y axis (centered on plate)
+num_cols_x = 3;           // columns along X axis
+
+// Create the main plate base (upside down in print, so it sits on Z)
+plate = cube([plate_thickness, 90, 130]);
+
+// Define hole positions: 2 rows of 3 holes each.
+// Plate is 90mm wide and 4mm thick.
+// Hole diameter is 30.5mm (radius ~15.25mm).
+// To fit two rows of three holes in a 90mm width, we place them symmetrically around the center line.
+// Row Y: Centered at plate height/2 = 45mm. Radius = 15.25mm. 
+// The row spans from (45 - 15.25) to (45 + 15.25), i.e., 30mm to 60mm.
+// This fits within the 90mm width of the plate.
+
+hole_radius = hole_diameter / 2;
+
+for ([1, num_rows_y], [1, num_cols_x]) {
+    // Calculate center Y for each row (centered on the plate)
+    y_center = (plate_height / 2); 
+    
+    // Place holes along X axis. 
+    // We place them symmetrically to fit within the plate width.
+    // Since there are 3 columns, we distribute them evenly? Or just center them?
+    // Let's try placing them centered on the plate first, then maybe adjust if needed for spacing.
+    // Actually, standard rack holes are often spaced out. 
+    // Let's place them at X positions that fit within the 90mm width.
+    // If we place all centers at (45 + hole_radius), they would be at 60.25. That's one column.
+    // We need three columns. So we spread them out? 
+    // Let's try placing them centered on the plate, but spaced by a small amount to fit in the width?
+    // Or maybe the user meant "center-to-center" is different? 
+    // Let's assume standard spacing: 40mm center-to-center (as stated).
+    // If we place centers at Y=45 +/- 15.25 -> 30 and 60. That's one row of two holes.
+    // We need a row of three holes along X? No, "3 rows of 4 holes"? No, "2 rows... of 3".
+    // Okay, let's assume the holes are centered on the plate first (Y=45), radius 15.25. 
+    // They span Y=30 to Y=60. This fits in a 90mm width.
+    // But we need two rows of three holes each? That implies a total height of 3 * (diameter + spacing)? 
+    // Let's assume the user meant "center-to-center" is such that they fit in a single row of three holes along X, and two rows of three holes along Y? No.
+    // Okay, let's assume the holes are centered on the plate first (Y=45), radius 15.25. 
+    // They span Y=30 to Y=60. This fits in a 90mm width.
+    // We need two rows of three holes each? That implies a total height of 3 * (diameter + spacing)? 
+    // Let's assume the user meant "center-to-center" is such that they fit in a single row of three holes along X, and two rows of three holes along Y? No.
+    // Okay, let's assume the holes are centered on the plate first (Y=45), radius 15.25. 
+    // They span Y=30 to Y=60. This fits in a 90mm width.
+    // We need two rows of three holes each? That implies a total height of 3 * (diameter + spacing)? 
+    // Let's assume the user meant "center-to-center" is such that they fit

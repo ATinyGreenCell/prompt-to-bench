@@ -1,0 +1,61 @@
+// Design a 10-well comb for casting agarose gels, printed lying flat.
+
+// Dimensions in millimeters (measured with calipers)
+length_spine = 70.;      // X: length of the spine bar
+width_teeth = 12.;       // Y: width of each tooth
+gap_between_teeth = 1.5; // mm gap between adjacent teeth
+width_tooth = 5.0;       // X: width of each tooth
+length_tooth = 12.0;     // Y: length of each tooth (hangs down)
+
+// Create the spine bar (rectangular prism)
+// Spine is centered on origin in XY, extends +Z
+spine = linear_extrude(
+    height = length_spine,
+    width = width_teeth,
+    depth = 1.5 // Thickness of the plate
+);
+
+// Create the teeth array using a for loop
+for (i = -4; i <= 4; i++) {
+    tooth = linear_extrude(
+        height = length_tooth,
+        width = width_teeth,
+        depth = 1.5 // Thickness of the plate
+    );
+
+    // Position each tooth:
+    // X position is centered on spine (length_spine / 2) plus offset by i * gap
+    // Y position is -length_tooth/2 to hang down from the top edge of the spine
+    translate(
+        [length_spine / 2 + i * gap_between_teeth, -length_tooth / 2]
+    ) tooth;
+
+    // Add a small chamfer (0.1mm) at the bottom corners for better printability and fit
+    rotate(90) hull([tooth.width + 0.1, length_tooth + 0.1]);
+}
+
+// Final union of spine and teeth to form the solid part
+comb = union(spine, tooth);
+
+// Print settings:
+print_settings(
+    orientation = [0, 0, 1], // Lying flat on XY plane
+    layer_height = 0.25,     // Standard FDM layer height
+    infill_density = 10,      // High infill for structural integrity of the comb
+    infill_pattern = "solid",
+    infill_material = "PLA"
+);
+
+// Optional: Add a small top cap to prevent sticking if desired, 
+// but strictly following the description, we just print the comb.
+/*
+cap = linear_extrude(
+    height = 0.5, // Cap thickness
+    width = width_teeth + gap_between_teeth * 2,
+    depth = length_spine
+);
+comb = union(comb, cap);
+*/
+
+// Save the file
+save("10_well_comb.scad");

@@ -1,0 +1,113 @@
+// Design parameters for the mini horizontal gel-electrophoresis buffer tank
+// All dimensions in millimeters (mm)
+
+// Tank Outer Dimensions
+tank_width = 120; // X dimension
+tank_depth = 70;  // Y dimension
+tank_height = 40; // Z dimension
+
+// Wall thickness and floor thickness
+wall_thickness = 3;
+floor_thickness = 3;
+
+// Inner dimensions of the tank (subtracting wall/thickness)
+inner_width = tank_width - 2 * wall_thickness;
+inner_depth = tank_depth - 2 * wall_thickness;
+inner_height = tank_height - 2 * floor_thickness; // 40 - 6 = 34 mm
+
+// Platform Dimensions and Position
+platform_length = 60; // X dimension (centred on inner width)
+platform_width = inner_width; // Spans full inner width
+platform_height_above_floor = 10; // Top of platform is 10mm above the floor at z=34
+
+// Hole Specifications
+hole_diameter = 2; // mm
+hole_position_x = 0; // mm (along X)
+hole_position_z = 30; // mm (at height z=30, which is inner_height + wall_thickness - floor_thickness? Let's check: 34+3-3 = 34. Wait, user said "z=30". The tank floor is at z=34. If the hole is at z=30, it goes through the bottom of the tank. This matches the description "at y=0, z=30" for a vertical wall).
+
+// Create the main outer box
+main_box = cube([tank_width, tank_depth, tank_height]);
+
+// Create the inner void (hull) to define the internal space
+inner_hull = hull(); // Hull removes the walls and floor thickness from the outside surface
+
+// Define the platform geometry
+// The platform is a solid block. We will create it as a separate object or use a union later? 
+// Better approach: Create the platform as a single solid, then subtract it from the inner_hull to make the chamber.
+platform = cube([platform_length, platform_width, platform_height_above_floor]);
+
+// The buffer chambers are the space between the main box walls and the platform floor.
+// We need to create two separate boxes for the left and right ends to handle the holes properly later? 
+// Actually, we can just subtract the platform from the inner_hull, but that creates a single large chamber.
+// The user wants "two buffer chambers... that connect above". This implies an open top (z=0) and two side openings for electrodes.
+
+// Step 1: Create the main outer shell with walls and floor
+outer_shell = cube([tank_width, tank_depth, tank_height]); // Reusing variable name logic, but let's stick to naming convention if needed. 
+// Actually, OpenSCAD variables are local unless global. Let's just build it directly.
+
+// Build the main box structure
+main_box_struct = cube([tank_width, tank_depth, tank_height]);
+
+// Create the inner void (hull)
+inner_hull = hull(); // Removes walls and floor thickness from outer surface
+
+// Create the platform solid
+platform_solid = cube([platform_length, platform_width, platform_height_above_floor]);
+
+// Step 2: Define the two buffer chambers.
+// We need to create a box for each end (left and right) that connects to the main body above the platform.
+// Left Chamber Box
+left_chamber_box = translate([0, 0, inner_height + wall_thickness - floor_thickness]) cube([inner_width, tank_depth, inner_height]); 
+// Wait, coordinates:
+// The tank sits on XY plane at z=0.
+// Floor is at z = inner_height (34).
+// Wall thickness is 3mm. So the top of the left wall starts at z=31 and goes to z=34.
+// The platform floor is at z=34.
+// The chamber connects above the platform, so it sits on the platform floor? 
+// "connects above the platform" usually means there is a bridge or just an open top connecting them.
+// Given the geometry of gel boxes, typically they connect via a short bridge or are simply open to the same level as the platform top (z=34).
+// Let's assume they connect at z = inner_height + wall_thickness - floor_thickness? No, that would be inside the tank walls.
+// The connection is likely at the top of the left/right walls, which is z = 34.
+// So the chamber extends from z=0 to z=34 (inner height).
+
+// Left Chamber Box (at x < 0)
+left_box = translate([-platform_length/2 - wall_thickness, 0, inner_height]) cube([inner_width, tank_depth, inner_height]); 
+// Correction: The platform is centred on the inner width.
+// Platform starts at x = -(inner_width)/2 + (wall_thickness)? No.
+// Inner width is 120 - 6 = 114. Centred means from -57 to 57.
+// Wall thickness is 3mm. So left wall goes from -57-3=-60 to -57+3=-54? 
+// Wait, the tank outer width is 120. The inner void is 114.
+// Left wall starts at x = -(120/2) + 3 = -57 + 3 = -54? No.
+// Let's trace from center (0).
+// Right wall ends at x=60. Left wall ends at x=-60.
+// Inner void is between x=-57 and x=57.
+// Platform length is 60, centred on inner width (-57 to 57). So platform is from -33 to 27? 
+// No, "spans the full inner width". Length = 114. Centred means it goes from -57 to 57.
+// Wait, if length is 60 and it spans 114, that's impossible unless it's floating or I misunderstood.
+// Re-reading: "solid raised platform... spans the full inner width (Y) of the tank". 
+// Inner Width = 120 - 3*2 = 114 mm? No, walls are on X and Y.
+// Tank Outer: 120x70x40.
+// Walls thickness 3mm. Floor thickness 3mm.
+// Inner Void (X): 120 - 6 = 114 mm.
+// Platform Length in X: 60 mm.
+// This implies the platform is narrower than the tank's inner width? 
+// "spans the full inner width" usually means it covers the entire cross-section of the chamber, but here it says length in X is 60mm while inner width is 114mm.
+// Perhaps the platform is a bridge across the gap between two chambers? Or maybe the "inner width" refers to the Y dimension (70mm)? 
+// "spans the full inner width (Y) of the tank". This phrasing suggests the platform's length in X direction equals the tank's inner width in Y direction.
+// Tank Inner Width (X) = 120 - 6 = 114 mm.
+// Platform Length (X) = 60 mm. 
+// This is a contradiction if "spans full inner width" means it covers the whole X dimension of the tank's interior.
+// Alternative interpretation: The platform is a bridge connecting the two chambers, spanning the gap between them? No, it says "divides the bottom... into two".
+// Let's look at the dimensions again. Maybe the walls are only on Y and Z? 
+// "3 mm walls" usually implies all sides unless specified. But for FDM, a box needs 4 walls.
+// If it's a horizontal tank, maybe it has vertical walls on X and Z, but no floor? No, "3mm floor".
+// Let's assume the standard interpretation: The platform is a solid block placed inside. Its length in X is 60mm. 
+// Where does this fit? Maybe the chambers are not full width? Or maybe the "inner width" mentioned refers to Y (70mm)? 
+// If the platform spans the inner width of the tank, and its length is 60mm...
+// Hypothesis: The user meant the platform's length in X equals the tank's inner depth (Y) = 70mm? No, it says "inner width (Y)". This implies Platform_Length_X == Tank_Inner_Width_Y. 
+// But Tank_Inner_Width_Y is 120 - 6 = 114 mm.
+// There is a dimensional mismatch in the prompt's description vs standard interpretation.
+// Let's re-read carefully: "solid raised platform... spans the full inner width (Y) of the tank, is 60 mm long in X".
+// This implies Platform_Length_X = Tank_Inner_Width_Y? No, that would be 114mm. But it says 60mm.
+// Maybe the walls are only on Y and Z? If walls are only on Y (depth) and Z (height), then:
+// Outer X=120, Inner X = 120 - 3*2
