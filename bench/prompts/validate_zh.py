@@ -14,6 +14,8 @@ import yaml
 
 ROOT = Path(__file__).resolve().parents[2]
 NUMBER = re.compile(r"\d+(?:\.\d+)?")
+SIGNED_NUMBER = re.compile(r"(?<![A-Za-z0-9_.])[+-]\s*\d+(?:\.\d+)?")
+SIGNED_AXIS = re.compile(r"(?<![A-Za-z0-9_])[+-]\s*[XYZxyz]\b")
 HAN = re.compile(r"[\u4e00-\u9fff]")
 
 
@@ -47,6 +49,20 @@ def audit(task_path=None, translation_path=None):
                 f"missing={dict(source_nums-localized_nums)} "
                 f"added={dict(localized_nums-source_nums)}"
             )
+        # Unsigned number parity alone would miss x=-25 becoming x=25, or -Y becoming +Y.
+        # Compare signed tokens separately; independent technical review remains necessary.
+        for kind, pattern in (("signed numbers", SIGNED_NUMBER), ("signed axes", SIGNED_AXIS)):
+            canonical = lambda text: Counter(
+                match.replace(" ", "").replace("\\t", "").upper()
+                for match in pattern.findall(text)
+            )
+            expected, observed = canonical(english), canonical(localized)
+            if observed != expected:
+                problems.append(
+                    f"{task_id}: altered {kind} "
+                    f"missing={dict(expected-observed)} "
+                    f"added={dict(observed-expected)}"
+                )
     return len(originals), problems
 
 
