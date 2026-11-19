@@ -53,7 +53,7 @@ def audit(task_path=None, translation_path=None):
         # Compare signed tokens separately; independent technical review remains necessary.
         for kind, pattern in (("signed numbers", SIGNED_NUMBER), ("signed axes", SIGNED_AXIS)):
             canonical = lambda text: Counter(
-                match.replace(" ", "").replace("\\t", "").upper()
+                re.sub(r"\s+", "", match).upper()
                 for match in pattern.findall(text)
             )
             expected, observed = canonical(english), canonical(localized)
