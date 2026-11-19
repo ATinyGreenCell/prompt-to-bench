@@ -45,3 +45,7 @@ For a short **connectivity smoke check** without treating it as publication evid
 - No agent model runs, paper score changes, 3D print measurements, or automatic authorship acceptance are claimed by this PR.
 
 **AI-use disclosure:** Initial localization and lexical checks used AI assistance; any actual language study must report its own empirical methods, outcomes and limitations.
+
+## Local shell-dispatch smoke check (2026-11-20)
+
+Executed `bash -n bench/run_lang.sh` and used a stub `.venv/bin/python` to capture the runner arguments without invoking any model. The unmodified default selected **es, hi, sw** in order; `PTB_LANGUAGES=zh` selected **zh** only. **4/4 language dispatch invocations matched**. This is a shell-level mock and does not show model correctness, OpenSCAD rendering during an agent run, or any new benchmark score.
