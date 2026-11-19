@@ -30,14 +30,16 @@ def audit(task_path=None, translation_path=None):
     zh = translations.get("zh")
     if not isinstance(zh, dict):
         raise ValueError("Missing zh language mapping")
-    if set(zh) != set(originals):
-        raise ValueError(
-            f"Translation IDs differ: missing={sorted(set(originals)-set(zh))}, "
-            f"extra={sorted(set(zh)-set(originals))}"
-        )
+    # New English benchmark tasks may be merged independently of this
+    # translation PR. Validate the translated subset, never silently label
+    # untranslated tasks as Chinese. run_bench.py already refuses to run
+    # --lang zh if any *selected* task lacks a translation.
+    extra = set(zh) - set(originals)
+    if extra:
+        raise ValueError(f"Translation IDs not present in benchmark: {sorted(extra)}")
     problems = []
-    for task_id, english in originals.items():
-        localized = zh[task_id]
+    for task_id, localized in zh.items():
+        english = originals[task_id]
         if not isinstance(localized, str) or not HAN.search(localized):
             problems.append(f"{task_id}: empty or non-Chinese translation")
             continue
@@ -63,7 +65,7 @@ def audit(task_path=None, translation_path=None):
                     f"missing={dict(expected-observed)} "
                     f"added={dict(observed-expected)}"
                 )
-    return len(originals), problems
+    return len(zh), problems
 
 
 if __name__ == "__main__":
