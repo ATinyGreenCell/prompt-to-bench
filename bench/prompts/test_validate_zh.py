@@ -57,5 +57,40 @@ class TranslationConstraintTests(unittest.TestCase):
         self.assertTrue(any("numeric constraints" in item for item in problems))
 
 
+    def test_untranslated_new_english_task_does_not_break_existing_zh_audit(self):
+        # Parallel upstream PRs extend the English roster independently.
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            task_file, trans_file = root / "tasks.yaml", root / "translations.yaml"
+            task_file.write_text(
+                yaml.safe_dump([
+                    {"id": "rail_fixture", "prompt": self.ENGLISH},
+                    {"id": "new_untranslated_fixture", "prompt": "A new device with 7 slots."},
+                ], allow_unicode=True), encoding="utf-8"
+            )
+            trans_file.write_text(
+                yaml.safe_dump({"zh": {"rail_fixture": self.CHINESE}}, allow_unicode=True),
+                encoding="utf-8"
+            )
+            total, problems = audit(task_file, trans_file)
+            self.assertEqual(total, 1)
+            self.assertEqual(problems, [])
+
+    def test_unknown_translation_id_is_rejected(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            task_file, trans_file = root / "tasks.yaml", root / "translations.yaml"
+            task_file.write_text(
+                yaml.safe_dump([{"id": "rail_fixture", "prompt": self.ENGLISH}]),
+                encoding="utf-8"
+            )
+            trans_file.write_text(
+                yaml.safe_dump({"zh": {"phantom_task": self.CHINESE}}, allow_unicode=True),
+                encoding="utf-8"
+            )
+            with self.assertRaisesRegex(ValueError, "not present in benchmark"):
+                audit(task_file, trans_file)
+
+
 if __name__ == "__main__":
     unittest.main()
