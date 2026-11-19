@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
-# Language ablation: the same 16 tasks with the request written in Spanish, Hindi or
-# Swahili (bench/prompts/translations.yaml). The system prompt stays in English, as when
+# Language ablation: the same tasks with localized requests. Default languages are
+# Spanish, Hindi and Swahili, preserving the original paper's runner behavior.
+# Opt in to Chinese with PTB_LANGUAGES=zh before the command.
+# Prompts live in bench/prompts/translations.yaml. The system prompt stays in English, as when
 # a student pastes the tutorial's starter prompt and writes the spec in their own language.
 # Usage: bash bench/run_lang.sh <run-name> <model> [<model> ...]
 set -u
@@ -12,7 +14,9 @@ if command -v systemd-inhibit >/dev/null 2>&1; then
 fi
 RUN=${1:?usage: run_lang.sh <run-name> <models...>}; shift
 [ $# -ge 1 ] || { echo "usage: run_lang.sh <run-name> <model> [<model> ...]" >&2; exit 2; }
-for lang in es hi sw; do
+# Word-splitting is intentional: the variable selects space-separated language IDs.
+# Example: PTB_LANGUAGES="zh" bash bench/run_lang.sh zh-local qwen2.5-coder:7b
+for lang in ${PTB_LANGUAGES:-es hi sw}; do
   ${INHIBIT[@]+"${INHIBIT[@]}"} .venv/bin/python bench/run_bench.py --run "$RUN" --lang "$lang" \
       --prompts bench/prompts/translations.yaml --models "$@"
 done
