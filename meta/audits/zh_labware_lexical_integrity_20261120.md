@@ -18,7 +18,11 @@ The last two checks are **lexical integrity tests only**. They do not verify tha
 python bench/prompts/validate_zh.py
 ```
 
-The branch validator enforces task-ID and numeric-token consistency. The independent audit also inspected signed axis references; these additional checks are not a claim that the validator proves full semantic fidelity.
+The branch validator now enforces task-ID coverage, numeric-token parity, signed numeric-token parity, and signed-axis parity. Four negative regression cases verify that dropping a negative coordinate sign, reversing an axis, or changing a dimension is rejected; a valid translated fixture passes. These automated checks are not a substitute for an independent, native-speaking technical reviewer.
+
+## Fork-level CI evidence (independent verification branch)
+
+GitHub Actions [run #44593271429](https://github.com/lindicaphxag-tech/prompt-to-bench/actions/runs/44593271429) completed with **Success** on 2026-11-20. It ran the 16-task lexical validator, the four regression unit tests, and task-ID coverage validation. This CI ran on verification branch `verification/zh-lexical-ci-20261120` cloned from this contribution; it is not an upstream maintainer approval or a language-model evaluation.
 
 ## Review checklist
 
