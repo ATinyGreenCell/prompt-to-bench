@@ -22,13 +22,17 @@
 
 The rendered reference volume was **32,363.35923 mm³**. Its min/max bounds were `[-50,-35,0]` and `[50,35,10]` mm. All 12 solid/empty probes in the task specification agreed with the reference. All four deliberately defective versions were rejected by at least one independent discriminating check.
 
-## Remaining official gates
+## Additional fork-level official suite verification
 
-1. Run repository-native `bench/build_refs.py --write` and compare the generated reference statistics.
-2. Confirm reference passes the official task check suite including 3% rescaling and symmetry handling.
-3. Validate that all branch mutants fail and that the new task does not accidentally match other tasks.
-4. Run `make designs` and official CI, and obtain a technical review.
-5. Fabrication/fit measurements are **not** claimed; no optical or microfluidic performance is claimed.
+The initial 17-task validation run identified three `bench/test_harness.py` assertions that hard-coded the original 16-task table size. The source PR branch was fixed in [commit df9ad958](https://github.com/lindicaphxag-tech/prompt-to-bench/commit/df9ad958f95ca9547f13e927c271a145a700a4dd), replacing those constants with `len(all_tasks)`. This is a harness-fixture correction, not a relaxation of the benchmark's geometry criteria.
+
+A verification branch created from the same contribution was then rerun. [GitHub Actions run #44593935083](https://github.com/lindicaphxag-tech/prompt-to-bench/actions/runs/44593935083) completed with **Success** on 2026-11-20, covering:
+- 17 distinct task IDs and a matching frozen reference-stat entry
+- the full repository-native `bench/test_harness.py` regression suite
+- frozen reference statistics, symmetry/rotation/mirroring, 3% scale discrimination, cross-task false positives, reference variants and mutants via `bench/build_refs.py`
+- the library design and invalid parameter checks via `tools/check_designs.py`
+
+This CI is a **fork-level** independent validation, not evidence of an upstream review, model benchmark improvement, or actual fabrication. `bench/build_refs.py --write` was not used by this run; the frozen stats were validated in place. The final technical design review and paper credit decision remain with project maintainers. Physical fit/optical function was not tested.
 
 ## Provenance
 
