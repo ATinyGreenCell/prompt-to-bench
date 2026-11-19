@@ -22,7 +22,7 @@ from scadreport import load_mesh  # noqa: E402
 BODIES = {"enclosure_box_and_lid": 2, "clearance_coupon": 2}  # everything else is one body
 # heights [mm] where a horizontal slice must cut at least one hole: a valid-looking solid can still have filled in
 # (a funnel whose inner cone OpenSCAD silently dropped was watertight, one body, and solid)
-HOLES = {"lab_funnel_60mm": [10, 30, 45], "clearance_coupon": [2]}
+HOLES = {"lab_funnel_60mm": [10, 30, 45], "clearance_coupon": [2], "microfluidic_chip_imaging_holder": [3]}
 
 # (design, overrides, expected): "ok" = valid solid, "assert" = stopped by a parameter check
 CASES = [
@@ -87,6 +87,9 @@ CASES = [
     ("seed_sowing_template", {"n": 5, "hole_d": 9.5}, "assert"),  # holes would merge
     ("slide_drying_rack", {"block_xz": [81, 12]}, "assert"),       # drain channels would leave 0.25 mm fins
     ("slide_drying_rack", {"slot_pitch": 3.2}, "assert"),
+    ("microfluidic_chip_imaging_holder", {"window_x": 62}, "ok"),
+    ("microfluidic_chip_imaging_holder", {"hole_d": 25}, "assert"),
+    ("microfluidic_chip_imaging_holder", {"rail_y": 12}, "assert"),
 ]
 
 
