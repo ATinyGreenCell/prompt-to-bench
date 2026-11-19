@@ -463,3 +463,34 @@
     - probes: {empty: [[58.5, 0.7, 30], [58.5, -0.7, 30], [58.5, 0, 30.7], [58.5, 0, 29.3], [-58.5, 0.7, 30], [-58.5, -0.7, 30]],
                solid: [[58.5, 1.3, 30], [58.5, -1.3, 30], [58.5, 0, 31.3], [58.5, 0, 28.7], [-58.5, 1.3, 30], [-58.5, -1.3, 30]]}   # wire holes 2 mm
     - volume: {rel_tol: 0.05}
+
+- id: slide_registration_jig
+  category: benchware
+  title: Microscope slide registration jig with clamp holes
+  short: slide jig
+  reference: bench/reference/slide_registration_jig.scad
+  library: designs/benchware/slide_registration_jig.scad
+  skills: [perpendicular indexing rails, asymmetric mounting holes, through holes]
+  prompt: >-
+    Create a reusable 3-D printable microscope slide registration jig. In print
+    orientation, a flat solid base is 100 mm along X, 40 mm along Y and 4 mm high,
+    centred at the XY origin and resting on z=0. Add two perpendicular solid
+    registration rails on TOP of the base, each reaching z=10: one rail is 3 mm
+    thick in Y and extends the full 100 mm length along the NEGATIVE-Y edge;
+    the other is 3 mm thick in X and extends the full 40 mm width along the
+    NEGATIVE-X edge. The rails meet to form a single L-shaped registration edge
+    for repeatably locating a standard 75 by 25 mm microscope slide.
+    Drill two circular 4.5 mm-diameter mounting through-holes ONLY through the
+    base: their centres are at (41,-8) mm and (41,+8) mm measured from the
+    base's XY centre. Keep both bores fully open from z=0 through z=4.
+    All dimensions are millimetres and the whole design is a single printable body.
+  checks:
+    - bbox: {size: [100, 40, 10], tol: 0.4}
+    - bodies: 1
+    - watertight: true
+    - slice: {z: 2, islands: 1, holes: 2, hole_d: [4.5, 0.35],
+              hole_centers: [[41, -8], [41, 8]], tol: 0.4}
+    - slice: {z: 6, islands: 1, holes: 0}
+    - probes: {solid: [[-48, 0, 6], [0, -18, 6], [0, 0, 2]],
+               empty: [[0, 0, 6], [41, 8, 2], [41, -8, 2], [0, 18, 6], [48, 0, 6]]}
+    - volume: {rel_tol: 0.03}
