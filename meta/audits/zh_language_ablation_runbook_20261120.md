@@ -17,13 +17,13 @@ These checks establish token-preservation and regression coverage; they **do not
 python3 -m venv .venv
 .venv/bin/pip install -r requirements.txt
 ollama pull qwen2.5-coder:7b
-PTB_LANGUAGES=zh bash bench/run_lang.sh zh-<hardware-id> qwen2.5-coder:7b
+PTB_LANGUAGES=zh bash bench/run_lang.sh zh-local-laptop qwen2.5-coder:7b
 ```
 
 Or use the unmodified Python runner directly:
 
 ```bash
-.venv/bin/python bench/run_bench.py --run zh-<hardware-id> \
+.venv/bin/python bench/run_bench.py --run zh-local-laptop \
     --lang zh --prompts bench/prompts/translations.yaml \
     --models qwen2.5-coder:7b
 ```
