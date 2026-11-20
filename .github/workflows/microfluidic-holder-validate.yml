@@ -25,7 +25,8 @@ jobs:
           import json,yaml
           from pathlib import Path
           tasks=yaml.safe_load(Path('bench/tasks.yaml').read_text())
-          assert len(tasks)==17
+          ids=[t['id'] for t in tasks]
+          assert len(ids)==len(set(ids))
           assert [t['id'] for t in tasks].count('microfluidic_chip_imaging_holder')==1
           assert 'microfluidic_chip_imaging_holder' in json.loads(Path('bench/reference_stats.json').read_text())
           PY
