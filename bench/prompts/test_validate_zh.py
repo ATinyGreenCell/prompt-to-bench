@@ -123,6 +123,26 @@ class TranslationConstraintTests(unittest.TestCase):
             self.assertEqual(problems, [])
 
 
+    def test_duplicate_source_task_ids_are_rejected(self):
+        # Duplicate English IDs must not silently overwrite the first source
+        # specification and make an incorrect translation appear valid.
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            task_file, trans_file = root / "tasks.yaml", root / "translations.yaml"
+            task_file.write_text(
+                yaml.safe_dump([
+                    {"id": "rail_fixture", "prompt": self.ENGLISH},
+                    {"id": "rail_fixture", "prompt": "Replace dimensions with 99 mm."},
+                ], allow_unicode=True),
+                encoding="utf-8",
+            )
+            trans_file.write_text(
+                yaml.safe_dump({"zh": {"rail_fixture": self.CHINESE}}, allow_unicode=True),
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(ValueError, "Duplicate benchmark task id"):
+                audit(task_file, trans_file, expected_baseline_ids={"rail_fixture"})
+
     def test_missing_baseline_translation_is_rejected(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
