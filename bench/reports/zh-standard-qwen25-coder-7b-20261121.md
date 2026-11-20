@@ -12,7 +12,7 @@ Under matched per-task settings, can Qwen2.5-Coder 7B produce valid benchmark pa
 - Model: Ollama `qwen2.5-coder:7b`, Q4_K_M, model digest `dae161e27b0e90dd` (7.6B parameters).
 - Matched conditions: same model, English system prompt, task IDs, temperature (0.2), seed base (1,000), context (8,192), generation cap (2,048 tokens), report feedback, and up to two repair rounds. Each task therefore had up to three attempts.
 - Language: English source prompts versus the `zh` entries in `bench/prompts/translations.yaml`.
-- Source: PR branch commit `9f4b46c786e099ad6a78ff8291fbddfb1f293d70`; the current PR branch is two commits ahead, and the intervening diff adds only the earlier pilot report.
+- Source: PR branch commit `9f4b46c786e099ad6a78ff8291fbddfb1f293d70`; at run time, the PR branch was two commits ahead; the intervening diff added only the earlier pilot report.
 - Environment: NVIDIA GeForce RTX 3080 Ti (12 GiB), x86_64 Linux container, Python 3.12.3, Ollama 0.40.16, OpenSCAD 2021.01. The OpenSCAD AppImage SHA-256 was `f758528f2cd213f773c7a105fb63bf3b45bf754b0f586fbb7c9cd653ffcd0882`.
 - Task-set SHA-256: `96a89073be9af221e78b3b40de70c8e74f27f33c002e458a5b1f22257a4fa1e5`.
 - Translation SHA-256: `1e55ed5ed113e3856071ee81668758098accdd61ba9951c127a06543b5860536`.
