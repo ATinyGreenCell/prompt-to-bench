@@ -626,10 +626,10 @@ def rescore_analyze_edges():
         brows = analyze.summarise_box(box, meta, all_tasks)
         btable = analyze.table_box(brows, len(all_tasks))
         check("analyze: per-sample box rows (complete + partial sample, zero-attempt records)",
-              len(brows) == 1 and brows[0]["per_sample"] == [(0, 3, 16), (1, 2, 2)] and brows[0]["mean_pass3"] == 3
+              len(brows) == 1 and brows[0]["per_sample"] == [(0, 3, len(all_tasks)), (1, 2, 2)] and brows[0]["mean_pass3"] == 3
               and brows[0]["tasks_any"] == 3 and brows[0]["tasks_every"] == 3 and "3 · 2 of 2" in btable, btable)
         check("analyze: pooled box columns use the complete sample only",
-              brows[0]["samples_used"] == [0] and brows[0]["n"] == 16 and brows[0]["pass1"] == 3, str(brows[0]["n"]))
+              brows[0]["samples_used"] == [0] and brows[0]["n"] == len(all_tasks) and brows[0]["pass1"] == 3, str(brows[0]["n"]))
         analyze.fig_box_heatmap(box, brows, all_tasks, analyze.THEMES["dark"], os.path.join(tmp, "b.png"), "t")
         check("analyze: box outcome grid draws", os.path.exists(os.path.join(tmp, "b.png")))
         check("analyze: no box records -> no rows", analyze.summarise_box([], meta, all_tasks) == [])
@@ -637,7 +637,7 @@ def rescore_analyze_edges():
                  for r in box if r["sample"] == 0]
         ttable = analyze.table_think(analyze.summarise_box(think, meta, all_tasks), brows, len(all_tasks))
         check("analyze: thinking table next to the thinking-off samples",
-              "| 3 · 2 of 2\\* | 16 |" in ttable and "| 16/16 | 900 | 16/16 |" in ttable, ttable)
+              f"| 3 · 2 of 2\\* | {len(all_tasks)} |" in ttable and f"| {len(all_tasks)}/{len(all_tasks)} | 900 | {len(all_tasks)}/{len(all_tasks)} |" in ttable, ttable)
         # newest record wins whatever the line order; needs_rerun records wait for their rerun
         merged = runs["merged"]
         check("analyze: newest record wins in a merged file; needs_rerun left out",

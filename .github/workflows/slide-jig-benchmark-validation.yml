@@ -1,0 +1,70 @@
+name: Slide jig benchmark reproducibility
+
+on:
+  push:
+    branches:
+      - contrib/slide-registration-jig-and-dynamic-harness
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install headless OpenSCAD and benchmark dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y openscad libgl1 libglu1-mesa
+          python -m pip install -r requirements.txt
+      - name: Assert exactly one new jig task and frozen reference
+        run: |
+          python - <<'PY'
+          import json, yaml
+          from pathlib import Path
+          tasks = yaml.safe_load(Path('bench/tasks.yaml').read_text(encoding='utf-8'))
+          ids = [t['id'] for t in tasks]
+          assert len(ids) == len(set(ids)), (len(ids), len(set(ids)))
+          assert ids.count('slide_registration_jig') == 1
+          stats = json.loads(Path('bench/reference_stats.json').read_text(encoding='utf-8'))
+          assert 'slide_registration_jig' in stats
+          print('JIG_MANIFEST_AND_FROZEN_STATS_PASS')
+          PY
+      - name: Test benchmark harness
+        run: |
+          mkdir -p validation-logs
+          python bench/test_harness.py > validation-logs/test_harness.log 2>&1 || {
+            tail -n 100 validation-logs/test_harness.log; exit 1;
+          }
+          tail -n 25 validation-logs/test_harness.log
+      - name: Validate reference, symmetry, scaling, cross-task checks and mutants
+        run: |
+          python bench/build_refs.py > validation-logs/build_refs.log 2>&1 || {
+            tail -n 100 validation-logs/build_refs.log; exit 1;
+          }
+          tail -n 35 validation-logs/build_refs.log
+      - name: Validate parametric design assertions
+        run: |
+          python tools/check_designs.py > validation-logs/check_designs.log 2>&1 || {
+            tail -n 100 validation-logs/check_designs.log; exit 1;
+          }
+          tail -n 30 validation-logs/check_designs.log
+      - name: Independent OpenSCAD mesh counterexample audit
+        run: |
+          python bench/metamorphic_slide_jig.py > validation-logs/metamorphic_slide_jig.log 2>&1 || {
+            cat validation-logs/metamorphic_slide_jig.log; exit 1;
+          }
+          cat validation-logs/metamorphic_slide_jig.log
+      - name: Preserve all evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: slide-jig-validation-logs
+          path: validation-logs/
+          if-no-files-found: warn

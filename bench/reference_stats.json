@@ -228,5 +228,19 @@
    40.0
   ],
   "material_area": {}
+ },
+ "slide_registration_jig": {
+  "design_center": [
+   0.0,
+   0.0
+  ],
+  "zmin": 0.0,
+  "volume": 18338.856318616,
+  "size": [
+   100.0,
+   40.0,
+   10.0
+  ],
+  "material_area": {}
  }
 }
