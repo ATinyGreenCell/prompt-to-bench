@@ -20,6 +20,17 @@ The contribution is a reviewable complete translation and associated evaluation 
 
 ## Exact-head CI acceptance update — 2026-11-20
 
-A new independent fork GitHub Actions run completed **successfully** on commit `e661780bca22019506b1e63564718870d44ae254`: [CI run #44735605417](https://github.com/lindicaphxag-tech/prompt-to-bench/actions/runs/44735605417). This exact-head result supersedes earlier references to candidate-only or obsolete-head CI receipts. It is the fork branch's executable validation and **not** an upstream Merge or a scientific-paper authorship acceptance.
+A new independent fork GitHub Actions run completed **successfully** on commit `8fc78b0b8bd50ce8fc6a79faeb86529589ad0aa4`: [CI run #44736035699](https://github.com/lindicaphxag-tech/prompt-to-bench/actions/runs/44736035699). This exact-head result supersedes earlier references to candidate-only or obsolete-head CI receipts. It is the fork branch's executable validation and **not** an upstream Merge or a scientific-paper authorship acceptance.
 
 The branch additionally fixes `bench/run_lang.sh` to propagate the first failed language evaluation (`set -euo pipefail`). A new isolated regression asserts that failure exits with code 7 and stops the next language, while the opt-in Chinese control exits 0. The branch's new `zh-labware-review-validation.yml` runs these checks without any paid model calls or hardware.
+
+## Complete three-PR joint regression
+
+- [GitHub Actions #44741030314](https://github.com/lindicaphxag-tech/prompt-to-bench/actions/runs/44741030314): **Completed / Success**, tested combined commit `651fad95a2987b9b3e0b8b4d52fb56e1b87130b7` from separate integration branch.
+- Both proposed new 3D geometry tasks (#2, #3) and this 16-task Chinese localization (#4) coexist under one full 18-English-task harness, geometry mutants, and parametric design checks.
+- **Translation coverage remains 16/18 English tasks.** The two new benchmark tasks do not have human-checked Chinese translations and are intentionally excluded from the existing localization claims.
+- Individual PR may be merged in any order provided its shared manifest/metadata and checker integration are preserved. See [integration compatibility proof](https://github.com/lindicaphxag-tech/prompt-to-bench/blob/verification/tri-labware-translation-integration-20261120/meta/audits/TRI_CONTRIBUTION_18TASK_ZH_INTEGRATION_20261120.md).
+
+### Explicit contributor-credit request
+
+Please assess whether this substantive data-curation and evaluation infrastructure contribution qualifies for co-authorship on the **next tagged living-paper version** under the repository's published `CONTRIBUTING.md`. Suggested CRediT roles: Data curation, Software, Validation, Writing – review & editing. The contributor will maintain the translations and validators, and acknowledges that publication authorship requires corresponding-author decision. AI-assisted drafting is disclosed and the executed tests, not model-performance claims, substantiate the contribution.
