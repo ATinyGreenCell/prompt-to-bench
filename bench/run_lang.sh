@@ -5,7 +5,9 @@
 # Prompts live in bench/prompts/translations.yaml. The system prompt stays in English, as when
 # a student pastes the tutorial's starter prompt and writes the spec in their own language.
 # Usage: bash bench/run_lang.sh <run-name> <model> [<model> ...]
-set -u
+# Stop the multi-language evaluation on its first failed language; never
+# report success because a later language happened to pass.
+set -euo pipefail
 cd "$(dirname "$0")/.."
 # Keep the laptop awake (no suspend on idle or lid close) while the benchmark runs.
 INHIBIT=()
