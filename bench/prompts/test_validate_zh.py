@@ -269,5 +269,41 @@ class TranslationConstraintTests(unittest.TestCase):
                 ["bench/run_bench.py --run local-probe --lang zh --prompts bench/prompts/translations.yaml --models fake-model"],
             )
 
+
+    def test_language_dispatch_invalid_preflight_never_launches_model(self):
+        """Whitespace-only, repeated and unknown languages must fail before any run."""
+        import os
+        import shutil
+        import subprocess
+
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            (root / "bench").mkdir()
+            (root / ".venv/bin").mkdir(parents=True)
+            script = root / "bench/run_lang.sh"
+            shutil.copy2(Path(__file__).resolve().parents[1] / "run_lang.sh", script)
+            fake_python = root / ".venv/bin/python"
+            fake_python.write_text(
+                '#!/bin/sh\n'
+                'echo launched >> "$PTB_LANG_TEST_LOG"\n'
+                'exit 0\n',
+                encoding="utf-8",
+            )
+            fake_python.chmod(0o755)
+            env = dict(os.environ)
+            log = root / "calls.txt"
+            env["PTB_LANG_TEST_LOG"] = str(log)
+            for invalid in ("   ", "es es", "es unknown", "es\nzh", "es *"):
+                with self.subTest(invalid=repr(invalid)):
+                    if log.exists():
+                        log.unlink()
+                    env["PTB_LANGUAGES"] = invalid
+                    result = subprocess.run(
+                        ["bash", str(script), "preflight-audit", "fake-model"],
+                        env=env, text=True, capture_output=True, check=False,
+                    )
+                    self.assertEqual(result.returncode, 2, result.stderr)
+                    self.assertFalse(log.exists(), f"unexpected model run for {invalid!r}")
+
 if __name__ == "__main__":
     unittest.main()
