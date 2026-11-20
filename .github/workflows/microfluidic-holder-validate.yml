@@ -45,6 +45,12 @@ jobs:
             exit 1
           }
           tail -n 60 validation-logs/check_designs.log
+      - name: Independent physical-mesh mutation and correctness audit
+        run: |
+          python bench/metamorphic_microfluidic.py > validation-logs/metamorphic_microfluidic.log 2>&1 || {
+            cat validation-logs/metamorphic_microfluidic.log; exit 1;
+          }
+          cat validation-logs/metamorphic_microfluidic.log
       - name: Archive evidence
         if: always()
         uses: actions/upload-artifact@v4
