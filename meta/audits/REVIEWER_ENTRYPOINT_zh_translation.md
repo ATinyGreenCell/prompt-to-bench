@@ -34,3 +34,15 @@ The branch additionally fixes `bench/run_lang.sh` to propagate the first failed 
 ### Explicit contributor-credit request
 
 Please assess whether this substantive data-curation and evaluation infrastructure contribution qualifies for co-authorship on the **next tagged living-paper version** under the repository's published `CONTRIBUTING.md`. Suggested CRediT roles: Data curation, Software, Validation, Writing – review & editing. The contributor will maintain the translations and validators, and acknowledges that publication authorship requires corresponding-author decision. AI-assisted drafting is disclosed and the executed tests, not model-performance claims, substantiate the contribution.
+
+
+## Exact-current-head engineering semantics review (2026-11-20)
+
+The translation contribution has been strengthened beyond numeric-token parity. A **separate pinned review table** in `bench/prompts/validate_zh_semantics.py` asserts **48 domain-specific semantic anchors across all 16 original labware tasks**. Examples include blind versus through bores, open versus sealed floors, inverted print orientation, through-channel continuity, and open channel geometry. `bench/prompts/test_validate_zh_semantics.py` adds 10 tests, including nine adversarial fixtures where the numbers stay unchanged but the Chinese engineering meaning is changed.
+
+- **Latest PR-head sha:** `1e95aa9006b654d91fe756bb531c6240b90a325b`.
+- **Exact-head successful GitHub Actions:** https://github.com/lindicaphxag-tech/prompt-to-bench/actions/runs/44749564270
+- **All tests actually executed in workflow:** both original numeric-validation tests and new semantics tests, plus shell fail-closed checks and both executable validators.
+- **Independent human semantic review still required:** keyword anchors detect specific dangerous regressions but cannot certify every intended CAD constraint, synonym, native-language nuance or real model output. The evaluation remains static; no model comparison scores were produced.
+
+This is a research methodology/quality contribution to the same PR rather than a claim of acceptance. Under the project author policy, final contributor and paper author credit must be confirmed by the corresponding author after review.
