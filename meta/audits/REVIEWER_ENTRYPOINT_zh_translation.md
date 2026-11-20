@@ -16,3 +16,10 @@ A bilingual CAD/labware reviewer must still verify that constraints attach to th
 
 ## Paper contribution discussion
 The contribution is a reviewable complete translation and associated evaluation infrastructure, not a completed full-language experimental study. Proposed CRediT roles: Resources (translations), Software (validators), Validation (lexical controls), Writing—original draft (runbook). AI assisted drafting and checking. Under the project's [contribution policy](https://github.com/ATinyGreenCell/prompt-to-bench/blob/main/CONTRIBUTING.md), final recognition/co-authorship is decided by the corresponding author after substantive review and is never automatic.
+
+
+## Exact-head CI acceptance update — 2026-11-20
+
+A new independent fork GitHub Actions run completed **successfully** on commit `e661780bca22019506b1e63564718870d44ae254`: [CI run #44735605417](https://github.com/lindicaphxag-tech/prompt-to-bench/actions/runs/44735605417). This exact-head result supersedes earlier references to candidate-only or obsolete-head CI receipts. It is the fork branch's executable validation and **not** an upstream Merge or a scientific-paper authorship acceptance.
+
+The branch additionally fixes `bench/run_lang.sh` to propagate the first failed language evaluation (`set -euo pipefail`). A new isolated regression asserts that failure exits with code 7 and stops the next language, while the opt-in Chinese control exits 0. The branch's new `zh-labware-review-validation.yml` runs these checks without any paid model calls or hardware.
