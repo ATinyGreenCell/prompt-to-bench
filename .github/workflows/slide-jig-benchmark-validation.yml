@@ -55,6 +55,12 @@ jobs:
             tail -n 100 validation-logs/check_designs.log; exit 1;
           }
           tail -n 30 validation-logs/check_designs.log
+      - name: Independent OpenSCAD mesh counterexample audit
+        run: |
+          python bench/metamorphic_slide_jig.py > validation-logs/metamorphic_slide_jig.log 2>&1 || {
+            cat validation-logs/metamorphic_slide_jig.log; exit 1;
+          }
+          cat validation-logs/metamorphic_slide_jig.log
       - name: Preserve all evidence
         if: always()
         uses: actions/upload-artifact@v4
