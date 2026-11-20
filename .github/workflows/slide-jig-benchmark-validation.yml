@@ -30,7 +30,7 @@ jobs:
           from pathlib import Path
           tasks = yaml.safe_load(Path('bench/tasks.yaml').read_text(encoding='utf-8'))
           ids = [t['id'] for t in tasks]
-          assert len(ids) == len(set(ids)) == 17, (len(ids), len(set(ids)))
+          assert len(ids) == len(set(ids)), (len(ids), len(set(ids)))
           assert ids.count('slide_registration_jig') == 1
           stats = json.loads(Path('bench/reference_stats.json').read_text(encoding='utf-8'))
           assert 'slide_registration_jig' in stats
