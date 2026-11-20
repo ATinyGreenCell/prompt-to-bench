@@ -16,6 +16,10 @@ ROOT = Path(__file__).resolve().parents[2]
 NUMBER = re.compile(r"\d+(?:\.\d+)?")
 SIGNED_NUMBER = re.compile(r"(?<![A-Za-z0-9_.])[+-]\s*\d+(?:\.\d+)?")
 SIGNED_AXIS = re.compile(r"(?<![A-Za-z0-9_])[+-]\s*[XYZxyz]\b")
+# Bind explicit coordinate assignment to its axis rather than only its number.
+COORD_ASSIGNMENT = re.compile(
+    r"(?<![A-Za-z0-9_])([xyzXYZ])\s*=\s*([+-]?\s*\d+(?:\.\d+)?)"
+)
 HAN = re.compile(r"[\u4e00-\u9fff]")
 
 # Frozen pre-contribution English task identities. New tasks may be added by
@@ -79,6 +83,20 @@ def audit(task_path=None, translation_path=None, expected_baseline_ids=None):
                 f"{task_id}: altered numeric constraints "
                 f"missing={dict(source_nums-localized_nums)} "
                 f"added={dict(localized_nums-source_nums)}"
+            )
+        # Global number multisets alone cannot detect swapped X/Y values.
+        def coordinate_bindings(text):
+            return Counter(
+                (axis.upper(), re.sub(r"\s+", "", number))
+                for axis, number in COORD_ASSIGNMENT.findall(text)
+            )
+        expected_bindings = coordinate_bindings(english)
+        observed_bindings = coordinate_bindings(localized)
+        if expected_bindings != observed_bindings:
+            problems.append(
+                f"{task_id}: altered coordinate axis-value assignments "
+                f"missing={dict(expected_bindings-observed_bindings)} "
+                f"added={dict(observed_bindings-expected_bindings)}"
             )
         # Unsigned number parity alone would miss x=-25 becoming x=25, or -Y becoming +Y.
         # Compare signed tokens separately; independent technical review remains necessary.
