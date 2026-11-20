@@ -487,7 +487,16 @@
   checks:
     - bbox: {size: [100, 70, 10], tol: 0.5}
     - bodies: 1
+    - watertight: true
     - slice: {z: 3, islands: 1, holes: 5}
+    # Five holes at z=3 do not establish through-open apertures.
+    - bores: {z: [0.15, 5.85], at: [[0, 0], [-40, -25], [-40, 25], [40, -25], [40, 25]]}
+    # Distinguish the 60 x 30 mm optical aperture and 5 mm bores from
+    # larger, still watertight openings hidden by the 4% volume tolerance.
+    - line: {z: 3, from: [-36, 0], to: [36, 0], intervals: 2, length: [6, 0.35]}
+    - line: {z: 3, from: [0, -21], to: [0, 21], intervals: 2, length: [6, 0.35]}
+    - line: {z: 3, from: [-45, -25], to: [-35, -25], intervals: 2, length: [2.5, 0.3]}
+    - line: {z: 3, from: [35, 25], to: [45, 25], intervals: 2, length: [2.5, 0.3]}
     - slice: {z: 7.5, islands: 3, holes: 0}
     - probes:
         solid: [[47, 0, 3], [0, 32, 3], [0, -20.5, 8], [0, 20.5, 8], [39, 0, 7.5]]
