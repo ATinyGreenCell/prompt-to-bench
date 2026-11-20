@@ -23,6 +23,8 @@ jobs:
       - name: Validate Bash and fail-closed language runner tests
         run: |
           bash -n bench/run_lang.sh
-          python -m unittest -v bench.prompts.test_validate_zh
+          python -m unittest -v bench.prompts.test_validate_zh bench.prompts.test_validate_zh_semantics
       - name: Validate all currently translated task constraints
-        run: python bench/prompts/validate_zh.py
+        run: |
+          python bench/prompts/validate_zh.py
+          python bench/prompts/validate_zh_semantics.py
