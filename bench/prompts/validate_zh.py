@@ -13,14 +13,23 @@ import sys
 import yaml
 
 ROOT = Path(__file__).resolve().parents[2]
-NUMBER = re.compile(r"\d+(?:\.\d+)?")
-SIGNED_NUMBER = re.compile(r"(?<![A-Za-z0-9_.])[+-]\s*\d+(?:\.\d+)?")
+NUMBER = re.compile(r"\d+(?:\.\d+)?(?:[eE][+-]?\d+)?")
+SIGNED_NUMBER = re.compile(r"(?<![A-Za-z0-9_.])[+-]\s*\d+(?:\.\d+)?(?:[eE][+-]?\d+)?")
 SIGNED_AXIS = re.compile(r"(?<![A-Za-z0-9_])[+-]\s*[XYZxyz]\b")
 # Bind explicit coordinate assignment to its axis rather than only its number.
 COORD_ASSIGNMENT = re.compile(
-    r"(?<![A-Za-z0-9_])([xyzXYZ])\s*=\s*([+-]?\s*\d+(?:\.\d+)?)"
+    r"(?<![A-Za-z0-9_])([xyzXYZ])\s*=\s*([+-]?\s*\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)"
 )
 HAN = re.compile(r"[\u4e00-\u9fff]")
+
+# Geometry text may use Unicode minus/full-width mathematical signs. Normalize
+# only mathematical sign characters: ordinary Chinese prose is unchanged.
+MATH_SIGNS = str.maketrans({"−": "-", "－": "-", "﹣": "-", "＋": "+", "﹢": "+"})
+
+
+def normalize_math_signs(text):
+    return text.translate(MATH_SIGNS)
+
 
 # Frozen pre-contribution English task identities. New tasks may be added by
 # independent PRs, but the original 16 Chinese translations must not disappear.
@@ -76,6 +85,8 @@ def audit(task_path=None, translation_path=None, expected_baseline_ids=None):
         if not isinstance(localized, str) or not HAN.search(localized):
             problems.append(f"{task_id}: empty or non-Chinese translation")
             continue
+        english = normalize_math_signs(english)
+        localized = normalize_math_signs(localized)
         source_nums = Counter(NUMBER.findall(english))
         localized_nums = Counter(NUMBER.findall(localized))
         if localized_nums != source_nums:
@@ -119,6 +130,7 @@ if __name__ == "__main__":
     total, problems = audit()
     for problem in problems:
         print("FAIL", problem, file=sys.stderr)
-    print(f"zh task translations: {total-len(problems)}/{total} numerically consistent")
+    invalid_ids = {problem.split(":", 1)[0] for problem in problems}
+    print(f"zh task translations: {total-len(invalid_ids)}/{total} numerically consistent")
     if problems:
         sys.exit(1)

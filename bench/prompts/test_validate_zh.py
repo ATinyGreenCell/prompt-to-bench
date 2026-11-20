@@ -35,6 +35,35 @@ class TranslationConstraintTests(unittest.TestCase):
         self.assertEqual(total, 1)
         self.assertEqual(problems, [])
 
+    def test_unicode_minus_and_fullwidth_plus_match_ascii_geometry(self):
+        english = "Place at x = -25 mm along -Y and y = +12 mm along +X."
+        chinese = "将部件定位在 x = −25 mm，沿 −Y，且 y = ＋12 mm，沿 ＋X。"
+        total, problems = self.audit_pair(english, chinese)
+        self.assertEqual(total, 1)
+        self.assertEqual(problems, [])
+
+    def test_unicode_minus_to_positive_reversal_is_rejected(self):
+        english = "Set x = −25 mm along −Y and thickness 2 mm."
+        chinese = "将导轨设在 x = +25 mm，沿 +Y，厚度 2 mm。"
+        _, problems = self.audit_pair(english, chinese)
+        self.assertTrue(any("signed numbers" in p for p in problems), problems)
+        self.assertTrue(any("signed axes" in p for p in problems), problems)
+
+    def test_scientific_notation_exponent_changes_are_rejected(self):
+        english = "Set x = 1e-3 mm and y = 2e-3 mm."
+        chinese = "设置 x = 1e+3 mm，y = 2e-3 mm。"
+        _, problems = self.audit_pair(english, chinese)
+        self.assertTrue(any("numeric constraints" in p for p in problems), problems)
+
+    def test_scientific_notation_coordinate_swap_is_rejected(self):
+        english = "Set x = 1e-3 mm and y = 2e-3 mm."
+        chinese = "设置 x = 2e-3 mm，y = 1e-3 mm。"
+        _, problems = self.audit_pair(english, chinese)
+        self.assertTrue(
+            any("coordinate axis-value assignments" in p for p in problems),
+            problems,
+        )
+
     def test_negative_coordinate_losing_sign_is_rejected(self):
         total, problems = self.audit_pair(
             self.ENGLISH, self.CHINESE.replace("x = -25", "x = 25")
