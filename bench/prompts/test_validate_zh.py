@@ -28,7 +28,7 @@ class TranslationConstraintTests(unittest.TestCase):
                 yaml.safe_dump({"zh": {"rail_fixture": chinese}}, allow_unicode=True),
                 encoding="utf-8",
             )
-            return audit(task_file, trans_file)
+            return audit(task_file, trans_file, expected_baseline_ids={'rail_fixture'})
 
     def test_preserves_signed_geometry(self):
         total, problems = self.audit_pair(self.ENGLISH, self.CHINESE)
@@ -72,9 +72,57 @@ class TranslationConstraintTests(unittest.TestCase):
                 yaml.safe_dump({"zh": {"rail_fixture": self.CHINESE}}, allow_unicode=True),
                 encoding="utf-8"
             )
-            total, problems = audit(task_file, trans_file)
+            total, problems = audit(task_file, trans_file, expected_baseline_ids={'rail_fixture'})
             self.assertEqual(total, 1)
             self.assertEqual(problems, [])
+
+
+    def test_missing_baseline_translation_is_rejected(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            task_file, trans_file = root / "tasks.yaml", root / "translations.yaml"
+            tasks = [
+                {"id": "rail_fixture", "prompt": self.ENGLISH},
+                {"id": "second_original", "prompt": "A 7 mm spacer."},
+            ]
+            task_file.write_text(yaml.safe_dump(tasks), encoding="utf-8")
+            trans_file.write_text(
+                yaml.safe_dump({"zh": {"rail_fixture": self.CHINESE}}, allow_unicode=True),
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(ValueError, "Missing baseline Chinese translations"):
+                audit(task_file, trans_file,
+                      expected_baseline_ids={"rail_fixture", "second_original"})
+
+    def test_missing_english_baseline_task_is_rejected(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            task_file, trans_file = root / "tasks.yaml", root / "translations.yaml"
+            task_file.write_text(
+                yaml.safe_dump([{"id": "rail_fixture", "prompt": self.ENGLISH}]),
+                encoding="utf-8",
+            )
+            trans_file.write_text(
+                yaml.safe_dump({"zh": {"rail_fixture": self.CHINESE}}, allow_unicode=True),
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(ValueError, "Missing baseline English benchmark tasks"):
+                audit(task_file, trans_file,
+                      expected_baseline_ids={"rail_fixture", "second_original"})
+
+    def test_empty_translation_baseline_is_rejected(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            task_file, trans_file = root / "tasks.yaml", root / "translations.yaml"
+            task_file.write_text(
+                yaml.safe_dump([{"id": "rail_fixture", "prompt": self.ENGLISH}]),
+                encoding="utf-8",
+            )
+            trans_file.write_text(
+                yaml.safe_dump({"zh": {}}, allow_unicode=True), encoding="utf-8"
+            )
+            with self.assertRaisesRegex(ValueError, "Missing baseline Chinese translations"):
+                audit(task_file, trans_file, expected_baseline_ids={"rail_fixture"})
 
     def test_unknown_translation_id_is_rejected(self):
         with tempfile.TemporaryDirectory() as temp:
@@ -89,7 +137,7 @@ class TranslationConstraintTests(unittest.TestCase):
                 encoding="utf-8"
             )
             with self.assertRaisesRegex(ValueError, "not present in benchmark"):
-                audit(task_file, trans_file)
+                audit(task_file, trans_file, expected_baseline_ids={'rail_fixture'})
 
 
     def test_language_dispatch_fail_closed_and_opt_in(self):
