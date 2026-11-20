@@ -1,0 +1,59 @@
+name: Microfluidic holder - upstream geometry checks (temporary)
+on:
+  push:
+    branches:
+      - feature/microfluidic-imaging-holder-task
+permissions:
+  contents: read
+jobs:
+  geometry:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install exact geometry toolchain
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y openscad libgl1 libglu1-mesa
+          python -m pip install -r requirements.txt
+      - name: Confirm new task manifest and exact reference
+        run: |
+          python - <<'PY'
+          import json,yaml
+          from pathlib import Path
+          tasks=yaml.safe_load(Path('bench/tasks.yaml').read_text())
+          ids=[t['id'] for t in tasks]
+          assert len(ids)==len(set(ids))
+          assert [t['id'] for t in tasks].count('microfluidic_chip_imaging_holder')==1
+          assert 'microfluidic_chip_imaging_holder' in json.loads(Path('bench/reference_stats.json').read_text())
+          PY
+      - name: Reference self-test, mutants, cross-task, and frozen statistics
+        run: |
+          mkdir -p validation-logs
+          python bench/build_refs.py > validation-logs/build_refs.log 2>&1 || {
+            tail -n 120 validation-logs/build_refs.log
+            exit 1
+          }
+          tail -n 110 validation-logs/build_refs.log
+      - name: Parametric labware tool regressions
+        run: |
+          python tools/check_designs.py > validation-logs/check_designs.log 2>&1 || {
+            tail -n 100 validation-logs/check_designs.log
+            exit 1
+          }
+          tail -n 60 validation-logs/check_designs.log
+      - name: Independent physical-mesh mutation and correctness audit
+        run: |
+          python bench/metamorphic_microfluidic.py > validation-logs/metamorphic_microfluidic.log 2>&1 || {
+            cat validation-logs/metamorphic_microfluidic.log; exit 1;
+          }
+          cat validation-logs/metamorphic_microfluidic.log
+      - name: Archive evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: microfluidic-holder-geometry
+          path: validation-logs/

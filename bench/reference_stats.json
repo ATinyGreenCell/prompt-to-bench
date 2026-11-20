@@ -228,5 +228,19 @@
    40.0
   ],
   "material_area": {}
+ },
+ "microfluidic_chip_imaging_holder": {
+  "design_center": [
+   0.0,
+   0.0
+  ],
+  "zmin": 0.0,
+  "volume": 32363.359,
+  "size": [
+   100.0,
+   70.0,
+   10.0
+  ],
+  "material_area": {}
  }
 }

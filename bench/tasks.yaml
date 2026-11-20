@@ -463,3 +463,42 @@
     - probes: {empty: [[58.5, 0.7, 30], [58.5, -0.7, 30], [58.5, 0, 30.7], [58.5, 0, 29.3], [-58.5, 0.7, 30], [-58.5, -0.7, 30]],
                solid: [[58.5, 1.3, 30], [58.5, -1.3, 30], [58.5, 0, 31.3], [58.5, 0, 28.7], [-58.5, 1.3, 30], [-58.5, -1.3, 30]]}   # wire holes 2 mm
     - volume: {rel_tol: 0.05}
+
+# Reference task: microfluidic chip optical holder. Geometry-only evaluation.
+- id: microfluidic_chip_imaging_holder
+  category: tools
+  title: Microfluidic chip optical-imaging holder
+  short: Microfluidic chip holder
+  reference: bench/reference/microfluidic_chip_imaging_holder.scad
+  library: designs/tools/microfluidic_chip_imaging_holder.scad
+  skills: [through optical aperture, four-hole mounting array, raised locating rails, asymmetric fiducial]
+  prompt: >-
+    Design a printable holder for repeatable imaging of a flat microfluidic chip.
+    In print orientation, a single flat 100 mm (X) by 70 mm (Y) base plate lies on
+    the bed from z = 0 to z = 6. Cut a centred 60 mm (X) by 30 mm (Y) rectangular
+    optical window all the way through the base. Cut four vertical through-holes,
+    each 5 mm in diameter, at the mounting coordinates (x, y) = (-40, -25),
+    (-40, 25), (40, -25), and (40, 25), in mm. Add two solid locating rails on
+    top of the base, each 64 mm long (X), 3 mm wide (Y) and 4 mm high (Z), with
+    their centre lines at y = -20.5 and y = 20.5. These rails must not obstruct
+    the optical window. Finally, add one asymmetric solid 7 mm (X) by 7 mm (Y)
+    by 2 mm (Z) orientation marker on top of the base, centred at x = 39, y = 0.
+    The whole object must be a connected printable solid, with its bottom at z = 0.
+  checks:
+    - bbox: {size: [100, 70, 10], tol: 0.5}
+    - bodies: 1
+    - watertight: true
+    - slice: {z: 3, islands: 1, holes: 5}
+    # Five holes at z=3 do not establish through-open apertures.
+    - bores: {z: [0.15, 5.85], at: [[0, 0], [-40, -25], [-40, 25], [40, -25], [40, 25]]}
+    # Distinguish the 60 x 30 mm optical aperture and 5 mm bores from
+    # larger, still watertight openings hidden by the 4% volume tolerance.
+    - line: {z: 3, from: [-36, 0], to: [36, 0], intervals: 2, length: [6, 0.35]}
+    - line: {z: 3, from: [0, -21], to: [0, 21], intervals: 2, length: [6, 0.35]}
+    - line: {z: 3, from: [-45, -25], to: [-35, -25], intervals: 2, length: [2.5, 0.3]}
+    - line: {z: 3, from: [35, 25], to: [45, 25], intervals: 2, length: [2.5, 0.3]}
+    - slice: {z: 7.5, islands: 3, holes: 0}
+    - probes:
+        solid: [[47, 0, 3], [0, 32, 3], [0, -20.5, 8], [0, 20.5, 8], [39, 0, 7.5]]
+        empty: [[0, 0, 3], [10, 0, 3], [-40, -25, 3], [-40, 25, 3], [40, -25, 3], [40, 25, 3], [0, 0, 8]]
+    - volume: {rel_tol: 0.04}
