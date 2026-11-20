@@ -19,3 +19,8 @@ No physical print, microscopy accuracy, sterility, biosafety, or clinical suitab
 
 ## Paper contribution discussion
 This submission is offered as a substantive "new task with reference and validation" under the repository's [authorship policy](https://github.com/ATinyGreenCell/prompt-to-bench/blob/main/CONTRIBUTING.md). Proposed CRediT roles: Conceptualization; Software; Validation; Writing—original draft. Any authorship on a later tagged paper must be separately confirmed by its corresponding author, and no acceptance is implied by mergeability or this report.
+
+
+## Exact-head CI acceptance update — 2026-11-20
+
+A new independent fork GitHub Actions run completed **successfully** on commit `dbaada80c72576a3782de1dc2b4f40c573d6947f`: [CI run #44733838525](https://github.com/lindicaphxag-tech/prompt-to-bench/actions/runs/44733838525). This exact-head result supersedes earlier references to candidate-only or obsolete-head CI receipts. It is the fork branch's executable validation and **not** an upstream Merge or a scientific-paper authorship acceptance.
