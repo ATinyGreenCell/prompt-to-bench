@@ -38,6 +38,20 @@ REQUIRED = {
 }
 
 
+# In addition to missing-keyword checks, reject an explicit contradictory
+# instruction *even if the required anchor remains elsewhere in the text*.
+# This list is deliberately conservative; it is a narrow regression guard,
+# not an automatic Chinese-language semantic equivalence certificate.
+CONTRADICTIONS = {
+    "tube_rack_1p5ml": ("所有孔都应为通孔", "底部必须敞开"),
+    "conical_rack_50ml": ("六个孔均为盲孔", "打印时应正立"),
+    "pcr_tube_adapter": ("中心孔为盲孔", "两端都必须封闭"),
+    "lab_funnel_60mm": ("漏斗顶部和底部都必须封闭", "不允许液体流过"),
+    "rod_tubing_clip": ("连接桥应阻塞孔", "连接桥必须堵住孔"),
+    "mini_gel_tank": ("两个腔室必须隔断", "两个腔室不可连通"),
+}
+
+
 def audit_semantics(translations):
     """Return human-readable missing anchors; don't silently accept missing IDs."""
     zh = translations.get("zh")
@@ -51,6 +65,9 @@ def audit_semantics(translations):
         for anchor in anchors:
             if anchor not in text:
                 problems.append(f"{task_id}: missing semantic anchor {anchor!r}")
+        for bad in CONTRADICTIONS.get(task_id, ()):
+            if bad in text:
+                problems.append(f"{task_id}: contradictory physical instruction {bad!r}")
     return problems
 
 
