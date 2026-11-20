@@ -491,6 +491,12 @@
     - slice: {z: 2, islands: 1, holes: 2, hole_d: [4.5, 0.35],
               hole_centers: [[41, -8], [41, 8]], tol: 0.4}
     - slice: {z: 6, islands: 1, holes: 0}
+    # A middle slice alone would accept blind holes stopped below z=2.
+    - bores: {z: [0.15, 3.85], at: [[41, -8], [41, 8]]}
+    # Explicit 3 mm rail-thickness checks: volume tolerance alone also
+    # accepts 2.5/3.5 mm rails despite the 3 mm specified dimension.
+    - line: {z: 6, from: [0, -20], to: [0, -15], intervals: 1, length: [3, 0.25]}
+    - line: {z: 6, from: [-50, 0], to: [-45, 0], intervals: 1, length: [3, 0.25]}
     - probes: {solid: [[-48, 0, 6], [0, -18, 6], [0, 0, 2]],
                empty: [[0, 0, 6], [41, 8, 2], [41, -8, 2], [0, 18, 6], [48, 0, 6]]}
     - volume: {rel_tol: 0.03}
