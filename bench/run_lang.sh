@@ -20,13 +20,7 @@ RUN=${1:?usage: run_lang.sh <run-name> <models...>}; shift
 # This prevents a zero-run 'success' and accidental duplicate paid evaluations.
 # Use Bash read -a (rather than unquoted expansion) to avoid filename globs.
 LANG_SPEC=${PTB_LANGUAGES:-es hi sw}
-if [[ "$LANG_SPEC" == *  ${INHIBIT[@]+"${INHIBIT[@]}"} .venv/bin/python bench/run_bench.py --run "$RUN" --lang "$lang" \
-      --prompts bench/prompts/translations.yaml --models "$@"
-done
-\n'* || "$LANG_SPEC" == *  ${INHIBIT[@]+"${INHIBIT[@]}"} .venv/bin/python bench/run_bench.py --run "$RUN" --lang "$lang" \
-      --prompts bench/prompts/translations.yaml --models "$@"
-done
-\r'* ]]; then
+if [[ "$LANG_SPEC" == *$'\n'* || "$LANG_SPEC" == *$'\r'* ]]; then
   echo "PTB_LANGUAGES must contain space-separated language IDs on one line" >&2
   exit 2
 fi
