@@ -18,8 +18,30 @@ SIGNED_NUMBER = re.compile(r"(?<![A-Za-z0-9_.])[+-]\s*\d+(?:\.\d+)?")
 SIGNED_AXIS = re.compile(r"(?<![A-Za-z0-9_])[+-]\s*[XYZxyz]\b")
 HAN = re.compile(r"[\u4e00-\u9fff]")
 
+# Frozen pre-contribution English task identities. New tasks may be added by
+# independent PRs, but the original 16 Chinese translations must not disappear.
+BASELINE_TASK_IDS = frozenset({
+    "tube_rack_1p5ml",
+    "conical_rack_50ml",
+    "slide_drying_rack",
+    "pcr_tube_rack_sbs",
+    "gel_comb_10well",
+    "micropestle_1p5ml",
+    "lab_funnel_60mm",
+    "seed_sowing_template",
+    "dshaft_knob_6mm",
+    "pcr_tube_adapter",
+    "hose_barb_reducer_8_5",
+    "rod_tubing_clip",
+    "stirrer_fan_housing",
+    "nema17_motor_bracket",
+    "enclosure_box_and_lid",
+    "mini_gel_tank",
+})
 
-def audit(task_path=None, translation_path=None):
+
+
+def audit(task_path=None, translation_path=None, expected_baseline_ids=None):
     task_path = task_path or ROOT / "bench/tasks.yaml"
     translation_path = translation_path or ROOT / "bench/prompts/translations.yaml"
     tasks = yaml.safe_load(Path(task_path).read_text(encoding="utf-8"))
@@ -37,6 +59,13 @@ def audit(task_path=None, translation_path=None):
     extra = set(zh) - set(originals)
     if extra:
         raise ValueError(f"Translation IDs not present in benchmark: {sorted(extra)}")
+    required = BASELINE_TASK_IDS if expected_baseline_ids is None else frozenset(expected_baseline_ids)
+    missing_english = required - set(originals)
+    if missing_english:
+        raise ValueError(f"Missing baseline English benchmark tasks: {sorted(missing_english)}")
+    missing_zh = required - set(zh)
+    if missing_zh:
+        raise ValueError(f"Missing baseline Chinese translations: {sorted(missing_zh)}")
     problems = []
     for task_id, localized in zh.items():
         english = originals[task_id]
