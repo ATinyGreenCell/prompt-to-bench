@@ -57,6 +57,23 @@ class TranslationConstraintTests(unittest.TestCase):
         self.assertTrue(any("numeric constraints" in item for item in problems))
 
 
+    def test_swapped_unsigned_coordinates_rejected(self):
+        # Numeric-token, sign and axis-token multisets are unchanged;
+        # only the scientific meaning of x and y was swapped.
+        english = "Place the probe at x = 10 mm and y = 20 mm."
+        chinese = "将探针放在 x = 20 mm、y = 10 mm。"
+        _, problems = self.audit_pair(english, chinese)
+        self.assertTrue(
+            any("coordinate axis-value assignments" in p for p in problems),
+            problems,
+        )
+
+    def test_coordinate_bindings_preserved_in_chinese(self):
+        english = "Place at x = -25 mm, y = 30 mm, and z = 5 mm."
+        chinese = "将物体放在 x = -25 mm、y = 30 mm 和 z = 5 mm。"
+        _, problems = self.audit_pair(english, chinese)
+        self.assertEqual(problems, [])
+
     def test_untranslated_new_english_task_does_not_break_existing_zh_audit(self):
         # Parallel upstream PRs extend the English roster independently.
         with tempfile.TemporaryDirectory() as temp:
