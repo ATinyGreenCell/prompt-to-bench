@@ -12,7 +12,7 @@ Can the translated prompts in this PR be executed through the same 16-task harne
 - Model: local Ollama `qwen2.5:1.5b`, model digest prefix `65ec06548149`.
 - Matched conditions: same model, system prompt, task IDs, temperature (0.2), context (8,192), seed base (1,000), and report feedback.
 - Language: English source prompts versus `bench/prompts/translations.yaml` (`zh` section).
-- Budget: first response only (`--max-repairs 0)); generation capped at 1,024 tokens (`--num-predict 1024`).
+- Budget: first response only (`--max-repairs 0`); generation capped at 1,024 tokens (`--num-predict 1024`).
 - Execution environment: shared CPU sandbox, x86_64 Intel Xeon Platinum 8573C, 9 logical CPUs, about 9.7 GiB RAM, Debian 13; no GPU was exposed. Python 3.12.14, Ollama 0.40.16, OpenSCAD 2021.01.
 - No paid model API, paid compute, physical lab visit, or user-device performance claim.
 
