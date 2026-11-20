@@ -46,3 +46,18 @@ The translation contribution has been strengthened beyond numeric-token parity. 
 - **Independent human semantic review still required:** keyword anchors detect specific dangerous regressions but cannot certify every intended CAD constraint, synonym, native-language nuance or real model output. The evaluation remains static; no model comparison scores were produced.
 
 This is a research methodology/quality contribution to the same PR rather than a claim of acceptance. Under the project author policy, final contributor and paper author credit must be confirmed by the corresponding author after review.
+
+
+## Contradiction-preserving semantic guard — 2026-11-20
+
+A keyword-only semantic check can pass a translated physical specification that contains the required correct anchor **and** an additional incompatible instruction (for instance, a blind-hole tube rack followed by "all holes should be through-holes"). This PR now rejects **12 explicit task-scoped contradictory phrases** across six high-risk labware tasks: blind versus through-hole, sealed versus open end, inverted print orientation, obstructed connecting bridge and separated buffer chambers.
+
+- Detector: `bench/prompts/validate_zh_semantics.py`; commit [`a1e0d871`](https://github.com/lindicaphxag-tech/prompt-to-bench/commit/a1e0d871437690177b14b403d04c13552bf8985d).
+- Four additional regression tests: `bench/prompts/test_validate_zh_semantics.py`; commit [`d54280b5`](https://github.com/lindicaphxag-tech/prompt-to-bench/commit/d54280b51d2f98e56d17418762a78693c96c70fe).
+- [Successfully completed **exact-code-head** GitHub Actions run `44769296318`](https://github.com/lindicaphxag-tech/prompt-to-bench/actions/runs/44769296318) at `d54280b51d2f98e56d17418762a78693c96c70fe`.
+
+This deliberately finite contradiction dictionary is a **targeted safety regression guard**, not a universal semantic checker. Complete bilingual technical review remains a scientific judgment. It does not imply any Chinese-model performance experiment or physical-print accuracy.
+
+### Author-credit evidence
+
+This is a substantive extension of the same 16-task localization contribution: 48 positive technical semantics anchors, explicit coordinate-value binding, 12 contradictory-phrase guards, validated backwards-compatible multilingual dispatch, and a fail-closed evaluation runner. The existing request for corresponding-author consideration under the next tagged living paper and the CRediT roles above remains unchanged. Upstream merge and paper author consent are still outstanding.
