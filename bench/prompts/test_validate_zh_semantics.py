@@ -59,6 +59,37 @@ class ChinesePhysicalSemanticsTests(unittest.TestCase):
     def test_gel_tank_chambers_disconnected(self):
         self.assert_detects_reversal("mini_gel_tank", "上方连通", "上方隔断")
 
+    def test_anchored_but_contradictory_through_hole_is_rejected(self):
+        # The required "blind hole" and "closed floor" anchors are intact.
+        zh = dict(self.translations["zh"])
+        zh["tube_rack_1p5ml"] += " 注意：所有孔都应为通孔。"
+        issues = audit_semantics({"zh": zh})
+        self.assertTrue(
+            any("tube_rack_1p5ml: contradictory physical instruction" in e for e in issues),
+            issues,
+        )
+
+    def test_anchored_but_contradictory_funnel_is_rejected(self):
+        zh = dict(self.translations["zh"])
+        zh["lab_funnel_60mm"] += " 另：漏斗顶部和底部都必须封闭。"
+        issues = audit_semantics({"zh": zh})
+        self.assertTrue(
+            any("lab_funnel_60mm: contradictory physical instruction" in e for e in issues),
+            issues,
+        )
+
+    def test_anchored_but_contradictory_clip_bridge_is_rejected(self):
+        zh = dict(self.translations["zh"])
+        zh["rod_tubing_clip"] += " 另：连接桥应阻塞孔。"
+        issues = audit_semantics({"zh": zh})
+        self.assertTrue(
+            any("rod_tubing_clip: contradictory physical instruction" in e for e in issues),
+            issues,
+        )
+
+    def test_unmodified_chinese_prompts_have_no_contradictions(self):
+        self.assertEqual(audit_semantics(self.translations), [])
+
     def test_unknown_translation_mapping_fails(self):
         with self.assertRaisesRegex(ValueError, "Missing zh"):
             audit_semantics({"en": {}})
