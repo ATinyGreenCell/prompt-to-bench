@@ -19,3 +19,8 @@ python bench/test_harness.py
 
 ## CRediT and integrity
 Work offered for review: Conceptualization (labware benchmark requirements), Software (OpenSCAD reference/mutants/harness), Validation (geometry checks), and Writing—original draft (test/protocol documentation). The contribution and checks were AI-assisted; the human contributor must verify every claim, respond to technical review and maintain merged artifacts. This is within the project's documented category "new task with reference and validation"; any future paper authorship depends on the corresponding author's explicit decision and the project's contribution policy. GitHub PR creation or CI success alone never confers authorship.
+
+
+## Exact-head CI acceptance update — 2026-11-20
+
+A new independent fork GitHub Actions run completed **successfully** on commit `5c80372e30208e261136afd3ff0630a1cad8ab74`: [CI run #44733835601](https://github.com/lindicaphxag-tech/prompt-to-bench/actions/runs/44733835601). This exact-head result supersedes earlier references to candidate-only or obsolete-head CI receipts. It is the fork branch's executable validation and **not** an upstream Merge or a scientific-paper authorship acceptance.
