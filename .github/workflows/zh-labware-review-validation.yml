@@ -4,6 +4,11 @@ on:
   push:
     branches:
       - feature/zh-labware-benchmark-prompts
+  pull_request:
+    paths:
+      - 'bench/prompts/**'
+      - 'bench/run_lang.sh'
+      - '.github/workflows/zh-labware-review-validation.yml'
   workflow_dispatch:
 
 permissions:
